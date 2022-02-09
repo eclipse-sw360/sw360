@@ -387,6 +387,7 @@ public class ComponentImportUtils {
                 String componentName = componentCSVRecord.getComponentName();
                 if (componentNames.add(componentName)) {
                     Component component = componentCSVRecord.getComponent();
+                    component.setBusinessUnit(user.getDepartment());
                     toBeUpdated.add(component);
                 }
             }

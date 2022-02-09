@@ -32,6 +32,10 @@
     </tbody>
 </table>
 
+<div class="stateinfo" id="inaccessibleRows_info" role="status" aria-live="polite">
+    <liferay-ui:message key="inaccessible.count" /> (<span id="inaccessibleCounter">${totalInaccessibleRows}</span>)
+</div>
+
 <button type="button" class="btn btn-secondary" id="addLinkedReleasesToReleaseButton"><liferay-ui:message key="click.to.add.releases" /></button>
 
 <script>

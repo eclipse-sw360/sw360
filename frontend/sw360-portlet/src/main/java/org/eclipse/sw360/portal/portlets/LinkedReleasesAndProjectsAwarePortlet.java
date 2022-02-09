@@ -53,6 +53,7 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import static org.eclipse.sw360.portal.common.PortalConstants.PARENT_BRANCH_ID;
 import static org.eclipse.sw360.portal.common.PortalConstants.PROJECT_LIST;
 import static org.eclipse.sw360.portal.common.PortalConstants.RELEASE_LIST;
+import static org.eclipse.sw360.portal.common.PortalConstants.TOTAL_INACCESSIBLE_ROWS;
 
 /**
  * linked releases and projects-aware portlet implementation
@@ -113,6 +114,22 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         request.setAttribute(RELEASE_LIST, linkedReleaseRelations);
     }
 
+    protected void putDirectlyLinkedReleaseRelationsWithAccessibilityInRequest(PortletRequest request, Release release, User user) {
+        List<ReleaseLink> linkedReleaseRelations = SW360Utils.getLinkedReleaseRelationsWithAccessibility(release, thriftClients, log, user);
+        linkedReleaseRelations = linkedReleaseRelations.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
+                rl -> rl.isAccessible() ? SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()) : "~", String.CASE_INSENSITIVE_ORDER)
+                ).collect(Collectors.toList());
+        request.setAttribute(RELEASE_LIST, linkedReleaseRelations);
+        
+        int totalInaccessibleRow = 0;
+        for (ReleaseLink link : linkedReleaseRelations) {
+            if (!link.isAccessible()) {
+                totalInaccessibleRow++;
+            }
+        }               
+        request.setAttribute(TOTAL_INACCESSIBLE_ROWS, totalInaccessibleRow);
+    }
+    
     protected void putDirectlyLinkedReleasesInRequest(PortletRequest request, Project project) throws TException {
         List<ReleaseLink> linkedReleases = SW360Utils.getLinkedReleases(project, thriftClients, log);
         linkedReleases = linkedReleases.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
@@ -121,6 +138,22 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         request.setAttribute(RELEASE_LIST, linkedReleases);
     }
 
+    protected void putDirectlyLinkedReleasesWithAccessibilityInRequest(PortletRequest request, Project project, User user) throws TException {
+        List<ReleaseLink> linkedReleases = SW360Utils.getLinkedReleasesWithAccessibility(project, thriftClients, log, user);
+        linkedReleases = linkedReleases.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
+                rl -> rl.isAccessible() ? SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()) : "~", String.CASE_INSENSITIVE_ORDER)
+                ).collect(Collectors.toList());
+        request.setAttribute(RELEASE_LIST, linkedReleases);
+        
+        int totalInaccessibleRow = 0;
+        for (ReleaseLink link : linkedReleases) {
+            if (!link.isAccessible()) {
+                totalInaccessibleRow++;
+            }
+        }               
+        request.setAttribute(TOTAL_INACCESSIBLE_ROWS, totalInaccessibleRow);
+    }
+    
     protected List<ProjectLink> createLinkedProjects(Project project, User user) {
         return createLinkedProjects(project, Function.identity(), user);
     }
@@ -245,13 +278,13 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
             String id = branchId.split("_")[0];
             try {
                 Release release = client.getReleaseById(id, user);
-                putDirectlyLinkedReleaseRelationsInRequest(request, release);
+                putDirectlyLinkedReleaseRelationsWithAccessibilityInRequest(request, release, user);
             } catch (TException e) {
                 log.error("Error getting projects!", e);
                 throw new PortletException("cannot get projects", e);
             }
         } else {
-            putDirectlyLinkedReleaseRelationsInRequest(request, new Release());
+            putDirectlyLinkedReleaseRelationsWithAccessibilityInRequest(request, new Release(), user);
         }
         List<ReleaseLink> releaseLinkList = (List<ReleaseLink>) request.getAttribute(RELEASE_LIST);
         Set<String> releaseIds = releaseLinkList.stream().map(ReleaseLink::getId).collect(Collectors.toSet());

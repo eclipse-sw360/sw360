@@ -30,16 +30,32 @@
             var result = [];
 
             <core_rt:forEach items="${releasesAndProjects}" var="linkedItem">
-                result.push({
-                    "0": "<sw360:DisplayEnum value="${linkedItem.release.eccInformation.eccStatus}"/>",
-                    "1": "<sw360:DisplayReleaseLink showName="true" release="${linkedItem.release}"/>",
-                    "2": "<sw360:out value="${linkedItem.release.version}"/>",
-                    "3": "<sw360:out value="${linkedItem.release.creatorDepartment}"/>",
-                    "4": '<sw360:DisplayUserEmail email="${linkedItem.release.eccInformation.assessorContactPerson}" bare="true"/>',
-                    "5": "<sw360:out value="${linkedItem.release.eccInformation.assessorDepartment}"/>",
-                    "6": "<sw360:out value="${linkedItem.release.eccInformation.assessmentDate}"/>",
-                    "7": "<sw360:out value="${linkedItem.release.eccInformation.ECCN}"/>"
-                });
+                <core_rt:choose>
+                    <core_rt:when test="${linkedItem.accessible}">
+                        result.push({
+                            "0": "<sw360:DisplayEnum value="${linkedItem.release.eccInformation.eccStatus}"/>",
+                            "1": "<sw360:DisplayReleaseLink showName="true" release="${linkedItem.release}"/>",
+                            "2": "<sw360:out value="${linkedItem.release.version}"/>",
+                            "3": "<sw360:out value="${linkedItem.release.creatorDepartment}"/>",
+                            "4": '<sw360:DisplayUserEmail email="${linkedItem.release.eccInformation.assessorContactPerson}" bare="true"/>',
+                            "5": "<sw360:out value="${linkedItem.release.eccInformation.assessorDepartment}"/>",
+                            "6": "<sw360:out value="${linkedItem.release.eccInformation.assessmentDate}"/>",
+                            "7": "<sw360:out value="${linkedItem.release.eccInformation.ECCN}"/>"
+                        });
+                    </core_rt:when>
+                    <core_rt:otherwise>
+                        result.push({
+                            "0": "<liferay-ui:message key="na" />",
+                            "1": "<liferay-ui:message key="inaccessible.release" />",
+                            "2": "",
+                            "3": "",
+                            "4": "",
+                            "5": "",
+                            "6": "",
+                            "7": ""
+                        });
+                    </core_rt:otherwise>
+                </core_rt:choose>
             </core_rt:forEach>
 
             datatables.create('#releasesECCTable', {

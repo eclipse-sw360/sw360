@@ -24,40 +24,61 @@
 </core_rt:if>
 
 <core_rt:forEach items='${releaseList}' var="releaseLink" varStatus="releaseloop">
-    <tr data-tt-id="${releaseLink.nodeId}" data-tt-branch="${releaseLink.hasSubreleases}" data-is-release-row="true"
-        <core_rt:if test="${true}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
-        <core_rt:if test="${empty parent_branch_id and not empty releaseLink.parentNodeId}">data-tt-parent-id="${releaseLink.parentNodeId}"</core_rt:if>>
-        <td style="white-space: nowrap">
-            <a href="<sw360:DisplayReleaseLink releaseId="${releaseLink.id}" bare="true" scopeGroupId="${concludedScopeGroupId}" />">
-                <sw360:out value="${releaseLink.name} ${releaseLink.version}" maxChar="60" />
-            </a>
-        </td>
-        <td>
-            <sw360:DisplayEnum value="${releaseLink.componentType}" />
-        </td>
-        <td>
-            <sw360:DisplayEnum value="${releaseLink.releaseRelationship}" /></td>
-        <td class="actions">
-            <core_rt:if test="${releaseLink.setLicenseIds}">
-                <sw360:DisplayLicenseCollection licenseIds="${releaseLink.licenseIds}" releaseId="${releaseLink.id}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}" icon="info-circle"/>
-            </core_rt:if>
-        </td>
-        <td class="actions">
-            <core_rt:if test="${releaseLink.setOtherLicenseIds}">
-                <sw360:DisplayLicenseCollection licenseIds="${releaseLink.otherLicenseIds}" main="false" releaseId="${releaseLink.id}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}" icon="info-circle"/>
-            </core_rt:if>
-        </td>
-        <td data-releaseclearingstate='<sw360:DisplayEnum value="${releaseLink.clearingState}" bare="true"/>' class="releaseClearingState"></td>
-        <td>
-            ${requestScope["relMainLineState"][releaseLink.id]}
-        </td>
-        <td>
-            <core_rt:if test='${not empty requestScope["projectReleaseRelation"][releaseLink.id]}'>
-                <sw360:DisplayEnum value='${requestScope["projectReleaseRelation"][releaseLink.id]["mainlineState"]}' />
-            </core_rt:if>
-        </td>
-        <td>
-        </td>
-        <td class="editAction" data-releaseid="${releaseLink.id}"></td>
-    </tr>
+    <core_rt:choose>
+        <core_rt:when test="${releaseLink.accessible}">
+            <tr data-tt-id="${releaseLink.nodeId}" data-tt-branch="${releaseLink.hasSubreleases}" data-is-release-row="true"
+                <core_rt:if test="${true}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
+                <core_rt:if test="${empty parent_branch_id and not empty releaseLink.parentNodeId}">data-tt-parent-id="${releaseLink.parentNodeId}"</core_rt:if>>
+                <td style="white-space: nowrap">
+                    <a href="<sw360:DisplayReleaseLink releaseId="${releaseLink.id}" bare="true" scopeGroupId="${concludedScopeGroupId}" />">
+                        <sw360:out value="${releaseLink.name} ${releaseLink.version}" maxChar="60" />
+                    </a>
+                </td>
+                <td>
+                    <sw360:DisplayEnum value="${releaseLink.componentType}" />
+                </td>
+                <td>
+                    <sw360:DisplayEnum value="${releaseLink.releaseRelationship}" /></td>
+                <td class="actions">
+                    <core_rt:if test="${releaseLink.setLicenseIds}">
+                        <sw360:DisplayLicenseCollection licenseIds="${releaseLink.licenseIds}" releaseId="${releaseLink.id}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}" icon="info-circle"/>
+                    </core_rt:if>
+                </td>
+                <td class="actions">
+                    <core_rt:if test="${releaseLink.setOtherLicenseIds}">
+                        <sw360:DisplayLicenseCollection licenseIds="${releaseLink.otherLicenseIds}" main="false" releaseId="${releaseLink.id}" scopeGroupId="${pageContext.getAttribute('scopeGroupId')}" icon="info-circle"/>
+                    </core_rt:if>
+                </td>
+                <td data-releaseclearingstate='<sw360:DisplayEnum value="${releaseLink.clearingState}" bare="true"/>' class="releaseClearingState"></td>
+                <td>
+                    ${requestScope["relMainLineState"][releaseLink.id]}
+                </td>
+                <td>
+                    <core_rt:if test='${not empty requestScope["projectReleaseRelation"][releaseLink.id]}'>
+                        <sw360:DisplayEnum value='${requestScope["projectReleaseRelation"][releaseLink.id]["mainlineState"]}' />
+                    </core_rt:if>
+                </td>
+                <td>
+                </td>
+                <td class="editAction" data-releaseid="${releaseLink.id}"></td>
+            </tr>
+        </core_rt:when>
+        <core_rt:otherwise>
+            <tr data-tt-id="releaseLinkRow${releaseloop.count}" data-tt-branch="false" data-is-release-row="true"
+                <core_rt:if test="${true}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
+            >
+                <td style="white-space: nowrap">
+                    <liferay-ui:message key="inaccessible.release" />
+                </td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </core_rt:otherwise>
+    </core_rt:choose>
 </core_rt:forEach>

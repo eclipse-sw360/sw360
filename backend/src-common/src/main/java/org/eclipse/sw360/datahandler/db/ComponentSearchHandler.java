@@ -13,6 +13,8 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.ektorp.http.HttpClient;
@@ -20,10 +22,13 @@ import org.ektorp.http.HttpClient;
 import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+
+import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
 /**
  * Class for accessing the Lucene connector on the CouchDB database
@@ -83,6 +88,9 @@ public class ComponentSearchHandler {
                     "    if(doc.createdOn && doc.createdOn.length) {  "+
                     "      ret.add(doc.createdOn, {\"field\": \"createdOn\", \"type\": \"date\"} );" +
                     "    }" +
+                    "    if(doc.businessUnit && doc.businessUnit.length) {  "+
+                    "      ret.add(doc.businessUnit, {\"field\": \"businessUnit\"} );" +
+                    "    }" +
                     "    return ret;" +
                     "}");
 
@@ -97,6 +105,25 @@ public class ComponentSearchHandler {
 
     public List<Component> search(String text, final Map<String , Set<String > > subQueryRestrictions ){
         return connector.searchViewWithRestrictions(Component.class, luceneSearchView, text, subQueryRestrictions);
+    }
+
+    public List<Component> searchAccessibleComponents(String text, final Map<String , Set<String > > subQueryRestrictions, User user ){
+        List<Component> resultComponentList = connector.searchViewWithRestrictions(Component.class, luceneSearchView, text, subQueryRestrictions);
+        List<Component> componentList = new ArrayList<Component>();
+        for (Component component : resultComponentList) {
+            if (makePermission(component, user).isActionAllowed(RequestedAction.READ)) {
+                componentList.add(component);
+            }
+        }
+        return componentList;
+    }
+
+    public List<Component> searchWithAccessibility(String text, final Map<String , Set<String > > subQueryRestrictions, User user ){
+        List<Component> resultComponentList = connector.searchViewWithRestrictions(Component.class, luceneSearchView, text, subQueryRestrictions);
+        for (Component component : resultComponentList) {
+            makePermission(component, user).fillPermissionsInOther(component);
+        }
+        return resultComponentList;
     }
 
 }

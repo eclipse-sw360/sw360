@@ -95,6 +95,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
@@ -166,23 +167,30 @@ public class DatabaseHandlerUtil {
                 String linkedElementId = linkedElementIterator.next();
                 T linkedElement = null;
                 String elementFullName = null;
+                boolean isAccessibleElement = false;
+                String inaccessibleElementLabel = "";
                 if (handler instanceof ProjectDatabaseHandler) {
                     ProjectDatabaseHandler projDBHandler = (ProjectDatabaseHandler) handler;
                     Project project = projDBHandler.getProjectById(linkedElementId, user);
                     elementFullName = SW360Utils.printName(project);
                     linkedElement = (T) project;
+                    isAccessibleElement = true;
                 } else if (handler instanceof ComponentDatabaseHandler) {
                     ComponentDatabaseHandler compDBHandler = (ComponentDatabaseHandler) handler;
                     Release release = compDBHandler.getRelease(linkedElementId, user);
                     elementFullName = SW360Utils.printName(release);
                     linkedElement = (T) release;
+                    isAccessibleElement = compDBHandler.isReleaseActionAllowed(release, user, RequestedAction.READ);
+                    if (!isAccessibleElement) {
+                        inaccessibleElementLabel = SW360Utils.INACCESSIBLE_RELEASE;
+                    }
                 }
 
                 if (linkedPath.containsKey(linkedElementId)) {
                     return new Object[] { Boolean.TRUE, elementFullName };
                 }
 
-                linkedPath.put(linkedElementId, elementFullName);
+                linkedPath.put(linkedElementId, isAccessibleElement ? elementFullName : inaccessibleElementLabel);
                 Object[] cyclicLinkPresenceAndLastElementInCycle = getCyclicLinkPresenceAndLastElementInCycle(
                         linkedElement, handler, user, linkedPath);
                 boolean isCyclicLinkPresent = (Boolean) cyclicLinkPresenceAndLastElementInCycle[0];

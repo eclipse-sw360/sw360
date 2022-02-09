@@ -278,7 +278,7 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
     protected void putReleasesAndProjectIntoRequest(PortletRequest request, String projectId, User user)
             throws TException {
         ProjectService.Iface client = thriftClients.makeProjectClient();
-        List<ReleaseClearingStatusData> releaseClearingStatuses = client.getReleaseClearingStatuses(projectId, user);
+        List<ReleaseClearingStatusData> releaseClearingStatuses = client.getReleaseClearingStatusesWithAccessibility(projectId, user);
         request.setAttribute(PortalConstants.RELEASES_AND_PROJECTS, releaseClearingStatuses);
     }
 

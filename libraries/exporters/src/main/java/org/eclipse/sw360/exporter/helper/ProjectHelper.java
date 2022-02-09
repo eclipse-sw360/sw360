@@ -11,6 +11,7 @@
 package org.eclipse.sw360.exporter.helper;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.fieldValueAsString;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.putProjectNamesInMap;
-import static org.eclipse.sw360.datahandler.common.SW360Utils.putReleaseNamesInMap;
+import static org.eclipse.sw360.datahandler.common.SW360Utils.putAccessibleReleaseNamesInMap;
 import static org.eclipse.sw360.exporter.ProjectExporter.HEADERS;
 import static org.eclipse.sw360.exporter.ProjectExporter.HEADERS_EXTENDED_BY_RELEASES;
 import static org.eclipse.sw360.exporter.ProjectExporter.PROJECT_RENDERED_FIELDS;
@@ -112,7 +113,8 @@ public class ProjectHelper implements ExporterHelper<Project> {
             Object fieldValue = project.getFieldValue(field);
             switch (field) {
                 case RELEASE_ID_TO_USAGE:
-                    row.add(fieldValueAsString(putReleaseNamesInMap(project.releaseIdToUsage, getReleases(project))));
+                    ProjectReleaseRelationship inaccessibleRelationship = new ProjectReleaseRelationship();
+                    row.add(fieldValueAsString(putAccessibleReleaseNamesInMap(project.releaseIdToUsage, getReleases(project), user, inaccessibleRelationship)));
                     break;
                 case LINKED_PROJECTS:
                     row.add(fieldValueAsString(putProjectNamesInMap(project.getLinkedProjects(), getProjects(project

@@ -1,6 +1,9 @@
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="org.eclipse.sw360.portal.portlets.Sw360Portlet" %>
 <%@ page import="org.eclipse.sw360.portal.portlets.components.ComponentPortlet" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.Component" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.users.RequestedAction" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%--
   ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
   ~
@@ -12,12 +15,14 @@
   --%>
 
 <%@include file="/html/init.jsp" %>
+
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
 <jsp:useBean id="components" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.Component>"
              class="java.util.ArrayList" scope="request"/>
 
+<c:set var="READ" value="<%=RequestedAction.READ%>"/>
 
 <h4><liferay-ui:message key="recent.components" /></h4>
 <div class="row">
@@ -26,7 +31,14 @@
             <ul>
                 <core_rt:forEach var="component" items="${components}">
                     <li>
-                        <sw360:DisplayComponentLink component="${component}"/><br>
+                        <core_rt:choose>
+                            <core_rt:when test="${component.permissions[READ]}">
+                                <sw360:DisplayComponentLink component="${component}"/><br>
+                            </core_rt:when>
+                            <core_rt:otherwise>
+                                <liferay-ui:message key="inaccessible.component" />
+                            </core_rt:otherwise>
+                        </core_rt:choose>
                     </li>
                 </core_rt:forEach>
             </ul>

@@ -16,10 +16,12 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
@@ -48,6 +50,13 @@ public class ReleasePermissions extends DocumentPermissions<Release> {
 
     }
 
+    @NotNull
+    public static Predicate<Release> isVisible(final User user) {
+        return input -> {
+            return true;
+        };
+    }
+
     @Override
     public void fillPermissions(Release other, Map<RequestedAction, Boolean> permissions) {
         other.permissions = permissions;
@@ -55,7 +64,9 @@ public class ReleasePermissions extends DocumentPermissions<Release> {
 
     @Override
     public boolean isActionAllowed(RequestedAction action) {
-        if (action == RequestedAction.WRITE_ECC) {
+        if (action == RequestedAction.READ) {
+            return isVisible(user).test(document);
+        } else if (action == RequestedAction.WRITE_ECC) {
             Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())
                     ? user.getSecondaryDepartmentsAndRoles().entrySet().stream().flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
                     : new HashSet<UserGroup>();

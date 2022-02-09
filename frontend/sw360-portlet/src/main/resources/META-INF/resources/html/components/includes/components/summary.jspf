@@ -70,6 +70,12 @@
         <td><liferay-ui:message key="mailing.list" />:</td>
         <td><sw360:DisplayLink target="mailto:${component.mailinglist}" text="${component.mailinglist}"/></td>
     </tr>
+    <core_rt:if test="${componentVisibilityRestriction}">
+        <tr>
+           <td><liferay-ui:message key="visibility" />:</td>
+           <td><sw360:DisplayEnum value="${component.visbility}"/></td>
+        </tr>
+    </core_rt:if>
     <tr>
         <td><liferay-ui:message key="external.ids" />:</td>
         <td><sw360:DisplayMapOfExternalIdsString value="${component.externalIds}"/></td>
@@ -116,6 +122,12 @@
             <th colspan="2"><liferay-ui:message key="roles" /></th>
         </tr>
     </thead>
+    <core_rt:if test="${componentVisibilityRestriction}">
+        <tr>
+            <td><liferay-ui:message key="group" />:</td>
+            <td><sw360:out value="${component.businessUnit}"/></td>
+        </tr>
+    </core_rt:if>
     <tr>
         <td><liferay-ui:message key="component.owner" />:</td>
         <td><sw360:DisplayUserEmail email="${component.componentOwner}"/></td>

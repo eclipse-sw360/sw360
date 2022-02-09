@@ -63,7 +63,7 @@ public class EccPortlet extends Sw360Portlet {
         ComponentService.Iface client = thriftClients.makeComponentClient();
 
         try {
-            final List<Release> releaseSummary = client.getReleaseSummary(user);
+            final List<Release> releaseSummary = client.getAccessibleReleaseSummary(user);
 
             request.setAttribute(RELEASE_LIST, releaseSummary);
 
