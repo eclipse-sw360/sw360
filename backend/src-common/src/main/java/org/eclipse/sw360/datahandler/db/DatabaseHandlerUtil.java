@@ -128,6 +128,7 @@ public class DatabaseHandlerUtil {
     private static final String SW360CHANGELOG_OUTPUT_PATH;
     private static boolean isChangeLogDisabledMessageLogged = false;
     private static boolean isLiferayEnvVarNotPresent = true;
+    public static final boolean AUTO_SET_ECC_STATUS;
 
     static {
         Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
@@ -143,6 +144,7 @@ public class DatabaseHandlerUtil {
                 "/etc/sw360/log4j2.xml");
         SW360CHANGELOG_OUTPUT_PATH = props.getProperty("sw360changelog.output.path",
                 "sw360changelog/sw360changelog");
+        AUTO_SET_ECC_STATUS = Boolean.parseBoolean(props.getProperty("auto.set.ecc.status", "false"));
     }
 
     public DatabaseHandlerUtil(DatabaseConnectorCloudant db) {
