@@ -44,5 +44,9 @@ jgiven-reports/
 #ignore any log files
 *.log
 
-/backend/src-common/src/main/resources/sw360.properties
-
+# Ignore docker local files
+deps
+data
+config
+.tmp
+.env

@@ -1,0 +1,65 @@
+# Copyright BMW CarIT GmbH, 2021.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+
+version: '3.8'
+
+services:
+  sw360:
+    image: 'sw360:latest'
+    build:
+      context: .
+      args:
+        - COUCHDB_USER
+        - COUCHDB_PASSWORD
+    container_name: sw360
+    depends_on:
+      - postgresdb
+      - couchdb
+    ports:
+      - "8080:8080"
+      - "11311:11311"
+    stdin_open: true
+    tty: true
+    volumes:
+      - etc:/etc/sw360
+      - webapps:/app/sw360/tomcat/webapps
+      - document_library:/app/sw360/data/document_library
+      - ./config:/app/sw360/config
+  postgresdb:
+    image: 'postgres:13'
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=liferay
+      - POSTGRES_PASSWORD=liferay
+      - POSTGRES_DB=lportal
+    volumes:
+      - postgres:/var/lib/postgresql/data/
+    ports:
+      - '5438:5432'
+    logging:
+      options:
+        max-size: 10m
+        max-file: "2"
+
+  couchdb:
+    image: couchdb
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=password
+      - COUCHDB_CREATE_DATABASE=yes
+    ports:
+      - 5984:5984
+    volumes:
+      - couchdb:/opt/couchdb/data
+
+volumes:
+  postgres:
+  couchdb:
+  etc:
+  webapps:
+  document_library:
