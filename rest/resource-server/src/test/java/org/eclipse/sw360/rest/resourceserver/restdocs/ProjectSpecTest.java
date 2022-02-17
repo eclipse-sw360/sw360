@@ -990,6 +990,35 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_project_vulnerabilities_by_externalid() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/vulnerabilities")
+                .header("Authorization", "Bearer " + accessToken)
+                .param("releaseId", "21055")
+                .param("externalId", "12345")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("releaseId").description("The release Id of vulnerability."),
+                                parameterWithName("externalId").description("The external Id of vulnerability.")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]priority").description("The priority of vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]projectAction").description("The action of vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]comment").description("Any message to added while updating project vulnerabilities"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]intReleaseId").description("The release id"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]intReleaseName").description("The release name"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
     public void should_document_update_project_vulnerabilities() throws Exception {
         Map<String, String> vulDtoMap = new HashMap<>();
         vulDtoMap.put("externalId", "12345");

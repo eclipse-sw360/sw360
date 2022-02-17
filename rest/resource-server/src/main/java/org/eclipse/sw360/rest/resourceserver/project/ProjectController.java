@@ -474,7 +474,10 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     public ResponseEntity<Resources<Resource<VulnerabilityDTO>>> getVulnerabilitiesOfReleases(
             Pageable pageable,
             @PathVariable("id") String id, @RequestParam(value = "priority") Optional<String> priority,
-            @RequestParam(value = "projectRelevance") Optional<String> projectRelevance, HttpServletRequest request) throws URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+            @RequestParam(value = "projectRelevance") Optional<String> projectRelevance,
+            @RequestParam(value = "releaseId") Optional<String> releaseId,
+            @RequestParam(value = "externalId") Optional<String> externalId,
+            HttpServletRequest request) throws URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final List<VulnerabilityDTO> allVulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
 
@@ -504,6 +507,8 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         final List<Resource<VulnerabilityDTO>> vulnResources = vulnerabilityResources.stream()
                 .filter(vulRes -> projectRelevance.isEmpty() || projectRelevanceList.contains(vulRes.getContent().getProjectRelevance()))
                 .filter(vulRes -> priority.isEmpty() || priorityList.contains(vulRes.getContent().getPriority()))
+                .filter(vulRes -> !releaseId.isPresent() || vulRes.getContent().getIntReleaseId().equals(releaseId.get()))
+                .filter(vulRes -> !externalId.isPresent() || vulRes.getContent().getExternalId().equals(externalId.get()))
                 .collect(Collectors.toList());
 
         List<VulnerabilityDTO> vulDtos = vulnResources.stream().map(res -> res.getContent()).collect(Collectors.toList());
