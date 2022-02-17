@@ -61,22 +61,20 @@
                         <div class="btn-toolbar" role="toolbar">
                             <div class="btn-group" role="group">
                                 <button id="changeReleaseButton" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <core_rt:if test="${release.clearingState.value == 4}"><span class="badge badge-circle badge-success"></span></core_rt:if>
-                                    <core_rt:if test="${release.clearingState.value == 0}"><span class="badge badge-circle badge-danger"></span></core_rt:if>
-                                    <core_rt:if test="${release.clearingState.value == 1}"><span class="badge badge-circle badge-danger"></span></core_rt:if>
-                                    <core_rt:if test="${release.clearingState.value == 2}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
-                                    <core_rt:if test="${release.clearingState.value == 3}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
+                                    <core_rt:set var = "clearingState" value = "${release.clearingState.value}"/>
+                                    <core_rt:if test="${clearingState == 4}"><span class="badge badge-circle badge-success"></span></core_rt:if>
+                                    <core_rt:if test="${clearingState == 0 || clearingState == 1}"><span class="badge badge-circle badge-danger"></span></core_rt:if>
+                                    <core_rt:if test="${clearingState == 2 || clearingState == 3 || clearingState == 5}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
                                     <liferay-ui:message key="version" /> <sw360:out value="${release.version}"/>
                                     <clay:icon symbol="caret-bottom" />
                                 </button>
                                 <div class="dropdown-menu" aria-labelledby="changeReleaseButton">
                                     <core_rt:forEach var="releaseItr" items="${component.releases}">
+                                        <core_rt:set var = "clrngState" value = "${releaseItr.clearingState.value}"/>
                                         <a class="dropdown-item" href="<portlet:renderURL ><portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/><portlet:param name="<%=PortalConstants.RELEASE_ID%>" value="${releaseItr.id}"/><portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>"/></portlet:renderURL>">
-                                            <core_rt:if test="${releaseItr.clearingState.value == 4}"><span class="badge badge-circle badge-success"></span></core_rt:if>
-                                            <core_rt:if test="${releaseItr.clearingState.value == 0}"><span class="badge badge-circle badge-danger"></span></core_rt:if>
-                                            <core_rt:if test="${releaseItr.clearingState.value == 1}"><span class="badge badge-circle badge-danger"></span></core_rt:if>
-                                            <core_rt:if test="${releaseItr.clearingState.value == 2}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
-                                            <core_rt:if test="${releaseItr.clearingState.value == 3}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
+                                            <core_rt:if test="${clrngState == 4}"><span class="badge badge-circle badge-success"></span></core_rt:if>
+                                            <core_rt:if test="${clrngState == 0 || clrngState == 1}"><span class="badge badge-circle badge-danger"></span></core_rt:if>
+                                            <core_rt:if test="${clrngState == 2 || clrngState == 3 || clrngState == 5}"><span class="badge badge-circle badge-warning"></span></core_rt:if>
                                             <liferay-ui:message key="version" /> <sw360:out value="${releaseItr.version}"/>
                                         </a>
                                     </core_rt:forEach>
