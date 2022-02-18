@@ -185,15 +185,25 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private void autosetReleaseClearingState(Release releaseAfter, Release releaseBefore) {
         Optional<Attachment> oldBestCR = getBestClearingReport(releaseBefore);
         Optional<Attachment> newBestCR = getBestClearingReport(releaseAfter);
-        if (newBestCR.isPresent()){
-            if (newBestCR.get().getCheckStatus() == CheckStatus.ACCEPTED){
+        long isrCountAfter = evaluateClearingStateForScanAvailable(releaseAfter);
+        if (isrCountAfter > 0) {
+            releaseAfter.setClearingState(ClearingState.SCAN_AVAILABLE);
+        } else {
+            releaseAfter.setClearingState(ClearingState.NEW_CLEARING);
+        }
+        if (newBestCR.isPresent()) {
+            if (newBestCR.get().getCheckStatus() == CheckStatus.ACCEPTED) {
                 releaseAfter.setClearingState(ClearingState.APPROVED);
-            }else{
+            } else {
                 releaseAfter.setClearingState(ClearingState.REPORT_AVAILABLE);
             }
         } else {
-            if (oldBestCR.isPresent()) releaseAfter.setClearingState(ClearingState.NEW_CLEARING);
-            evaluateClearingStateForScanAvailable(releaseAfter);
+            if (oldBestCR.isPresent()) {
+                releaseAfter.setClearingState(ClearingState.NEW_CLEARING);
+            }
+            if (isrCountAfter > 0) {
+                releaseAfter.setClearingState(ClearingState.SCAN_AVAILABLE);
+            }
         }
     }
 
@@ -1015,15 +1025,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    private void evaluateClearingStateForScanAvailable(Release release) {
-        Set<Attachment> attachments = release.getAttachments();
-        if (CommonUtils.isNotEmpty(attachments)) {
-            long initialScanReportcount = attachments.stream()
-                    .filter(att -> att.getAttachmentType() == AttachmentType.INITIAL_SCAN_REPORT).count();
-            if (initialScanReportcount > 0) {
-                release.setClearingState(ClearingState.SCAN_AVAILABLE);
-            }
-        }
+    private long evaluateClearingStateForScanAvailable(Release release) {
+        return nullToEmptyCollection(release.getAttachments()).stream()
+                .filter(att -> att.getAttachmentType() == AttachmentType.INITIAL_SCAN_REPORT).count();
     }
 
     private Runnable addCrCommentForAttachmentUpdatesInRelease(Release release, Set<Attachment> updatedAttachments, User user) {
