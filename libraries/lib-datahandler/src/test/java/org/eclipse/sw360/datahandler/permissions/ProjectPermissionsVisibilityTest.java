@@ -48,40 +48,77 @@ public class ProjectPermissionsVisibilityTest extends ScenarioTest<GivenProject,
     @DataProvider
     public static Object[][] projectVisibilityProvider() {
         // @formatter:off
-        return new Object[][] {
-                //test otherDeparment
-                //test User
-                { PRIVATE, theBu, theOtherDep, USER, false },
-                { ME_AND_MODERATORS, theBu, theOtherDep, USER, false },
-                { BUISNESSUNIT_AND_MODERATORS, theBu, theOtherDep, USER, false },
-                { EVERYONE, theBu, theOtherDep, USER, true },
-                //test Clearing Admin
-                { PRIVATE, theBu, theOtherDep, CLEARING_ADMIN, false },
-                { ME_AND_MODERATORS, theBu, theOtherDep, CLEARING_ADMIN, false },
-                { BUISNESSUNIT_AND_MODERATORS, theBu, theOtherDep, CLEARING_ADMIN, true },
-                { EVERYONE, theBu, theOtherDep, CLEARING_ADMIN, true },
-                //test  Admin
-                { PRIVATE, theBu, theOtherDep, ADMIN, false },
-                { ME_AND_MODERATORS, theBu, theOtherDep, ADMIN, false },
-                { BUISNESSUNIT_AND_MODERATORS, theBu, theOtherDep, ADMIN, true },
-                { EVERYONE, theBu, theOtherDep, ADMIN, true },
-                //test same department
-                //test User
-                { PRIVATE, theBu, theDep, USER, false },
-                { ME_AND_MODERATORS, theBu, theDep, USER, false },
-                { BUISNESSUNIT_AND_MODERATORS, theBu, theDep, USER, true },
-                { EVERYONE, theBu, theDep, USER, true },
-                //test Clearing Admin
-                { PRIVATE, theBu, theDep, CLEARING_ADMIN, false },
-                { ME_AND_MODERATORS, theBu, theDep, CLEARING_ADMIN, false },
-                { BUISNESSUNIT_AND_MODERATORS, theBu, theDep, CLEARING_ADMIN, true },
-                { EVERYONE, theBu, theDep, CLEARING_ADMIN, true },
-                //test  Admin
-                { PRIVATE, theBu, theDep, ADMIN, false },
-                { ME_AND_MODERATORS, theBu, theDep, ADMIN, false },
-                { BUISNESSUNIT_AND_MODERATORS, theBu, theDep, ADMIN, true },
-                { EVERYONE, theBu, theDep, ADMIN, true },
-        };
+        if (PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED) {
+            return new Object[][] {
+                    //test otherDeparment
+                    //test User
+                    { PRIVATE, theBu, theOtherDep, USER, false },
+                    { ME_AND_MODERATORS, theBu, theOtherDep, USER, false },
+                    { BUISNESSUNIT_AND_MODERATORS, theBu, theOtherDep, USER, false },
+                    { EVERYONE, theBu, theOtherDep, USER, true },
+                    //test Clearing Admin
+                    { PRIVATE, theBu, theOtherDep, CLEARING_ADMIN, false },
+                    { ME_AND_MODERATORS, theBu, theOtherDep, CLEARING_ADMIN, false },
+                    { BUISNESSUNIT_AND_MODERATORS, theBu, theOtherDep, CLEARING_ADMIN, true },
+                    { EVERYONE, theBu, theOtherDep, CLEARING_ADMIN, true },
+                    //test  Admin
+                    { PRIVATE, theBu, theOtherDep, ADMIN, true },
+                    { ME_AND_MODERATORS, theBu, theOtherDep, ADMIN, true },
+                    { BUISNESSUNIT_AND_MODERATORS, theBu, theOtherDep, ADMIN, true },
+                    { EVERYONE, theBu, theOtherDep, ADMIN, true },
+                    //test same department
+                    //test User
+                    { PRIVATE, theBu, theDep, USER, false },
+                    { ME_AND_MODERATORS, theBu, theDep, USER, false },
+                    { BUISNESSUNIT_AND_MODERATORS, theBu, theDep, USER, true },
+                    { EVERYONE, theBu, theDep, USER, true },
+                    //test Clearing Admin
+                    { PRIVATE, theBu, theDep, CLEARING_ADMIN, false },
+                    { ME_AND_MODERATORS, theBu, theDep, CLEARING_ADMIN, false },
+                    { BUISNESSUNIT_AND_MODERATORS, theBu, theDep, CLEARING_ADMIN, true },
+                    { EVERYONE, theBu, theDep, CLEARING_ADMIN, true },
+                    //test  Admin
+                    { PRIVATE, theBu, theDep, ADMIN, true },
+                    { ME_AND_MODERATORS, theBu, theDep, ADMIN, true },
+                    { BUISNESSUNIT_AND_MODERATORS, theBu, theDep, ADMIN, true },
+                    { EVERYONE, theBu, theDep, ADMIN, true },
+            };
+        } else {
+            return new Object[][] {
+                    //test otherDeparment
+                    //test User
+                    { PRIVATE, theBu, theOtherDep, USER, false },
+                    { ME_AND_MODERATORS, theBu, theOtherDep, USER, false },
+                    { BUISNESSUNIT_AND_MODERATORS, theBu, theOtherDep, USER, false },
+                    { EVERYONE, theBu, theOtherDep, USER, true },
+                    //test Clearing Admin
+                    { PRIVATE, theBu, theOtherDep, CLEARING_ADMIN, false },
+                    { ME_AND_MODERATORS, theBu, theOtherDep, CLEARING_ADMIN, false },
+                    { BUISNESSUNIT_AND_MODERATORS, theBu, theOtherDep, CLEARING_ADMIN, true },
+                    { EVERYONE, theBu, theOtherDep, CLEARING_ADMIN, true },
+                    //test  Admin
+                    { PRIVATE, theBu, theOtherDep, ADMIN, false },
+                    { ME_AND_MODERATORS, theBu, theOtherDep, ADMIN, false },
+                    { BUISNESSUNIT_AND_MODERATORS, theBu, theOtherDep, ADMIN, true },
+                    { EVERYONE, theBu, theOtherDep, ADMIN, true },
+                    //test same department
+                    //test User
+                    { PRIVATE, theBu, theDep, USER, false },
+                    { ME_AND_MODERATORS, theBu, theDep, USER, false },
+                    { BUISNESSUNIT_AND_MODERATORS, theBu, theDep, USER, true },
+                    { EVERYONE, theBu, theDep, USER, true },
+                    //test Clearing Admin
+                    { PRIVATE, theBu, theDep, CLEARING_ADMIN, false },
+                    { ME_AND_MODERATORS, theBu, theDep, CLEARING_ADMIN, false },
+                    { BUISNESSUNIT_AND_MODERATORS, theBu, theDep, CLEARING_ADMIN, true },
+                    { EVERYONE, theBu, theDep, CLEARING_ADMIN, true },
+                    //test  Admin
+                    { PRIVATE, theBu, theDep, ADMIN, false },
+                    { ME_AND_MODERATORS, theBu, theDep, ADMIN, false },
+                    { BUISNESSUNIT_AND_MODERATORS, theBu, theDep, ADMIN, true },
+                    { EVERYONE, theBu, theDep, ADMIN, true },
+            };
+        }
         // @formatter:on
     }
 

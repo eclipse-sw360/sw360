@@ -89,11 +89,13 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
                 visibility = Visibility.BUISNESSUNIT_AND_MODERATORS; // the current default
             }
 
+            boolean isPrivateAccessAllowed = PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isUserAtLeast(ADMIN, user);
+
             switch (visibility) {
                 case PRIVATE:
-                    return user.getEmail().equals(input.getCreatedBy());
+                    return user.getEmail().equals(input.getCreatedBy()) || isPrivateAccessAllowed;
                 case ME_AND_MODERATORS: {
-                    return userIsEquivalentToModeratorInProject(input, user.getEmail());
+                    return userIsEquivalentToModeratorInProject(input, user.getEmail()) || isPrivateAccessAllowed;
                 }
             case BUISNESSUNIT_AND_MODERATORS: {
                 boolean isVisibleBasedOnPrimaryCondition = isUserInBU(input, user.getDepartment())
