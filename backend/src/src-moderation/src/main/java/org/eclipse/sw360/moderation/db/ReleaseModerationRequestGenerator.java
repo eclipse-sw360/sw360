@@ -24,6 +24,8 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  */
 public class ReleaseModerationRequestGenerator extends ModerationRequestGenerator<Release._Fields, Release> {
 
+    private static final String DUMMY_VALUE = "Dummy_Value";
+
     @Override
     public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, Release updateRelease, Release actualRelease){
         updateDocument = updateRelease;
@@ -32,13 +34,13 @@ public class ReleaseModerationRequestGenerator extends ModerationRequestGenerato
         documentAdditions = new Release();
         documentDeletions = new Release();
         //required fields:
-        documentAdditions.setName(updateRelease.getName());
+        documentAdditions.setName(DUMMY_VALUE);
         documentAdditions.setId(updateRelease.getId());
-        documentAdditions.setVersion(updateRelease.getVersion());
+        documentAdditions.setVersion(DUMMY_VALUE);
         documentAdditions.setComponentId(updateRelease.getComponentId());
-        documentDeletions.setName(actualRelease.getName());
+        documentDeletions.setName(DUMMY_VALUE);
         documentDeletions.setId(actualRelease.getId());
-        documentDeletions.setVersion(actualRelease.getVersion());
+        documentDeletions.setVersion(DUMMY_VALUE);
         documentDeletions.setComponentId(actualRelease.getComponentId());
 
         for (Release._Fields field : Release._Fields.values()) {
