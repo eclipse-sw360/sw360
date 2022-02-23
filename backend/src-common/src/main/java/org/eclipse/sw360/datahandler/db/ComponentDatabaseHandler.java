@@ -1158,7 +1158,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 eccInfo.setAL(ECC_AUTOSET_VALUE);
                 eccInfo.setECCN(ECC_AUTOSET_VALUE);
                 eccInfo.setEccComment(ECC_AUTOSET_COMMENT);
-                eccInfo.setEccStatus(ECCStatus.APPROVED);
+                if (DatabaseHandlerUtil.AUTO_SET_ECC_STATUS) {
+                    eccInfo.setEccStatus(ECCStatus.APPROVED);
+                }
                 eccInfo.setAssessmentDate(SW360Utils.getCreatedOn());
             } else {
                 log.warn("Could not set ECC options for unmodified OSS because download url is not valid: " + url);
