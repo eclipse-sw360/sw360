@@ -744,10 +744,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 .collect(Collectors.toSet());
         Set<String> releaseIds = Stream.concat(targetComponentReleaseIds.stream(), srcComponentReleaseIds.stream())
                 .collect(Collectors.toSet());
+        
+        long noOfReleasesNotAllowedToUpdate = getNoOfReleasesNotAllowedToUpdate(srcComponentReleaseIds, sessionUser);
 
         if (!makePermission(mergeTarget, sessionUser).isActionAllowed(RequestedAction.WRITE)
                 || !makePermission(mergeSource, sessionUser).isActionAllowed(RequestedAction.WRITE)
-                || !makePermission(mergeSource, sessionUser).isActionAllowed(RequestedAction.DELETE)) {
+                || !makePermission(mergeSource, sessionUser).isActionAllowed(RequestedAction.DELETE)
+                || noOfReleasesNotAllowedToUpdate > 0) {
             return RequestStatus.ACCESS_DENIED;
         }
 
@@ -910,7 +913,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                             attachmentConnector, Lists.newArrayList(), mergeTarget.getId(), Operation.MERGE_COMPONENT);
                 return r;
             }).collect(Collectors.toList());
-        updateReleases(releasesToUpdate, sessionUser);
+        updateReleases(releasesToUpdate, sessionUser, true);
     }
 
     /**
@@ -1178,11 +1181,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
-    public RequestSummary updateReleases(Collection<Release> releases, User user) throws SW360Exception {
+    public RequestSummary updateReleases(Collection<Release> releases, User user, boolean allowUpdate) throws SW360Exception {
         List<Release> storedReleases = prepareReleases(releases);
 
         RequestSummary requestSummary = new RequestSummary();
-        if (PermissionUtils.isAdmin(user)) {
+        if (allowUpdate || PermissionUtils.isAdmin(user)) {
             // Prepare component for database
             final List<Response> documentOperationResults = componentRepository.executeBulk(storedReleases);
 
@@ -2195,12 +2198,20 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Set<String> srcComponentReleaseIdsMovedFromSrc = new HashSet<>(srcComponentReleaseIdsBefore);
             srcComponentReleaseIdsMovedFromSrc.removeAll(srcComponentReleaseIdsAfter);
 
+            long noOfReleasesNotAllowedToUpdate = getNoOfReleasesNotAllowedToUpdate(srcComponentReleaseIdsMovedFromSrc, user);
+
+            if (noOfReleasesNotAllowedToUpdate > 0) {
+                return RequestStatus.ACCESS_DENIED;
+            }
+
             if (isAttachmentsModified || CommonUtils.isNotEmpty(srcComponentReleaseIdsMovedFromSrc)) {
                 targetComponentFromDB.setReleaseIds(targetComponentReleaseIdsAfter);
                 srcComponentFromDB.setReleaseIds(srcComponentReleaseIdsAfter);
 
                 recomputeReleaseDependentFields(targetComponentFromDB, null);
                 recomputeReleaseDependentFields(srcComponentFromDB, null);
+                targetComponentFromDB.unsetReleases();
+                srcComponentFromDB.unsetReleases();
                 componentRepository.update(targetComponentFromDB);
 
                 componentRepository.update(srcComponentFromDB);
@@ -2225,6 +2236,18 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     Operation.SPLIT_COMPONENT);
         }
         return RequestStatus.SUCCESS;
+    }
+
+    private long getNoOfReleasesNotAllowedToUpdate(Set<String> releaseIds, User sessionUser) {
+        return releaseIds.stream().map(relId -> {
+            try {
+                return getRelease(relId, sessionUser);
+            } catch (SW360Exception e) {
+                log.error("Error occured while getting release. ", e);
+            }
+            return null;
+        }).filter(rel -> rel == null || !makePermission(rel, sessionUser).isActionAllowed(RequestedAction.WRITE))
+                .count();
     }
 
     private void sendMailNotificationsForNewComponent(Component component, String user) {
@@ -2457,7 +2480,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     Lists.newArrayList(), srcComponentFromDB.getId(), Operation.SPLIT_COMPONENT);
             return r;
         }).collect(Collectors.toList());
-        updateReleases(releasesToUpdate, user);
+        updateReleases(releasesToUpdate, user, true);
     }
 
     public Map<PaginationData, List<Component>> getRecentComponentsSummaryWithPagination(User user,
