@@ -24,11 +24,11 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <div class="dialogs">
     <div id="searchObligationElementsDialog" data-title="<liferay-ui:message key="import.obligation.element" />" class="modal fade" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
-      <div class="modal-content">
-        <div class="modal-body container">
-            <form>
-            <div class="row form-group">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-body container">
+                    <form>
+                        <div class="row form-group">
                             <div class="col">
                                 <input type="text" name="searchobligationelement" id="searchobligationelement" placeholder="<liferay-ui:message key="enter.search.text" />" class="form-control"/>
                             </div>
@@ -36,14 +36,12 @@
                                 <button type="button" class="btn btn-secondary" id="searchbuttonobligation"><liferay-ui:message key="search" /></button>
                             </div>
                         </div>
-
                         <div id="ObligationElementsearchresults">
                             <div class="spinner text-center" style="display: none;">
                                 <div class="spinner-border" role="status">
                                     <span class="sr-only"><liferay-ui:message key="loading" /></span>
                                 </div>
                             </div>
-
                             <table id="obligationElementSearchResultstable" class="table table-bordered">
                                 <thead>
                                     <tr>
@@ -58,12 +56,12 @@
                             </table>
                         </div>
                     </form>
-				</div>
-			    <div class="modal-footer">
-		            <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
-			        <button id="importObligationElementsButton" type="button" class="btn btn-primary" title="<liferay-ui:message key="import.obligation.element" />"><liferay-ui:message key="import.obligation.element" /></button>
-			    </div>
-			</div>
-		</div>
-	</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+                    <button id="importObligationElementsButton" type="button" class="btn btn-primary" title="<liferay-ui:message key="import.obligation.element" />"><liferay-ui:message key="import.obligation.element" /></button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

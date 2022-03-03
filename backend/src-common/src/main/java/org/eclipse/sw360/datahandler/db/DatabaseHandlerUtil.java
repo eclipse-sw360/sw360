@@ -74,6 +74,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.Obligatio
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectReleaseRelationshipMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.RepositoryMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.VendorMixin;
+import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ObligationMixin;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -98,6 +99,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -402,6 +404,11 @@ public class DatabaseHandlerUtil {
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
             changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+        } else if (newDocVersion instanceof Obligation) {
+            Obligation newProjVer = (Obligation) newDocVersion;
+            changeLog.setDocumentId(newProjVer.getId());
+            changeLog.setDocumentType(newProjVer.getType());
+            changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
         }
 
         log.info("Initialize ChangeLogs for Document Id : " + changeLog.getDocumentId());
@@ -574,6 +581,8 @@ public class DatabaseHandlerUtil {
             fields = Release._Fields.values();
         } else if (neworDeletedVersion instanceof ModerationRequest) {
             fields = ModerationRequest._Fields.values();
+        } else if (neworDeletedVersion instanceof Obligation) {
+            fields = Obligation._Fields.values();
         } else {
             return;
         }
@@ -598,6 +607,8 @@ public class DatabaseHandlerUtil {
             fields = Release._Fields.values();
         } else if (newVersion instanceof ModerationRequest) {
             fields = ModerationRequest._Fields.values();
+        } else if (newVersion instanceof Obligation) {
+            fields = Obligation._Fields.values();
         } else {
             return;
         }
@@ -812,6 +823,7 @@ public class DatabaseHandlerUtil {
             mapper.addMixInAnnotations(Repository.class, RepositoryMixin.class);
             mapper.addMixInAnnotations(ProjectProjectRelationship.class, ProjectProjectRelationshipMixin.class);
             mapper.addMixInAnnotations(ProjectReleaseRelationship.class, ProjectReleaseRelationshipMixin.class);
+            mapper.addMixInAnnotations(Obligation.class, ObligationMixin.class);
         }
         return mapper;
     }

@@ -16,6 +16,7 @@ namespace php sw360.thrift.changelogs
 
 typedef users.User User
 typedef sw360.SW360Exception SW360Exception
+typedef sw360.RequestStatus RequestStatus
 enum Operation {
     CREATE = 0,
     UPDATE = 1,
@@ -74,4 +75,9 @@ service ChangeLogsService {
      * get all Change Logs associated with Document Id
      */
     list<ChangeLogs> getChangeLogsByDocumentId(1: User user,2: string docId) throws (1: SW360Exception exp);
+
+    /**
+     * delete all Change Logs associated with Document,
+    **/
+    RequestStatus deleteChangeLogsByDocumentId(1: string documentId, 2: User user);
 }

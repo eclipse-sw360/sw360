@@ -10,6 +10,7 @@
  */
 package org.eclipse.sw360.licenses.db;
 
+import org.apache.xmlbeans.impl.xb.xsdschema.Attribute;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
@@ -39,6 +40,7 @@ import org.json.simple.JSONObject;
 import com.cloudant.client.api.CloudantClient;
 import com.cloudant.client.api.model.Response;
 import com.google.common.collect.Sets;
+import static com.google.common.base.Strings.isNullOrEmpty;
 
 import java.net.MalformedURLException;
 import java.sql.Timestamp;
@@ -54,6 +56,11 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.*;
 
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONArray;
+import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
+import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
+import com.google.common.collect.Lists;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+
 /**
  * Class for accessing the CouchDB database
  *
@@ -77,6 +84,7 @@ public class LicenseDatabaseHandler {
     private final LicenseModerator moderator;
     private final CustomPropertiesRepository customPropertiesRepository;
     private final DatabaseRepositoryCloudantClient[] repositories;
+    private DatabaseHandlerUtil dbHandlerUtil;
 
     private static boolean IMPORT_STATUS = false;
     private static long IMPORT_TIME = 0;
@@ -87,6 +95,8 @@ public class LicenseDatabaseHandler {
     public LicenseDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         // Create the connector
         db = new DatabaseConnectorCloudant(httpClient, dbName);
+        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
 
         // Create the repository
         licenseRepository = new LicenseRepository(db);
@@ -217,9 +227,41 @@ public class LicenseDatabaseHandler {
             return null;
         }
         prepareTodo(obligs);
+        List<Obligation> obligations = getObligations();
+        for (Obligation obligation : obligations) {
+            if (obligation.getTitle().equals(obligs.getTitle())) {
+                log.error("An Obligation with the same title already exists.");
+                return null;
+            }
+        }
         obligRepository.add(obligs);
+        obligs.setNode(null);
+        Obligation obligTmp = new  Obligation();
+        obligTmp.setDevelopment(false)
+                .setDistribution(false)
+                .setId(obligs.getId());
+        dbHandlerUtil.addChangeLogs(obligs, obligTmp, user.getEmail(), Operation.CREATE, null, Lists.newArrayList(), null, null);
 
         return obligs.getId();
+    }
+
+    /**
+     * Update a existed obligation to the database.
+     *
+     * @return ID of the added obligations.
+     */
+    public String updateObligation(@NotNull Obligation oblig, User user) throws SW360Exception {
+        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
+            return null;
+        }
+        Obligation oldObligation = getObligationsById(oblig.getId());
+        prepareTodo(oblig);
+        obligRepository.update(oblig);
+        oblig.setNode(null);
+        oldObligation.setNode(null);
+        dbHandlerUtil.addChangeLogs(oblig, oldObligation, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
+
+        return oblig.getId();
     }
 
     /**
@@ -756,6 +798,16 @@ public class LicenseDatabaseHandler {
         if (existedObligationElement.isEmpty()) {
             return Collections.emptyList();
         }
+
+        if (isNullOrEmpty(lang) || isNullOrEmpty(action) || isNullOrEmpty(object)) {
+            log.info("Obligation Element have empty field");
+            List<ObligationElement> existedElement = existedObligationElement.stream().filter(el -> lang.equals(el.getLangElement()) && action.equals(el.getAction()) && object.equals(el.getObject())).collect(Collectors.toList());
+            if (CommonUtils.isNullOrEmptyCollection(existedElement)) {
+                return Collections.emptyList();
+            } else {
+                return existedElement;
+            }
+        }
         return existedObligationElement;
     }
 
@@ -936,6 +988,12 @@ public class LicenseDatabaseHandler {
         }
 
         return requestSummary;
+    }
+
+    public String convertTextToNodes(Obligation obligation, User user) throws SW360Exception {
+        OSADLObligationConnector osadlConnector = new OSADLObligationConnector();
+        String obligNode = addNodes(osadlConnector.parseText(obligation.getText()), user);
+        return obligNode;
     }
 
     public RequestStatus deleteObligations(String id, User user) throws SW360Exception {

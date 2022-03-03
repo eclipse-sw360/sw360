@@ -1,22 +1,12 @@
-# -----------------------------------------------------------------------------
-# Copyright Siemens AG, 2021.
-# Part of the SW360 Portal Project.
-#
-# This program and the accompanying materials are made
-# available under the terms of the Eclipse Public License 2.0
-# which is available at https://www.eclipse.org/legal/epl-2.0/
-#
-# SPDX-License-Identifier: EPL-2.0
-#
-# -----------------------------------------------------------------------------
+﻿name: SW360
 
-name: SW360
-
-on:
+on: 
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches: [ dev/feature-edit_and_clone_obligation ]
+  
+  #UTC
+  schedule:
+    - cron:  '0 0 * * *'
 
 env:
   COUCHDB_USER: admin
@@ -28,11 +18,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up JDK 11
-      uses: actions/setup-java@v2
-      with:
-        java-version: '11'
-        distribution: 'adopt'
+
     - name: Setup CouchDB
       uses: iamssen/couchdb-github-action@master
       with:
@@ -46,10 +32,22 @@ jobs:
         sudo mkdir /etc/sw360
         sudo cp ./scripts/sw360BackendRestDockerConfig/etc_sw360/couchdb-test.properties /etc/sw360/
 
-    - name: Verify license headers
+    - name: Check property file
+      run: cat build-configuration/test-resources/couchdb-test.properties
+
+    - name: Test endpoint
       run: |
-        chmod +x .github/testForLicenseHeaders.sh
-        bash .github/testForLicenseHeaders.sh
+          curl -f http://127.0.0.1:5984/
+
+    - name: Test auth
+      run: |
+          curl -X POST -H "Content-Type: application/json; charset=utf-8" -d '{"name": "${COUCHDB_USER}", "password": "${COUCHDB_PASSWORD}"}' http://127.0.0.1:5984/_session
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v2
+      with:
+        java-version: '11'
+        distribution: 'adopt'
 
     - name: Install Thrift and mkdocs
       run: |
