@@ -266,7 +266,7 @@
                             );
                 } else {
                 dialog.warn(
-                        '<liferay-ui:message key="clearing.request.cannot.be.created.for.closed.or.private.project" />'
+                        '<liferay-ui:message key="clearing.request.cannot.be.created.for.project.with.specific.bu.or.closed.or.private.project" />'
                     );
                 }
             });
@@ -357,10 +357,10 @@
                         'data-clearing-request-id': row.crId,
                         'data-project-name': row.name,
                     }).append('<title><liferay-ui:message key="view.clearing.request" /></title>');
-                } else if (row.cState === 'CLOSED' || row.visbility === 'PRIVATE') {
+                } else if (row.isCrDisabledForProjectBU || row.cState === 'CLOSED' || row.visbility === 'PRIVATE') {
                     $clearingRequestAction = $('<svg>', {
                         'class': 'disabledClearingRequest lexicon-icon disabled',
-                    }).append('<title><liferay-ui:message key="c.r.is.disabled.for.closed.or.private.project" /></title>');
+                    }).append('<title><liferay-ui:message key="c.r.is.disabled.for.project.with.specific.bu.or.closed.or.private.project" /></title>');
                 } else {
                     $clearingRequestAction = $('<svg>', {
                         'class': 'createClearingRequest lexicon-icon',
