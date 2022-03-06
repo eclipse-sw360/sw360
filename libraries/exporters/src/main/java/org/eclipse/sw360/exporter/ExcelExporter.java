@@ -20,9 +20,16 @@ import org.eclipse.sw360.exporter.utils.SubTable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created on 06/02/15.
@@ -37,9 +44,10 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
         this.helper = helper;
     }
 
-    public InputStream makeExcelExport(List<T> documents) throws IOException, SW360Exception {
+    public String makeExcelExport(List<T> documents) throws IOException, SW360Exception {
         final SXSSFWorkbook workbook = new SXSSFWorkbook();
-        final ByteArrayInputStream stream;
+        //final ByteArrayInputStream stream;
+        String token = UUID.randomUUID().toString();
         try {
             SXSSFSheet sheet = workbook.createSheet("Data");
 
@@ -60,10 +68,26 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
             /** Copy the streams */
             final ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);
-            stream = new ByteArrayInputStream(out.toByteArray());
+            
+            try(OutputStream outputStream = new FileOutputStream("/tmp/"+token)) {
+                out.writeTo(outputStream);
+                out.flush();
+            }
+            //stream = new ByteArrayInputStream(out.toByteArray());
         }finally{
             workbook.dispose();
         }
+        return token;
+    }
+
+    public InputStream downloadExcelSheet(String token) {
+        InputStream stream = null;
+        try {
+            stream = new FileInputStream(new File("/tmp/" + token));
+        } catch (FileNotFoundException e) {
+            // logger
+        }
+
         return stream;
     }
 
