@@ -100,7 +100,7 @@ For docker based approach, is recommended use official [Fossology docker image](
 This is the steps to quick perform this:
 
 ```sh
-# Create Fossology database on ingternal postgres
+# Create Fossology database on internal postgres
 docker exec -it sw360_postgresdb_1 createdb -U liferay -W fossology
 
 # Start Fossology container connected to sw360 env
