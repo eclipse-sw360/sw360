@@ -151,16 +151,29 @@ cat "company.default.name=MYCOMPANY" > config/sw360-portal-ext.properties
 Docker compose with treat config as a bind volume dir and will expose to application.
 
 
-### CSS layout looks wrong
+### Make **HTTPS** default
 
-If you do not use an external web server with redirection ( see below ), you may find the main CSS theme scrambled ( not properly loaded )
+Modify the following line on your custom __portal-sw360.properties__ to https:
+
+```ini
+web.server.protocol=https
+```
+
+### CSS layout looks wrong or using non standard ports
+
+If you do not use an external web server with redirection ( see below ), you may find the main CSS theme scrambled ( not properly loaded ) or you are using a different port
 
 This happens because current Liferay used version try to access the theme using only canonical hostname, without the port assigned, so leading to an invalid CSS url.
 
-To fix, you will need to change *portal-ext.properties* in data directory ( or your assigned data directory ) with the following extra value:
+To fix, you will need to change __portal-sw360.properties__ ( as described above ) with the following extra values:
 
 ```ini
-web.server.host=<your ip/host of docker>:<port>
+# For different hostname redirection
+web.server.host=<your ip/host of docker>
+# For HTTP non standard 80 port
+web.server.http.port=<your_http_port>
+# For HTTPS non standard 443 port
+web.server.https.port=<your_https_port>
 ```
 
 This will tell liferay where is your real host instead of trying to guess the wrong host.
@@ -186,14 +199,6 @@ For nginx, assuming you are using default config for your sw360, this is a simpl
 
 ***WARNING*** - X-frame is enabled wide open for development purposes. If you intend to use the above config in production, remember to properly secure the web server.
 
-
-### Make https only **port 443** default
-
-Modify the following line on your custom __portal-sw360.properties__ to https:
-
-```ini
-web.server.protocol=https
-```
 
 ### Liferay Redirects
 
