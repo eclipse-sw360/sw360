@@ -906,6 +906,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             is_used = client.projectIsUsed(actual_project.getId());
             request.setAttribute(PortalConstants.ACTUAL_PROJECT, actual_project);
             request.setAttribute(PortalConstants.DEFAULT_LICENSE_INFO_HEADER_TEXT, getDefaultLicenseInfoHeaderText());
+            request.setAttribute(IS_CLEARING_REQUEST_DISABLED_FOR_PROJECT_BU, true);
         } catch (TException e) {
             log.error("Could not retrieve project", e);
         }
