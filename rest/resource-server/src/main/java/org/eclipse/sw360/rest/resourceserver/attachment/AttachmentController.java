@@ -31,7 +31,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.*;
-import org.springframework.hateoas.mvc.ControllerLinkBuilder;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -40,12 +41,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Arrays.asList;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class AttachmentController implements ResourceProcessor<RepositoryLinksResource> {
+public class AttachmentController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String ATTACHMENTS_URL = "/attachments";
 
     @NonNull
@@ -64,7 +65,7 @@ public class AttachmentController implements ResourceProcessor<RepositoryLinksRe
     private final RestControllerHelper restControllerHelper;
 
     @GetMapping(value = ATTACHMENTS_URL + "/{id}")
-    public ResponseEntity<Resource<Attachment>> getAttachmentForId(
+    public ResponseEntity<EntityModel<Attachment>> getAttachmentForId(
             @PathVariable("id") String id) throws TException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -74,18 +75,18 @@ public class AttachmentController implements ResourceProcessor<RepositoryLinksRe
     }
 
     @GetMapping(value = ATTACHMENTS_URL)
-    public ResponseEntity<Resources<Resource<Attachment>>> getAttachments(@RequestParam String sha1) throws TException {
+    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getAttachments(@RequestParam String sha1) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<AttachmentInfo> attachmentInfos = attachmentService.getAttachmentsBySha1(sha1);
 
-        List<Resource<Attachment>> attachmentResources = new ArrayList<>();
+        List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
         for (AttachmentInfo sw360Attachment : attachmentInfos) {
             HalResource<Attachment> attachmentResource = createHalAttachment(sw360Attachment, sw360User);
             attachmentResources.add(attachmentResource);
         }
-        Resources<Resource<Attachment>> resources;
+        CollectionModel<EntityModel<Attachment>> resources;
         if (!attachmentResources.isEmpty()) {
-            resources = new Resources<>(attachmentResources);
+            resources = CollectionModel.of(attachmentResources);
             return new ResponseEntity<>(resources, HttpStatus.OK);
         } else {
             return new ResponseEntity(attachmentResources, HttpStatus.NO_CONTENT);
@@ -127,8 +128,8 @@ public class AttachmentController implements ResourceProcessor<RepositoryLinksRe
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        final ControllerLinkBuilder controllerLinkBuilder = linkTo(AttachmentController.class);
-        final Link attachments = new Link(new UriTemplate(controllerLinkBuilder.toUri().toString() + "/api/attachments{?sha1}"), "attachments");
+        final WebMvcLinkBuilder controllerLinkBuilder = linkTo(AttachmentController.class);
+        final Link attachments = Link.of(UriTemplate.of(controllerLinkBuilder.toUri().toString() + "/api/attachments{?sha1}"), "attachments");
         resource.add(attachments);
         return resource;
     }

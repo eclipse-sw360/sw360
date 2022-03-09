@@ -13,19 +13,19 @@ package org.eclipse.sw360.rest.resourceserver.project;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.stereotype.Component;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 
 @Component
 @RequiredArgsConstructor
-class ProjectResourceProcessor implements ResourceProcessor<Resource<Project>> {
+class ProjectResourceProcessor implements RepresentationModelProcessor<EntityModel<Project>> {
 
     @Override
-    public Resource<Project> process(Resource<Project> resource) {
+    public EntityModel<Project> process(EntityModel<Project> resource) {
         Project project = resource.getContent();
         Link selfLink = linkTo(ProjectController.class)
                 .slash("api" + ProjectController.PROJECTS_URL + "/" + project.getId()).withSelfRel();

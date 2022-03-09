@@ -92,7 +92,7 @@ public abstract class TestRestDocsSpecBase {
         MockMultipartFile jsonFile = new MockMultipartFile("attachment", "", "application/json",
                 new ByteArrayInputStream(attachment.getBytes()));
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.fileUpload(url + id + "/attachments")
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(url + id + "/attachments")
                 .file("file", "@/spring-core-4.3.4.RELEASE.jar".getBytes())
                 .file(jsonFile)
                 .contentType(MediaType.MULTIPART_FORM_DATA)

@@ -45,8 +45,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -54,13 +54,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
@@ -105,11 +103,11 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     public void before() throws TException, IOException {
         Set<Attachment> attachments = new HashSet<>();
         Set<Component> usedByComponent = new HashSet<>();
-        List<Resource<Attachment>> attachmentResources = new ArrayList<>();
+        List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
         attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
         attachment.setSha1(attachmentSha1);
         attachments.add(attachment);
-        attachmentResources.add(new Resource<>(attachment));
+        attachmentResources.add(EntityModel.of(attachment));
 
         attachment.setSha1(attachmentSha1);
         attachment.setAttachmentType(AttachmentType.BINARY_SELF);
@@ -140,11 +138,11 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.getAttachmentById(eq(attachment.getAttachmentContentId())))
                 .willReturn(attachmentInfo);
         given(this.attachmentServiceMock.getAttachmentsBySha1(eq(attachment.getSha1()))).willReturn(attachmentInfos);
-        given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
-        given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
-        given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
+        given(this.attachmentServiceMock.getAttachmentContent(any())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
+        given(this.attachmentServiceMock.getResourcesFromList(any())).willReturn(CollectionModel.of(attachmentResources));
+        given(this.attachmentServiceMock.uploadAttachment(any(), any(), any())).willReturn(attachment);
         given(this.attachmentServiceMock.filterAttachmentsToRemove(any(), any(), any())).willReturn(Collections.singleton(attachment));
-        given(this.attachmentServiceMock.updateAttachment(anyObject(), anyObject(), anyObject(), anyObject())).willReturn(att2);
+        given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
 
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("mainline-id-component", new HashSet<>(Arrays.asList("1432", "4876")));
@@ -247,13 +245,13 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         project.setVersion("1.0.2");
         projectList.add(project);
 
-        given(this.releaseServiceMock.getReleasesForUser(anyObject())).willReturn(releaseList);
-        given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
-        given(this.releaseServiceMock.getReleaseForUserById(eq(testRelease.getId()), anyObject())).willReturn(testRelease);
-        given(this.releaseServiceMock.getProjectsByRelease(eq(release.getId()), anyObject())).willReturn(projectList);
-        given(this.releaseServiceMock.getUsingComponentsForRelease(eq(release.getId()), anyObject())).willReturn(usedByComponent);
-        given(this.releaseServiceMock.deleteRelease(eq(release.getId()), anyObject())).willReturn(RequestStatus.SUCCESS);
-        given(this.releaseServiceMock.searchByExternalIds(eq(externalIds), anyObject())).willReturn((new HashSet<>(releaseList)));
+        given(this.releaseServiceMock.getReleasesForUser(any())).willReturn(releaseList);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(testRelease.getId()), any())).willReturn(testRelease);
+        given(this.releaseServiceMock.getProjectsByRelease(eq(release.getId()), any())).willReturn(projectList);
+        given(this.releaseServiceMock.getUsingComponentsForRelease(eq(release.getId()), any())).willReturn(usedByComponent);
+        given(this.releaseServiceMock.deleteRelease(eq(release.getId()), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.releaseServiceMock.searchByExternalIds(eq(externalIds), any())).willReturn((new HashSet<>(releaseList)));
         given(this.releaseServiceMock.convertToEmbeddedWithExternalIds(eq(release))).willReturn(
                 new Release("Angular", "2.3.0", component.getId())
                         .setId(releaseId)
@@ -262,7 +260,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 new Release("Angular", "2.3.1", component.getId())
                         .setId("3765276512")
                         .setExternalIds(Collections.singletonMap("mainline-id-component", "4876")));
-        when(this.releaseServiceMock.createRelease(anyObject(), anyObject())).then(invocation ->
+        when(this.releaseServiceMock.createRelease(any(), any())).then(invocation ->
                 new Release("Test Release", "1.0", component.getId())
                         .setId("1234567890"));
 
@@ -317,7 +315,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         processSteps.add(reportStep);
         fossologyProcess.setProcessSteps(processSteps);
         release3.setExternalToolProcesses(ImmutableSet.of(fossologyProcess));
-        when(releaseServiceMock.getReleaseForUserById(eq(release3.getId()), anyObject())).thenReturn(release3);
+        when(releaseServiceMock.getReleaseForUserById(eq(release3.getId()), any())).thenReturn(release3);
         when(releaseServiceMock.getExternalToolProcess(release3)).thenReturn(fossologyProcess);
 
         releaseIdToRelationship1 = ImmutableMap.of(release2.getId(), ReleaseRelationship.DYNAMICALLY_LINKED, release3.getId(), ReleaseRelationship.CONTAINED);
@@ -608,7 +606,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(responseFields(
-                        fieldWithPath("content.message").description(
+//                        fieldWithPath("content.message").description(
+//                                "Message indicating whether FOSSology Process for Release triggered or not"),
+                        fieldWithPath("message").description(
                                 "Message indicating whether FOSSology Process for Release triggered or not"),
                         subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"))));
     }

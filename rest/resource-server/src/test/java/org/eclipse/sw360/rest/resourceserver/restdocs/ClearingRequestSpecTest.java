@@ -10,7 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
@@ -75,8 +75,8 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         comments.add(comment);
         clearingRequest.setComments(comments);
 
-        given(this.clearingRequestServiceMock.getClearingRequestById(anyObject(), anyObject())).willReturn(clearingRequest);
-        given(this.clearingRequestServiceMock.getClearingRequestByProjectId(anyObject(), anyObject())).willReturn(clearingRequest);
+        given(this.clearingRequestServiceMock.getClearingRequestById(any(), any())).willReturn(clearingRequest);
+        given(this.clearingRequestServiceMock.getClearingRequestByProjectId(any(), any())).willReturn(clearingRequest);
     }
 
     @Test

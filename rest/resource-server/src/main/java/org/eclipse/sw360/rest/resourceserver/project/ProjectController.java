@@ -74,9 +74,9 @@ import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -121,14 +121,14 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.wrapThriftOptionalReplacement;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapException;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.*;
 
 import org.apache.thrift.transport.TTransportException;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class ProjectController implements ResourceProcessor<RepositoryLinksResource> {
+public class ProjectController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String PROJECTS_URL = "/projects";
     public static final String SW360_ATTACHMENT_USAGES = "sw360:attachmentUsages";
     private static final Logger log = LogManager.getLogger(ProjectController.class);
@@ -176,7 +176,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     private final com.fasterxml.jackson.databind.Module sw360Module;
 
     @RequestMapping(value = PROJECTS_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Project>>> getProjectsForUser(
+    public ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectsForUser(
             Pageable pageable,
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "type", required = false) String projectType,
@@ -231,12 +231,12 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         sw360Projects.stream().forEach(prj -> mapOfProjects.put(prj.getId(), prj));
         PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Projects, SW360Constants.TYPE_PROJECT);
 
-        List<Resource<Project>> projectResources = new ArrayList<>();
+        List<EntityModel<Project>> projectResources = new ArrayList<>();
         Consumer<Project> consumer = p -> {
-            Resource<Project> embeddedProjectResource = null;
+            EntityModel<Project> embeddedProjectResource = null;
             if (!allDetails) {
                 Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
-                embeddedProjectResource = new Resource<>(embeddedProject);
+                embeddedProjectResource = EntityModel.of(embeddedProject);
             } else {
                 embeddedProjectResource = createHalProjectResourceWithAllDetails(p, sw360User, mapOfProjects,
                         !isSearchByName);
@@ -255,7 +255,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
                     .filter(project -> group == null || group.isEmpty() || group.equals(project.getBusinessUnit()))
                     .filter(project -> tag == null || tag.isEmpty() || tag.equals(project.getTag())).forEach(consumer);
         }
-        Resources resources;
+        CollectionModel resources;
         if (projectResources.size() == 0) {
             resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
         } else {
@@ -267,7 +267,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Resource<Project>> getProject(
+    public ResponseEntity<EntityModel<Project>> getProject(
             @PathVariable("id") String id) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
@@ -313,7 +313,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL + "/duplicate/{id}", method = RequestMethod.POST)
-    public ResponseEntity<Resource<Project>> createDuplicateProject(@PathVariable("id") String id,
+    public ResponseEntity<EntityModel<Project>> createDuplicateProject(@PathVariable("id") String id,
             @RequestBody Map<String, Object> reqBodyMap) throws TException {
         if (!reqBodyMap.containsKey("name") && !reqBodyMap.containsKey("version")) {
             throw new HttpMessageNotReadableException(
@@ -368,7 +368,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/releases", method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Release>>> getProjectReleases(
+    public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectReleases(
             Pageable pageable,
             @PathVariable("id") String id,
             @RequestParam(value = "transitive", required = false) String transitive,HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
@@ -386,7 +386,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                 releases, SW360Constants.TYPE_RELEASE);
 
-        final List<Resource<Release>> releaseResources = paginationResult.getResources().stream()
+        final List<EntityModel<Release>> releaseResources = paginationResult.getResources().stream()
                 .map(sw360Release -> wrapTException(() -> {
                     final Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release);
                     final HalResource<Release> releaseResource = new HalResource<>(embeddedRelease);
@@ -397,7 +397,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
                     return releaseResource;
                 })).collect(Collectors.toList());
 
-        Resources resources;
+        CollectionModel resources;
         if (releaseResources.size() == 0) {
             resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
         } else {
@@ -409,7 +409,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @RequestMapping(value = PROJECTS_URL + "/releases", method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Release>>> getProjectsReleases(
+    public ResponseEntity<CollectionModel<EntityModel<Release>>> getProjectsReleases(
             Pageable pageable,
             @RequestBody List<String> projectIds,
             @RequestParam(value = "transitive", required = false) String transitive,@RequestParam(value = "clearingState", required = false) String clState, HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
@@ -428,7 +428,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         List<Release> relList = releases.stream().collect(Collectors.toList());
 
         PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, relList, SW360Constants.TYPE_RELEASE);
-        final List<Resource<Release>> releaseResources = paginationResult.getResources().stream()
+        final List<EntityModel<Release>> releaseResources = paginationResult.getResources().stream()
                 .map(sw360Release -> wrapTException(() -> {
                     final Release embeddedRelease = restControllerHelper.convertToEmbeddedReleaseWithDet(sw360Release);
                     final HalResource<Release> releaseResource = new HalResource<>(embeddedRelease);
@@ -439,7 +439,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
                     return releaseResource;
                 })).collect(Collectors.toList());
 
-        Resources resources = null;
+        CollectionModel resources = null;
         if (CommonUtils.isNotEmpty(releaseResources)) {
             resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
         }
@@ -449,29 +449,29 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/releases/ecc", method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Release>>> getECCsOfReleases(
+    public ResponseEntity<CollectionModel<EntityModel<Release>>> getECCsOfReleases(
             @PathVariable("id") String id,
             @RequestParam(value = "transitive", required = false) String transitive) throws TException {
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
 
-        final List<Resource<Release>> releaseResources = new ArrayList<>();
+        final List<EntityModel<Release>> releaseResources = new ArrayList<>();
         for (final String releaseId : releaseIds) {
             final Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
             Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release);
             embeddedRelease.setEccInformation(sw360Release.getEccInformation());
-            final Resource<Release> releaseResource = new Resource<>(embeddedRelease);
+            final EntityModel<Release> releaseResource = EntityModel.of(embeddedRelease);
             releaseResources.add(releaseResource);
         }
 
-        final Resources<Resource<Release>> resources = restControllerHelper.createResources(releaseResources);
+        final CollectionModel<EntityModel<Release>> resources = restControllerHelper.createResources(releaseResources);
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<VulnerabilityDTO>>> getVulnerabilitiesOfReleases(
+    public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> getVulnerabilitiesOfReleases(
             Pageable pageable,
             @PathVariable("id") String id, @RequestParam(value = "priority") Optional<String> priority,
             @RequestParam(value = "projectRelevance") Optional<String> projectRelevance,
@@ -485,7 +485,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         Map<String, Map<String, List<VulnerabilityCheckStatus>>> vulnerabilityIdToStatusHistory = projectVulnerabilityRating
                 .map(ProjectVulnerabilityRating::getVulnerabilityIdToReleaseIdToStatus).orElseGet(HashMap::new);
 
-        final List<Resource<VulnerabilityDTO>> vulnerabilityResources = new ArrayList<>();
+        final List<EntityModel<VulnerabilityDTO>> vulnerabilityResources = new ArrayList<>();
         for (final VulnerabilityDTO vulnerabilityDTO : allVulnerabilityDTOs) {
             String comment = "", action = "";
             Map<String, Map<String, VulnerabilityRatingForProject>> vulRatingProj = vulnerabilityService.fillVulnerabilityMetadata(vulnerabilityDTO, projectVulnerabilityRating);
@@ -498,13 +498,13 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
             }
             vulnerabilityDTO.setComment(comment);
             vulnerabilityDTO.setAction(action);
-            final Resource<VulnerabilityDTO> vulnerabilityDTOResource = new Resource<>(vulnerabilityDTO);
-            vulnerabilityResources.add(vulnerabilityDTOResource);
+            final EntityModel<VulnerabilityDTO> vulnerabilityDTOEntityModel = EntityModel.of(vulnerabilityDTO);
+            vulnerabilityResources.add(vulnerabilityDTOEntityModel);
         }
 
         List<String> priorityList = priority.isPresent() ? Lists.newArrayList(priority.get().split(",")) : Lists.newArrayList();
         List<String> projectRelevanceList = projectRelevance.isPresent() ? Lists.newArrayList(projectRelevance.get().split(",")) : Lists.newArrayList();
-        final List<Resource<VulnerabilityDTO>> vulnResources = vulnerabilityResources.stream()
+        final List<EntityModel<VulnerabilityDTO>> vulnResources = vulnerabilityResources.stream()
                 .filter(vulRes -> projectRelevance.isEmpty() || projectRelevanceList.contains(vulRes.getContent().getProjectRelevance()))
                 .filter(vulRes -> priority.isEmpty() || priorityList.contains(vulRes.getContent().getPriority()))
                 .filter(vulRes -> !releaseId.isPresent() || vulRes.getContent().getIntReleaseId().equals(releaseId.get()))
@@ -513,12 +513,12 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
         List<VulnerabilityDTO> vulDtos = vulnResources.stream().map(res -> res.getContent()).collect(Collectors.toList());
         PaginationResult<VulnerabilityDTO> paginationResult = restControllerHelper.createPaginationResult(request, pageable, vulDtos, SW360Constants.TYPE_VULNERABILITYDTO);
-        List<Resource<VulnerabilityDTO>> paginatedVulnResources = Lists.newArrayList();
+        List<EntityModel<VulnerabilityDTO>> paginatedVulnResources = Lists.newArrayList();
         for (VulnerabilityDTO vd: paginationResult.getResources()) {
-            Resource<VulnerabilityDTO> vDTOResource = new Resource<>(vd);
-            paginatedVulnResources.add(vDTOResource);
+            EntityModel<VulnerabilityDTO> vDTOEntityModel = EntityModel.of(vd);
+            paginatedVulnResources.add(vDTOEntityModel);
         }
-        Resources resources;
+        CollectionModel resources;
         if (vulnResources.size() == 0) {
             resources = restControllerHelper.emptyPageResource(VulnerabilityDTO.class, paginationResult);
         } else {
@@ -530,7 +530,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilities", method = RequestMethod.PATCH, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Resources<Resource<VulnerabilityDTO>>> updateVulnerabilitiesOfReleases(
+    public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> updateVulnerabilitiesOfReleases(
             @PathVariable("id") String id, @RequestBody List<VulnerabilityDTO> vulnDTOs) {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
@@ -554,13 +554,13 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings = wrapThriftOptionalReplacement(vulnerabilityService.getProjectVulnerabilityRatingByProjectId(id, sw360User));
         ProjectVulnerabilityRating link = updateProjectVulnerabilityRatingFromRequest(projectVulnerabilityRatings, vulnDTOs, id, sw360User);
         final RequestStatus requestStatus = vulnerabilityService.updateProjectVulnerabilityRating(link, sw360User);
-        final List<Resource<VulnerabilityDTO>> vulnerabilityResources = new ArrayList<>();
+        final List<EntityModel<VulnerabilityDTO>> vulnerabilityResources = new ArrayList<>();
         vulnDTOs.forEach(dto->{
-            final Resource<VulnerabilityDTO> vulnerabilityDTOResource = new Resource<>(dto);
-            vulnerabilityResources.add(vulnerabilityDTOResource);
+            final EntityModel<VulnerabilityDTO> vulnerabilityDTOEntityModel = EntityModel.of(dto);
+            vulnerabilityResources.add(vulnerabilityDTOEntityModel);
         });
 
-        Resources<Resource<VulnerabilityDTO>> resources = null;
+        CollectionModel<EntityModel<VulnerabilityDTO>> resources = null;
         if (RequestStatus.SUCCESS.equals(requestStatus)) {
             resources = restControllerHelper.createResources(vulnerabilityResources);
         }
@@ -573,7 +573,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL + "/{id}/release/{releaseId}", method = RequestMethod.PATCH)
-    public ResponseEntity<Resource<ProjectReleaseRelationship>> patchProjectReleaseUsage(
+    public ResponseEntity<EntityModel<ProjectReleaseRelationship>> patchProjectReleaseUsage(
             @PathVariable("id") String id, @PathVariable("releaseId") String releaseId,
             @RequestBody ProjectReleaseRelationship requestBodyProjectReleaseRelationship) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -585,7 +585,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
-        Resource<ProjectReleaseRelationship> updatedProjectReleaseRelationshipResource = new Resource<>(
+        EntityModel<ProjectReleaseRelationship> updatedProjectReleaseRelationshipResource = EntityModel.of(
                 updatedProjectReleaseRelationship);
         return new ResponseEntity<>(updatedProjectReleaseRelationshipResource, HttpStatus.OK);
     }
@@ -640,10 +640,10 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenses", method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<License>>> getLicensesOfReleases(@PathVariable("id") String id) throws TException {
+    public ResponseEntity<CollectionModel<EntityModel<License>>> getLicensesOfReleases(@PathVariable("id") String id) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project project = projectService.getProjectForUserById(id, sw360User);
-        final List<Resource<License>> licenseResources = new ArrayList<>();
+        final List<EntityModel<License>> licenseResources = new ArrayList<>();
         final Set<String> allLicenseIds = new HashSet<>();
 
         final Set<String> releaseIdToUsage = project.getReleaseIdToUsage().keySet();
@@ -657,11 +657,11 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         for (final String licenseId : allLicenseIds) {
             final License sw360License = licenseService.getLicenseById(licenseId);
             final License embeddedLicense = restControllerHelper.convertToEmbeddedLicense(sw360License);
-            final Resource<License> licenseResource = new Resource<>(embeddedLicense);
+            final EntityModel<License> licenseResource = EntityModel.of(embeddedLicense);
             licenseResources.add(licenseResource);
         }
 
-        final Resources<Resource<License>> resources = restControllerHelper.createResources(licenseResources);
+        final CollectionModel<EntityModel<License>> resources = restControllerHelper.createResources(licenseResources);
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
@@ -689,7 +689,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
                 .collect(Collectors.toMap(AttachmentUsage::getAttachmentContentId, attUsage -> {
                     if (attUsage.isSetUsageData()
                             && attUsage.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)) {
-                        return new Boolean(attUsage.getUsageData().getLicenseInfo().isIncludeConcludedLicense());
+                        return Boolean.valueOf(attUsage.getUsageData().getLicenseInfo().isIncludeConcludedLicense());
                     }
                     return Boolean.FALSE;
                 }, (li1, li2) -> li1));
@@ -757,17 +757,17 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/attachments", method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Attachment>>> getProjectAttachments(
+    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getProjectAttachments(
             @PathVariable("id") String id) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        final Resources<Resource<Attachment>> resources = attachmentService.getResourcesFromList(sw360Project.getAttachments());
+        final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getResourcesFromList(sw360Project.getAttachments());
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL + "/{id}/attachment/{attachmentId}", method = RequestMethod.PATCH)
-    public ResponseEntity<Resource<Attachment>> patchProjectAttachmentInfo(@PathVariable("id") String id,
+    public ResponseEntity<EntityModel<Attachment>> patchProjectAttachmentInfo(@PathVariable("id") String id,
             @PathVariable("attachmentId") String attachmentId, @RequestBody Attachment attachmentData)
             throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -778,7 +778,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
         if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
-        Resource<Attachment> attachmentResource = new Resource<>(updatedAttachment);
+        EntityModel<Attachment> attachmentResource = EntityModel.of(updatedAttachment);
         return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
     }
 
@@ -820,7 +820,7 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.PATCH)
-    public ResponseEntity<Resource<Project>> patchProject(
+    public ResponseEntity<EntityModel<Project>> patchProject(
             @PathVariable("id") String id,
             @RequestBody Map<String, Object> reqBodyMap) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
@@ -866,18 +866,18 @@ public class ProjectController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @RequestMapping(value = PROJECTS_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Project>>> getUsedByProjectDetails(@PathVariable("id") String id) throws TException{
+    public ResponseEntity<CollectionModel<EntityModel<Project>>> getUsedByProjectDetails(@PathVariable("id") String id) throws TException{
         User user = restControllerHelper.getSw360UserFromAuthentication();
         //Project sw360Project = projectService.getProjectForUserById(id, user);
         Set<Project> sw360Projects = projectService.searchLinkingProjects(id, user);
 
-        List<Resource<Project>> projectResources = new ArrayList<>();
+        List<EntityModel<Project>> projectResources = new ArrayList<>();
         sw360Projects.forEach(p -> {
                     Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
-                    projectResources.add(new Resource<>(embeddedProject));
+                    projectResources.add(EntityModel.of(embeddedProject));
                 });
 
-        Resources<Resource<Project>> resources = restControllerHelper.createResources(projectResources);
+        CollectionModel<EntityModel<Project>> resources = restControllerHelper.createResources(projectResources);
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }

@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -45,9 +46,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 
@@ -89,7 +89,7 @@ public class ReleaseTest extends TestIntegrationBase {
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
 
         given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.getDummyReleaseListForTest().get(0).getId()),eq(user))).willReturn(TestHelper.getDummyReleaseListForTest().get(0));
-        given(this.releaseServiceMock.getReleasesForUser(anyObject())).willReturn(TestHelper.getDummyReleaseListForTest());
+        given(this.releaseServiceMock.getReleasesForUser(any())).willReturn(TestHelper.getDummyReleaseListForTest());
         given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.getDummyReleaseListForTest().get(1).getId()),eq(user))).willReturn(TestHelper.getDummyReleaseListForTest().get(1));
 
         given(this.licenseServiceMock.getLicenseById("Apache-2.0")).willReturn(
@@ -107,8 +107,8 @@ public class ReleaseTest extends TestIntegrationBase {
     @Test
     public void should_update_release_valid() throws IOException, TException {
         String updatedReleaseName = "updatedReleaseName";
-        given(this.releaseServiceMock.updateRelease(anyObject(), anyObject())).willReturn(RequestStatus.SUCCESS);
-        given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.release1Id), anyObject())).willReturn(TestHelper.getDummyReleaseListForTest().get(0));
+        given(this.releaseServiceMock.updateRelease(any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.release1Id), any())).willReturn(TestHelper.getDummyReleaseListForTest().get(0));
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
         Map<String, Object> body = new HashMap<>();
@@ -136,7 +136,7 @@ public class ReleaseTest extends TestIntegrationBase {
 
     @Test
     public void should_update_release_invalid() throws IOException, TException {
-        doThrow(TException.class).when(this.releaseServiceMock).getReleaseForUserById(anyObject(), anyObject());
+        doThrow(TException.class).when(this.releaseServiceMock).getReleaseForUserById(any(), any());
         String updatedReleaseName = "updatedReleaseName";
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -166,7 +166,7 @@ public class ReleaseTest extends TestIntegrationBase {
     @Test
     public void should_delete_releases() throws IOException, TException {
         String unknownReleaseId = "abcde12345";
-        given(this.releaseServiceMock.deleteRelease(eq(TestHelper.release1Id), anyObject())).willReturn(RequestStatus.SUCCESS);
+        given(this.releaseServiceMock.deleteRelease(eq(TestHelper.release1Id), any())).willReturn(RequestStatus.SUCCESS);
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + TestHelper.release1Id + "," + unknownReleaseId,
@@ -182,7 +182,7 @@ public class ReleaseTest extends TestIntegrationBase {
     @Test
     public void should_delete_release() throws IOException, TException {
         String unknownReleaseId = "abcde12345";
-        given(this.releaseServiceMock.deleteRelease(anyObject(), anyObject())).willReturn(RequestStatus.FAILURE);
+        given(this.releaseServiceMock.deleteRelease(any(), any())).willReturn(RequestStatus.FAILURE);
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases/" + unknownReleaseId,

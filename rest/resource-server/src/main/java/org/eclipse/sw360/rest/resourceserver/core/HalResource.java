@@ -22,20 +22,21 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
+import org.springframework.hateoas.EntityModel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class HalResource<T> extends Resource<T> {
+public class HalResource<T> extends EntityModel<T> {
 
     private Map<String, Object> embeddedMap;
 
     public HalResource(T content, Link... links) {
-        super(content, links);
+        super(content, Arrays.asList(links));
         if (content instanceof Project) {
             ((Project) content).setType(null);
         } else if (content instanceof Component) {

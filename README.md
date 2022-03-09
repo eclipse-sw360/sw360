@@ -53,7 +53,7 @@ In addition, the Liferay instance must provide the following dependecies via OSG
 * Apache Commons Logging 1.2
 * Apache Commons Compress 1.20
 * Google Gson 2.8.5
-* Google Guava 21.0
+* Google Guava 31.0.1-jre
 * Jackson Annotations 2.9.8
 * Jackson Core 2.9.8
 * Jackson Databind 2.9.8

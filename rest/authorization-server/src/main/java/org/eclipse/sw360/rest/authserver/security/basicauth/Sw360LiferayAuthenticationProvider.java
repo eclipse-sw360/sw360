@@ -121,7 +121,7 @@ public class Sw360LiferayAuthenticationProvider implements AuthenticationProvide
             return false;
         }
 
-        RestTemplate restTemplate = restTemplateBuilder.basicAuthorization(user, encodedPassword).build();
+        RestTemplate restTemplate = restTemplateBuilder.basicAuthentication(user, encodedPassword).build();
         ResponseEntity<String> response;
         try {
             response = restTemplate.postForEntity(url, null, String.class);

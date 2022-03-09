@@ -25,8 +25,8 @@ import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
@@ -143,7 +143,7 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_error_internal_error() throws Exception {
-        given(this.projectServiceMock.getProjectForUserById(anyString(), anyObject())).willThrow(new RuntimeException(new TException("Internal error processing getProjectById")));
+        given(this.projectServiceMock.getProjectForUserById(anyString(), any())).willThrow(new RuntimeException(new TException("Internal error processing getProjectById")));
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(RestDocumentationRequestBuilders.get("/api/projects/12321")
                 .header("Authorization", "Bearer " + accessToken))

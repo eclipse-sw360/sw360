@@ -10,7 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.project;
 
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.springframework.hateoas.core.Relation;
+import org.springframework.hateoas.server.core.Relation;
 
 /**
  * 

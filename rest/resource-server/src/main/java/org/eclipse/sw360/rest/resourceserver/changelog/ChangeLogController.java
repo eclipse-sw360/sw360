@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.changelog;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
@@ -37,11 +37,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.ResourceProcessor;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.UriTemplate;
-import org.springframework.hateoas.core.Relation;
-import org.springframework.hateoas.mvc.ControllerLinkBuilder;
+import org.springframework.hateoas.server.core.Relation;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -57,7 +57,7 @@ import lombok.RequiredArgsConstructor;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class ChangeLogController implements ResourceProcessor<RepositoryLinksResource> {
+public class ChangeLogController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     private static final Logger log = LogManager.getLogger(ChangeLogController.class);
 
@@ -111,7 +111,7 @@ public class ChangeLogController implements ResourceProcessor<RepositoryLinksRes
             }
         });
 
-        Resources resources = null;
+        CollectionModel resources = null;
         if (CommonUtils.isNotEmpty(embeddedChangeLogs)) {
             resources = restControllerHelper.generatePagesResource(paginationResult, embeddedChangeLogs);
         }
@@ -122,9 +122,9 @@ public class ChangeLogController implements ResourceProcessor<RepositoryLinksRes
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        final ControllerLinkBuilder controllerLinkBuilder = linkTo(ChangeLogController.class);
-        final Link changelogLink = new Link(
-                new UriTemplate(controllerLinkBuilder.toUri().toString() + "/api" + CHANGE_LOG_URL + "/document/{id}"),
+        final WebMvcLinkBuilder controllerLinkBuilder = linkTo(ChangeLogController.class);
+        final Link changelogLink = Link.of(
+                UriTemplate.of(controllerLinkBuilder.toUri().toString() + "/api" + CHANGE_LOG_URL + "/document/{id}"),
                 "changeLogs");
         resource.add(changelogLink);
         return resource;

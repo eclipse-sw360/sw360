@@ -9,11 +9,8 @@
  */
 package org.eclipse.sw360.rest.authserver.security.customheaderauth;
 
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.authserver.StringTransformer;
-import org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer;
-import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
 
@@ -27,7 +24,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.common.util.OAuth2Utils;
 import org.springframework.security.oauth2.provider.ClientDetails;
 import org.springframework.security.oauth2.provider.ClientDetailsService;

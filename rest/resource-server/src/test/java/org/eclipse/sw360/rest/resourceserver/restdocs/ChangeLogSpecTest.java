@@ -10,7 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
@@ -118,7 +118,7 @@ public class ChangeLogSpecTest extends TestRestDocsSpecBase {
         changeLogs.add(changeLog);
         changeLogs.add(changeLog2);
 
-        given(this.changeLogServiceMock.getChangeLogsByDocumentId(anyObject(), anyObject())).willReturn(changeLogs);
+        given(this.changeLogServiceMock.getChangeLogsByDocumentId(any(), any())).willReturn(changeLogs);
     }
 
     @Test

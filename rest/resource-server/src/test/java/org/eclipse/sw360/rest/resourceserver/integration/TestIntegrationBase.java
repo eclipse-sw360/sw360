@@ -24,7 +24,7 @@ import java.util.HashMap;
 
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @SpringBootTest(classes = Sw360ResourceServer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ContextConfiguration
@@ -38,7 +38,7 @@ abstract public class TestIntegrationBase {
                                 String.class);
 
         String responseText = response.getBody();
-        HashMap jwtMap = new ObjectMapper().readValue(responseText, HashMap.class);
+        HashMap<?, ?> jwtMap = new ObjectMapper().readValue(responseText, HashMap.class);
         String accessToken = (String) jwtMap.get("access_token");
 
         HttpHeaders headers = new HttpHeaders();

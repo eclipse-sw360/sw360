@@ -35,8 +35,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -45,9 +45,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
@@ -86,15 +85,15 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     @Before
     public void before() throws TException, IOException {
         Set<Attachment> attachmentList = new HashSet<>();
-        List<Resource<Attachment>> attachmentResources = new ArrayList<>();
+        List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
         attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
         attachment.setSha1("da373e491d3863477568896089ee9457bc316783");
         attachmentList.add(attachment);
-        attachmentResources.add(new Resource<>(attachment));
+        attachmentResources.add(EntityModel.of(attachment));
         Attachment attachment2 = new Attachment("1231231255", "spring-mvc-4.3.4.RELEASE.jar");
         attachment2.setSha1("da373e491d3863477568896089ee9457bc316784");
         attachmentList.add(attachment2);
-        attachmentResources.add(new Resource<>(attachment2));
+        attachmentResources.add(EntityModel.of(attachment2));
 
         Set<Attachment> setOfAttachment = new HashSet<Attachment>();
         Attachment att1 = new Attachment("1234", "test.zip").setAttachmentType(AttachmentType.SOURCE)
@@ -104,11 +103,11 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .setCheckStatus(CheckStatus.ACCEPTED).setCheckedComment("Checked Comment").setCheckedOn("2021-04-27")
                 .setCheckedBy("admin@sw360.org").setCheckedTeam("DEPARTMENT1");
 
-        given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
-        given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
-        given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
+        given(this.attachmentServiceMock.getAttachmentContent(any())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
+        given(this.attachmentServiceMock.getResourcesFromList(any())).willReturn(CollectionModel.of(attachmentResources));
+        given(this.attachmentServiceMock.uploadAttachment(any(), any(), any())).willReturn(attachment);
         given(this.attachmentServiceMock.filterAttachmentsToRemove(any(), any(), any())).willReturn(Collections.singleton(attachment));
-        given(this.attachmentServiceMock.updateAttachment(anyObject(), anyObject(), anyObject(), anyObject())).willReturn(att2);
+        given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
 
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("component-id-key", ImmutableSet.of("1831A3", "c77321"));
@@ -181,7 +180,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         project.setVersion("1.0.2");
         projectList.add(project);
 
-        when(this.componentServiceMock.createComponent(anyObject(), anyObject())).then(invocation ->
+        when(this.componentServiceMock.createComponent(any(), any())).then(invocation ->
                 new Component("Spring Framework")
                         .setDescription("The Spring Framework provides a comprehensive programming and configuration model for modern Java-based enterprise applications.")
                         .setComponentType(ComponentType.OSS)
@@ -189,14 +188,14 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .setCreatedBy("admin@sw360.org")
                         .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
 
-        given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(componentList);
-        given(this.componentServiceMock.getComponentForUserById(eq("17653524"), anyObject())).willReturn(angularComponent);
-        given(this.componentServiceMock.getComponentForUserById(eq("98745"), anyObject())).willReturn(testComponent);
-        given(this.componentServiceMock.getProjectsByComponentId(eq("17653524"), anyObject())).willReturn(projectList);
-        given(this.componentServiceMock.getUsingComponentsForComponent(eq("17653524"), anyObject())).willReturn(usedByComponent);
+        given(this.componentServiceMock.getComponentsForUser(any())).willReturn(componentList);
+        given(this.componentServiceMock.getComponentForUserById(eq("17653524"), any())).willReturn(angularComponent);
+        given(this.componentServiceMock.getComponentForUserById(eq("98745"), any())).willReturn(testComponent);
+        given(this.componentServiceMock.getProjectsByComponentId(eq("17653524"), any())).willReturn(projectList);
+        given(this.componentServiceMock.getUsingComponentsForComponent(eq("17653524"), any())).willReturn(usedByComponent);
         given(this.componentServiceMock.searchComponentByName(eq(angularComponent.getName()))).willReturn(componentListByName);
-        given(this.componentServiceMock.deleteComponent(eq(angularComponent.getId()), anyObject())).willReturn(RequestStatus.SUCCESS);
-        given(this.componentServiceMock.searchByExternalIds(eq(externalIds), anyObject())).willReturn((new HashSet<>(componentList)));
+        given(this.componentServiceMock.deleteComponent(eq(angularComponent.getId()), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.componentServiceMock.searchByExternalIds(eq(externalIds), any())).willReturn((new HashSet<>(componentList)));
         given(this.componentServiceMock.convertToEmbeddedWithExternalIds(eq(angularComponent))).willReturn(
                 new Component("Angular")
                         .setId("17653524")

@@ -13,7 +13,6 @@ package org.eclipse.sw360.rest.resourceserver.security;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -61,7 +60,7 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
 
     @Override
     public void configure(WebSecurity web) {
-        web.ignoring().antMatchers("/", "/**/*.html", "/**/*.css", "/**/*.js", "/**/*.json", "/**/*.png", "/**/*.gif");
+        web.ignoring().antMatchers("/", "/**/*.html", "/**/*.css", "/**/*.js", "/**/*.json", "/**/*.png", "/**/*.gif", "/**/*.ico", "/**/*.woff*", "/**/*.ttf");
     }
 
     @Override

@@ -13,18 +13,18 @@ package org.eclipse.sw360.rest.resourceserver.attachment;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.stereotype.Component;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @Component
 @RequiredArgsConstructor
-class AttachmentResourceProcessor implements ResourceProcessor<Resource<Attachment>> {
+class AttachmentResourceProcessor implements RepresentationModelProcessor<EntityModel<Attachment>> {
 
     @Override
-    public Resource<Attachment> process(Resource<Attachment> resource) {
+    public EntityModel<Attachment> process(EntityModel<Attachment> resource) {
         Attachment attachment = resource.getContent();
         Link selfLink = linkTo(AttachmentController.class)
                 .slash("api" + AttachmentController.ATTACHMENTS_URL + "/" + attachment.getAttachmentContentId()).withSelfRel();

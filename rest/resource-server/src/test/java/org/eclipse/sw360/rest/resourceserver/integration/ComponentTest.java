@@ -18,7 +18,6 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
@@ -47,21 +46,20 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -94,7 +92,7 @@ public class ComponentTest extends TestIntegrationBase {
         component.setCreatedBy("admin@sw360.org");
         componentList.add(component);
 
-        given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(componentList);
+        given(this.componentServiceMock.getComponentsForUser(any())).willReturn(componentList);
 
         User user = TestHelper.getTestUser();
 
@@ -117,7 +115,7 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_get_all_components_empty_list() throws IOException, TException {
-        given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(new ArrayList<>());
+        given(this.componentServiceMock.getComponentsForUser(any())).willReturn(new ArrayList<>());
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/components",
@@ -131,7 +129,7 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_get_all_components_wrong_page() throws IOException, TException {
-        when(this.componentServiceMock.getComponentsForUser(anyObject())).thenThrow(ResourceNotFoundException.class);
+        when(this.componentServiceMock.getComponentsForUser(any())).thenThrow(ResourceNotFoundException.class);
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/components?page=5&page_entries=10",
@@ -158,8 +156,8 @@ public class ComponentTest extends TestIntegrationBase {
     @Test
     public void should_update_component_valid() throws IOException, TException {
         String updatedComponentName = "updatedComponentName";
-        given(this.componentServiceMock.updateComponent(anyObject(), anyObject())).willReturn(RequestStatus.SUCCESS);
-        given(this.componentServiceMock.getComponentForUserById(eq(componentId), anyObject())).willReturn(component);
+        given(this.componentServiceMock.updateComponent(any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.componentServiceMock.getComponentForUserById(eq(componentId), any())).willReturn(component);
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
         Map<String, String> body = new HashMap<>();
@@ -179,7 +177,7 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_update_component_invalid() throws IOException, TException {
-        doThrow(TException.class).when(this.componentServiceMock).getComponentForUserById(anyObject(), anyObject());
+        doThrow(TException.class).when(this.componentServiceMock).getComponentForUserById(any(), any());
         String updatedComponentName = "updatedComponentName";
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -195,7 +193,7 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_delete_component_valid() throws IOException, TException {
-        given(this.componentServiceMock.deleteComponent(eq(componentId), anyObject())).willReturn(RequestStatus.SUCCESS);
+        given(this.componentServiceMock.deleteComponent(eq(componentId), any())).willReturn(RequestStatus.SUCCESS);
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/components/" + componentId,
@@ -208,7 +206,7 @@ public class ComponentTest extends TestIntegrationBase {
     @Test
     public void should_delete_component_invalid() throws IOException, TException {
         String invalidComponentId = "2734982743928374";
-        given(this.componentServiceMock.deleteComponent(anyObject(), anyObject())).willReturn(RequestStatus.FAILURE);
+        given(this.componentServiceMock.deleteComponent(any(), any())).willReturn(RequestStatus.FAILURE);
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/components/" + invalidComponentId,

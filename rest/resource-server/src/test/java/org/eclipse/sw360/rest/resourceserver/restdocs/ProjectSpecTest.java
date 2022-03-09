@@ -58,8 +58,8 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -75,10 +75,9 @@ import java.util.*;
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.OPEN;
 import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED;
-import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
@@ -127,11 +126,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Before
     public void before() throws TException, IOException {
         Set<Attachment> attachmentList = new HashSet<>();
-        List<Resource<Attachment>> attachmentResources = new ArrayList<>();
+        List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
         attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
         attachment.setSha1("da373e491d3863477568896089ee9457bc316783");
         attachmentList.add(attachment);
-        attachmentResources.add(new Resource<>(attachment));
+        attachmentResources.add(EntityModel.of(attachment));
 
         Set<Attachment> setOfAttachment = new HashSet<Attachment>();
         Attachment att1 = new Attachment("1234", "test.zip").setAttachmentType(AttachmentType.SOURCE)
@@ -141,13 +140,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .setCheckStatus(CheckStatus.ACCEPTED).setCheckedComment("Checked Comment").setCheckedOn("2021-04-27")
                 .setCheckedBy("admin@sw360.org").setCheckedTeam("DEPARTMENT1");
 
-        given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
-        given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
-        given(this.attachmentServiceMock.uploadAttachment(anyObject(), anyObject(), anyObject())).willReturn(attachment);
-        given(this.attachmentServiceMock.updateAttachment(anyObject(), anyObject(), anyObject(), anyObject())).willReturn(att2);
-        Mockito.doNothing().when(projectServiceMock).deleteProject(anyObject(), anyObject());
-        Mockito.doNothing().when(projectServiceMock).copyLinkedObligationsForClonedProject(anyObject(), anyObject(),
-                anyObject());
+        given(this.attachmentServiceMock.getAttachmentContent(any())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
+        given(this.attachmentServiceMock.getResourcesFromList(any())).willReturn(CollectionModel.of(attachmentResources));
+        given(this.attachmentServiceMock.uploadAttachment(any(), any(), any())).willReturn(attachment);
+        given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
+        Mockito.doNothing().when(projectServiceMock).deleteProject(any(), any());
+        Mockito.doNothing().when(projectServiceMock).copyLinkedObligationsForClonedProject(any(), any(),
+                any());
 
         Map<String, ProjectReleaseRelationship> linkedReleases = new HashMap<>();
         Map<String, ProjectProjectRelationship> linkedProjects = new HashMap<>();
@@ -250,7 +249,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project2.setRemarksAdditionalRequirements("Lorem Ipsum");
         project2.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
         project2.setProjectResponsible("projectresponsible@sw360.org");
-        Map<String, String> projExtKeys = new HashMap();
+        Map<String, String> projExtKeys = new HashMap<String, String>();
         projExtKeys.put("mainline-id-project", "7657");
         projExtKeys.put("portal-id", "13319-XX3");
         project2.setExternalIds(projExtKeys);
@@ -272,19 +271,19 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Set<String> releaseIds = new HashSet<>(Collections.singletonList("3765276512"));
         Set<String> releaseIdsTransitive = new HashSet<>(Arrays.asList("3765276512", "5578999"));
 
-        given(this.projectServiceMock.getProjectsForUser(anyObject())).willReturn(projectList);
-        given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), anyObject())).willReturn(project);
-        given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), anyObject())).willReturn(project2);
-        given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), anyObject())).willReturn(projectForAtt);
-        given(this.projectServiceMock.searchLinkingProjects(eq(project.getId()), anyObject())).willReturn(usedByProjectList);
-        given(this.projectServiceMock.searchProjectByName(eq(project.getName()), anyObject())).willReturn(projectListByName);
-        given(this.projectServiceMock.searchProjectByTag(anyObject(), anyObject())).willReturn(new ArrayList<Project>(projectList));
-        given(this.projectServiceMock.searchProjectByType(anyObject(), anyObject())).willReturn(new ArrayList<Project>(projectList));
-        given(this.projectServiceMock.searchProjectByGroup(anyObject(), anyObject())).willReturn(new ArrayList<Project>(projectList));
-        given(this.projectServiceMock.refineSearch(anyObject(), anyObject())).willReturn(projectListByName);
-        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("false"))).willReturn(releaseIds);
-        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), anyObject(), eq("true"))).willReturn(releaseIdsTransitive);
-        given(this.projectServiceMock.updateProjectReleaseRelationship(anyObject(), anyObject(), anyObject())).willReturn(projectReleaseRelationshipResponseBody);
+        given(this.projectServiceMock.getProjectsForUser(any())).willReturn(projectList);
+        given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
+        given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(project2);
+        given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(projectForAtt);
+        given(this.projectServiceMock.searchLinkingProjects(eq(project.getId()), any())).willReturn(usedByProjectList);
+        given(this.projectServiceMock.searchProjectByName(eq(project.getName()), any())).willReturn(projectListByName);
+        given(this.projectServiceMock.searchProjectByTag(any(), any())).willReturn(new ArrayList<Project>(projectList));
+        given(this.projectServiceMock.searchProjectByType(any(), any())).willReturn(new ArrayList<Project>(projectList));
+        given(this.projectServiceMock.searchProjectByGroup(any(), any())).willReturn(new ArrayList<Project>(projectList));
+        given(this.projectServiceMock.refineSearch(any(), any())).willReturn(projectListByName);
+        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq("false"))).willReturn(releaseIds);
+        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq("true"))).willReturn(releaseIdsTransitive);
+        given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(projectReleaseRelationshipResponseBody);
         given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(
                 new Project("Emerald Web")
                         .setVersion("1.0.2")
@@ -299,7 +298,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         .setDescription("Orange Web provides a suite of components for documentation.")
                         .setExternalIds(projExtKeys)
                         .setProjectType(ProjectType.PRODUCT));
-        when(this.projectServiceMock.createProject(anyObject(), anyObject())).then(invocation ->
+        when(this.projectServiceMock.createProject(any(), any())).then(invocation ->
                 new Project("Test Project")
                         .setId("1234567890")
                         .setDescription("This is the description of my Test Project")
@@ -366,8 +365,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         rel.setMainlineState(MainlineState.MAINLINE);
         rel.setVendor(new Vendor("TV", "Test Vendor", "http://testvendor.com"));
 
-        given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
-        given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), anyObject())).willReturn(release2);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
@@ -377,12 +376,12 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 new User("jane@sw360.org", "sw360").setId("209582812"));
         OutputFormatInfo outputFormatInfo = new OutputFormatInfo();
         outputFormatInfo.setFileExtension("html");
-        given(this.licenseInfoMockService.getOutputFormatInfoForGeneratorClass(anyObject()))
+        given(this.licenseInfoMockService.getOutputFormatInfoForGeneratorClass(any()))
                 .willReturn(outputFormatInfo);
         LicenseInfoFile licenseInfoFile = new LicenseInfoFile();
         licenseInfoFile.setGeneratedOutput(new byte[0]);
-        given(this.licenseInfoMockService.getLicenseInfoFile(anyObject(), anyObject(), anyObject(), anyObject(),
-                anyObject(),anyObject(), anyObject())).willReturn(licenseInfoFile);
+        given(this.licenseInfoMockService.getLicenseInfoFile(any(), any(), any(), any(),
+                any(),any(), any())).willReturn(licenseInfoFile);
 
         Source ownerSrc1 = Source.releaseId("9988776655");
         Source usedBySrc = Source.projectId(project.getId());
@@ -410,7 +409,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         List<AttachmentUsage> attachmentUsageList = new ArrayList<>();
         attachmentUsageList.add(attachmentUsage1);
         attachmentUsageList.add(attachmentUsage2);
-        given(this.attachmentServiceMock.getAllAttachmentUsage(anyObject())).willReturn(attachmentUsageList);
+        given(this.attachmentServiceMock.getAllAttachmentUsage(any())).willReturn(attachmentUsageList);
         List<VulnerabilityDTO> vulDtos = new ArrayList<VulnerabilityDTO>();
         VulnerabilityDTO vulDto = new VulnerabilityDTO();
         vulDto.setComment("Lorem Ipsum");
@@ -430,7 +429,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         vulDto1.setAction("Update to Fixed Version");
         vulDto1.setPriority("1 - critical");
         vulDtos.add(vulDto1);
-        given(this.vulnerabilityMockService.getVulnerabilitiesByProjectId(anyObject(), anyObject())).willReturn(vulDtos);
+        given(this.vulnerabilityMockService.getVulnerabilitiesByProjectId(any(), any())).willReturn(vulDtos);
         VulnerabilityCheckStatus vulnCheckStatus = new VulnerabilityCheckStatus();
         vulnCheckStatus.setCheckedBy("admin@sw360.org");
         vulnCheckStatus.setCheckedOn(SW360Utils.getCreatedOn());
@@ -460,7 +459,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         projVulnRating.setVulnerabilityIdToReleaseIdToStatus(vulnerabilityIdToReleaseIdToStatus);
         List<ProjectVulnerabilityRating> projVulnRatings = new ArrayList<ProjectVulnerabilityRating>();
         projVulnRatings.add(projVulnRating);
-        given(this.vulnerabilityMockService.getProjectVulnerabilityRatingByProjectId(anyObject(), anyObject())).willReturn(projVulnRatings);
+        given(this.vulnerabilityMockService.getProjectVulnerabilityRatingByProjectId(any(), any())).willReturn(projVulnRatings);
 
         Map<String, VulnerabilityRatingForProject> relIdToprojVUlRating = new HashMap<String, VulnerabilityRatingForProject>();
         relIdToprojVUlRating.put("21055", VulnerabilityRatingForProject.IRRELEVANT);
@@ -472,9 +471,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         vulIdToRelIdToRatings.put("12345", relIdToprojVUlRating);
         vulIdToRelIdToRatings.put("23105", relIdToprojVUlRating1);
 
-        given(this.vulnerabilityMockService.fillVulnerabilityMetadata(anyObject(), anyObject())).willReturn(vulIdToRelIdToRatings);
-        given(this.vulnerabilityMockService.updateProjectVulnerabilityRating(anyObject(), anyObject())).willReturn(RequestStatus.SUCCESS);
-        given(this.projectServiceMock.getReleasesFromProjectIds(anyObject(), anyObject(), anyObject(), anyObject())).willReturn(Set.of(rel));
+        given(this.vulnerabilityMockService.fillVulnerabilityMetadata(any(), any())).willReturn(vulIdToRelIdToRatings);
+        given(this.vulnerabilityMockService.updateProjectVulnerabilityRating(any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.projectServiceMock.getReleasesFromProjectIds(any(), any(), any(), any())).willReturn(Set.of(rel));
     }
 
     @Test
@@ -894,7 +893,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Map<String, Set<String>> externalIdsQuery = new HashMap<>();
         externalIdsQuery.put("portal-id", new HashSet<>(Collections.singletonList("13319-XX3")));
         externalIdsQuery.put("project-ext", new HashSet<>(Arrays.asList("515432", "7657")));
-        given(this.projectServiceMock.searchByExternalIds(eq(externalIdsQuery), anyObject())).willReturn((new HashSet<>(projectList)));
+        given(this.projectServiceMock.searchByExternalIds(eq(externalIdsQuery), any())).willReturn((new HashSet<>(projectList)));
 
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/projects/searchByExternalIds?project-ext=515432&project-ext=7657&portal-id=13319-XX3")
@@ -973,13 +972,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]priority").description("The priority of vulnerability"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]projectAction").description("The action of vulnerability"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]comment").description("Any message to added while updating project vulnerabilities"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]intReleaseId").description("The release id"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]intReleaseName").description("The release name"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]priority").description("The priority of vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]projectAction").description("The action of vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]comment").description("Any message to added while updating project vulnerabilities"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]intReleaseId").description("The release id"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]intReleaseName").description("The release name"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of vulnerability per page"),
@@ -1007,13 +1006,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("curies").description("Curies are used for online documentation")
                         ),
                         responseFields(
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]priority").description("The priority of vulnerability"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]projectAction").description("The action of vulnerability"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]comment").description("Any message to added while updating project vulnerabilities"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]intReleaseId").description("The release id"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]intReleaseName").description("The release name"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]priority").description("The priority of vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]projectAction").description("The action of vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]comment").description("Any message to added while updating project vulnerabilities"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]intReleaseId").description("The release id"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]intReleaseName").description("The release name"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -1040,11 +1039,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("curies").description("Curies are used for online documentation")
                         ),
                         responseFields(
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]intReleaseId").description("The release id"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes.[]comment").description("Any message to add while updating project vulnerabilities"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes[]projectAction").description("The action of vulnerability"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilityDToes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]intReleaseId").description("The release id"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]comment").description("Any message to add while updating project vulnerabilities"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]projectAction").description("The action of vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }

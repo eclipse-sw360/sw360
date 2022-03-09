@@ -26,7 +26,6 @@ import org.apache.thrift.TException;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,6 +34,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.jwt.Jwt;
 import org.springframework.security.jwt.JwtHelper;
 import org.springframework.security.oauth2.provider.ClientDetails;
@@ -49,11 +49,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -146,12 +146,12 @@ public abstract class IntegrationTestBase {
         when(mockedResponseEntity.getBody()).thenReturn("4711");
 
         RestTemplate mockedRestTemplate = mock(RestTemplate.class);
-        when(mockedRestTemplate.postForEntity(anyString(), anyObject(), eq(String.class)))
+        when(mockedRestTemplate.postForEntity(anyString(), any(), eq(String.class)))
                 .thenReturn(mockedResponseEntity);
 
         RestTemplateBuilder mockedRTB = mock(RestTemplateBuilder.class);
-        when(restTemplateBuilder.basicAuthorization(eq(adminTestUser.email), anyString())).thenReturn(mockedRTB);
-        when(restTemplateBuilder.basicAuthorization(eq(normalTestUser.email), anyString())).thenReturn(mockedRTB);
+        when(restTemplateBuilder.basicAuthentication(adminTestUser.email, "password-not-checked-in-test-without-liferay")).thenReturn(mockedRTB);
+        when(restTemplateBuilder.basicAuthentication(normalTestUser.email, "password-not-checked-in-test-without-liferay")).thenReturn(mockedRTB);
         when(mockedRTB.build()).thenReturn(mockedRestTemplate);
 
         // preparation for bad case
@@ -159,11 +159,11 @@ public abstract class IntegrationTestBase {
         when(mockedResponseEntityFail.getBody()).thenReturn("Some auth exception");
 
         RestTemplate mockedRestTemplateFail = mock(RestTemplate.class);
-        when(mockedRestTemplateFail.postForEntity(anyString(), anyObject(), eq(String.class)))
+        when(mockedRestTemplateFail.postForEntity(anyString(), any(), eq(String.class)))
                 .thenReturn(mockedResponseEntityFail);
 
         RestTemplateBuilder mockedRTBFail = mock(RestTemplateBuilder.class);
-        when(restTemplateBuilder.basicAuthorization(eq("my-unknown-user"), anyString())).thenReturn(mockedRTBFail);
+        when(restTemplateBuilder.basicAuthentication("my-unknown-user", "pwd")).thenReturn(mockedRTBFail);
         when(mockedRTBFail.build()).thenReturn(mockedRestTemplateFail);
     }
 

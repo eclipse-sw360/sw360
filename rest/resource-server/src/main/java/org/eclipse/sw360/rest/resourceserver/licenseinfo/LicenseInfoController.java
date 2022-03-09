@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.licenseinfo;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -18,7 +18,7 @@ import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @BasePathAwareController
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class LicenseInfoController implements ResourceProcessor<RepositoryLinksResource> {
+public class LicenseInfoController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String LICENSE_INFO_URL = "/licenseinfo";
 
     @Override

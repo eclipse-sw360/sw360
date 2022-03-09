@@ -13,19 +13,19 @@ package org.eclipse.sw360.rest.resourceserver.obligation;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.stereotype.Component;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 
 @Component
 @RequiredArgsConstructor
-class ObligationResourceProcessor implements ResourceProcessor<Resource<Obligation>> {
+class ObligationResourceProcessor implements RepresentationModelProcessor<EntityModel<Obligation>> {
 
     @Override
-    public Resource<Obligation> process(Resource<Obligation> resource) {
+    public EntityModel<Obligation> process(EntityModel<Obligation> resource) {
         Obligation obliagtion = resource.getContent();
         Link selfLink = linkTo(ObligationController.class)
                 .slash("api" + ObligationController.OBLIGATION_URL + "/" + obliagtion.getId()).withSelfRel();
