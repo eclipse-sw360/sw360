@@ -117,23 +117,35 @@ RUN --mount=type=tmpfs,target=/build \
     && rm -rf /deps
 
 #--------------------------------------------------------------------------------------------------
-# Base container
+# Runtime image
 # We need use JDK, JRE is not enough as Liferay do runtime changes and require javac
-FROM eclipse-temurin:11-jdk-focal as imagebase
+FROM eclipse-temurin:11-jdk-focal
 
 WORKDIR /app/
 
 ARG LIFERAY_SOURCE="liferay-ce-portal-tomcat-7.3.4-ga5-20200811154319029.tar.gz"
+
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates \
+    curl \
     gnupg2 \
+    iproute2 \
+    iputils-ping \
+    libarchive-tools \
+    locales \
     lsof \
+    netbase \
     openssh-client \
+    openssl \
     tzdata \
+    sudo \
     vim \
     unzip \
     zip \
@@ -146,40 +158,50 @@ COPY --from=thriftbuild /thrift-bin.tar.gz .
 RUN tar xzf thrift-bin.tar.gz -C / \
     && rm thrift-bin.tar.gz
 
+ENV LIFERAY_HOME=/app/sw360
+ENV LIFERAY_INSTALL=/app/sw360
+
+ARG USERNAME=sw360
+ARG USER_ID=1000
+ARG USER_GID=$USER_ID
+ARG HOMEDIR=/workspace
+ENV HOME=$HOMEDIR
+
 # Prepare system for non-priv user
-RUN groupadd --gid 1000 sw360 \
-    && useradd --uid 1000 --gid sw360 --shell /bin/bash --home-dir /workspace --create-home sw360
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd \
+    --uid $USER_ID \
+    --gid $USER_GID \
+    --shell /bin/bash \
+    --home-dir $HOMEDIR \
+    --create-home $USERNAME
+
+# sudo support
+RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
 
 # Unpack liferay as sw360 and link current tomcat version
 # to tomcat to make future proof updates
 RUN mkdir sw360 \
-    && tar xzf /deps/$LIFERAY_SOURCE -C sw360 --strip-components=1 \
+    && tar xzf /deps/$LIFERAY_SOURCE -C $USERNAME --strip-components=1 \
     && cp /deps/jars/* sw360/deploy \ 
-    && chown -R sw360:sw360 sw360 \
+    && chown -R $USERNAME:$USERNAME sw360 \
     && ln -s /app/sw360/tomcat-* /app/sw360/tomcat \
     && rm -rf /deps
 
-#--------------------------------------------------------------------------------------------------
-# SW360 Final image
-
-FROM imagebase
-
-ENV LIFERAY_HOME=/app/sw360
-ENV LIFERAY_INSTALL=/app/sw360
-
-COPY --chown=sw360:sw360 --from=sw360build /sw360_deploy/* /app/sw360/deploy
-COPY --chown=sw360:sw360 --from=sw360build /sw360_tomcat_webapps/* /app/sw360/tomcat/webapps/
-COPY --chown=sw360:sw360 --from=clucenebuild /couchdb-lucene.war /app/sw360/tomcat/webapps/
+COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_deploy/* /app/sw360/deploy
+COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/* /app/sw360/tomcat/webapps/
+COPY --chown=$USERNAME:$USERNAME --from=clucenebuild /couchdb-lucene.war /app/sw360/tomcat/webapps/
 
 # Copy tomcat base files
-COPY --chown=sw360:sw360 ./scripts/docker-config/setenv.sh /app/sw360/tomcat/bin
+COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/setenv.sh /app/sw360/tomcat/bin
 
 # Copy liferay/sw360 config files
-COPY --chown=sw360:sw360 ./scripts/docker-config/portal-ext.properties /app/sw360/portal-ext.properties
-COPY --chown=sw360:sw360 ./scripts/docker-config/etc_sw360 /etc/sw360
-COPY --chown=sw360:sw360 ./scripts/docker-config/entry_point.sh /app/entry_point.sh
+COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/portal-ext.properties /app/sw360/portal-ext.properties
+COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/etc_sw360 /etc/sw360
+COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/entry_point.sh /app/entry_point.sh
 
-USER sw360
+USER $USERNAME
 
 STOPSIGNAL SIGINT
 

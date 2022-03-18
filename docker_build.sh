@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # -----------------------------------------------------------------------------
 # Copyright BMW CarIT GmbH 2021
@@ -27,13 +27,28 @@ COMPOSE_DOCKER_CLI_BUILD=1
 DOCKER_BUILDKIT=1
 export DOCKER_BUILDKIT COMPOSE_DOCKER_CLI_BUILD
 
-[ -n "$FOSSOLOGY" ] && extra_args="-f $GIT_ROOT/fossology-docker-compose.yml"
-[ -n "$VERBOSE" ] && docker_verbose="--progress=plain"
+usage() {
+    echo "Usage:"
+    echo "-v Verbose build"
+    exit 0;
+}
+
+while getopts "hv" arg; do
+    case $arg in
+        h)
+            usage
+            ;;
+        v)
+            docker_verbose="--progress=plain"
+            ;;
+        *)
+            ;;
+    esac
+done
 
 #shellcheck disable=SC2086
 docker-compose \
     --file "$GIT_ROOT"/docker-compose.yml \
-    $extra_args \
     build \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
     $docker_verbose \

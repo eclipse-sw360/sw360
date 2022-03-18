@@ -30,8 +30,9 @@ services:
       - webapps:/app/sw360/tomcat/webapps
       - document_library:/app/sw360/data/document_library
       - ./config:/app/sw360/config
+
   postgresdb:
-    image: 'postgres:13'
+    image: 'postgres:14'
     restart: unless-stopped
     environment:
       - POSTGRES_USER=liferay
@@ -58,8 +59,12 @@ services:
       - couchdb:/opt/couchdb/data
 
 volumes:
-  postgres:
-  couchdb:
-  etc:
-  webapps:
-  document_library:
+  postgres: null
+  couchdb: null
+  etc: null
+  webapps: null
+  document_library: null
+
+networks:
+  default:
+    name: sw360net
