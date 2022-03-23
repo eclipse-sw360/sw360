@@ -139,7 +139,7 @@ public class SPDXParserTest {
         Document spdxDocument = dBuilder.parse(input);
         spdxDocument.getDocumentElement().normalize();
 
-        LicenseInfoParsingResult result = SPDXParserTools.getLicenseInfoFromSpdx(attachmentContent, true, spdxDocument);
+        LicenseInfoParsingResult result = SPDXParserTools.getLicenseInfoFromSpdx(attachmentContent, true, false, spdxDocument);
         assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
                 exampleCopyright, exampleConcludedLicenseIds);
     }

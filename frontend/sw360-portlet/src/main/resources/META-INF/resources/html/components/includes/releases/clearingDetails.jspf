@@ -45,13 +45,19 @@
         <core_rt:forEach items="${spdxAttachments}" var="spdxAttachment">
             <tr id="${spdxAttachment.attachmentContentId}">
                 <td>
-                    <sw360:out value="${spdxAttachment.filename}"/>
+                    <div <core_rt:if test="${spdxAttachment.attachmentType eq 'INITIAL_SCAN_REPORT'}">class="actions d-inline" </core_rt:if> >
+                        <sw360:out value="${spdxAttachment.filename}"/><core_rt:if test="${spdxAttachment.attachmentType eq 'INITIAL_SCAN_REPORT'}">
+                        <svg class="cursor lexicon-icon text-danger ml-2">
+                        <title><liferay-ui:message key='this.is.only.an.initial.scanner.isr.finding.of.the.contained.licenses.in.the.uploaded.source.file' /><br> <liferay-ui:message key='the.final.license.list.may.differ.based.on.the.conclusions.made.by.the.clearing.expert.and.is.made.available.as.component.license.information.cli' /></title>
+                        <use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#warning' /></svg>
+                        </core_rt:if>
+                    </div>
                 </td>
                 <td data-attachment-id="${spdxAttachment.attachmentContentId}">
                     <button class="btn btn-secondary showSpdxContentBtn" data-attachment-name="${spdxAttachment.filename}"
-                    data-release-id="${release.id}" data-attachment-id="${spdxAttachment.attachmentContentId}"><liferay-ui:message key="show.license.info" /></button>
+                    data-release-id="${release.id}" data-attachment-id="${spdxAttachment.attachmentContentId}" data-attachment-type="${spdxAttachment.attachmentType}"><liferay-ui:message key="show.license.info" /></button>
                 </td>
-                <td class="result">
+                <td class="result actions">
                 </td>
             </tr>
         </core_rt:forEach>
@@ -217,9 +223,10 @@
 
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
+<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 <script type="text/javascript">
-    require(['jquery', 'modules/button', 'utils/includes/fossologyClearing'], function ($, button, fossology) {
-
+    require(['jquery', 'modules/button', 'utils/includes/fossologyClearing', 'modules/dialog'], function ($, button, fossology, dialog) {
+        var releaseToLicenseDetailsMap = new Map();
         fossology.initialize();
 
         $('#ReleaseClearingOverview').on('click', '.action.fossology', function(event) {
@@ -231,6 +238,30 @@
             handleShowSpdxContentClick($(event.currentTarget));
         });
 
+        $("table#spdxAttachments").on("click", "svg.isr", function(event) {
+            let licenseName = $(event.currentTarget).data().licenseId,
+                attId = $(event.currentTarget).closest('tr').attr('id'),
+                attName = $(event.currentTarget).closest('tr').find('td:first div')[0].innerText;
+            displayLicenseToSrcMapping(attId, attName, licenseName);
+        });
+
+        function displayLicenseToSrcMapping(attId, attName, licenseName) {
+            let data,
+            list = $('<ul/>');
+            if (releaseToLicenseDetailsMap.has(attId)) {
+                data = releaseToLicenseDetailsMap.get(attId);
+            }
+
+            if (data && data[licenseName]) {
+                data[licenseName].forEach(function (file, index) {
+                    list.append('<li>' + file + '</li>');
+                });
+            } else {
+                list.append('<li><liferay-ui:message key="source.file.information.not.found.in.isr"/></li>');
+            }
+            dialog.info(attName, '<br>Source File List: <br>' + $(list)[0].outerHTML);
+        }
+        
         function handleShowSpdxContentClick($btn) {
             var tableData = $('#spdxAttachments').data(),
                 rawUrl = tableData.loadSpdxLicenseInfoUrl,
@@ -238,9 +269,11 @@
                 btnData = $btn.data(),
                 releaseId = btnData.releaseId,
                 attachmentId = btnData.attachmentId,
+                attachmentType = btnData.attachmentType,
                 $row = $('#' + attachmentId),
                 $btnCell = $row.find('td[data-attachment-id=' + attachmentId + ']'),
-                $resultCell = $btnCell.parent().find('.result');
+                $resultCell = $btnCell.parent().find('.result')
+                isISR = attachmentType === 'INITIAL_SCAN_REPORT';
 
             url.setParameter(tableData.releaseIdParameterName, releaseId);
             url.setParameter(tableData.attachmentIdParameterName, attachmentId);
@@ -256,51 +289,80 @@
                 if (!result || result.length == 0 || Object.getOwnPropertyNames(result).length == 0) {
                     replaceContentWithWarning($resultCell, 'No license information found in file.');
                 } else {
-                    printResult($row, result);
-                    addTakeOverBtn($btnCell, releaseId, attachmentId, result);
+                	releaseToLicenseDetailsMap.set(attachmentId, result);
+                    printResult($row, result, attachmentId, isISR);
+                    addTakeOverBtn($btnCell, releaseId, attachmentId, result, attachmentType, isISR);
                 }
             }).fail(function(error) {
                 replaceContentWithError($resultCell, '<liferay-ui:message key="cannot.load.license.information" />: '+ error.statusText + ' (' + error.status + ').');
             }).always(function() {
-                button.finish($btnCell.find('button'));
+                if (!isISR) {
+                    button.finish($btnCell.find('button'));
+                }
             });
         }
 
-        function printResult($row, data) {
+        function printResult($row, data, attachmentId, isISR) {
             var $list = $('<ul></ul>'),
                 $otherList = $('<ul></ul>'),
-                $cell = $row.find('.result');
+                $cell = $row.find('.result'),
+                fileCount = data.totalFileCount,
+                complexity = '<liferay-ui:message key="very.large" />';
 
-            $cell.html('');
-            $cell.append($('<div>', { text: data.license}));
-            $cell.append($list);
-
-            if (data.licenseIds) {
-                data.licenseIds.forEach(function(id) {
-                    $list.append($('<li>', { text: id }));
-                });
+            if (fileCount <= 1000) {
+                complexity = '<liferay-ui:message key="small" />';
+            } else if (fileCount > 1000 && fileCount <= 5000) {
+                complexity = '<liferay-ui:message key="medium" />';
+            } else if (fileCount > 5000 && fileCount <= 10000) {
+                complexity = '<liferay-ui:message key="large" />';
             }
 
-            $cell.append($('<div>', { text: data.otherLicense}));
-            $cell.append($otherList);
+            $cell.html('');
+            if (isISR) {
+                $cell.append($('<div>', { html: '<liferay-ui:message key="total.number.of.files"/>: <b>' + data.totalFileCount + '</b>'}));
+                $cell.append($('<div>', { html: '<liferay-ui:message key="complexity"/>: <b>' + complexity + '</b> (<liferay-ui:message key="based.on.license.file.count" />)'}));
+            }
+
+            if (data.licenseIds) {
+                $cell.append($('<div>', { html: '<b>' + data.license + '</b>'}));
+                $cell.append($list);
+                data.licenseIds.forEach(function(id) {
+                    $list.append($('<li>', { text: id }));
+                    if (isISR) {
+                        let $infoIcon = "<span class='actions'><svg class='cursor lexicon-icon ml-2 isr' data-license-id=" + id + "> <title><liferay-ui:message key='view.file.list' /></title> <use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle'/> </svg></span>";
+                        $($list).find('li:last').append($infoIcon);
+                    }
+                });
+            } else {
+                $cell.append($('<div>', { text: 'Main / Concluded License Ids: N/A'}));
+            }
+
 
             if (data.otherLicenseIds) {
+                $cell.append($('<div>', { html: '<b>' + data.otherLicense + '</b>'}));
+                $cell.append($otherList);
                 data.otherLicenseIds.forEach(function(id) {
                     $otherList.append($('<li>', { text: id }));
+                    if (isISR) {
+                        let $infoIcon = "<span class='actions'><svg class='cursor lexicon-icon ml-2 isr' data-license-id=" + id + "> <title><liferay-ui:message key='view.file.list' /></title> <use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle'/> </svg></span>";
+                        $($otherList).find('li:last').append($infoIcon);
+                    }
                 });
+            } else {
+                $cell.append($('<div>', { text: 'Other License Ids: N/A'}));
             }
         }
 
-        function addTakeOverBtn($parent, releaseId, attachmentId, data) {
-            var $newBtn = $('<button>', { 'class': 'btn btn-primary spdxTakeOverBtn', 'data-release-id': releaseId, 'data-attachment-id': attachmentId, text: '<liferay-ui:message key="add.data.to.this.release" />' });
-
-            $newBtn.data('result', data);
+        function addTakeOverBtn($parent, releaseId, attachmentId, data, attachmentType, isISR) {
             $parent.html('');
-            $parent.append($newBtn);
-
-            $newBtn.on('click', function(event) {
-                handleTakeOverClick($(event.currentTarget));
-            });
+            if (!isISR) {
+                var $newBtn = $('<button>', { 'class': 'btn btn-primary spdxTakeOverBtn', 'data-release-id': releaseId, 'data-attachment-id': attachmentId, text: '<liferay-ui:message key="add.data.to.this.release" />' });
+                $newBtn.data('result', data);
+            	$parent.append($newBtn);
+                $newBtn.on('click', function(event) {
+                    handleTakeOverClick($(event.currentTarget));
+                });
+            }
         }
 
         function handleTakeOverClick($btn) {
