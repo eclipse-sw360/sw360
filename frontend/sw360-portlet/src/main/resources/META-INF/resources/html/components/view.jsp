@@ -251,7 +251,7 @@
                     return;
                 }
 
-                if (selected === 'Between') {
+                if (selected === "<liferay-ui:message key="between" />" ) {
                     $datePkr.show();
                     $toLabel.show();
                 } else {
