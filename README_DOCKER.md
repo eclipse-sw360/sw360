@@ -107,7 +107,7 @@ docker exec -it sw360_postgresdb_1 createdb -U liferay -W fossology
 docker run \
     --network sw360net \
     -p 8081:80 \
-    -name fossology \
+    --name fossology \
     -e FOSSOLOGY_DB_HOST=postgresdb \
     -e FOSSOLOGY_DB_USER=liferay \
     -e FOSSOLOGY_DB_PASSWORD=liferay \
