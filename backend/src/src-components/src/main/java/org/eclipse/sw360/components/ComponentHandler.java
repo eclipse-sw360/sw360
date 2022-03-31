@@ -396,7 +396,7 @@ public class ComponentHandler implements ComponentService.Iface {
     @Override
     public RequestSummary updateReleases(Set<Release> releases, User user) throws TException {
         assertUser(user);
-        return handler.updateReleases(releases, user);
+        return handler.updateReleases(releases, user, false);
     }
 
     @Override

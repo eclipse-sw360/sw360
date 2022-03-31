@@ -25,45 +25,54 @@
     The script will download all dependencies in the deps folder.
 
     Docker compose for sw360 are configured with default entries on docker-compose.yml.
-    The default sample environment file is under `scripts/docker-config/default.docker.env`
-
-    The config file looks like this:
+    
+    The config entries that can be modifiled:
 
     ```ini
-    # scripts/docker-config/default.docker.env
+    # Postgres
     POSTGRES_USER=liferay
     POSTGRES_PASSWORD=liferay
     POSTGRES_DB=lportal
+    # Couchdb
     COUCHDB_USER=admin
     COUCHDB_PASSWORD=password
     COUCHDB_CREATE_DATABASE=yes
-    SW360_DATA=./data/sw360
     ```
 
-    By default, data for postgres, couchdb and sw360 document will be persisted under `data` on current directory. 
+    By default couchdb, postgres and sw360 have their own storage volumes:
 
-    If you want to override all configs, copy `scripts/docker-config/default.docker.env` to project root as `.env` file and alter for your needs.
-
-    Then just rebuild the project with -env_file option
-
-* Proxy setup
-
-    To build under proxy system, add this options on your custom env file:
-
-    ```ini
-    PROXY_ENABLED=true
-    PROXY_HTTP_HOST=<your_http_proxy_ip>
-    PROXY_HTTPS_HOST=<your_https_proxy_ip>
-    PROXY_PORT=<your_port>
+    **Postgres**
+    ```yml
+    - postgres:/var/lib/postgresql/data/
     ```
 
-### Fossology
+    **CouchDB**
+    ```yml
+    - couchdb:/opt/couchdb/data
+    ```
 
-If you want to add Fossology in the mix, add FOSSOLOGY=1 on the build:
+    **sw360**
+    ```yml
+    - etc:/etc/sw360
+    - webapps:/app/sw360/tomcat/webapps
+    - document_library:/app/sw360/data/document_library
+    ```
+    There's a local mounted as binded dir volume to add customizations
+    ```yml
+    - ./config:/app/sw360/config
+    ```
 
-```sh
-FOSSOLOGY=1 ./docker_build.sh
-```
+    If you want to override all configs, create a docker env file  and alter for your needs.
+
+    Then just rebuild the project with **-env_file** option
+
+
+## Networking
+
+This composed image runs unde a single ndefault network, called **sw360net**
+
+So any external docker image can connect to internal couchdb or postgresql through this network
+
 
 ## Running the image
 
@@ -73,16 +82,10 @@ FOSSOLOGY=1 ./docker_build.sh
     docker-compose up
     ```
 
-    or with fossology ( see above build instructions )
-
-    ```sh
-    docker-compose -f docker-compose.yml -f fossology-docker-compose.yml up
-    ```
-
 * With custom env file
 
     ```sh
-    docker-compose --env-file <myenvfile> up
+    docker-compose --env-file <envfile> up
     ```
 
     You can add **-d** parameter at end of line to start in daemon mode and see the logs with the following command:
@@ -91,13 +94,47 @@ FOSSOLOGY=1 ./docker_build.sh
     docker logs -f sw360
     ```
 
+## Fossology
+For docker based approach, is recommended use official [Fossology docker image](https://hub.docker.com/r/fossology/fossology/)
+
+This is the steps to quick perform this:
+
+```sh
+# Create Fossology database on internal postgres
+docker exec -it sw360_postgresdb_1 createdb -U liferay -W fossology
+
+# Start Fossology container connected to sw360 env
+docker run \
+    --network sw360net \
+    -p 8081:80 \
+    -name fossology \
+    -e FOSSOLOGY_DB_HOST=postgresdb \
+    -e FOSSOLOGY_DB_USER=liferay \
+    -e FOSSOLOGY_DB_PASSWORD=liferay \
+    -d fossology/fossology
+```
+
+This will pull/start the fossology container and made it available on the host machine at port 8081
+
+### Configure Fossology
+
+* **On Fossology**
+  * Login on Fossology
+  * Create an API token for the user intended to be used
+* **On sw360**
+  * Go to fossology admin config
+  * Add the host, will be something like: `http(s)://<hostname>:8081/repo/api/v1/`
+  * Add the id of folder. The default id is **1** (Software Repository). You can get the ID of the folder you want from the folder URL in FOssology
+  * Add your obtained Token from Fossology
+
+
 ## Configurations
 
-By default, docker image of SW360 runs without internal web server and is assigned to be SSL as default. This is configured on *portal-ext.properties*
+By default, docker image of sw360 runs without internal web server and is assigned to be on port 8080. This is configured on *portal-ext.properties*
 
 Here's some extra configurations that can be useful to fix some details.
 
-## Customize portal-ext
+### Customize portal-ext
 
 The config file __portal-ext.properties__ overrides a second file that can be created to add a custom configuration with all data related to your necessities.
 
@@ -113,19 +150,34 @@ cat "company.default.name=MYCOMPANY" > config/sw360-portal-ext.properties
 
 Docker compose with treat config as a bind volume dir and will expose to application.
 
-### CSS layout looks wrong
 
-If you do not use an external web server with redirection ( see below ), you may find the main CSS theme scrambled ( not properly loaded )
+### Make **HTTPS** default
+
+Modify the following line on your custom __portal-sw360.properties__ to https:
+
+```ini
+web.server.protocol=https
+```
+
+### CSS layout looks wrong or using non standard ports
+
+If you do not use an external web server with redirection ( see below ), you may find the main CSS theme scrambled ( not properly loaded ) or you are using a different port
 
 This happens because current Liferay used version try to access the theme using only canonical hostname, without the port assigned, so leading to an invalid CSS url.
 
-To fix, you will need to change *portal-ext.properties* in data directory ( or your assigned data directory ) with the following extra value:
+To fix, you will need to change __portal-sw360.properties__ ( as described above ) with the following extra values:
 
 ```ini
-web.server.host=<your ip/host of docker>:<port>
+# For different hostname redirection
+web.server.host=<your ip/host of docker>
+# For HTTP non standard 80 port
+web.server.http.port=<your_http_port>
+# For HTTPS non standard 443 port
+web.server.https.port=<your_https_port>
 ```
 
 This will tell liferay where is your real host instead of trying to guess the wrong host.
+
 
 ### Nginx config for reverse proxy and X-Frame issues on on host machine ( not docker )
 
@@ -147,13 +199,6 @@ For nginx, assuming you are using default config for your sw360, this is a simpl
 
 ***WARNING*** - X-frame is enabled wide open for development purposes. If you intend to use the above config in production, remember to properly secure the web server.
 
-### Make https only **port 443** default
-
-Modify the following line on your custom __portal-sw360.properties__ to https:
-
-```ini
-web.server.protocol=https
-```
 
 ### Liferay Redirects
 

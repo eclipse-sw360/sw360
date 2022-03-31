@@ -18,6 +18,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TConfiguration;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
@@ -61,6 +62,8 @@ public class ThriftClients {
     public static final String BACKEND_PROXY_URL;
     public static final int THRIFT_CONNECTION_TIMEOUT;
     public static final int THRIFT_READ_TIMEOUT;
+    public static final int THRIFT_MAX_MESSAGE_SIZE;
+    public static final int THRIFT_MAX_FRAME_SIZE;
 
     //! Service addresses
     private static final String ATTACHMENT_SERVICE_URL = "/attachments/thrift";
@@ -96,6 +99,9 @@ public class ThriftClients {
         THRIFT_CONNECTION_TIMEOUT = Integer.valueOf(props.getProperty("backend.timeout.connection", "5000"));
         THRIFT_READ_TIMEOUT = Integer.valueOf(props.getProperty("backend.timeout.read", "600000"));
 
+        THRIFT_MAX_MESSAGE_SIZE = Integer.valueOf(props.getProperty("backend.thrift.max.message.size", String.valueOf(TConfiguration.DEFAULT_MAX_MESSAGE_SIZE)));
+        THRIFT_MAX_FRAME_SIZE = Integer.valueOf(props.getProperty("backend.thrift.max.frame.size", String.valueOf(TConfiguration.DEFAULT_MAX_FRAME_SIZE)));
+
         log.info("The following configuration will be used for connections to the backend:\n" +
             "\tURL                      : " + BACKEND_URL + "\n" +
             "\tProxy                    : " + BACKEND_PROXY_URL + "\n" +
@@ -111,15 +117,18 @@ public class ThriftClients {
     private static TProtocol makeProtocol(String url, String service) {
         THttpClient thriftClient = null;
         final String destinationAddress = url + service;
+        final TConfiguration thriftConfigure = TConfiguration.custom().setMaxMessageSize(THRIFT_MAX_MESSAGE_SIZE)
+                .setMaxFrameSize(THRIFT_MAX_FRAME_SIZE).build();
+
         try {
             if (BACKEND_PROXY_URL != null) {
                 URL proxyUrl = new URL(BACKEND_PROXY_URL);
                 HttpHost proxy = new HttpHost(proxyUrl.getHost(), proxyUrl.getPort(), proxyUrl.getProtocol());
                 DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
                 CloseableHttpClient httpClient = HttpClients.custom().setRoutePlanner(routePlanner).build();
-                thriftClient = new THttpClient(destinationAddress, httpClient);
+                thriftClient = new THttpClient(thriftConfigure, destinationAddress, httpClient);
             } else {
-                thriftClient = new THttpClient(destinationAddress);
+                thriftClient = new THttpClient(thriftConfigure, destinationAddress);
             }
             thriftClient.setConnectTimeout(THRIFT_CONNECTION_TIMEOUT);
             thriftClient.setReadTimeout(THRIFT_READ_TIMEOUT);

@@ -390,6 +390,17 @@ require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup'
         $("form#projectEditForm button").prop("disabled", true);
         $("form#projectEditForm button[id='add-external-id']").prop("disabled", false);
         $("form#projectEditForm button[id='formSubmit']").prop("disabled", false);
+        
+        $("#enable_svm").prop("disabled", false);
+        $("#enable_vulnerabilities_display").prop("disabled", false);
+        $("#projectState").prop("disabled", false);
+        $("#proj_phaseout").prop("disabled", false);
+        $("#SECURITY_RESPONSIBLESDisplay").prop("disabled", false);
+        $("#PROJECT_OWNERDisplay").prop("disabled", false);
+        $("#PROJECT_RESPONSIBLEDisplay").prop("disabled", false);
+        $("#externalIdsTable :disabled").each(function () {
+            $(this).prop("disabled", false);
+        });
     </core_rt:if>
 
     <core_rt:if test="${isProjectObligationsEnabled}">
