@@ -1,12 +1,12 @@
 # SW360 Docker
 
-### Table of Contents
+## Table of Contents
 
 [Building](#building)
 
 [Running the Image](#running-the-image)
 
-[Extra Configurations](#extra-configurations)
+[Extra Configurations](#configurations)
 
 
 ## Building
@@ -25,7 +25,7 @@
     The script will download all dependencies in the deps folder.
 
     Docker compose for sw360 are configured with default entries on docker-compose.yml.
-    
+
     The config entries that can be modifiled:
 
     ```ini
@@ -38,6 +38,41 @@
     COUCHDB_PASSWORD=password
     COUCHDB_CREATE_DATABASE=yes
     ```
+
+* Proxy during build stage
+
+    By default, the docker compose build not detect any proxy on your system. You can choose if you want to enable the proxy only during compose build, or configure docker system wide.
+
+    1 - On docker compose
+    Add the following lines on sw360 build tag in docker-compose.yml file ( assuming to have the exported proxy environment )
+    ```docker
+    services:
+        sw360:
+            image: 'sw360:latest'
+            build:
+                context: .
+                args:
+                    - HTTP_PROXY=$HTTP_PROXY
+                    - http_proxy=$http_proxy
+                    - HTTPS_PROXY=$HTTPS_PROXY
+                    - https_proxy=$https_proxy
+     ```
+
+    2 - Configure docker system wide ( require super user privileges )
+    * systemd based
+      If you are using a regular systemd based docker:
+      * Create the following file **http_proxy.conf** on the directory **/etc/systemd/system/docker.service.d/**
+
+      ```ini
+      [Service]
+      Environment="HTTP_PROXY=<your_proxy>"
+      Environment="HTTPS_PROXY=<your_proxy>"
+      Environment="NO_PROXY=<your_proxy>"
+      ```
+
+       * Do a regular systemctl daemon-reload and systemctl restart docker
+
+* Volumes
 
     By default couchdb, postgres and sw360 have their own storage volumes:
 
@@ -57,19 +92,19 @@
     - webapps:/app/sw360/tomcat/webapps
     - document_library:/app/sw360/data/document_library
     ```
-    There's a local mounted as binded dir volume to add customizations
+    There is a local mounted as binded dir volume to add customizations
     ```yml
     - ./config:/app/sw360/config
     ```
 
     If you want to override all configs, create a docker env file  and alter for your needs.
 
-    Then just rebuild the project with **-env_file** option
+    Then just rebuild the project with **-env env_file** option
 
 
 ## Networking
 
-This composed image runs unde a single ndefault network, called **sw360net**
+This composed image runs under a single default network, called **sw360net**
 
 So any external docker image can connect to internal couchdb or postgresql through this network
 
@@ -124,7 +159,7 @@ This will pull/start the fossology container and made it available on the host m
 * **On sw360**
   * Go to fossology admin config
   * Add the host, will be something like: `http(s)://<hostname>:8081/repo/api/v1/`
-  * Add the id of folder. The default id is **1** (Software Repository). You can get the ID of the folder you want from the folder URL in FOssology
+  * Add the id of folder. The default id is **1** (Software Repository). You can get the ID of the folder you want from the folder URL in Fossology
   * Add your obtained Token from Fossology
 
 
@@ -148,7 +183,7 @@ mkdir config
 cat "company.default.name=MYCOMPANY" > config/sw360-portal-ext.properties
 ```
 
-Docker compose with treat config as a bind volume dir and will expose to application.
+Docker compose will treat config as a bind volume dir and will expose to application.
 
 
 ### Make **HTTPS** default
@@ -199,23 +234,22 @@ For nginx, assuming you are using default config for your sw360, this is a simpl
 
 ***WARNING*** - X-frame is enabled wide open for development purposes. If you intend to use the above config in production, remember to properly secure the web server.
 
-
 ### Liferay Redirects
 
 Liferay by default for security reasons do not allow redirect for unknown ips/domains, mostly on admin modules, so is necessary to add your domain or ip to the redirect allowed lists in custom __portal-sw360.properties__.
-    
+
 A not proper redirect can see in logs
 
 **IP based** - The list of ips is separated by comma
 
-```
+```ini
 redirect.url.security.mode=ip
 redirect.url.ips.allowed=127.0.0.1,172.17.0.1,...
 ```
 
 **Domain based** - The list domains is separated by comma
-    
-```
+
+```ini
 redirect.url.security.mode=domain
 redirect.url.domain.allowed=example.com,*.wildcard.com
 ```
