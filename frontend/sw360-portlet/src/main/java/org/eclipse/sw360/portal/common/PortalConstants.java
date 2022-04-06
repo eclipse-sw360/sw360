@@ -297,6 +297,7 @@ public class PortalConstants {
     public static final String PROJECT_OBLIGATIONS_INFO_BY_RELEASE = "projectObligationsInfoByRelease";
     public static final String LINKED_OBLIGATIONS = "linkedObligations";
     public static final String APPROVED_OBLIGATIONS_COUNT = "approvedObligationsCount";
+    public static final String OBLIGATION_FROM_README_OSS = "obligationFromReadmeOSS";
     public static final String EXCLUDED_RELEASES = "excludedReleases";
     public static final String RELATIONSHIPS = "relations";
     public static final String PROJECT_RELEASE_TO_RELATION = "projectReleaseToRelation";
