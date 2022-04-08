@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.spdx;
 
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
@@ -16,12 +17,21 @@ import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+
+import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.spdx.documentcreationinfo.SpdxDocumentCreationInfoDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabaseHandler;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
+import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,11 +40,17 @@ public class SpdxBOMImporterSink {
 
     private final ProjectDatabaseHandler projectDatabaseHandler;
     private final ComponentDatabaseHandler componentDatabaseHandler;
+    private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
+    private final SpdxDocumentCreationInfoDatabaseHandler creationInfoDatabaseHandler;
+    private final SpdxPackageInfoDatabaseHandler packageInfoDatabaseHandler;
     private final User user;
 
-    public SpdxBOMImporterSink(User user, ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) {
+    public SpdxBOMImporterSink(User user, ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) throws MalformedURLException {
         this.projectDatabaseHandler = projectDatabaseHandler;
         this.componentDatabaseHandler = componentDatabaseHandler;
+        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        this.creationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
+        this.packageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
         this.user = user;
     }
 
@@ -68,6 +84,62 @@ public class SpdxBOMImporterSink {
         return new Response(releaseId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
     }
 
+    public Response addOrUpdateSpdxDocument(SPDXDocument spdxDocument) throws SW360Exception {
+        log.debug("create or update SPDXDocument");
+        RequestStatus requestStatus;
+        String spdxDocId;
+        if (spdxDocument.isSetId()) {
+            requestStatus = spdxDocumentDatabaseHandler.updateSPDXDocument(spdxDocument, user);
+            spdxDocId = spdxDocument.getId();
+        } else {
+            AddDocumentRequestSummary addDocumentRequestSummary = spdxDocumentDatabaseHandler.addSPDXDocument(spdxDocument, user);
+            requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
+            spdxDocId = addDocumentRequestSummary.getId();
+        }
+
+        if(spdxDocId == null || spdxDocId.isEmpty()) {
+            throw new SW360Exception("Id of spdx document should not be empty. " + requestStatus.toString());
+        }
+        return new Response(spdxDocId, RequestStatus.SUCCESS.equals(requestStatus));
+    }
+
+    public Response addOrUpdateDocumentCreationInformation(DocumentCreationInformation documentCreationInfo) throws SW360Exception {
+        log.debug("create or update DocumentCreationInformation { name='" + documentCreationInfo.getName() + "' }");
+        RequestStatus requestStatus;
+        String docCreationInfoId;
+        if (documentCreationInfo.isSetId()) {
+            requestStatus = creationInfoDatabaseHandler.updateDocumentCreationInformation(documentCreationInfo, user);
+            docCreationInfoId = documentCreationInfo.getId();
+        } else {
+            AddDocumentRequestSummary addDocumentRequestSummary = creationInfoDatabaseHandler.addDocumentCreationInformation(documentCreationInfo, user);
+            requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
+            docCreationInfoId = addDocumentRequestSummary.getId();
+        }
+
+        if(docCreationInfoId == null || docCreationInfoId.isEmpty()) {
+            throw new SW360Exception("Id of added document creation information should not be empty. " + requestStatus.toString());
+        }
+        return new Response(docCreationInfoId, RequestStatus.SUCCESS.equals(requestStatus));
+    }
+
+    public Response addOrUpdatePackageInformation(PackageInformation packageInfo) throws SW360Exception {
+        log.debug("create or update PackageInfomation { name='" + packageInfo.getName() + "' }");
+        RequestStatus requestStatus;
+        String packageInfoId;
+        if (packageInfo.isSetId()) {
+            requestStatus = packageInfoDatabaseHandler.updatePackageInformation(packageInfo, user);
+            packageInfoId = packageInfo.getId();
+        } else {
+            AddDocumentRequestSummary addDocumentRequestSummary = packageInfoDatabaseHandler.addPackageInformation(packageInfo, user);
+            requestStatus = RequestStatus.findByValue(addDocumentRequestSummary.getRequestStatus().getValue());
+            packageInfoId = addDocumentRequestSummary.getId();
+        }
+        if (packageInfoId == null || packageInfoId.isEmpty()) {
+            throw new SW360Exception("Id of added package information should not be empty. " + requestStatus.toString());
+        }
+        return new Response(packageInfoId, RequestStatus.SUCCESS.equals(requestStatus));
+    }
+
     public Response addProject(Project project) throws SW360Exception {
         log.debug("create Project { name='" + project.getName() + "', version='" + project.getVersion() + "' }");
 
@@ -89,6 +161,48 @@ public class SpdxBOMImporterSink {
             throw new SW360Exception("Id of added project should not be empty. " + addDocumentRequestSummary.toString());
         }
         return new Response(projectId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
+    }
+
+    public Release getRelease(String id) throws SW360Exception {
+        return componentDatabaseHandler.getRelease(id, user);
+    }
+
+    public Component searchComponent(String name)throws SW360Exception {
+        List<Component> components = componentDatabaseHandler.searchComponentByNameForExport(name, true);
+        if (components.isEmpty())
+            return null;
+        else {
+            for (Component component : components) {
+                if (component.getName().equals(name))
+                    return component;
+            }
+        }
+        return null;
+    }
+
+    public Release searchRelease(String name)throws SW360Exception {
+        List<Release> releases = componentDatabaseHandler.searchReleaseByNamePrefix(name);
+        if (releases.isEmpty())
+            return null;
+        else {
+            for (Release release : releases) {
+                if (release.getName().equals(name))
+                    return release;
+            }
+        }
+        return null;
+    }
+
+    public SPDXDocument getSPDXDocument(String id)  throws SW360Exception {
+        return spdxDocumentDatabaseHandler.getSPDXDocumentById(id, user);
+    }
+
+    public DocumentCreationInformation getDocumentCreationInfo(String id)  throws SW360Exception {
+        return creationInfoDatabaseHandler.getDocumentCreationInformationById(id, user);
+    }
+
+    public PackageInformation getPackageInfo(String id)  throws SW360Exception {
+        return packageInfoDatabaseHandler.getPackageInformationById(id, user);
     }
 
     public static class Response {

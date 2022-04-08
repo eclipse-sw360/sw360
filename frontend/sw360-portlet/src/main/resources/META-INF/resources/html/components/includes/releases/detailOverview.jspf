@@ -32,6 +32,7 @@
 		<div class="col-3 sidebar">
 			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+            <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-SPDX'}">active</core_rt:if>" href="#tab-SPDX" data-toggle="list" role="tab"><liferay-ui:message key="spdx.document" /></a>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab"><liferay-ui:message key="linked.releases" /></a>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active</core_rt:if>" href="#tab-ClearingDetails" data-toggle="list" role="tab"><liferay-ui:message key="clearing.details" /></a>
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCDetails'}">active</core_rt:if>" href="#tab-ECCDetails" data-toggle="list" role="tab">
@@ -144,6 +145,12 @@
                             <core_rt:set var="tableId" value="usingProjectsTableSummary"/>
                             <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
                             <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
+                        </div>
+                        <div id="tab-SPDX" class="tab-pane <core_rt:if test="${selectedTab == 'tab-SPDX'}">active show</core_rt:if>">
+                            <%@include file="/html/components/includes/releases/spdx/view.jsp" %>
+                            <core_rt:set var="tableId" value="usingProjectsTableSPDX"/>
+                            <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
+                            <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
 		                </div>
 		                <div id="tab-linkedReleases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active show</core_rt:if>">
 		                    <%@include file="/html/utils/includes/linkedReleaseDetails.jspf" %>
@@ -246,6 +253,7 @@
             textToCopy = $(textSelector).clone().children().remove().end().text().trim();
             clipboard.copyToClipboard(textToCopy, textSelector);
         });
+
 
         function doAjax(url, successCallback, errorCallback) {
             $.ajax({

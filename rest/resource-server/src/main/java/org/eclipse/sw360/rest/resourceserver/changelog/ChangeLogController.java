@@ -77,6 +77,7 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
             ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<ChangeLogs> changelogs = sw360ChangeLogService.getChangeLogsByDocumentId(docId, sw360User);
+        changelogs.stream().forEach(cl -> cl.setChangeTimestamp(cl.getChangeTimestamp().split(" ")[0]));
         PaginationResult<ChangeLogs> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                 changelogs, SW360Constants.TYPE_CHANGELOG);
         ObjectMapper mapper = new ObjectMapper();

@@ -57,6 +57,8 @@ public class SpdxBOMImporterTest {
             Component component = i.getArgument(0);
             return new SpdxBOMImporterSink.Response(component.getName());
         });
+        when(spdxBOMImporterSink.searchComponent(anyString())).thenReturn(new Component());
+        when(spdxBOMImporterSink.searchRelease(anyString())).thenReturn(new Release());
 
         attachmentContent = new AttachmentContent();
         attachmentContent.setFilename("attchmentContentFilename.rdf");

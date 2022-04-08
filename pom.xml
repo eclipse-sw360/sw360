@@ -333,6 +333,11 @@
             </dependency>
             <dependency>
                 <groupId>org.spdx</groupId>
+                <artifactId>tools-java</artifactId>
+                <version>1.0.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.spdx</groupId>
                 <artifactId>spdx-tools</artifactId>
                 <version>2.2.3</version>
                 <exclusions>

@@ -159,10 +159,10 @@ abstract public class Sw360Portlet extends MVCPortlet {
             jsonObject.put("isComponentDuplicate", requestPreparation.isComponentDuplicate);
         if (requestPreparation.isSetIsReleaseDuplicate())
             jsonObject.put("isReleaseDuplicate", requestPreparation.isReleaseDuplicate);
-        if (requestPreparation.isSetName())
-            jsonObject.put("name", requestPreparation.name);
+        if (requestPreparation.isSetComponentsName())
+            jsonObject.put("name", requestPreparation.componentsName);
         if (requestPreparation.isSetVersion())
-            jsonObject.put("version", requestPreparation.version);
+            jsonObject.put("version", requestPreparation.releasesName);
         if (requestPreparation.isSetMessage())
             jsonObject.put("message", requestPreparation.message);
 

@@ -12,6 +12,7 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.attachments.Attachment" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.ComponentType" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.Release" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.users.RequestedAction" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus" %>
@@ -46,8 +47,8 @@
     <jsp:useBean id="component" class="org.eclipse.sw360.datahandler.thrift.components.Component" scope="request"/>
     <jsp:useBean id="release" class="org.eclipse.sw360.datahandler.thrift.components.Release" scope="request"/>
 
-    <jsp:useBean id="usingProjects" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.projects.Project>"
-                 scope="request"/>
+    <jsp:useBean id="spdxDocument" class="org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument" scope="request"/>
+    <jsp:useBean id="usingProjects" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.projects.Project>"scope="request"/>
     <jsp:useBean id="allUsingProjectsCount" type="java.lang.Integer" scope="request"/>
     <jsp:useBean id="usingComponents" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.components.Component>" scope="request"/>
     <jsp:useBean id="customFields" type="java.util.List<org.eclipse.sw360.portal.common.customfields.CustomField>" scope="request"/>
@@ -76,6 +77,9 @@
             <div class="col-3 sidebar">
                 <div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
                     <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+                    <core_rt:if test="${not addMode}" >
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-SPDX'}">active</core_rt:if>" href="#tab-SPDX" data-toggle="list" role="tab"><liferay-ui:message key="spdx.document" /></a>
+                    </core_rt:if>
                     <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab"><liferay-ui:message key="linked.releases" /></a>
 
                     <core_rt:if test="${not addMode}" >
@@ -160,6 +164,9 @@
                                     <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
                                         <%@include file="/html/utils/includes/editAttachments.jspf" %>
                                     </div>
+                                    <div id="tab-SPDX" class="tab-pane <core_rt:if test="${selectedTab == 'tab-SPDX'}">active show</core_rt:if>" >
+                                        <%@include file="/html/components/includes/releases/spdx/edit.jspf" %>
+                                    </div>
                                 </core_rt:if>
                                  <core_rt:if test="${cotsMode}">
                                     <div id="tab-CommercialDetails" class="tab-pane <core_rt:if test="${selectedTab == 'tab-CommercialDetails'}">active show</core_rt:if>">
@@ -230,7 +237,7 @@
 </core_rt:if>
 
 <script>
-    require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation' ], function($, vendorsearch, autocomplete, dialog, listgroup, validation) {
+    require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'components/includes/releases/validateLib', 'components/includes/releases/spdxjs'], function($, vendorsearch, autocomplete, dialog, listgroup, validation, validateLib, spdxjs) {
         document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
@@ -244,6 +251,38 @@
 
         $('#formSubmit').click(
             function() {
+                if ("${addMode}" == "false") {
+                    validateLib.setFormId('editSPDXForm');
+                    validateLib.validate();
+                    if (spdxjs.readDocumentCreator().length == 0) {
+                        validateLib.addError('spdxCreator', ['required']);
+                        $('.creator-value').each(function () {
+                            if ($(this).val().trim() == '') {
+                                this.setCustomValidity('error');
+                            }
+                        });
+                        $('#spdxCreator')[0].setCustomValidity('error');
+                        // It does not auto scroll to Creator if there is error with Creator
+                        // So, code below used to scroll to Creator manually
+                        let gotErrorBeforeCreator = false;
+
+                        for (let i = 1; i < 4; i++) {
+                            if ($($('#editDocumentCreationInformation').find('tr')[i]).find('.invalid-feedback.d-block').length > 0) {
+                                gotErrorBeforeCreator = true;
+                                break;
+                            }
+                        }
+                        if (!gotErrorBeforeCreator) {
+                            $('#creator-anonymous').get(0).scrollIntoView({behavior: "auto", block: "center", inline: "nearest"})
+                        }
+                    } else {
+                        $('.creator-value').each(function () {
+                            this.setCustomValidity('');
+                        });
+                        $('#spdxCreator')[0].setCustomValidity('')
+                    }
+                    validateLib.showAllErrors();
+                }
                 $(document).find(".checkStatus select").attr("disabled", false);
                 $(document).find(".checkedComment input").attr("disabled", false);
                 <core_rt:choose>
@@ -275,9 +314,9 @@
             }).always(function() {
                 var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
                     portletURL = Liferay.PortletURL.createURL(baseUrl)
-                        .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_RELEASE_DETAIL%>')
-                        .setParameter('<%=PortalConstants.COMPONENT_ID%>', '${component.id}')
-                        .setParameter('<%=PortalConstants.RELEASE_ID%>', '${release.id}');
+                        .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DETAIL%>')
+                        .setParameter('<%=PortalConstants.COMPONENT_ID%>', '${component.id}');
+
                 window.location.href = portletURL.toString() + window.location.hash;
             });
         }
