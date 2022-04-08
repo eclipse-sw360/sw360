@@ -219,6 +219,7 @@ public class FossologyRestClient {
         headers.set("Authorization", "Bearer " + token);
         headers.set("folderId", folderId);
         headers.set("uploadId", uploadId + "");
+        headers.set("Content-Type", "application/json");
 
         ObjectNode analysis = objectMapper.createObjectNode();
         analysis.put("bucket", true);

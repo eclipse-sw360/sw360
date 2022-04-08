@@ -186,6 +186,15 @@ struct AddDocumentRequestSummary {
     3: optional string message;
 }
 
+struct ImportBomRequestPreparation {
+    1: required RequestStatus requestStatus;
+    2: optional bool isComponentDuplicate;
+    3: optional bool isReleaseDuplicate;
+    4: optional string name;
+    5: optional string version;
+    6: optional string message;
+}
+
 struct CustomProperties {
     1: optional string id,
     2: optional string revision,

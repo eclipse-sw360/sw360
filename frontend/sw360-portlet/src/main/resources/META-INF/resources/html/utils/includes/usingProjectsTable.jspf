@@ -15,7 +15,7 @@
                         (${usingProjects.size()} visible / ${allUsingProjectsCount - usingProjects.size()} restricted) projects.
     </div>
 
-    <table id="usingProjectsTable" class="table table-bordered mt-1">
+    <table id="${tableId}" class="table table-bordered mt-1">
         <colgroup>
             <col style="width: 50%;" />
             <col style="width: 25%;" />
@@ -44,7 +44,7 @@
                 ]);
             </core_rt:forEach>
 
-            datatables.create('#usingProjectsTable', {
+            datatables.create('#${tableId}', {
                 data: result,
                 lengthChange: false,
                 language: {
