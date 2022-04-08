@@ -17,7 +17,6 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.apache.logging.log4j.LogManager;
@@ -84,10 +83,6 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
 
             case TType.STRING:
             case TType.ENUM:
-                if (document instanceof Release && ((field == Release._Fields.NAME || field == Release._Fields.VERSION)
-                    && "Dummy_Value".equals(documentAdditions.getFieldValue(field)))) {
-                    break;
-                }
                 document.setFieldValue(field, documentAdditions.getFieldValue(field));
                 break;
             case TType.I32:

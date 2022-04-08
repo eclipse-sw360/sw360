@@ -78,6 +78,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectRe
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.RepositoryMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.VendorMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ObligationMixin;
+import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.*;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -102,6 +103,19 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.CheckSum;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Creator;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.ExternalDocumentReferences;
+import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
+import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -412,6 +426,21 @@ public class DatabaseHandlerUtil {
             changeLog.setDocumentId(newProjVer.getId());
             changeLog.setDocumentType(newProjVer.getType());
             changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+        } else if (newDocVersion instanceof SPDXDocument) {
+            SPDXDocument newProjVer = (SPDXDocument) newDocVersion;
+            changeLog.setDocumentId(newProjVer.getId());
+            changeLog.setDocumentType(newProjVer.getType());
+            changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
+        } else if (newDocVersion instanceof DocumentCreationInformation) {
+            DocumentCreationInformation newProjVer = (DocumentCreationInformation) newDocVersion;
+            changeLog.setDocumentId(newProjVer.getId());
+            changeLog.setDocumentType(newProjVer.getType());
+            changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
+        } else if (newDocVersion instanceof PackageInformation) {
+            PackageInformation newProjVer = (PackageInformation) newDocVersion;
+            changeLog.setDocumentId(newProjVer.getId());
+            changeLog.setDocumentType(newProjVer.getType());
+            changeLog.setDbName(DatabaseSettings.COUCH_DB_SPDX);
         } else if (newDocVersion instanceof Obligation) {
             Obligation newProjVer = (Obligation) newDocVersion;
             changeLog.setDocumentId(newProjVer.getId());
@@ -598,6 +627,12 @@ public class DatabaseHandlerUtil {
             fields = Release._Fields.values();
         } else if (neworDeletedVersion instanceof ModerationRequest) {
             fields = ModerationRequest._Fields.values();
+        } else if (neworDeletedVersion instanceof SPDXDocument) {
+            fields = SPDXDocument._Fields.values();
+        } else if (neworDeletedVersion instanceof DocumentCreationInformation) {
+            fields = DocumentCreationInformation._Fields.values();
+        } else if (neworDeletedVersion instanceof PackageInformation) {
+            fields = PackageInformation._Fields.values();
         } else if (neworDeletedVersion instanceof Obligation) {
             fields = Obligation._Fields.values();
         } else {
@@ -624,6 +659,12 @@ public class DatabaseHandlerUtil {
             fields = Release._Fields.values();
         } else if (newVersion instanceof ModerationRequest) {
             fields = ModerationRequest._Fields.values();
+        } else if (newVersion instanceof SPDXDocument) {
+            fields = SPDXDocument._Fields.values();
+        } else if (newVersion instanceof DocumentCreationInformation) {
+            fields = DocumentCreationInformation._Fields.values();
+        } else if (newVersion instanceof PackageInformation) {
+            fields = PackageInformation._Fields.values();
         } else if (newVersion instanceof Obligation) {
             fields = Obligation._Fields.values();
         } else {
@@ -840,6 +881,16 @@ public class DatabaseHandlerUtil {
             mapper.addMixInAnnotations(Repository.class, RepositoryMixin.class);
             mapper.addMixInAnnotations(ProjectProjectRelationship.class, ProjectProjectRelationshipMixin.class);
             mapper.addMixInAnnotations(ProjectReleaseRelationship.class, ProjectReleaseRelationshipMixin.class);
+            mapper.addMixInAnnotations(CheckSum.class, CheckSumMixin.class);
+            mapper.addMixInAnnotations(Annotations.class, AnnotationsMixin.class);
+            mapper.addMixInAnnotations(ExternalDocumentReferences.class, ExternalDocumentReferencesMixin.class);
+            mapper.addMixInAnnotations(Creator.class, CreatorMixin.class);
+            mapper.addMixInAnnotations(OtherLicensingInformationDetected.class, OtherLicensingInformationDetectedMixin.class);
+            mapper.addMixInAnnotations(PackageVerificationCode.class, PackageVerificationCodeMixin.class);
+            mapper.addMixInAnnotations(ExternalReference.class, ExternalReferenceMixin.class);
+            mapper.addMixInAnnotations(RelationshipsBetweenSPDXElements.class, RelationshipsBetweenSPDXElementsMixin.class);
+            mapper.addMixInAnnotations(SnippetInformation.class, SnippetInformationMixin.class);
+            mapper.addMixInAnnotations(SnippetRange.class, SnippetRangeMixin.class);
             mapper.addMixInAnnotations(Obligation.class, ObligationMixin.class);
         }
         return mapper;

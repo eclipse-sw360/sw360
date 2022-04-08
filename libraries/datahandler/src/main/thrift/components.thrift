@@ -275,6 +275,8 @@ struct Release {
     90: optional DocumentState documentState,
 
     200: optional map<RequestedAction, bool> permissions,
+
+    400: optional string spdxId,
     204: optional string modifiedBy, // Last Modified By User Email
     205: optional string modifiedOn, // Last Modified Date YYYY-MM-dd
 }

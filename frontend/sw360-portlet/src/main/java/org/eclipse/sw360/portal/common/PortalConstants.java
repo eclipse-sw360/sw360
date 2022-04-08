@@ -92,6 +92,7 @@ public class PortalConstants {
     public static final String SELECTED_TAB = "selectedTab";
     public static final String IS_USER_ALLOWED_TO_MERGE = "isUserAllowedToMerge";
     public static final String DOCUMENT_TYPE = "documentType";
+    public static final String IS_SPDX_DOCUMENT = "isSpdxDocument";
     public static final String VIEW_SIZE = "viewSize";
     public static final String TOTAL_ROWS = "totalRows";
     public static final String RESULT = "result";
@@ -728,6 +729,15 @@ public class PortalConstants {
     
     public static final boolean IS_SVM_ENABLED;
 
+    //! Specialized keys for SPDX
+    public static final String SPDX_DOCUMENT = "spdxDocument";
+    public static final String SPDX_DOCUMENT_CREATION_INFO = "spdxDocumentCreationInfo";
+    public static final String SPDX_PACKAGE_INFO = "spdxPackageInfo";
+    public static final String ACTUAL_SPDX_DOCUMENT = "actual_SPDXDocument";
+    public static final String ACTUAL_DOCUMENT_CREATION_INFO = "actual_DocumentCreationInfo";
+    public static final String ACTUAL_PACKAGE_INFO = "actual_PackageInfo";
+    public static final Set<String> SET_RELATIONSHIP_TYPE;
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
@@ -769,6 +779,7 @@ public class PortalConstants {
         CLEARING_REPORT_TEMPLATE_FORMAT = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templateformat", "docx");
         PREDEFINED_TAGS = props.getProperty("project.tag", "[]");
         SSO_LOGIN_ENABLED = Boolean.parseBoolean(props.getProperty("sso.login.enabled", "false"));
+        SET_RELATIONSHIP_TYPE = CommonUtils.splitToSet(props.getProperty("relationship.type", "DESCRIBES,DESCRIBED_BY,CONTAINS,CONTAINED_BY,DEPENDS_ON,DEPENDENCY_OF,DEPENDENCY_MANIFEST_OF,BUILD_DEPENDENCY_OF,DEV_DEPENDENCY_OF,OPTIONAL_DEPENDENCY_OF,PROVIDED_DEPENDENCY_OF,TEST_DEPENDENCY_OF,RUNTIME_DEPENDENCY_OF,EXAMPLE_OF,GENERATES,GENERATED_FROM,ANCESTOR_OF,DESCENDANT_OF,VARIANT_OF,DISTRIBUTION_ARTIFACT,PATCH_FOR,PATCH_APPLIED,COPY_OF,FILE_ADDED,FILE_DELETED,FILE_MODIFIED,EXPANDED_FROM_ARCHIVE,DYNAMIC_LINK,STATIC_LINK,DATA_FILE_OF,TEST_CASE_OF,BUILD_TOOL_OF,DEV_TOOL_OF,TEST_OF,TEST_TOOL_OF,DOCUMENTATION_OF,OPTIONAL_COMPONENT_OF,METAFILE_OF,PACKAGE_OF,AMENDS,PREREQUISITE_FOR,HAS_PREREQUISITE,REQUIREMENT_DESCRIPTION_FOR,SPECIFICATION_FOR,OTHER"));
         IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED = Boolean.parseBoolean(
             System.getProperty("RunComponentVisibilityRestrictionTest", props.getProperty("component.visibility.restriction.enabled", "false")));
         DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS = props.getProperty("org.eclipse.sw360.disable.clearing.request.for.project.group", "");

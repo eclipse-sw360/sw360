@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
@@ -38,6 +39,10 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService.Iface;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -125,8 +130,12 @@ public class ChangeLogsPortletUtils {
             }
         }
 
-        List<ChangeLogs> changeLogsList = getFilteredChangeLogList(request, changeLogsClient);
+        List<ChangeLogs> changeLogsList = getFilteredChangeLogList(request, changeLogsClient, null);
 
+        if (isReleaseChangesLog(changeLogsList)) {
+            changeLogsList = getChangesLogsForSPDX(request, changeLogsList, changeLogsClient);
+        }
+        changeLogsList.stream().forEach(cl -> cl.setChangeTimestamp(cl.getChangeTimestamp().split(" ")[0]));
         JSONArray jsonProjects = getChangeLogData(changeLogsList, paginationParameters, request);
         JSONObject jsonResult = createJSONObject();
         jsonResult.put(DATATABLE_RECORDS_TOTAL, changeLogsList.size());
@@ -134,6 +143,49 @@ public class ChangeLogsPortletUtils {
         jsonResult.put(DATATABLE_DISPLAY_DATA, jsonProjects);
 
         return jsonResult;
+    }
+
+    private boolean isReleaseChangesLog(List<ChangeLogs> changeLogsList) {
+        for (ChangeLogs changeLogs : changeLogsList) {
+            if (changeLogs.documentType.equals("release")){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<ChangeLogs> getChangesLogsForSPDX(ResourceRequest request, List<ChangeLogs> SPDXChangeLogsList, ChangeLogsService.Iface changeLogsClient) {
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        SPDXDocumentService.Iface SPDXClient = thriftClients.makeSPDXClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String releaseId = request.getParameter(PortalConstants.DOCUMENT_ID);
+        try {
+            Release release = componentClient.getReleaseById(releaseId, user);
+            String spdxId = release.getSpdxId();
+            if (!isNullOrEmpty(spdxId)) {
+                SPDXDocument spdxDocument = SPDXClient.getSPDXDocumentById(spdxId, user);
+                String spdxDocumentCreationInfoId = spdxDocument.getSpdxDocumentCreationInfoId();
+                Set<String> packageInfoIds = spdxDocument.getSpdxPackageInfoIds();
+                List<ChangeLogs> spdxChangeLogsList = getFilteredChangeLogList(request, changeLogsClient, spdxId);
+                SPDXChangeLogsList.addAll(spdxChangeLogsList);
+                if (!isNullOrEmpty(spdxDocumentCreationInfoId)) {
+                    List<ChangeLogs> spdxDocumentChangeLogsList = getFilteredChangeLogList(request, changeLogsClient, spdxDocumentCreationInfoId);
+                    SPDXChangeLogsList.addAll(spdxDocumentChangeLogsList);
+                }
+                if (packageInfoIds != null) {
+                    List<ChangeLogs> packagesChangeLogsList = Lists.newArrayList();
+                    for (String packageInfoId : packageInfoIds) {
+                        List<ChangeLogs> packageChangeLogsList = getFilteredChangeLogList(request, changeLogsClient, packageInfoId);
+                        packagesChangeLogsList.addAll(packageChangeLogsList);
+                    }
+                    SPDXChangeLogsList.addAll(packagesChangeLogsList);
+                }
+                Collections.sort(SPDXChangeLogsList, Comparator.comparing(ChangeLogs::getChangeTimestamp).reversed());
+            }
+        } catch (TException e) {
+            log.error("Error while getting change logs for SPDX" + e);
+        }
+        return SPDXChangeLogsList;
     }
 
     private LiferayPortletURL getModerationPortletUrl(PortletRequest request) {
@@ -150,9 +202,11 @@ public class ChangeLogsPortletUtils {
     }
 
     private List<ChangeLogs> getFilteredChangeLogList(ResourceRequest request,
-            ChangeLogsService.Iface changeLogsClient) {
+            ChangeLogsService.Iface changeLogsClient, String docId) {
         final User user = UserCacheHolder.getUserFromRequest(request);
-        String docId = request.getParameter(PortalConstants.DOCUMENT_ID);
+        if (docId == null) {
+            docId = request.getParameter(PortalConstants.DOCUMENT_ID);
+        }
         try {
             return changeLogsClient.getChangeLogsByDocumentId(user, docId);
         } catch (TException exp) {

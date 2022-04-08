@@ -125,7 +125,7 @@
                         generateUniqueIdentifier: getAttachmentIdPromise,
                         chunkRetryInterval: 2000,
                         maxChunkRetries: 3,
-                        fileType: ['rdf','spdx']
+                        fileType: ['rdf','json','spdx']
                     });
 
                     r.assignBrowse($('#fileupload-browse')[0]);

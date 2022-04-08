@@ -74,9 +74,13 @@ public class SW360Constants {
     public static final String TYPE_OBLIGATIONELEMENT = "obligationElement";
     public static final String TYPE_OBLIGATIONNODE = "obligationNode";
     public static final String TYPE_DOCUMENT = "document";
+    public static final String TYPE_SPDX_DOCUMENT = "SPDXDocument";
+    public static final String TYPE_SPDX_DOCUMENT_CREATION_INFO = "documentCreationInformation";
+    public static final String TYPE_SPDX_PACKAGE_INFO = "packageInformation";
 
     public static final String SVM_COMPONENT_ID;
     public static final String SVM_MONITORINGLIST_ID;
+    public static final Boolean SPDX_DOCUMENT_ENABLED;
     public static final String MAINLINE_COMPONENT_ID;
     public static final String SVM_COMPONENT_ID_KEY;
     public static final String SVM_SHORT_STATUS;
@@ -173,6 +177,7 @@ public class SW360Constants {
         SVM_SHORT_STATUS_KEY = props.getProperty("svm.short.status.key", "");
         SVM_SCHEDULER_EMAIL = props.getProperty("svm.scheduler.email", "");
         SVM_MONITORINGLIST_ID = props.getProperty("svm.monitoringlist.id", "");
+        SPDX_DOCUMENT_ENABLED = Boolean.parseBoolean(props.getProperty("spdx.document.enabled", "false"));
     }
 
     private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName){

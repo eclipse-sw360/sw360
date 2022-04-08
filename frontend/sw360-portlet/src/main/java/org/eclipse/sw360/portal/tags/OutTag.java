@@ -30,6 +30,7 @@ import static org.eclipse.sw360.portal.tags.TagUtils.escapeAttributeValue;
 public class OutTag extends OutSupport {
     private boolean jsQuoting = false;
     private boolean stripNewlines = true;
+    private boolean hashSet = false;
     private boolean bare = false;
     private Integer maxChar = -1;
 
@@ -56,6 +57,11 @@ public class OutTag extends OutSupport {
 
             if (stripNewlines) {
                 candidate = candidate.replaceAll("[\r\n]+", " ");
+            }
+
+            if (hashSet) {
+                candidate = StringUtils.removeStart(candidate, "[");
+                candidate = StringUtils.chop(candidate);
             }
 
             this.value = candidate;
@@ -93,6 +99,10 @@ public class OutTag extends OutSupport {
 
     public void setStripNewlines(boolean stripNewlines) {
         this.stripNewlines = stripNewlines;
+    }
+
+    public void setHashSet(boolean hashSet) {
+        this.hashSet = hashSet;
     }
 
     public void setBare(boolean bare) { this.bare = bare; }

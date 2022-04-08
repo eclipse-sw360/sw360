@@ -1258,6 +1258,12 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>
+            <name>hashSet</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
             <name>maxChar</name>
             <required>false</required>
             <type>java.lang.Integer</type>
@@ -1432,4 +1438,128 @@
         <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
         <function-signature>java.lang.String printName(org.eclipse.sw360.datahandler.thrift.users.User)</function-signature>
     </function>
+
+    <function>
+        <name>printSPDXDocumentName</name>
+        <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
+        <function-signature>java.lang.String printName(org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument)</function-signature>
+    </function>
+    <function>
+        <name>printDocumentCreationInfoName</name>
+        <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
+        <function-signature>java.lang.String printName(org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation)</function-signature>
+    </function>
+    <function>
+        <name>printPackageInfoName</name>
+        <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
+        <function-signature>java.lang.String printName(org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation)</function-signature>
+    </function>
+
+    <tag>
+        <name>DisplaySPDXDocumentChanges</name>
+        <tag-class>org.eclipse.sw360.portal.tags.DisplaySPDXDocumentChanges</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>actual</name>
+            <required>true</required>
+            <type>org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>additions</name>
+            <required>true</required>
+            <type>org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>deletions</name>
+            <required>true</required>
+            <type>org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+            <attribute>
+            <name>tableClasses</name>
+            <required>true</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>idPrefix</name>
+            <required>true</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>DisplayDocumentCreationInfoChanges</name>
+        <tag-class>org.eclipse.sw360.portal.tags.DisplayDocumentCreationInfoChanges</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>actual</name>
+            <required>true</required>
+            <type>org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>additions</name>
+            <required>true</required>
+            <type>org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>deletions</name>
+            <required>true</required>
+            <type>org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+            <attribute>
+            <name>tableClasses</name>
+            <required>true</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>idPrefix</name>
+            <required>true</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+
+    <tag>
+        <name>DisplayPackageInfoChanges</name>
+        <tag-class>org.eclipse.sw360.portal.tags.DisplayPackageInfoChanges</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>actual</name>
+            <required>true</required>
+            <type>org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>additions</name>
+            <required>true</required>
+            <type>org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>deletions</name>
+            <required>true</required>
+            <type>org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+            <attribute>
+            <name>tableClasses</name>
+            <required>true</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>idPrefix</name>
+            <required>true</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
 </taglib>

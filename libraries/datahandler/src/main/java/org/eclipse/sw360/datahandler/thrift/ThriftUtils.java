@@ -30,6 +30,10 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.fileinformation.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -68,6 +72,10 @@ public class ThriftUtils {
             .add(Vulnerability.class, ReleaseVulnerabilityRelation.class, ProjectVulnerabilityRating.class) // Vulnerability Service
             .add(VMPriority.class, VMAction.class, VMComponent.class, VMProcessReporting.class, VMMatch.class) // Vulnerability Monitoring service
             .add(ChangeLogs.class) // Changelog Service
+            .add(SPDXDocument.class ) // SPDX Document service
+            .add(DocumentCreationInformation.class ) // Document Creation Information service
+            .add(PackageInformation.class ) // Package Information service
+            .add(FileInformation.class) // File Information Service
             .build();
 
     public static final List<Class<?>> THRIFT_NESTED_CLASSES = ImmutableList.<Class<?>>builder()
