@@ -32,6 +32,7 @@
 		<div class="col-3 sidebar">
 			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+            <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-SPDX'}">active</core_rt:if>" href="#tab-SPDX" data-toggle="list" role="tab"><liferay-ui:message key="spdx.document" /></a>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab"><liferay-ui:message key="linked.releases" /></a>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active</core_rt:if>" href="#tab-ClearingDetails" data-toggle="list" role="tab"><liferay-ui:message key="clearing.details" /></a>
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCDetails'}">active</core_rt:if>" href="#tab-ECCDetails" data-toggle="list" role="tab">
@@ -96,6 +97,22 @@
                                 <sw360:DisplaySubscribeButton email="<%=themeDisplay.getUser().getEmailAddress()%>" object="${release}"
                                         id="SubscribeButton" />
                             </div>
+
+                            <div id="btnExportGroup" class="btn-group" role="group">
+                                <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <liferay-ui:message key="export.sbom" />
+                                    <clay:icon symbol="caret-bottom" />
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="btnExport">
+                                    <button class="dropdown-item export-sbom" type="button" data-type="SPDX" data-release-id="${release.id}">TAG</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="RDF" data-release-id="${release.id}">RDF/XML</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="JSON" data-release-id="${release.id}">JSON</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="XLS" data-release-id="${release.id}">XLS</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="XLSX" data-release-id="${release.id}">XLSX</button>
+                                    <button class="dropdown-item export-sbom" type="button" data-type="YAML" data-release-id="${release.id}">YAML</button>
+                                </div>
+                            </div>
+
                             <div class="list-group-companion" data-belong-to="tab-Attachments">
                                 <core_rt:if test="${inReleaseDetailsContext}">
                                     <div class="btn-group" role="group">
@@ -141,6 +158,13 @@
                             <%@include file="/html/components/includes/vendors/vendorDetail.jspf" %>
 
                             <core_rt:set var="documentName"><sw360:ReleaseName release="${release}"/></core_rt:set>
+                            <core_rt:set var="tableId" value="usingProjectsTableSummary"/>
+                            <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
+                            <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
+                        </div>
+                        <div id="tab-SPDX" class="tab-pane <core_rt:if test="${selectedTab == 'tab-SPDX'}">active show</core_rt:if>">
+                            <%@include file="/html/components/includes/releases/spdx/view.jsp" %>
+                            <core_rt:set var="tableId" value="usingProjectsTableSPDX"/>
                             <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
                             <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
 		                </div>
@@ -245,6 +269,86 @@
             textToCopy = $(textSelector).clone().children().remove().end().text().trim();
             clipboard.copyToClipboard(textToCopy, textSelector);
         });
+
+        var portletURL
+        $('#btnExportGroup button.dropdown-item').on('click', function(event) {
+            $('#btnExport').prop('disabled', true)
+            var $dialog;
+            var releaseId = $(event.currentTarget).data().releaseId;
+            var type = $(event.currentTarget).data('type')
+
+            function downloadFileExport (callback) {
+                $('#confirmDialog').hide()
+                $('#confirmDialog').modal('hide');
+                var portletURLDownload = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                    .setParameter('<%=PortalConstants.ACTION%>', 'download-export-spdx')
+                    .setParameter('<%=PortalConstants.WHAT%>', type)
+                    .setParameter('<%=PortalConstants.RELEASE_ID%>', releaseId);
+                window.location.href = portletURLDownload.toString();
+            }
+
+            $.ajax({
+                url: exportSpreadsheet(type, releaseId),
+                cache: false,
+                dataType: "json",
+            }).done(function (data) {
+                $('#btnExport').prop('disabled', false)
+                $dialog = dialog.confirm(
+                    null,
+                    'question-circle',
+                    '<liferay-ui:message key="export.sbom" />',
+                    '<p style="display: none;"><liferay-ui:message key="export.sbom.have.some.error" />:' +
+                    '<div style="display: none;" class="alert alert-warning" id="verifySPDX"></div>',
+                    '<liferay-ui:message key="export" />',
+                    {},
+                    function(submit, callback) {
+                        downloadFileExport(callback);
+                    }
+                );
+                $('#confirmDialog button.btn.btn-primary').prop('disabled', true)
+                var log = data.message
+                if (log != null) {
+                    $('#verifySPDX').attr("style","overflow: auto; max-height: 20rem;")
+                    $('#verifySPDX').append("<strong>" + log + "</strong>")
+                }
+                if (data.result == 'SUCCESS') {
+                    $('#confirmDialog button.btn.btn-primary').prop('disabled', false)
+                    cancelExport()
+                } else {
+                    $('#confirmDialog > div > div > div.modal-body > p:nth-child(1)').attr("style","color: red;")
+                    cancelExport()
+                }
+            });
+
+            function cancelExport() {
+                var portletURLCancel = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                        .setParameter('<%=PortalConstants.ACTION%>', 'download-export-spdx')
+                        .setParameter('<%=PortalConstants.WHAT%>', type)
+                        .setParameter('<%=PortalConstants.RELEASE_ID%>', releaseId)
+                        .setParameter('<%=PortalConstants.ACTION_CANCEL%>', 'action_cancel');
+                $('#confirmDialog > div > div > div.modal-footer > button.btn.btn-light').on('click', function(event) {
+                    $.ajax({
+                        url: portletURLCancel.toString(),
+                        cache: false,
+                    })
+                })
+                $('#confirmDialog > div > div > div.modal-header > button').on('click', function(event) {
+                    $.ajax({
+                        url: portletURLCancel.toString(),
+                        cache: false,
+                    })
+                })
+            }
+        });
+
+        // Export Spreadsheet action
+        function exportSpreadsheet(type, releaseId) {
+            portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                    .setParameter('<%=PortalConstants.ACTION%>', 'export-spdx')
+                    .setParameter('<%=PortalConstants.WHAT%>', type)
+                    .setParameter('<%=PortalConstants.RELEASE_ID%>', releaseId);
+            return portletURL.toString()
+        }
 
         function doAjax(url, successCallback, errorCallback) {
             $.ajax({

@@ -112,6 +112,7 @@ public class ThriftEnumUtils {
             .put(AttachmentType.README_OSS, "ReadMe OSS")
             .put(AttachmentType.OTHER, "Other")
             .put(AttachmentType.SECURITY_ASSESSMENT, "Security Assessment")
+            .put(AttachmentType.SBOM, "SBOM")
             .put(AttachmentType.INITIAL_SCAN_REPORT, "Initial Scan Report")
             .build();
 
@@ -137,6 +138,7 @@ public class ThriftEnumUtils {
             .put(AttachmentType.README_OSS, "RDM")
             .put(AttachmentType.OTHER, "OTH")
             .put(AttachmentType.SECURITY_ASSESSMENT, "SECA")
+            .put(AttachmentType.SBOM, "SBOM")
             .put(AttachmentType.INITIAL_SCAN_REPORT, "ISR")
             .build();
 
@@ -277,13 +279,16 @@ public class ThriftEnumUtils {
             ECCStatus.REJECTED, "Rejected"
     );
 
-    private static final ImmutableMap<DocumentType, String> MAP_DOCUMENT_TYPE_STRING = ImmutableMap.of(
-            DocumentType.COMPONENT, "component" ,
-            DocumentType.RELEASE, "release" ,
-            DocumentType.PROJECT, "project",
-            DocumentType.LICENSE, "license",
-            DocumentType.USER, "user"
-    );
+    private static final ImmutableMap<DocumentType, String> MAP_DOCUMENT_TYPE_STRING = ImmutableMap.<DocumentType, String>builder()
+            .put(DocumentType.COMPONENT, "component" )
+            .put(DocumentType.RELEASE, "release")
+            .put(DocumentType.PROJECT, "project")
+            .put(DocumentType.LICENSE, "license")
+            .put(DocumentType.USER, "user")
+            .put(DocumentType.SPDXDOCUMENT, "spdxDocument")
+            .put(DocumentType.SPDX_PACKAGE_INFO, "spdxPackageInfo")
+            .put(DocumentType.SPDX_DOCUMENT_CREATION_INFO, "spdxDocumentCreation")
+            .build();
 
     private static final ImmutableMap<ObligationStatus, String> MAP_OBLIGATION_STATUS_STRING = ImmutableMap.<ObligationStatus, String>builder()
             .put(ObligationStatus.OPEN, "Open")

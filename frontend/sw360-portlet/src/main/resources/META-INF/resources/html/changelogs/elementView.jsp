@@ -251,6 +251,8 @@
                 if(fieldValueOld === null || fieldValueOld === undefined ||
                         fieldValueNew === null || fieldValueNew === undefined )
                 {
+                    removeIndexFields(fieldValueOld);
+                    removeIndexFields(fieldValueNew);
                     jsonStrOld = JSON.stringify(fieldValueOld, undefined, 5).replace(/\\n/g, '\n').replace(/\\r/g, '\r');
                     jsonStrNew = JSON.stringify(fieldValueNew, undefined, 5).replace(/\\n/g, '\n').replace(/\\r/g, '\r');
                 }
@@ -310,10 +312,13 @@
                 for (let primaryValue of primaryField) {
                     if(typeof primaryValue === 'object') {
                         let matched = false;
+                        let indexKey = "index";
                         for(let secondaryValue of secondaryField) {
-                            if(secondaryValue[selector] === primaryValue[selector]) {
+                            if (isEqualObject(secondaryValue, primaryValue, selector, indexKey)) {
                                 matched = true;
                                 if(differentiateObject) {
+                                    delete primaryValue[indexKey];
+                                    delete secondaryValue[indexKey];
                                     diffObject(primaryValue, secondaryValue, primarySpanHightlighter, secondarySpanHighlighter, indentlevel);
                                     primaryFieldTmp.push(primaryValue);
                                     secondaryFieldTmp.push(secondaryValue);
@@ -322,7 +327,8 @@
                             }
                         }
                         if(!matched) {
-                            let jsonString = JSON.stringify(primaryValue, undefined, 5*indentlevel);
+                            removeIndexFields(primaryValue);
+                            let jsonString = JSON.stringify(primaryValue, undefined, 10*indentlevel);
                             jsonString = jsonString.substring(0, jsonString.length-1) + spaceForClosingBraces + jsonString.substring(jsonString.length-1);
                             primaryFieldTmp.push($($.parseHTML(primarySpanHightlighter)).text(jsonString)[0].outerHTML);
                         }
@@ -331,6 +337,33 @@
                             primaryFieldTmp.push(primaryValue);
                         } else {
                             primaryFieldTmp.push($($.parseHTML(primarySpanHightlighter)).text(primaryValue)[0].outerHTML);
+                        }
+                    }
+                }
+            }
+
+            function isEqualObject(secondaryValue, primaryValue, selector, indexKey) {
+                if (primaryValue[selector] === secondaryValue[selector] && typeof primaryValue[indexKey] === 'undefined') {
+                    return true;
+                }
+                if (primaryValue[indexKey] === secondaryValue[indexKey] && typeof primaryValue[selector] === 'undefined') {
+                    return true;
+                }
+                return false;
+            }
+
+            function removeIndexFields(object) {
+                if (Array.isArray(object)) {
+                    for (let objectValue of object) {
+                        removeIndexFields(objectValue);
+                    }
+                } else if (typeof object === 'object') {
+                    for (key in object) {
+                        if (key === 'index') {
+                            delete object[key];
+                        }
+                        if (typeof object[key] === 'object') {
+                            removeIndexFields(object[key]);
                         }
                     }
                 }
@@ -354,6 +387,11 @@
 
             function highlightObject(fieldValuePrimary, fieldValueSecondary, primarySpanHightlighter, secondarySpanHighlighter, differentiateCommonObject, spaceForClosingBraces, indentlevel) {
                 for(key in fieldValuePrimary) {
+                    if (key === 'index') {
+                        delete fieldValuePrimary[key];
+                        delete fieldValueSecondary[key];
+                        continue;
+                    }
                     if(fieldValueSecondary[key] === null || fieldValueSecondary[key] === undefined) {
                         let highlighted = fieldValuePrimary[key];
                         if(typeof fieldValuePrimary[key] === 'object') {

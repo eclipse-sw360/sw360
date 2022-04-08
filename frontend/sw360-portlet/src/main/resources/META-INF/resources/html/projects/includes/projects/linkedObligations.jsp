@@ -38,7 +38,6 @@
     <core_rt:set var="linkedObligations" value="${obligationData.linkedObligationStatus}" />
     <core_rt:if test="${isObligationPresent}">
         <jsp:useBean id="projectObligationsInfoByRelease" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult>" scope="request" />
-        <jsp:useBean id="obligationFromReadmeOSS" type="java.lang.Integer" scope="request"/>
         <jsp:useBean id="approvedObligationsCount" type="java.lang.Integer" scope="request"/>
         <jsp:useBean id="excludedReleases" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.components.Release>" scope="request" />
     </core_rt:if>
@@ -115,7 +114,7 @@ AUI().use('liferay-portlet-url', function () {
 			<core_rt:when test="${approvedObligationsCount == 0}">
 			badgeClass="badge badge-danger"
 			</core_rt:when>
-			<core_rt:when test="${approvedObligationsCount == obligationFromReadmeOSS}">
+			<core_rt:when test="${approvedObligationsCount == linkedObligations.size()}">
 			badgeClass="badge badge-success"
 			</core_rt:when>
 			<core_rt:otherwise>

@@ -56,6 +56,12 @@ import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -600,6 +606,42 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 UserUtils.activateLiferayUser(request, moderationRequest.getUser());
             }
             break;
+            case SPDXDOCUMENT: {
+                SPDXDocumentService.Iface SpdxDocumentClient = thriftClients.makeSPDXClient();
+                if (moderationRequest.isRequestDocumentDelete()) {
+                    SpdxDocumentClient.deleteSPDXDocument(moderationRequest.getDocumentId(), user);
+                } else {
+                    SpdxDocumentClient.updateSPDXDocumentFromModerationRequest(
+                            moderationRequest.getSPDXDocumentAdditions(),
+                            moderationRequest.getSPDXDocumentDeletions(),
+                            user);
+                }
+            }
+            break;
+            case SPDX_DOCUMENT_CREATION_INFO: {
+                DocumentCreationInformationService.Iface documentCreationInfoClient = thriftClients.makeSPDXDocumentInfoClient();
+                if (moderationRequest.isRequestDocumentDelete()) {
+                    documentCreationInfoClient.deleteDocumentCreationInformation(moderationRequest.getDocumentId(), user);
+                } else {
+                    documentCreationInfoClient.updateDocumentCreationInfomationFromModerationRequest(
+                            moderationRequest.getDocumentCreationInfoAdditions(),
+                            moderationRequest.getDocumentCreationInfoDeletions(),
+                            user);
+                }
+            }
+            break;
+            case SPDX_PACKAGE_INFO: {
+                PackageInformationService.Iface packageInfoClient = thriftClients.makeSPDXPackageInfoClient();
+                if (moderationRequest.isRequestDocumentDelete()) {
+                    packageInfoClient.deletePackageInformation(moderationRequest.getDocumentId(), user);
+                } else {
+                    packageInfoClient.updatePackageInfomationFromModerationRequest(
+                            moderationRequest.getPackageInfoAdditions(),
+                            moderationRequest.getPackageInfoDeletions(),
+                            user);
+                }
+            }
+            break;
         }
     }
 
@@ -768,6 +810,15 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                         break;
                     case USER:
                         renderUserModeration(request, response, moderationRequest, user);
+                        break;
+                    case SPDXDOCUMENT:
+                        renderSPDXDocumentModeration(request, response, moderationRequest, user);
+                        break;
+                    case SPDX_DOCUMENT_CREATION_INFO:
+                        renderDocumentCreationInfoModeration(request, response, moderationRequest, user);
+                        break;
+                    case SPDX_PACKAGE_INFO:
+                        renderPackageInfoModeration(request, response, moderationRequest, user);
                         break;
                 }
             }
@@ -1000,6 +1051,93 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
 
         include("/html/moderation/users/merge.jsp", request, response);
+    }
+
+    public void renderSPDXDocumentModeration(RenderRequest request, RenderResponse response, ModerationRequest moderationRequest, User user) throws IOException, PortletException, TException {
+        final boolean requestDocumentDelete = moderationRequest.isRequestDocumentDelete();
+        Boolean is_used = false;
+        SPDXDocument actual_SPDXDocuemnt = null;
+        try {
+            SPDXDocumentService.Iface client = thriftClients.makeSPDXClient();
+            actual_SPDXDocuemnt = client.getSPDXDocumentForEdit(moderationRequest.getDocumentId(), user);
+            request.setAttribute(PortalConstants.ACTUAL_SPDXDOCUMENT, actual_SPDXDocuemnt);
+        } catch (TException e) {
+            log.error("Could not retrieve SPDX Document", e);
+        }
+
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        if (actual_SPDXDocuemnt == null) {
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
+            return;
+        }
+
+        if (refuseToDeleteUsedDocument(request, response, moderationRequest, user, requestDocumentDelete, is_used))
+            return;
+
+        request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_SPDX_DOCUMENT);
+        if (moderationRequest.isRequestDocumentDelete()) {
+            include("/html/moderation/spdx/spdxdocument/delete.jsp", request, response);
+        } else {
+            include("/html/moderation/spdx/spdxdocument/merge.jsp", request, response);
+        }
+    }
+
+    public void renderDocumentCreationInfoModeration(RenderRequest request, RenderResponse response, ModerationRequest moderationRequest, User user) throws IOException, PortletException, TException {
+        final boolean requestDocumentDelete = moderationRequest.isRequestDocumentDelete();
+        Boolean is_used = false;
+        DocumentCreationInformation actual_DocuemntCreationInfo = null;
+        try {
+            DocumentCreationInformationService.Iface client = thriftClients.makeSPDXDocumentInfoClient();
+            actual_DocuemntCreationInfo = client.getDocumentCreationInfoForEdit(moderationRequest.getDocumentId(), user);
+            request.setAttribute(PortalConstants.ACTUAL_DOCUMENT_CREATION_INFO, actual_DocuemntCreationInfo);
+        } catch (TException e) {
+            log.error("Could not retrieve Document Creation Information", e);
+        }
+
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        if (actual_DocuemntCreationInfo == null) {
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
+            return;
+        }
+
+        if (refuseToDeleteUsedDocument(request, response, moderationRequest, user, requestDocumentDelete, is_used))
+            return;
+
+        request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_SPDX_DOCUMENT_CREATION_INFO);
+        if (moderationRequest.isRequestDocumentDelete()) {
+            include("/html/moderation/spdx/documentcreationinfo/delete.jsp", request, response);
+        } else {
+            include("/html/moderation/spdx/documentcreationinfo/merge.jsp", request, response);
+        }
+    }
+
+    public void renderPackageInfoModeration(RenderRequest request, RenderResponse response, ModerationRequest moderationRequest, User user) throws IOException, PortletException, TException {
+        final boolean requestDocumentDelete = moderationRequest.isRequestDocumentDelete();
+        Boolean is_used = false;
+        PackageInformation actual_PackageInfo = null;
+        try {
+            PackageInformationService.Iface client = thriftClients.makeSPDXPackageInfoClient();
+            actual_PackageInfo = client.getPackageInformationForEdit(moderationRequest.getDocumentId(), user);
+            request.setAttribute(PortalConstants.ACTUAL_PACKAGE_INFO, actual_PackageInfo);
+        } catch (TException e) {
+            log.error("Could not retrieve Package Information", e);
+        }
+
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        if (actual_PackageInfo == null) {
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
+            return;
+        }
+
+        if (refuseToDeleteUsedDocument(request, response, moderationRequest, user, requestDocumentDelete, is_used))
+            return;
+
+        request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_SPDX_PACKAGE_INFO);
+        if (moderationRequest.isRequestDocumentDelete()) {
+            include("/html/moderation/spdx/packageinfo/delete.jsp", request, response);
+        } else {
+            include("/html/moderation/spdx/packageinfo/merge.jsp", request, response);
+        }
     }
 
     @UsedAsLiferayAction

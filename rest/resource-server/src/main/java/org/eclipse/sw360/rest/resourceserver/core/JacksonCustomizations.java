@@ -186,7 +186,8 @@ public class JacksonCustomizations {
                 "setExternalUrls",
                 "externalUrls",
                 "setVendor",
-                "setVendorId"
+                "setVendorId",
+                "setSpdxId"
         })
         static abstract class ProjectMixin extends Project {
 
@@ -429,6 +430,7 @@ public class JacksonCustomizations {
                 "setComponentId",
                 "setReleaseDate",
                 "setExternalIds",
+                "setSpdxId",
                 "externalToolProcessesSize",
                 "setExternalToolProcesses",
                 "setEccInformation",
@@ -989,7 +991,8 @@ public class JacksonCustomizations {
             "setMainlineState",
             "setReleaseRelation",
             "setCreatedOn",
-            "setCreatedBy"
+            "setCreatedBy",
+            "setSpdxId"
         })
         public static abstract class ProjectReleaseRelationshipMixin extends ProjectReleaseRelationship {
         }
@@ -1086,7 +1089,8 @@ public class JacksonCustomizations {
             "verificationStateInfoIterator",
             "setMatchedBy",
             "setUsedNeedle",
-            "setReleaseId"
+            "setReleaseId",
+            "setSpdxId"
         })
         public static abstract class ReleaseVulnerabilityRelationMixin extends ReleaseVulnerabilityRelation {
         }
@@ -1104,9 +1108,12 @@ public class JacksonCustomizations {
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
             "setEnableSvm",
-            "setProjectRelationship"
+            "setProjectRelationship",
+            "setSpdxId"
         })
         public static abstract class ProjectProjectRelationshipMixin extends ProjectProjectRelationship {
         }
+
+
     }
 }

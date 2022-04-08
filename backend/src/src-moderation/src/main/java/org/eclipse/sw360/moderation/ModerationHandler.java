@@ -27,6 +27,9 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.moderation.db.ModerationDatabaseHandler;
 
 import java.io.IOException;
@@ -123,6 +126,54 @@ public class ModerationHandler implements ModerationService.Iface {
         assertNotNull(project);
 
         handler.createRequest(project, user, true);
+    }
+
+    @Override
+    public RequestStatus createSPDXDocumentRequest(SPDXDocument spdx, User user) throws TException {
+        assertUser(user);
+        assertNotNull(spdx);
+
+        return handler.createRequest(spdx, user, false);
+    }
+
+    @Override
+    public void createSPDXDocumentDeleteRequest(SPDXDocument spdx, User user) throws TException {
+        assertUser(user);
+        assertNotNull(spdx);
+
+        handler.createRequest(spdx, user, true);
+    }
+
+    @Override
+    public RequestStatus createSpdxDocumentCreationInfoRequest(DocumentCreationInformation documentCreationInfo, User user) throws TException {
+        assertUser(user);
+        assertNotNull(documentCreationInfo);
+
+        return handler.createRequest(documentCreationInfo, user, false);
+    }
+
+    @Override
+    public void createSpdxDocumentCreationInfoDeleteRequest(DocumentCreationInformation documentCreationInfo, User user) throws TException {
+        assertUser(user);
+        assertNotNull(documentCreationInfo);
+
+        handler.createRequest(documentCreationInfo, user, true);
+    }
+
+    @Override
+    public RequestStatus createSpdxPackageInfoRequest(PackageInformation packageInfo, User user) throws TException {
+        assertUser(user);
+        assertNotNull(packageInfo);
+
+        return handler.createRequest(packageInfo, user, false);
+    }
+
+    @Override
+    public void createSpdxPackageInfoDeleteRequest(PackageInformation packageInfo, User user) throws TException {
+        assertUser(user);
+        assertNotNull(packageInfo);
+
+        handler.createRequest(packageInfo, user, true);
     }
 
     @Override

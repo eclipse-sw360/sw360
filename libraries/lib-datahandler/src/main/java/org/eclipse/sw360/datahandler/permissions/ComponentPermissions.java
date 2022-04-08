@@ -147,9 +147,6 @@ public class ComponentPermissions extends DocumentPermissions<Component> {
             departments.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
         }
         departments.add(user.getDepartment());
-        if(!PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
-            return departments;
-        }
         Set<String> finalDepartments = new HashSet<String>();
         String departmentIfUserInBU = getDepartmentIfUserInBU(document, departments);
         finalDepartments.add(departmentIfUserInBU);

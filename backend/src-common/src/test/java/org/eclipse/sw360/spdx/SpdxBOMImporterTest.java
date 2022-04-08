@@ -41,7 +41,6 @@ public class SpdxBOMImporterTest {
     @Before
     public void before() throws Exception {
         spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-
         inputStream = getClass()
              .getClassLoader().getResourceAsStream("bom.spdx.rdf");
 
@@ -73,7 +72,7 @@ public class SpdxBOMImporterTest {
 
     @Test
     public void testProject() throws  Exception {
-        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
+        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProjectForTest(inputStream, attachmentContent);
         assertNotNull(requestSummary);
 
         verify(spdxBOMImporterSink, times(1)).addProject(Matchers.any());
@@ -83,7 +82,7 @@ public class SpdxBOMImporterTest {
 
     @Test
     public void testRelease() throws  Exception {
-        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
+        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsReleaseForTest(inputStream, attachmentContent);
         assertNotNull(requestSummary);
 
         verify(spdxBOMImporterSink, times(4)).addComponent(Matchers.any());

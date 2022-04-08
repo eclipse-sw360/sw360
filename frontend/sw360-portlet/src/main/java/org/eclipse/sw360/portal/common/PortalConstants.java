@@ -303,7 +303,6 @@ public class PortalConstants {
     public static final String PROJECT_OBLIGATIONS_INFO_BY_RELEASE = "projectObligationsInfoByRelease";
     public static final String LINKED_OBLIGATIONS = "linkedObligations";
     public static final String APPROVED_OBLIGATIONS_COUNT = "approvedObligationsCount";
-    public static final String OBLIGATION_FROM_README_OSS = "obligationFromReadmeOSS";
     public static final String EXCLUDED_RELEASES = "excludedReleases";
     public static final String RELATIONSHIPS = "relations";
     public static final String PROJECT_RELEASE_TO_RELATION = "projectReleaseToRelation";
@@ -499,7 +498,11 @@ public class PortalConstants {
     public static final String PARENT_SCOPE_GROUP_ID = "parentScopeGroupId";
 
     // bom import
+    public static final String PREPARE_IMPORT_BOM = "prepareImportBom";
     public static final String IMPORT_BOM = "importBom";
+    public static final String IMPORT_BOM_AS_NEW = "importBomAsNew";
+    public static final String NEW_RELEASE_VERSION = "newRleaseVersion";
+    public static final String RDF_FILE_PATH = "rdfFilePath";
 
     // project actions
     public static final String VIEW_LINKED_PROJECTS = "view_linked_projects";
@@ -657,6 +660,18 @@ public class PortalConstants {
     public static final boolean SSO_LOGIN_ENABLED;
     public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
 
+    //! Specialized keys for SPDX
+    public static final String SPDXDOCUMENT = "spdxDocument";
+    public static final String SPDX_DOCUMENT_CREATION_INFO = "spdxDocumentCreationInfo";
+    public static final String SPDX_PACKAGE_INFO = "spdxPackageInfo";
+    public static final String SPDX_DOCUMENT_ID = "spdxDocumentId";
+    public static final String SPDX_DOCUMENT_CREATION_INFO_ID = "spdxDocumentCreationInfoId";
+    public static final String SPDX_PACKAGE_INFO_ID = "spdxPackageInfoId";
+    public static final String ACTUAL_SPDXDOCUMENT = "actual_SPDXDocument";
+    public static final String ACTUAL_DOCUMENT_CREATION_INFO = "actual_DocumentCreationInfo";
+    public static final String ACTUAL_PACKAGE_INFO = "actual_PackageInfo";
+    public static final Set<String> SET_RELATIONSHIP_TYPE;
+
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
@@ -695,6 +710,7 @@ public class PortalConstants {
         CLEARING_REPORT_TEMPLATE_FORMAT = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templateformat", "docx");
         PREDEFINED_TAGS = props.getProperty("project.tag", "[]");
         SSO_LOGIN_ENABLED = Boolean.parseBoolean(props.getProperty("sso.login.enabled", "false"));
+        SET_RELATIONSHIP_TYPE = CommonUtils.splitToSet(props.getProperty("relationship.type", "DESCRIBES,DESCRIBED_BY,CONTAINS,CONTAINED_BY,DEPENDS_ON,DEPENDENCY_OF,DEPENDENCY_MANIFEST_OF,BUILD_DEPENDENCY_OF,DEV_DEPENDENCY_OF,OPTIONAL_DEPENDENCY_OF,PROVIDED_DEPENDENCY_OF,TEST_DEPENDENCY_OF,RUNTIME_DEPENDENCY_OF,EXAMPLE_OF,GENERATES,GENERATED_FROM,ANCESTOR_OF,DESCENDANT_OF,VARIANT_OF,DISTRIBUTION_ARTIFACT,PATCH_FOR,PATCH_APPLIED,COPY_OF,FILE_ADDED,FILE_DELETED,FILE_MODIFIED,EXPANDED_FROM_ARCHIVE,DYNAMIC_LINK,STATIC_LINK,DATA_FILE_OF,TEST_CASE_OF,BUILD_TOOL_OF,DEV_TOOL_OF,TEST_OF,TEST_TOOL_OF,DOCUMENTATION_OF,OPTIONAL_COMPONENT_OF,METAFILE_OF,PACKAGE_OF,AMENDS,PREREQUISITE_FOR,HAS_PREREQUISITE,OTHER"));
         IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED = Boolean.parseBoolean(
             System.getProperty("RunComponentVisibilityRestrictionTest", props.getProperty("component.visibility.restriction.enabled", "false")));
         DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS = props.getProperty("org.eclipse.sw360.disable.clearing.request.for.project.group", "");
