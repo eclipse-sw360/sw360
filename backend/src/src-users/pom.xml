@@ -18,6 +18,14 @@
         <groupId>org.eclipse.sw360</groupId>
         <version>${revision}</version>
     </parent>
+    <dependencies>
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>5.5.2</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 
     <artifactId>src-users</artifactId>
     <packaging>jar</packaging>

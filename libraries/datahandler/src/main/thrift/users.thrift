@@ -14,6 +14,7 @@ namespace php sw360.thrift.users
 
 typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
 typedef sw360.RequestStatus RequestStatus
+typedef sw360.RequestSummary RequestSummary
 typedef sw360.PaginationData PaginationData
 
 enum UserGroup {
@@ -83,6 +84,13 @@ struct RestApiToken {
     3: optional string createdOn
     4: optional i32 numberOfDaysValid,
     5: optional set<string> authorities,
+}
+
+struct DepartmentConfigDTO {
+    1: optional string pathFolder,
+    2: optional string pathFolderLog,
+    3: optional string lastRunningTime,
+    4: optional i32 showFileLogFrom,
 }
 
 service UserService {
@@ -161,4 +169,35 @@ service UserService {
      * get email of all user
      **/
     set<string> getUserEmails();
+
+    RequestSummary importFileToDB();
+
+    RequestStatus importDepartmentSchedule();
+
+    map<string, list<User>> getAllUserByDepartment();
+
+    set<string> getListFileLog();
+
+    map<string, list<string>> getAllContentFileLog();
+
+    string getLastModifiedFileName();
+
+    string getPathConfigDepartment();
+
+    void writePathFolderConfig(1:string pathFolder);
+
+    string getLastRunningTime();
+
+    list<User> getAllUserByEmails(1: list<string> emails)
+
+    string convertUsersByDepartmentToJson(1: string department)
+
+    string convertEmailsOtherDepartmentToJson(1: string department)
+
+    void updateDepartmentToListUser(1: list<User> users, 2: string department)
+
+    void deleteDepartmentByListUser(1: list<User> users,2: string department)
+
+    set<string> getAllEmailsByDepartmentKey(1: string departmentName)
+
 }

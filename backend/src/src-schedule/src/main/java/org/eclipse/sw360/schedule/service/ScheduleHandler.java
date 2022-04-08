@@ -10,8 +10,9 @@
  */
 package org.eclipse.sw360.schedule.service;
 
-import org.eclipse.sw360.schedule.timer.ScheduleConstants;
-import org.eclipse.sw360.schedule.timer.Scheduler;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -20,9 +21,8 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TException;
+import org.eclipse.sw360.schedule.timer.ScheduleConstants;
+import org.eclipse.sw360.schedule.timer.Scheduler;
 
 import java.util.Date;
 import java.util.Optional;
@@ -82,6 +82,9 @@ public class ScheduleHandler implements ScheduleService.Iface {
                 successSync = wrapSupplierException(() -> thriftClients.makeComponentClient().updateReleasesWithSvmTrackingFeedback(), serviceName);
             case ThriftClients.DELETE_ATTACHMENT_SERVICE:
                 successSync = wrapSupplierException(() -> thriftClients.makeAttachmentClient().deleteOldAttachmentFromFileSystem(), serviceName);
+                break;
+            case ThriftClients.IMPORT_DEPARTMENT_SERVICE:
+                successSync = wrapSupplierException(() -> thriftClients.makeUserClient().importDepartmentSchedule(), serviceName);
                 break;
             default:
                 log.error("Could not schedule service: " + serviceName + ". Reason: service is not registered in ThriftClients.");

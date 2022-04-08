@@ -9,6 +9,8 @@
  */
 package org.eclipse.sw360.users;
 
+import com.cloudant.client.api.CloudantClient;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -16,17 +18,19 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.users.DepartmentConfigDTO;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
+import org.eclipse.sw360.users.util.FileUtil;
+import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
 import org.ektorp.http.HttpClient;
 
-import com.cloudant.client.api.CloudantClient;
-
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
@@ -41,11 +45,14 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
 public class UserHandler implements UserService.Iface {
 
     private static final Logger log = LogManager.getLogger(UserHandler.class);
+    private static final String EXTENSION = ".log";
 
     private UserDatabaseHandler db;
+    private ReadFileDepartmentConfig readFileDepartmentConfig;
 
     public UserHandler() throws IOException {
         db = new UserDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_USERS);
+        readFileDepartmentConfig = new ReadFileDepartmentConfig();
     }
 
     public UserHandler(Supplier<CloudantClient> client, Supplier<HttpClient> httpclient, String userDbName) throws IOException {
@@ -60,7 +67,7 @@ public class UserHandler implements UserService.Iface {
     @Override
     public User getByEmail(String email) throws TException {
         StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[2];
-        assertNotEmpty(email, "Invalid empty email " + stackTraceElement.getFileName() + ": "  + stackTraceElement.getLineNumber());
+        assertNotEmpty(email, "Invalid empty email " + stackTraceElement.getFileName() + ": " + stackTraceElement.getLineNumber());
 
         if (log.isTraceEnabled()) log.trace("getByEmail: " + email);
 
@@ -145,7 +152,139 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
+    public Set<String> getAllEmailsByDepartmentKey(String departmentName) throws TException {
+        return db.getAllEmailsByDepartmentKey(departmentName);
+    }
+
     public Set<String> getUserEmails() throws TException {
         return db.getUserEmails();
     }
+
+
+    @Override
+    public RequestSummary importFileToDB()  {
+        DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
+        RequestSummary requestSummary = new RequestSummary();
+        if (!configDTO.getPathFolder().isEmpty()) {
+            requestSummary = db.importFileToDB(configDTO.getPathFolder());
+        }
+        return requestSummary;
+    }
+
+    @Override
+    public RequestStatus importDepartmentSchedule()  {
+        DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
+        db.importFileToDB(configDTO.getPathFolder());
+        return RequestStatus.SUCCESS;
+    }
+
+    @Override
+    public Map<String, List<User>> getAllUserByDepartment() throws TException {
+        return db.getAllUserByDepartment();
+    }
+
+    @Override
+    public String convertUsersByDepartmentToJson(String department) throws TException {
+        return db.convertUsersByDepartmentToJson(department);
+    }
+
+    @Override
+    public String convertEmailsOtherDepartmentToJson(String department) throws TException {
+        return db.convertEmailsOtherDepartmentToJson(department);
+    }
+
+    @Override
+    public Set<String> getListFileLog() {
+        try {
+            DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
+            if (configDTO != null && !configDTO.getPathFolderLog().isEmpty()) {
+                String path = configDTO.getPathFolderLog();
+                File theDir = new File(path);
+                if (!theDir.exists()) theDir.mkdirs();
+                return FileUtil.listFileNames(path);
+            }
+        } catch (IOException e) {
+            log.error("Can't get file log: {}", e.getMessage());
+        }
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Map<String, List<String>> getAllContentFileLog() {
+        Map<String, List<String>> listMap = new HashMap<>();
+        try {
+            DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
+            if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
+                String path = configDTO.getPathFolderLog();
+                File theDir = new File(path);
+                if (!theDir.exists()) theDir.mkdirs();
+                Set<String> fileNamesSet = FileUtil.getListFilesOlderThanNDays(configDTO.getShowFileLogFrom(), path);
+                for (String fileName : fileNamesSet) {
+                    listMap.put(FilenameUtils.getName(fileName).replace(EXTENSION, ""), FileUtil.readFileLog(fileName));
+                }
+            }
+        } catch (IOException e) {
+            log.error("Can't get file log: {}", e.getMessage());
+        }
+        return listMap;
+    }
+
+    @Override
+    public String getLastModifiedFileName() throws TException {
+        try {
+            DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
+            if (configDTO != null && !configDTO.getPathFolderLog().isEmpty()) {
+                String path = configDTO.getPathFolderLog();
+                File theDir = new File(path);
+                if (!theDir.exists()) theDir.mkdirs();
+                Set<String> strings = FileUtil.listFileNames(path);
+                if (!strings.isEmpty()) {
+                    File file = FileUtil.getFileLastModified(path);
+                    return file.getName().replace(EXTENSION, "");
+                }
+            }
+        } catch (IOException e) {
+            log.error("Read file failed!", e.getMessage());
+        }
+        return "";
+    }
+
+    @Override
+    public String getPathConfigDepartment() throws TException {
+        DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
+        if (configDTO != null && !configDTO.getPathFolder().isEmpty()) {
+            return configDTO.getPathFolder();
+        }
+        return "";
+    }
+
+    @Override
+    public void writePathFolderConfig(String pathFolder) throws TException {
+        readFileDepartmentConfig.writePathFolderConfig(pathFolder);
+    }
+
+    @Override
+    public String getLastRunningTime() throws TException {
+        DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
+        if (configDTO != null && !configDTO.getLastRunningTime().isEmpty()) {
+            return configDTO.getLastRunningTime();
+        }
+        return "";
+    }
+
+    @Override
+    public void updateDepartmentToListUser(List<User> users, String department) throws TException {
+        db.updateDepartmentToUsers(users, department);
+    }
+
+    @Override
+    public void deleteDepartmentByListUser(List<User> users, String department) throws TException {
+        db.deleteDepartmentByUsers(users, department);
+    }
+
+    @Override
+    public List<User> getAllUserByEmails(List<String> emails) throws TException {
+        return db.getAllUserByEmails(emails);
+    }
+
 }

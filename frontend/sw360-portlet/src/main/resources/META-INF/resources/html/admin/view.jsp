@@ -25,6 +25,11 @@
                 <a class="btn btn-secondary" href="${baseUrl}/../users">
                     <clay:icon symbol="users"/> <liferay-ui:message key="user" />
                 </a>
+
+                <a class="btn btn-secondary" href="${baseUrl}/../departments">
+                    <clay:icon symbol="organizations"/> <liferay-ui:message key="department" />
+                </a>
+
                 <a class="btn btn-secondary" href="${baseUrl}/../vendors">
                     <clay:icon symbol="suitcase"/> <liferay-ui:message key="vendors" />
                 </a>
