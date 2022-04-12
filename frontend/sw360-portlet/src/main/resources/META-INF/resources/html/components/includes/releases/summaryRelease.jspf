@@ -104,7 +104,7 @@
         </tr>
         <tr>
             <td><liferay-ui:message key="additional.data" />:</td>
-            <td><sw360:DisplayMap value="${release.additionalData}"/></td>
+            <td><ul id="list-data-additional-release" class="mapDisplayRootItem"></ul> </td>
         </tr>
     </table>
 
