@@ -45,6 +45,7 @@ public class PortalConstants {
     public static final String CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING;
     public static final String CLEARING_REPORT_TEMPLATE_FORMAT;
     public static final String DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS;
+    public static final Boolean SEND_PROJECT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED;
     public static final String LOAD_OPEN_MODERATION_REQUEST = "loadOpenModerationRequest";
     public static final String LOAD_CLOSED_MODERATION_REQUEST = "loadClosedModerationRequest";
 
@@ -592,6 +593,8 @@ public class PortalConstants {
 
     // Excel export
     public static final String EXPORT_TO_EXCEL = "export_to_excel";
+    public static final String EMAIL_EXPORTED_EXCEL = "email_exported_excel";
+    public static final String DOWNLOAD_EXCEL = "download_excel";
     public static final String EXPORT_CLEARING_TO_EXCEL = "export_clearing_to_excel";
     public static final String EXPORT_ID = "export_id";
 
@@ -695,6 +698,7 @@ public class PortalConstants {
         IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED = Boolean.parseBoolean(
             System.getProperty("RunComponentVisibilityRestrictionTest", props.getProperty("component.visibility.restriction.enabled", "false")));
         DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS = props.getProperty("org.eclipse.sw360.disable.clearing.request.for.project.group", "");
+        SEND_PROJECT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED = Boolean.parseBoolean(props.getProperty("send.project.spreadsheet.export.to.mail.enabled", "false"));
     }
 
     private PortalConstants() {

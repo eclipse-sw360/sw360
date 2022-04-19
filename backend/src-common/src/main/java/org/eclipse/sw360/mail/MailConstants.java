@@ -41,6 +41,7 @@ public class MailConstants {
     public static final String SUBJECT_FOR_CLOSED_CLEARING_REQUEST = "subjectForClosedClearingRequest";
     public static final String SUBJECT_FOR_REJECTED_CLEARING_REQUEST = "subjectForRejectedClearingRequest";
     public static final String SUBJECT_FOR_UPDATED_PROJECT_WITH_CLEARING_REQUEST = "subjectForUpdatedProjectWithClearingRequest";
+    public static final String SUBJECT_SPREADSHEET_EXPORT_SUCCESS = "subjectForSuccessfulExport";
 
     public static final String TEXT_FOR_NEW_MODERATION_REQUEST = "textForNewModerationRequest";
     public static final String TEXT_FOR_UPDATE_MODERATION_REQUEST = "textForUpdateModerationRequest";
@@ -55,6 +56,7 @@ public class MailConstants {
     public static final String TEXT_FOR_UPDATE_PROJECT = "textForUpdateProject";
     public static final String TEXT_FOR_CLOSED_CLEARING_REQUEST = "textForClosedClearingRequest";
     public static final String TEXT_FOR_REJECTED_CLEARING_REQUEST = "textForRejectedClearingRequest";
+    public static final String TEXT_SPREADSHEET_EXPORT_SUCCESS = "textForSuccessfulExport";
 
     private MailConstants() {
         // Utility class with only static functions

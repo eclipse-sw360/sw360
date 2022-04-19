@@ -207,8 +207,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             updateVulnerabilitiesProject(request, response);
         } else if (PortalConstants.UPDATE_VULNERABILITY_RATINGS.equals(action)) {
             updateVulnerabilityRating(request, response);
+        } else if (PortalConstants.EMAIL_EXPORTED_EXCEL.equals(action)) {
+            exportExcelWithEmail(request, response);
         } else if (PortalConstants.EXPORT_TO_EXCEL.equals(action)) {
             exportExcel(request, response);
+        } else if (PortalConstants.DOWNLOAD_EXCEL.equals(action)) {
+            downloadExcel(request, response);
         } else if (PortalConstants.EXPORT_CLEARING_TO_EXCEL.equals(action)) {
             exportReleasesSpreadsheet(request, response);
         } else if (PortalConstants.DOWNLOAD_LICENSE_INFO.equals(action)) {
@@ -287,6 +291,25 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             serveViewVendor(request, response);
         } else if (ADD_VENDOR.equals(action)) {
             serveAddVendor(request, response);
+        }
+    }
+
+    private void downloadExcel(ResourceRequest request, ResourceResponse response) {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        final String token = request.getParameter("token");
+        String filename = null;
+
+        try {
+            boolean extendedByReleases = Boolean.valueOf(request.getParameter(PortalConstants.EXTENDED_EXCEL_EXPORT));
+            ProjectExporter exporter = new ProjectExporter(thriftClients.makeComponentClient(),
+                    thriftClients.makeProjectClient(), user, extendedByReleases);
+            filename = String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
+            PortletResponseUtil.sendFile(request, response, filename, exporter.downloadExcelSheet(token),
+                    CONTENT_TYPE_OPENXML_SPREADSHEET);
+        } catch (IOException | TException e) {
+            log.error("An error occurred while generating the Excel export", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
+                    Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
         }
     }
 
@@ -1027,9 +1050,26 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         String filename = String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
         try {
             boolean extendedByReleases = Boolean.valueOf(request.getParameter(PortalConstants.EXTENDED_EXCEL_EXPORT));
-            List<Project> projects = getFilteredProjectList(request);
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            int total = client.getMyAccessibleProjectCounts(user);
+            PaginationData pageData = new PaginationData();
+            pageData.setAscending(true);
+            Map<PaginationData, List<Project>> pageDtToProjects;
+            Set<Project> projects = new HashSet<>();
+            int displayStart = 0;
+            int rowsPerPage = 500;
+            while (0 < total) {
+                pageData.setDisplayStart(displayStart);
+                pageData.setRowsPerPage(rowsPerPage);
+                displayStart = displayStart + rowsPerPage;
+                pageDtToProjects = client.getAccessibleProjectsSummaryWithPagination(user, pageData);
+                projects.addAll(pageDtToProjects.entrySet().iterator().next().getValue());
+                total = total - rowsPerPage;
+            }
+
+            List<Project> listOfProjects = new ArrayList<Project>(projects);
             if (!isNullOrEmpty(projectId)) {
-                Project project = projects.stream().filter(p -> p.getId().equals(projectId)).findFirst().get();
+                Project project = listOfProjects.stream().filter(p -> p.getId().equals(projectId)).findFirst().get();
                 fillVendor(project);
                 filename = String.format("project-%s-%s-%s.xlsx", project.getName(), project.getVersion(), SW360Utils.getCreatedOn());
             }
@@ -1037,10 +1077,66 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     thriftClients.makeComponentClient(),
                     thriftClients.makeProjectClient(),
                     user,
-                    projects,
+                    listOfProjects,
                     extendedByReleases);
-            PortletResponseUtil.sendFile(request, response, filename, exporter.makeExcelExport(projects), CONTENT_TYPE_OPENXML_SPREADSHEET);
-        } catch (IOException | SW360Exception e) {
+            PortletResponseUtil.sendFile(request, response, filename, exporter.makeExcelExport(listOfProjects), CONTENT_TYPE_OPENXML_SPREADSHEET);
+        } catch (IOException | TException e) {
+            log.error("An error occurred while generating the Excel export", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
+                    Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    private void exportExcelWithEmail(ResourceRequest request, ResourceResponse response) {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        final String projectId = request.getParameter(Project._Fields.ID.toString());
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        String token = null;
+
+        try {
+            setSessionMessage(request, LanguageUtil.get(resourceBundle,"excel.report.generation.has.started.we.will.send.you.an.email.with.download.link.once.completed"));
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            boolean extendedByReleases = Boolean.valueOf(request.getParameter(PortalConstants.EXTENDED_EXCEL_EXPORT));
+            int total = client.getMyAccessibleProjectCounts(user);
+            PaginationData pageData = new PaginationData();
+            pageData.setAscending(true);
+            Map<PaginationData, List<Project>> pageDtToProjects;
+            Set<Project> projects = new HashSet<>();
+            int displayStart = 0;
+            int rowsPerPage = 500;
+            while (0 < total) {
+                pageData.setDisplayStart(displayStart);
+                pageData.setRowsPerPage(rowsPerPage);
+                displayStart = displayStart + rowsPerPage;
+                pageDtToProjects = client.getAccessibleProjectsSummaryWithPagination(user, pageData);
+                projects.addAll(pageDtToProjects.entrySet().iterator().next().getValue());
+                total = total - rowsPerPage;
+            }
+
+            List<Project> listOfProjects = new ArrayList<Project>(projects);
+            if (!isNullOrEmpty(projectId)) {
+                Project project = listOfProjects.stream().filter(p -> p.getId().equals(projectId)).findFirst().get();
+                fillVendor(project);
+            }
+            ProjectExporter exporter = new ProjectExporter(thriftClients.makeComponentClient(),
+                    thriftClients.makeProjectClient(), user, listOfProjects, extendedByReleases);
+
+            token = exporter.makeExcelExportForProject(listOfProjects, user);
+
+            String portletId = (String) request.getAttribute(WebKeys.PORTLET_ID);
+            ThemeDisplay tD = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+            long plid = tD.getPlid();
+
+            LiferayPortletURL projectUrl = PortletURLFactoryUtil.create(request, portletId, plid,
+                    PortletRequest.RESOURCE_PHASE);
+            projectUrl.setParameter("action", PortalConstants.DOWNLOAD_EXCEL);
+            projectUrl.setParameter("token", token);
+            projectUrl.setParameter(PortalConstants.EXTENDED_EXCEL_EXPORT, String.valueOf(extendedByReleases));
+
+            if(!CommonUtils.isNullEmptyOrWhitespace(token)) {
+                client.sendExportSpreadsheetSuccessMail(projectUrl.toString(), user.getEmail());
+            }
+        } catch (IOException | TException | PortletException e) {
             log.error("An error occurred while generating the Excel export", e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE,
                     Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));

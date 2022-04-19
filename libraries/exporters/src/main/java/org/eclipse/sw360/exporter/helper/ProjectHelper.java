@@ -72,12 +72,12 @@ public class ProjectHelper implements ExporterHelper<Project> {
         if (releases.size() > 0) {
             for (Release release : releases) {
                 List<String> currentRow = makeRowForProject(project);
-                currentRow.addAll(releaseHelper.makeRows(release).getRow(0));
+                currentRow.addAll(releaseHelper.makeCustomRowsForProjectExport(release).getRow(0));
                 table.addRow(currentRow);
             }
             for (String releaseId : releaseIdsNotAvaialbleInDB) {
                 List<String> projRowWithNotAvailableReleaseFields = makeRowForProject(project);
-                for (int i = 0; i < releaseHelper.getColumns(); i++) {
+                for (int i = 0; i < releaseHelper.getColumnsProjExport(); i++) {
                     if (i == 0) {
                         projRowWithNotAvailableReleaseFields.add(releaseId);
                         continue;
@@ -88,7 +88,7 @@ public class ProjectHelper implements ExporterHelper<Project> {
             }
         } else {
             List<String> projectRowWithEmptyReleaseFields = makeRowForProject(project);
-            for (int i = 0; i < releaseHelper.getColumns(); i++) {
+            for (int i = 0; i < releaseHelper.getColumnsProjExport(); i++) {
                 projectRowWithEmptyReleaseFields.add("");
             }
             table.addRow(projectRowWithEmptyReleaseFields);

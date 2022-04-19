@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.SW360Utils.displayNameFor;
 import static org.eclipse.sw360.datahandler.thrift.components.Release._Fields.*;
+import static org.eclipse.sw360.datahandler.thrift.components.EccInformation._Fields.*;
 
 
 public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
@@ -58,6 +59,26 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
             .add(VENDOR_ID)
             .build();
 
+   public static final List<Release._Fields> RELEASE_REQUIRED_FIELDS = ImmutableList.<Release._Fields>builder()
+            .add(COMPONENT_ID)
+            .add(NAME)
+            .add(VERSION)
+            .add(CLEARING_STATE)
+            .add(ECC_INFORMATION)
+            .build();
+
+   public static final List<EccInformation._Fields> ECC_IGNORE_FIELDS = ImmutableList.<EccInformation._Fields>builder()
+            .add(AL)
+            .add(MATERIAL_INDEX_NUMBER)
+            .add(ASSESSOR_CONTACT_PERSON)
+            .add(ECC_COMMENT)
+            .build();
+
+   public static final List<Release._Fields> RELEASE_RENDERED_FIELDS_PROJECTS = Release.metaDataMap.keySet()
+            .stream()
+            .filter(k -> RELEASE_REQUIRED_FIELDS.contains(k))
+            .collect(Collectors.toList());
+
     public static final List<Vendor._Fields> VENDOR_IGNORED_FIELDS = ImmutableList.<Vendor._Fields>builder()
             .add(Vendor._Fields.PERMISSIONS)
             .add(Vendor._Fields.REVISION)
@@ -73,6 +94,58 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
     public static final List<String> HEADERS = makeHeaders();
 
     public static final List<String> HEADERS_EXTENDED_BY_ADDITIONAL_DATA = makeHeadersForExtendedExport();
+
+    public static final List<String> RELEASE_HEADERS_PROJECT_EXPORT = makeReleaseHeadersForProjectExport();
+
+    public static final List<String> HEADERS_EXTENDED_BY_ADDITIONAL_DATA_PROJECT = makeHeadersForExtendedExportProject();
+
+    private static List<String> makeReleaseHeadersForProjectExport() {
+        List<String> headers = new ArrayList<>();
+        for (Release._Fields field : RELEASE_RENDERED_FIELDS_PROJECTS) {
+            addToHeadersForProjectExport(headers, field);
+        }
+        return headers;
+    }
+
+    private static void addToHeadersForProjectExport(List<String> headers, Release._Fields field) {
+        switch (field) {
+        case COMPONENT_ID:
+            headers.add(displayNameFor("component type", nameToDisplayName));
+            break;
+        case VENDOR:
+            Vendor.metaDataMap.keySet().stream().filter(f -> !VENDOR_IGNORED_FIELDS.contains(f))
+                    .forEach(f -> headers.add("vendor " + f.getFieldName()));
+            break;
+        case COTS_DETAILS:
+            COTSDetails.metaDataMap.keySet().forEach(f -> headers.add("COTS details: " + f.getFieldName()));
+            break;
+        case CLEARING_INFORMATION:
+            ClearingInformation.metaDataMap.keySet()
+                    .forEach(f -> headers.add("clearing information: " + f.getFieldName()));
+            break;
+        case ECC_INFORMATION:
+            EccInformation.metaDataMap.keySet().stream().filter(f -> !ECC_IGNORE_FIELDS.contains(f))
+                    .forEach(f -> headers.add("ECC information: " + f.getFieldName()));
+            break;
+        default:
+            headers.add(displayNameFor(field.getFieldName(), nameToDisplayName));
+        }
+    }
+
+    private static List<String> makeHeadersForExtendedExportProject() {
+        List<String> additionalHeaders = new ArrayList<>();
+        additionalHeaders.add(displayNameFor("project origin", nameToDisplayName));
+        additionalHeaders.add(displayNameFor("project mainline state", nameToDisplayName));
+
+        List<String> completeHeaders = new ArrayList<>();
+        completeHeaders.addAll(makeHeadersForExtendedExport());
+        completeHeaders.addAll(
+                // add after component type which is directly after component_id
+                completeHeaders.indexOf(displayNameFor(COMPONENT_ID.getFieldName(), nameToDisplayName)) + 2,
+                additionalHeaders);
+
+        return completeHeaders;
+    }
 
     public ReleaseExporter(ComponentService.Iface cClient, List<Release> releases, User user,
             List<ReleaseClearingStatusData> releaseClearingStatuses) throws SW360Exception {
