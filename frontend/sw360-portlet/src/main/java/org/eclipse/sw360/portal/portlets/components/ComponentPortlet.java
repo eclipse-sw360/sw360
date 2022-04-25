@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -71,7 +72,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TEnum;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
-import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.apache.commons.lang.StringUtils;
 
@@ -573,35 +573,56 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
         String attachmentContentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
         String attachmentName = request.getParameter(PortalConstants.ATTACHMENT_NAME);
+        Map<String, Set<String>> licenseToSrcFilesMap = new LinkedHashMap<>();
         boolean includeConcludedLicense = new Boolean(request.getParameter(PortalConstants.INCLUDE_CONCLUDED_LICENSE));
 
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
 
-        Set<String> concludedLicenseIds = new HashSet<>();
-        Set<String> mainLicenseNames = new HashSet<String>();
-        Set<String> otherLicenseNames = new HashSet<String>();
+        final Set<String> concludedLicenseIds = new TreeSet<String>();
+        Set<String> mainLicenseNames = new TreeSet<String>();
+        Set<String> otherLicenseNames = new TreeSet<String>();
+        AttachmentType attachmentType = AttachmentType.OTHER;
+        Predicate<LicenseInfoParsingResult> filterLicenseResult = result -> (null != result.getLicenseInfo() && null != result.getLicenseInfo().getLicenseNamesWithTexts());
+        long totalFileCount = 0;
         try {
             Release release = componentClient.getReleaseById(releaseId, user);
             List<LicenseInfoParsingResult> licenseInfoResult = licenseInfoClient.getLicenseInfoForAttachment(release,
                     attachmentContentId, includeConcludedLicense, user);
+            attachmentType = release.getAttachments().stream().filter(att -> attachmentContentId.equals(att.getAttachmentContentId())).map(Attachment::getAttachmentType).findFirst().orElse(null);
             List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
+                    .filter(filterLicenseResult)
                     .flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
                     .filter(license -> !license.getLicenseName().equalsIgnoreCase(SW360Constants.LICENSE_NAME_UNKNOWN)
                             && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NA)
                             && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NO_ASSERTION)) // exclude unknown, n/a and noassertion
                     .collect(Collectors.toList());
-            if (attachmentName.endsWith(".rdf")) {
-                concludedLicenseIds = licenseInfoResult.stream()
-                        .flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
-                        .collect(Collectors.toSet());
-                otherLicenseNames = licenseWithTexts.stream().map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet());
-                otherLicenseNames.removeAll(concludedLicenseIds);
-            } else if (attachmentName.endsWith(".xml")) {
-                mainLicenseNames = licenseWithTexts.stream().filter(license -> license.getType().equals(LICENSE_TYPE_GLOBAL)).map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet());
-                otherLicenseNames = licenseWithTexts.stream().filter(license -> !license.getType().equals(LICENSE_TYPE_GLOBAL)).map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet());
-            }
 
+            if (attachmentName.endsWith(PortalConstants.RDF_FILE_EXTENSION)) {
+                if (AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType)) {
+                    totalFileCount = licenseWithTexts.stream().map(LicenseNameWithText::getSourceFiles).filter(Objects::nonNull).mapToInt(Set::size).sum();
+                    licenseToSrcFilesMap = licenseWithTexts.stream().collect(Collectors.toMap(LicenseNameWithText::getLicenseName,
+                            LicenseNameWithText::getSourceFiles, (oldValue, newValue) -> oldValue));
+                    licenseWithTexts.forEach(lwt -> {
+                        lwt.getSourceFiles().forEach(sf -> {
+                            if (sf.replaceAll(".*/", "").matches(MAIN_LICENSE_FILES)) {
+                                concludedLicenseIds.add(lwt.getLicenseName());
+                            }
+                        });
+                    });
+                } else {
+                    concludedLicenseIds.addAll(licenseInfoResult.stream().flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream()).collect(Collectors.toCollection(TreeSet::new)));
+                }
+                otherLicenseNames = licenseWithTexts.stream().map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(TreeSet::new));
+                otherLicenseNames.removeAll(concludedLicenseIds);
+            } else if (attachmentName.endsWith(PortalConstants.XML_FILE_EXTENSION)) {
+                mainLicenseNames = licenseWithTexts.stream()
+                        .filter(license -> license.getType().equals(LICENSE_TYPE_GLOBAL))
+                        .map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(TreeSet::new));
+                otherLicenseNames = licenseWithTexts.stream()
+                        .filter(license -> !license.getType().equals(LICENSE_TYPE_GLOBAL))
+                        .map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(TreeSet::new));
+            }
         } catch (TException e) {
             log.error("Cannot retrieve license information for attachment id " + attachmentContentId + " in release "
                     + releaseId + ".", e);
@@ -626,7 +647,15 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             jsonGenerator.writeArrayFieldStart("otherLicenseIds");
             otherLicenseNames.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
             jsonGenerator.writeEndArray();
-
+            if (AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType)) {
+                jsonGenerator.writeStringField(LICENSE_PREFIX, LanguageUtil.get(resourceBundle, "possible.main.license.ids"));
+                jsonGenerator.writeStringField("totalFileCount", Long.toString(totalFileCount));
+            }
+            for (Map.Entry<String, Set<String>> entry : licenseToSrcFilesMap.entrySet()) {
+                jsonGenerator.writeArrayFieldStart(entry.getKey());
+                entry.getValue().forEach(srcFile -> wrapException(() -> { jsonGenerator.writeString(srcFile); }));
+                jsonGenerator.writeEndArray();
+            }
             jsonGenerator.writeEndObject();
 
             jsonGenerator.close();
@@ -1544,10 +1573,18 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     private void setSpdxAttachmentsInRequest(RenderRequest request, Release release) {
         Set<Attachment> attachments = CommonUtils.nullToEmptySet(release.getAttachments());
-        Set<Attachment> spdxAttachments = attachments.stream()
-                .filter(a -> AttachmentType.COMPONENT_LICENSE_INFO_COMBINED.equals(a.getAttachmentType())
-                        || AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(a.getAttachmentType()))
-                .collect(Collectors.toSet());
+        Set<AttachmentType> attTypes = attachments.stream().map(Attachment::getAttachmentType).collect(Collectors.toUnmodifiableSet());
+        Set<Attachment> spdxAttachments = Sets.newHashSet();
+        if (attTypes.contains(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED) || attTypes.contains(AttachmentType.COMPONENT_LICENSE_INFO_XML)) {
+            spdxAttachments = attachments.stream()
+                    .filter(a -> AttachmentType.COMPONENT_LICENSE_INFO_COMBINED.equals(a.getAttachmentType())
+                            || AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(a.getAttachmentType()))
+                    .collect(Collectors.toSet());
+        } else if (attTypes.contains(AttachmentType.INITIAL_SCAN_REPORT)) {
+            spdxAttachments = attachments.stream()
+                    .filter(a -> AttachmentType.INITIAL_SCAN_REPORT.equals(a.getAttachmentType()))
+                    .collect(Collectors.toSet());
+        }
         request.setAttribute(PortalConstants.SPDX_ATTACHMENTS, spdxAttachments);
     }
 

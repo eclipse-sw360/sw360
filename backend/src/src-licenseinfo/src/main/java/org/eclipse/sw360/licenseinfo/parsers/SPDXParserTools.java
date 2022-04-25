@@ -35,6 +35,7 @@ import org.w3c.dom.Element;
 
 import org.apache.jena.rdf.model.impl.Util;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNotNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
 public class SPDXParserTools {
@@ -57,6 +58,7 @@ public class SPDXParserTools {
 
     // SPDX Class
     private static final String SPDX_FILE = "File";
+    private static final String SPDX_FILE_NAME = "fileName";
     private static final String SPDX_LICENSE = "License";
     private static final String SPDX_PACKAGE = "Package";
     private static final String SPDX_EXTRACTED_LICENSING_INFO = "ExtractedLicensingInfo";
@@ -324,11 +326,20 @@ public class SPDXParserTools {
         return licenseDeclareds.length > 0 ? licenseDeclareds[0] : null;
     }
 
+    private static LicenseNameWithText getLicenseObject(Element e) {
+        String licenseName = extractLicenseName(e);
+        String licenseID = getLicenseId(e);
+        String licenseText = getExtractedText(e);
+        if (isNullEmptyOrWhitespace(licenseText)) {
+            licenseText = getLicenseText(e);
+        }
+        return new LicenseNameWithText().setLicenseName(licenseName).setLicenseText(licenseText).setLicenseSpdxId(licenseID);
+    }
     /*
      * Get all licenses with text in spdx:ExtractedLicensingInfo and spdx:License
      * with their uri.
      */
-    private static HashMap<String, LicenseNameWithText> getLicenseTextFromMetadata(Document doc) {
+    private static HashMap<String, LicenseNameWithText> getLicenseTextFromMetadata(Document doc, boolean includeFileInformation) {
         HashMap<String, LicenseNameWithText> uriLicenseMap = new HashMap<String, LicenseNameWithText>();
         String[] licenseTags = { SPDX_EXTRACTED_LICENSING_INFO, SPDX_LICENSE };
 
@@ -346,17 +357,49 @@ public class SPDXParserTools {
                     if (isNullEmptyOrWhitespace(uri))
                         continue;
 
-                    String licenseName = extractLicenseName(e);
-                    String licenseID = getLicenseId(e);
-                    String licenseText = getExtractedText(e);
-                    if (isNullEmptyOrWhitespace(licenseText))
-                        licenseText = getLicenseText(e);
-                    uriLicenseMap.put(uri, new LicenseNameWithText().setLicenseName(licenseName)
-                            .setLicenseText(licenseText).setLicenseSpdxId(licenseID));
+                    uriLicenseMap.put(uri, getLicenseObject(e));
                 }
             }
         }
+        if (includeFileInformation) {
+            Node[] files = findMultipleSpdxNodes(doc, SPDX_FILE);
+            // To link license with files -> adding source files into LicenseNameWithText
+            for (Node file : files) {
+                NodeList childNodes = file.getChildNodes();
+                String sourceFileName = "";
+                for (Node child : iterable(childNodes)) {
+                    if (isNotNullEmptyOrWhitespace(child.getLocalName())) {
+                        if (child.getLocalName().equals(SPDX_FILE_NAME)) {
+                            sourceFileName = child.getTextContent();
+                        } else if (child.getLocalName().equals(SPDX_LICENSE_INFO_IN_FILE)) {
+                            if (child instanceof Element) {
+                                Element e = (Element) child;
+                                String uri = e.getAttributeNS(RDF_NAMESPACE, RDF_RESOURCE);
 
+                                if (isNullEmptyOrWhitespace(uri)) {
+                                    continue;
+                                }
+                                LicenseNameWithText lnwt = uriLicenseMap.containsKey(uri) ? uriLicenseMap.get(uri) : getLicenseObject(e);
+                                lnwt.addToSourceFiles(sourceFileName);
+                                uriLicenseMap.put(uri, lnwt);
+                            }
+                        } else if (child.getLocalName().equals(SPDX_LICENSE_CONCLUDED)) {
+                            if (child instanceof Element) {
+                                Element e = (Element) child;
+                                String uri = e.getAttributeNS(RDF_NAMESPACE, RDF_RESOURCE);
+
+                                if (isNullEmptyOrWhitespace(uri)) {
+                                    continue;
+                                }
+                                LicenseNameWithText lnwt = uriLicenseMap.containsKey(uri) ? uriLicenseMap.get(uri) : getLicenseObject(e);
+                                lnwt.addToSourceFiles(sourceFileName);
+                                uriLicenseMap.put(uri, lnwt);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return uriLicenseMap;
     }
 
@@ -607,13 +650,13 @@ public class SPDXParserTools {
     }
 
     protected static LicenseInfoParsingResult getLicenseInfoFromSpdx(AttachmentContent attachmentContent,
-            boolean includeConcludedLicense, Document doc) {
+            boolean includeConcludedLicense, boolean includeFileInformation, Document doc) {
         LicenseInfo licenseInfo = new LicenseInfo().setFilenames(Arrays.asList(attachmentContent.getFilename()));
         licenseInfo.setLicenseNamesWithTexts(new HashSet<>());
         licenseInfo.setCopyrights(new HashSet<>());
         Set<String> concludedLicenseIds = Sets.newHashSet();
 
-        uriLicenseMap = getLicenseTextFromMetadata(doc);
+        uriLicenseMap = getLicenseTextFromMetadata(doc, includeFileInformation);
         nodeIDFileMap = getFileFromMetadata(doc);
 
         for (Node spdxItem : getDocumentDescribes(doc)) {

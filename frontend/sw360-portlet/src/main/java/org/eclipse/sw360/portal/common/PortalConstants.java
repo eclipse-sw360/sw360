@@ -65,6 +65,8 @@ public class PortalConstants {
 
     //! Standard keys for Lists and their size
     public static final String KEY_SUMMARY = "documents";
+    public static final String RDF_FILE_EXTENSION = ".rdf";
+    public static final String XML_FILE_EXTENSION = ".xml";
 
     public static final String KEY_LIST_SIZE = "documentssize";
 
@@ -113,6 +115,7 @@ public class PortalConstants {
     public static final String LICENSE_TYPE_GLOBAL = "global";
     public static final String LICENSE_TYPE_OTHERS = "Others";
     public static final String LICENSE_IDS = "licenseIds";
+    public static final String MAIN_LICENSE_FILES = "LICENSE.*|license|license.txt|license.html|COPYING.*|copying|copying.txt|copying.html";
 
     //! Specialized keys for moderation
     public static final String MODERATION_PORTLET_NAME = PORTLET_NAME_PREFIX + "moderations";

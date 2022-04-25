@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -60,16 +61,16 @@ public class SPDXParser extends LicenseInfoParser {
     @Override
     public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context)
             throws TException {
-        return Collections.singletonList(getLicenseInfo(attachment, true, user, context));
+        return Collections.singletonList(getLicenseInfo(attachment, true, false, user, context));
     }
 
     @Override
     public <T> List<LicenseInfoParsingResult> getLicenseInfosIncludeConcludedLicense(Attachment attachment,
             boolean includeConcludedLicense, User user, T context) throws TException {
-        return Collections.singletonList(getLicenseInfo(attachment, includeConcludedLicense, user, context));
+        return Collections.singletonList(getLicenseInfo(attachment, includeConcludedLicense, false, user, context));
     }
 
-    public <T> LicenseInfoParsingResult getLicenseInfo(Attachment attachment, boolean includeConcludedLicense, User user,
+    public <T> LicenseInfoParsingResult getLicenseInfo(Attachment attachment, boolean includeConcludedLicense, boolean includeFileInformation, User user,
             T context) throws TException {
         AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
 
@@ -78,8 +79,10 @@ public class SPDXParser extends LicenseInfoParser {
             return new LicenseInfoParsingResult()
                     .setStatus(LicenseInfoRequestStatus.FAILURE);
         }
-
-        return getLicenseInfoFromSpdx(attachmentContent, includeConcludedLicense, spdxDocument.get());
+        if (attachment.getAttachmentType().equals(AttachmentType.INITIAL_SCAN_REPORT)) {
+            return getLicenseInfoFromSpdx(attachmentContent, includeConcludedLicense, true, spdxDocument.get());
+        }
+        return getLicenseInfoFromSpdx(attachmentContent, includeConcludedLicense, false, spdxDocument.get());
     }
 
     protected String getUriOfAttachment(AttachmentContent attachmentContent) throws URISyntaxException {
