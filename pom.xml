@@ -66,8 +66,9 @@
         <log4j2.version>2.17.1</log4j2.version>
         <gson.version>2.8.6</gson.version>
         <jcraft.version>0.1.54</jcraft.version>
-        <jackson.version>2.11.3</jackson.version>
-        <junit-dataprovider.version>1.12.0</junit-dataprovider.version>
+        <jackson.version>2.13.2</jackson.version>
+        <jackson-databind.version>2.13.2.2</jackson-databind.version>
+        <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
         <poi.version>4.1.2</poi.version>
 
         <junit.version>4.13.2</junit.version>
@@ -268,7 +269,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson-databind.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -507,7 +508,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.6</version>
+                    <version>2.7</version>
                     <configuration>
                         <overwrite>true</overwrite>
                     </configuration>

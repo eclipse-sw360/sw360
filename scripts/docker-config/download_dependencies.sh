@@ -24,9 +24,9 @@ jar_dependencies=(
   https://search.maven.org/remotecontent?filepath=commons-logging/commons-logging/1.2/commons-logging-1.2.jar
   https://search.maven.org/remotecontent?filepath=com/google/code/gson/gson/2.8.5/gson-2.8.5.jar
   https://search.maven.org/remotecontent?filepath=com/google/guava/guava/31.0.1-jre/guava-31.0.1-jre.jar
-  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-annotations/2.11.3/jackson-annotations-2.11.3.jar
-  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-core/2.11.3/jackson-core-2.11.3.jar
-  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-databind/2.11.3/jackson-databind-2.11.3.jar
+  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-annotations/2.13.2/jackson-annotations-2.13.2.jar
+  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-core/2.13.2/jackson-core-2.13.2.jar
+  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-databind/2.13.2.2/jackson-databind-2.13.2.2.jar
   https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.20/commons-compress-1.20.jar
   https://repo1.maven.org/maven2/org/apache/thrift/libthrift/0.14.0/libthrift-0.14.0.jar
 )
