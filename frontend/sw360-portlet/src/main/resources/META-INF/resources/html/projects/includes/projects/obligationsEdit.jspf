@@ -479,8 +479,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
 
     /* collect all the obligation status */
     function updateObligations(event, data, node, config) {
-        let btnData = node.data(),
-            date = new Date().toISOString().split('T')[0],
+        let date = new Date().toISOString().split('T')[0],
             isDeleteAllOrphanObligations = $('input[name="deleteAllOrphanObligations"]').is(":checked"),
             obligationMap = new Map();
 
@@ -592,7 +591,6 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
             if (data.modifiedBy && data.modifiedOn) {
                 $(row).attr('title', '<liferay-ui:message key="modified.by" />: ' + data.modifiedBy + ' | <liferay-ui:message key="modified.on" />: ' + data.modifiedOn);
             }
-            $(row).attr('data-text', data.text);
         },
         "order": [[1, 'asc']],
         "buttons": [
@@ -683,7 +681,6 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
             if (data.modifiedBy && data.modifiedOn) {
                 $(row).attr('title', '<liferay-ui:message key="modified.by" />: ' + data.modifiedBy + ' | <liferay-ui:message key="modified.on" />: ' + data.modifiedOn);
             }
-            $(row).attr('data-text', data.text);
         },
         "order": [[1, 'asc']],
         "buttons": [
@@ -774,7 +771,6 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
               if (data.modifiedBy && data.modifiedOn) {
                   $(row).attr('title', '<liferay-ui:message key="modified.by" />: ' + data.modifiedBy + ' | <liferay-ui:message key="modified.on" />: ' + data.modifiedOn);
               }
-              $(row).attr('data-text', data.text);
           },
           "order": [[1, 'asc']],
           "buttons": [
@@ -812,7 +808,6 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
       function orgUpdateObligations(event, data, node, config) {
           updateprojectCompOrgObligations(event, data, node, config, "<%=ObligationLevel.ORGANISATION_OBLIGATION%>",orgTable, orgDataMap);
           $('#projectEditForm').append('<input id="obligationData" type="hidden" name="<portlet:namespace/><%=PortalConstants.OBLIGATION_DATA%>"/>');
-
           if (Object.keys(jsonObject).length > 0) {
               $("#obligationData").val(JSON.stringify(jsonObject));
           }
@@ -820,26 +815,24 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
 
       /* collect all the obligation status */
       function updateprojectCompOrgObligations(event, data, node, config, level, otherObligTable, otherDataMap) {
-          let btnData = node.data(),
-              date = new Date().toISOString().split('T')[0],
+          let date = new Date().toISOString().split('T')[0],
               obligationMap = new Map();
-
           if (otherDataMap.size < 1) {
               return;
           }
 
           otherObligTable.rows().every(function (rowIdx, tableLoop, rowLoop) {
               let rowData = this.data(),
-                  mapKey = $.parseHTML(rowData.text)[0].nodeValue,
+                  mapKey = $.parseHTML(rowData.obligation)[0].nodeValue,
                   ids = [];
               let mapValue = {};
               if (otherDataMap.has(mapKey)) {
                   $node = $(this.node()),
                   mapValue.status = $node.find('select.obl_status option:selected').val();
                   mapValue.comment = $node.find("input.obl_comment").val();
-                  mapValue.id=rowData.id;
-                  let type=$node.find("td.obl_type").text().trim();
-                  mapValue.obligationType=type.length==0?"<%=ObligationType.OBLIGATION%>":type.toUpperCase();
+                  mapValue.id = rowData.id;
+                  let type = $node.find("td.obl_type").text().trim();
+                  mapValue.obligationType = type.length == 0 ? "<%=ObligationType.OBLIGATION%>" : type.toUpperCase();
                   mapValue.modifiedOn = date;
                   mapValue.obligationLevel = level;
                   obligationMap.set(mapKey, mapValue);
@@ -883,7 +876,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
           let $tr = thisObj.closest("tr");
           if (!$tr.hasClass('orphan')) {
               // get obligatoin topic/text from second column (index -> 1) in table.
-              projectCompOrgObligationDataMap.set($.parseHTML($tr.attr('data-text'))[0].nodeValue, '');
+              projectCompOrgObligationDataMap.set($.parseHTML($tr.find('td:eq(1)').text())[0].nodeValue, '');
           }
       }
 

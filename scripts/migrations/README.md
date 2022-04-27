@@ -87,6 +87,10 @@ To migrate it is recommended to do this in the following order:
 - `046_migrate_project_moderation_request_linked_project_relation.py`
 - `047_migrate_obligation_status.py`
 
+### 15.1.0 -> 16.0.0
+
+- `049_migrate_admin_obligation.py`
+
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
 - `010_repair_missing_vendorId_links_in_releases.py`
