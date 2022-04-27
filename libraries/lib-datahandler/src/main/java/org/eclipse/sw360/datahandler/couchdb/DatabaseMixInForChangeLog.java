@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Repository;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -234,5 +235,15 @@ public class DatabaseMixInForChangeLog {
         "setProjectRelationship"
     })
     public static abstract class ProjectProjectRelationshipMixin extends ProjectProjectRelationship {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+        "node",
+        "distribution",
+        "development",
+        "obligationType"
+    })
+    public static abstract class ObligationMixin extends Obligation {
     }
 }

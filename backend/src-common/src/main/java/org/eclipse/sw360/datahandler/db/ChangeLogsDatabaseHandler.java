@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 
 import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.ImmutableSet;
@@ -68,6 +69,17 @@ public class ChangeLogsDatabaseHandler {
         removeNullToEmtpyChanges(changeLogs);
         changeLogs.setChangeTimestamp(changeLogs.changeTimestamp.split(" ")[0]);
         return changeLogs;
+    }
+
+    public RequestStatus deleteChangeLogsByDocumentId(String docId, User user) {
+        try {
+            for (ChangeLogs changeLog: getChangeLogsByDocumentId(user, docId)) {
+                changeLogsRepository.remove(changeLog);
+            }
+            return RequestStatus.SUCCESS;
+        } catch (Exception e) {
+            return RequestStatus.FAILURE;
+        }
     }
 
     private ChangeLogs removeNullToEmtpyChanges(ChangeLogs changeLog) {

@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 
 import com.cloudant.client.api.CloudantClient;
 
@@ -55,5 +56,12 @@ public class ChangeLogsHandler implements ChangeLogsService.Iface {
     public ChangeLogs getChangeLogsById(String id) throws SW360Exception {
         assertNotEmpty(id);
         return handler.getChangeLogsById(id);
+    }
+
+    @Override
+    public RequestStatus deleteChangeLogsByDocumentId(String docId, User user) throws SW360Exception {
+        assertNotEmpty(docId);
+        assertUser(user);
+        return handler.deleteChangeLogsByDocumentId(docId, user);
     }
 }

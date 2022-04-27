@@ -11,11 +11,9 @@
 
 <%@include file="/html/init.jsp"%>
 <%@ page import="org.eclipse.sw360.portal.users.UserCacheHolder" %>
-<%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.Obligation" %>	
+<%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.Obligation" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode" %>
-<jsp:useBean id="obligationNodeList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode>" scope="request"/>
-<jsp:useBean id="obligationElementList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement>" scope="request"/>
 
 <style type="text/css">
 .tree-container {
@@ -43,84 +41,116 @@
 
 #tree input {
     width: 15rem;
+}
 
+#tree .obObject {
+    width: 20rem;
+}
+
+.elementType, .other,
+.obLangElement, .obAction, .obObject {
+    display: inline-block;
+}
+
+#obligationTitle {
+    color: black;
+    font-weight: bold;
+}
+
+#out {
+    font-size: 1rem;
+    line-height: 3rem;
 }
 </style>
+<tr>
+    <td colspan="3">
+        <div class="form-group">
+            <label for="obligsText"><liferay-ui:message key="text"/></label>
+            <div class="invalid-feedback" id="empty-text">
+                <liferay-ui:message key="please.enter.a.text" />
+            </div>
+            <div id="obligationTree">
+                <main class="container tree-container">
+                    <div class="wrapper">
+                        <div class="main-ctn">
+                            <div id="tree">
+                                <ul id="obligationText">
+                                    <li class="tree-node" id="root">
+                                        <input id="obligationTitle" type="text" name="<portlet:namespace/><%=ObligationNode._Fields.NODE_TEXT%>" class="elementType form-control" placeholder="<liferay-ui:message key="title" />">
+                                        <span class="controls">
+                                            &raquo;
+                                            <a class="btn-link" href="#" data-func="add-child"
+                                                >+<liferay-ui:message key="child" /></a
+                                            >
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
 
-<div id="obligationTree">    
-    <main class="container tree-container">
-        <div class="wrapper">
-            <div class="main-ctn">
-                <div id="tree">
-                    <ul id="obligationText">
-                        <li class="tree-node" id="root">
-                            <input type="text" name="<portlet:namespace/><%=ObligationNode._Fields.NODE_TEXT%>" class="elementType" placeholder="<liferay-ui:message key="title" />">
+                            <hr />
+
+                            <div class="right">
+                                <b class="app-subtitle"><liferay-ui:message key="preview" /></b>
+                                <div class="output-tree-ctn" style="padding-left: 2.5rem">
+                                    <pre id="out"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+
+                <div style="display: none;" class="hidden" id="template">
+                    <ul>
+                        <li class="tree-node">
+                            <input type="text" name="<portlet:namespace/><%=ObligationNode._Fields.NODE_TYPE%>" class="elementType form-control" list="typeList" placeholder="<liferay-ui:message key="type" />">
+                            <datalist id="typeList" class="typeListData">
+                                <option value="<Obligation>">
+                            </datalist>
+
+                            <%-- Obligation element --%>
+                            <input type="text" name="<portlet:namespace/><%=ObligationElement._Fields.LANG_ELEMENT%>" class="obLangElement form-control" list="obLangElement" element-type="<Obligation>" placeholder="<liferay-ui:message key="language.element" />">
+                            <datalist id="obLangElement" class="obLangElementData">
+                            </datalist>
+
+                            <input type="text" name="<portlet:namespace/><%=ObligationElement._Fields.ACTION%>" class="obAction form-control" list="obAction" element-type="<Obligation>" placeholder="<liferay-ui:message key="action" />">
+                            <datalist id="obAction" class="obActionData">
+                            </datalist>
+
+                            <input type="text" name="<portlet:namespace/><%=ObligationElement._Fields.OBJECT%>" class="obObject form-control" list="obObject" element-type="<Obligation>" placeholder="<liferay-ui:message key="object" />">
+                            <datalist id="obObject" class="obObjectData">
+                            </datalist>
+
+                            <%-- Other Type --%>
+                            <input type="text" name="<portlet:namespace/><%=ObligationNode._Fields.NODE_TEXT%>" class="other form-control" list="otherText" element-type="Other" placeholder="<liferay-ui:message key="text" />">
+                            <datalist id="otherText" class="otherTextData">
+                            </datalist>
+
+                            <%-- Action with element --%>
                             <span class="controls">
                                 &raquo;
-                                <a class="btn-link" href="#" data-func="add-child"
-                                    >+<liferay-ui:message key="child" /></a
-                                >
+                                <a class="btn-link" href="#"Attribute data-func="add-sibling">+<liferay-ui:message key="sibling" /></a> |
+                                <a class="btn-link" href="#" data-func="add-child">+<liferay-ui:message key="child" /></a> |
+                                <a class="btn-link" href="#" data-func="delete"><liferay-ui:message key="delete" /></a> |
+                                <a class="btn-link" href="#" data-func="import" id="importObligationElementtButton"><liferay-ui:message key="import" /></a>
                             </span>
                         </li>
                     </ul>
                 </div>
-
-                <hr />
-
-                <div class="right">
-                    <b class="app-subtitle"><liferay-ui:message key="preview" /></b>
-                    <div class="output-tree-ctn" style="padding-left: 2.5rem">
-                        <pre id="out"></pre>
-                    </div>
-                </div>
             </div>
+            <%@ include file="/html/admin/obligations/includes/searchObligationElements.jsp" %>
+            <%@ include file="/html/utils/includes/requirejs.jspf" %>
         </div>
-    </main>
-
-    <div style="display: none;" class="hidden" id="template">
-        <ul>
-            <li class="tree-node">
-                <input type="text" name="<portlet:namespace/><%=ObligationNode._Fields.NODE_TYPE%>" class="elementType" list="typeList" placeholder="<liferay-ui:message key="type" />">
-                <datalist id="typeList" class="typeListData">
-                    <option value="Obligation">
-                </datalist>
-
-                <%-- Obligation element --%>
-                <input type="text" name="<portlet:namespace/><%=ObligationElement._Fields.LANG_ELEMENT%>" class="obLangElement" list="obLangElement" element-type="Obligation" placeholder="<liferay-ui:message key="language.element" />">
-                <datalist id="obLangElement" class="obLangElementData">
-                </datalist>
-
-                <input type="text" name="<portlet:namespace/><%=ObligationElement._Fields.ACTION%>" class="obAction" list="obAction" element-type="Obligation" placeholder="<liferay-ui:message key="action" />">
-                <datalist id="obAction" class="obActionData">
-                </datalist>
-
-                <input type="text" name="<portlet:namespace/><%=ObligationElement._Fields.OBJECT%>" class="obObject" list="obObject" element-type="Obligation" placeholder="<liferay-ui:message key="object" />">
-                <datalist id="obObject" class="obObjectData">
-                </datalist>
-
-                <%-- Other Type --%>
-                <input type="text" name="<portlet:namespace/><%=ObligationNode._Fields.NODE_TEXT%>" class="other" list="otherText" element-type="Other" placeholder="<liferay-ui:message key="text" />">
-                <datalist id="otherText" class="otherTextData">
-                </datalist>
-
-                <%-- Action with element --%>
-                <span class="controls">
-                    &raquo;
-                    <a class="btn-link" href="#"Attribute data-func="add-sibling">+<liferay-ui:message key="sibling" /></a> |
-                    <a class="btn-link" href="#" data-func="add-child">+<liferay-ui:message key="child" /></a> |
-                    <a class="btn-link" href="#" data-func="delete"><liferay-ui:message key="delete" /></a> |
-                    <a class="btn-link" href="#" data-func="import" id="importObligationElementtButton"><liferay-ui:message key="import" /></a>
-                </span>
-            </li>
-        </ul>
-    </div>
-</div>
-<%@ include file="/html/admin/obligations/includes/searchObligationElements.jsp" %>
-<%@ include file="/html/utils/includes/requirejs.jspf" %>
+    </td>
+</tr>
 <script>
-require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', 'utils/cssloader'], function($, dialog, datatables, keyboard, cssloader) {
+require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], function($, dialog, datatables, keyboard) {
     var $dataTable,
     $dialog;
+
+    let obligationObj = jQuery.parseJSON(JSON.stringify(${ obligationJson }));
+    let obligationNodeListObj = jQuery.parseJSON(JSON.stringify(${ obligationNodeListJson }));
+    let obligationElementListObj = jQuery.parseJSON(JSON.stringify(${ obligationElementListJson }));
+    let obligationTextObj = jQuery.parseJSON(JSON.stringify(${ obligationTextJson }));
 
     $(document).ready(function () {
         const indent = "    ",                  // Use 4 spaces for indentation of previewing
@@ -149,7 +179,7 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', 'ut
                 obj.parent().remove();
             },
             "import": function (obj) {
-                showObligationElementDialog(obj)
+                showObligationElementDialog(obj);
             },
         };
 
@@ -183,24 +213,19 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', 'ut
 
         function getTypeSuggestions() {
             var suggestions = {};
-            <core_rt:forEach items="${obligationNodeList}" var="node">
-                var nodeType = "<sw360:out value='${node.nodeType}'/>";
+
+            for (let i = 0; i < obligationNodeListObj.length; i++) {
+                let nodeType = obligationNodeListObj[i].nodeType;
                 if (nodeType != "" && nodeType != "ROOT" && !suggestions.hasOwnProperty(nodeType)) {
                     suggestions[nodeType] = new Set();
                 }
-            </core_rt:forEach>
-
-            <core_rt:forEach items="${obligationNodeList}" var="node">
-                var nodeType = "<sw360:out value='${node.nodeType}'/>";
-
                 if (suggestions.hasOwnProperty(nodeType)) {
-                    suggestions[nodeType].add("<sw360:out value='${node.nodeText}'/>");
+                    suggestions[nodeType].add(obligationNodeListObj[i].nodeText);
                 }
-            </core_rt:forEach>
-
-            if (Object.keys(suggestions).length === 0) {
-                suggestions['Obligation'] = new Set()
             }
+
+            delete suggestions.Obligation;
+            suggestions['<Obligation>'] = new Set();
 
             return suggestions;
         }
@@ -211,16 +236,14 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', 'ut
             suggestions['Action'] = new Set();
             suggestions['Object'] = new Set();
 
-            <core_rt:forEach items="${obligationElementList}" var="obligationElement">
-                suggestions['LE'].add("<sw360:out value='${obligationElement.langElement}'/>");
-                suggestions['Action'].add("<sw360:out value='${obligationElement.action}'/>");
-                suggestions['Object'].add("<sw360:out value='${obligationElement.object}'/>");
-            </core_rt:forEach>
-
-            if (suggestions['LE'].size === 0) {
-                suggestions['LE'].add("YOU MUST")
-                suggestions['LE'].add("YOU MUST NOT")
+            for (let i = 0; i < obligationElementListObj.length; i++) {
+                suggestions['LE'].add(obligationElementListObj[i].langElement);
+                suggestions['Action'].add(obligationElementListObj[i].action);
+                suggestions['Object'].add(obligationElementListObj[i].object);
             }
+
+            suggestions['LE'].add("YOU MUST")
+            suggestions['LE'].add("YOU MUST NOT")
 
             if (suggestions['Action'].size === 0) {
                 suggestions['Action'].add("Provide")
@@ -238,7 +261,7 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', 'ut
         function addSuggestion(selector, suggestions) {
             $.each($(selector), function(i, element) {
                 $(element).empty();
-                $.each(suggestions, function(j, suggestion) {
+                $.each(suggestions.sort(), function(j, suggestion) {
                     $(element).html($(element).html() + "<option value=\"" + suggestion + "\">");
                 });
             });
@@ -269,19 +292,23 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', 'ut
             var siblings = typeControl.siblings();
             siblings.hide();
 
-            if (type == 'Obligation') {
+            if (type == '<Obligation>') {
+                typeControl.css('font-style', 'italic');
+
                 $.each(siblings, function(key, sibling) {
                     if ($(sibling).attr('element-type') == type) {
                         $(sibling).show();
                     }
                 });
             } else {
-            $.each(siblings, function(key, sibling) {
+                typeControl.css('font-style', 'normal');
+
+                $.each(siblings, function(key, sibling) {
                     if ($(sibling).attr('element-type') == undefined) {
                         $(sibling).hide();
                         return;
                     }
-                    if ($(sibling).attr('element-type') != 'Obligation') {
+                    if ($(sibling).attr('element-type') != '<Obligation>') {
                         $(sibling).show();
                     }
                 });
@@ -301,7 +328,7 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', 'ut
 
             items.each(function (index) {
                 if ($(this).attr('id') != "root") {
-                    if ($(this).children(".elementType").val() == "Obligation") {
+                    if ($(this).children(".elementType").val() == "<Obligation>") {
                         out += padding +
                                 ($(this).children(".obLangElement").val() == null ? "" : $(this).children(".obLangElement").val()) + " " +
                                 ($(this).children(".obAction").val() == null ? "" : $(this).children(".obAction").val()) + " " +
@@ -324,7 +351,7 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', 'ut
         }
 
         function updatePreview() {
-            $("#out").text(getNodeText($("#obligationText")));
+            $("#out").text($('#todoTitle').val() + '\n' + getNodeText($("#obligationText")));
         }
 
         $(document).on("keyup", "#tree input", updatePreview);
@@ -339,7 +366,20 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', 'ut
                 e.stopPropagation();
             });
 
+        let obligationText = obligationObj.text;
+
+        // buildTreeNodeFromText(obligationText);
+        buildNode(obligationTextObj, $('#root'));
+
+        let oblTitle = obligationObj.title;
+
+        $('#todoTitle').val(oblTitle);
+
+        $('#root').find('input').first().val(oblTitle);
+
         updatePreview();
+
+        // Processing for Import Obligation dialog
 
         keyboard.bindkeyPressToClick('searchobligationelement', 'searchbuttonobligation');
 
@@ -433,7 +473,7 @@ require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', 'ut
                     obligationElement.push($("input[type='radio'].form-check-input:checked").attr("action"));
                     obligationElement.push($("input[type='radio'].form-check-input:checked").attr("object"));
 
-                    obj.first().children(".elementType").val("Obligation")
+                    obj.first().children(".elementType").val("<Obligation>")
                     obj.first().children(".other").attr("style","display:none;")
                     obj.first().children(".obLangElement").attr("style","").val(obligationElement[0])
                     obj.first().children(".obAction").attr("style","").val(obligationElement[1])

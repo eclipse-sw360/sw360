@@ -158,6 +158,11 @@ service LicenseService {
     string addObligations(1:Obligation obligations, 2: User user);
 
     /**
+     * Update a existed obligation object to database, return id
+     **/
+    string updateObligation(1:Obligation obligation, 2: User user);
+
+    /**
     * Add an existing obligation to a license or generate moderation request if user has no permission
     **/
     RequestStatus addObligationsToLicense(1: set<Obligation> obligations, 2: License license, 3: User user);
@@ -333,7 +338,12 @@ service LicenseService {
     // Search functions
 
     /**
-     * global search function to list obigation elements which match the text argument
+     * global search function to list obligation elements which match the text argument
      */
     list<ObligationElement> searchObligationElement(1: string text);
+
+    /**
+     * convert Text to Node in obligation
+     **/
+    string convertTextToNode(1:Obligation Obligation, 2: User user);
 }

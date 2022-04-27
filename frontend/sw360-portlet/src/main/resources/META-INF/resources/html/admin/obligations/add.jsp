@@ -28,9 +28,12 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode" %>
 
 <jsp:useBean id="todo" class="org.eclipse.sw360.datahandler.thrift.licenses.Obligation" scope="request" />
-<jsp:useBean id="obligList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.licenses.Obligation>" scope="request"/>
+<jsp:useBean id="obligationId" type="java.lang.String" scope="request"/>
+<jsp:useBean id="obligationAction" class="java.lang.String" scope="request"/>
 
 <portlet:actionURL var="addURL" name="addObligations">
+    <portlet:param name="<%=PortalConstants.OBLIGATION_ID%>" value="${obligationId}"/>
+    <portlet:param name="<%=PortalConstants.OBLIGATION_ACTION%>" value="${obligationAction}"/>
 </portlet:actionURL>
 
 <div class="container">
@@ -40,7 +43,12 @@
 				<div class="col-auto">
 					<div class="btn-toolbar" role="toolbar">
                         <div class="btn-group">
-                            <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message key="create.obligation" /></button>
+                            <core_rt:if test="${obligationAction == 'edit'}">
+                                <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message key="update.obligation" /></button>
+                            </core_rt:if>
+                            <core_rt:if test="${obligationAction != 'edit'}">
+                                <button type="button" class="btn btn-primary" data-action="save"><liferay-ui:message key="create.obligation" /></button>
+                            </core_rt:if>
                         </div>
                         <div class="btn-group">
                             <button type="button" class="btn btn-light" data-action="cancel"><liferay-ui:message key="cancel" /></button>
@@ -55,7 +63,7 @@
                         <table id="todoAddTable" class="table edit-table three-columns">
                             <thead>
                                 <tr>
-                                    <th colspan="3"><liferay-ui:message key="add.obligation" /></th>
+                                    <th colspan="3"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -97,17 +105,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td colspan="3">
-                                        <div class="form-group">
-                                            <label for="obligsText"><liferay-ui:message key="text"/></label>
-                                            <div class="invalid-feedback" id="empty-text">
-                                                <liferay-ui:message key="please.enter.a.text" />
-                                            </div>
-                                            <%@ include file="obligationTextTree.jsp" %>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <%@ include file="obligationTextTree.jsp" %>
                             </tbody>
                         </table>
                     </form>
@@ -121,82 +119,188 @@
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
+    function buildNode(node, nodeTag) {
+        if (typeof node.children == 'undefined') {
+            return;
+        }
+
+        for (let i = 0; i < node.children.length; i++) {
+            nodeTag.find('[data-func=add-child]').first().click();
+
+            let child = node.children[i];
+            let childTag = nodeTag.find('li').last();
+
+            if (child.type == 'obligationElement') {
+                childTag.find('.elementType').first().val('<Obligation>');
+                childTag.find('.elementType').first().change();
+                childTag.find('.obLangElement').first().val(child.langElement);
+                childTag.find('.obAction').first().val(child.action);
+                childTag.find('.obObject').first().val(child.object);
+            } else {
+                childTag.find('.elementType').first().val(child.type);
+                childTag.find('.other').first().val(child.text);
+            }
+
+            buildNode(child, childTag);
+        }
+    }
+
     require(['jquery', 'modules/dialog', 'modules/validation' ], function($, dialog, validation) {
-        $('.invalid-feedback').css('display', 'none');
-        $('.invalid-feedback').removeClass('d-block');
-        validation.enableForm('#todoAddForm');
+        var action = '${obligationAction}';
 
-        $('.portlet-toolbar button[data-action="cancel"]').on('click', function() {
-            var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
-            var portletURL = Liferay.PortletURL.createURL( baseUrl )
-                .setParameter('<%=PortalConstants.PAGENAME%>','<%=PortalConstants.PAGENAME_VIEW%>')
-            window.location = portletURL.toString();
-        });
+        let obligationObj = jQuery.parseJSON(JSON.stringify(${ obligationJson }));
+        let obligationListObj = jQuery.parseJSON(JSON.stringify(${ obligationListJson }));
+        let obligationTextObj = jQuery.parseJSON(JSON.stringify(${ obligationTextJson }));
 
-        $('.portlet-toolbar button[data-action="save"]').on('click', function() {
+        if (action == 'edit') {
+            $('[data-action="save"]').text("Update Obligation");
+        }
+
+        $(function () {
+            if (action != '') {
+                var oblType = obligationObj.obligationType;
+
+                switch (oblType) {
+                    case "PERMISSION":
+                        $('#obligationType').val("0");
+                        break
+                    case "RISK":
+                        $('#obligationType').val("1");
+                        break
+                    case "EXCEPTION":
+                        $('#obligationType').val("2");
+                        break
+                    case "RESTRICTION":
+                        $('#obligationType').val("3");
+                        break
+                    case "OBLIGATION":
+                        $('#obligationType').val("4");
+                        break
+                    default:
+                        $('#obligationType').val($("#obligationType option:first").val());
+                }
+
+                var oblLevel = obligationObj.obligationLevel;
+
+                switch (oblLevel) {
+                    case "ORGANISATION_OBLIGATION":
+                        $('#obligationLevel').val("0");
+                        break;
+                    case "PROJECT_OBLIGATION":
+                        $('#obligationLevel').val("1");
+                        break;
+                    case "COMPONENT_OBLIGATION":
+                        $('#obligationLevel').val("2");
+                        break;
+                    case "LICENSE_OBLIGATION":
+                        $('#obligationLevel').val("3");
+                        break;
+                    default:
+                        $('#obligationLevel').val("0");
+                }
+            }
+
             $('.invalid-feedback').css('display', 'none');
             $('.invalid-feedback').removeClass('d-block');
-            if (checkObligation($("#todoTitle").val())) {
-                const tree = readNode('#root');
-                const jsonTextTree = JSON.stringify(tree);
-                document.getElementById("obligsText").value = jsonTextTree;
-                $('#todoAddForm').submit();
+            validation.enableForm('#todoAddForm');
+
+            $('.portlet-toolbar button[data-action="cancel"]').on('click', function() {
+                var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
+                var portletURL = Liferay.PortletURL.createURL( baseUrl )
+                    .setParameter('<%=PortalConstants.PAGENAME%>','<%=PortalConstants.PAGENAME_VIEW%>')
+                window.location = portletURL.toString();
+            });
+
+            $('.portlet-toolbar button[data-action="save"]').on('click', function() {
+                $('.invalid-feedback').css('display', 'none');
+
+                $('.invalid-feedback').removeClass('d-block');
+
+                if (checkObligation()) {
+                    const tree = readNode('#root');
+
+                    const jsonTextTree = JSON.stringify(tree);
+
+                    document.getElementById("obligsText").value = jsonTextTree;
+
+                    $('#todoAddForm').submit();
+                }
+            });
+
+            function readNode(currentNode) {
+                var nodeData = {val:[], children:[]};
+
+                nodeData.val = getNodeValues(currentNode);
+
+                const childNodes = $(currentNode).children('ul');
+
+                $(childNodes).each(function(key, childNode) {
+                    var tmp = $(childNode).children('.tree-node').first();
+                    nodeData.children.push(readNode(tmp));
+                });
+
+                return nodeData;
+            }
+
+            function getNodeValues(node) {
+                const children = $(node).children();
+
+                var nodeValues = [];
+
+                $.each(children, function(key, child) {
+                    if ($(child).is('input') && $(child).css('display') != 'none') {
+                        nodeValues.push($(child).val().trim());
+                    }
+                });
+
+                if ($(node).find('.elementType').val() == '<Obligation>') {
+                    nodeValues.push("UNDEFINED");
+                }
+
+                if (nodeValues.length > 0 && nodeValues[0] == '<Obligation>') {
+                    nodeValues[0] = 'Obligation';
+                }
+
+                return nodeValues;
+            }
+
+            function checkObligation() {
+                let errorList = [];
+                let title = $("#todoTitle").val();
+
+                if (title.trim().length == 0) {
+                    errorList.push('empty-title');
+                }
+
+                for (let i = 0; i < obligationListObj.length; i++) {
+                    let obligationTitle = obligationListObj[i].title;
+
+                    if (obligationTitle == title.trim() &&
+                        (obligationTitle != obligationObj.title || action != 'edit')) {
+                        errorList.push('duplicate-obl');
+                        break;
+                    }
+                }
+
+                var obligationText = $('#out').text().substring(title.length).replaceAll(" ","").replaceAll("\n","");
+
+                if (obligationText == '') {
+                    errorList.push('empty-text');
+                }
+
+                if (errorList.length === 0) {
+                    return true;
+                } else {
+                    showError(errorList);
+                    return false;
+                }
+            }
+
+            function showError(errorList) {
+                errorList.forEach(e => {
+                    $('#' + e).addClass('d-block');
+                });
             }
         });
-
-        function readNode(currentNode) {
-            var nodeData = {val:[], children:[]};
-
-            nodeData.val = getNodeValues(currentNode);
-
-            const childNodes = $(currentNode).children('ul');
-
-            $(childNodes).each(function(key, childNode) {
-                var tmp = $(childNode).children('.tree-node').first();
-                nodeData.children.push(readNode(tmp));
-            });
-
-            return nodeData;
-        }
-
-        function getNodeValues(node) {
-            const children = $(node).children();
-
-            var nodeValues = [];
-
-            $.each(children, function(key, child) {
-                if ($(child).is('input') && $(child).css('display') != 'none') {
-                    nodeValues.push($(child).val());
-                }
-            });
-
-            if ($(node).find('.elementType').val() == "Obligation") {
-                nodeValues.push("UNDEFINED")
-            }
-
-            return nodeValues;
-        }
-
-        function checkObligation(title) {
-            check = true
-            if (title.trim().length == 0){
-                $('#empty-title').addClass('d-block')
-                check = false
-            }
-            <core_rt:forEach items="${obligList}" var="oblig">
-                var obligationTitle = "<sw360:out value='${oblig.title}'/>"
-                if (obligationTitle == title.trim()) {
-                    $('#duplicate-obl').addClass('d-block')
-                    check = false
-                }
-            </core_rt:forEach>
-
-            var obligation_text = $('#out').text().replaceAll(" ","").replaceAll("\n","")
-            if (obligation_text == "") {
-                $('#empty-text').addClass('d-block')
-                check = false
-            }
-            return check
-        }
     });
 </script>

@@ -7,6 +7,8 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
   --%>
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 
 <%@ include file="/html/init.jsp" %>
@@ -71,116 +73,143 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter'], function($, datatables, dialog, quickfilter) {
-        var todoTable = createTodoTable();
-        quickfilter.addTable(todoTable);
+    AUI().use('liferay-portlet-url', function () {
+        var PortletURL = Liferay.PortletURL;
+        require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter', 'utils/render'], function($, datatables, dialog, quickfilter, render) {
+            var todoTable = createTodoTable();
+            quickfilter.addTable(todoTable);
 
-        // register event handlers
-        $('#todoTable').on('click', 'svg.delete', function (event) {
-            var data = $(event.currentTarget).data();
-            deleteObligations(data.id, data.title);
-        });
+            // register event handlers
+            $('#todoTable').on('click', 'svg.delete', function (event) {
+                var data = $(event.currentTarget).data();
+                deleteObligations(data.id, data.title);
+            });
 
-        function createTodoTable() {
-            var todosTbl,
-                result = [];
+            function createTodoTable() {
+                var todosTbl,
+                    result = [];
 
-            <core_rt:forEach items="${obligList}" var="oblig">
-                var obligText = "<sw360:out value='${oblig.text}' stripNewlines='false' jsQuoting='true'/>";
-                obligText = obligText.replace(/[\r\n]/g, '<br>');
-                obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
-                result.push({
-                    DT_RowId: "${oblig.id}",
-                    id: "${oblig.id}",
-                    title: "<sw360:out value='${oblig.title}'/>",
-                    text: '<p style="overflow: auto; max-height: 10rem;">'+obligText+'</p>',
-                    obligationLevel: "<sw360:DisplayEnum value="${oblig.obligationLevel}"/>"
-                });
-            </core_rt:forEach>
-
-            todosTbl = datatables.create('#todoTable', {
-                searching: true,
-                data: result,
-                columns: [
-                    {"title": "<liferay-ui:message key="title" />", data: 'title' },
-                    {"title": "<liferay-ui:message key="text" />", data: 'text' },
-                    {"title": "<liferay-ui:message key="obligation.level" />", data: 'obligationLevel'},
-                    {"title": "<liferay-ui:message key="actions" />", data: 'id', render: renderActions }
-                ],
-                language: {
-                    url: "<liferay-ui:message key="datatables.lang" />",
-                    loadingRecords: "<liferay-ui:message key="loading" />"
-                },
-                initComplete: datatables.showPageContainer
-            }, [0, 1], [3]);
-
-            return todosTbl;
-        }
-
-        function renderActions(value, type, row, meta) {
-            if(type === 'display') {
-                var $actions = $('<div>', {
-                        'class': 'actions'
-                    }),
-                    $deleteAction = $('<svg>', {
-                        'class': 'delete lexicon-icon',
-                        'data-id': value,
-                        'data-title': row.title
+                <core_rt:forEach items="${obligList}" var="oblig">
+                    var obligText = "<sw360:out value='${oblig.text}' stripNewlines='false' jsQuoting='true'/>";
+                    obligText = obligText.replace(/[\r\n]/g, '<br>');
+                    obligText = obligText.replace(/\t/g, '&ensp;&ensp;&ensp;&ensp;');
+                    result.push({
+                        DT_RowId: "${oblig.id}",
+                        id: "${oblig.id}",
+                        title: "<sw360:out value='${oblig.title}'/>",
+                        text: '<p style="overflow: auto; max-height: 10rem;">'+obligText+'</p>',
+                        obligationLevel: "<sw360:DisplayEnum value="${oblig.obligationLevel}"/>"
                     });
-                $deleteAction.append($('<title>Delete</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
+                </core_rt:forEach>
 
-                $actions.append($deleteAction);
-                return $actions[0].outerHTML;
-            } else if(type === 'type') {
-                return 'string';
-            } else {
-                return '';
-            }
-        }
-
-        function deleteObligations(id, title) {
-            var $dialog;
-
-            function deleteTodoInternal(callback) {
-                jQuery.ajax({
-                    type: 'POST',
-                    url: '<%=deleteAjaxURL%>',
-                    cache: false,
-                    data: {
-                        <portlet:namespace/>id: id
+                todosTbl = datatables.create('#todoTable', {
+                    searching: true,
+                    data: result,
+                    columns: [
+                        {"title": "<liferay-ui:message key="title" />", data: 'title' },
+                        {"title": "<liferay-ui:message key="text" />", data: 'text' },
+                        {"title": "<liferay-ui:message key="obligation.level" />", data: 'obligationLevel'},
+                        {"title": "<liferay-ui:message key="actions" />", data: 'id', render: renderActions, className: 'four actions', orderable: false}
+                    ],
+                    language: {
+                        url: "<liferay-ui:message key="datatables.lang" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
                     },
-                    success: function (data) {
-                        callback();
+                    initComplete: datatables.showPageContainer
+                }, [0, 1], [3]);
 
-                        if(data.result == 'SUCCESS') {
-                            todoTable.row('#' + id).remove().draw(false);
-                            $dialog.close();
-                        } else if(data.result == 'ACCESS_DENIED') {
-                            $dialog.alert('<liferay-ui:message key="do.you.really.want.to.delete.the.obligation.x" />');
-                        } else {
+                return todosTbl;
+            }
+
+            function renderActions(value, type, row, meta) {
+                if(type === 'display') {
+                    var id = value
+                    var $actions = $('<div>', {
+                            'class': 'actions'
+                        }),
+
+                        $deleteAction = '<a><svg class="delete lexicon-icon" name="delete-annotation" data-id=' + value + ' data-title="' + row.title + '" viewBox="0 0 512 512"><title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/></svg></a>',
+
+                        $duplicateAction = render.linkTo(
+                            makeComponentUrl(id, '<%=PortalConstants.PAGENAME_DUPLICATE%>'),
+                            "",
+                            '<svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#paste"/><title><liferay-ui:message key="duplicate" /></title></svg>'
+                        ),
+
+                        $editAction = render.linkTo(
+                            makeComponentUrl(id, '<%=PortalConstants.PAGENAME_EDIT%>'),
+                            "",
+                            '<svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#pencil"/><title><liferay-ui:message key="edit" /></title></svg>'
+                        ),
+
+                        $viewChangeLogAction = render.linkTo(
+                            makeComponentUrl(id, 'obligation_changelog'),
+                            "",
+                            '<svg class="lexicon-icon"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#document"/><title><liferay-ui:message key="change.log" /></title></svg>'
+                        );
+
+                    $actions.append($editAction, $duplicateAction, $viewChangeLogAction, $deleteAction);
+                    return $actions[0].outerHTML;
+                } else if(type === 'type') {
+                    return 'string';
+                } else {
+                    return '';
+                }
+            }
+
+            // helper functions
+            function makeComponentUrl(obligationId, page) {
+                var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>')
+                        .setParameter('<%=PortalConstants.PAGENAME%>', page)
+                        // .setParameter('<%=PortalConstants.OBLIGATION_ID%>', obligationId)
+                        .setParameter('<%=PortalConstants.DOCUMENT_ID%>', obligationId)
+                return portletURL.toString();
+            }
+
+            function deleteObligations(id, title) {
+                var $dialog;
+
+                function deleteTodoInternal(callback) {
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: '<%=deleteAjaxURL%>',
+                        cache: false,
+                        data: {
+                            <portlet:namespace/>id: id
+                        },
+                        success: function (data) {
+                            callback();
+
+                            if(data.result == 'SUCCESS') {
+                                todoTable.row('#' + id).remove().draw(false);
+                                $dialog.close();
+                            } else if(data.result == 'ACCESS_DENIED') {
+                                $dialog.alert('<liferay-ui:message key="do.you.really.want.to.delete.the.obligation.x" />');
+                            } else {
+                                $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.obligation" />");
+                            }
+                        },
+                        error: function () {
+                            callback();
                             $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.obligation" />");
                         }
-                    },
-                    error: function () {
-                        callback();
-                        $dialog.alert("<liferay-ui:message key="i.could.not.delete.the.obligation" />");
-                    }
-                });
-            }
-
-            $dialog = dialog.confirm(
-                'danger',
-                'question-circle',
-                '<liferay-ui:message key="delete.obligation" />?',
-                '<p><liferay-ui:message key="do.you.really.want.to.delete.the.obligation.x" />?</p>',
-                '<liferay-ui:message key="delete.obligation" />',
-                {
-                    title: title,
-                },
-                function(submit, callback) {
-                    deleteTodoInternal(callback);
+                    });
                 }
-            );
-        }
+
+                $dialog = dialog.confirm(
+                    'danger',
+                    'question-circle',
+                    '<liferay-ui:message key="delete.obligation" />?',
+                    '<p><liferay-ui:message key="do.you.really.want.to.delete.the.obligation.x" />?</p>',
+                    '<liferay-ui:message key="delete.obligation" />',
+                    {
+                        title: title,
+                    },
+                    function(submit, callback) {
+                        deleteTodoInternal(callback);
+                    }
+                );
+            }
+        });
     });
 </script>

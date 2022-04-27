@@ -213,6 +213,8 @@ public class PortalConstants {
     public static final String LOAD_OBLIGATIONS_EDIT = "load_obligations_edit";
     public static final String LOAD_LICENSE_OBLIGATIONS = "load_license_obligations";
     public static final String UNUSED_RELEASES = "unusedReleases";
+    public static final String OBLIGATION_EDIT = "obligationEdit";
+    public static final String OBLIGATION_CHANGELOG = "obligation_changelog";
 
     //! Specialized keys for license types
     public static final String LICENSE_TYPE_LIST = "licenseTypeList";
