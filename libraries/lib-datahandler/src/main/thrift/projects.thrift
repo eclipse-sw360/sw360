@@ -501,4 +501,9 @@ service ProjectService {
     * get accessible projects count
     */
     i32 getMyAccessibleProjectCounts(1: User user);
+
+    /**
+    * Send email to the user once spreadsheet export completed
+    */
+    void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
 }

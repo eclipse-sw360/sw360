@@ -430,4 +430,9 @@ public class ProjectHandler implements ProjectService.Iface {
     public int getMyAccessibleProjectCounts(User user) throws TException {
         return handler.getMyAccessibleProjects(user);
     }
+
+    @Override
+    public void sendExportSpreadsheetSuccessMail(String url, String recepient) throws TException {
+        handler.sendExportSpreadsheetSuccessMail(url, recepient);
+    }
 }

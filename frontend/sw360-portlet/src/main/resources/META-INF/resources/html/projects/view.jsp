@@ -71,6 +71,11 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_PROJECT_LIST%>'/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="generateExcelReport">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EMAIL_EXPORTED_EXCEL%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
+</portlet:resourceURL>
+
 <div class="container" style="display: none;">
     <div class="row">
         <div class="col-3 sidebar">
@@ -530,17 +535,29 @@
 
             // Export Spreadsheet action
             function exportSpreadsheet(type) {
-                var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                var  isEMailEnabled = <%=PortalConstants.SEND_PROJECT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED%>;
+                if(isEMailEnabled){
+                    var isWithReleases = (type === 'projectWithReleases' ? 'true' : 'false');
+                    $.ajax({
+                        type: 'POST',
+                        url: '<%=generateExcelReport%>',
+                        cache: false,
+                        data: {
+                            "<portlet:namespace/><%=PortalConstants.EXTENDED_EXCEL_EXPORT%>": isWithReleases,
+                        }
+                    });
+                } else {
+                    var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
                     .setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_TO_EXCEL%>');
-                portletURL.setParameter('<%=Project._Fields.NAME%>', $('#project_name').val());
-                portletURL.setParameter('<%=Project._Fields.TYPE%>', $('#project_type').val());
-                portletURL.setParameter('<%=Project._Fields.PROJECT_RESPONSIBLE%>', $('#project_responsible').val());
-                portletURL.setParameter('<%=Project._Fields.BUSINESS_UNIT%>', $('#group').val());
-                portletURL.setParameter('<%=Project._Fields.STATE%>', $('#project_state').val());
-                portletURL.setParameter('<%=Project._Fields.TAG%>', $('#tag').val());
-                portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
-
-                window.location.href = portletURL.toString();
+                    portletURL.setParameter('<%=Project._Fields.NAME%>', $('#project_name').val());
+                    portletURL.setParameter('<%=Project._Fields.TYPE%>', $('#project_type').val());
+                    portletURL.setParameter('<%=Project._Fields.PROJECT_RESPONSIBLE%>', $('#project_responsible').val());
+                    portletURL.setParameter('<%=Project._Fields.BUSINESS_UNIT%>', $('#group').val());
+                    portletURL.setParameter('<%=Project._Fields.STATE%>', $('#project_state').val());
+                    portletURL.setParameter('<%=Project._Fields.TAG%>', $('#tag').val());
+                    portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
+                    window.location.href = portletURL.toString();
+                }
             }
 
             // delete action

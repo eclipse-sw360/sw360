@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.eclipse.sw360.exporter.utils.SubTable;
 
 import java.util.*;
@@ -101,26 +102,51 @@ public class ReleaseHelper implements ExporterHelper<Release> {
         return addAdditionalData() ? HEADERS_EXTENDED_BY_ADDITIONAL_DATA : HEADERS;
     }
 
+    public int getColumnsProjExport() {
+        return getHeadersProjExport().size();
+    }
+
+    public List<String> getHeadersProjExport() {
+        return addAdditionalData() ? HEADERS_EXTENDED_BY_ADDITIONAL_DATA_PROJECT : HEADERS;
+    }
+
     @Override
     public SubTable makeRows(Release release) throws SW360Exception {
         List<String> row = new ArrayList<>();
         if (release.isSetPermissions() && release.getPermissions().get(RequestedAction.READ)) {
             for (Release._Fields renderedField : RELEASE_RENDERED_FIELDS) {
-                addFieldValueToRow(row, renderedField, release);
+                addFieldValueToRow(row, renderedField, release, false);
             }
         } else {
             for (Release._Fields renderedField : RELEASE_RENDERED_FIELDS) {
-                addInaccessibleFieldValueToRow(row, renderedField, release);
+                addInaccessibleFieldValueToRow(row, renderedField, release, false);
             }
         }
         return new SubTable(row);
     }
 
-    private void addFieldValueToRow(List<String> row, Release._Fields field, Release release) throws SW360Exception {
+    public SubTable makeCustomRowsForProjectExport(Release release) throws SW360Exception {
+        List<String> row = new ArrayList<>();
+        if (release.isSetPermissions() && release.getPermissions().get(RequestedAction.READ)) {
+            for (Release._Fields renderedField : RELEASE_RENDERED_FIELDS_PROJECTS) {
+                addFieldValueToRow(row, renderedField, release, true);
+            }
+        } else {
+            for (Release._Fields renderedField : RELEASE_RENDERED_FIELDS_PROJECTS) {
+                addInaccessibleFieldValueToRow(row, renderedField, release, true);
+            }
+        }
+        return new SubTable(row);
+    }
+
+
+    private void addFieldValueToRow(List<String> row, Release._Fields field, Release release, boolean isForProjectExport) throws SW360Exception {
         switch (field) {
             case COMPONENT_ID:
                 // first, add data for given field
-                row.add(release.getComponentId());
+                if (!isForProjectExport) {
+                    row.add(release.getComponentId());
+                }
 
                 // second, add joined data, remark that headers have already been added
                 // accordingly
@@ -155,13 +181,15 @@ public class ReleaseHelper implements ExporterHelper<Release> {
                         row.add("");
                     }
                 }
-                if(component == null) {
-                    row.add("");
-                } else {
-                    if (component.getCategories() == null) {
+                if (!isForProjectExport) {
+                    if (component == null) {
                         row.add("");
                     } else {
-                        row.add(component.getCategories().toString());
+                        if (component.getCategories() == null) {
+                            row.add("");
+                        } else {
+                            row.add(component.getCategories().toString());
+                        }
                     }
                 }
 
@@ -177,7 +205,7 @@ public class ReleaseHelper implements ExporterHelper<Release> {
                 addClearingInformationToRow(release.getClearingInformation(), row);
                 break;
             case ECC_INFORMATION:
-                addEccInformationToRow(release.getEccInformation(), row);
+                addEccInformationToRow(release.getEccInformation(), row, isForProjectExport);
                 break;
             case RELEASE_ID_TO_RELATIONSHIP:
                 addReleaseIdToRelationShipToRow(release.getReleaseIdToRelationship(), row);
@@ -192,7 +220,7 @@ public class ReleaseHelper implements ExporterHelper<Release> {
         }
     }
 
-    private void addInaccessibleFieldValueToRow(List<String> row, Release._Fields field, Release release) throws SW360Exception {
+    private void addInaccessibleFieldValueToRow(List<String> row, Release._Fields field, Release release, boolean isForProjectExport) throws SW360Exception {
         switch (field) {
             case NAME:
                 row.add(SW360Utils.INACCESSIBLE_RELEASE);
@@ -223,7 +251,7 @@ public class ReleaseHelper implements ExporterHelper<Release> {
                 addClearingInformationToRow(null, row);
                 break;
             case ECC_INFORMATION:
-                addEccInformationToRow(null, row);
+                addEccInformationToRow(null, row, isForProjectExport);
                 break;
             case RELEASE_ID_TO_RELATIONSHIP:
                 addReleaseIdToRelationShipToRow(null, row);
@@ -284,9 +312,9 @@ public class ReleaseHelper implements ExporterHelper<Release> {
         }
     }
 
-    private void addEccInformationToRow(EccInformation eccInformation, List<String> row) throws SW360Exception {
+    private void addEccInformationToRow(EccInformation eccInformation, List<String> row, boolean isForProjectExport) throws SW360Exception {
         try {
-            EccInformation.metaDataMap.keySet().forEach(f -> wrapSW360Exception(() -> {
+            EccInformation.metaDataMap.keySet().stream().filter(e -> (!isForProjectExport || !ReleaseExporter.ECC_IGNORE_FIELDS.contains(e))).forEach(f -> wrapSW360Exception(() -> {
                 if (eccInformation != null && eccInformation.isSet(f)) {
                     row.add(fieldValueAsString(eccInformation.getFieldValue(f)));
                 } else {

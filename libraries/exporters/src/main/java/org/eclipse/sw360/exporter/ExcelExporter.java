@@ -10,19 +10,30 @@
 package org.eclipse.sw360.exporter;
 
 
+import org.apache.commons.compress.archivers.zip.Zip64Mode;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.helper.ExporterHelper;
 import org.eclipse.sw360.exporter.utils.SubTable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created on 06/02/15.
@@ -31,7 +42,11 @@ import java.util.List;
  */
 public class ExcelExporter<T, U extends ExporterHelper<T>> {
 
+    private static final Logger log = LogManager.getLogger(ExcelExporter.class);
+
     protected final U helper;
+    private static final String SLASH = "/";
+    private static final String TMP_EXPORTEDFILES = "/tmp/";
 
     public ExcelExporter(U helper) {
         this.helper = helper;
@@ -64,6 +79,59 @@ public class ExcelExporter<T, U extends ExporterHelper<T>> {
         }finally{
             workbook.dispose();
         }
+        return stream;
+    }
+
+    public String makeExcelExportForProject(List<T> documents, User user) throws IOException, SW360Exception {
+        final SXSSFWorkbook workbook = new SXSSFWorkbook();
+        String token = UUID.randomUUID().toString();
+        String filePath = TMP_EXPORTEDFILES + user.getEmail() + SLASH;
+        File file;
+        try {
+            File dir = new File(filePath);
+            dir.mkdir();
+            file = new File(dir.getPath() + SLASH + SW360Utils.getCreatedOn() + "_" + token);
+            file.createNewFile();
+            SXSSFSheet sheet = workbook.createSheet("Data");
+
+            /** Adding styles to cells */
+            CellStyle cellStyle = createCellStyle(workbook);
+            CellStyle headerStyle = createHeaderStyle(workbook);
+
+            /** Create header row */
+            Row headerRow = sheet.createRow(0);
+            List<String> headerNames = helper.getHeaders();
+            fillRow(headerRow, headerNames, headerStyle);
+
+            /** Create data rows */
+            fillValues(sheet, documents, cellStyle);
+
+            // removed autosizing of spreadsheet columns for performance reasons
+
+            /** Copy the streams */
+
+            try (OutputStream outputStream = new FileOutputStream(file.getPath())) {
+                workbook.setZip64Mode(Zip64Mode.Always);
+                workbook.write(outputStream);
+                outputStream.close();
+            }
+        } finally {
+            workbook.dispose();
+        }
+        return file.getPath();
+    }
+
+    public InputStream downloadExcelSheet(String token) {
+        InputStream stream = null;
+        try {
+            File file = new File(token);
+            if (file.exists()) {
+                stream = new FileInputStream(new File(token));
+            }
+        } catch (FileNotFoundException e) {
+            log.error("Error getting file", e);
+        }
+
         return stream;
     }
 
