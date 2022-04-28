@@ -669,19 +669,18 @@ public class SW360Utils {
         obligationAlreadyPresent.entrySet().stream().forEach(e -> obligationStatusMap.remove(e.getKey()));
 
         Map<String, ObligationStatusInfo> mapOfObligations = obligations.stream().filter(Objects::nonNull)
-                .filter(o -> Objects.nonNull(o.getObligationLevel()))
-                .filter(o -> o.getObligationLevel().equals(oblLevel))
+                .filter(o -> Objects.nonNull(o.getObligationLevel()) && oblLevel.equals(o.getObligationLevel()))
                 .filter(o -> addFromDB || obligationAlreadyPresent
-                        .containsKey(CommonUtils.nullToEmptyString(o.getText()).replaceAll("\r\n", " ")))
+                        .containsKey(CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " ")))
                 .collect(Collectors.toMap(
-                        o -> CommonUtils.isNotNullEmptyOrWhitespace(o.getTitle()) ? o.getTitle() : o.getText(), o -> {
-                            String key = CommonUtils.nullToEmptyString(o.getText()).replaceAll("\r\n", " ");
+                        o -> CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " "), o -> {
+                            String key = CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " ");
                             if (obligationAlreadyPresent.containsKey(key)) {
                                 return obligationAlreadyPresent.remove(key);
                             } else {
                                 return new ObligationStatusInfo().setComment(o.getComments())
                                         .setObligationLevel(oblLevel).setObligationType(o.getObligationType())
-                                        .setReleaseIdToAcceptedCLI(new HashMap()).setText(o.getText());
+                                        .setReleaseIdToAcceptedCLI(new HashMap<>()).setText(o.getText());
                             }
                         }, (oldValue, newValue) -> oldValue));
 
