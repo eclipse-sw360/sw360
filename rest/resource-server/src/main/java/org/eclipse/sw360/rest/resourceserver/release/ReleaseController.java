@@ -43,9 +43,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -78,11 +78,11 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class ReleaseController implements ResourceProcessor<RepositoryLinksResource> {
+public class ReleaseController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
     private static final Logger log = LogManager.getLogger(ReleaseController.class);
     private static final Map<String, ReentrantLock> mapOfLocks = new HashMap<String, ReentrantLock>();
@@ -111,7 +111,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     private final com.fasterxml.jackson.databind.Module sw360Module;
 
     @GetMapping(value = RELEASES_URL)
-    public ResponseEntity<Resources<Resource>> getReleasesForUser(
+    public ResponseEntity<CollectionModel<EntityModel>> getReleasesForUser(
             Pageable pageable,
             @RequestParam(value = "sha1", required = false) String sha1,
             @RequestParam(value = "fields", required = false) List<String> fields,
@@ -133,12 +133,12 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
         PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE);
 
-        List<Resource> releaseResources = new ArrayList<>();
+        List<EntityModel> releaseResources = new ArrayList<>();
         for (Release sw360Release : paginationResult.getResources()) {
-            Resource<Release> releaseResource = null;
+            EntityModel<Release> releaseResource = null;
             if (!allDetails) {
                 Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release, fields);
-                releaseResource = new Resource<>(embeddedRelease);
+                releaseResource = EntityModel.of(embeddedRelease);
             } else {
                 releaseResource = createHalReleaseResourceWithAllDetails(sw360Release);
             }
@@ -146,7 +146,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
             releaseResources.add(releaseResource);
         }
 
-        Resources resources = null;
+        CollectionModel resources = null;
         if (CommonUtils.isNotEmpty(releaseResources)) {
             resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
         }
@@ -167,7 +167,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @GetMapping(value = RELEASES_URL + "/{id}")
-    public ResponseEntity<Resource> getRelease(
+    public ResponseEntity<EntityModel> getRelease(
             @PathVariable("id") String id) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
@@ -184,24 +184,24 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @RequestMapping(value = RELEASES_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource>> getUsedByResourceDetails(@PathVariable("id") String id)
+    public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
             throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
         Set<org.eclipse.sw360.datahandler.thrift.projects.Project> sw360Projects = releaseService.getProjectsByRelease(id, user);
         Set<org.eclipse.sw360.datahandler.thrift.components.Component> sw360Components = releaseService.getUsingComponentsForRelease(id, user);
 
-        List<Resource> resources = new ArrayList<>();
+        List<EntityModel> resources = new ArrayList<>();
         sw360Projects.forEach(p -> {
             Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
-            resources.add(new Resource<>(embeddedProject));
+            resources.add(EntityModel.of(embeddedProject));
         });
 
         sw360Components.forEach(c -> {
                     Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
-                    resources.add(new Resource<>(embeddedComponent));
+                    resources.add(EntityModel.of(embeddedComponent));
                 });
 
-        Resources<Resource> finalResources = restControllerHelper.createResources(resources);
+        CollectionModel<EntityModel> finalResources = restControllerHelper.createResources(resources);
         HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(finalResources, status);
     }
@@ -234,7 +234,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
     @PreAuthorize("hasAuthority('WRITE')")
     @PatchMapping(value = RELEASES_URL + "/{id}")
-    public ResponseEntity<Resource<Release>> patchRelease(
+    public ResponseEntity<EntityModel<Release>> patchRelease(
             @PathVariable("id") String id,
             @RequestBody Map<String, Object> reqBodyMap) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
@@ -253,7 +253,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
 
     @PreAuthorize("hasAuthority('WRITE')")
     @PostMapping(value = RELEASES_URL)
-    public ResponseEntity<Resource<Release>> createRelease(
+    public ResponseEntity<EntityModel<Release>> createRelease(
             @RequestBody Map<String, Object> reqBodyMap) throws URISyntaxException, TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Release release = setBackwardCompatibleFieldsInRelease(reqBodyMap);
@@ -294,17 +294,17 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
     }
 
     @GetMapping(value = RELEASES_URL + "/{id}/attachments")
-    public ResponseEntity<Resources<Resource<Attachment>>> getReleaseAttachments(
+    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getReleaseAttachments(
             @PathVariable("id") String id) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
-        final Resources<Resource<Attachment>> resources = attachmentService.getResourcesFromList(sw360Release.getAttachments());
+        final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getResourcesFromList(sw360Release.getAttachments());
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
     @PatchMapping(value = RELEASES_URL + "/{id}/attachment/{attachmentId}")
-    public ResponseEntity<Resource<Attachment>> patchReleaseAttachmentInfo(@PathVariable("id") String id,
+    public ResponseEntity<EntityModel<Attachment>> patchReleaseAttachmentInfo(@PathVariable("id") String id,
             @PathVariable("attachmentId") String attachmentId, @RequestBody Attachment attachmentData)
             throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -315,7 +315,7 @@ public class ReleaseController implements ResourceProcessor<RepositoryLinksResou
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
-        Resource<Attachment> attachmentResource = new Resource<>(updatedAttachment);
+        EntityModel<Attachment> attachmentResource = EntityModel.of(updatedAttachment);
         return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
     }
 

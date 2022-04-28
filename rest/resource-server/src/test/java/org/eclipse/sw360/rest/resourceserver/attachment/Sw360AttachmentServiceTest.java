@@ -25,7 +25,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Arrays;
@@ -38,10 +38,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -106,7 +106,7 @@ public class Sw360AttachmentServiceTest {
         Set<Attachment> filtered = attachmentService.filterAttachmentsToRemove(Source.releaseId("r"),
                 new HashSet<>(attachmentSet), Arrays.asList(attachmentId(10), attachmentId(11)));
         assertThat(filtered).isEmpty();
-        verifyZeroInteractions(thriftService);
+        verifyNoMoreInteractions(thriftService);
     }
 
     @Test

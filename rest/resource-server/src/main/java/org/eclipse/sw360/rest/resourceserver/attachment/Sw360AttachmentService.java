@@ -41,8 +41,8 @@ import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -250,16 +250,16 @@ public class Sw360AttachmentService {
         }
     }
 
-    public Resources<Resource<Attachment>> getResourcesFromList(Set<Attachment> attachmentList) {
-        final List<Resource<Attachment>> attachmentResources = new ArrayList<>();
+    public CollectionModel<EntityModel<Attachment>> getResourcesFromList(Set<Attachment> attachmentList) {
+        final List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
         if (CommonUtils.isNotEmpty(attachmentList)) {
             for (final Attachment attachment : attachmentList) {
                 final Attachment embeddedAttachment = restControllerHelper.convertToEmbeddedAttachment(attachment);
-                final Resource<Attachment> attachmentResource = new Resource<>(embeddedAttachment);
+                final EntityModel<Attachment> attachmentResource = EntityModel.of(embeddedAttachment);
                 attachmentResources.add(attachmentResource);
             }
         }
-        return new Resources<>(attachmentResources);
+        return CollectionModel.of(attachmentResources);
     }
 
     public List<AttachmentUsage> getAllAttachmentUsage(String projectId) throws TException {

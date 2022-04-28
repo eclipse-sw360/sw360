@@ -23,9 +23,9 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -43,12 +43,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class LicenseController implements ResourceProcessor<RepositoryLinksResource> {
+public class LicenseController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String LICENSES_URL = "/licenses";
 
     @NonNull
@@ -58,22 +58,22 @@ public class LicenseController implements ResourceProcessor<RepositoryLinksResou
     private final RestControllerHelper restControllerHelper;
 
     @RequestMapping(value = LICENSES_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<License>>> getLicenses() throws TException {
+    public ResponseEntity<CollectionModel<EntityModel<License>>> getLicenses() throws TException {
         List<License> sw360Licenses = licenseService.getLicenses();
 
-        List<Resource<License>> licenseResources = new ArrayList<>();
+        List<EntityModel<License>> licenseResources = new ArrayList<>();
         for (License sw360License : sw360Licenses) {
             License embeddedLicense = restControllerHelper.convertToEmbeddedLicense(sw360License);
-            Resource<License> licenseResource = new Resource<>(embeddedLicense);
+            EntityModel<License> licenseResource = EntityModel.of(embeddedLicense);
             licenseResources.add(licenseResource);
         }
 
-        Resources<Resource<License>> resources = new Resources<>(licenseResources);
+        CollectionModel<EntityModel<License>> resources = CollectionModel.of(licenseResources);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     @RequestMapping(value = LICENSES_URL + "/{id:.+}", method = RequestMethod.GET)
-    public ResponseEntity<Resource<License>> getLicense(
+    public ResponseEntity<EntityModel<License>> getLicense(
             @PathVariable("id") String id) throws TException {
         License sw360License = licenseService.getLicenseById(id);
         HalResource<License> licenseHalResource = createHalLicense(sw360License);
@@ -91,7 +91,7 @@ public class LicenseController implements ResourceProcessor<RepositoryLinksResou
     
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL, method = RequestMethod.POST)
-    public ResponseEntity<Resource<License>> createLicense(
+    public ResponseEntity<EntityModel<License>> createLicense(
             @RequestBody License license) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         license = licenseService.createLicense(license, sw360User);

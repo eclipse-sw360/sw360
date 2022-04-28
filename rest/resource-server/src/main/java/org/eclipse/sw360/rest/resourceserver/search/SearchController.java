@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.search;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -34,9 +34,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,7 +48,7 @@ import lombok.RequiredArgsConstructor;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class SearchController implements ResourceProcessor<RepositoryLinksResource> {
+public class SearchController implements RepresentationModelProcessor<RepositoryLinksResource> {
     
     private static final Logger log = LogManager.getLogger(SearchController.class);
     
@@ -62,7 +62,7 @@ public class SearchController implements ResourceProcessor<RepositoryLinksResour
     
 
     @RequestMapping(value = SEARCH_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<SearchResult>>> getSearchResult(Pageable pageable,
+    public ResponseEntity<CollectionModel<EntityModel<SearchResult>>> getSearchResult(Pageable pageable,
             @RequestParam(value = "searchText") String searchText, @RequestParam Optional<List<String>> typeMasks,
             HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         log.debug("SearchText = {} typeMasks = {}", searchText, typeMasks);
@@ -72,10 +72,10 @@ public class SearchController implements ResourceProcessor<RepositoryLinksResour
         PaginationResult<SearchResult> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                 searchResults, SW360Constants.TYPE_SEARCHRESULT);
 
-        List<Resource<SearchResult>> searchResources = paginationResult.getResources().stream()
-                .map(sr -> new Resource<SearchResult>(sr)).collect(Collectors.toList());
+        List<EntityModel<SearchResult>> searchResources = paginationResult.getResources().stream()
+                .map(sr -> EntityModel.of(sr)).collect(Collectors.toList());
 
-        Resources resources = null;
+        CollectionModel resources = null;
         if (CommonUtils.isNotEmpty(searchResources)) {
             resources = restControllerHelper.generatePagesResource(paginationResult, searchResources);
         }

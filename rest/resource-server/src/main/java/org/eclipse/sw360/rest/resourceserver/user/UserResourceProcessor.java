@@ -13,19 +13,19 @@ package org.eclipse.sw360.rest.resourceserver.user;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.stereotype.Component;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 
 @Component
 @RequiredArgsConstructor
-class UserResourceProcessor implements ResourceProcessor<Resource<User>> {
+class UserResourceProcessor implements RepresentationModelProcessor<EntityModel<User>> {
 
     @Override
-    public Resource<User> process(Resource<User> resource) {
+    public EntityModel<User> process(EntityModel<User> resource) {
         try {
             User user = resource.getContent();
             Link selfLink = linkTo(UserController.class).slash("api/users/byid/" + user.getId()).withSelfRel();

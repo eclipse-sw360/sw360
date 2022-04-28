@@ -13,18 +13,18 @@ package org.eclipse.sw360.rest.resourceserver.release;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.stereotype.Component;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @Component
 @RequiredArgsConstructor
-class ReleaseResourceProcessor implements ResourceProcessor<Resource<Release>> {
+class ReleaseResourceProcessor implements RepresentationModelProcessor<EntityModel<Release>> {
 
     @Override
-    public Resource<Release> process(Resource<Release> resource) {
+    public EntityModel<Release> process(EntityModel<Release> resource) {
         Release release = resource.getContent();
         Link selfLink = linkTo(ReleaseController.class)
                 .slash("api" + ReleaseController.RELEASES_URL + "/" + release.getId()).withSelfRel();

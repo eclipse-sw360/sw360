@@ -22,7 +22,10 @@ Export-Package: \
 	org.eclipse.sw360.datahandler.*, \
 	org.ektorp.*, \
 	com.cloudant.*, \
-	com.google.gson.*
+	com.google.gson.*, \
+	com.google.common.*, \
+	com.google.common.util.concurrent.*
+
 
 Import-Package: \
 	com.fasterxml.jackson.*, \
@@ -43,5 +46,10 @@ Conditional-Package: \
 	com.cloudant.*, \
 	com.google.gson.*
 
+# The following resources are not available as OSGI bundles and therefore will be directly included
+Include-Resource: \
+    META-INF/lib/com.google.guava.failureaccess.jar=failureaccess-[0-9]*.jar;lib:=true
+
 Bundle-Classpath: \
-	.
+    ., \
+    META-INF/lib/com.google.guava.failureaccess.jar,

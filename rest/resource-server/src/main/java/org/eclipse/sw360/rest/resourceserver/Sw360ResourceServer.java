@@ -27,11 +27,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
 import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurer;
-import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapter;
 import org.springframework.hateoas.UriTemplate;
-import org.springframework.hateoas.hal.CurieProvider;
-import org.springframework.hateoas.hal.DefaultCurieProvider;
+import org.springframework.hateoas.mediatype.hal.CurieProvider;
+import org.springframework.hateoas.mediatype.hal.DefaultCurieProvider;
 import org.springframework.web.filter.ForwardedHeaderFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 
 @SpringBootApplication
 @Import(Sw360CORSFilter.class)
@@ -64,7 +64,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     @Bean
     public CurieProvider curieProvider() {
-        return new DefaultCurieProvider(CURIE_NAMESPACE, new UriTemplate("/docs/{rel}.html"));
+        return new DefaultCurieProvider(CURIE_NAMESPACE, UriTemplate.of("/docs/{rel}.html"));
     }
 
     @Bean
@@ -74,9 +74,9 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     @Bean
     public RepositoryRestConfigurer repositoryRestConfigurer() {
-        return new RepositoryRestConfigurerAdapter() {
+        return new RepositoryRestConfigurer() {
             @Override
-            public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config) {
+            public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config,  CorsRegistry cors) {
                 config.setLimitParamName(RestControllerHelper.PAGINATION_PARAM_PAGE_ENTRIES);
                 config.setBasePath(REST_BASE_PATH);
             }

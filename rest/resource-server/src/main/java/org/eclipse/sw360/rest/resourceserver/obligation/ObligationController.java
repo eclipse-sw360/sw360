@@ -22,9 +22,9 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,12 +39,12 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class ObligationController implements ResourceProcessor<RepositoryLinksResource> {
+public class ObligationController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String OBLIGATION_URL = "/obligations";
 
     @NonNull
@@ -54,21 +54,21 @@ public class ObligationController implements ResourceProcessor<RepositoryLinksRe
     private final RestControllerHelper restControllerHelper;
 
     @RequestMapping(value = OBLIGATION_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Obligation>>> getObligations() {
+    public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligations() {
         List<Obligation> obligations = obligationService.getObligations();
 
-        List<Resource<Obligation>> obligationResources = new ArrayList<>();
+        List<EntityModel<Obligation>> obligationResources = new ArrayList<>();
         obligations.forEach(o -> {
             Obligation embeddedObligation = restControllerHelper.convertToEmbeddedObligation(o);
-            obligationResources.add(new Resource<>(embeddedObligation));
+            obligationResources.add(EntityModel.of(embeddedObligation));
         });
 
-        Resources<Resource<Obligation>> resources = new Resources<>(obligationResources);
+        CollectionModel<EntityModel<Obligation>> resources = CollectionModel.of(obligationResources);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     @RequestMapping(value = OBLIGATION_URL + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Resource<Obligation>> getObligation(
+    public ResponseEntity<EntityModel<Obligation>> getObligation(
             @PathVariable("id") String id) {
         try {
             Obligation sw360Obligation = obligationService.getObligationById(id);

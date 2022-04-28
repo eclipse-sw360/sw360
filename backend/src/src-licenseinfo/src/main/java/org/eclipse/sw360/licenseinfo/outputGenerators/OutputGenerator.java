@@ -183,8 +183,8 @@ public abstract class OutputGenerator<T> {
                 .filter(Objects::nonNull)
                 .map(LicenseInfo::getLicenseNamesWithTexts)
                 .filter(Objects::nonNull)
-                .reduce(Sets::union)
-                .orElse(Collections.emptySet());
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet());
 
         return licenseNamesWithText.stream()
                 .filter(licenseNameWithText -> !LicenseNameWithTextUtils.isEmpty(licenseNameWithText))

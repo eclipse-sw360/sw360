@@ -18,9 +18,9 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,12 +34,12 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class VendorController implements ResourceProcessor<RepositoryLinksResource> {
+public class VendorController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String VENDORS_URL = "/vendors";
 
     @NonNull
@@ -49,21 +49,21 @@ public class VendorController implements ResourceProcessor<RepositoryLinksResour
     private final RestControllerHelper restControllerHelper;
 
     @RequestMapping(value = VENDORS_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Vendor>>> getVendors() {
+    public ResponseEntity<CollectionModel<EntityModel<Vendor>>> getVendors() {
         List<Vendor> vendors = vendorService.getVendors();
 
-        List<Resource<Vendor>> vendorResources = new ArrayList<>();
+        List<EntityModel<Vendor>> vendorResources = new ArrayList<>();
         vendors.forEach(v -> {
             Vendor embeddedVendor = restControllerHelper.convertToEmbeddedVendor(v);
-            vendorResources.add(new Resource<>(embeddedVendor));
+            vendorResources.add(EntityModel.of(embeddedVendor));
         });
 
-        Resources<Resource<Vendor>> resources = new Resources<>(vendorResources);
+        CollectionModel<EntityModel<Vendor>> resources = CollectionModel.of(vendorResources);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     @RequestMapping(value = VENDORS_URL + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Resource<Vendor>> getVendor(
+    public ResponseEntity<EntityModel<Vendor>> getVendor(
             @PathVariable("id") String id) {
         Vendor sw360Vendor = vendorService.getVendorById(id);
         HalResource<Vendor> halResource = createHalVendor(sw360Vendor);

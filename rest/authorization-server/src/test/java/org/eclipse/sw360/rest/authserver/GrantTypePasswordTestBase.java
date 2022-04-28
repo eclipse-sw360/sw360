@@ -19,7 +19,7 @@ import java.io.IOException;
 
 import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.READ;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public abstract class GrantTypePasswordTestBase extends IntegrationTestBase {
 

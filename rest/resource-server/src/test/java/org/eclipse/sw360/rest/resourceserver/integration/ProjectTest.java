@@ -26,14 +26,12 @@ import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ProjectTest extends TestIntegrationBase {
@@ -55,7 +53,7 @@ public class ProjectTest extends TestIntegrationBase {
         project.setDescription("Project description");
         projectList.add(project);
 
-        given(this.projectServiceMock.getProjectsForUser(anyObject())).willReturn(projectList);
+        given(this.projectServiceMock.getProjectsForUser(any())).willReturn(projectList);
 
         User user = new User();
         user.setId("123456789");

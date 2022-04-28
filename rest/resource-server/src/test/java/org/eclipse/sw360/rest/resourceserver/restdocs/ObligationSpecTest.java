@@ -13,7 +13,6 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
-import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
@@ -27,13 +26,12 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
@@ -85,9 +83,9 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
 
         given(this.obligationServiceMock.getObligations()).willReturn(obligationList);
         given(this.obligationServiceMock.getObligationById(eq(obligation.getId()))).willReturn(obligation);
-        given(this.obligationServiceMock.deleteObligation(eq(obligation.getId()), anyObject())).willReturn(RequestStatus.SUCCESS);
+        given(this.obligationServiceMock.deleteObligation(eq(obligation.getId()), any())).willReturn(RequestStatus.SUCCESS);
 
-        when(this.obligationServiceMock.createObligation(anyObject(), anyObject())).then(invocation ->
+        when(this.obligationServiceMock.createObligation(any(), any())).then(invocation ->
         new Obligation("This is the text of my Test Obligation")
                 .setId("1234567890")
                 .setTitle("Test Obligation")

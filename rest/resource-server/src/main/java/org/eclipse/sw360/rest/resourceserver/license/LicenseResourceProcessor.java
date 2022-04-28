@@ -13,17 +13,17 @@ package org.eclipse.sw360.rest.resourceserver.license;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @org.springframework.stereotype.Component
 @RequiredArgsConstructor
-class LicenseResourceProcessor implements ResourceProcessor<Resource<License>> {
+class LicenseResourceProcessor implements RepresentationModelProcessor<EntityModel<License>> {
 
     @Override
-    public Resource<License> process(Resource<License> resource) {
+    public EntityModel<License> process(EntityModel<License> resource) {
         License license = resource.getContent();
         Link selfLink = linkTo(LicenseController.class)
                 .slash("api" + LicenseController.LICENSES_URL + "/" + license.getId()).withSelfRel();

@@ -73,7 +73,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.util.List;
 import java.util.Map;

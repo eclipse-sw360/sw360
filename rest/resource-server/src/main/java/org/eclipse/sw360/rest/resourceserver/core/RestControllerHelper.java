@@ -52,8 +52,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.hateoas.*;
-import org.springframework.hateoas.core.EmbeddedWrapper;
-import org.springframework.hateoas.core.EmbeddedWrappers;
+import org.springframework.hateoas.server.core.EmbeddedWrapper;
+import org.springframework.hateoas.server.core.EmbeddedWrappers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -76,7 +76,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.*;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
 @Service
@@ -133,27 +133,27 @@ public class RestControllerHelper<T> {
         return request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE) || request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE_ENTRIES);
     }
 
-    public <T extends TBase<?, ? extends TFieldIdEnum>> Resources<Resource<T>> generatePagesResource(PaginationResult paginationResult, List<Resource<T>> resources) throws URISyntaxException {
+    public <T extends TBase<?, ? extends TFieldIdEnum>> CollectionModel<EntityModel<T>> generatePagesResource(PaginationResult paginationResult, List<EntityModel<T>> resources) throws URISyntaxException {
         if (paginationResult.isPagingActive()) {
-            PagedResources.PageMetadata pageMetadata = createPageMetadata(paginationResult);
+            PagedModel.PageMetadata pageMetadata = createPageMetadata(paginationResult);
             List<Link> pagingLinks = this.getPaginationLinks(paginationResult, this.getAPIBaseUrl());
-            return new PagedResources<>(resources, pageMetadata, pagingLinks);
+            return PagedModel.of(resources, pageMetadata, pagingLinks);
         } else {
-            return new Resources<>(resources);
+            return CollectionModel.of(resources);
         }
     }
 
-    public PagedResources emptyPageResource(Class resourceClass, PaginationResult paginationResult) {
+    public PagedModel emptyPageResource(Class resourceClass, PaginationResult paginationResult) {
         EmbeddedWrappers embeddedWrappers = new EmbeddedWrappers(true);
         EmbeddedWrapper embeddedWrapper = embeddedWrappers.emptyCollectionOf(resourceClass);
         List<EmbeddedWrapper> list = Collections.singletonList(embeddedWrapper);
-        PagedResources.PageMetadata pageMetadata = createPageMetadata(paginationResult);
-        return new PagedResources<>(list, pageMetadata, new ArrayList<>());
+        PagedModel.PageMetadata pageMetadata = createPageMetadata(paginationResult);
+        return PagedModel.of(list, pageMetadata, new ArrayList<>());
     }
 
-    private PagedResources.PageMetadata createPageMetadata(PaginationResult paginationResult) {
+    private PagedModel.PageMetadata createPageMetadata(PaginationResult paginationResult) {
         PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
-        return new PagedResources.PageMetadata(
+        return new PagedModel.PageMetadata(
                 paginationOptions.getPageSize(),
                 paginationOptions.getPageNumber(),
                 paginationResult.getTotalCount(),
@@ -164,14 +164,14 @@ public class RestControllerHelper<T> {
         PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
         List<Link> paginationLinks = new ArrayList<>();
 
-        paginationLinks.add(new Link(createPaginationLink(baseUrl, 0, paginationOptions.getPageSize()),PAGINATION_KEY_FIRST));
+        paginationLinks.add(Link.of(createPaginationLink(baseUrl, 0, paginationOptions.getPageSize()),PAGINATION_KEY_FIRST));
         if(paginationOptions.getPageNumber() > 0) {
-            paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationOptions.getPageNumber() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_PREVIOUS));
+            paginationLinks.add(Link.of(createPaginationLink(baseUrl, paginationOptions.getPageNumber() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_PREVIOUS));
         }
         if(paginationOptions.getOffset() + paginationOptions.getPageSize() < paginationResult.getTotalCount()) {
-            paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationOptions.getPageNumber() + 1, paginationOptions.getPageSize()),PAGINATION_KEY_NEXT));
+            paginationLinks.add(Link.of(createPaginationLink(baseUrl, paginationOptions.getPageNumber() + 1, paginationOptions.getPageSize()),PAGINATION_KEY_NEXT));
         }
-        paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationResult.getTotalPageCount() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_LAST));
+        paginationLinks.add(Link.of(createPaginationLink(baseUrl, paginationResult.getTotalPageCount() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_LAST));
 
         return paginationLinks;
     }
@@ -272,7 +272,7 @@ public class RestControllerHelper<T> {
 
     public void addEmbeddedUser(HalResource halResource, User user, String relation) {
         User embeddedUser = convertToEmbeddedUser(user);
-        Resource<User> embeddedUserResource = new Resource<>(embeddedUser);
+        EntityModel<User> embeddedUserResource = EntityModel.of(embeddedUser);
         try {
             Link userLink = linkTo(UserController.class).slash("api/users/byid/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
             embeddedUserResource.add(userLink);
@@ -585,22 +585,22 @@ public class RestControllerHelper<T> {
 
         Map<String, Set<String>> externalIds = getExternalIdsFromMultiMap(externalIdsMultiMap);
         Set<T> sw360Objects = service.searchByExternalIds(externalIds, user);
-        List<Resource> resourceList = new ArrayList<>();
+        List<EntityModel> resourceList = new ArrayList<>();
 
         sw360Objects.forEach(sw360Object -> {
             T embeddedResource = service.convertToEmbeddedWithExternalIds(sw360Object);
-            Resource<T> releaseResource = new Resource<>(embeddedResource);
+            EntityModel<T> releaseResource = EntityModel.of(embeddedResource);
             resourceList.add(releaseResource);
         });
 
-        Resources<Resource> resources = new Resources<>(resourceList);
+        CollectionModel<EntityModel> resources = CollectionModel.of(resourceList);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
-    public Resources<Resource<T>> createResources(List<Resource<T>> listOfResources) {
-        Resources<Resource<T>> resources = null;
+    public CollectionModel<EntityModel<T>> createResources(List<EntityModel<T>> listOfResources) {
+        CollectionModel<EntityModel<T>> resources = null;
         if (!listOfResources.isEmpty()) {
-            resources = new Resources<>(listOfResources);
+            resources = CollectionModel.of(listOfResources);
         }
         return resources;
     }

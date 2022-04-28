@@ -64,6 +64,7 @@ public class ApiTokenAuthenticationFilter implements Filter {
     }
 
     class ApiTokenAuthentication implements Authentication {
+        private static final long serialVersionUID = 1L;
         private String token;
 
         private ApiTokenAuthentication(String token) {

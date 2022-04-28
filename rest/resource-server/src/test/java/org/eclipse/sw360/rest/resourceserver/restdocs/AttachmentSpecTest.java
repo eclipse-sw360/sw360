@@ -36,8 +36,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
@@ -107,7 +107,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
 
         given(this.attachmentServiceMock.getAttachmentById(eq(attachment.getAttachmentContentId()))).willReturn(attachmentInfo);
         given(this.attachmentServiceMock.getAttachmentsBySha1(eq(attachment.getSha1()))).willReturn(attachmentInfos);
-        given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
 
         User user = new User();
         user.setId("123456789");

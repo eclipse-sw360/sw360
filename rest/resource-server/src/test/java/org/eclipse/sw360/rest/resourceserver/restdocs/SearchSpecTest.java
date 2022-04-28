@@ -10,7 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
@@ -69,7 +69,7 @@ public class SearchSpecTest extends TestRestDocsSpecBase {
         srs.add(sr);
         srs.add(sr1);
 
-        given(this.searchServiceMock.search(anyObject(), anyObject(), anyObject())).willReturn(srs);
+        given(this.searchServiceMock.search(any(), any(), any())).willReturn(srs);
     }
 
     @Test

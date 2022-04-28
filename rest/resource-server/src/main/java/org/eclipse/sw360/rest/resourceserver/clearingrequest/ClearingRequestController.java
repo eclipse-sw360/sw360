@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.clearingrequest;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -36,10 +36,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.UriTemplate;
-import org.springframework.hateoas.mvc.ControllerLinkBuilder;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -52,7 +52,7 @@ import lombok.RequiredArgsConstructor;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class ClearingRequestController implements ResourceProcessor<RepositoryLinksResource> {
+public class ClearingRequestController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     private static final Logger log = LogManager.getLogger(ClearingRequestController.class);
 
@@ -71,7 +71,7 @@ public class ClearingRequestController implements ResourceProcessor<RepositoryLi
 
 
     @RequestMapping(value = CLEARING_REQUEST_URL + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Resource<ClearingRequest>> getClearingRequestById(Pageable pageable, @PathVariable("id") String docId,
+    public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestById(Pageable pageable, @PathVariable("id") String docId,
             HttpServletRequest request) throws TException, URISyntaxException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestById(docId, sw360User);
@@ -81,7 +81,7 @@ public class ClearingRequestController implements ResourceProcessor<RepositoryLi
     }
 
     @RequestMapping(value = CLEARING_REQUEST_URL + "/project/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Resource<ClearingRequest>> getClearingRequestByProjectId(Pageable pageable, @PathVariable("id") String projectId,
+    public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestByProjectId(Pageable pageable, @PathVariable("id") String projectId,
             HttpServletRequest request) throws TException, URISyntaxException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestByProjectId(projectId, sw360User);
@@ -92,9 +92,9 @@ public class ClearingRequestController implements ResourceProcessor<RepositoryLi
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        final ControllerLinkBuilder controllerLinkBuilder = linkTo(ClearingRequestController.class);
-        final Link clearingRequestLink = new Link(
-                new UriTemplate(controllerLinkBuilder.toUri().toString() + "/api" + CLEARING_REQUEST_URL + "/{id}"), "clearingRequest");
+        final WebMvcLinkBuilder controllerLinkBuilder = linkTo(ClearingRequestController.class);
+        final Link clearingRequestLink = Link.of(
+                UriTemplate.of(controllerLinkBuilder.toUri().toString() + "/api" + CLEARING_REQUEST_URL + "/{id}"), "clearingRequest");
         resource.add(clearingRequestLink);
         return resource;
     }

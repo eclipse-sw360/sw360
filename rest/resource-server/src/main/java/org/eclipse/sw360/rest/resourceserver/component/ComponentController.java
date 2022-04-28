@@ -42,6 +42,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.*;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -67,11 +68,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class ComponentController implements ResourceProcessor<RepositoryLinksResource> {
+public class ComponentController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     public static final String COMPONENTS_URL = "/components";
     private static final Logger log = LogManager.getLogger(ComponentController.class);
@@ -97,7 +98,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     private final RestControllerHelper<Component> restControllerHelper;
 
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
-    public ResponseEntity<Resources> getComponents(Pageable pageable,
+    public ResponseEntity<CollectionModel> getComponents(Pageable pageable,
                                                                         @RequestParam(value = "name", required = false) String name,
                                                                         @RequestParam(value = "type", required = false) String componentType,
                                                                         @RequestParam(value = "fields", required = false) List<String> fields,
@@ -114,15 +115,15 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
         PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable, allComponents, SW360Constants.TYPE_COMPONENT);
 
-        List<Resource<Component>> componentResources = new ArrayList<>();
+        List<EntityModel<Component>> componentResources = new ArrayList<>();
         paginationResult.getResources().stream()
                 .filter(component -> componentType == null || (component.isSetComponentType() && componentType.equals(component.componentType.name())))
                 .forEach(c -> {
                     Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
-                    componentResources.add(new Resource<>(embeddedComponent));
+                    componentResources.add(EntityModel.of(embeddedComponent));
                 });
 
-        Resources resources;
+        CollectionModel resources;
         if (componentResources.size() == 0) {
             resources = restControllerHelper.emptyPageResource(Component.class, paginationResult);
         } else {
@@ -132,29 +133,29 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     }
 
     @RequestMapping(value = COMPONENTS_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource>> getUsedByResourceDetails(@PathVariable("id") String id)
+    public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
             throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
         Set<Project> sw360Projects = componentService.getProjectsByComponentId(id, user);
         Set<Component> sw360Components = componentService.getUsingComponentsForComponent(id, user);
 
-        List<Resource<Object>> resources = new ArrayList<>();
+        List<EntityModel> resources = new ArrayList<>();
         sw360Projects.forEach(p -> {
             Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
-            resources.add(new Resource<>(embeddedProject));
+            resources.add(EntityModel.of(embeddedProject));
         });
 
         sw360Components.forEach(c -> {
                     Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
-                    resources.add(new Resource<>(embeddedComponent));
+                    resources.add(EntityModel.of(embeddedComponent));
                 });
 
-        Resources<Resource> finalResources = new Resources(resources);
+        CollectionModel<EntityModel> finalResources = CollectionModel.of(resources);
         return new ResponseEntity(finalResources, HttpStatus.OK);
     }
 
     @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Resource<Component>> getComponent(
+    public ResponseEntity<EntityModel<Component>> getComponent(
             @PathVariable("id") String id) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
@@ -169,7 +170,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.PATCH)
-    public ResponseEntity<Resource<Component>> patchComponent(
+    public ResponseEntity<EntityModel<Component>> patchComponent(
             @PathVariable("id") String id,
             @RequestBody Component updateComponent) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
@@ -206,7 +207,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.POST)
-    public ResponseEntity<Resource<Component>> createComponent(@RequestBody Component component) throws URISyntaxException, TException {
+    public ResponseEntity<EntityModel<Component>> createComponent(@RequestBody Component component) throws URISyntaxException, TException {
 
         User user = restControllerHelper.getSw360UserFromAuthentication();
         if(component.getComponentType() == null) {
@@ -237,17 +238,17 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
     }
 
     @RequestMapping(value = COMPONENTS_URL + "/{id}/attachments", method = RequestMethod.GET)
-    public ResponseEntity<Resources<Resource<Attachment>>> getComponentAttachments(
+    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getComponentAttachments(
             @PathVariable("id") String id) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
-        final Resources<Resource<Attachment>> resources = attachmentService.getResourcesFromList(sw360Component.getAttachments());
+        final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getResourcesFromList(sw360Component.getAttachments());
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = COMPONENTS_URL + "/{id}/attachment/{attachmentId}", method = RequestMethod.PATCH)
-    public ResponseEntity<Resource<Attachment>> patchComponentAttachmentInfo(@PathVariable("id") String id,
+    public ResponseEntity<EntityModel<Attachment>> patchComponentAttachmentInfo(@PathVariable("id") String id,
             @PathVariable("attachmentId") String attachmentId, @RequestBody Attachment attachmentData)
             throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -258,7 +259,7 @@ public class ComponentController implements ResourceProcessor<RepositoryLinksRes
         if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
-        Resource<Attachment> attachmentResource = new Resource<>(updatedAttachment);
+        EntityModel<Attachment> attachmentResource = EntityModel.of(updatedAttachment);
         return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
     }
 
