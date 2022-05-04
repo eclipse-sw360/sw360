@@ -1,0 +1,64 @@
+/*
+* Copyright BMW CarIT GmbH, 2022.
+*
+* This program and the accompanying materials are made
+* available under the terms of the Eclipse Public License 2.0
+* which is available at https://www.eclipse.org/legal/epl-2.0/
+*
+* SPDX-License-Identifier: EPL-2.0
+*/
+
+plugins {
+    id 'org.eclipse.sw360.java-conventions'
+    id "org.jruyi.thrift" version "0.4.2"
+    id 'java-library'
+}
+
+dependencies {
+    implementation libs.commons.csv
+    implementation libs.commons.codec
+    implementation libs.log4j.api
+    implementation libs.log4j.core
+    implementation libs.commons.io
+    implementation libs.ektorp
+    implementation libs.ektorplucene
+    implementation libs.cloudant.client
+    implementation libs.jackson.annotations
+    implementation libs.jackson.core
+    implementation libs.jackson.databind
+    implementation libs.httpcore
+    implementation libs.libthrift
+    implementation libs.slf4j.api
+    implementation libs.guava
+    compileOnly libs.annotations
+    compileOnly libs.findbugs.annotations
+    runtimeOnly libs.log4j.slf4j.impl
+    runtimeOnly libs.log4j.jcl
+    testImplementation libs.hamcrest.all
+    testImplementation libs.junit
+    testImplementation libs.mockito.all
+    testImplementation libs.jgiven.junit
+    testImplementation libs.junit.dataprovider
+}
+
+description = 'datahandler'
+
+tasks.register('testsJar', Jar) {
+    archiveClassifier = 'tests'
+    from(sourceSets.test.output)
+}
+
+compileThrift {
+    Set<File> files = new HashSet<>()
+    files.add(file("src/test/thrift/test.thrift"))
+    sourceItems += files
+    outputDir = file('build/generated-sources/thrift')
+    createGenFolder = false
+}
+
+sourceSets {
+    main.java.srcDirs += 'build/generated-sources/thrift'
+    //test.java.destinationDirectory.set(file('boogle'))
+}
+
+publishing.publications.maven.artifact(testsJar)

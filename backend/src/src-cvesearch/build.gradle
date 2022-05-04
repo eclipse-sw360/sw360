@@ -1,0 +1,36 @@
+/*
+* Copyright BMW CarIT GmbH, 2022.
+*
+* This program and the accompanying materials are made
+* available under the terms of the Eclipse Public License 2.0
+* which is available at https://www.eclipse.org/legal/epl-2.0/
+*
+* SPDX-License-Identifier: EPL-2.0
+*/
+
+plugins {
+    id 'org.eclipse.sw360.java-conventions'
+    id 'java-library'
+}
+
+dependencies {
+    implementation project(':src-vulnerabilities')
+    implementation project(':src-common')
+    implementation project(':datahandler')
+    implementation 'org.apache.commons:commons-csv:1.4'
+    implementation 'commons-codec:commons-codec:1.10'
+    implementation 'commons-io:commons-io:2.7'
+    implementation 'org.apache.logging.log4j:log4j-api:2.17.1'
+    implementation 'org.apache.logging.log4j:log4j-core:2.17.1'
+    implementation 'org.apache.logging.log4j:log4j-1.2-api:2.17.1'
+    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'org.apache.thrift:libthrift:0.14.0'
+    implementation 'com.google.guava:guava:21.0'
+    implementation 'org.ektorp:org.ektorp:1.5.0'
+    implementation 'com.cloudant:cloudant-client:2.20.1'
+    testImplementation libs.junit
+    testImplementation libs.hamcrest.all
+    testImplementation libs.mockito.all
+}
+
+description = 'src-cvesearch'

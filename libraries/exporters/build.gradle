@@ -1,0 +1,40 @@
+/*
+* Copyright BMW CarIT GmbH, 2022.
+*
+* This program and the accompanying materials are made
+* available under the terms of the Eclipse Public License 2.0
+* which is available at https://www.eclipse.org/legal/epl-2.0/
+*
+* SPDX-License-Identifier: EPL-2.0
+*/
+
+plugins {
+    id 'org.eclipse.sw360.java-conventions'
+}
+
+dependencies {
+    implementation project(':datahandler')
+    implementation project(':commonIO')
+    implementation libs.commons.csv
+    implementation libs.log4j.api
+    implementation libs.log4j.core
+    implementation libs.annotations
+    implementation libs.slf4j.api
+    implementation libs.guava
+    implementation libs.gson
+    implementation libs.poi.ooxml
+    implementation libs.libthrift
+    runtimeOnly libs.log4j.slf4j.impl
+    testImplementation libs.junit
+    testImplementation libs.hamcrest.all
+    testImplementation libs.mockito.all
+}
+
+description = 'exporters'
+
+tasks.register('testsJar', Jar) {
+    archiveClassifier = 'tests'
+    from(sourceSets.test.output)
+}
+
+publishing.publications.maven.artifact(testsJar)

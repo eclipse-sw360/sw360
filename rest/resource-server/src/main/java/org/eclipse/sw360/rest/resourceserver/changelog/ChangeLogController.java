@@ -11,6 +11,7 @@ package org.eclipse.sw360.rest.resourceserver.changelog;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -105,6 +106,8 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
                             changesAsMap.put("fieldValueNew", fieldValueNewAsMap);
                         }
                     } catch (JsonProcessingException e) {
+                        log.error("Error while parsing changes", e);
+                    } catch (IOException e) {
                         log.error("Error while parsing changes", e);
                     }
                 });

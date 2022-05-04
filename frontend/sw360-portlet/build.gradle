@@ -1,0 +1,53 @@
+/*
+* Copyright BMW CarIT GmbH, 2022.
+*
+* This program and the accompanying materials are made
+* available under the terms of the Eclipse Public License 2.0
+* which is available at https://www.eclipse.org/legal/epl-2.0/
+*
+* SPDX-License-Identifier: EPL-2.0
+*/
+
+plugins {
+    id 'org.eclipse.sw360.java-conventions'
+    id 'java-library'
+}
+
+dependencies {
+    implementation project(':datahandler')
+    implementation project(':commonIO')
+    implementation project(':exporters')
+    implementation project(':importers')
+    implementation libs.guava
+    implementation libs.commons.csv
+    implementation libs.libthrift
+    implementation libs.annotations
+    implementation libs.log4j.api
+    implementation libs.log4j.core
+    implementation libs.jstl.api
+    implementation libs.jstl.impl
+    implementation libs.osgi.framework
+    implementation libs.spring.security.core
+    implementation libs.apache.commons.lang
+    implementation libs.jackson.databind
+    implementation libs.cloudant.client
+    implementation libs.ektorp
+    implementation libs.ektorplucene
+    compileOnly libs.jstl.impl
+    compileOnly libs.liferay.portal.kernel
+    compileOnly libs.liferay.util.bridges
+    compileOnly libs.liferay.util.taglib
+    compileOnly libs.liferay.util.java
+    compileOnly libs.portlet.api
+    compileOnly libs.javax.servlet.api
+    compileOnly libs.javax.servlet.jsp.api
+    compileOnly libs.osgi.service.component
+    compileOnly libs.osgi.service.component.annotations
+    compileOnly libs.osgi.service.cm
+    testImplementation libs.junit
+    testImplementation libs.hamcrest.all
+    testImplementation libs.mockito.all
+    testImplementation libs.liferay.petra.lang
+}
+
+description = 'sw360-portlet'

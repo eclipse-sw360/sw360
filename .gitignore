@@ -60,3 +60,7 @@ build/
 bin/
 tmp/**
 tmp/**/*
+
+# Avoid ignoring Gradle wrapper jar and properties
+!gradle-wrapper.jar
+!gradle-wrapper.properties

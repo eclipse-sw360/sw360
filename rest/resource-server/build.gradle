@@ -1,0 +1,52 @@
+/*
+* Copyright BMW CarIT GmbH, 2022.
+*
+* This program and the accompanying materials are made
+* available under the terms of the Eclipse Public License 2.0
+* which is available at https://www.eclipse.org/legal/epl-2.0/
+*
+* SPDX-License-Identifier: EPL-2.0
+*/
+
+plugins {
+    id 'org.eclipse.sw360.java-conventions'
+    id 'org.springframework.boot' version '2.1.17.RELEASE'
+    id "io.freefair.lombok" version "6.4.3"
+    id 'war'
+}
+
+dependencies {
+    implementation project(':datahandler')
+    implementation project(':commonIO')
+    implementation project(':rest-common')
+    implementation libs.annotations
+    implementation libs.apache.commons.lang
+    implementation libs.spring.boot.starter.web
+    implementation libs.cloudant.client
+    implementation libs.ektorp
+    implementation libs.ektorplucene
+    implementation libs.guava
+    implementation libs.slf4j.api
+    implementation libs.spring.boot.starter.actuator
+    implementation libs.spring.boot.starter.web
+    implementation libs.spring.boot.starter.security
+    implementation libs.spring.boot.starter.tomcat
+    implementation libs.spring.boot.starter.data.rest
+    implementation libs.spring.security.oauth2
+    implementation libs.spring.security.oauth2.autoconfigure
+    implementation libs.spring.security.jwt
+    implementation libs.spring.data.rest.hal.browser
+    implementation libs.libthrift
+    implementation libs.jakarta.xml.bind.api
+    implementation libs.jaxb.runtime
+    implementation libs.javax.annotation.api
+    implementation libs.activation
+    runtimeOnly libs.spring.boot.devtools
+    testImplementation libs.junit
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.spring.security.test
+    testImplementation libs.spring.restdocs.mockmvc
+    providedCompile libs.spring.boot.starter.tomcat
+}
+
+description = 'resource-server'

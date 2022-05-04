@@ -1,0 +1,29 @@
+/*
+* Copyright BMW CarIT GmbH, 2022.
+*
+* This program and the accompanying materials are made
+* available under the terms of the Eclipse Public License 2.0
+* which is available at https://www.eclipse.org/legal/epl-2.0/
+*
+* SPDX-License-Identifier: EPL-2.0
+*/
+
+plugins {
+    id 'org.eclipse.sw360.java-conventions'
+    id 'java-library'
+}
+
+dependencies {
+    implementation project(":datahandler")
+    implementation project(":src-common")
+    implementation libs.apache.commons.lang
+    implementation libs.guava
+    implementation libs.ektorp
+    implementation libs.ektorplucene
+    implementation libs.cloudant.client
+    implementation libs.libthrift
+    implementation libs.log4j.core
+    testImplementation libs.junit
+}
+
+description = 'src-vendors'

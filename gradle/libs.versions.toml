@@ -1,0 +1,178 @@
+# Copyright BMW CarIT GmbH, 2022.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+
+[versions]
+activation = "1.1.1"
+annotations = "15.0"
+apache-commons-lang = "2.6"
+asm = "7.1"
+assertj-core = "3.11.1"
+byte-buddy = "1.10.18"
+cloudant-client = "2.19.1"
+commons-csv = "1.4"
+commons-cli = "1.4"
+commons-codec = "1.12"
+commons-io = "2.7"
+commons-lang3 = "3.8.1"
+dom4j = "2.1.3"
+findbugs-annotations = "1.3.9-1"
+ektorp = "1.5.0"
+ektorplucene = "0.2.0"
+equalsverifier = "3.1.12"
+gson = "2.8.6"
+guava = "31.0.1-jre"
+hamcrest-all = "1.3"
+httpcore = "4.4.8"
+jackson = "2.11.3"
+jakarta-xml-bind-api = "2.3.2"
+javax-annotation-api = "1.3.2"
+javax-mail = "1.4.1"
+javax-servlet-api = "3.0.1"
+javax-servlet-jsp-api = "2.2.1"
+jaxb-runtime = "2.3.2"
+jaxen = "1.1.6"
+jgiven-junit = "0.17.0"
+json-simple = "2.3.1"
+jsch = "0.1.54"
+jstl = "1.2"
+junit = "4.13.2"
+junit-dataprovider = "1.12.0"
+libthrift = "0.14.0"
+liferay-portal-kernel = "8.1.0"
+liferay-util-bridges = "7.0.3"
+liferay-util-taglib = "5.1.1"
+liferay-util-java = "5.0.5"
+liferay-petra-lang = "3.0.0"
+liferay-frontend-css = "5.0.9"
+liferay-frontend-theme-styled = "5.0.33"
+liferay-frontend-theme-unstyled = "5.0.32"
+log4j = "2.17.1"
+lombok = "1.18.24"
+mockito-all = "1.10.19"
+mockito-core = "2.28.2"
+okhttp = "4.3.1"
+osgi-framework = "1.9.0"
+osgi-service-component = "1.4.0"
+osgi-service-component-annotations = "1.4.0"
+osgi-service-cm = "1.6.0"
+packageurl-java = "1.1.1"
+poi = "4.1.2"
+portlet-api = "3.0.1"
+saxon-dom = "8.7"
+slf4j = "1.7.30"
+spdx-tools = "2.2.3"
+spring = "5.3.19"
+spring-boot = "2.6.6"
+spring-boot-starter-logging = "2.6.7"
+spring-data-rest-hal-browser = "3.1.20.RELEASE"
+spring-hateoas = "1.4.0"
+spring-restdocs-core = "2.0.6.RELEASE"
+spring-restdocs-mockmvc = "2.0.6.RELEASE"
+spring-security-core = "5.6.2"
+spring-security-oauth2 = "2.5.1.RELEASE"
+spring-security-oauth2-autoconfigure = "2.6.6"
+spring-security-jwt = "1.1.1.RELEASE"
+spring-security-test = "5.1.12.RELEASE"
+velocity-engine-core = "2.3"
+velocity-tools-generic = "3.1"
+wiremock-jre8 = "2.26.0"
+
+[libraries]
+activation = { group = "javax.activation", name = "activation", version.ref = "activation" }
+annotations = { group = "org.jetbrains", name = "annotations", version.ref = "annotations" }
+apache-commons-lang = { group = "org.apache.directory.studio", name = "org.apache.commons.lang", version.ref = "apache-commons-lang" }
+asm = { group = "org.ow2.asm", name = "asm", version.ref = "asm" }
+asm-util = { group = "org.ow2.asm", name = "asm-util", version.ref = "asm" }
+asm-commons = { group = "org.ow2.asm", name = "asm-commons", version.ref = "asm" }
+assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertj-core" }
+byte-buddy = { group = "net.bytebuddy", name = "byte-buddy", version.ref = "byte-buddy" }
+cloudant-client = { group = "com.cloudant", name = "cloudant-client", version.ref = "cloudant-client" }
+commons-csv = { group = "org.apache.commons", name = "commons-csv", version.ref = "commons-csv" }
+commons-cli = { group = "commons-cli", name = "commons-cli", version.ref = "commons-cli" }
+commons-codec = { group = "commons-codec", name = "commons-codec", version.ref = "commons-codec" }
+commons-lang3 = { group = "org.apache.commons", name = "commons-lang3", version.ref = "commons-lang3"}
+commons-io = { group = "commons-io", name = "commons-io", version.ref = "commons-io" }
+dom4j = { group = "org.dom4j", name = "dom4j", version.ref = "dom4j" }
+ektorp = { group = "org.ektorp", name = "org.ektorp", version.ref = "ektorp" }
+ektorplucene = { group = "com.github.ldriscoll", name = "ektorplucene", version.ref = "ektorplucene" }
+equalsverifier = { group = "nl.jqno.equalsverifier", name = "equalsverifier", version.ref = "equalsverifier" }
+findbugs-annotations = { group = "com.github.stephenc.findbugs", name = "findbugs-annotations", version.ref = "findbugs-annotations" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
+guava-failureaccess = { group = "com.google.guava", name = "failureaccess", version.ref = "guava" }
+httpcore = { group = "org.apache.httpcomponents", name = "httpcore", version.ref = "httpcore" }
+jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson" }
+jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jackson" }
+jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jackson" }
+jakarta-xml-bind-api = { group = "jakarta.xml.bind", name = "jakarta.xml.bind-api", version.ref = "jakarta.xml.bind-api" }
+javax-annotation-api = { group = "javax.annotation", name = "javax.annotation-api", version.ref = "javax.annotation-api" }
+javax-mail = { group = "javax.mail", name = "mail", version.ref = "javax-mail" }
+javax-servlet-api = { group = "javax.servlet", name = "javax.servlet-api", version.ref = "javax.servlet-api" }
+javax-servlet-jsp-api = { group = "javax.servlet.jsp", name = "javax.servlet.jsp-api", version.ref = "javax.servlet.jsp-api" }
+jaxb-runtime = { group = "org.glassfish.jaxb", name = "jaxb-runtime", version.ref = "jaxb-runtime" }
+jaxen = { group = "jaxen", name = "jaxen", version.ref = "jaxen" }
+jsch = { group = "com.jcraft", name = "jsch", version.ref = "jsch" }
+json-simple = { group = "com.github.cliftonlabs", name = "json-simple", version.ref = "json-simple" }
+jstl-api = { group = "javax.servlet.jsp.jstl", name = "jstl-api", version.ref = "jstl" }
+jstl-impl = { group = "org.glassfish.web", name = "jstl-impl", version.ref = "jstl" }
+libthrift = { group = "org.apache.thrift", name = "libthrift", version.ref = "libthrift" }
+liferay-portal-kernel = { group = "com.liferay.portal", name = "com.liferay.portal.kernel", version.ref = "liferay.portal.kernel" }
+liferay-util-bridges = { group = "com.liferay.portal", name = "com.liferay.util.bridges", version.ref = "liferay.util.bridges" }
+liferay-util-taglib = { group = "com.liferay.portal", name = "com.liferay.util.taglib", version.ref = "liferay.util.taglib" }
+liferay-util-java = { group = "com.liferay.portal", name = "com.liferay.util.java", version.ref = "liferay.util.java" }
+liferay-frontend-css-common = { group = "com.liferay", name = "com.liferay.frontend.css.common", version.ref = "liferay-frontend-css"}
+liferay-frontend-theme-styled = { group = "com.liferay", name = "com.liferay.frontend.theme.styled", version.ref = "liferay-frontend-theme-styled"}
+liferay-frontend-theme-unstyled = { group = "com.liferay", name = "com.liferay.frontend.theme.unstyled", version.ref = "liferay-frontend-theme-unstyled"}
+log4j-1-2-api = { group = "org.apache.logging.log4j", name = "log4j-1.2-api", version.ref = "log4j" }
+log4j-api = { group = "org.apache.logging.log4j", name = "log4j-api", version.ref = "log4j" }
+log4j-core = { group = "org.apache.logging.log4j", name = "log4j-core", version.ref = "log4j" }
+log4j-jcl = { group = "org.apache.logging.log4j", name = "log4j-jcl", version.ref = "log4j" }
+log4j-slf4j-impl = { group = "org.apache.logging.log4j", name = "log4j-slf4j-impl", version.ref = "log4j" }
+lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
+osgi-framework = { group = "org.osgi", name = "org.osgi.framework", version.ref = "osgi.framework" }
+osgi-service-component = { group = "org.osgi", name = "org.osgi.service.component", version.ref = "osgi.service.component" }
+osgi-service-component-annotations = { group = "org.osgi", name = "org.osgi.service.component.annotations", version.ref = "osgi.service.component.annotations" }
+osgi-service-cm = { group = "org.osgi", name = "org.osgi.service.cm", version.ref = "osgi.service.cm" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+packageurl-java = { group = "com.github.package-url", name = "packageurl-java", version.ref = "packageurl-java" }
+poi = { group = "org.apache.poi", name = "poi", version.ref = "poi" }
+poi-ooxml = { group = "org.apache.poi", name = "poi-ooxml", version.ref = "poi" }
+portlet-api = { group = "javax.portlet", name = "portlet-api", version.ref = "portlet-api" }
+saxon-dom = { group = "net.sf.saxon", name = "saxon-dom", version.ref = "saxon-dom" }
+slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4j" }
+spdx-tools = { group = "org.spdx", name = "spdx-tools", version.ref = "spdx-tools" }
+spring-boot-devtools = { group = "org.springframework.boot", name = "spring-boot-devtools", version.ref = "spring-boot" }
+spring-boot-starter-actuator = { group = "org.springframework.boot", name = "spring-boot-starter-actuator", version.ref = "spring-boot" }
+spring-boot-starter-data-rest = { group = "org.springframework.boot", name = "spring-boot-starter-data-rest", version.ref = "spring-boot" }
+spring-data-rest-hal-browser = { group = "org.springframework.data", name = "spring-data-rest-hal-browser", version.ref = "spring-data-rest-hal-browser" }
+spring-boot-starter-logging = { group = "org.springframework.boot", name = "spring-boot-starter-logging", version.ref = "spring-boot-starter-logging" }
+spring-boot-starter-web = { group = "org.springframework.boot", name = "spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-starter-security = { group = "org.springframework.boot", name = "spring-boot-starter-security", version.ref = "spring-boot" }
+spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test", version.ref = "spring-boot" }
+spring-boot-starter-tomcat = { group = "org.springframework.boot", name = "spring-boot-starter-tomcat", version.ref = "spring-boot" }
+spring-beans = { group = "org.springframework", name = "spring-beans", version.ref = "spring"}
+spring-context = { group = "org.springframework", name = "spring-context", version.ref = "spring"}
+spring-webmvc = { group = "org.springframework", name = "spring-webmvc", version.ref = "spring"}
+spring-restdocs-core = { group = "org.springframework.restdocs", name = "spring-restdocs-core", version.ref = "spring-restdocs-core" }
+spring-restdocs-mockmvc = { group = "org.springframework.restdocs", name = "spring-restdocs-mockmvc", version.ref = "spring-restdocs-mockmvc" }
+spring-security-core = { group = "org.springframework.security", name = "spring-security-core", version.ref = "spring-security-core" }
+spring-security-oauth2 = { group = "org.springframework.security.oauth", name = "spring-security-oauth2", version.ref = "spring-security-oauth2" }
+spring-security-oauth2-autoconfigure = { group = "org.springframework.security.oauth.boot", name = "spring-security-oauth2-autoconfigure", version.ref = "spring-security-oauth2-autoconfigure" }
+spring-security-jwt = { group = "org.springframework.security", name = "spring-security-jwt", version.ref = "spring-security-jwt" }
+spring-security-test = { group = "org.springframework.security", name = "spring-security-test", version.ref = "spring-security-test" }
+hamcrest-all = { group = "org.hamcrest", name = "hamcrest-all", version.ref = "hamcrest-all" }
+jgiven-junit = { group = "com.tngtech.jgiven", name = "jgiven-junit", version.ref = "jgiven-junit" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+junit-dataprovider = { group = "com.tngtech.java", name = "junit-dataprovider", version.ref = "junit-dataprovider" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito-core" }
+mockito-all = { group = "org.mockito", name = "mockito-all", version.ref = "mockito-all" }
+liferay-petra-lang = { group = "com.liferay", name = "com.liferay.petra.lang", version.ref = "liferay.petra.lang" }
+velocity-engine-core  = { group = "org.apache.velocity", name = "velocity-engine-core", version.ref = "velocity-engine-core" }
+velocity-tools-generic  = { group = "org.apache.velocity.tools", name = "velocity-tools-generic", version.ref = "velocity-tools-generic" }
+wiremock-jre8 = { group = "com.github.tomakehurst", name = "wiremock-jre8", version.ref = "wiremock-jre8" }
