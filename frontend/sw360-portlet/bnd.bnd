@@ -36,25 +36,31 @@ Import-Package: \
 	com.fasterxml.jackson.databind.ser.std, \
 	com.fasterxml.jackson.databind.module, \
 	com.fasterxml.jackson.databind.node, \
-	com.liferay.expando.kernel.model, \
+	com.liferay.expando.kernel.model; version=4.1.0, \
 	com.liferay.expando.kernel.service, \
 	com.liferay.portal.kernel.bean, \
-	com.liferay.portal.kernel.exception, \
+	com.liferay.portal.kernel.exception; version=10.1.0, \
 	com.liferay.portal.kernel.events, \
-	com.liferay.portal.kernel.json, \
-	com.liferay.portal.kernel.model, \
-	com.liferay.portal.kernel.portlet.*, \
-	com.liferay.portal.kernel.search, \
-	com.liferay.portal.kernel.security.*, \
-	com.liferay.portal.kernel.service, \
-	com.liferay.portal.kernel.service.persistence, \
-	com.liferay.portal.kernel.servlet, \
-	com.liferay.portal.kernel.template, \
-	com.liferay.portal.kernel.theme, \
-	com.liferay.portal.kernel.util, \
-	com.liferay.portal.kernel.upload, \
-	com.liferay.portal.kernel.language.*, \
-	com.liferay.taglib.*, \
+	com.liferay.portal.kernel.json; version=9.1.0, \
+	com.liferay.portal.kernel.model; version=12.0.0, \
+	com.liferay.portal.kernel.portlet; version=15.0.0, \
+	com.liferay.portal.kernel.portlet.bridges.mvc; version=5.0.0, \
+	com.liferay.portal.kernel.search; version=11.1.0, \
+	com.liferay.portal.kernel.security.pwd; version=3.0.0, \
+	com.liferay.portal.kernel.security.auto.login; version=2.0.0, \
+	com.liferay.portal.kernel.security.permission; version=5.0.0, \
+	com.liferay.portal.kernel.security.membershippolicy; version=1.0.0, \
+	com.liferay.portal.kernel.service.persistence; version=10.1.0, \
+	com.liferay.portal.kernel.service; version=10.2.0, \
+	com.liferay.portal.kernel.servlet; version=11.0.0, \
+	com.liferay.portal.kernel.template; version=11.0.0, \
+	com.liferay.portal.kernel.theme; version=7.0.0, \
+	com.liferay.portal.kernel.util; version=31.0.0, \
+	com.liferay.portal.kernel.upload; version=8.1.0, \
+	com.liferay.portal.kernel.language;  version=9.0.0, \
+	com.liferay.portal.kernel.language.constants;  version=1.0.0, \
+	com.liferay.taglib.portlet; version=9.0.0, \
+	com.liferay.taglib; version=10.0.0, \
 	javax.portlet, \
 	javax.servlet, \
 	javax.servlet.http, \
