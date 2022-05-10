@@ -790,7 +790,7 @@ AUI().use('liferay-portlet-url', function () {
                         projCell.data(renderLinkToProject(response[i].id, projName));
                         if (isOpenCrTable) {
                             let clearing = response[i].clearing,
-                                totalCount = d(clearing.newRelease) + d(clearing.underClearing) + d(clearing.sentToClearingTool) + d(clearing.reportAvailable) + d(clearing.approved),
+                                totalCount = d(clearing.newRelease) + d(clearing.underClearing) + d(clearing.sentToClearingTool) + d(clearing.reportAvailable) + d(clearing.approved) + d(clearing.scanAvailable),
                                 approvedCount = d(clearing.reportAvailable) + d(clearing.approved);
                             compCell.data(totalCount - approvedCount);
                             if (!totalCount || $(table.cell('#'+crId, 4).node()).find('span.sw360-tt-ClearingRequestState-NEW').text()) {
