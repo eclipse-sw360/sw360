@@ -22,3 +22,9 @@
 <%@ taglib uri="http://liferay.com/tld/util" prefix="liferay-util"%>
 
 <%@ taglib uri="http://example.com/tld/customTags.tld" prefix="sw360"%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+require(['jquery'], function($) {
+    $("div.alert-container").removeClass("cadmin");
+});
+</script>
