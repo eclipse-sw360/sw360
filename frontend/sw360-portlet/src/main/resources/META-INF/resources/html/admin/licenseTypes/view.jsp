@@ -74,6 +74,7 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter'], function($, datatables, dialog, quickfilter) {
+        $("div.alert-container").removeClass("cadmin");
         var licenseTypeTable = createLicenseTypeTable();
         quickfilter.addTable(licenseTypeTable);
 

@@ -143,6 +143,7 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'modules/validation' ], function($, validation) {
+        $("div.alert-container").removeClass("cadmin");
 
         validation.enableForm('#fossologyConfigurationForm');
 

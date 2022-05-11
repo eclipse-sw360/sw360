@@ -43,6 +43,7 @@
 </div>
 <script>
     require(['jquery', 'modules/dialog', 'bridges/datatables', 'modules/validation', 'utils/render'], function($, dialog, datatables, validation, render) {
+    $("div.alert-container").removeClass("cadmin");
     	
     var licenseObligationJSON = [];
     <core_rt:forEach var="ob" varStatus="status" items="${obligationList}">

@@ -35,6 +35,7 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'bridges/datatables', 'utils/link' ], function($, datatables, link) {
+        $("div.alert-container").removeClass("cadmin");
         var table;
 
         $('#my-task-assignments h4 svg')

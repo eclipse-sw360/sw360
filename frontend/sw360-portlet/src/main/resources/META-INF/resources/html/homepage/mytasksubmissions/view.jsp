@@ -42,6 +42,7 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/link', 'utils/render' ], function($, datatables, dialog, link, render) {
+        $("div.alert-container").removeClass("cadmin");
         var $datatable;
 
         $datatable = createTable();

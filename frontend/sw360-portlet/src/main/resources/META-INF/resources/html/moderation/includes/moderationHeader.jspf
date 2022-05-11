@@ -46,6 +46,7 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
 require(['jquery'], function($) {
+    $("div.alert-container").removeClass("cadmin");
     $('button[data-action="accept"]').on('click', function() {
         sendModerationDecision('<%=PortalConstants.ACTION_ACCEPT%>');
     });

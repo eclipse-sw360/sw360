@@ -41,8 +41,8 @@
 <#assign liferay_user = themeDisplay.getUser() />
 <#assign js_folder = theme_display.getPathThemeJavaScript() />
 <#assign js_banner_file = htmlUtil.escape(portalUtil.getStaticResourceURL(request, "${js_folder}/banner.js")) />
-
-<html class="${root_css_class}" dir="<@liferay.language key="lang.dir" />" lang="${w3c_language_id}">
+<#assign overflow_hidden_css = "hide_overflow" />
+<html class="${root_css_class} ${overflow_hidden_css}" dir="<@liferay.language key="lang.dir" />" lang="${w3c_language_id}">
 
 <head>
 	<script type="text/javascript" src ="${js_banner_file}" > </script>

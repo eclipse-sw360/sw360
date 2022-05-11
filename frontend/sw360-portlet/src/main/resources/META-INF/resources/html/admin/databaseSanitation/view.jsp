@@ -57,6 +57,7 @@
 <script>
     require(['jquery', 'bridges/datatables' ], function($, datatables) {
         $('.portlet-toolbar button[data-action="search-duplicates"]').on("click", function() {
+            $("div.alert-container").removeClass("cadmin");
             var $container = $('#duplicateSearch'),
                 $tables = $container.find('div[data-type="tables"]'),
                 $progress = $container.find('.alert[data-type="progress"]'),
