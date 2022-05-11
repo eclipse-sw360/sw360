@@ -53,6 +53,7 @@
 
 <script>
 require(['jquery'], function($) {
+    $("div.alert-container").removeClass("cadmin");
     if ('${obligationName}' == '') {
         $('#portlet_sw360_portlet_todos > div > div.portlet-content-container > div').attr('style','display:none')
         $('#portlet_sw360_portlet_todos').append('<div class=" portlet-content-container"> <div class="portlet-body"><div class="btn-group" role="group">\

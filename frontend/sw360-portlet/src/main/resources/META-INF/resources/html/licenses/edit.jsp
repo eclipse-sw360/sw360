@@ -162,6 +162,7 @@
         document.title = "${licenseDetail.shortname} - " + document.title;
 
         require(['jquery', 'modules/dialog', 'modules/validation', 'bridges/datatables', 'modules/listgroup', 'bridges/jquery-ui'], function($, dialog, validation, datatables, listgroup) {
+            $("div.alert-container").removeClass("cadmin");
             licenseTableData=$("#spinnerForLicenseObligation").html().toString();
             $("#spinnerForLicenseObligation").remove();
             listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-AddLicense');

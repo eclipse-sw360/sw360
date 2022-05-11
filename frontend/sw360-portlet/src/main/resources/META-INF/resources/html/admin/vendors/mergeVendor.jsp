@@ -70,6 +70,7 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'bridges/datatables', 'modules/mergeWizard'], function($, datatables, wizard) {
+        $("div.alert-container").removeClass("cadmin");
         var mergeWizardStepUrl = '<%=vendorMergeWizardStepUrl%>',
             postParamsPrefix = '<portlet:namespace/>',
             $wizardRoot = $('#vendorMergeWizard');

@@ -107,7 +107,7 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'modules/autocomplete', 'modules/dialog', 'bridges/datatables', 'utils/render'], function($, autocomplete, dialog, datatables, render) {
-
+        $("div.alert-container").removeClass("cadmin");
         createSearchTable();
 
         $('#keyword-search button[data-action="deselect"]').on("click", function() {

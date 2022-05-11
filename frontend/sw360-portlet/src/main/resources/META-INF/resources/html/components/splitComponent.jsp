@@ -73,6 +73,7 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'bridges/datatables', 'modules/mergeWizard' ], function($, datatables, wizard) {
+        $("div.alert-container").removeClass("cadmin");
         let releaseTooltipFormatter = function(release) {
             if (!release) {
                 return '';

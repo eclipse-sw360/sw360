@@ -75,6 +75,7 @@
         var PortletURL = Liferay.PortletURL;
 
         require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter', 'utils/link' ], function($, datatables, dialog, quickfilter, linkutil) {
+            $("div.alert-container").removeClass("cadmin");
             var vendorsTable,
                 vendorIdInURL = '<%=PortalConstants.VENDOR_ID%>',
                 pageName = '<%=PortalConstants.PAGENAME%>';

@@ -110,7 +110,7 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'bridges/datatables', 'utils/render'], function($, datatables, render) {
-
+        $("div.alert-container").removeClass("cadmin");
         var licenseObligationJSON = [];
         <core_rt:forEach var="ob" varStatus="status" items="${licenseDetail.obligations}">
             <core_rt:if test="${not empty ob.whitelist}">

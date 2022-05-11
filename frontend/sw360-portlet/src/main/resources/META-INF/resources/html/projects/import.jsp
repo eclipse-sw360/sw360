@@ -159,6 +159,7 @@
             PortletURL = Liferay.PortletURL;
 
         require(['jquery', 'bridges/datatables', 'modules/button', 'modules/dialog', 'modules/validation'], function($, datatables, button, dialog, validation) {
+            $("div.alert-container").removeClass("cadmin");
 
             dataSourceTable = createDataSourceTable(getInitialData());
             $('#buttonConnect, #buttonRefresh').on('click', connectAndRefreshDataSource);

@@ -230,6 +230,7 @@
     }
 
     require(['jquery', 'modules/validation', 'bridges/jquery-ui'], function ($, validation) {
+        $("div.alert-container").removeClass("cadmin");
 
         var $wantsMailNotification = $('#wants_mail_notification');
         setDisabledStateOfPreferenceCheckboxes(!$wantsMailNotification.is(":checked"));

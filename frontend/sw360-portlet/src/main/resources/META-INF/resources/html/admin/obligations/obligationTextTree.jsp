@@ -145,6 +145,7 @@
 </tr>
 <script>
 require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard'], function($, dialog, datatables, keyboard) {
+	$("div.alert-container").removeClass("cadmin");
     var $dataTable,
     $dialog;
 

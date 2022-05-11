@@ -132,6 +132,7 @@
 	document.title = $("<span></span>").html("<sw360:UserName user="${userObj}"/> - " + document.title).text();
 	AUI().use('liferay-portlet-url', function () {
 	require(['jquery'], function($) {
+        $("div.alert-container").removeClass("cadmin");
 	    function makeUserUrl(email, page) {
 	        var portletURLToEditUser = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>')
 	            .setParameter('<%=PortalConstants.PAGENAME%>', page)
