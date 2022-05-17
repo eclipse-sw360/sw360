@@ -49,6 +49,7 @@
                             <option value="" class="textlabel stackedLabel">-- <liferay-ui:message key="release.filter" /> -- </option>
                             <option value="2" class="textlabel stackedLabel"><liferay-ui:message key="with.cli.attachments" /></option>
                             <option value="1" class="textlabel stackedLabel"><liferay-ui:message key="with.attachments" /></option>
+                            <option value="3" class="textlabel stackedLabel"><liferay-ui:message key="without.source.attachments" /></option>
                             <option value="0" class="textlabel stackedLabel"><liferay-ui:message key="without.attachments" /></option>
                         </select>
                     </div>
@@ -156,6 +157,7 @@
             isFilterWithAttach = filterVal == '1',
             isFilterWithoutAttach = filterVal == '0',
             isFilterCliAttach = filterVal == '2',
+            isFilterWithoutSourceAttach = filterVal == '3',
             isClearFilter = filterVal == '';
 
             $("#AttachmentUsagesInfo tbody").find('tr').each(function(index) {
@@ -175,6 +177,16 @@
                 } else if (isFilterCliAttach) {
                     if (!data.ttParentId && $(this).hasClass('branch') && !data.ttParentprojectpath && data.isCliPresent) {
                         $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                } else if (isFilterWithoutSourceAttach) {
+                    if (!data.ttParentId && $(this).hasClass('branch') && !data.ttParentprojectpath) {
+                        if (data.isSourcePresent) {
+                            $(this).hide();
+                        } else {
+                            $(this).show();
+                        }
                     } else {
                         $(this).hide();
                     }
