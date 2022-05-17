@@ -39,10 +39,10 @@
                         </span>
                     </core_rt:if>
                 </td>
-                <td>
+                <td data-componenttype='<sw360:DisplayEnum value="${releaseLink.componentType}" bare="true"/>'>
                     <sw360:DisplayEnum value="${releaseLink.componentType}" />
                 </td>
-                <td>
+                <td data-releaserelation='<sw360:DisplayEnum value="${releaseLink.releaseRelationship}" bare="true"/>'>
                     <sw360:DisplayEnum value="${releaseLink.releaseRelationship}" /></td>
                 <td class="actions">
                     <core_rt:if test="${releaseLink.setLicenseIds}">

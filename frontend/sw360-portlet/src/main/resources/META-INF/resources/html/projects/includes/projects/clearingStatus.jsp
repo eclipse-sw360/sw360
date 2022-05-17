@@ -85,14 +85,111 @@
                                 <a href="#" id="collapseAll" class="text-primary"> <liferay-ui:message key="collapse.all" /></a>)
                             </div>
                             </core_rt:if>
+                            <core_rt:if test="${projectList.size() > 1 or releaseList.size() > 0}">
+                                Linked Releases: ${releaseList.size()}, Linked Projects: ${projectList.size() - 1}<br>
+                            </core_rt:if>
                         </div>
                     </th>
-                    <th style="width:6%; cursor: pointer" class="sort"><liferay-ui:message key="type" /><clay:icon symbol="caret-double-l" /></th>
-                    <th style="width:7%; cursor: pointer" class="sort"><liferay-ui:message key="relation" /><clay:icon symbol="caret-double-l" /></th>
+                    <th style="width:6%; cursor: pointer" class="sort">
+                    <div class="dropdown d-inline text-capitalize releaseFilterForTT" id="typeFilterForTT">
+                        <span title="<liferay-ui:message key="component.type" /> <liferay-ui:message key="filter" />" class="dropdown-toggle float-none" data-toggle="dropdown" id="configId">
+                            <liferay-ui:message key="type" /> <clay:icon symbol="select-from-list" /> <svg class="lexicon-icon lexicon-icon-caret-double-l mt-1"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#caret-double-l"/></svg>
+                        </span>
+                        <ul class="dropdown-menu" id="dropdownmenu" name="<portlet:namespace/>roles"
+                            aria-labelledby="configId">
+                            <li class="dropdown-header"><liferay-ui:message key="component.type" /></li>
+                            <li><hr class="my-2" /></li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="oss" data-componenttype="OSS"/>
+                                <label class="mb-0"><liferay-ui:message key="oss" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="cots" data-componenttype="COTS"/>
+                                <label class="mb-0"><liferay-ui:message key="cots" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="internal" data-componenttype="Internal"/>
+                                <label class="mb-0"><liferay-ui:message key="internal" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="innerSource" data-componenttype="Inner Source"/>
+                                <label class="mb-0"><liferay-ui:message key="inner.source" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="service" data-componenttype="Service"/>
+                                <label class="mb-0"><liferay-ui:message key="service" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="freeware" data-componenttype="Freeware" />
+                                <label class="mb-0"><liferay-ui:message key="freeware" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="codeSnippet" data-componenttype="Code Snippet" />
+                                <label class="mb-0"><liferay-ui:message key="code.snippet" /></label>
+                            </li>
+                        </ul>
+                    </div>
+                    </th>
+                    <th style="width:7%; cursor: pointer" class="sort">
+                    <div class="dropdown d-inline text-capitalize releaseFilterForTT" id="relationFilterForTT">
+                        <span title="<liferay-ui:message key="release.relation" /> <liferay-ui:message key="filter" />" class="dropdown-toggle float-none" data-toggle="dropdown" id="configId">
+                            <liferay-ui:message key="relation" /> <clay:icon symbol="select-from-list" /> <svg class="lexicon-icon lexicon-icon-caret-double-l mt-1"><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#caret-double-l"/></svg>
+                        </span>
+                        <ul class="dropdown-menu" id="dropdownmenu" name="<portlet:namespace/>roles"
+                            aria-labelledby="configId">
+                            <li class="dropdown-header"><liferay-ui:message key="release.relation" /></li>
+                            <li><hr class="my-2" /></li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="unknown" data-releaserelation="Unknown"/>
+                                <label class="mb-0"><liferay-ui:message key="unknown" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="contained" data-releaserelation="Contained"/>
+                                <label class="mb-0"><liferay-ui:message key="contained" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="related" data-releaserelation="Related"/>
+                                <label class="mb-0"><liferay-ui:message key="related" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="dynamicallyLinked" data-releaserelation="Dynamically linked"/>
+                                <label class="mb-0"><liferay-ui:message key="dynamically.linked" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="staticallyLinked" data-releaserelation="Statically linked"/>
+                                <label class="mb-0"><liferay-ui:message key="statically.linked" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="sideBySide" data-releaserelation="Side by side"/>
+                                <label class="mb-0"><liferay-ui:message key="side.by.side" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="standalone" data-releaserelation="Standalone"/>
+                                <label class="mb-0"><liferay-ui:message key="standalone" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="internalUse" data-releaserelation="Internal use"/>
+                                <label class="mb-0"><liferay-ui:message key="internal.use" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="optional" data-releaserelation="Optional"/>
+                                <label class="mb-0"><liferay-ui:message key="optional" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="toBeReplaced" data-releaserelation="To be replaced"/>
+                                <label class="mb-0"><liferay-ui:message key="to.be.replaced" /></label>
+                            </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="codeSnippet" data-releaserelation="Code Snippet"/>
+                                <label class="mb-0"><liferay-ui:message key="code.snippet" /></label>
+                            </li>
+                        </ul>
+                    </div>
+                    </th>
                     <th style="width:12%; cursor: pointer" class="sort"><liferay-ui:message key="main.licenses" /><clay:icon symbol="caret-double-l" /></th>
                     <th style="width:11%"><liferay-ui:message key="other.licenses" /></th>
                     <th style="width:6%">
-                    <div class="dropdown d-inline text-capitalize" id="stateFilterForTT">
+                    <div class="dropdown d-inline text-capitalize releaseFilterForTT" id="stateFilterForTT">
                         <span title="<liferay-ui:message key="release.clearing.state" /> <liferay-ui:message key="filter" />" class="dropdown-toggle float-none" data-toggle="dropdown" id="configId">
                             <liferay-ui:message key="state" /> <clay:icon symbol="select-from-list" />
                         </span>
@@ -169,7 +266,7 @@ AUI().use('liferay-portlet-url', function () {
           });
 
         $('#search_table').on('input', function() {
-            $("div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
+            $("div.releaseFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
                 $(this).prop('checked', false);
             });
             search_table($(this).val().trim());
@@ -181,10 +278,19 @@ AUI().use('liferay-portlet-url', function () {
             return false;
         });
 
-        function filterByClearingState() {
-            let isChecked, isPresent, checkedData = [];
-            $("div#stateFilterForTT #dropdownmenu input[type=checkbox]:checked").each(function() {
-                let val = $(this).data().releaseclearingstate;
+        function removeFilterBySelector(selector) {
+            $("div#" + selector + " #dropdownmenu input[type=checkbox]:checked").each(function() {
+                $(this).prop('checked', false);
+            });
+        }
+
+        function filterDirectlyLinkedReleases(selector) {
+            let isChecked, isPresent, checkedData = [],
+            isTypeFilter = selector.includes('typeFilter') ? true: false,
+            isRelationFilter = selector.includes('relationFilter') ? true: false,
+            isStateFilter = selector.includes('stateFilter') ? true: false;
+            $("div#" + selector + " #dropdownmenu input[type=checkbox]:checked").each(function() {
+                let val = isTypeFilter ? $(this).data().componenttype : isRelationFilter ? $(this).data().releaserelation : isStateFilter ? $(this).data().releaseclearingstate : "";
                 isChecked = true;
                 if (val) {
                     checkedData.push(val.trim().toLowerCase());
@@ -192,15 +298,43 @@ AUI().use('liferay-portlet-url', function () {
             });
 
             if (isChecked) {
-                $('#LinkedProjectsInfo tbody tr').each(function() {
-                    let relState = $(this).find('td:eq(5)').data().releaseclearingstate;
-                    if (relState && checkedData.includes(relState.trim().toLowerCase())) {
-                        showRow(relState, $(this));
-                        isPresent = true;
-                    } else {
-                        $(this).hide();
-                    }
-                });
+                if (isStateFilter) {
+                    removeFilterBySelector("relationFilterForTT");
+                    removeFilterBySelector("typeFilterForTT");
+                    $('#LinkedProjectsInfo tbody tr').each(function() {
+                        let relState = $(this).find('td:eq(5)').data().releaseclearingstate;
+                        if (relState && checkedData.includes(relState.trim().toLowerCase())) {
+                            showRow(relState, $(this));
+                            isPresent = true;
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                } else if (isTypeFilter) {
+                    removeFilterBySelector("relationFilterForTT");
+                    removeFilterBySelector("stateFilterForTT");
+                    $('#LinkedProjectsInfo tbody tr').each(function() {
+                        let relType = $(this).find('td:eq(1)').data().componenttype;
+                        if (relType && checkedData.includes(relType.trim().toLowerCase())) {
+                            showRow(relType, $(this));
+                            isPresent = true;
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                } else if (isRelationFilter) {
+                    removeFilterBySelector("typeFilterForTT");
+                    removeFilterBySelector("stateFilterForTT");
+                    $('#LinkedProjectsInfo tbody tr').each(function() {
+                        let relRelation = $(this).find('td:eq(2)').data().releaserelation;
+                        if (relRelation && checkedData.includes(relRelation.trim().toLowerCase())) {
+                            showRow(relRelation, $(this));
+                            isPresent = true;
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                }
                 if (!isPresent) {
                     if (!$('#LinkedProjectsInfo tbody tr#noDataRow').length) {
                         $('#LinkedProjectsInfo tbody tr:last').after('<tr id="noDataRow"><td colspan="8"> ' + emptyMsg + '</td></tr>');
@@ -227,10 +361,10 @@ AUI().use('liferay-portlet-url', function () {
             $thiz.show();
         }
 
-        $("div#stateFilterForTT input:checkbox").on('change', function() {
+        $("div.releaseFilterForTT input:checkbox").on('change', function() {
             $('#search_table').val('');
             search_table('');
-            filterByClearingState();
+            filterDirectlyLinkedReleases($(this).closest('div').attr('id'));
         });
 
         function search_table(value) {
@@ -319,12 +453,13 @@ AUI().use('liferay-portlet-url', function () {
                 	}
                 	return row;
                 }),
+                infoOnTop: true,
                 columns: [
                     {title: "<liferay-ui:message key="name" />", data : "name", "defaultContent": "", render: {display: detailUrl} },
-                    {title: "<liferay-ui:message key="type" />", data : "type", "defaultContent": ""},
+                    {title: "", data : "type", "defaultContent": ""},
                     {title: "<liferay-ui:message key="project.path" />", data : "projectOrigin", "defaultContent": "", render: $.fn.dataTable.render.text() },
                     {title: "<liferay-ui:message key="release.path" />", data : "releaseOrigin", "defaultContent": "", render: $.fn.dataTable.render.text() },
-                    {title: "<liferay-ui:message key="relation" />", data : "relation", "defaultContent": ""},
+                    {title: "", data : "relation", "defaultContent": ""},
                     {title: "<liferay-ui:message key="main.licenses" />", data : "mainLicenses", "defaultContent": "", render: {display: mainLicenseUrl}},
                     {title: "", "data": function(row) {
                     	if(row.isAccessible === "false"){
@@ -356,6 +491,40 @@ AUI().use('liferay-portlet-url', function () {
                     loadingRecords: "<liferay-ui:message key="loading" />"
                 },
                 initComplete: function() {
+                    this.api().columns([1]).every(function() {
+                        var column = this;
+                        var typeFilterForLT = $("div#typeFilterForTT").clone();
+                        $(typeFilterForLT).attr('id', 'typeFilterForLT');
+                        $(typeFilterForLT).find('span svg.lexicon-icon-caret-double-l').remove()
+                        var select = $(typeFilterForLT)
+                            .appendTo($(column.header()))
+                            .on('change', function(event) {
+                                var values = $('input:checked', this).map(function(index, element) {
+                                    return $.fn.dataTable.util.escapeRegex($(element).data().componenttype);
+                                }).toArray().join('|');
+                                column.search(values.length > 0 ? '^(' + values + ')$' : '', true, false).draw();
+                            });
+                        $("div#typeFilterForLT #dropdownmenu").on('click', function(e) {
+                            e.stopPropagation();
+                        });
+                    });
+                    this.api().columns([4]).every(function() {
+                        var column = this;
+                        var relationFilterForLT = $("div#relationFilterForTT").clone();
+                        $(relationFilterForLT).attr('id', 'relationFilterForLT');
+                        $(relationFilterForLT).find('span svg.lexicon-icon-caret-double-l').remove()
+                        var select = $(relationFilterForLT)
+                            .appendTo($(column.header()))
+                            .on('change', function(event) {
+                                var values = $('input:checked', this).map(function(index, element) {
+                                    return $.fn.dataTable.util.escapeRegex($(element).data().releaserelation);
+                                }).toArray().join('|');
+                                column.search(values.length > 0 ? '^(' + values + ')$' : '', true, false).draw();
+                            });
+                        $("div#relationFilterForLT #dropdownmenu").on('click', function(e) {
+                            e.stopPropagation();
+                        });
+                    });
                     this.api().columns([6]).every(function() {
                         var column = this;
                         var stateFilterForLT = $("div#stateFilterForTT").clone();
