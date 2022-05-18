@@ -1062,7 +1062,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 pageData.setDisplayStart(displayStart);
                 pageData.setRowsPerPage(rowsPerPage);
                 displayStart = displayStart + rowsPerPage;
-                pageDtToProjects = client.getAccessibleProjectsSummaryWithPagination(user, pageData);
+                pageDtToProjects = getFilteredProjectList(request, pageData);
                 projects.addAll(pageDtToProjects.entrySet().iterator().next().getValue());
                 total = total - rowsPerPage;
             }
@@ -1108,7 +1108,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 pageData.setDisplayStart(displayStart);
                 pageData.setRowsPerPage(rowsPerPage);
                 displayStart = displayStart + rowsPerPage;
-                pageDtToProjects = client.getAccessibleProjectsSummaryWithPagination(user, pageData);
+                pageDtToProjects = getFilteredProjectList(request, pageData);
                 projects.addAll(pageDtToProjects.entrySet().iterator().next().getValue());
                 total = total - rowsPerPage;
             }
@@ -1512,6 +1512,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 final Collection<ProjectLink> projectLinks = SW360Utils.getLinkedProjectsAsFlatList(id, true, thriftClients, log, user);
                 List<String> linkedProjectIds = projectLinks.stream().map(ProjectLink::getId).collect(Collectors.toList());
                 projectList = projectClient.getProjectsById(linkedProjectIds, user);
+                ctToProjects.put(pageData.setTotalRowCount(projectList.size()), projectList);
             } else {
                 if (filterMap.isEmpty()) {
                     ctToProjects = projectClient.getAccessibleProjectsSummaryWithPagination(user, pageData);
