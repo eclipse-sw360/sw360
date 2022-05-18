@@ -66,6 +66,11 @@
     <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_LICENSE_ID%>"/>
 </liferay-portlet:renderURL>
 
+<portlet:resourceURL var="generateExcelReport">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EMAIL_EXPORTED_EXCEL%>"/>
+    <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${docid}"/>
+</portlet:resourceURL>
+
 <div class="container" style="display: none;">
   <div class="row">
     <div class="col-3 sidebar">
@@ -399,19 +404,32 @@
 
             // Export Spreadsheet action
             function exportSpreadsheet(type){
-                var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+                var  isEMailEnabled = <%=PortalConstants.SEND_COMPONENT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED%>;
+                if(isEMailEnabled){
+                    var isWithReleases = (type === 'componentWithReleases' ? 'true' : 'false');
+                    $.ajax({
+                        type: 'POST',
+                        url: '<%=generateExcelReport%>',
+                        cache: false,
+                        data: {
+                            "<portlet:namespace/><%=PortalConstants.EXTENDED_EXCEL_EXPORT%>": isWithReleases,
+                        }
+                    });
+                } else {
+                    var portletURL = PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
                         .setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_TO_EXCEL%>');
-                portletURL.setParameter('<%=Component._Fields.NAME%>', $('#component_name').val());
-                portletURL.setParameter('<%=Component._Fields.CATEGORIES%>', $('#categories').val());
-                portletURL.setParameter('<%=Component._Fields.LANGUAGES%>', $('#languages').val());
-                portletURL.setParameter('<%=Component._Fields.SOFTWARE_PLATFORMS%>', $('#software_platforms').val());
-                portletURL.setParameter('<%=Component._Fields.OPERATING_SYSTEMS%>', $('#operating_systems').val());
-                portletURL.setParameter('<%=Component._Fields.VENDOR_NAMES%>', $('#vendor_names').val());
-                portletURL.setParameter('<%=Component._Fields.COMPONENT_TYPE%>', $('#component_type').val());
-                portletURL.setParameter('<%=Component._Fields.MAIN_LICENSE_IDS%>', $('#main_licenses').val());
-                portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'componentWithReleases' ? 'true' : 'false');
+                    portletURL.setParameter('<%=Component._Fields.NAME%>', $('#component_name').val());
+                    portletURL.setParameter('<%=Component._Fields.CATEGORIES%>', $('#categories').val());
+                    portletURL.setParameter('<%=Component._Fields.LANGUAGES%>', $('#languages').val());
+                    portletURL.setParameter('<%=Component._Fields.SOFTWARE_PLATFORMS%>', $('#software_platforms').val());
+                    portletURL.setParameter('<%=Component._Fields.OPERATING_SYSTEMS%>', $('#operating_systems').val());
+                    portletURL.setParameter('<%=Component._Fields.VENDOR_NAMES%>', $('#vendor_names').val());
+                    portletURL.setParameter('<%=Component._Fields.COMPONENT_TYPE%>', $('#component_type').val());
+                    portletURL.setParameter('<%=Component._Fields.MAIN_LICENSE_IDS%>', $('#main_licenses').val());
+                    portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'componentWithReleases' ? 'true' : 'false');
 
-                window.location.href = portletURL.toString();
+                    window.location.href = portletURL.toString();
+                }
             }
 
             // Delete component action

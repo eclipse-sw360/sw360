@@ -2502,4 +2502,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     });
         }
     }
+
+    public void sendExportSpreadsheetSuccessMail(String url, String recepient) throws TException {
+        mailUtil.sendMail(recepient, MailConstants.SUBJECT_SPREADSHEET_EXPORT_SUCCESS,
+                MailConstants.TEXT_SPREADSHEET_EXPORT_SUCCESS, SW360Constants.NOTIFICATION_CLASS_COMPONENT, "", false,
+                "component", url);
+    }
 }

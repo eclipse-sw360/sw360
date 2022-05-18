@@ -74,6 +74,11 @@ public class ComponentExporter extends ExcelExporter<Component, ComponentHelper>
         preloadLinkedReleasesFor(components, extendedByReleases);
     }
 
+    public ComponentExporter(ComponentService.Iface componentClient, User user,
+            boolean extendedByReleases) throws SW360Exception {
+        super(new ComponentHelper(extendedByReleases, new ReleaseHelper(componentClient, user)));
+    }
+
     private void preloadLinkedReleasesFor(List<Component> components, boolean extendedByReleases)
             throws SW360Exception {
         Set<String> linkedReleaseIds = components
