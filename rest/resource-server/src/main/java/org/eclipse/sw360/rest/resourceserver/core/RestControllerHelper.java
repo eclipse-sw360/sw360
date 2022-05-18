@@ -422,6 +422,7 @@ public class RestControllerHelper<T> {
         embeddedProject.setId(project.getId());
         embeddedProject.setProjectType(project.getProjectType());
         embeddedProject.setVersion(project.getVersion());
+        embeddedProject.setVisbility(project.getVisbility());
         embeddedProject.setType(null);
         return embeddedProject;
     }
