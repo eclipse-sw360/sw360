@@ -176,12 +176,9 @@
 
             $('#formSubmit').on('click', function() {
                 var selectedObligationIds = [];
-                $('#licenseTodoTable > tbody  > tr').each(function() {
-                    id = $(this).attr('id');
-                    if(id){
-                        selectedObligationIds.push($(this).attr('id').slice(10));
-                    }
-                });
+                $('#licenseTodoTable').DataTable().rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+                     selectedObligationIds.push(this.data().DT_RowId.slice(10));
+                 } );
                 $('#licenseEditForm').append('<input id="oblIds" type="hidden" name="<portlet:namespace/>obligations"/>');
                 $("#oblIds").val(selectedObligationIds);
                 $('#licenseEditForm').submit();

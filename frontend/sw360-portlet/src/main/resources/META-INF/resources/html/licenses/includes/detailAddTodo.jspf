@@ -183,7 +183,8 @@
             $dialog = dialog.confirm('danger', 'question-circle', '<liferay-ui:message key="delete.obligation" />?', '<p><liferay-ui:message key="do.you.really.want.to.delete.the.obligation.x" />?</p>', '<liferay-ui:message key="delete.obligation" />', {
                 title: title
             }, function(submit, callback) {
-                $('#' + rowId).remove();
+                $("#licenseTodoTable").DataTable().rows($('#' + rowId)).remove();
+                $("#licenseTodoTable").DataTable().draw();
                 callback(true);
             });
         });
