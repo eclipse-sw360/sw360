@@ -42,7 +42,7 @@ RUN chmod a+x /usr/local/bin/setup_maven_proxy
 # Thrift
 FROM builder AS thriftbuild
 
-ARG THRIFT_VERSION=0.14.0
+ARG THRIFT_VERSION=0.16.0
 
 COPY deps/thrift-*.tar.gz /deps/
 COPY ./scripts/docker-config/install_scripts/build_thrift.sh build_thrift.sh
@@ -123,7 +123,7 @@ FROM eclipse-temurin:11-jdk-focal
 
 WORKDIR /app/
 
-ARG LIFERAY_SOURCE="liferay-ce-portal-tomcat-7.3.4-ga5-20200811154319029.tar.gz"
+ARG LIFERAY_SOURCE="liferay-ce-portal-tomcat-7.4.3.18-ga18-20220329092001364.tar.gz"
 
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
