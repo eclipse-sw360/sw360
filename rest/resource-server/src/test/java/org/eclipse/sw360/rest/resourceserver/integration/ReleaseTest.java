@@ -47,6 +47,7 @@ import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -107,7 +108,7 @@ public class ReleaseTest extends TestIntegrationBase {
     @Test
     public void should_update_release_valid() throws IOException, TException {
         String updatedReleaseName = "updatedReleaseName";
-        given(this.releaseServiceMock.updateRelease(any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.releaseServiceMock.updateRelease(any(), any(), anyBoolean())).willReturn(RequestStatus.SUCCESS);
         given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.release1Id), any())).willReturn(TestHelper.getDummyReleaseListForTest().get(0));
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -223,7 +224,7 @@ public class ReleaseTest extends TestIntegrationBase {
         String strIds = String.join(",", attachmentIds);
         release.setAttachments(new HashSet<>(attachments));
         given(releaseServiceMock.getReleaseForUserById(release.id, TestHelper.getTestUser())).willReturn(release);
-        given(releaseServiceMock.updateRelease(any(), eq(TestHelper.getTestUser())))
+        given(releaseServiceMock.updateRelease(any(), eq(TestHelper.getTestUser()), anyBoolean()))
                 .will(invocationOnMock -> {
                     refUpdatedRelease.set(new Release((Release) invocationOnMock.getArguments()[0]));
                     return RequestStatus.SUCCESS;
@@ -275,6 +276,6 @@ public class ReleaseTest extends TestIntegrationBase {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         then(releaseServiceMock)
                 .should(never())
-                .updateRelease(any(), any());
+                .updateRelease(any(), any(), anyBoolean());
     }
 }
