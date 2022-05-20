@@ -523,7 +523,7 @@
                     approvedCount;
 
                 if (clearing) {
-                    releaseCount = d(clearing.newRelease) + d(clearing.underClearing) + d(clearing.sentToClearingTool) + d(clearing.reportAvailable) + d(clearing.approved);
+                    releaseCount = d(clearing.newRelease) + d(clearing.underClearing) + d(clearing.sentToClearingTool) + d(clearing.reportAvailable) + d(clearing.approved) + d(clearing.scanAvailable);
                     approvedCount = d(clearing.approved);
                     resultElementAsString = "<span class=\"clearingstate content-center\" title=\"" + approvedCount + (approvedCount === 1 ? " <liferay-ui:message key='release' />" : " <liferay-ui:message key='releases' />")
                         + " <liferay-ui:message key='out.of' /> " + releaseCount + (approvedCount === 1 ? " <liferay-ui:message key='has' />" : " <liferay-ui:message key='have' />")
