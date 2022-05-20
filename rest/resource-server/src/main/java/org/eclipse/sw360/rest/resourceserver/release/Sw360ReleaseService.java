@@ -207,11 +207,11 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return sw360ComponentClient.getUsingComponentsForRelease(releaseId);
     }
 
-    public ExternalToolProcess fossologyProcess(String releaseId, User sw360User) throws TException {
+    public ExternalToolProcess fossologyProcess(String releaseId, User sw360User, String uploadDescription) throws TException {
         FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
         ExternalToolProcess fossologyProcess = null;
         try {
-            fossologyProcess = sw360FossologyClient.process(releaseId, sw360User);
+            fossologyProcess = sw360FossologyClient.process(releaseId, sw360User, uploadDescription);
         } catch (TException exp) {
             throw new ResourceNotFoundException("Could not determine FOSSology state for this release!");
         }
@@ -268,7 +268,8 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     }
 
     public void executeFossologyProcess(User user, Sw360AttachmentService attachmentService,
-            Map<String, ReentrantLock> mapOfLocks, String releaseId, boolean markFossologyProcessOutdated)
+            Map<String, ReentrantLock> mapOfLocks, String releaseId, boolean markFossologyProcessOutdated,
+            String uploadDescription)
             throws TException, IOException {
         String attachmentId = validateNumberOfSrcAttachedAndGetAttachmentId(releaseId, user);
 
@@ -299,7 +300,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
                 if (lockObj.tryLock()) {
                     service = Executors.newSingleThreadScheduledExecutor();
                     triggerUploadScanAndReportStep(attachmentService, service, fossologyProcessFinal, release, user,
-                            attachmentId);
+                            attachmentId, uploadDescription);
                 }
             } catch (Exception exp) {
                 log.error(String.format("Release : %s .Error occured while triggering Fossology Process . %s",
@@ -355,7 +356,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     private void triggerUploadScanAndReportStep(Sw360AttachmentService attachmentService,
             ScheduledExecutorService service, ExternalToolProcess fossologyProcess, Release release, User user,
-            String attachmentId) throws TException {
+            String attachmentId, String uploadDescription) throws TException {
 
         int scanTriggerRetriesCount = 0, reportGenerateTriggerRetries = 0, reportGeneratestatusCheckCount = 0,
                 maxRetries = 15;
@@ -373,13 +374,13 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
         Callable<ExternalToolProcess> processRunnable = new Callable<ExternalToolProcess>() {
             public ExternalToolProcess call() throws Exception {
-                return fossologyProcess(releaseId, user);
+                return fossologyProcess(releaseId, user, uploadDescription);
             }
         };
 
         if (fossologyProcessLocal == null || !isUploadStepCompletedSuccessfully(fossologyProcessLocal, releaseId)) {
             log.info("Release : " + releaseId + " .Triggering Upload Step.");
-            fossologyProcessLocal = fossologyProcess(releaseId, user);
+            fossologyProcessLocal = fossologyProcess(releaseId, user, uploadDescription);
         }
 
         if (isUploadStepCompletedSuccessfully(fossologyProcessLocal, releaseId)

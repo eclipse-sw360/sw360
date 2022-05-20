@@ -233,7 +233,7 @@ public abstract class FossologyAwarePortlet extends LinkedReleasesAndProjectsAwa
         JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
         try {
             ExternalToolProcess fossologyProcess = fossologyClient.process(releaseId,
-                    UserCacheHolder.getUserFromRequest(request));
+                    UserCacheHolder.getUserFromRequest(request), "");
             fillJsonObjectFromFossologyProcess(jsonObject, Stream.of(fossologyProcess).collect(Collectors.toSet()));
         } catch (TException e) {
             jsonObject.put("error", "Could not determine FOSSology state for this release!");

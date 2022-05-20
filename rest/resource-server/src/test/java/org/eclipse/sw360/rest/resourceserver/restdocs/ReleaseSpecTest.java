@@ -602,7 +602,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     public void should_document_trigger_fossology_process() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(
-                get("/api/releases/" + release3.getId() + "/triggerFossologyProcess?markFossologyProcessOutdated=false")
+                get("/api/releases/" + release3.getId() + "/triggerFossologyProcess?uploadDescription=uploadDescription&markFossologyProcessOutdated=false")
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(responseFields(
