@@ -43,7 +43,7 @@ service FossologyService {
      * Not only saves the reached state in the release, but also returns the 
      * ExternalToolProcess.
      **/
-    ExternalToolProcess process(1: string releaseId, 2: User user);
+    ExternalToolProcess process(1: string releaseId, 2: User user,3: string uploadDescription);
 
     /**
      * Since there should only be one actice Fossology process at most for a release

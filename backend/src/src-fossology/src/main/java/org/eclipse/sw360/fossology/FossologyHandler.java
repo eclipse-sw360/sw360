@@ -125,7 +125,7 @@ public class FossologyHandler implements FossologyService.Iface {
     }
 
     @Override
-    public ExternalToolProcess process(String releaseId, User user) throws TException {
+    public ExternalToolProcess process(String releaseId, User user, String uploadDescription) throws TException {
         ExternalToolProcess fossologyProcess;
 
         Iface componentClient = thriftClients.makeComponentClient();
@@ -159,7 +159,7 @@ public class FossologyHandler implements FossologyService.Iface {
 
         ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps().get(fossologyProcess.getProcessSteps().size() - 1); 
         if (FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD.equals(furthestStep.getStepName())) {
-            handleUploadStep(componentClient, release, user, fossologyProcess, sourceAttachment);
+            handleUploadStep(componentClient, release, user, fossologyProcess, sourceAttachment, uploadDescription);
         } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(furthestStep.getStepName())) {
             handleScanStep(componentClient, release, user, fossologyProcess);
         } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
@@ -313,7 +313,7 @@ public class FossologyHandler implements FossologyService.Iface {
     }
 
     private void handleUploadStep(Iface componentClient, Release release, User user,
-            ExternalToolProcess fossologyProcess, Attachment sourceAttachment) throws TException {
+            ExternalToolProcess fossologyProcess, Attachment sourceAttachment, String uploadDescription) throws TException {
         ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps()
                 .get(fossologyProcess.getProcessSteps().size() - 1);
         switch (furthestStep.getStepStatus()) {
@@ -332,7 +332,7 @@ public class FossologyHandler implements FossologyService.Iface {
             AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
 
             InputStream attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, release);
-            int uploadId = fossologyRestClient.uploadFile(attachmentFilename, attachmentStream);
+            int uploadId = fossologyRestClient.uploadFile(attachmentFilename, attachmentStream, uploadDescription);
             if (uploadId > -1) {
                 furthestStep.setFinishedOn(Instant.now().toString());
                 furthestStep.setStepStatus(ExternalToolProcessStatus.DONE);

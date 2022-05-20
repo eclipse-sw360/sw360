@@ -181,7 +181,7 @@ public class FossologyHandlerLocalhostIntegrationTest {
         prepareValidPreconditions(user);
 
         // when:
-        ExternalToolProcess actual = uut.process(sharedRelease.getId(), user);
+        ExternalToolProcess actual = uut.process(sharedRelease.getId(), user, "");
 
         // then:
         assertNotNull(actual);
@@ -207,7 +207,7 @@ public class FossologyHandlerLocalhostIntegrationTest {
                 || actual.getProcessSteps().get(1).getStepStatus().equals(ExternalToolProcessStatus.NEW)) {
             // give fossology some time to process the upload
             Thread.sleep(1_000l);
-            actual = uut.process(sharedRelease.getId(), user);
+            actual = uut.process(sharedRelease.getId(), user, "");
         }
 
         // then:
@@ -228,7 +228,7 @@ public class FossologyHandlerLocalhostIntegrationTest {
         prepareValidPreconditions(user);
 
         // when:
-        ExternalToolProcess actual = uut.process(sharedRelease.getId(), user);
+        ExternalToolProcess actual = uut.process(sharedRelease.getId(), user, "");
 
         // then:
         assertNotNull(actual);
@@ -252,7 +252,7 @@ public class FossologyHandlerLocalhostIntegrationTest {
         while (actual.getProcessSteps().get(1).getStepStatus().equals(ExternalToolProcessStatus.IN_WORK)) {
             // give fossology some time to process the scan
             Thread.sleep(5_000l);
-            actual = uut.process(sharedRelease.getId(), user);
+            actual = uut.process(sharedRelease.getId(), user, "");
         }
 
         // then:
@@ -273,7 +273,7 @@ public class FossologyHandlerLocalhostIntegrationTest {
         prepareValidPreconditions(user);
 
         // when:
-        ExternalToolProcess actual = uut.process(sharedRelease.getId(), user);
+        ExternalToolProcess actual = uut.process(sharedRelease.getId(), user, "");
 
         // then:
         assertNotNull(actual);
@@ -293,7 +293,7 @@ public class FossologyHandlerLocalhostIntegrationTest {
         prepareValidPreconditions(user);
 
         // when:
-        ExternalToolProcess actual = uut.process(sharedRelease.getId(), user);
+        ExternalToolProcess actual = uut.process(sharedRelease.getId(), user, "");
 
         // then:
         assertNotNull(actual);
@@ -326,7 +326,7 @@ public class FossologyHandlerLocalhostIntegrationTest {
         while (actual.getProcessSteps().get(2).getStepStatus().equals(ExternalToolProcessStatus.IN_WORK)) {
             // give fossology some time to process the report generation
             Thread.sleep(1_000l);
-            actual = uut.process(sharedRelease.getId(), user);
+            actual = uut.process(sharedRelease.getId(), user, "");
         }
 
         // then:

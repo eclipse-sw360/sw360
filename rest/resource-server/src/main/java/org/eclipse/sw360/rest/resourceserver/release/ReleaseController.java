@@ -398,6 +398,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @RequestMapping(value = RELEASES_URL + "/{id}/triggerFossologyProcess", method = RequestMethod.GET)
     public ResponseEntity<HalResource> triggerFossologyProcess(@PathVariable("id") String releaseId,
             @RequestParam(value = "markFossologyProcessOutdated", required = false) boolean markFossologyProcessOutdated,
+            @RequestParam(value = "uploadDescription", required = false) String uploadDescription,
             HttpServletResponse response) throws TException, IOException {
         releaseService.checkFossologyConnection();
 
@@ -412,7 +413,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             } else {
                 User user = restControllerHelper.getSw360UserFromAuthentication();
                 releaseService.executeFossologyProcess(user, attachmentService, mapOfLocks, releaseId,
-                        markFossologyProcessOutdated);
+                        markFossologyProcessOutdated, uploadDescription);
                 responseMap.put("message", "FOSSology Process for Release Id : " + releaseId + " has been triggered.");
                 status = HttpStatus.OK;
             }

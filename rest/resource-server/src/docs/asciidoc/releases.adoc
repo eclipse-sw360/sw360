@@ -239,7 +239,9 @@ have been successful.
 ==== Trigger FOSSology process
 
 A `GET` request will allow you to Trigger FOSSology process for a release. +
-Please set the request parameter `&markFossologyProcessOutdated=<true|false>` to set previous FOSSology process outdated and generate new.
+Please set the request parameter  +
+   `&markFossologyProcessOutdated=<true|false>` to set previous FOSSology process outdated and generate new. +
+   `&uploadDescription=uploadDescription` with the upload description to FOSSology +
 
 ===== Response structure
 include::{snippets}/should_document_trigger_fossology_process/response-fields.adoc[]

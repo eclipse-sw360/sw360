@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 
 import org.apache.commons.lang.StringUtils;
@@ -139,7 +140,7 @@ public class FossologyRestClient {
      * @return the uploadId provided by FOSSology in case of an successful upload,
      *         -1 otherwise
      */
-    public int uploadFile(String filename, InputStream fileStream) {
+    public int uploadFile(String filename, InputStream fileStream, String uploadDescription) {
         String baseUrl = restConfig.getBaseUrlWithSlash();
         String token = restConfig.getAccessToken();
         String folderId = restConfig.getFolderId();
@@ -160,6 +161,9 @@ public class FossologyRestClient {
         headers.set("Authorization", "Bearer " + token);
         headers.set("folderId", folderId);
 
+        if (CommonUtils.isNotNullEmptyOrWhitespace(uploadDescription)) {
+            headers.set("uploadDescription", uploadDescription);
+        }
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("fileInput", new FossologyInputStreamResource(filename, fileStream));
 
