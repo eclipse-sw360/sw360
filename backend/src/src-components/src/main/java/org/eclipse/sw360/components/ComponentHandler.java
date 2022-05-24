@@ -485,8 +485,10 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
-    public Component recomputeReleaseDependentFields(String componentId) throws TException {
-        return handler.updateReleaseDependentFieldsForComponentId(componentId);
+    public Component recomputeReleaseDependentFields(String componentId, User user) throws TException {
+        assertUser(user);
+        assertId(componentId);
+        return handler.updateReleaseDependentFieldsForComponentId(componentId, user);
     }
 
     //////////////////////////////////

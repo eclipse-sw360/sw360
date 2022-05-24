@@ -188,6 +188,25 @@
                                    description="moderators" multiUsers="true" readonly="false"/>
         </td>
     </tr>
+
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="modified_on"><liferay-ui:message key="modified.on" /></label>
+                <input id="modified_on" name="<portlet:namespace/><%=Release._Fields.MODIFIED_ON%>" type="date"
+                    placeholder="<liferay-ui:message key="modified.date.yyyy.mm.dd" />"
+                    value="<sw360:out value="${release.modifiedOn}"/>" readonly class="form-control"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <sw360:DisplayUserEdit email="${release.modifiedBy}" id="<%=Release._Fields.MODIFIED_BY.toString()%>"
+                                    description="modified.by" multiUsers="false" readonly="true"/>
+            </div>
+        </td>
+        <td>
+        </td>
+    </tr>
 </table>
 
 <script>

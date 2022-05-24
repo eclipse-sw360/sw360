@@ -50,6 +50,14 @@
         <td><sw360:DisplayUserEmail email="${project.createdBy}"/></td>
     </tr>
     <tr>
+        <td><liferay-ui:message key="modified.on" />:</td>
+        <td><sw360:out value="${project.modifiedOn}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="modified.by" />:</td>
+        <td><sw360:DisplayUserEmail email="${project.modifiedBy}"/></td>
+    </tr>
+    <tr>
         <td><liferay-ui:message key="project.type" />:</td>
         <td><sw360:DisplayEnum value="${project.projectType}"/></td>
     </tr>

@@ -46,6 +46,14 @@
             <td><sw360:DisplayUserEmail email="${release.createdBy}"/></td>
         </tr>
         <tr>
+            <td><liferay-ui:message key="modified.on" />:</td>
+            <td><sw360:out value="${release.modifiedOn}"/></td>
+        </tr>
+        <tr>
+            <td><liferay-ui:message key="modified.by" />:</td>
+            <td><sw360:DisplayUserEmail email="${release.modifiedBy}"/></td>
+        </tr>
+        <tr>
             <td><liferay-ui:message key="contributors" />:</td>
             <td><sw360:DisplayUserEmailCollection value="${release.contributors}"/></td>
         </tr>
