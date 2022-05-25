@@ -82,7 +82,7 @@
     </tr>
     <tr>
         <td><liferay-ui:message key="additional.data" />:</td>
-        <td><sw360:DisplayMap value="${component.additionalData}"/></td>
+        <td><ul id="list-data-additional-contentComponent" class="mapDisplayRootItem"></ul> </td>
     </tr>
 </table>
 

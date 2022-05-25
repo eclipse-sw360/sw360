@@ -186,7 +186,7 @@
 <script>
 	document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
-    require(['jquery', 'components/includes/releases/linkProject', 'modules/button', 'modules/listgroup', 'utils/includes/clipboard'], function($, linkProject, button, listgroup, clipboard) {
+    require(['jquery','components/includes/releases/regexjs','components/includes/releases/linkProject', 'modules/button', 'modules/listgroup', 'utils/includes/clipboard'], function($,regexjs,linkProject, button, listgroup, clipboard) {
         linkProject.initialize();
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 
@@ -257,6 +257,18 @@
                     errorCallback();
                 }
             });
+        }
+
+        let keyReleases, valueReleases;
+        renderDataReleases();
+        function renderDataReleases() {
+            let content ='';
+            <core_rt:forEach items="${release.additionalData}" var="additional">
+                keyReleases = '<sw360:out value='${additional.key}'/>';
+                valueReleases = '<sw360:out value='${additional.value}'/>';
+                content+=regexjs.regex(keyReleases,valueReleases);
+            </core_rt:forEach>
+            $('#list-data-additional-release').append(content);
         }
 	});
 </script>
