@@ -37,12 +37,14 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TEnum;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -737,6 +739,18 @@ public class SW360Utils {
             }
         } catch (TException e) {
             log.error("Error duplicating obligations for project: " + newProject.getId(), e);
+        }
+    }
+
+    public static void removeReleaseVulnerabilityRelation(String releaseId, User user){
+        VulnerabilityService.Iface vulnerabilityService = new ThriftClients().makeVulnerabilityClient();
+        try {
+            List<ReleaseVulnerabilityRelation> releaseVulnerabilityRelations = vulnerabilityService.getReleaseVulnerabilityRelationsByReleaseId(releaseId, user);
+            for (ReleaseVulnerabilityRelation relation : releaseVulnerabilityRelations) {
+                vulnerabilityService.deleteReleaseVulnerabilityRelation(relation, user);
+            }
+        } catch (TException e) {
+            log.error(e.getMessage());
         }
     }
 }

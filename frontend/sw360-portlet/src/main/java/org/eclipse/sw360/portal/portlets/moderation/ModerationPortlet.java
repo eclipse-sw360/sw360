@@ -71,6 +71,7 @@ import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.common.datatables.PaginationParser;
 import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
+import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.eclipse.sw360.portal.users.UserUtils;
 import org.apache.logging.log4j.LogManager;
@@ -562,7 +563,10 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             case RELEASE: {
                 ComponentService.Iface componentClient = thriftClients.makeComponentClient();
                 if (moderationRequest.isRequestDocumentDelete()) {
-                    componentClient.deleteRelease(moderationRequest.getDocumentId(), user);
+                    RequestStatus deleteStatus = componentClient.deleteRelease(moderationRequest.getDocumentId(), user);
+                    if (deleteStatus.equals(RequestStatus.SUCCESS)) {
+                        SW360Utils.removeReleaseVulnerabilityRelation(moderationRequest.getDocumentId(), UserCacheHolder.getUserFromRequest(request));
+                    }
                 } else {
                     componentClient.updateReleaseFromModerationRequest(
                             moderationRequest.getReleaseAdditions(),
