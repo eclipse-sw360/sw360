@@ -46,18 +46,18 @@ This is a multi module maven file. please consider that we have the following mo
 In addition, the Liferay instance must provide the following dependecies via OSGi:
 
 * Apache Commons Codec 1.12
-* Apache Commons Collections4 4.1
+* Apache Commons Collections4 4.4
 * Apache Commons CSV 1.4
-* Apache Commons IO 2.6
+* Apache Commons IO 2.7
 * Apache Commons Lang 2.4
 * Apache Commons Logging 1.2
 * Apache Commons Compress 1.20
-* Google Gson 2.8.5
+* Google Gson 2.8.9
 * Google Guava 31.0.1-jre
-* Jackson Annotations 2.9.8
-* Jackson Core 2.9.8
-* Jackson Databind 2.9.8
-* libthrift 0.13
+* Jackson Annotations 2.13.2
+* Jackson Core 2.13.2
+* Jackson Databind 2.13.2.2
+* libthrift 0.14
 
 In order to build you will need:
 
