@@ -39,8 +39,8 @@
     font-size: 100%;
 }
 
-#tree input {
-    width: 15rem;
+#ul input {
+    width: 20rem;
 }
 
 #tree .obObject {
@@ -55,6 +55,7 @@
 #obligationTitle {
     color: black;
     font-weight: bold;
+    width: 60rem;
 }
 
 #out {
@@ -100,7 +101,7 @@
                 </main>
 
                 <div style="display: none;" class="hidden" id="template">
-                    <ul>
+                    <ul id="ul">
                         <li class="tree-node">
                             <input type="text" name="<portlet:namespace/><%=ObligationNode._Fields.NODE_TYPE%>" class="elementType form-control" list="typeList" placeholder="<liferay-ui:message key="type" />">
                             <datalist id="typeList" class="typeListData">
