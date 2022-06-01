@@ -388,6 +388,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
         final Selector buAndModorator_visibility_Selector = eq("visbility", "BUISNESSUNIT_AND_MODERATORS");
         final Selector userBuSelector = eq("businessUnit", userBU);
+        boolean isAdmin = PermissionUtils.isAdmin(user);
         boolean isClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
         Selector isUserBelongToBuAndModerator = null;
 
@@ -412,12 +413,16 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         isUserBelongToBuAndModerator = and(buAndModorator_visibility_Selector, or(buSelectors));
 
         Selector finalSelector = null;
-        if (isClearingAdmin) {
-            finalSelector = and(typeSelector, or(getAllPrivateProjects, everyone_visibility_Selector,
-                    isUserBelongToMeAndModerator, buAndModorator_visibility_Selector));
+        if (PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isAdmin) {
+                finalSelector = typeSelector;
         } else {
-            finalSelector = and(typeSelector, or(getAllPrivateProjects, everyone_visibility_Selector,
-                    isUserBelongToMeAndModerator, isUserBelongToBuAndModerator));
+            if (isClearingAdmin) {
+                finalSelector = and(typeSelector, or(getAllPrivateProjects, everyone_visibility_Selector,
+                        isUserBelongToMeAndModerator, buAndModorator_visibility_Selector));
+            } else {
+                finalSelector = and(typeSelector, or(getAllPrivateProjects, everyone_visibility_Selector,
+                        isUserBelongToMeAndModerator, isUserBelongToBuAndModerator));
+            }
         }
 
         QueryBuilder qb = new QueryBuilder(finalSelector);
@@ -532,6 +537,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     }
 
     public int getMyAccessibleProjectsCount(User user) {
+        boolean isAdmin = PermissionUtils.isAdmin(user);
         boolean isClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
         Set<String> BUs = new HashSet<>();
         String primaryOrg = SW360Utils.getBUFromOrganisation(user.getDepartment());
@@ -552,6 +558,9 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         }
         keys[keys.length - 2] = user.getEmail();
         keys[keys.length - 1] = "everyone";
+        if (PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isAdmin) {
+            return getConnector().getDocumentCount(Project.class);
+        }
         if (isClearingAdmin) {
             String[] keyss = new String[3];
             keyss[keyss.length - 3] = "bu";
