@@ -105,10 +105,18 @@ define('bridges/datatables', [
 				config.searching = true;
 
 				if(typeof printColumns !== 'undefined' && printColumns.length > 0) {
-					config.dom = "<'row'<'col-auto'l><'col'f><'col-auto'B>>"; 	// line above table
+                    if (config.infoOnTop) {
+                        config.dom = "<'row'<'col-auto'l><'col-auto'i><'col'f><'col-auto'B>>";
+                    } else {
+                        config.dom = "<'row'<'col-auto'l><'col'f><'col-auto'B>>"; 	// line above table
+                    }
 				} else {
-					config.dom = "<'row'<'col-auto'l><'col'f>>"; 	// line above table
-				}
+                    if (config.infoOnTop) {
+                        config.dom = "<'row'<'col-auto'l><'col-auto'i><'col'f>>";
+                    } else {
+                        config.dom = "<'row'<'col-auto'l><'col'f>>";    // line above table
+                    }
+                }
 
 				config.dom += '' +
 					"<'row'<'col-12'tr>>" +			// table
