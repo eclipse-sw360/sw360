@@ -67,6 +67,11 @@ public class ErrorMessages {
     public static final String ERROR_VENDOR = "Error: Invalid vendor Name or Url.";
 
 
+    public static final String ERROR_VULNERABILITY_USED_BY_RELEASE = "Can not remove vulnerability because it is used by releases";
+    public static final String ERROR_VULNERABILITY_DELETE = "Error when delete vulnerability";
+    public static final String ERROR_ADD_VULNERABILITY = "Error when add vulnerability";
+
+    public static final String ERROR_UPDATE_VULNERABILITY = "Error when edit vulnerability";
     //this map is used in errorKeyToMessage.jspf to generate key-value pairs for the liferay-ui error tag
     public static final ImmutableList<String> allErrorMessages = ImmutableList.<String>builder()
             .add(PROJECT_NOT_ADDED)
@@ -116,6 +121,10 @@ public class ErrorMessages {
             .add(ERROR_USER_ACTIVATE_DEACTIVATE)
             .add(OBLIGATION_NOT_ADDED)
             .add(OBLIGATION_NOT_UPDATED)
+            .add(ERROR_VULNERABILITY_USED_BY_RELEASE)
+            .add(ERROR_VULNERABILITY_DELETE)
+            .add(ERROR_ADD_VULNERABILITY)
+            .add(ERROR_UPDATE_VULNERABILITY)
             .add(VENDOR_DUPLICATE)
             .add(ERROR_VENDOR)
             .build();
