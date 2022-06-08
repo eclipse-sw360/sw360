@@ -109,6 +109,13 @@
                             }
                         </script>
                         </core_rt:if>
+                        <core_rt:if test="${attachment.attachmentType eq 'SOURCE'}">
+                        <script>
+                            parId = "${releaseLink.nodeId}",
+                            $tr = $('tr[data-tt-id='+parId+']');
+                            $tr.attr('data-is-source-present', "true");
+                        </script>
+                        </core_rt:if>
                     </td>
                     <td <core_rt:if test="${not empty attachment.superAttachmentId}">class="text-white" style="background-color: #adaec1 !important"</core_rt:if>>
                         <input type="checkbox"
