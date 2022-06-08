@@ -15,6 +15,7 @@ import com.github.ldriscoll.ektorplucene.LuceneQuery;
 import com.github.ldriscoll.ektorplucene.LuceneResult;
 import com.github.ldriscoll.ektorplucene.util.IndexUploader;
 import com.google.common.base.Joiner;
+
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -58,7 +59,8 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
 
     private final DatabaseConnectorCloudant connector;
 
-    private static final List<String> LUCENE_SPECIAL_CHARACTERS = Arrays.asList("[\\\\\\+\\-\\!\\~\\*\\?\\\"\\^\\:\\(\\)\\{\\}\\[\\]]", "\\&\\&", "\\|\\|");
+    private static final List<String> LUCENE_SPECIAL_CHARACTERS = Arrays.asList("[\\\\\\+\\-\\!\\~\\*\\?\\\"\\^\\:\\(\\)\\{\\}\\[\\]]", "\\&\\&", "\\|\\|", "/");
+
     private String dbNameForLuceneSearch;
     /**
      * Maximum number of results to return
