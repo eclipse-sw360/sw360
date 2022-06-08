@@ -259,7 +259,7 @@
             } else {
                 list.append('<li><liferay-ui:message key="source.file.information.not.found.in.isr"/></li>');
             }
-            dialog.info(attName, '<br>Source File List: <br>' + $(list)[0].outerHTML);
+            dialog.info(attName, 'License Name:<b> ' + licenseName + ' </b><br>Source File List: <br>' + $(list)[0].outerHTML);
         }
         
         function handleShowSpdxContentClick($btn) {
@@ -289,7 +289,7 @@
                 if (!result || result.length == 0 || Object.getOwnPropertyNames(result).length == 0) {
                     replaceContentWithWarning($resultCell, 'No license information found in file.');
                 } else {
-                	releaseToLicenseDetailsMap.set(attachmentId, result);
+                    releaseToLicenseDetailsMap.set(attachmentId, result);
                     printResult($row, result, attachmentId, isISR);
                     addTakeOverBtn($btnCell, releaseId, attachmentId, result, attachmentType, isISR);
                 }
@@ -323,33 +323,33 @@
                 $cell.append($('<div>', { html: '<liferay-ui:message key="complexity"/>: <b>' + complexity + '</b> (<liferay-ui:message key="based.on.license.file.count" />)'}));
             }
 
-            if (data.licenseIds) {
+            if (data.licenseIds && data.licenseIds.length) {
                 $cell.append($('<div>', { html: '<b>' + data.license + '</b>'}));
                 $cell.append($list);
                 data.licenseIds.forEach(function(id) {
                     $list.append($('<li>', { text: id }));
                     if (isISR) {
-                        let $infoIcon = "<span class='actions'><svg class='cursor lexicon-icon ml-2 isr' data-license-id=" + id + "> <title><liferay-ui:message key='view.file.list' /></title> <use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle'/> </svg></span>";
+                        let $infoIcon = "<span class='actions'><svg class='cursor lexicon-icon ml-2 isr' data-license-id='" + id + "'> <title><liferay-ui:message key='view.file.list' /></title> <use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle'/> </svg></span>";
                         $($list).find('li:last').append($infoIcon);
                     }
                 });
             } else {
-                $cell.append($('<div>', { text: 'Main / Concluded License Ids: N/A'}));
+                $cell.append($('<div>', { html: '<b>Main / Concluded License Ids:</b><br> N/A'}));
             }
 
 
-            if (data.otherLicenseIds) {
+            if (data.otherLicenseIds && data.otherLicenseIds.length) {
                 $cell.append($('<div>', { html: '<b>' + data.otherLicense + '</b>'}));
                 $cell.append($otherList);
                 data.otherLicenseIds.forEach(function(id) {
                     $otherList.append($('<li>', { text: id }));
                     if (isISR) {
-                        let $infoIcon = "<span class='actions'><svg class='cursor lexicon-icon ml-2 isr' data-license-id=" + id + "> <title><liferay-ui:message key='view.file.list' /></title> <use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle'/> </svg></span>";
+                        let $infoIcon = "<span class='actions'><svg class='cursor lexicon-icon ml-2 isr' data-license-id='" + id + "'> <title><liferay-ui:message key='view.file.list' /></title> <use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle'/> </svg></span>";
                         $($otherList).find('li:last').append($infoIcon);
                     }
                 });
             } else {
-                $cell.append($('<div>', { text: 'Other License Ids: N/A'}));
+                $cell.append($('<div>', { html: '<b>Other License Ids:</b><br> N/A'}));
             }
         }
 
@@ -358,7 +358,7 @@
             if (!isISR) {
                 var $newBtn = $('<button>', { 'class': 'btn btn-primary spdxTakeOverBtn', 'data-release-id': releaseId, 'data-attachment-id': attachmentId, text: '<liferay-ui:message key="add.data.to.this.release" />' });
                 $newBtn.data('result', data);
-            	$parent.append($newBtn);
+                $parent.append($newBtn);
                 $newBtn.on('click', function(event) {
                     handleTakeOverClick($(event.currentTarget));
                 });

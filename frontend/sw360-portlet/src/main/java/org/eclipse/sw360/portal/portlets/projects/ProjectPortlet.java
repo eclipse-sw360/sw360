@@ -2884,7 +2884,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                                 && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NO_ASSERTION)) // exclude unknown, n/a and noassertion
                         .collect(Collectors.toList());
                 if (attachmentName.endsWith(PortalConstants.RDF_FILE_EXTENSION)) {
-                    totalFileCount = licenseWithTexts.stream().map(LicenseNameWithText::getSourceFiles).filter(Objects::nonNull).mapToInt(Set::size).sum();
+                    totalFileCount = licenseInfoResult.stream().flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
+                            .map(LicenseNameWithText::getSourceFiles).filter(Objects::nonNull).flatMap(Set::stream).collect(Collectors.toSet()).size();
                     concludedLicenseIds = licenseInfoResult.stream()
                             .filter(filterConcludedLicense)
                             .flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
@@ -2901,7 +2902,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                         concludedLicenseIds.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
                         jsonGenerator.writeEndArray();
                     }
-                    jsonGenerator.writeStringField("otherLicense", LanguageUtil.get(resourceBundle,"other.license.id"));
+                    jsonGenerator.writeStringField("otherLicense", LanguageUtil.get(resourceBundle,"other.license.ids"));
                     jsonGenerator.writeArrayFieldStart("otherLicenseIds");
                     otherLicenseNames.forEach(licenseId -> wrapException(() -> { jsonGenerator.writeString(licenseId); }));
                     jsonGenerator.writeEndArray();
