@@ -232,7 +232,11 @@ public abstract class ComponentPortletUtils {
                     user.setCommentMadeDuringModerationRequest(deleteComment);
                 }
                 ComponentService.Iface client = new ThriftClients().makeComponentClient();
-                return client.deleteRelease(releaseId, UserCacheHolder.getUserFromRequest(request));
+                RequestStatus deleteStatus = client.deleteRelease(releaseId, UserCacheHolder.getUserFromRequest(request));
+                if (deleteStatus.equals(RequestStatus.SUCCESS)) {
+                    SW360Utils.removeReleaseVulnerabilityRelation(releaseId, UserCacheHolder.getUserFromRequest(request));
+                }
+                return deleteStatus;
 
             } catch (TException e) {
                 log.error("Could not delete release from DB", e);

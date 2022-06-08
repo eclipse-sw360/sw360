@@ -195,7 +195,11 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public RequestStatus deleteRelease(String releaseId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.deleteRelease(releaseId, sw360User);
+        RequestStatus deleteStatus = sw360ComponentClient.deleteRelease(releaseId, sw360User);
+        if (deleteStatus.equals(RequestStatus.SUCCESS)) {
+            SW360Utils.removeReleaseVulnerabilityRelation(releaseId, sw360User);
+        }
+        return deleteStatus;
     }
 
     public Set<Project> getProjectsByRelease(String releaseId, User sw360User) throws TException {
