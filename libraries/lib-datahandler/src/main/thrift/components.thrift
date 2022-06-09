@@ -367,7 +367,14 @@ struct ReleaseLink{
     101: optional set<string> licenseNames,
     102: optional string comment,
     103: optional set<string> otherLicenseIds,
-    104: optional bool accessible = true
+    104: optional bool accessible = true,
+
+    105: optional list<Release> releaseWithSameComponent,
+    106: optional i32 layer,
+    107: optional i32 index,
+    108: optional string defaultValue,
+    109: optional string projectId,
+    110: optional MainlineState releaseMainLineState
 }
 
 struct ReleaseClearingStatusData {
@@ -376,6 +383,16 @@ struct ReleaseClearingStatusData {
     3: optional string projectNames, // comma separated list of project names for display; possibly abbreviated
     4: optional string mainlineStates, // comma separated list of mainline states for display; possibly abbreviated
     5: optional bool accessible = true
+}
+
+struct ReleaseLinkJSON {
+     1: required string releaseId,
+     3: optional list<ReleaseLinkJSON> releaseLink,
+     4: optional string releaseRelationship,
+     5: optional string mainlineState,
+     10: optional string comment,
+     12: optional string createOn,
+     13: optional string createBy
 }
 
 service ComponentService {
@@ -427,7 +444,7 @@ service ComponentService {
      * short summary of all accessible releases.
      **/
     list<Release> getAccessibleReleaseSummary(1: User user);
-    
+
     /**
      * search components in database that match subQueryRestrictions
      **/
@@ -653,7 +670,7 @@ service ComponentService {
 
     /**
      * Update the set of releases. Do only use for updating simple fields.
-     */ 
+     */
     RequestSummary updateReleasesDirectly(1: set<Release> releases, 2: User user);
 
     /**
@@ -692,7 +709,7 @@ service ComponentService {
      * get components with accessibility belonging to linked releases of the releases specified by releaseId
      **/
     set <Component> getUsingComponentsWithAccessibilityForComponent(1: set <string> releaseId, 2: User user);
-    
+
     /**
      * get components using the given vendor id
      */
@@ -816,7 +833,7 @@ service ComponentService {
 
     /**
      * Gets releases referencing the given release id
-     */ 
+     */
     list<Release> getReferencingReleases(1: string releaseId);
 
     /**
@@ -838,4 +855,9 @@ service ComponentService {
      * Gets all releases with complete details
      */
     list<Release> getAllReleasesForUser(1: User user);
+
+    /**
+     * Gets all releases with complete details
+     */
+    list<ReleaseLink> getReleasesAndOtherWithSameComponent(1: map<string, ProjectReleaseRelationship> relations, 2: User user);
 }

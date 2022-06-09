@@ -527,7 +527,7 @@ AUI().use('liferay-portlet-url', function () {
                     });
                     this.api().columns([6]).every(function() {
                         var column = this;
-                        var stateFilterForLT = $("div#stateFilterForTT").clone();
+                        var stateFilterForLT = $("#LinkedProjectsInfo div#stateFilterForTT").clone();
                         $(stateFilterForLT).attr('id', 'stateFilterForLT');
                         var select = $(stateFilterForLT)
                             .appendTo($(column.header()))
@@ -537,7 +537,7 @@ AUI().use('liferay-portlet-url', function () {
                                 }).toArray().join('|');
                                 column.search(values.length > 0 ? '^(' + values + ')$' : '', true, false).draw();
                             });
-                        $("div#stateFilterForLT #dropdownmenu").on('click', function(e) {
+                        $("#LinkedProjectsInfo div#stateFilterForLT #dropdownmenu").on('click', function(e) {
                             e.stopPropagation();
                         });
                     });

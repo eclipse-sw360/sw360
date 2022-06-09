@@ -753,4 +753,35 @@ public class SW360Utils {
             log.error(e.getMessage());
         }
     }
+
+    
+    public static Collection<ProjectLink> getLinkedProjectsNetworkAsFlatList(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+        return flattenProjectLinkNetwork(getLinkedProjectsInNetwork(project, deep, thriftClients, log, user));
+    }
+
+    public static Collection<ProjectLink> flattenProjectLinkNetwork(Collection<ProjectLink> linkedProjects) {
+        List<ProjectLink> result = new ArrayList<>();
+
+        for (ProjectLink projectLink : linkedProjects) {
+            result.add(projectLink);
+            if (projectLink.isSetSubprojects()){
+                result.addAll(flattenProjectLinkNetwork(projectLink.getSubprojects()));
+            }
+        }
+
+        return result;
+    }
+
+    public static Collection<ProjectLink> getLinkedProjectsInNetwork(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+        if (project != null) {
+            try {
+                ProjectService.Iface client = thriftClients.makeProjectClient();
+                List<ProjectLink> linkedProjects = client.getLinkedProjectsOfProjectInNetwork(project, deep, user);
+                return linkedProjects;
+            } catch (TException e) {
+                log.error("Could not get linked projects", e);
+            }
+        }
+        return Collections.emptyList();
+    }
 }

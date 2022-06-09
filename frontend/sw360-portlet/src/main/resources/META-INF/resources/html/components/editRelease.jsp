@@ -105,7 +105,7 @@
                             <core_rt:if test="${not addMode}" >
                                 <div class="btn-group" role="group">
                                     <button id="deleteReleaseButton" type="button" class="btn btn-danger"
-                                        <core_rt:if test="${usingComponents.size()>0 or usingProjects.size()>0}"> disabled="disabled" title="<liferay-ui:message key="deletion.is.disabled.as.the.release.is.used" />" </core_rt:if>
+                                        <core_rt:if test="${usingComponents.size()>0 or usingProjects.size()>0 or countProjectInDependencyNetwork>0}"> disabled="disabled" title="<liferay-ui:message key="deletion.is.disabled.as.the.release.is.used" />" </core_rt:if>
                                     ><liferay-ui:message key="delete.release" /></button>
                                 </div>
                             </core_rt:if>

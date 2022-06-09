@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.ektorp.http.HttpClient;
 
 import com.cloudant.client.api.CloudantClient;
@@ -434,5 +435,28 @@ public class ProjectHandler implements ProjectService.Iface {
     @Override
     public void sendExportSpreadsheetSuccessMail(String url, String recepient) throws TException {
         handler.sendExportSpreadsheetSuccessMail(url, recepient);
+    }
+
+    @Override
+    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(String projectId, List<String> trace, User user) throws TException {
+        return handler.getReleaseLinksOfProjectNetWorkByTrace(trace, projectId, user);
+    }
+
+    @Override
+    public List<Map<String, String>> getDependencyNetworkForListView(String projectId,User user) throws SW360Exception {
+        assertNotNull(projectId);
+        return handler.getDependencyNetworkInformation(projectId, user,true);
+    }
+
+
+    @Override
+    public List<ProjectLink> getLinkedProjectsOfProjectInNetwork(Project project, boolean deep, User user) throws TException {
+        assertNotNull(project);
+        return handler.getLinkedProjectsInNetwork(project, deep, user);
+    }
+
+    @Override
+    public List<Project> getAll(){
+        return handler.getAll();
     }
 }

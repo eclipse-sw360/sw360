@@ -143,6 +143,7 @@
                             <core_rt:set var="documentName"><sw360:ReleaseName release="${release}"/></core_rt:set>
                             <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
                             <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
+                            <%@include file="/html/utils/includes/usingProjectInDependencyNetwork.jspf"%>
 		                </div>
 		                <div id="tab-linkedReleases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active show</core_rt:if>">
 		                    <%@include file="/html/utils/includes/linkedReleaseDetails.jspf" %>

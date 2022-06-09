@@ -104,6 +104,7 @@
                             <core_rt:set var="documentName"><sw360:out value='${component.name}'/></core_rt:set>
                             <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
                             <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
+                            <%@include file="/html/utils/includes/usingProjectInDependencyNetwork.jspf" %>
 		                </div>
 		                <div id="tab-Releases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Releases'}">active show</core_rt:if>">
 		                    <%@include file="/html/components/includes/components/clearingStatus.jspf" %>

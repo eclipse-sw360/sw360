@@ -65,6 +65,8 @@
 				</a>
 			</core_rt:if>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active</core_rt:if>" href="#tab-ChangeLogs" data-toggle="list" role="tab"><liferay-ui:message key="change.log" /></a>
+		    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-dependencyNetwork'}">active</core_rt:if>" href="#tab-dependencyNetwork" data-toggle="list" role="tab"><liferay-ui:message key="dependency.network" /></a>
+
 		    </div>
 	    </div>
 	    <div class="col">
@@ -200,6 +202,15 @@
 									<liferay-ui:message key="changes" /></a>
 								</div>
 							</div>
+
+							<div class="list-group-companion" data-belong-to="tab-dependencyNetwork">
+                                <div class="nav nav-pills justify-content-center bg-light font-weight-bold d-inline-flex" id="pills-tab" role="tablist">
+                                    <a class="nav-item nav-link active" id="pills-network-tree-tab" data-toggle="pill" href="#pills-network-treeView" role="tab" aria-controls="pills-treeView" aria-selected="true">
+                                    <liferay-ui:message key="tree.view" /></a>
+                                    <a class="nav-item nav-link" id="pills-network-list-tab" data-toggle="pill" href="#pills-network-listView" role="tab" aria-controls="pills-listView" aria-selected="false">
+                                    <liferay-ui:message key="list.view" /></a>
+                                </div>
+                            </div>
 						</div>
 					</div>
 					<div class="col portlet-title text-truncate" title="${sw360:printProjectName(project)}">
@@ -270,6 +281,9 @@
 		                <div id="tab-ChangeLogs" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active show</core_rt:if>">
 			                <jsp:include page="/html/changelogs/elementView.jsp" />
 		                </div>
+		                <div id="tab-dependencyNetwork" class="tab-pane <core_rt:if test="${selectedTab == 'tab-dependencyNetwork'}">active show</core_rt:if>">
+                            <jsp:include page="/html/projects/includes/projects/dependencyNetworkDetail.jsp" />
+                        </div>
 		            </div>
 		        </div>
 		    </div>

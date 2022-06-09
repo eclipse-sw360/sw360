@@ -11,6 +11,9 @@
 package org.eclipse.sw360.datahandler.db;
 
 import com.cloudant.client.api.CloudantClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.*;
@@ -1631,5 +1634,246 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public ProjectData searchByType(String type, User user) {
         return repository.searchByType(type, user);
+    }
+
+
+
+    /*
+     * This function will get list ReleaseLink from release network of project with trace from root to clicked release on screen
+     * Trace is list index of each node.
+     */
+    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(List<String> trace, String projectId, User user) throws TException{
+        Project project = repository.get(projectId);
+        String releaseNetwork = project.getReleaseRelationNetwork();
+        ObjectMapper mapper = new ObjectMapper();
+        List<ReleaseLinkJSON> listReleaseLinkJson;
+        List<ReleaseLink> linkedReleases = new ArrayList<>();
+        try {
+            listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+            });
+            ReleaseLinkJSON previousNode = listReleaseLinkJson.get(Integer.parseInt(trace.get(0)));
+            for (int i = 1; i < trace.size(); i++){
+                previousNode = previousNode.getReleaseLink().get(Integer.parseInt(trace.get(i)));
+            }
+            linkedReleases = convertFromReleaseLinkJSONToReleaseLink(previousNode.getReleaseLink(), projectId, user, previousNode.getReleaseId(), trace.size());
+        } catch (JsonProcessingException e) {
+            log.error("JsonProcessingException: " + e);
+        }
+        return linkedReleases;
+    }
+
+    protected List<ReleaseLink> convertFromReleaseLinkJSONToReleaseLink(List<ReleaseLinkJSON> releaseLinkJSONs, String projectId, User user, String parentId, int layer) throws TException {
+        List<ReleaseLink> releaseLinks = new ArrayList<>();
+        int index = 0;
+        for (ReleaseLinkJSON releaseLinkJSON : releaseLinkJSONs) {
+            Release releaseById = componentDatabaseHandler.getAccessibleRelease(releaseLinkJSON.getReleaseId(), user);
+            Component componentById = componentDatabaseHandler.getAccessibleComponent(releaseById.getComponentId(), user);
+
+            ReleaseLink releaseLink = new ReleaseLink();
+            releaseLink.setId(releaseLinkJSON.getReleaseId());
+            releaseLink.setReleaseRelationship(ReleaseRelationship.valueOf(releaseLinkJSON.getReleaseRelationship()));
+            releaseLink.setMainlineState(MainlineState.valueOf(releaseLinkJSON.getMainlineState()));
+            releaseLink.setComment(releaseLinkJSON.getComment());
+            if (releaseLinkJSON.getReleaseLink().size() > 0) {
+                releaseLink.setHasSubreleases(true);
+            } else {
+                releaseLink.setHasSubreleases(false);
+            }
+            releaseLink.setName(releaseById.getName());
+            releaseLink.setVersion(releaseById.getVersion());
+            releaseLink.setLongName(releaseById.getName() + " (" + releaseById.getVersion() + ")");
+            releaseLink.setClearingState(releaseById.getClearingState());
+            releaseLink.setComponentType(componentById.getComponentType());
+            releaseLink.setLicenseIds(releaseById.getMainLicenseIds());
+            releaseLink.setOtherLicenseIds(releaseById.getOtherLicenseIds());
+            releaseLink.setAccessible(true);
+            releaseLink.setNodeId(releaseById.getId() + "_" + UUID.randomUUID());
+            releaseLink.setParentNodeId(parentId);
+            releaseLink.setLayer(layer);
+            releaseLink.setProjectId(projectId);
+            releaseLink.setIndex(index);
+            releaseLink.setReleaseMainLineState(releaseById.getMainlineState());
+
+            if (releaseById.getVendor() != null) {
+                releaseLink.setVendor(releaseById.getVendor().getFullname());
+            } else {
+                releaseLink.setVendor("");
+            }
+            index++;
+            releaseLinks.add(releaseLink);
+        }
+        return releaseLinks;
+    }
+
+
+    public List<Map<String, String>> getDependencyNetworkInformation(String projectId, User user, boolean isInaccessibleLinkMasked)
+            throws SW360Exception {
+        Project projectById = getProjectById(projectId, user);
+        List<Map<String, String>> clearingStatusList = new ArrayList<Map<String, String>>();
+        LinkedHashMap<String, String> projectOrigin = new LinkedHashMap<>();
+        projectOrigin.put(projectId, SW360Utils.printName(projectById));
+        LinkedHashMap<String, String> releaseOrigin = new LinkedHashMap<>();
+        Map<String, ProjectProjectRelationship> linkedProjects = projectById.getLinkedProjects();
+
+        String releaseNetwork = projectById.getReleaseRelationNetwork();
+        ObjectMapper mapper = new ObjectMapper();
+        List<ReleaseLinkJSON> listReleaseLinkJson;
+        try {
+            listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+            });
+            flattenLinkedReleaseOfRelease(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked);
+        } catch (JsonProcessingException e) {
+            log.error("JsonProcessingException: " + e);
+        }
+
+        if (linkedProjects != null && !linkedProjects.isEmpty()) {
+            flattenNetworkForLinkedProject(linkedProjects, projectOrigin, releaseOrigin, clearingStatusList,
+                    user, isInaccessibleLinkMasked);
+        }
+
+        return clearingStatusList;
+    }
+
+    private void flattenLinkedReleaseOfRelease(List<ReleaseLinkJSON>  listReleaseLinkJson,
+                                               LinkedHashMap<String, String> projectOrigin, LinkedHashMap<String, String> releaseOrigin,
+                                               List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked) {
+        listReleaseLinkJson.forEach(rl -> wrapTException(() -> {
+            String relation = ThriftEnumUtils.enumToString(ReleaseRelationship.valueOf(rl.getReleaseRelationship()));
+            String projectMailLineState = ThriftEnumUtils.enumToString(MainlineState.valueOf(rl.getMainlineState()));
+            String comment = rl.getComment();
+            String releaseId = rl.getReleaseId();
+            if (releaseOrigin.containsKey(releaseId))
+                return;
+            Release rel = componentDatabaseHandler.getRelease(releaseId, user);
+            List<ReleaseLinkJSON>  listLinkedRelease = rl.getReleaseLink();
+            if (!isInaccessibleLinkMasked || componentDatabaseHandler.isReleaseActionAllowed(rel, user, RequestedAction.READ)) {
+                releaseOrigin.put(releaseId, SW360Utils.printName(rel));
+                Map<String, String> row = createReleaseCSRow(relation, projectMailLineState, rel, clearingStatusList, user, comment);
+                if (listLinkedRelease != null && listLinkedRelease.size() > 0) {
+                    flattenLinkedReleaseOfRelease(listLinkedRelease, projectOrigin, releaseOrigin,
+                            clearingStatusList, user, isInaccessibleLinkMasked);
+                }
+                releaseOrigin.remove(releaseId);
+                row.put("projectOrigin", String.join(" -> ", projectOrigin.values()));
+                row.put("releaseOrigin", String.join(" -> ", releaseOrigin.values()));
+            } else {
+                Map<String, String> row = createInaccessibleReleaseCSRow(clearingStatusList);
+                row.put("projectOrigin", "");
+                row.put("releaseOrigin", "");
+            }
+        }));
+    }
+
+    private void flattenNetworkForLinkedProject(Map<String, ProjectProjectRelationship> linkedProjects,
+                                                       LinkedHashMap<String, String> projectOrigin, LinkedHashMap<String, String> releaseOrigin,
+                                                       List<Map<String, String>> clearingStatusList, User user, boolean isInaccessibleLinkMasked) {
+
+        linkedProjects.entrySet().stream().forEach(lp -> wrapTException(() -> {
+            String projId = lp.getKey();
+            String relation = ThriftEnumUtils.enumToString(lp.getValue().getProjectRelationship());
+            if (projectOrigin.containsKey(projId))
+                return;
+            Project linkedProjectById = getProjectById(projId, user);
+            projectOrigin.put(projId, SW360Utils.printName(linkedProjectById));
+            Map<String, String> row = createProjectCSRow(relation, linkedProjectById, clearingStatusList);
+            Map<String, ProjectProjectRelationship> subprojects = linkedProjectById.getLinkedProjects();
+
+            String releaseNetwork = linkedProjectById.getReleaseRelationNetwork();
+            ObjectMapper mapper = new ObjectMapper();
+            List<ReleaseLinkJSON> listReleaseLinkJson;
+            try {
+                listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+                flattenLinkedReleaseOfRelease(listReleaseLinkJson, projectOrigin, releaseOrigin, clearingStatusList, user, isInaccessibleLinkMasked);
+            } catch (JsonProcessingException e) {
+                log.error("JsonProcessingException: " + e);
+            }
+
+            if (subprojects != null && !subprojects.isEmpty()) {
+                flattenNetworkForLinkedProject(subprojects, projectOrigin, releaseOrigin, clearingStatusList,
+                        user, isInaccessibleLinkMasked);
+            }
+
+            projectOrigin.remove(projId);
+            row.put("projectOrigin", String.join(" -> ", projectOrigin.values()));
+        }));
+    }
+    private Optional<ProjectLink> createProjectNetworkLink(String id, ProjectProjectRelationship projectProjectRelationship, String parentNodeId,
+                                                    Deque<String> visitedIds, int maxDepth, User user) {
+        ProjectLink projectLink = null;
+        if (!visitedIds.contains(id) && (maxDepth < 0 || visitedIds.size() < maxDepth)) {
+            visitedIds.push(id);
+            Project project = repository.get(id);
+            if (project != null
+                    && (user == null || !makePermission(project, user).isActionAllowed(RequestedAction.READ))) {
+                log.error("User " + user == null ? ""
+                        : user.getEmail() + " requested not accessible project " + printName(project));
+                project = null;
+            }
+            if (project != null) {
+                projectLink = new ProjectLink(id, project.name);
+                if (project.getReleaseRelationNetwork() != null && project.getReleaseRelationNetwork().length() > 0){
+                    String releaseNetwork = project.getReleaseRelationNetwork();
+                    ObjectMapper mapper = new ObjectMapper();
+                    List<ReleaseLinkJSON> listReleaseLinkJson;
+                    List<ReleaseLink> linkedReleases = new ArrayList<>();
+                    try {
+                        listReleaseLinkJson = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseLinkJSON>>() {
+                        });
+                        linkedReleases = convertFromReleaseLinkJSONToReleaseLink(listReleaseLinkJson, id, user, "", 0);
+                    } catch (JsonProcessingException e) {
+                        log.error("JsonProcessingException: " + e);
+                    } catch (TException e) {
+                        log.error(e.getMessage());
+                    }
+                    projectLink.setLinkedReleases(nullToEmptyList(linkedReleases));
+                }
+
+                projectLink
+                        .setNodeId(generateNodeId(id))
+                        .setParentNodeId(parentNodeId)
+                        .setRelation(projectProjectRelationship.getProjectRelationship())
+                        .setEnableSvm(projectProjectRelationship.isEnableSvm())
+                        .setVersion(project.getVersion())
+                        .setState(project.getState())
+                        .setProjectType(project.getProjectType())
+                        .setClearingState(project.getClearingState())
+                        .setTreeLevel(visitedIds.size() - 1);
+                if (project.isSetLinkedProjects()) {
+                    List<ProjectLink> subprojectLinks = iterateProjectRelationShips(project.getLinkedProjects(),
+                            projectLink.getNodeId(), visitedIds, maxDepth, user);
+                    projectLink.setSubprojects(subprojectLinks);
+                }
+            } else {
+                log.error("Broken ProjectLink in project with id: " + parentNodeId + ". Linked project with id " + id + " was not found");
+            }
+            visitedIds.pop();
+        }
+        return Optional.ofNullable(projectLink);
+    }
+
+    public List<ProjectLink> getLinkedProjectsInNetwork(Project project, boolean deep, User user) {
+        Deque<String> visitedIds = new ArrayDeque<>();
+
+        Map<String, ProjectProjectRelationship> fakeRelations = new HashMap<>();
+        fakeRelations.put(project.isSetId() ? project.getId() : DUMMY_NEW_PROJECT_ID, new ProjectProjectRelationship(ProjectRelationship.UNKNOWN));
+        List<ProjectLink> out = iterateProjectRelationShipsInNetwork(fakeRelations, null, visitedIds, deep ? -1 : 2, user);
+        return out;
+    }
+
+    private List<ProjectLink> iterateProjectRelationShipsInNetwork(Map<String, ProjectProjectRelationship> relations,
+                                                          String parentNodeId, Deque<String> visitedIds, int maxDepth, User user) {
+        List<ProjectLink> out = new ArrayList<>();
+        for (Map.Entry<String, ProjectProjectRelationship> entry : relations.entrySet()) {
+            Optional<ProjectLink> projectLinkOptional = createProjectNetworkLink(entry.getKey(), entry.getValue(),
+                    parentNodeId, visitedIds, maxDepth, user);
+            projectLinkOptional.ifPresent(out::add);
+        }
+        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        return out;
+    }
+
+    public List<Project> getAll(){
+        return repository.getAll();
     }
 }

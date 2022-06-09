@@ -160,6 +160,8 @@ struct Project {
     201: optional map<string, string> externalUrls,
     202: optional Vendor vendor,
     203: optional string vendorId,
+
+    204: optional string releaseRelationNetwork
 }
 
 struct ProjectLink {
@@ -289,7 +291,7 @@ service ProjectService {
      * project data which are visible to the `user` and match the `tag`
      */
     ProjectData searchByTag(1: string tag, 2: User user) throws (1: SW360Exception exp);
- 
+
     /**
      * project data which are visible to the `user` and match the `type`
      */
@@ -486,7 +488,7 @@ service ProjectService {
      * get clearing state information for list view
      */
     list<map<string,string>> getClearingStateInformationForListView(1:string projectId, 2: User user) throws (1: SW360Exception exp);
-    
+
     /**
      * get accessible clearing state information for list view
      */
@@ -506,4 +508,23 @@ service ProjectService {
     * Send email to the user once spreadsheet export completed
     */
     void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
+
+    /**
+    * get ReleaseLink in release network of project by project id and trace
+    */
+    list<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(1: string projectId, 2: list<string> trace, 3: User user);
+
+    /**
+     * get dependency network information for list view
+     */
+    list<map<string,string>> getDependencyNetworkForListView(1:string projectId, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * get a list of project links of the project that matches the id `id`
+     * is equivalent to `getLinkedProjectsOfProject(getProjectById(id, user))`
+     * use for dependency network
+     */
+    list<ProjectLink> getLinkedProjectsOfProjectInNetwork(1: Project project, 2: bool deep, 3: User user);
+
+    list<Project> getAll();
 }

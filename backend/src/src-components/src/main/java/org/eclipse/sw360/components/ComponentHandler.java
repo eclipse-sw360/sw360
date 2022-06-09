@@ -643,4 +643,17 @@ public class ComponentHandler implements ComponentService.Iface {
             PaginationData pageData) throws TException {
         return handler.getRecentComponentsSummaryWithPagination(user, pageData);
     }
+
+    @Override
+    public List<ReleaseLink> getReleasesAndOtherWithSameComponent(Map<String, ProjectReleaseRelationship> relations, User user) throws TException {
+        assertNotNull(relations);
+
+        List<ReleaseLink> releaseLinks = handler.getLinkedReleasesWithAccessibility(relations, user);
+        for (ReleaseLink releaseLink : releaseLinks){
+            Release release = getReleaseById(releaseLink.getId(),user);
+            List<Release> releasesWithSameComponent = getReleasesByComponentId(release.getComponentId(),user);
+            releaseLink.setReleaseWithSameComponent(releasesWithSameComponent);
+        }
+        return releaseLinks;
+    }
 }

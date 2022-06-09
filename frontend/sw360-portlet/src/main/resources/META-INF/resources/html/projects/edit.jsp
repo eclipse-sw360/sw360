@@ -92,6 +92,7 @@
                         </a>
                     </core_rt:if>
                 </core_rt:if>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-dependencyNetwork'}">active</core_rt:if>" href="#tab-dependencyNetwork" data-toggle="list" role="tab"><liferay-ui:message key="dependency.network" /></a>
             </div>
         </div>
         <div class="col">
@@ -176,6 +177,9 @@
                                     </div>
                                 </core_rt:if>
                             </core_rt:if>
+                            <div id="tab-dependencyNetwork" class="tab-pane <core_rt:if test="${selectedTab == 'tab-dependencyNetwork'}">active show</core_rt:if>">
+                                <%@include file="/html/utils/includes/dependencyNetworkEdit.jspf" %>
+                            </div>
                         </div>
                     </form>
                 </div>

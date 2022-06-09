@@ -28,21 +28,26 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.components.*;
+
+
 import javax.portlet.PortletException;
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -299,5 +304,118 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
             relMainLineState.put(releaseId, ThriftEnumUtils.enumToString(releaseMainlineState));
         }));
         return relMainLineState;
+    }
+
+    protected List<ReleaseLinkJSON> getNetworkLinkedRelease(List<Release> releases, User user){
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+        for (Release release : releases) {
+            ReleaseLinkJSON r = new ReleaseLinkJSON(release.getId());
+            releaseLinkJSONS.add(r);
+        }
+        for (int i = 0; i < releaseLinkJSONS.size(); i++) {
+            releaseLinkJSONS.set(i, getReleaseLinkJSONS(releaseLinkJSONS.get(i), user));
+        }
+        return releaseLinkJSONS;
+    }
+    public ReleaseLinkJSON getReleaseLinkJSONS(ReleaseLinkJSON releaseLinkJSON, User user) {
+        ComponentService.Iface client = thriftClients.makeComponentClient();
+        Release releaseById = null;
+        try {
+            releaseById = client.getAccessibleReleaseById(releaseLinkJSON.getReleaseId(), user);
+            List<Release> releaseList = client.getReleasesById(releaseById.getReleaseIdToRelationship().keySet().stream().collect(Collectors.toSet()), user);
+            List<ReleaseLinkJSON> linkedReleasesJSON = new ArrayList<>();
+            releaseLinkJSON.setMainlineState(MainlineState.OPEN.toString());
+            releaseLinkJSON.setReleaseRelationship(ReleaseRelationship.CONTAINED.toString());
+            releaseLinkJSON.setComment("");
+            for (Release release : releaseList) {
+                ReleaseLinkJSON rj = new ReleaseLinkJSON(release.getId());
+                rj.setMainlineState(MainlineState.OPEN.toString());
+                rj.setReleaseRelationship(ReleaseRelationship.CONTAINED.toString());
+                rj.setComment("");
+                rj.setCreateOn(SW360Utils.getCreatedOn());
+                rj.setCreateBy(user.getEmail());
+                linkedReleasesJSON.add(getReleaseLinkJSONS(rj, user));
+            }
+            releaseLinkJSON.setReleaseLink(linkedReleasesJSON);
+            return releaseLinkJSON;
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void putLinkedReleasesNetworkWithAccessibilityInRequest(PortletRequest request, Project project, User user){
+        request.setAttribute(PortalConstants.RELEASE_LIST, new ArrayList<ReleaseLink>());
+    }
+
+    protected void loadLinkedReleaseLayerOfProject(ResourceRequest request, ResourceResponse response) throws TException {
+        String projectId = request.getParameter("projectId");
+        String[] trace = request.getParameterValues("trace[]");
+        String branchId = request.getParameter(PortalConstants.NETWORK_PARENT_BRANCH_ID);
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        ComponentService.Iface client = thriftClients.makeComponentClient();
+        try {
+            ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+            List<ReleaseLink> linkedReleases = projectClient.getReleaseLinksOfProjectNetWorkByTrace(projectId, Arrays.asList(trace), user);
+            request.setAttribute(PortalConstants.NETWORK_PARENT_BRANCH_ID, branchId);
+            request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
+            request.setAttribute(PortalConstants.NETWORK_RELEASE_LIST, linkedReleases);
+            int totalInaccessibleRow = 0;
+            for (ReleaseLink link : linkedReleases) {
+                if (!link.isAccessible()) {
+                    totalInaccessibleRow++;
+                }
+            }
+            request.setAttribute(PortalConstants.NETWORK_TOTAL_INACCESSIBLE_ROWS, totalInaccessibleRow);
+        } catch (TException e) {
+            log.error("Error getting projects!", e);
+        }
+    }
+
+    protected void serveLoadLinkedProjectsRowsNetwork(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
+        prepareLinkedProjectsInNetwork(request);
+        include("/html/utils/ajax/linkedProjectRowsNetwork.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
+
+    protected void prepareLinkedProjectsInNetwork(ResourceRequest request) throws PortletException {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        String branchId = request.getParameter(PortalConstants.NETWORK_PARENT_BRANCH_ID);
+        Optional<String> projectIdOpt = getProjectIdFromBranchId(branchId);
+        request.setAttribute(PortalConstants.NETWORK_PARENT_BRANCH_ID, branchId);
+        final Project project;
+        if (projectIdOpt.isPresent()) {
+            try {
+                ProjectService.Iface client = thriftClients.makeProjectClient();
+                project = client.getProjectById(projectIdOpt.get(), user);
+            } catch (TException e) {
+                log.error("Error getting projects!", e);
+                throw new PortletException("cannot load project " + projectIdOpt.get(), e);
+            }
+            String parentProjectPath = request.getParameter(PortalConstants.PARENT_PROJECT_PATH);
+            if (parentProjectPath != null) {
+                request.setAttribute(PortalConstants.PARENT_PROJECT_PATH,
+                        parentProjectPath.concat(":").concat(projectIdOpt.get()));
+            }
+        } else {
+            project = new Project();
+        }
+        ComponentService.Iface compClient = thriftClients.makeComponentClient();
+        List<ProjectLink> mappedProjectLinks = createLinkedProjectsNetwork(project, user);
+
+        mappedProjectLinks = sortProjectLink(mappedProjectLinks);
+        request.setAttribute(PortalConstants.NETWORK_PROJECT_LIST, mappedProjectLinks);
+        request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
+    }
+
+    protected List<ProjectLink> createLinkedProjectsNetwork(Project project, User user) {
+        return createLinkedProjectsNetwork(project, Function.identity(), user);
+    }
+    protected List<ProjectLink> createLinkedProjectsNetwork(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, User user) {
+        return createLinkedProjectsNetwork(project, projectLinkMapper, false, user);
+    }
+
+    protected List<ProjectLink> createLinkedProjectsNetwork(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep,
+                                                     User user) {
+        final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsNetworkAsFlatList(project, deep, thriftClients, log, user);
+        return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
     }
 }

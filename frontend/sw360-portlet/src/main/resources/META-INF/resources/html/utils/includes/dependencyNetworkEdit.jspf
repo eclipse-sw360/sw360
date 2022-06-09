@@ -1,0 +1,814 @@
+<%--
+  ~ Copyright TOSHIBA CORPORATION, 2022. Part of the SW360 Portal Project.
+  ~ Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2022. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  --%>
+
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@include file="/html/init.jsp" %>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.ReleaseLink" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.users.User" %>
+<%@ page import="org.eclipse.sw360.datahandler.common.SW360Utils" %>
+
+<portlet:resourceURL var="viewReleaseURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.VIEW_LINKED_RELEASES%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${project.id}"/>
+</portlet:resourceURL>
+
+<h4 class="mt-4"><liferay-ui:message key="linked.releases" /></h4>
+<table class="table edit-table five-columns-with-actions" id="LinkedReleasesNetwork">
+    <thead>
+        <tr>
+            <th><liferay-ui:message key="release.name" /></th>
+            <th><liferay-ui:message key="release.version" /></th>
+            <th><liferay-ui:message key="release.relation" /> <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/></th>
+            <th><liferay-ui:message key="project.mainline.state" /> <sw360:DisplayEnumInfo type="<%=MainlineState.class%>"/></th>
+            <th><liferay-ui:message key="comments" /></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+<input type="hidden" id="releaseRelationTree" name="<portlet:namespace/><%=Project._Fields.RELEASE_RELATION_NETWORK%>" />
+<button type="button" class="btn btn-secondary" id="addReleaseToNetWork"><liferay-ui:message key="add.releases" /></button>
+
+<div class="dialogs">
+    <div id="deleteReleaseInNetworkDialog" class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+		    <div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">
+					<clay:icon symbol="question-circle" />
+					<liferay-ui:message key="delete.link.to.release" />
+				</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+				<div class="modal-body">
+			        <p>
+                        <liferay-ui:message key="do.you.really.want.to.remove.the.link.to.release.x" />
+                    </p>
+				</div>
+			    <div class="modal-footer">
+			        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+			        <button type="button" class="btn btn-danger"><liferay-ui:message key="delete.link" /></button>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="dialogs">
+	<div id="searchReleasesDialogOfNetwork" data-title="<liferay-ui:message key="link.releases" />" class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+		    <div class="modal-content">
+			<div class="modal-body container">
+
+                    <form>
+                        <div class="row form-group">
+                            <div class="col-6">
+                                <input type="text" name="searchRelease" id="searchRelease" placeholder="<liferay-ui:message key="enter.search.text" />" class="form-control" autofocus/>
+                            </div>
+                            <div class="col">
+                                <button type="button" class="btn btn-secondary" id="searchReleaseBtn"><liferay-ui:message key="search" /></button>
+
+                                <core_rt:if test="${enableSearchForReleasesFromLinkedProjects}">
+                                    <button type="button" class="btn btn-secondary" id="linkedReleasesButton"><liferay-ui:message key="releases.of.linked.projects" /></button>
+                                </core_rt:if>
+                            </div>
+                        </div>
+
+                        <div id="search-release-form">
+                            <div class="spinner text-center" style="display: none;">
+                                <div class="spinner-border" role="status">
+                                    <span class="sr-only"><liferay-ui:message key="loading" /></span>
+                                </div>
+                            </div>
+
+                            <table id="releaseResultsTable" class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th><liferay-ui:message key="vendor" /></th>
+                                        <th><liferay-ui:message key="component.name" /></th>
+                                        <th><liferay-ui:message key="release.version" /></th>
+                                        <th><liferay-ui:message key="clearing.state" /></th>
+                                        <th><liferay-ui:message key="mainline.state" /></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+				</div>
+			    <div class="modal-footer">
+		            <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+			        <button id="selectReleaseButton" type="button" class="btn btn-primary" title="<liferay-ui:message key="link.releases" />"><liferay-ui:message key="link.releases" /></button>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<div class="dialogs">
+	<div id="searchChildReleaseDialog" data-title="<liferay-ui:message key="link.releases" />" class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+		    <div class="modal-content">
+			<div class="modal-body container">
+
+                    <form>
+                        <div class="row form-group">
+                            <div class="col-6">
+                                <input type="text" name="searchRelease" id="searchRelease" placeholder="<liferay-ui:message key="enter.search.text" />" class="form-control" autofocus/>
+                            </div>
+                            <div class="col">
+                                <button type="button" class="btn btn-secondary" id="searchReleaseBtn"><liferay-ui:message key="search" /></button>
+
+                                <core_rt:if test="${enableSearchForReleasesFromLinkedProjects}">
+                                    <button type="button" class="btn btn-secondary" id="linkedReleasesButton"><liferay-ui:message key="releases.of.linked.projects" /></button>
+                                </core_rt:if>
+                            </div>
+                        </div>
+                        <div id="child-release-search-form">
+                            <div class="spinner text-center" style="display: none;">
+                                <div class="spinner-border" role="status">
+                                    <span class="sr-only"><liferay-ui:message key="loading" /></span>
+                                </div>
+                            </div>
+
+                            <table id="searchChildResultsTable" class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th><liferay-ui:message key="vendor" /></th>
+                                        <th><liferay-ui:message key="component.name" /></th>
+                                        <th><liferay-ui:message key="release.version" /></th>
+                                        <th><liferay-ui:message key="clearing.state" /></th>
+                                        <th><liferay-ui:message key="mainline.state" /></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+				</div>
+			    <div class="modal-footer">
+		            <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+			        <button id="selectReleaseButton" type="button" class="btn btn-primary" title="<liferay-ui:message key="link.releases" />"><liferay-ui:message key="link.releases" /></button>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+    AUI().use('liferay-portlet-url', function () {
+        var PortletURL = Liferay.PortletURL;
+        require(['jquery', 'modules/dialog', 'bridges/datatables', 'utils/keyboard', /* jquery-plugins */ 'jquery-ui' ], function($, dialog, datatables, keyboard) {
+            var $dataTable,
+                $releaseDialog;
+            let releaseId = "";
+            var releaseWithRelations = [];
+            let projectId = '${project.id}';
+            let layer = 1;
+            let releaseWithRelationsString = "[]";
+
+            let flattenArray = [];
+            let releaseIds = [];
+            let mainlineStates = [];
+            let releaseRelationShips = [];
+            let layers = [];
+            let indexes = [];
+            let parentIds = [];
+            let comments = [];
+
+            function getContent() {
+                return new Promise(function(resolve, reject) {
+                    jQuery.ajax({
+                           type: 'POST',
+                           url: '<%=viewReleaseURL%>',
+                           data: {
+                               '<portlet:namespace/><%=PortalConstants.WHAT%>': '<%=PortalConstants.FIND_SUB_LINKED_RELEASE%>'
+                           },
+                           cache: false,
+                           success: function (body) {
+                              resolve(body.result);
+                           },
+                           error: function () {
+                               reject("ERROR");
+                           }
+                    });
+                });
+            }
+
+            $( document ).ready(async function(event){
+                releaseWithRelations = await(getContent());
+                if (typeof releaseWithRelations == "string") {
+                    releaseWithRelations = JSON.parse(releaseWithRelations);
+                }
+                if(releaseWithRelations == undefined) {
+                    releaseWithRelations = [];
+                }
+                flattenRecursiveNetwork();
+                releaseWithRelationsString = JSON.stringify(releaseWithRelations);
+                $('#releaseRelationTree').val(releaseWithRelationsString);
+                displayReleaseRelationShip();
+            });
+
+            function flattenRecursiveNetwork() {
+                 flattenArray = [];
+                 releaseIds = [];
+                 mainlineStates = [];
+                 releaseRelationShips = [];
+                 layers = [];
+                 indexes = [];
+                 parentIds = [];
+                 comments = [];
+
+                 for(let index = 0 ; index < releaseWithRelations.length ; index++) {
+                    releaseIds.push(releaseWithRelations[index].releaseId);
+                    mainlineStates.push(releaseWithRelations[index].mainlineState);
+                    releaseRelationShips.push(releaseWithRelations[index].releaseRelationship);
+                    if(releaseWithRelations[index].comment != null) {
+                        comments.push(releaseWithRelations[index].comment);
+                    } else {
+                        comments.push("");
+                    }
+                    layers.push(0);
+                    indexes.push(index);
+                    parentIds.push("");
+
+                    releaseWithRelations[index] = removeUnnecessaryField(releaseWithRelations[index]);
+                    let releaseRelationElement = Object.assign({},releaseWithRelations[index]);
+                    releaseRelationElement.parentId = "";
+                    releaseRelationElement.releaseLink = [];
+                    flattenArray.push(releaseRelationElement);
+
+                    let parentId = releaseWithRelations[index].releaseId;
+                    let releases = releaseWithRelations[index].releaseLink;
+                    layer = 1;
+                    recursiveNetwork(layer, parentId, releases, index);
+                 }
+            }
+
+            function recursiveNetwork(layer, parentId, releases, parentIndex){
+                 for(let index = 0 ; index < releases.length ; index++) {
+                     releaseIds.push(releases[index].releaseId);
+                     mainlineStates.push(releases[index].mainlineState);
+                     releaseRelationShips.push(releases[index].releaseRelationship);
+                     if(releases[index].comment != null) {
+                        comments.push(releases[index].comment);
+                     } else {
+                        comments.push("");
+                     }
+                     layers.push(layer);
+                     indexes.push(index);
+                     parentIds.push(parentId);
+
+                     releases[index] = removeUnnecessaryField(releases[index]);
+                     let releaseRelationElement = Object.assign({},releases[index]);
+                     releaseRelationElement.releaseLink = [];
+                     flattenArray.push(releaseRelationElement);
+                     let nextLayer = layer + 1;
+                     recursiveNetwork(nextLayer, releases[index].releaseId, releases[index].releaseLink, index);
+                 }
+            }
+
+            function removeUnnecessaryField(jsonObject) {
+                 delete jsonObject.setComment;
+                 delete jsonObject.setReleaseId;
+                 delete jsonObject.setReleaseLink;
+                 delete jsonObject.setReleaseRelationship;
+                 delete jsonObject.releaseLinkIterator;
+                 delete jsonObject.setMainlineState;
+                 delete jsonObject.releaseLinkSize;
+                 delete jsonObject.setCreateOn;
+                 delete jsonObject.setCreateBy;
+                 return jsonObject;
+            }
+
+            async function displayReleaseRelationShip() {
+                let newRow = await releaseRelationFromAjax('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', releaseIds, parentIds, layers, mainlineStates, releaseRelationShips, indexes, comments);
+                $('#LinkedReleasesNetwork tbody').append(newRow);
+            }
+
+            $('#LinkedReleasesNetwork').on('click', 'svg[data-row-id]', function(event) {
+                let current = $(this).closest('tr').find('select').eq(0).val();
+                let currentLayer =  $(this).closest('tr').attr('data-layer');
+                let parentNode = $(this).closest('tr').attr('parent-node');
+                let currentIndex = $(this).closest('tr').attr('data-index');
+                let i=0;
+                let trace = [];
+                trace.unshift(currentIndex);
+
+                for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
+                      trace.unshift($(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('data-index'));
+                      parentNode =  $(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('parent-node');
+                }
+
+                dialog.open('#deleteReleaseInNetworkDialog', {
+                    release: current
+                }, function(submit, callback) {
+                     removeNodeFromNetwork(releaseWithRelations, i, trace);
+                     $('#LinkedReleasesNetwork tbody').empty();
+                     flattenRecursiveNetwork();
+                     $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
+                     displayReleaseRelationShip();
+                     callback(true);
+                });
+            });
+
+            $('#LinkedReleasesNetwork').on('click', '.load-release', displayRelationOfNode);
+            $('#LinkedReleasesNetwork').on('change', '.releaseVersion', changeReleaseIdInNode);
+            $('#LinkedReleasesNetwork').on('change', '.projectReleaseRelation', changeReleaseRelation);
+            $('#LinkedReleasesNetwork').on('change', '.mainlineState', changeMainLineState);
+            $('#LinkedReleasesNetwork').on('focusout', '.releaseComment', changeComment);
+
+            async function displayRelationOfNode(){
+               let newSelect = $(this).closest('tr').find('select').eq(0).val();
+               let oldSelect = $(this).closest('tr').find('select').eq(0).attr('data-old');
+               let currentLayer =  $(this).closest('tr').attr('data-layer');
+               let parentNode = $(this).closest('tr').attr('parent-node');
+               let currentIndex = $(this).closest('tr').attr('data-index');
+
+               let newNode = await getLinkedReleaseOfNode('<%=PortalConstants.FIND_LINKED_RELEASE_OF_NODE%>',newSelect);
+               let i=0;
+               let trace = [];
+               trace.unshift(currentIndex);
+               for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
+                    trace.unshift($(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('data-index'));
+                    parentNode =  $(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('parent-node');
+               }
+               replaceNode(releaseWithRelations, i, trace, newNode[0], newSelect, oldSelect);
+               $('#LinkedReleasesNetwork tbody').empty();
+               flattenRecursiveNetwork()
+               displayReleaseRelationShip();
+               $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
+            }
+
+            function replaceNode(releasesLinked, i, trace, newNode, newSelect, oldSelect){
+                let index = trace[i];
+                if(i === (trace.length - 1)) {
+                     releasesLinked[index] = newNode;
+                     return;
+                }
+                else{
+                    i++;
+                    replaceNode(releasesLinked[index].releaseLink, i, trace, newNode, newSelect, oldSelect);
+                }
+            }
+
+            function changeReleaseIdInNode() {
+               let idValue = $(this).closest('tr').find('select').eq(0).val();
+               let oldSelect = $(this).closest('tr').find('select').eq(0).attr('data-old');
+               let currentLayer =  $(this).closest('tr').attr('data-layer');
+               let parentNode = $(this).closest('tr').attr('parent-node');
+               let currentIndex = $(this).closest('tr').attr('data-index');
+               let version = $(this).closest('tr').find('select').eq(0).find('option:selected').text();
+               let componentName = $(this).closest('tr').find('td').eq(0).text().trim();
+               let i=0;
+               let trace = [];
+               trace.unshift(currentIndex);
+
+               for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
+                    trace.unshift($(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('data-index'));
+                    parentNode =  $(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('parent-node');
+               }
+               replaceValueOfNode(releaseWithRelations, i, trace, idValue, "", "releaseId");
+               $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
+               $(this).closest('tr').find('select').eq(0).attr('data-old',idValue);
+            }
+
+            function changeReleaseRelation() {
+               let newSelect = $(this).closest('tr').find('select').eq(0).val();
+               let currentLayer =  $(this).closest('tr').attr('data-layer');
+               let parentNode = $(this).closest('tr').attr('parent-node');
+               let idValue = $(this).closest('tr').find('select').eq(1).val();
+               let textValue = $(this).closest('tr').find('select').eq(1).find('option:selected').text();
+               let currentIndex = $(this).closest('tr').attr('data-index');
+
+               let i=0;
+               let trace = [];
+               trace.unshift(currentIndex);
+
+               for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
+                    trace.unshift($(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('data-index'));
+                    parentNode =  $(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('parent-node');
+               }
+               replaceValueOfNode(releaseWithRelations, i, trace, idValue, textValue, "releaseRelation");
+               $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
+            }
+
+            function changeMainLineState() {
+               let newSelect = $(this).closest('tr').find('select').eq(0).val();
+               let currentLayer =  $(this).closest('tr').attr('data-layer');
+               let parentNode = $(this).closest('tr').attr('parent-node');
+               let idValue = $(this).closest('tr').find('select').eq(2).val();
+               let textValue = $(this).closest('tr').find('select').eq(2).find('option:selected').text();
+               let currentIndex = $(this).closest('tr').attr('data-index');
+
+               let i=0;
+               let trace = [];
+               trace.unshift(currentIndex);
+
+               for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
+                    trace.unshift($(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('data-index'));
+                    parentNode =  $(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('parent-node');
+               }
+               replaceValueOfNode(releaseWithRelations, i, trace, idValue, textValue, "mainLineState");
+               $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
+            }
+
+
+            function replaceValueOfNode(releasesLinked, i, trace, idValue, textValue, type) {
+                let index = trace[i];
+                if(i === (trace.length - 1)) {
+                    if (type == "releaseId") {
+                        releasesLinked[index].releaseId = idValue;
+                    } else if (type == "releaseRelation") {
+                        releasesLinked[index].releaseRelationship = idValue;
+                    } else if (type == "mainLineState") {
+                        releasesLinked[index].mainlineState = idValue;
+                    } else if (type == "comment") {
+                        releasesLinked[index].comment = textValue;
+                    }
+                    return;
+                }
+                else {
+                    i++;
+                    replaceValueOfNode(releasesLinked[index].releaseLink, i, trace, idValue, textValue, type);
+                }
+            }
+
+            function changeComment() {
+               let newSelect = $(this).closest('tr').find('select').eq(0).val();
+               let currentLayer =  $(this).closest('tr').attr('data-layer');
+               let parentNode = $(this).closest('tr').attr('parent-node');
+               let value = $(this).val();
+               let currentIndex = $(this).closest('tr').attr('data-index');
+
+               let i=0;
+               let trace = [];
+               trace.unshift(currentIndex);
+
+               for(let layer = currentLayer - 1; layer >= 0; layer-- ) {
+                    trace.unshift($(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('data-index'));
+                    parentNode = $(this).closest('tr').prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('parent-node');
+               }
+               replaceValueOfNode(releaseWithRelations, i, trace, "", value, "comment");
+               $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
+            }
+
+            function removeNodeFromNetwork(releasesLinked, i, trace) {
+                let index = trace[i];
+                if (i === (trace.length - 1)) {
+                    releasesLinked.splice(index,1);
+                    return;
+                }
+                else {
+                    i++;
+                    removeNodeFromNetwork(releasesLinked[index].releaseLink, i, trace);
+                }
+            }
+
+            function addChildNode(releasesLinked, i, trace, newNode) {
+                let index = trace[i];
+                if (i === (trace.length - 1)) {
+                    releasesLinked[index].releaseLink.push(newNode);
+                    return;
+                }
+                else {
+                    i++;
+                    addChildNode(releasesLinked[index].releaseLink, i, trace, newNode);
+                }
+            }
+
+
+
+            function releaseRelationFromAjax(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments) {
+                return new Promise(function(resolve, reject) {
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: '<%=viewReleaseURL%>',
+                        data: {
+                            '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
+                            '<portlet:namespace/><%=PortalConstants.WHERE%>': where,
+                            '<portlet:namespace/><%=PortalConstants.PARENT_NODE_ID%>': parentIds,
+                            '<portlet:namespace/><%=PortalConstants.LAYER%>': layers,
+                            '<portlet:namespace/><%=PortalConstants.MAINLINE_STATE%>': mainLineState,
+                            '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation,
+                            '<portlet:namespace/><%=PortalConstants.INDEXES%>': indexes,
+                            '<portlet:namespace/><%=PortalConstants.COMMENTS%>': comments
+                        },
+                        success: function (data) {
+                            resolve(data);
+                        },
+                        error: function() {
+                            reject("");
+                        }
+                    });
+                });
+            }
+
+            function getLinkedReleaseOfNode(what, releaseId){
+                return new Promise(function(resolve, reject) {
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: '<%=viewReleaseURL%>',
+                        data: {
+                            '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
+                            '<portlet:namespace/><%=PortalConstants.RELEASE_ID%>': releaseId
+                        },
+                        success: function (body) {
+                            resolve(body.result);
+                        },
+                        error: function() {
+                            reject("ERROR");
+                        }
+                    });
+                });
+            }
+
+            $('#addReleaseToNetWork').on('click', showSearchReleaseDialog);
+            $('#LinkedReleasesNetwork').on('click', '.add-child', function(event) {
+                let selectedElement = $(this).closest('tr');
+                showChildSearchReleaseDialog(selectedElement);
+            });
+
+
+            $('#searchChildReleaseDialog').on('click', '#searchReleaseBtn', function(event) {
+                releaseFromAjax('<%=PortalConstants.RELEASE_SEARCH%>', $('#searchChildReleaseDialog #searchRelease').val(), function(data) {
+                    if($dataTable) {
+                        $dataTable.destroy();
+                    }
+                    $('#searchChildResultsTable tbody').html(data);
+                    addLinkToReleaseNameAndVersion('searchChildResultsTable');
+                    makeSearchChildReleaseDataTable();
+                });
+            });
+
+            function makeSearchChildReleaseDataTable() {
+                $dataTable = datatables.create('#searchChildResultsTable', {
+                    destroy: true,
+                    paging: false,
+                    info: false,
+                    language: {
+                        emptyTable: "<liferay-ui:message key="no.releases.found" />",
+                        processing: "<liferay-ui:message key="processing" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
+                    },
+                    order: [
+                        [2, 'asc']
+                    ],
+                    select: 'multi+shift'
+                }, undefined, [0]);
+                datatables.enableCheckboxForSelection($dataTable, 0);
+            }
+
+            function showChildSearchReleaseDialog(selectedElement) {
+                let parentId = selectedElement.attr('id').substring(14);
+                let parentLayer = parseInt(selectedElement.attr('data-layer'));
+                let currentIndex = selectedElement.attr('data-index');
+
+                if($dataTable) {
+                    $dataTable.destroy();
+                    $dataTable = undefined;
+                }
+
+                $releaseDialog = dialog.open('#searchChildReleaseDialog', {
+                }, function(submit, callback) {
+                    var releaseIds = [];
+                    var releaseNames = [];
+
+                    let parentNode = selectedElement.attr('parent-node');
+                    let trace = [];
+                    trace.unshift(currentIndex);
+
+                    for(let layer = parentLayer - 1; layer >= 0; layer-- ) {
+                        trace.unshift(selectedElement.prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('data-index'));
+                        parentNode = selectedElement.prevAll('#releaseLinkRow'+parentNode+'[data-layer="'+layer+'"]').first().attr('parent-node');
+                    }
+
+                    $('#searchChildResultsTable').find(':checked').each(function () {
+                        releaseIds.push(this.value);
+                        releaseNames.push($(this).closest('tr').find('td').eq(2).find('a').html() + ' (' + $(this).closest('tr').find('td').eq(3).find('a').html() + ')');
+                    });
+                    let numberOfNodeSameLevel = $('tr[parent-node="'+parentId+'"][data-layer="'+(parentLayer+1)+'"]').length;
+                    for (let [index, releaseId] of releaseIds.entries()) {
+                        let i=0;
+                        let toArray = [];
+                        toArray.push(releaseId);
+                        let indexOfNode = numberOfNodeSameLevel + index;
+                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [parentId], [(parentLayer+1)], ["OPEN"], ["CONTAINED"], [indexOfNode], [""], function(result){
+                            selectedElement.after(result);
+                        });
+                        let selectedRelease = {
+                              "releaseLink": [],
+                              "releaseId": releaseId,
+                              "releaseRelationship": "CONTAINED",
+                              "mainlineState": "OPEN",
+                              "comment": "",
+                              "createOn": "<%=SW360Utils.getCreatedOn()%>",
+                              "createBy": "${loginUser.email}"
+                        }
+
+                        addChildNode(releaseWithRelations, i, trace, selectedRelease);
+                    }
+                    $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
+                    $("#searchChildResultsTable").empty();
+                    $("#searchChildReleaseDialog #selectReleaseButton").attr("disabled", true);
+                    callback(true);
+                }, function() {
+                    //$('#searchChildResultsTable').hide();
+                   // $('#searchRelease').val('');
+                    $("#searchChildReleaseDialog #selectReleaseButton").attr("disabled", true);
+                });
+            }
+
+            $('#searchChildResultsTable').on('change', 'input', function() {
+                $("#searchChildReleaseDialog #selectReleaseButton").attr("disabled", false);
+            });
+
+            // Search release dialog
+            keyboard.bindkeyPressToClick('searchRelease', 'searchRelease');
+            var homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
+            $('#addReleaseToNetWork').on('click', showSearchReleaseDialog);
+
+            $('#searchReleasesDialogOfNetwork').on('click','#searchReleaseBtn', function() {
+                releaseFromAjax('<%=PortalConstants.RELEASE_SEARCH%>', $('#searchReleasesDialogOfNetwork #searchRelease').val(), function(data) {
+                    if($dataTable) {
+                        $dataTable.destroy();
+                    }
+                    $('#releaseResultsTable tbody').html(data);
+                    addLinkToReleaseNameAndVersion('releaseResultsTable');
+                    makeReleaseDataTable();
+                });
+            });
+            $('#searchReleasesDialogOfNetwork').on('click', '#linkedReleasesButton', function() {
+                releaseFromAjax('<%=PortalConstants.RELEASE_LIST_FROM_LINKED_PROJECTS%>', '', function(data) {
+                    if($dataTable) {
+                        $dataTable.destroy();
+                    }
+                    $('#releaseResultsTable tbody').html(data);
+                    addLinkToReleaseNameAndVersion('releaseResultsTable');
+                    makeReleaseDataTable();
+                });
+            });
+            $('#releaseResultsTable').on('change', 'input', function() {
+                $releaseDialog.enablePrimaryButtons($('#releaseResultsTable input:checked').length > 0);
+            });
+
+            function showSearchReleaseDialog() {
+                if($dataTable) {
+                    $dataTable.destroy();
+                    $dataTable = undefined;
+                }
+
+                $releaseDialog = dialog.open('#searchReleasesDialogOfNetwork', {
+                }, function(submit, callback) {
+                    var releaseIds = [];
+                    var releaseNames = [];
+
+                    $('#releaseResultsTable').find(':checked').each(function () {
+                        releaseIds.push(this.value);
+                        releaseNames.push($(this).closest('tr').find('td').eq(2).find('a').html() + ' (' + $(this).closest('tr').find('td').eq(3).find('a').html() + ')');
+                    });
+                    let numberOfRootExisted = $('tr[parent-node=""]').length;
+                    for (let [index, releaseId] of releaseIds.entries()) {
+                        let toArray = [];
+                        toArray.push(releaseId);
+                        let indexOfNode = numberOfRootExisted + index;
+                        addReleaseToTable('<%=PortalConstants.CREATE_LINKED_RELEASE_ROW%>', toArray, [""], [0], ["OPEN"], ["CONTAINED"], [indexOfNode], [""], function(result){
+                            $('#LinkedReleasesNetwork tbody').append(result);
+                        });
+                        let selectedRelease = {
+                              "releaseLink": [],
+                              "releaseId": releaseId,
+                              "releaseRelationship": "CONTAINED",
+                              "mainlineState": "OPEN",
+                              "comment": "",
+                              "createOn": "<%=SW360Utils.getCreatedOn()%>",
+                              "createBy": "${loginUser.email}"
+                        }
+                        releaseWithRelations.push(selectedRelease);
+                    }
+                    $('#releaseRelationTree').val(JSON.stringify(releaseWithRelations));
+                    callback(true);
+                }, function() {
+                    this.$.find('#releaseResultsTable').hide();
+                    this.$.find('#searchRelease').val('');
+                    this.enablePrimaryButtons(false);
+                });
+            }
+
+            function makeReleaseDataTable() {
+                $dataTable = datatables.create('#releaseResultsTable', {
+                    destroy: true,
+                    paging: false,
+                    info: false,
+                    language: {
+                        emptyTable: "<liferay-ui:message key="no.releases.found" />",
+                        processing: "<liferay-ui:message key="processing" />",
+                        loadingRecords: "<liferay-ui:message key="loading" />"
+                    },
+                    order: [
+                        [2, 'asc']
+                    ],
+                    select: 'multi+shift'
+                }, undefined, [0]);
+                datatables.enableCheckboxForSelection($dataTable, 0);
+            }
+
+            function releaseFromAjax(what, where, callback) {
+                $releaseDialog.$.find('#releaseResultsTable').hide();
+                $releaseDialog.$.find('#searchReleaseBtn').prop('disabled', true);
+                $releaseDialog.$.find('#linkedReleasesButton').prop('disabled', true);
+                $releaseDialog.enablePrimaryButtons(false);
+
+                jQuery.ajax({
+                    type: 'POST',
+                    url: '<%=viewReleaseURL%>',
+                    data: {
+                        '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
+                        '<portlet:namespace/><%=PortalConstants.WHERE%>': where
+                    },
+                    success: function (data) {
+                        callback(data);
+                        $releaseDialog.$.find('#releaseResultsTable').show();
+                        $releaseDialog.$.find('#searchReleaseBtn').prop('disabled', false);
+                        $releaseDialog.$.find('#linkedReleasesButton').prop('disabled', false);
+                    },
+                    error: function() {
+                        $releaseDialog.alert('<liferay-ui:message key="cannot.link.to.release" />');
+                    }
+                });
+             }
+
+            function addReleaseToTable(what, where, parentIds, layers, mainLineState, releaseRelation, indexes, comments, callback){
+                jQuery.ajax({
+                    type: 'POST',
+                    url: '<%=viewReleaseURL%>',
+                    data: {
+                        '<portlet:namespace/><%=PortalConstants.WHAT%>': what,
+                        '<portlet:namespace/><%=PortalConstants.WHERE%>': where,
+                        '<portlet:namespace/><%=PortalConstants.PARENT_NODE_ID%>': parentIds,
+                        '<portlet:namespace/><%=PortalConstants.LAYER%>': layers,
+                        '<portlet:namespace/><%=PortalConstants.MAINLINE_STATE%>': mainLineState,
+                        '<portlet:namespace/><%=PortalConstants.RELEASE_RELATION_SHIP%>': releaseRelation,
+                        '<portlet:namespace/><%=PortalConstants.INDEXES%>': indexes,
+                        '<portlet:namespace/><%=PortalConstants.COMMENTS%>': comments
+                    },
+                    success: function (data) {
+                        callback(data);
+                    },
+                    error: function() {
+                        $releaseDialog.alert('<liferay-ui:message key="cannot.link.to.release" />');
+                    }
+                });
+            }
+
+            function makeReleaseViewUrl(releaseId) {
+                return homeUrl + '/components/-/component/release/detailRelease/' + releaseId;
+            }
+
+            function makeComponentViewUrl(componentId) {
+                return homeUrl + '/components/-/component/detail/' + componentId;
+            }
+
+            function detailUrl(name, url)
+            {
+                let viewUrl = $("<a></a>").attr("href",url).attr("target","_blank").css("word-break","break-word").text(name);
+                return viewUrl[0].outerHTML;
+            }
+
+
+            function addLinkToReleaseNameAndVersion(tableId) {
+                $('#'+tableId+' > tbody  > tr').each(function() {
+                    let $releasId = $('td:eq(0)', this).find("input[type='checkbox']").val();
+                    let $componentId = $('td:eq(0)', this).find("input[type='hidden']").val();
+                    let $relName = $('td:eq(2)', this);
+                    let $relVersion = $('td:eq(3)', this);
+                    let linkOnRelName = detailUrl($relName.text(), makeComponentViewUrl($componentId));
+                    let linkOnRelVersion = detailUrl($relVersion.text(), makeReleaseViewUrl($releasId));
+                    $relName.html(linkOnRelName);
+                    $relVersion.html(linkOnRelVersion);
+             });
+            }
+        });
+    });
+</script>

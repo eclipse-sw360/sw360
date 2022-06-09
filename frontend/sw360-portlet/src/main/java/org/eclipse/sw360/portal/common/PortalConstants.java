@@ -657,6 +657,49 @@ public class PortalConstants {
     public static final boolean SSO_LOGIN_ENABLED;
     public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
 
+    public static final String RELEASES_IN_NETWORK = "releasesInNetwork";
+    public static final String FIND_SUB_LINKED_RELEASE = "findSubLinkedRelease";
+    public static final String LIST_SUB_LINKED_RELEASES = "listSubLinkedReleases";
+    public static final String CREATE_LINKED_RELEASE_ROW = "createLinkedReleaseRow";
+    public static final String LAYER = "layer[]";
+
+    public static final String FIND_LINKED_RELEASE_OF_NODE = "findLinkedReleaseOfNode";
+
+    public static final String RELEASE_NETWORK = "releaseNetwork";
+
+    public static final String RELEASE_RELATION_SHIP = "releaseRelationShip[]";
+
+    public static final String MAINLINE_STATE = "mainlineState[]";
+
+    public static final String INDEXES = "indexes[]";
+
+    public static final String PARENT_NODE_ID = "parentNodeIds[]";
+
+    public static final String COMMENTS = "comments[]";
+
+    public static final String DEFAULT_VALUES = "defaultValues[]";
+
+    public static final String RELEASE_ID_ARRAY = "releaseIdArray[]";
+
+    public static final String LOAD_LINKED_PROJECTS_TO_NETWORK = "loadLinkedProjectToNetwork";
+
+    public static final String LIST_NETWORK_CLEARING_STATUS = "listNetworkClearingStatus";
+
+    public static final String CLEARING_STATUS_ON_LOAD_URL = "clearingStatusOnLoadUrl";
+
+    public static final String NETWORK_PARENT_BRANCH_ID = "network_parent_branch_id";
+
+    public static final String NETWORK_PROJECT_LIST = "networkProjectList";
+
+    public static final String NETWORK_RELEASE_LIST = "networkReleaseList";
+
+    public static final String NETWORK_TOTAL_INACCESSIBLE_ROWS = "netWorkTotalInAccessibleRow";
+
+    public static final String DEPENDENCE_NETWORK_ON_LOAD_URL = "dependenceNetworkOnLoadUrl";
+
+    public static final String PROJECTS_IN_DEPENDENCY_NETWOWK = "projectsInDependencyNetwork";
+
+    public static final String COUNT_PROJECT_IN_DEPENDENCY_NETWOWK = "countProjectInDependencyNetwork";
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
