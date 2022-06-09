@@ -120,8 +120,9 @@ public class ThriftValidate {
 
     public static void prepareVendor(Vendor vendor) throws SW360Exception {
         // Check required fields
-        assertNotEmpty(vendor.getShortname());
-        assertNotEmpty(vendor.getFullname());
+        assertNotEmpty(vendor.getShortname(), "vendor short name cannot be empty!");
+        assertNotEmpty(vendor.getFullname(), "vendor full name cannot be empty!");
+        assertValidUrl(vendor.getUrl());
 
         // Check type
         vendor.setType(TYPE_VENDOR);

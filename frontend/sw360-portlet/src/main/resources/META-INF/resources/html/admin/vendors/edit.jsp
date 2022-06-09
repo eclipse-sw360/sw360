@@ -99,7 +99,7 @@
                                     <td>
                                         <div class="form-group">
                                             <label for="vendorURL"><liferay-ui:message key="url" /></label>
-                                            <input id="vendorURL" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.vendor.url" />" name="<portlet:namespace/><%=Vendor._Fields.URL%>"
+                                            <input id="vendorURL" type="url" required class="form-control" placeholder="<liferay-ui:message key="enter.vendor.url" />" name="<portlet:namespace/><%=Vendor._Fields.URL%>"
                                                 value="<sw360:out value="${vendor.url}"/>" />
                                             <div class="invalid-feedback">
                                                 <liferay-ui:message key="please.enter.an.url" />

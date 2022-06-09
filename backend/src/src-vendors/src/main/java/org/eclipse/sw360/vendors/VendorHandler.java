@@ -14,6 +14,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.VendorSearchHandler;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -87,13 +88,11 @@ public class VendorHandler implements VendorService.Iface {
 
 
     @Override
-    public String addVendor(Vendor vendor) throws TException {
+    public AddDocumentRequestSummary addVendor(Vendor vendor) throws TException {
         assertNotNull(vendor);
         assertIdUnset(vendor.getId());
 
-        vendorDatabaseHandler.addVendor(vendor);
-
-        return vendor.getId();
+        return vendorDatabaseHandler.addVendor(vendor);
     }
 
     @Override
@@ -108,6 +107,7 @@ public class VendorHandler implements VendorService.Iface {
     public RequestStatus updateVendor(Vendor vendor, User user) throws TException {
         assertUser(user);
         assertNotNull(vendor);
+        assertId(vendor.getId());
 
         return vendorDatabaseHandler.updateVendor(vendor, user);
     }

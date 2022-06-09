@@ -332,9 +332,17 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         try {
             VendorService.Iface client = thriftClients.makeVendorClient();
-            String vendorId = client.addVendor(vendor);
+            AddDocumentRequestSummary summary = client.addVendor(vendor);
+            AddDocumentRequestStatus status = summary.getRequestStatus();
             JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-            jsonObject.put("id", vendorId);
+
+            if (AddDocumentRequestStatus.SUCCESS.equals(status)) {
+                jsonObject.put("id", summary.getId());
+            } else if (AddDocumentRequestStatus.DUPLICATE.equals(status)) {
+                jsonObject.put("error", ErrorMessages.VENDOR_DUPLICATE);
+            } else if (AddDocumentRequestStatus.FAILURE.equals(status)) {
+                jsonObject.put("error", summary.getMessage());
+            }
             try {
                 writeJSON(request, response, jsonObject);
             } catch (IOException e) {
