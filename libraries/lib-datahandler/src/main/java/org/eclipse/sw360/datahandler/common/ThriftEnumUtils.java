@@ -303,7 +303,7 @@ public class ThriftEnumUtils {
             .put(ClearingRequestState.IN_QUEUE, "In Queue")
             .put(ClearingRequestState.IN_PROGRESS, "In Progress")
             .put(ClearingRequestState.CLOSED, "Closed")
-            .put(ClearingRequestState.ON_HOLD, "On Hold")
+            .put(ClearingRequestState.AWAITING_RESPONSE, "Awaiting Response")
             .build();
 
     private static final ImmutableMap<ClearingRequestPriority, String> MAP_CLEARING_REQUEST_PRIORITY_STRING = ImmutableMap.of(

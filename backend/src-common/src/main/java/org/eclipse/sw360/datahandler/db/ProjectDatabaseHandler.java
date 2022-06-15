@@ -240,7 +240,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             case IN_PROGRESS:
             case IN_QUEUE:
             case ACCEPTED:
-            case ON_HOLD:
+            case AWAITING_RESPONSE:
                 sendMailForUpdatedCR(project, projectUrl, clearingRequest, user);
                 break;
 

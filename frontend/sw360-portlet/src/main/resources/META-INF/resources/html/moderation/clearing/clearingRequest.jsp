@@ -148,7 +148,26 @@
                                             </tr>
                                             <tr>
                                                 <td><label class="form-group"><liferay-ui:message key="preferred.clearing.date" />:</label></td>
-                                                <td><sw360:out value="${clearingRequest.requestedClearingDate}" bare="true"/></td>
+                                                <td>
+                                                <core_rt:choose>
+                                                    <core_rt:when test="${isEditableForRequestingUser}">
+                                                        <input class="form-control datepicker" id="preferredClearingDate"
+                                                            name="<portlet:namespace/><%=ClearingRequest._Fields.REQUESTED_CLEARING_DATE%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                                                            value="<sw360:out value="${clearingRequest.requestedClearingDate}"/>" placeholder="<liferay-ui:message key='preferred.clearing.date.yyyy.mm.dd' />" />
+                                                        <small class="form-text">
+                                                            <svg class='lexicon-icon'><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' /></svg>
+                                                            <liferay-ui:message key="only.current.or.future.date.is.considered.as.valid"/>
+                                                        </small>
+                                                        <div class="invalid-feedback">
+                                                            <liferay-ui:message key="date.should.be.valid" />!
+                                                        </div>
+                                                    </core_rt:when>
+                                                    <core_rt:otherwise>
+                                                        <sw360:out value="${clearingRequest.requestedClearingDate}" bare="true"/>
+                                                    </core_rt:otherwise>
+                                                </core_rt:choose>
+
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><label class="form-group"><liferay-ui:message key="business.area.line" />:</label></td>
@@ -422,16 +441,19 @@
 require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'bridges/jquery-ui' ], function($, dialog, validation, button) {
     validation.enableForm('#updateCRForm');
     let pcdLimit = ${PreferredClearingDateLimit};
+    let pcDate = $("#preferredClearingDate").val();
     var clearingTeamEmailEditable = $("#CLEARING_TEAM");
 
     $('#formSubmit').click(
         function() {
             let $form = $("#updateCRForm"),
                 $emailId = $("#CLEARING_TEAMDisplay"),
-                $acDate = $("#agreedClearingDate");
+                $acDate = $("#agreedClearingDate"),
+                $pcDate = $("#preferredClearingDate");
+                pcdDiff = parseInt((new Date($pcDate.val()) - new Date(pcDate)) / (1000 * 60 * 60 * 24), 10);
             $form.addClass('was-validated');
 
-            if (clearingTeamEmailEditable){
+            if (clearingTeamEmailEditable) {
                 let emailId = $("#CLEARING_TEAM").val();
                 if (validation.isValidEmail(emailId)) {
                     $("#clearingTeamEmailErrorMsg").hide();
@@ -442,6 +464,11 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
                 }
             }
             $emailId.removeClass("is-invalid");
+            if ($pcDate.val() && pcdDiff < 0) {
+                $pcDate.addClass("is-invalid");
+                return;
+            }
+            $pcDate.removeClass("is-invalid");
             if ($acDate.val() && !validation.isValidDate($acDate.val())) {
                 $acDate.addClass("is-invalid");
                 return;                
