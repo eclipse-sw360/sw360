@@ -18,9 +18,7 @@
     </thead>
     <tr>
         <td>
-            <pre style="white-space: pre-line;">
-                <sw360:out value="${licenseDetail.text}"/>
-            </pre>
+            <pre style="white-space: pre-wrap;"><sw360:out value="${licenseDetail.text}" stripNewlines="false"/></pre>
         </td>
     </tr>
 </table>
