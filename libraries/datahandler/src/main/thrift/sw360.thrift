@@ -71,7 +71,7 @@ enum ClearingRequestState {
     IN_QUEUE = 3,
     IN_PROGRESS = 4,
     CLOSED = 5,
-    ON_HOLD = 6
+    AWAITING_RESPONSE = 6
 }
 
 enum ClearingRequestPriority {
