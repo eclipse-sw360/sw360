@@ -643,4 +643,9 @@ public class ComponentHandler implements ComponentService.Iface {
             PaginationData pageData) throws TException {
         return handler.getRecentComponentsSummaryWithPagination(user, pageData);
     }
+
+    @Override
+    public void sendExportSpreadsheetSuccessMail(String url, String recepient) throws TException {
+        handler.sendExportSpreadsheetSuccessMail(url, recepient);
+    }
 }
