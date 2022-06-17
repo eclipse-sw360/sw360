@@ -3,12 +3,11 @@
  * With modifications by Bosch Software Innovations GmbH, 2016.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
@@ -20,6 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationInfoRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.Before;
@@ -55,6 +56,27 @@ public class CLIParserTest {
             "https://jquery.org/license/ \n" +
             "]]></Files>\n" +
             "</License>\n" +
+            "<Obligation>\n" +
+            "<Topic><![CDATA[do not change the nature of the package\n" +
+            "]]></Topic>\n" +
+            "<Text><![CDATA[LGPL code must only be changed if the result is still a software library.\n" +
+            "]]></Text>\n" +
+            "<Licenses>\n" +
+            "<License><![CDATA[LGPL-2.1+]]></License>\n" +
+            "</Licenses>\n" +
+            "</Obligation>\n" +
+            "<Obligation>\n" +
+            "<Topic><![CDATA[(Copyleft Effect) license derived works under the same license\n" +
+            "]]></Topic>\n" +
+            "<Text><![CDATA[In any case contact your 3rd Party Software Manager to check the copyleft effect\n" +
+            "]]></Text>\n" +
+            "<Licenses>\n" +
+            "<License><![CDATA[GPL-1.0+]]></License>\n" +
+            "<License><![CDATA[GPL-2.0]]></License>\n" +
+            "<License><![CDATA[GPL-2.0+]]></License>\n" +
+            "<License><![CDATA[LGPL-2.1+]]></License>\n" +
+            "</Licenses>\n" +
+            "</Obligation>\n" +
             "<Copyright>\n" +
             "<Content><![CDATA[Copyrights\n" +
             "]]></Content>\n" +
@@ -117,6 +139,19 @@ public class CLIParserTest {
         assertThat(res.getLicenseInfo().getCopyrights().size(), is(2));
         assertThat(res.getLicenseInfo().getCopyrights(), containsInAnyOrder("Copyrights", "(c) jQuery Foundation, Inc. | jquery.org"));
 
+    }
+
+    @Test
+    public void testGetCLIObligations() throws Exception {
+        Attachment cliAttachment = new Attachment("A1", "a.xml");
+        when(connector.getAttachmentStream(anyObject(), anyObject(), anyObject())).thenReturn(new ReaderInputStream(new StringReader(CLI_TESTFILE)));
+        ObligationParsingResult oblRes = parser.getObligations(cliAttachment, new User(), new Project());
+        assertThat(oblRes.getStatus(), is(ObligationInfoRequestStatus.SUCCESS));
+        assertThat(oblRes.getObligationsAtProjectSize(), is(2));
+        assertThat(oblRes.getObligationsAtProject().get(0).getTopic(), equalTo("do not change the nature of the package"));
+        assertThat(oblRes.getObligationsAtProject().get(1).getText(), equalTo("In any case contact your 3rd Party Software Manager to check the copyleft effect\n"));
+        assertThat(oblRes.getObligationsAtProject().get(1).getLicenseIDsSize(), is(4));
+        assertThat(oblRes.getObligationsAtProject().get(1).getLicenseIDs(), containsInAnyOrder("GPL-1.0+", "GPL-2.0", "GPL-2.0+", "LGPL-2.1+"));
     }
 
     @Test

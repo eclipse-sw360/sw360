@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.rest.resourceserver.user;
@@ -46,10 +45,28 @@ public class Sw360UserService {
         }
     }
 
+    public User getUserByEmailOrExternalId(String userIdentifier) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public User getUser(String id) {
         try {
             UserService.Iface sw360UserClient = getThriftUserClient();
             return sw360UserClient.getUser(id);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public User getUserByApiToken(String token) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.getByApiToken(token);
         } catch (TException e) {
             throw new RuntimeException(e);
         }

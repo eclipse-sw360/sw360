@@ -1,24 +1,23 @@
 /*
  * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.thrift;
 
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
+
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
-import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
@@ -46,65 +45,42 @@ public class ThriftValidate {
         // Utility class with only static functions
     }
 
-    public static void prepareObligation(Obligation obligation) throws SW360Exception {
+    public static void prepareTodo(Obligation oblig) throws SW360Exception {
         // Check required fields
-        assertNotNull(obligation);
-        assertNotEmpty(obligation.getName());
-        assertNotNull(obligation.getObligationId());
+        assertNotNull(oblig);
+        assertNotEmpty(oblig.getText());
+        assertNotNull(oblig.getTitle());
+        assertNotNull(oblig.getObligationLevel());
+
+        if (oblig.whitelist == null) {
+            oblig.setWhitelist(Collections.emptySet());
+        }
 
         // Check type
-        obligation.setType(TYPE_OBLIGATION);
+        oblig.setType(TYPE_OBLIGATION);
     }
 
-    public static void prepareTodo(Todo todo) throws SW360Exception {
+    public static void prepareLicenseType(LicenseType licenseType) throws SW360Exception {
         // Check required fields
-        assertNotNull(todo);
-        assertNotEmpty(todo.getText());
-        assertNotNull(todo.getTodoId());
+        assertNotNull(licenseType);
+        assertNotEmpty(licenseType.getLicenseType());
 
-        if (todo.isSetObligations() && !todo.isSetObligationDatabaseIds()) {
-            for (Obligation obligation : todo.getObligations()) {
-                todo.addToObligationDatabaseIds(obligation.getId());
-            }
-        }
-
-        if (todo.obligations == null) {
-            todo.setObligations(Collections.emptyList());
-        }
-
-        if (todo.whitelist == null) {
-            todo.setWhitelist(Collections.emptySet());
-        }
-
-        todo.unsetObligations();
         // Check type
-        todo.setType(TYPE_TODO);
+        licenseType.setType(TYPE_LICENSETYPE);
     }
 
-    public static void prepareRiskCategory(RiskCategory riskCategory) throws SW360Exception {
+    public static void prepareObligationElement(ObligationElement obligationElement) throws SW360Exception {
         // Check required fields
-        assertNotNull(riskCategory);
-        assertNotEmpty(riskCategory.getText());
-        assertNotNull(riskCategory.getRiskCategoryId());
-
+        assertNotNull(obligationElement);
         // Check type
-        riskCategory.setType(TYPE_RISKCATEGORY);
+        obligationElement.setType(TYPE_OBLIGATIONELEMENT);
     }
 
-    public static void prepareRisk(Risk risk) throws SW360Exception {
+    public static void prepareObligationNode(ObligationNode obligationNode) throws SW360Exception {
         // Check required fields
-        assertNotNull(risk);
-        assertNotEmpty(risk.getText());
-        assertNotNull(risk.getRiskId());
-
-        if (risk.isSetCategory() && !risk.isSetRiskCategoryDatabaseId()) {
-            risk.setRiskCategoryDatabaseId(risk.getCategory().getId());
-        }
-
-        risk.unsetCategory();
-
+        assertNotNull(obligationNode);
         // Check type
-        risk.setType(TYPE_RISK);
+        obligationNode.setType(TYPE_OBLIGATIONNODE);
     }
 
     public static void prepareLicense(License license) throws SW360Exception {
@@ -118,19 +94,12 @@ public class ThriftValidate {
         }
         license.unsetLicenseType();
 
-        if (license.isSetTodos() && license.isSetTodoDatabaseIds()) {
-            for (Todo todo : license.getTodos()) {
-                license.addToTodoDatabaseIds(todo.getId());
+        if (license.isSetObligations() && license.isSetObligationDatabaseIds()) {
+            for (Obligation oblig : license.getObligations()) {
+                license.addToObligationDatabaseIds(oblig.getId());
             }
         }
-        license.unsetTodos();
-
-        if (license.isSetRisks() && !license.isSetRiskDatabaseIds()) {
-            for (Risk risk : license.getRisks()) {
-                license.addToRiskDatabaseIds(risk.getId());
-            }
-        }
-        license.unsetRisks();
+        license.unsetObligations();
 
         // Check type
         license.setType(TYPE_LICENSE);
@@ -170,6 +139,12 @@ public class ThriftValidate {
 
         // Unset fields that do not make sense
         component.unsetReleases();
+        component.unsetDefaultVendor();
+        // we might want to have a logic someday that the defaultVendorId will be set
+        // from defaultVendor if the latter one is set and the former one not - but
+        // until now the thought is that clients need to make sure that the
+        // defaultVendorId is set and that the component contains the vendor itself is
+        // just convenience
     }
 
     public static List<Component> prepareComponents(Collection<Component> components) throws SW360Exception {
@@ -265,9 +240,19 @@ public class ThriftValidate {
     public static void prepareProject(Project project) throws SW360Exception {
         assertNotEmpty(project.getName());
         project.setType(TYPE_PROJECT);
+        if (!project.isSetClearingState()) {
+            project.setClearingState(ProjectClearingState.OPEN);
+        }
 
         // Unset temporary fields
         project.unsetPermissions();
         project.unsetReleaseClearingStateSummary();
+    }
+
+    public static void prepareProjectObligation(ObligationList obligation) throws SW360Exception {
+        assertId(obligation.getProjectId());
+        assertNotNull(obligation.getLinkedObligationStatus());
+        assertNotEmpty(obligation.getLinkedObligationStatus().keySet(), "linked obligtions cannot be empty");
+        obligation.setType(TYPE_PROJECT_OBLIGATION);
     }
 }

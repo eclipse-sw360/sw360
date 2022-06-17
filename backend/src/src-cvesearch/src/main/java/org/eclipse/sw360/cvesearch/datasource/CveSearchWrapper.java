@@ -2,12 +2,11 @@
  * Copyright (c) Bosch Software Innovations GmbH 2016.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.cvesearch.datasource;
 
@@ -15,15 +14,16 @@ import org.eclipse.sw360.cvesearch.datasource.heuristics.Heuristic;
 import org.eclipse.sw360.cvesearch.datasource.heuristics.SearchLevels;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.log4j.Logger;
-
 public class CveSearchWrapper {
 
-    private static final Logger log = Logger.getLogger(CveSearchWrapper.class);
+    private static final Logger log = LogManager.getLogger(CveSearchWrapper.class);
 
     private final Heuristic heuristic;
 

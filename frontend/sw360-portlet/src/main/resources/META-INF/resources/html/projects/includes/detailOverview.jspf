@@ -1,0 +1,303 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  --%>
+
+<portlet:renderURL var="editProjectURL">
+	<portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${project.id}"/>
+	<portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>"/>
+</portlet:renderURL>
+
+<core_rt:set var = "docid" scope = "request" value = "${project.id}"/>
+<portlet:resourceURL var="obligationviewurl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LOAD_OBLIGATIONS_VIEW%>"/>
+    <portlet:param name="<%=PortalConstants.DOCUMENT_ID%>" value="${docid}"/>
+</portlet:resourceURL>
+<portlet:resourceURL var="updateProjectVulnerabilitiesURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.UPDATE_VULNERABILITIES_PROJECT%>"/>
+</portlet:resourceURL>
+<portlet:resourceURL var="updateVulnerabilityRatings">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.UPDATE_VULNERABILITY_RATINGS%>"/>
+</portlet:resourceURL>
+
+<core_rt:set var = "updateProjectVulnerabilitiesURL" scope = "request" value = "updateProjectVulnerabilitiesURL"/>
+<core_rt:set var = "updateVulnerabilityRatings" scope = "request" value = "updateVulnerabilityRatings"/>
+<jsp:useBean id="isCrDisabledForProjectBU" type="java.lang.Boolean" scope="request"/>
+<div class="container" style="display: none;">
+	<div class="row">
+		<div class="col-3 sidebar">
+			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Administration'}">active</core_rt:if>" href="#tab-Administration" data-toggle="list" role="tab"><liferay-ui:message key="administration" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-licenseClearing'}">active</core_rt:if>" href="#tab-licenseClearing" data-toggle="list" role="tab"><liferay-ui:message key="license.clearing" /></a>		
+			<core_rt:if test="${isProjectObligationsEnabled}">
+			<a id="obligationCountBadge" class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Obligations'}">active</core_rt:if>" href="#tab-Obligations" data-toggle="list" role="tab"><liferay-ui:message key="obligations" />
+			</a>
+			</core_rt:if>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECC'}">active</core_rt:if>" href="#tab-ECC" data-toggle="list" role="tab"><liferay-ui:message key="ecc" /></a>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab"><liferay-ui:message key="attachments" /></a>
+			<core_rt:if test="${inProjectDetailsContext}">
+				<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active</core_rt:if>" href="#tab-attachmentUsages" data-toggle="list" role="tab"><liferay-ui:message key="attachment.usages" /></a>
+			</core_rt:if>
+			<core_rt:if test="${inProjectDetailsContext}">
+				<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active</core_rt:if>" href="#tab-Vulnerabilities" data-toggle="list" role="tab">
+					<liferay-ui:message key="vulnerabilities" />
+						<span id="numberOfVulnerabilities"
+						<core_rt:if test="${numberOfUncheckedVulnerabilities.intValue() == 0 || !project.enableSvm || !project.enableVulnerabilitiesDisplay}">
+							class="badge badge-light"
+						</core_rt:if>
+						<core_rt:if test="${numberOfUncheckedVulnerabilities.intValue() > 0 && project.enableSvm}">
+							class="badge badge-danger"
+						</core_rt:if>
+						>
+						<core_rt:if test="${project.enableVulnerabilitiesDisplay}">
+							${numberOfUncheckedVulnerabilities} / ${numberOfVulnerabilities}
+						</core_rt:if>
+						<core_rt:if test="${not project.enableVulnerabilitiesDisplay}">
+							? / ?
+						</core_rt:if>
+						</span>
+				</a>
+			</core_rt:if>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active</core_rt:if>" href="#tab-ChangeLogs" data-toggle="list" role="tab"><liferay-ui:message key="change.log" /></a>
+		    </div>
+	    </div>
+	    <div class="col">
+		<div class="row portlet-toolbar">
+				<core_rt:if test="${inProjectDetailsContext}">
+					<div class="col-auto">
+						<div class="btn-toolbar" role="toolbar">
+							<div class="btn-group" role="group">
+								<button type="button" class="btn btn-primary" onclick="window.location.href='<%=editProjectURL%>' + window.location.hash"
+									<core_rt:if test = "${(project.clearingState eq 'CLOSED') && (isUserAdmin != 'Yes') && (not isProjectMember)}">
+										disabled="disabled"
+									</core_rt:if>
+								>
+									<liferay-ui:message key="edit.project" />
+								</button>
+							</div>
+                                                        <div class="btn-group" role="group">
+                                                            <button type="button" class="btn btn-secondary" id="linkToProjectButton"><liferay-ui:message key="link.to.projects" /></button>
+                                                        </div>
+							 <div class="list-group-companion" data-belong-to="tab-licenseClearing">
+								<div class="nav nav-pills justify-content-center bg-light font-weight-bold d-inline-flex" id="pills-tab" role="tablist">
+									<a class="nav-item nav-link active" id="pills-tree-tab" data-toggle="pill" href="#pills-treeView" role="tab" aria-controls="pills-treeView" aria-selected="true">
+									<liferay-ui:message key="tree.view" /></a>
+									<a class="nav-item nav-link" id="pills-list-tab" data-toggle="pill" href="#pills-listView" role="tab" aria-controls="pills-listView" aria-selected="false">
+									<liferay-ui:message key="list.view" /></a>
+								</div>
+								<div id="btnExportGroup" class="btn-group" role="group">
+									<button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+										<liferay-ui:message key="export.spreadsheet" />
+										<clay:icon symbol="caret-bottom" />
+									</button>
+									<div class="dropdown-menu" aria-labelledby="btnExport">
+										<a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="projects.only" /></a>
+										<a class="dropdown-item" data-type="projectWithReleases"><liferay-ui:message key="projects.with.linked.releases" /></a>
+									</div>
+								</div>
+								<div class="btn-group" role="group">
+									<div class="btn-group" id="downloadLicenseInfo" style="margin-right: auto;">
+										<button id="downloadLicenseInfoButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
+											<liferay-ui:message key="generate.license.info" />
+											<clay:icon symbol="caret-bottom" />
+										</button>
+										<div class="dropdown-menu">
+											<a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
+											<a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
+										</div>
+									</div>
+									<div class="btn-group" id="downloadSourceCode">
+										<button id="downloadSourceCodeBundleButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
+											<liferay-ui:message key="generate.source.code.bundle" />
+											<clay:icon symbol="caret-bottom" />
+										</button>
+										<div class="dropdown-menu">
+											<a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
+											<a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
+										</div>
+									</div>
+								</div>
+								<core_rt:if test='${not isCrDisabledForProjectBU}'>
+								<div class="btn-group" role="group" id="clearingRequest">
+									<button id="createClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${not empty project.clearingRequestId}">d-none</core_rt:if>"
+									    <core_rt:if test = "${(project.clearingState eq 'CLOSED') || !writeAccessUser}">
+											disabled="disabled"
+										</core_rt:if>
+										>
+										<liferay-ui:message key="create.clearing.request" />
+									</button>
+									<button id="viewClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${empty project.clearingRequestId}">d-none</core_rt:if>"
+										data-clearing-request-id="${project.clearingRequestId}">
+										<liferay-ui:message key="view.clearing.request" />
+									</button>
+								</div>
+								</core_rt:if>
+							</div>
+							<div class="list-group-companion" data-belong-to="tab-attachmentUsages">
+								<core_rt:if test="${writeAccessUser}">
+									<div class="btn-group" role="group">
+										<button id="saveAttachmentUsagesButton" type="button" class="btn btn-secondary"><liferay-ui:message key="save.usages" /></button>
+									</div>
+								</core_rt:if>
+							</div>
+							<div class="list-group-companion" data-belong-to="tab-ECC">
+								<div class="btn-group" role="group">
+									<button id="exportReleasesSpreadsheetECCButton" type="button" class="btn btn-secondary"><liferay-ui:message key="export.spreadsheet" /></button>
+								</div>
+							</div>
+							<div class="list-group-companion" data-belong-to="tab-Obligations">
+								<core_rt:if test="${isProjectObligationsEnabled and isObligationPresent}">
+                                <div class="btn-group" role="group">
+								    <div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
+									    <a class="nav-item nav-link active" id="pills-obligations-tab" data-toggle="pill" href="#pills-obligationsView" role="tab" aria-controls="pills-obligationsView" aria-selected="true">
+								        <liferay-ui:message key="obligations.view" /></a>
+                                        <a class="nav-item nav-link" id="pills-releases-tab" data-toggle="pill" href="#pills-releasesView" role="tab" aria-controls="pills-releasesView" aria-selected="false">
+                                        <liferay-ui:message key="release.view" /></a>
+                                    </div>
+                                </div>
+								</core_rt:if>
+                                <div class="btn-group" role="group" id="downloadLicenseInfoObl">
+                                    <button id="downloadLicenseInfoButton" type="button" data-toggle="dropdown" class="btn btn-primary dropdown-toggle">
+                                        <liferay-ui:message key="create.project.clearing.report" />
+                                        <clay:icon symbol="caret-bottom" />
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
+                                        <a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
+                                    </div>
+                                </div>
+							</div>
+							<div class="list-group-companion" data-belong-to="tab-Vulnerabilities">
+								<div class="btn-group" role="group">
+									<button id="btnShowVulnerabilityCount" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+										<liferay-ui:message key="show" /> <span data-name="count"></span>
+										<clay:icon symbol="caret-bottom" />
+									</button>
+									<div class="dropdown-menu" aria-labelledby="btnExport">
+										<a class="dropdown-item" data-type="200">200</a>
+										<a class="dropdown-item" data-type="500">500</a>
+										<a class="dropdown-item" data-type="1000">1000</a>
+										<a class="dropdown-item" data-type="-1"><liferay-ui:message key="all" /></a>
+									</div>
+								</div>
+							</div>
+							<div class="list-group-companion" data-belong-to="tab-Attachments">
+								<div class="btn-group" role="group">
+									<button id="downloadAttachmentBundle" type="button" class="btn btn-secondary"><liferay-ui:message key="download.attachment.bundle" /></button>
+								</div>
+							</div>
+							<div class="list-group-companion" data-belong-to="tab-ChangeLogs">
+								<div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
+									<a class="nav-item nav-link active" id="pills-changelogs-list-tab" data-toggle="pill" href="#pills-changelogslist" role="tab" aria-controls="pills-changeloglist" aria-selected="true">
+									<liferay-ui:message key="change.log" /></a>
+									<a class="nav-item nav-link" id="pills-changelogs-view-tab" href="#pills-changelogsView" role="tab" aria-controls="pills-changelogsView" aria-selected="false">
+									<liferay-ui:message key="changes" /></a>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col portlet-title text-truncate" title="${sw360:printProjectName(project)}">
+						<sw360:ProjectName project="${project}"/>
+					</div>
+				</core_rt:if>
+			</div>
+			<div class="row">
+				<div class="col">
+		            <div class="tab-content">
+		                <div id="tab-Summary" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>" >
+		                    <%@include file="/html/projects/includes/projects/summary.jspf" %>
+                            <%@include file="/html/projects/includes/vendors/vendorDetail.jspf" %>
+		                    <core_rt:set var="documentName"><sw360:ProjectName project="${project}"/></core_rt:set>
+		                    <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
+		                    <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
+		                </div>
+		                <div id="tab-Administration" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Administration'}">active show</core_rt:if>">
+		                    <%@include file="/html/projects/includes/projects/administration.jspf" %>
+		                </div>
+		                <div id="tab-licenseClearing" class="tab-pane <core_rt:if test="${selectedTab == 'tab-licenseClearing'}">active show</core_rt:if>"> 
+		                    <jsp:include page="/html/projects/includes/projects/clearingStatus.jsp" />
+		                </div>
+		                <core_rt:if test="${inProjectDetailsContext}">
+			                <div id="tab-attachmentUsages" class="tab-pane <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active show</core_rt:if>">
+			                    <%@include file="/html/projects/includes/attachmentUsages.jspf" %>
+			                </div>
+		                </core_rt:if>
+		                <core_rt:if test="${isProjectObligationsEnabled}">
+		                    <div id="tab-Obligations"  class="tab-pane <core_rt:if test="${selectedTab == 'tab-Obligations'}">active show</core_rt:if>">
+		                        <%@ include file="/html/utils/includes/pageSpinner.jspf" %>
+		                    </div>
+		                </core_rt:if>
+		                <div id="tab-ECC" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ECC'}">active show</core_rt:if>">
+		                    <%@include file="/html/projects/includes/projects/eccStatus.jspf" %>
+		                </div>
+		                <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
+		                    <jsp:include page="/html/utils/includes/attachmentsDetail.jsp" />
+		                </div>
+		                <core_rt:if test="${inProjectDetailsContext}">
+                            <div id="tab-Vulnerabilities" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active show</core_rt:if>">
+                                <%@include file="/html/utils/includes/vulnerabilityModal.jspf" %>
+                                <ul class="nav nav-tabs font-weight-bold border-bottom" role="tablist">
+                                    <li class="nav-item border rounded border-bottom-0"><a class="nav-link active" id="parentProject-tab" data-toggle="tab" href="#parentProject" role="tab"
+                                        aria-controls="parentProject" aria-selected="true"><sw360:ProjectName project="${project}" /></a></li>
+                                    <core_rt:forEach var="subprojectLink" items="${allSubProjectLink}">
+                                    <core_rt:if test="${subprojectLink.id != project.id}">
+                                        <li class="nav-item border rounded border-bottom-0"><a class="nav-link" id="subProject-${subprojectLink.id}-tab" data-toggle="tab"
+                                            href="#subProject-${subprojectLink.id}" role="tab" aria-controls="subProject-${subprojectLink.id}" aria-selected="false"><sw360:out value="${subprojectLink.name}" />  (<sw360:out value="${subprojectLink.version}" />)</a>
+                                        </li>
+                                        </core_rt:if>
+                                    </core_rt:forEach>
+                                </ul>
+                                <div class="tab-content">
+                                    <div class="tab-pane fade show active" id="parentProject" role="tabpanel" aria-labelledby="parentProject-tab">
+                                        <%@include file="/html/projects/includes/projects/vulnerabilities.jsp"%>
+                                    </div>
+                                    <core_rt:forEach var="subprojectLink" items="${allSubProjectLink}">
+                                     <core_rt:if test="${subprojectLink.id != project.id}">
+                                        <div class="tab-pane fade subproject" id="subProject-${subprojectLink.id}" role="tabpanel" aria-labelledby="subProject-${subprojectLink.id}-tab">
+                                            <%@include file="/html/projects/includes/projects/vulnerabilitiesFetch.jspf"%>
+                                        </div>
+                                        </core_rt:if>
+                                    </core_rt:forEach>
+                                </div>
+                            </div>
+                        </core_rt:if>
+		                <div id="tab-ChangeLogs" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active show</core_rt:if>">
+			                <jsp:include page="/html/changelogs/elementView.jsp" />
+		                </div>
+		            </div>
+		        </div>
+		    </div>
+        </div>
+    </div>
+</div>
+<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
+
+<jsp:include page="/html/projects/includes/searchProjects.jsp" />
+
+<div class="dialogs auto-dialogs"></div>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+	document.title = $("<span></span>").html("<sw360:ProjectName project="${project}"/> - " + document.title).text();
+
+	require(['jquery', 'modules/listgroup', 'utils/link'], function($, listgroup, linkutil) {
+		listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
+	    if (window.history.replaceState) {
+	        window.history.replaceState(null, document.title, linkutil.to('project', 'show', "${project.id}"));
+	    }
+	});
+	
+	$.ajax({
+        url: '<%=obligationviewurl%>',
+        type: "GET",
+        success: function(result){
+            $("#tab-Obligations").html("").append(result);
+      }});
+</script>

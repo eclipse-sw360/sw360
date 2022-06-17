@@ -1,21 +1,25 @@
 /*
- * Copyright Siemens AG, 2016-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2016-2017, 2019. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.meta_data.FieldMetaData;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
@@ -24,10 +28,12 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.tags.urlutils.LinkedReleaseRenderer;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.add;
@@ -47,6 +53,8 @@ public class DisplayProjectChanges extends UserAwareTag {
     private String tableClasses = "";
     private String idPrefix = "";
     private String defaultLicenseInfoHeaderText = PortalConstants.DEFAULT_LICENSE_INFO_HEADER_TEXT_FOR_DISPALY;
+    private String defaultObligationsText = PortalConstants.DEFAULT_OBLIGATIONS_TEXT_FOR_DISPALY;
+    private boolean isClosedModeration = false;
 
     public void setActual(Project actual) {
         this.actual = prepareLicenseInfoHeaderTextInProject(actual);
@@ -72,6 +80,13 @@ public class DisplayProjectChanges extends UserAwareTag {
         this.defaultLicenseInfoHeaderText = defaultLicenseInfoHeaderText;
     }
 
+    public void setDefaultObligationsText(String defaultObligationsText) {
+        this.defaultObligationsText = defaultObligationsText;
+    }
+
+    public void setIsClosedModeration(boolean isClosedModeration) {
+        this.isClosedModeration = isClosedModeration;
+    }
 
     public int doStartTag() throws JspException {
 
@@ -106,19 +121,21 @@ public class DisplayProjectChanges extends UserAwareTag {
 
                     default:
                         FieldMetaData fieldMetaData = Project.metaDataMap.get(field);
-                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "");
+                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "", isClosedModeration);
                 }
             }
 
             String renderString = display.toString();
+            HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
 
             if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<h4> No changes in basic fields </h4>";
+                renderString = "<div class=\"alert alert-info\">"+LanguageUtil.get(resourceBundle,"no.changes.in.basic.fields")+"</div>";
             } else {
                 renderString = String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
-                        + "<thead><tr><th colspan=\"4\"> Changes for Basic fields</th></tr>"
+                        + "<thead>"
                         + String.format("<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
-                        FIELD_NAME, CURRENT_VAL, DELETED_VAL, SUGGESTED_VAL)
+                        LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"), LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
                         + renderString + "</tbody></table>";
             }
 
@@ -137,6 +154,8 @@ public class DisplayProjectChanges extends UserAwareTag {
     }
 
     private void renderLinkedProjects(StringBuilder display, User user) {
+       HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+       ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
        if (ensureSomethingTodoAndNoNullLinkedProjects()) {
 
             Set<String> changedProjectIds = Sets.intersection(additions.getLinkedProjects().keySet(),
@@ -150,8 +169,13 @@ public class DisplayProjectChanges extends UserAwareTag {
 
             Set<String> addedProjectIds = Sets.difference(additions.getLinkedProjects().keySet(), changedProjectIds);
 
-            renderProjectLinkList(display, deletions.getLinkedProjects(), removedProjectIds, "Removed Project Links", user);
-            renderProjectLinkList(display, additions.getLinkedProjects(), addedProjectIds, "Added Project Links", user);
+            if (isClosedModeration) {
+                addedProjectIds = Sets.difference(additions.getLinkedProjects().keySet(),
+                        deletions.getLinkedProjects().keySet());
+                removedProjectIds = Sets.difference(deletions.getLinkedProjects().keySet(), linkedProjectsInDb);
+            }
+            renderProjectLinkList(display, deletions.getLinkedProjects(), removedProjectIds, LanguageUtil.get(resourceBundle,"removed.project.links"), user);
+            renderProjectLinkList(display, additions.getLinkedProjects(), addedProjectIds, LanguageUtil.get(resourceBundle,"added.project.links"), user);
             renderProjectLinkListCompare(
                     display,
                     actual.getLinkedProjects(),
@@ -175,13 +199,13 @@ public class DisplayProjectChanges extends UserAwareTag {
     }
 
     private void renderProjectLinkList(StringBuilder display,
-                                       Map<String, ProjectRelationship> projectRelationshipMap,
+                                       Map<String, ProjectProjectRelationship> projectRelationshipMap,
                                        Set<String> projectIds,
                                        String msg,
                                        User user) {
         if (projectIds.isEmpty()) return;
 
-        Map<String, ProjectRelationship> filteredMap = new HashMap<>();
+        Map<String, ProjectProjectRelationship> filteredMap = new HashMap<>();
         for(String id : projectIds){
             filteredMap.put(id, projectRelationshipMap.get(id));
         }
@@ -190,16 +214,20 @@ public class DisplayProjectChanges extends UserAwareTag {
             ProjectService.Iface client = new ThriftClients().makeProjectClient();
             for (ProjectLink projectLink : client.getLinkedProjects(filteredMap, user)) {
                 candidate.append(
-                        String.format("<tr><td>%s</td><td>%s</td></tr>", projectLink.getName(), projectLink.getRelation()));
+                        String.format("<tr><td>%s</td><td>%s</td><td>%s</td></tr>", projectLink.getName(), projectLink.getRelation(), projectLink.isEnableSvm()));
             }
         } catch (TException ignored) {
         }
         String tableContent = candidate.toString();
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+
         if (!tableContent.isEmpty()) {
 
             display.append(String.format("<table class=\"%s\" id=\"%s%s\" >", tableClasses, idPrefix, msg));
-            display.append(String.format("<thead><tr><th colspan=\"2\">%s</th></tr>" +
-                    "<tr><th>Project Name</th><th>Project Relationship</th></tr></thead><tbody>", msg));
+            display.append(String.format("<thead><tr><th colspan=\"3\">%s</th></tr>" +
+                    "<tr><th>"+LanguageUtil.get(resourceBundle,"project.name")+"</th><th>"+LanguageUtil.get(resourceBundle,"project.relationship")+"</th>" +
+                    "<th>"+LanguageUtil.get(resourceBundle,"enable.svm") + "</th>"+ "</tr></thead><tbody>", msg));
             display.append(tableContent);
             display.append("</tbody></table>");
         }
@@ -207,9 +235,9 @@ public class DisplayProjectChanges extends UserAwareTag {
 
 
     private void renderProjectLinkListCompare(StringBuilder display,
-                                              Map<String, ProjectRelationship> oldProjectRelationshipMap,
-                                              Map<String, ProjectRelationship> deleteProjectRelationshipMap,
-                                              Map<String, ProjectRelationship> updateProjectRelationshipMap,
+                                              Map<String, ProjectProjectRelationship> oldProjectRelationshipMap,
+                                              Map<String, ProjectProjectRelationship> deleteProjectRelationshipMap,
+                                              Map<String, ProjectProjectRelationship> updateProjectRelationshipMap,
                                               Set<String> projectIds, User user) {
         if (projectIds.isEmpty()) return;
 
@@ -217,39 +245,57 @@ public class DisplayProjectChanges extends UserAwareTag {
         try {
             ProjectService.Iface client = new ThriftClients().makeProjectClient();
 
-            Map<String, ProjectRelationship> changeMap= new HashMap<>();
+            Map<String, ProjectProjectRelationship> changeMap= new HashMap<>();
 
             for (String projectId : projectIds) {
-                ProjectRelationship updateProjectRelationship = updateProjectRelationshipMap.get(projectId);
-                ProjectRelationship oldProjectRelationship = oldProjectRelationshipMap.get(projectId);
+                ProjectRelationship updateProjectRelationship = updateProjectRelationshipMap.get(projectId).getProjectRelationship();
+                ProjectRelationship oldProjectRelationship = oldProjectRelationshipMap.get(projectId).getProjectRelationship();
+                ProjectRelationship deleteProjectRelationship = deleteProjectRelationshipMap.get(projectId).getProjectRelationship();
 
-                if (!updateProjectRelationship.equals(oldProjectRelationship)) {
+                if (!isClosedModeration && !updateProjectRelationship.equals(oldProjectRelationship)) {
                     changeMap.put(projectId, oldProjectRelationshipMap.get(projectId));
+                }
+                
+                if (isClosedModeration && !updateProjectRelationship.equals(deleteProjectRelationship)) {
+                    changeMap.put(projectId, deleteProjectRelationshipMap.get(projectId));
                 }
             }
             //! This code doubling is done to reduce the database queries. I.e. one big query instead of multiple small ones
             for (ProjectLink projectLink : client.getLinkedProjects(changeMap, user)) {
-                ProjectRelationship updateProjectRelationship = updateProjectRelationshipMap.get(projectLink.getId());
-                ProjectRelationship deleteProjectRelationship = deleteProjectRelationshipMap.get(projectLink.getId());
-                ProjectRelationship oldProjectRelationship = oldProjectRelationshipMap.get(projectLink.getId());
-                candidate.append(String.format("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+                ProjectRelationship updateProjectRelationship = updateProjectRelationshipMap.get(projectLink.getId()).getProjectRelationship();
+                ProjectRelationship deleteProjectRelationship = deleteProjectRelationshipMap.get(projectLink.getId()).getProjectRelationship();
+                ProjectRelationship oldProjectRelationship = oldProjectRelationshipMap.get(projectLink.getId()).getProjectRelationship();
+                boolean updateEnableSvm = updateProjectRelationshipMap.get(projectLink.getId()).isEnableSvm();
+                boolean deleteEnableSvm = deleteProjectRelationshipMap.get(projectLink.getId()).isEnableSvm();
+                boolean oldEnableSvm = oldProjectRelationshipMap.get(projectLink.getId()).isEnableSvm();
+
+                candidate.append(String.format("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
                         projectLink.getName(),
                         oldProjectRelationship,
                         deleteProjectRelationship,
-                        updateProjectRelationship));
+                        updateProjectRelationship,
+                        oldEnableSvm,
+                        deleteEnableSvm,
+                        updateEnableSvm));
             }
 
         } catch (TException ignored) {
         }
 
         String tableContent = candidate.toString();
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+
         if (!tableContent.isEmpty()) {
             display.append(String.format("<table class=\"%s\" id=\"%sUpdated\" >", tableClasses, idPrefix));
-            display.append("<thead><tr><th colspan=\"4\">Updated Project Links</th></tr>" +
-                    "<tr><th>Project Name</th>" +
-                    "<th>Current Project Relationship</th>" +
-                    "<th>Deleted Project Relationship</th>" +
-                    "<th>Suggested Project Relationship</th></tr>" +
+            display.append("<thead><tr><th colspan=\"7\">"+LanguageUtil.get(resourceBundle,"updated.project.links")+"</th></tr>" +
+                    "<tr><th>"+LanguageUtil.get(resourceBundle,"project.name")+"</th>" +
+                    "<th>"+LanguageUtil.get(resourceBundle,"current.project.relationship")+"</th>" +
+                    "<th>"+LanguageUtil.get(resourceBundle,"deleted.project.relationship")+"</th>" +
+                    "<th>"+LanguageUtil.get(resourceBundle,"suggested.project.relationship")+"</th>" +
+                    "<th>"+LanguageUtil.get(resourceBundle,"current.linked.project.enable.svm")+"</th>" +
+                    "<th>"+LanguageUtil.get(resourceBundle,"deleted.linked.project.enable.svm")+"</th>" +
+                    "<th>"+LanguageUtil.get(resourceBundle,"suggested.linked.project.enable.svm")+"</th></tr>" +
                     "</thead><tbody>");
             display.append(tableContent);
             display.append("</tbody></table>");
@@ -259,7 +305,9 @@ public class DisplayProjectChanges extends UserAwareTag {
     private void renderReleaseIdToUsage(StringBuilder display, User user) {
 
        if (ensureSomethingTodoAndNoNullReleaseIdUsage()) {
-
+           if (actual.getReleaseIdToUsage() == null) {
+               actual.setReleaseIdToUsage(new HashMap<>());
+           }
            Set<String> changedReleaseIds = Sets.intersection(
                    additions.getReleaseIdToUsage().keySet(),
                    deletions.getReleaseIdToUsage().keySet());
@@ -276,13 +324,21 @@ public class DisplayProjectChanges extends UserAwareTag {
                    additions.getReleaseIdToUsage().keySet(),
                    changedReleaseIds);
 
+           if (isClosedModeration) {
+                addedReleaseIds = Sets.difference(additions.getReleaseIdToUsage().keySet(),
+                        deletions.getReleaseIdToUsage().keySet());
+                removedReleaseIds = Sets.difference(deletions.getReleaseIdToUsage().keySet(),
+                        CommonUtils.nullToEmptySet(actual.getReleaseIdToUsage().keySet()));
+           }
            LinkedReleaseRenderer renderer = new LinkedReleaseRenderer(display, tableClasses, idPrefix, user);
-           renderer.renderReleaseLinkList(display, deletions.getReleaseIdToUsage(), removedReleaseIds, "Removed Release Links");
-           renderer.renderReleaseLinkList(display, additions.getReleaseIdToUsage(), addedReleaseIds, "Added Release Links");
+           HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+           ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+           renderer.renderReleaseLinkList(display, deletions.getReleaseIdToUsage(), removedReleaseIds, LanguageUtil.get(resourceBundle,"removed.release.links"), request);
+           renderer.renderReleaseLinkList(display, additions.getReleaseIdToUsage(), addedReleaseIds, LanguageUtil.get(resourceBundle,"added.release.links"), request);
            renderer.renderReleaseLinkListCompare(display,
                    actual.getReleaseIdToUsage(),
                    deletions.getReleaseIdToUsage(),
-                   additions.getReleaseIdToUsage(), changedReleaseIds);
+                   additions.getReleaseIdToUsage(), changedReleaseIds, request, isClosedModeration);
         }
     }
 
@@ -311,6 +367,23 @@ public class DisplayProjectChanges extends UserAwareTag {
         } else {
             // for a custom text escape html properly
             modifiedProject.setLicenseInfoHeaderText(StringEscapeUtils.escapeHtml(modifiedProject.getLicenseInfoHeaderText()).replace("\n", "<br>") );
+        }
+
+        return modifiedProject;
+    }
+
+    private Project prepareObligationsTextInProject(Project project) {
+        Project modifiedProject = project.deepCopy();
+
+        String defaultTextAsHtmlForDisplay = "<span title=\"" + defaultObligationsText + "\">" + PortalConstants.DEFAULT_OBLIGATIONS_TEXT_FOR_DISPALY + "</span>";
+
+        if(!modifiedProject.isSetObligationsText()) {
+            // if the project contains the default clearing summary text, we wrap it into an html span-element such that the default text is given as a hover text.
+            // this is only done for displaying it in a three-way merge in a moderation request.
+            modifiedProject.setObligationsText(defaultTextAsHtmlForDisplay);
+        } else {
+            // for a custom text escape html properly
+            modifiedProject.setObligationsText(StringEscapeUtils.escapeHtml(modifiedProject.getObligationsText()).replace("\n", "<br>") );
         }
 
         return modifiedProject;

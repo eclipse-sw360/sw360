@@ -2,20 +2,21 @@
  * Copyright Siemens AG, 2015-2017. Part of the SW360 Portal Project,
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.portlets;
 
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.model.Layout;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.service.LayoutLocalServiceUtil;
-import com.liferay.portal.service.PortletLocalServiceUtil;
+import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
+import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
+
+import org.eclipse.sw360.portal.portlets.admin.UserPortlet;
 import org.eclipse.sw360.portal.portlets.components.ComponentPortlet;
 import org.eclipse.sw360.portal.portlets.licenses.LicensesPortlet;
 import org.eclipse.sw360.portal.portlets.moderation.ModerationPortlet;
@@ -38,7 +39,8 @@ public enum LinkToPortletConfiguration {
     PROJECTS(ProjectPortlet.class),
     LICENSES(LicensesPortlet.class),
     MODERATION(ModerationPortlet.class),
-    VULNERABILITIES(VulnerabilitiesPortlet.class);
+    VULNERABILITIES(VulnerabilitiesPortlet.class),
+    USERS(UserPortlet.class);
 
     private final Class<? extends Sw360Portlet> portletClass;
 

@@ -1,25 +1,32 @@
 /*
  * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.users;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
+import org.ektorp.http.HttpClient;
+
+import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
@@ -31,16 +38,20 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
  */
 public class UserHandler implements UserService.Iface {
 
-    private static final Logger log = Logger.getLogger(UserHandler.class);
+    private static final Logger log = LogManager.getLogger(UserHandler.class);
 
-    UserDatabaseHandler db;
+    private UserDatabaseHandler db;
 
     public UserHandler() throws IOException {
-        db = new UserDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_USERS);
+        db = new UserDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_USERS);
+    }
+
+    public UserHandler(Supplier<CloudantClient> client, Supplier<HttpClient> httpclient, String userDbName) throws IOException {
+        db = new UserDatabaseHandler(client, httpclient, userDbName);
     }
 
     @Override
-    public User getUser(String id) throws TException {
+    public User getUser(String id) {
         return db.getUser(id);
     }
 
@@ -60,16 +71,25 @@ public class UserHandler implements UserService.Iface {
         if (user == null) {
             user = db.getByExternalId(externalId);
         }
+        if (user != null && user.isDeactivated()) {
+            return null;
+        }
         return user;
     }
 
     @Override
-    public List<User> searchUsers(String searchText) throws TException {
+    public User getByApiToken(String token) throws TException {
+        assertNotEmpty(token);
+        return db.getByApiToken(token);
+    }
+
+    @Override
+    public List<User> searchUsers(String searchText) {
         return db.searchUsers(searchText);
     }
 
     @Override
-    public List<User> getAllUsers() throws TException {
+    public List<User> getAllUsers() {
         return db.getAll();
     }
 
@@ -98,5 +118,26 @@ public class UserHandler implements UserService.Iface {
     public String getDepartmentByEmail(String email) throws TException {
         User user = getByEmail(email);
         return user != null ? user.getDepartment() : null;
+    }
+
+    @Override
+    public Map<PaginationData, List<User>> getUsersWithPagination(User user, PaginationData pageData)
+            throws TException {
+        return db.getUsersWithPagination(pageData);
+    }
+
+    @Override
+    public List<User> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
+        return db.search(text, subQueryRestrictions);
+    }
+
+    @Override
+    public Set<String> getUserDepartments() throws TException {
+        return db.getUserDepartments();
+    }
+
+    @Override
+    public Set<String> getUserEmails() throws TException {
+        return db.getUserEmails();
     }
 }

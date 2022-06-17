@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
@@ -104,6 +103,22 @@ public class DatabaseRepository<T> extends CouchDbRepositorySupport<T> {
         return queryForIds(query);
     }
 
+    public Set<String> queryForIdsOnlyComplexKey(String queryName, String key) {
+        return queryForIdsOnlyComplexKeys(queryName, Collections.singleton(key));
+    }
+
+    public Set<String> queryForIdsOnlyComplexKeys(String queryName, Set<String> keys) {
+        Set<String> queryResult = new HashSet<>();
+        for (String key : keys) {
+            // If there is no value for the key just search for the key occurrence
+            // \ufff0 is used to ignore all other complex keys
+            ComplexKey startKeys = ComplexKey.of(key);
+            ComplexKey endKeys = ComplexKey.of(key, "\ufff0");
+            queryResult.addAll(queryForIds(queryName, startKeys, endKeys));
+        }
+        return queryResult;
+    }
+
     private static Set<ComplexKey> createComplexKeys(Map.Entry<String, Set<String>> key) {
         return key.getValue().stream().map(v -> ComplexKey.of(key.getKey(), v)).collect(Collectors.toSet());
     }
@@ -114,6 +129,11 @@ public class DatabaseRepository<T> extends CouchDbRepositorySupport<T> {
     }
 
     public Set<String> queryForIds(String queryName, String startKey, String endKey) {
+        ViewQuery query = createQuery(queryName).startKey(startKey).endKey(endKey);
+        return queryForIds(query);
+    }
+
+    public Set<String> queryForIds(String queryName, ComplexKey startKey, ComplexKey endKey) {
         ViewQuery query = createQuery(queryName).startKey(startKey).endKey(endKey);
         return queryForIds(query);
     }
@@ -187,6 +207,10 @@ public class DatabaseRepository<T> extends CouchDbRepositorySupport<T> {
 
     public List<T> get(Collection<String> ids) {
         return connector.get(type, ids);
+    }
+
+    public List<T> get(Collection<String> ids, boolean ignoreNotFound) {
+        return connector.get(type, ids, ignoreNotFound);
     }
 
 

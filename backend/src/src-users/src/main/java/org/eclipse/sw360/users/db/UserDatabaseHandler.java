@@ -1,18 +1,20 @@
 /*
  * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.users.db;
 
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.db.UserSearchHandler;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftValidate;
@@ -20,8 +22,12 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.http.HttpClient;
 
+import com.cloudant.client.api.CloudantClient;
+
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
@@ -36,15 +42,25 @@ public class UserDatabaseHandler {
     /**
      * Connection to the couchDB database
      */
-    private DatabaseConnector db;
+    private DatabaseConnectorCloudant db;
+    private DatabaseConnector dbConnector;
     private UserRepository repository;
     private UserSearchHandler userSearchHandler;
 
-    public UserDatabaseHandler(Supplier<HttpClient> httpClient, String dbName) throws IOException {
+    public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
-        db = new DatabaseConnector(httpClient, dbName);
+        db = new DatabaseConnectorCloudant(httpClient, dbName);
+        dbConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
         repository = new UserRepository(db);
-        userSearchHandler = new UserSearchHandler(db);
+        userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
+    }
+
+    public UserDatabaseHandler(Supplier<CloudantClient> httpClient,Supplier<HttpClient> client, String dbName) throws IOException {
+        // Create the connector
+        db = new DatabaseConnectorCloudant(httpClient, dbName);
+        dbConnector = new DatabaseConnector(client, dbName);
+        repository = new UserRepository(db);
+        userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
     }
 
     public User getByEmail(String email) {
@@ -93,5 +109,25 @@ public class UserDatabaseHandler {
 
     public User getByExternalId(String externalId) {
         return repository.getByExternalId(externalId);
+    }
+
+    public User getByApiToken(String token) {
+        return repository.getByApiToken(token);
+    }
+
+    public Set<String> getUserDepartments() {
+        return repository.getUserDepartments();
+    }
+
+    public Set<String> getUserEmails() {
+        return repository.getUserEmails();
+    }
+
+    public List<User> search(String text, Map<String, Set<String>> subQueryRestrictions) {
+        return userSearchHandler.search(text, subQueryRestrictions);
+    }
+
+    public Map<PaginationData, List<User>> getUsersWithPagination(PaginationData pageData) {
+        return repository.getUsersWithPagination(pageData);
     }
 }

@@ -1,68 +1,136 @@
 /*
  * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.portlets.moderation;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONException;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.model.Organization;
 import com.liferay.portal.kernel.servlet.SessionMessages;
-import com.liferay.portal.model.Organization;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
+import org.eclipse.sw360.commonIO.SampleOptions;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.DateRange;
+import org.eclipse.sw360.datahandler.permissions.DocumentPermissions;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
+import org.eclipse.sw360.portal.common.ChangeLogsPortletUtils;
+import org.eclipse.sw360.portal.common.ErrorMessages;
+import org.eclipse.sw360.portal.common.JsonHelpers;
 import org.eclipse.sw360.portal.common.PortalConstants;
+import org.eclipse.sw360.portal.common.PortletUtils;
+import org.eclipse.sw360.portal.common.ThriftJsonSerializer;
+import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
+import org.eclipse.sw360.portal.common.datatables.PaginationParser;
+import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.portlets.FossologyAwarePortlet;
+import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.eclipse.sw360.portal.users.UserUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TEnum;
+import org.apache.thrift.TException;
 import org.jetbrains.annotations.NotNull;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 import javax.portlet.*;
+import javax.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Strings.nullToEmpty;
+import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONArray;
+import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONObject;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNotNullEmptyOrWhitespace;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
+import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 
-/**
- * Moderation portlet implementation
- *
- * @author daniele.fognini@tngtech.com
- * @author johannes.najjar@tngtech.com
- * @author alex.borodin@evosoft.com
- */
+@org.osgi.service.component.annotations.Component(
+    immediate = true,
+    properties = {
+        "/org/eclipse/sw360/portal/portlets/base.properties",
+        "/org/eclipse/sw360/portal/portlets/default.properties"
+    },
+    property = {
+        "javax.portlet.name=" + MODERATION_PORTLET_NAME,
+
+        "javax.portlet.display-name=Moderations",
+        "javax.portlet.info.short-title=Moderations",
+        "javax.portlet.info.title=Moderations",
+        "javax.portlet.resource-bundle=content.Language",
+        "javax.portlet.init-param.view-template=/html/moderation/view.jsp",
+    },
+    service = Portlet.class,
+    configurationPolicy = ConfigurationPolicy.REQUIRE
+)
 public class ModerationPortlet extends FossologyAwarePortlet {
 
-    private static final Logger log = Logger.getLogger(ModerationPortlet.class);
+    private static final Logger log = LogManager.getLogger(ModerationPortlet.class);
+    private static final ImmutableList<ModerationRequest._Fields> MODERATION_FILTERED_FIELDS = ImmutableList.of(
+            ModerationRequest._Fields.TIMESTAMP,
+            ModerationRequest._Fields.COMPONENT_TYPE,
+            ModerationRequest._Fields.DOCUMENT_NAME,
+            ModerationRequest._Fields.REQUESTING_USER,
+            ModerationRequest._Fields.REQUESTING_USER_DEPARTMENT,
+            ModerationRequest._Fields.MODERATORS,
+            ModerationRequest._Fields.MODERATION_STATE);
+
+    private static final int MODERATION_NO_SORT = -1;
 
     @Override
     public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
@@ -71,14 +139,241 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             removeMeFromModerators(request, response);
         } else if (PortalConstants.DELETE_MODERATION_REQUEST.equals(action)) {
             serveDeleteModerationRequest(request, response);
+        } else if (PortalConstants.ADD_COMMENT.equals(action)) {
+            addCommentToClearingRequest(request, response);
+        } else if (PortalConstants.LOAD_PROJECT_INFO.equals(action)) {
+            getProjectDetailsForCR(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
+        } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
+            ChangeLogsPortletUtils changeLogsPortletUtilsPortletUtils = PortletUtils
+                    .getChangeLogsPortletUtils(thriftClients);
+            JSONObject dataForChangeLogs = changeLogsPortletUtilsPortletUtils.serveResourceForChangeLogs(request,
+                    response, action);
+            writeJSON(request, response, dataForChangeLogs);
+        } else if (PortalConstants.LOAD_OPEN_MODERATION_REQUEST.equals(action)) {
+            serveModerationList(request, response, true);
+        } else if (PortalConstants.LOAD_CLOSED_MODERATION_REQUEST.equals(action)) {
+            serveModerationList(request, response, false);
         }
+    }
+
+    private void serveModerationList(ResourceRequest request, ResourceResponse response, boolean open) {
+        HttpServletRequest originalServletRequest = PortalUtil
+                .getOriginalServletRequest(PortalUtil.getHttpServletRequest(request));
+        PaginationParameters paginationParameters = PaginationParser.parametersFrom(originalServletRequest);
+        PortletUtils.handlePaginationSortOrder(request, paginationParameters, MODERATION_FILTERED_FIELDS,
+                MODERATION_NO_SORT);
+        PaginationData pageData = new PaginationData();
+        pageData.setRowsPerPage(paginationParameters.getDisplayLength());
+        pageData.setDisplayStart(paginationParameters.getDisplayStart());
+        pageData.setAscending(paginationParameters.isAscending().get());
+        if(paginationParameters.getSortingColumn().isPresent()) {
+            int sortParam = paginationParameters.getSortingColumn().get();
+            if(sortParam == 0 &&  Integer.valueOf(paginationParameters.getEcho()) == 1) {
+                pageData.setSortColumnNumber(-1);
+            } else {
+                pageData.setSortColumnNumber(paginationParameters.getSortingColumn().get());
+            }
+        } else {
+            pageData.setSortColumnNumber(-1);
+        }
+        Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData = getFilteredModerationList(request,
+                pageData, open);
+        List<ModerationRequest> moderations = new ArrayList<>();
+        PaginationData pgDt = new PaginationData();
+        if (!CommonUtils.isNullOrEmptyMap(modRequestsWithPageData)) {
+            moderations = modRequestsWithPageData.values().iterator().next();
+            pgDt = modRequestsWithPageData.keySet().iterator().next();
+        }
+        JSONArray jsonOpenModerations = getModerationData(moderations, paginationParameters, request, open);
+        JSONObject jsonResult = createJSONObject();
+        final Map<String, Long> countByModerationState = getCountByModerationState(request);
+        long openModRequestCount = countByModerationState.get("OPEN") == null ? 0
+                : countByModerationState.get("OPEN");
+        long closedModRequestCount = countByModerationState.get("CLOSED") == null ? 0
+                : countByModerationState.get("CLOSED");
+        Map<String, Set<String>> filterMap = getModerationFilterMap(request);
+        long noOfRecords = filterMap.isEmpty() ? (open ? openModRequestCount : closedModRequestCount)
+                : pgDt.getTotalRowCount();
+        jsonResult.put(DATATABLE_RECORDS_TOTAL, noOfRecords);
+        jsonResult.put(DATATABLE_RECORDS_FILTERED, noOfRecords);
+        jsonResult.put(DATATABLE_DISPLAY_DATA, jsonOpenModerations);
+        jsonResult.put(CLOSED_MODERATION_REQUESTS, closedModRequestCount);
+        jsonResult.put(OPEN_MODERATION_REQUESTS, openModRequestCount);
+        jsonResult.put(MODERATION_REQUESTING_USER_DEPARTMENTS, getRequestingUserDepts());
+        try {
+            writeJSON(request, response, jsonResult);
+        } catch (IOException e) {
+            log.error("Problem rendering list of open moderation", e);
+        }
+    }
+
+    private Map<String, Long> getCountByModerationState(ResourceRequest request) {
+        Map<String, Long> countByModerationState = Maps.newHashMap();
+        ModerationService.Iface client = thriftClients.makeModerationClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        try {
+            countByModerationState = client.getCountByModerationState(user);
+        } catch (TException e) {
+            log.error("Error geeting moderation requests count", e);
+        }
+        return countByModerationState;
+    }
+
+    private Set<String> getRequestingUserDepts() {
+        Set<String> requestingUserDepts = Sets.newHashSet();
+        ModerationService.Iface client = thriftClients.makeModerationClient();
+        try {
+            requestingUserDepts = client.getRequestingUserDepts();
+        } catch (TException e) {
+            log.error("Error geeting requesting user departments", e);
+        }
+        return requestingUserDepts;
+    }
+
+    private JSONArray getModerationData(List<ModerationRequest> moderationList,
+            PaginationParameters paginationParameters, ResourceRequest request, boolean open) {
+        Map<String, Set<String>> filterMap = getModerationFilterMap(request);
+        int count = PortletUtils.getProjectDataCount(paginationParameters, moderationList.size());
+        User user = UserCacheHolder.getUserFromRequest(request);
+        boolean isClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
+        JSONArray moderationRequestData = createJSONArray();
+        final int start = filterMap.isEmpty() ? 0 : paginationParameters.getDisplayStart();
+        for (int i = start; i < count; i++) {
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            ModerationRequest modreq = moderationList.get(i);
+            jsonObject.put("id", modreq.getId());
+            jsonObject.put("renderTimestamp", modreq.getTimestamp() + "");
+            jsonObject.put("componentType", printEnumValueWithTooltip(request, modreq.getComponentType()));
+            jsonObject.put("documentName", modreq.getDocumentName());
+            jsonObject.put("requestingUser", UserUtils.displayUser(modreq.getRequestingUser(), null));
+            jsonObject.put("requestingUserDepartment", modreq.getRequestingUserDepartment());
+            jsonObject.put("moderators", displayUserCollection(modreq.getModerators()));
+            jsonObject.put("moderationState", printEnumValueWithTooltip(request, modreq.getModerationState()));
+            if (!open) {
+                jsonObject.put("isClearingAdmin", isClearingAdmin);
+            }
+            moderationRequestData.put(jsonObject);
+        }
+
+        return moderationRequestData;
+    }
+
+    private String displayUserCollection(Set<String> values) {
+        if (!CommonUtils.isNotEmpty(values)) {
+            return "";
+        }
+        List<String> valueList = new ArrayList<String>(values);
+        Collections.sort(valueList, String.CASE_INSENSITIVE_ORDER);
+        List<String> resultList = new ArrayList<>();
+
+        for (String email : valueList) {
+            if (!Strings.isNullOrEmpty(email)) {
+                resultList.add(UserUtils.displayUser(email, null));
+            }
+        }
+        return CommonUtils.COMMA_JOINER.join(resultList);
+    }
+
+    private String printEnumValueWithTooltip(ResourceRequest request, TEnum value) {
+        if (value == null) {
+            return "";
+        }
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+                getClass());
+        return "<span class='" + PortalConstants.TOOLTIP_CLASS__CSS + " " + PortalConstants.TOOLTIP_CLASS__CSS + "-"
+                + value.getClass().getSimpleName() + "-" + value.toString() + "' data-content='"
+                + LanguageUtil.get(resourceBundle, value.getClass().getSimpleName() + "-" + value.toString()) + "'>"
+                + LanguageUtil.get(resourceBundle, ThriftEnumUtils.enumToString(value).replace(' ', '.').toLowerCase())
+                + "</span>";
+    }
+
+    private Map<PaginationData, List<ModerationRequest>> getFilteredModerationList(PortletRequest request, PaginationData pageData, boolean open) {
+        ModerationService.Iface client = thriftClients.makeModerationClient();
+        Map<String, Set<String>> filterMap = getModerationFilterMap(request);
+        User user = UserCacheHolder.getUserFromRequest(request);
+        Map<PaginationData, List<ModerationRequest>> moderationRequestsWithPageData = Maps.newHashMap();
+        try {
+            if (filterMap.isEmpty()) {
+                moderationRequestsWithPageData = client.getRequestsByModeratorWithPagination(user, pageData, open);
+            } else {
+                List<ModerationRequest> moderations = client.refineSearch(null, filterMap);
+                moderations = moderations.stream().filter(mr -> mr.getModerators().contains(user.getEmail())).collect(Collectors.toList());
+                Map<Boolean, List<ModerationRequest>> partitionedModerationRequests = moderations.stream()
+                        .collect(Collectors.groupingBy(ModerationPortletUtils::isOpenModerationRequest));
+                List<ModerationRequest> requests = CommonUtils.nullToEmptyList(partitionedModerationRequests.get(open));
+                moderationRequestsWithPageData.put(pageData.setTotalRowCount(requests.size()), requests);
+            }
+        } catch (TException e) {
+            log.error("Could not fetch moderation requests from backend!", e);
+        }
+        return moderationRequestsWithPageData;
     }
 
     private void serveDeleteModerationRequest(ResourceRequest request, ResourceResponse response) throws IOException {
         RequestStatus requestStatus = ModerationPortletUtils.deleteModerationRequest(request, log);
-        serveRequestStatus(request, response, requestStatus, "Problem removing moderation request", log);
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        serveRequestStatus(request, response, requestStatus, LanguageUtil.get(resourceBundle,"problem.removing.moderation.request"), log);
+    }
+
+    private void addCommentToClearingRequest(ResourceRequest request, ResourceResponse response) throws PortletException {
+        RequestStatus requestStatus = ModerationPortletUtils.addCommentToClearingRequest(request, log);
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+        serveRequestStatus(request, response, requestStatus, LanguageUtil.get(resourceBundle,"error.adding.comment.to.clearing.request"), log);
+    }
+
+    private void getProjectDetailsForCR(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
+        User user = UserCacheHolder.getUserFromRequest(request);
+        List<Project> projects;
+        String ids[] = request.getParameterValues("projectIds[]");
+        Boolean isOpenCr = Boolean.parseBoolean(request.getParameter("isOpenCr"));
+        if (ids == null || ids.length == 0) {
+            log.warn("Invalid project Ids!");
+            JSONArray jsonResponse = createJSONArray();
+            writeJSON(request, response, jsonResponse);
+        } else {
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            try {
+                projects = client.getProjectsById(Arrays.asList(ids), user);
+            } catch (TException e) {
+                log.error("Could not fetch project summary from backend!", e);
+                projects = Collections.emptyList();
+            }
+
+            if (isOpenCr) {
+                projects = getWithFilledClearingStateSummary(client, projects, user);
+            }
+
+            JSONArray jsonResponse = createJSONArray();
+            ThriftJsonSerializer thriftJsonSerializer = new ThriftJsonSerializer();
+            for (Project project : projects) {
+                try {
+                    JSONObject row = createJSONObject();
+                    row.put("id", project.getId());
+                    row.put("crId", project.getClearingRequestId());
+                    row.put("name", SW360Utils.printName(project));
+                    if (isOpenCr && null != project.getReleaseClearingStateSummary()) {
+                        row.put("clearing", JsonHelpers.toJson(project.getReleaseClearingStateSummary(), thriftJsonSerializer));
+                    }
+                    String babl = CommonUtils.nullToEmptyMap(project.getAdditionalData()).get("BA BL");
+                    row.put("bu", CommonUtils.isNotNullEmptyOrWhitespace(babl) ? babl : CommonUtils.nullToEmptyString(project.getBusinessUnit()));
+                    jsonResponse.put(row);
+                } catch (JSONException e) {
+                    log.error("cannot serialize json", e);
+                }
+            }
+            writeJSON(request, response, jsonResponse);
+        }
+    }
+
+    private List<Project> getWithFilledClearingStateSummary(ProjectService.Iface client, List<Project> projects, User user) {
+        try {
+            return client.fillClearingStateSummary(projects, user);
+        } catch (TException e) {
+            log.error("Could not get summary of release clearing states for projects!", e);
+            return projects;
+        }
     }
 
     private void removeMeFromModerators(ResourceRequest request, ResourceResponse response){
@@ -97,10 +392,14 @@ public class ModerationPortlet extends FossologyAwarePortlet {
 
     @Override
     public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        if (PAGENAME_EDIT.equals(request.getParameter(PAGENAME))) {
+        final String pageName = request.getParameter(PAGENAME);
+        if (PAGENAME_EDIT.equals(pageName)) {
             renderEditView(request, response);
-        } else if (PAGENAME_ACTION.equals(request.getParameter(PAGENAME))) {
+        } else if (PAGENAME_ACTION.equals(pageName)) {
             renderActionView(request, response);
+        } else if (PAGENAME_EDIT_CLEARING_REQUEST.equals(pageName) || PAGENAME_DETAIL_CLEARING_REQUEST.equals(pageName)) {
+            renderClearingRequest(request, response, pageName);
+            include("/html/moderation/clearing/clearingRequest.jsp", request, response);
         } else {
             renderStandardView(request, response);
         }
@@ -110,6 +409,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         final User user = UserCacheHolder.getUserFromRequest(request);
         final String id = request.getParameter(MODERATION_ID);
         String sessionMessage;
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (id != null) {
             try {
                 ModerationService.Iface client = thriftClients.makeModerationClient();
@@ -124,26 +424,26 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 if (ACTION_CANCEL.equals(action)) {
                     client.cancelInProgress(id);
 
-                    sessionMessage = "You have cancelled working on the previous moderation request.";
+                    sessionMessage = LanguageUtil.get(resourceBundle,"you.have.cancelled.working.on.the.previous.moderation.request");
                 } else if (ACTION_DECLINE.equals(action)) {
                     declineModerationRequest(user, moderationRequest, request);
 
                     client.refuseRequest(id, moderationComment, user.getEmail());
-                    sessionMessage = "You have declined the previous moderation request.";
+                    sessionMessage = LanguageUtil.get(resourceBundle,"you.have.declined.the.previous.moderation.request");
                 } else if (ACTION_ACCEPT.equals(action)) {
                     String requestingUserEmail = moderationRequest.getRequestingUser();
                     User requestingUser = UserCacheHolder.getUserFromEmail(requestingUserEmail);
                     acceptModerationRequest(user, requestingUser, moderationRequest, request);
 
                     client.acceptRequest(moderationRequest, moderationComment, user.getEmail());
-                    sessionMessage = "You have accepted the previous moderation request.";
+                    sessionMessage = LanguageUtil.get(resourceBundle,"you.have.accepted.the.previous.moderation.request");
                 } else if (ACTION_POSTPONE.equals(action)) {
                     // keep me assigned but do it later... so nothing to be done here, just update the comment message
                     moderationRequest.setCommentDecisionModerator(moderationComment);
                     client.updateModerationRequest(moderationRequest);
-                    sessionMessage = "You have postponed the previous moderation request.";
+                    sessionMessage = LanguageUtil.get(resourceBundle,"you.have.postponed.the.previous.moderation.request");
                 } else if (ACTION_RENDER_NEXT_AFTER_UNSUBSCRIBE.equals(action)) {
-                    sessionMessage = "You are removed from the list of moderators for the previous moderation request.";
+                    sessionMessage = LanguageUtil.get(resourceBundle,"you.are.removed.from.the.list.of.moderators.for.the.previous.moderation.request");
                 } else {
                    throw new PortletException("Unknown action");
                 }
@@ -153,6 +453,85 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             } catch (TException e) {
                 log.error("Error in Moderation ", e);
             }
+        }
+    }
+
+    private void renderClearingRequest(RenderRequest request, RenderResponse response, String pageName) throws PortletException {
+        final String clearingId = request.getParameter(CLEARING_REQUEST_ID);
+        final User user = UserCacheHolder.getUserFromRequest(request);
+
+        if (CommonUtils.isNullEmptyOrWhitespace(clearingId)) {
+            throw new PortletException("Clearing request ID not set!");
+        }
+
+        try {
+            ModerationService.Iface client = thriftClients.makeModerationClient();
+            ClearingRequest clearingRequest;
+            if (PAGENAME_EDIT_CLEARING_REQUEST.equals(pageName)) {
+                clearingRequest = client.getClearingRequestByIdForEdit(clearingId, user);
+            } else {
+                clearingRequest = client.getClearingRequestById(clearingId, user);
+            }
+            clearingRequest.setComments(Lists.reverse(CommonUtils.nullToEmptyList(clearingRequest.getComments())));
+            boolean isPrimaryRoleOfUserAtLeastClearingExpert = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_EXPERT,
+                    user);
+            request.setAttribute(CLEARING_REQUEST, clearingRequest);
+            request.setAttribute(WRITE_ACCESS_USER, false);
+            request.setAttribute(IS_CLEARING_EXPERT, isPrimaryRoleOfUserAtLeastClearingExpert);
+            Integer approvedReleaseCount = 0;
+            if (CommonUtils.isNotNullEmptyOrWhitespace(clearingRequest.getProjectId()) ) {
+                ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+                Project project = projectClient.getProjectById(clearingRequest.getProjectId(), UserCacheHolder.getUserFromRequest(request));
+                DocumentPermissions<Project> projectPermission = makePermission(project, user);
+                ImmutableSet<UserGroup> clearingExpertRoles = ImmutableSet.of(UserGroup.CLEARING_EXPERT);
+                ImmutableSet<UserGroup> adminRoles = ImmutableSet.of(UserGroup.ADMIN, UserGroup.SW360_ADMIN);
+                request.setAttribute(IS_CLEARING_EXPERT,
+                        isPrimaryRoleOfUserAtLeastClearingExpert
+                                || projectPermission.isUserOfOwnGroupHasRole(clearingExpertRoles, UserGroup.CLEARING_EXPERT)
+                                || projectPermission.isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN));
+                request.setAttribute(WRITE_ACCESS_USER, projectPermission.isActionAllowed(RequestedAction.WRITE));
+                String babl = CommonUtils.nullToEmptyMap(project.getAdditionalData()).get("BA BL");
+                if (CommonUtils.isNotNullEmptyOrWhitespace(babl)) {
+                    project.setBusinessUnit(babl);
+                }
+                request.setAttribute(PROJECT, project);
+                List<Project> projects = getWithFilledClearingStateSummary(projectClient, Lists.newArrayList(project), user);
+                Project projWithCsSummary = projects.get(0);
+                if (null != projWithCsSummary && null != projWithCsSummary.getReleaseClearingStateSummary()) {
+                    ReleaseClearingStateSummary summary = projWithCsSummary.getReleaseClearingStateSummary();
+                    approvedReleaseCount = summary.getApproved() + summary.getReportAvailable();
+                }
+            }
+            if (clearingRequest.getTimestampOfDecision() > 1) {
+                Integer criticalCount = client.getCriticalClearingRequestCount();
+                request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
+            }
+            String dateLimit = CommonUtils.nullToEmptyString(ModerationPortletUtils.loadPreferredClearingDateLimit(request, user));
+            request.setAttribute(CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, dateLimit);
+            request.setAttribute(APPROVED_RELEASE_COUNT, approvedReleaseCount);
+            addClearingBreadcrumb(request, response, clearingId);
+        } catch (TException e) {
+            log.error("Error fetching clearing request from backend!", e);
+            setSW360SessionError(request, ErrorMessages.ERROR_GETTING_CLEARING_REQUEST);
+        }
+    }
+
+    @UsedAsLiferayAction
+    public void updateClearingRequest(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+        AddDocumentRequestSummary requestSummary = ModerationPortletUtils.updateClearingRequest(request, log);
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+
+        if (AddDocumentRequestStatus.SUCCESS.equals(requestSummary.getRequestStatus())) {
+            String successMsg = new StringBuilder(LanguageUtil.get(resourceBundle, "clearing.request")).append(" ")
+                    .append(requestSummary.getId()).append(" ").append(LanguageUtil.get(resourceBundle, "updated.successfully")).toString();
+            SessionMessages.add(request, "request_processed", successMsg);
+            response.setRenderParameter(CLEARING_REQUEST_ID, request.getParameter(CLEARING_REQUEST_ID));
+            response.setRenderParameter(PAGENAME, PAGENAME_DETAIL_CLEARING_REQUEST);
+        } else if (AddDocumentRequestStatus.FAILURE.equals(requestSummary.getRequestStatus())) {
+            String errorMsg = LanguageUtil.get(resourceBundle, requestSummary.getMessage().replace(' ', '.').toLowerCase());
+            setSW360SessionError(request, errorMsg);
+            response.setRenderParameter(CLEARING_REQUEST_ID, request.getParameter(CLEARING_REQUEST_ID));
+            response.setRenderParameter(PAGENAME, PAGENAME_DETAIL_CLEARING_REQUEST);
         }
     }
 
@@ -184,7 +563,10 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             case RELEASE: {
                 ComponentService.Iface componentClient = thriftClients.makeComponentClient();
                 if (moderationRequest.isRequestDocumentDelete()) {
-                    componentClient.deleteRelease(moderationRequest.getDocumentId(), user);
+                    RequestStatus deleteStatus = componentClient.deleteRelease(moderationRequest.getDocumentId(), user);
+                    if (deleteStatus.equals(RequestStatus.SUCCESS)) {
+                        SW360Utils.removeReleaseVulnerabilityRelation(moderationRequest.getDocumentId(), UserCacheHolder.getUserFromRequest(request));
+                    }
                 } else {
                     componentClient.updateReleaseFromModerationRequest(
                             moderationRequest.getReleaseAdditions(),
@@ -222,6 +604,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
     }
 
     private void renderNextModeration(RenderRequest request, RenderResponse response, final User user, String sessionMessage, ModerationService.Iface client, ModerationRequest moderationRequest) throws IOException, PortletException, TException {
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (ACTION_CANCEL.equals(request.getParameter(ACTION))) {
             SessionMessages.add(request, "request_processed", sessionMessage);
             renderStandardView(request, response);
@@ -246,11 +629,11 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                     .collect(Collectors.toList());
 
             if (requestsInProgressAndAssignedToMe.size()>0) {
-                sessionMessage += " You have returned to your first open request.";
+                sessionMessage += LanguageUtil.get(resourceBundle,"you.have.returned.to.your.first.open.request");
                 SessionMessages.add(request, "request_processed", sessionMessage);
                 renderEditViewForId(request, response, Collections.min(requestsInProgressAndAssignedToMe, compareByTimeStamp()).getId());
             } else {
-                sessionMessage += " You have no open Requests.";
+                sessionMessage += LanguageUtil.get(resourceBundle,"you.have.no.open.requests");
                 SessionMessages.add(request, "request_processed", sessionMessage);
                 renderStandardView(request, response);
             }
@@ -275,27 +658,57 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         addBreadcrumbEntry(request, moderationRequest.getDocumentName(), baseUrl);
     }
 
+    private void addClearingBreadcrumb(RenderRequest request, RenderResponse response, String Id) {
+        PortletURL baseUrl = response.createRenderURL();
+        baseUrl.setParameter(PAGENAME, PAGENAME_EDIT_CLEARING_REQUEST);
+        baseUrl.setParameter(CLEARING_REQUEST_ID, Id);
+
+        addBreadcrumbEntry(request, Id, baseUrl);
+    }
+
     public void renderStandardView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         User user = UserCacheHolder.getUserFromRequest(request);
 
-        List<ModerationRequest> openModerationRequests = null;
-        List<ModerationRequest> closedModerationRequests = null;
+        HttpServletRequest httpServletRequest = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request));
+        String selectedTab = httpServletRequest.getParameter(SELECTED_TAB);
+
+        List<ClearingRequest> openClearingRequests = null;
+        List<ClearingRequest> closedClearingRequests = null;
+        ModerationService.Iface client = thriftClients.makeModerationClient();
 
         try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
-            List<ModerationRequest> moderationRequests = client.getRequestsByModerator(user);
-            Map<Boolean, List<ModerationRequest>> partitionedModerationRequests = moderationRequests
-                    .stream()
-                    .collect(Collectors.groupingBy(ModerationPortletUtils::isOpenModerationRequest));
-            openModerationRequests = partitionedModerationRequests.get(true);
-            closedModerationRequests = partitionedModerationRequests.get(false);
+            Set<ClearingRequest> clearingRequestsSet = client.getMyClearingRequests(user);
+            clearingRequestsSet.addAll(client.getClearingRequestsByBU(user.getDepartment()));
+
+            if (!CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
+                user.getSecondaryDepartmentsAndRoles().keySet().stream().forEach(department -> wrapTException(() -> {
+                    clearingRequestsSet.addAll(client.getClearingRequestsByBU(department));
+                }));
+            }
+
+            Map<Boolean, List<ClearingRequest>> partitionedClearingRequests = clearingRequestsSet
+                    .stream().collect(Collectors.groupingBy(ModerationPortletUtils::isClosedClearingRequest));
+            closedClearingRequests = partitionedClearingRequests.get(true);
+            openClearingRequests = partitionedClearingRequests.get(false);
         } catch (TException e) {
-            log.error("Could not fetch moderation requests from backend!", e);
+            log.error("Could not fetch clearing requests from backend!", e);
         }
 
-        request.setAttribute(MODERATION_REQUESTS, CommonUtils.nullToEmptyList(openModerationRequests));
-        request.setAttribute(CLOSED_MODERATION_REQUESTS, CommonUtils.nullToEmptyList(closedModerationRequests));
-        request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user) ? "Yes" : "No");
+        request.setAttribute(CLEARING_REQUESTS, CommonUtils.nullToEmptyList(openClearingRequests));
+        request.setAttribute(CLOSED_CLEARING_REQUESTS, CommonUtils.nullToEmptyList(closedClearingRequests));
+        request.setAttribute(IS_CLEARING_EXPERT, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_EXPERT, user));
+        PortletUtils.getBaBlSelection(request, user);
+        List<Organization> organizations = UserUtils.getOrganizations(request);
+        request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
+        if (CommonUtils.isNotNullEmptyOrWhitespace(selectedTab)) {
+            request.setAttribute(SELECTED_TAB, selectedTab);
+        }
+        for (ModerationRequest._Fields moderationFilteredField : MODERATION_FILTERED_FIELDS) {
+            request.setAttribute(moderationFilteredField.getFieldName(),
+                    nullToEmpty(request.getParameter(moderationFilteredField.toString())));
+        }
+        request.setAttribute(PortalConstants.DATE_RANGE, nullToEmpty(request.getParameter(PortalConstants.DATE_RANGE)));
+        request.setAttribute(PortalConstants.END_DATE, nullToEmpty(request.getParameter(PortalConstants.END_DATE)));
         super.doView(request, response);
     }
 
@@ -312,6 +725,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         if (id != null) {
             ModerationRequest moderationRequest = null;
             User user = UserCacheHolder.getUserFromRequest(request);
+            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
             try {
 
                 ModerationService.Iface client = thriftClients.makeModerationClient();
@@ -319,7 +733,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 boolean actionsAllowed = moderationRequest.getModerators().contains(user.getEmail()) && ModerationPortletUtils.isOpenModerationRequest(moderationRequest);
                 request.setAttribute(PortalConstants.MODERATION_ACTIONS_ALLOWED, actionsAllowed);
                 if(actionsAllowed) {
-                    SessionMessages.add(request, "request_processed", "You have assigned yourself to this moderation request.");
+                    SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"you.have.assigned.yourself.to.this.moderation.request"));
                     client.setInProgress(id, user);
                 }
                 request.setAttribute(PortalConstants.MODERATION_REQUEST, moderationRequest);
@@ -375,8 +789,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             log.error("Could not retrieve component", e);
         }
 
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (actual_component == null) {
-            renderNextModeration(request, response, user, "Ignored unretrievable target", thriftClients.makeModerationClient(), moderationRequest);
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"eignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
             return;
         }
 
@@ -430,8 +845,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             log.error("Could not retrieve release", e);
         }
 
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (actual_release == null) {
-            renderNextModeration(request, response, user, "Ignored unretrievable target", thriftClients.makeModerationClient(), moderationRequest);
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
             return;
         }
 
@@ -450,8 +866,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
     private boolean refuseToDeleteUsedDocument(RenderRequest request, RenderResponse response, ModerationRequest moderationRequest, User user, boolean requestDocumentDelete, Boolean is_used) throws TException, IOException, PortletException {
         if (requestDocumentDelete && is_used) {
             ModerationService.Iface client = thriftClients.makeModerationClient();
-            client.refuseRequest(moderationRequest.getId(), "You cannot delete a document still used by others", user.getEmail());
-            renderNextModeration(request, response, user, "Ignored delete of used target", client, moderationRequest);
+            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+            client.refuseRequest(moderationRequest.getId(), LanguageUtil.get(resourceBundle,"you.cannot.delete.a.document.still.used.by.others"), user.getEmail());
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.delete.of.used.target"), client, moderationRequest);
             return true;
         }
         return false;
@@ -493,12 +910,14 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             is_used = client.projectIsUsed(actual_project.getId());
             request.setAttribute(PortalConstants.ACTUAL_PROJECT, actual_project);
             request.setAttribute(PortalConstants.DEFAULT_LICENSE_INFO_HEADER_TEXT, getDefaultLicenseInfoHeaderText());
+            request.setAttribute(IS_CLEARING_REQUEST_DISABLED_FOR_PROJECT_BU, true);
         } catch (TException e) {
             log.error("Could not retrieve project", e);
         }
 
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (actual_project == null) {
-            renderNextModeration(request, response, user, "Ignored unretrievable target", thriftClients.makeModerationClient(), moderationRequest);
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
             return;
         }
 
@@ -527,6 +946,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             putReleasesAndProjectIntoRequest(request, actual_project.getId(), user);
             request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
             setAttachmentsInRequest(request, actual_project);
+            ModerationService.Iface modClient = thriftClients.makeModerationClient();
+            Integer criticalCount = modClient.getCriticalClearingRequestCount();
+            request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
         } catch (TException e) {
             log.error("Error fetching project from backend!", e);
         }
@@ -535,18 +957,23 @@ public class ModerationPortlet extends FossologyAwarePortlet {
     public void renderLicenseModeration(RenderRequest request, RenderResponse response, ModerationRequest moderationRequest, User user) throws IOException, PortletException, TException {
         License actual_license = null;
         User requestingUser = UserCacheHolder.getUserFromEmail(moderationRequest.getRequestingUser());
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         try {
             LicenseService.Iface client = thriftClients.makeLicenseClient();
             actual_license = client.getByID(moderationRequest.getDocumentId(),requestingUser.getDepartment());
             request.setAttribute(KEY_LICENSE_DETAIL, actual_license);
-            List<Obligation> obligations = client.getObligations();
+            List<Obligation> obligations = client.getObligations().stream()
+                    .filter(Objects::nonNull)
+                    .filter(Obligation::isSetObligationLevel)
+                    .filter(obl -> obl.getObligationLevel().equals(ObligationLevel.LICENSE_OBLIGATION))
+                    .collect(Collectors.toList());
             request.setAttribute(KEY_OBLIGATION_LIST, obligations);
         } catch (TException e) {
             log.error("Could not retrieve license", e);
         }
 
         if (actual_license == null) {
-            renderNextModeration(request, response, user, "Ignored unretrievable target", thriftClients.makeModerationClient(), moderationRequest);
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
             return;
         }
 
@@ -563,8 +990,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             log.error("Could not retrieve user", e);
         }
 
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (changedUser == null) {
-            renderNextModeration(request, response, user, "Ignored unretrievable target", thriftClients.makeModerationClient(), moderationRequest);
+            renderNextModeration(request, response, user, LanguageUtil.get(resourceBundle,"ignored.unretrievable.target"), thriftClients.makeModerationClient(), moderationRequest);
             return;
         }
 
@@ -574,17 +1002,67 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         include("/html/moderation/users/merge.jsp", request, response);
     }
 
+    @UsedAsLiferayAction
+    public void applyFilters(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+        for (ModerationRequest._Fields moderationFilteredField : MODERATION_FILTERED_FIELDS) {
+            response.setRenderParameter(moderationFilteredField.toString(),
+                    nullToEmpty(request.getParameter(moderationFilteredField.toString())));
+        }
+        response.setRenderParameter(PortalConstants.DATE_RANGE, nullToEmpty(request.getParameter(PortalConstants.DATE_RANGE)));
+        response.setRenderParameter(PortalConstants.END_DATE, nullToEmpty(request.getParameter(PortalConstants.END_DATE)));
+    }
+
+    private Map<String, Set<String>> getModerationFilterMap(PortletRequest request) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        for (ModerationRequest._Fields filteredField : MODERATION_FILTERED_FIELDS) {
+            String parameter = request.getParameter(filteredField.toString());
+            if (!isNullOrEmpty(parameter) && !((filteredField.equals(ModerationRequest._Fields.COMPONENT_TYPE)
+                    || filteredField.equals(ModerationRequest._Fields.MODERATION_STATE))
+                    && parameter.equals(PortalConstants.NO_FILTER))) {
+                if (filteredField.equals(ModerationRequest._Fields.TIMESTAMP) && isNotNullEmptyOrWhitespace(request.getParameter(PortalConstants.DATE_RANGE))) {
+                    Date date = new Date();
+                    String upperLimit = new SimpleDateFormat(SampleOptions.DATE_OPTION).format(date);
+                    String dateRange = request.getParameter(PortalConstants.DATE_RANGE);
+                    String query = new StringBuilder("[%s ").append(PortalConstants.TO).append(" %s]").toString();
+                    DateRange range = ThriftEnumUtils.stringToEnum(dateRange, DateRange.class);
+                    switch (range) {
+                    case EQUAL:
+                        break;
+                    case LESS_THAN_OR_EQUAL_TO:
+                        parameter = String.format(query, PortalConstants.EPOCH_DATE, parameter);
+                        break;
+                    case GREATER_THAN_OR_EQUAL_TO:
+                        parameter = String.format(query, parameter, upperLimit);
+                        break;
+                    case BETWEEN:
+                        String endDate = request.getParameter(PortalConstants.END_DATE);
+                        if (isNullEmptyOrWhitespace(endDate)) {
+                            endDate = upperLimit;
+                        }
+                        parameter = String.format(query, parameter, endDate);
+                        break;
+                    }
+                }
+                Set<String> values = CommonUtils.splitToSet(parameter);
+                if (filteredField.equals(ModerationRequest._Fields.DOCUMENT_NAME)
+                        || filteredField.equals(ModerationRequest._Fields.REQUESTING_USER)
+                        || filteredField.equals(ModerationRequest._Fields.REQUESTING_USER_DEPARTMENT)) {
+                    values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
+                            .collect(Collectors.toSet());
+                }
+                filterMap.put(filteredField.getFieldName(), values);
+            }
+        }
+        return filterMap;
+    }
+
     private UnsupportedOperationException unsupportedActionException() {
         throw new UnsupportedOperationException("cannot call this action on the moderation portlet");
     }
 
     @Override
     protected void dealWithFossologyAction(ResourceRequest request, ResourceResponse response, String action) throws IOException, PortletException {
-        if (PortalConstants.FOSSOLOGY_GET_STATUS.equals(action)) {
-            serveFossologyStatus(request, response);
-        } else {
-            throw unsupportedActionException();
-        }
+        throw unsupportedActionException();
     }
 
     @Override

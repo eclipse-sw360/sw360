@@ -1,43 +1,51 @@
 /*
  * Copyright Siemens AG, 2013-2016. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.licenses.db;
 
 import org.eclipse.sw360.components.summary.LicenseSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.ektorp.ViewQuery;
-import org.ektorp.support.View;
-import org.ektorp.support.Views;
 
-import java.util.Collection;
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * CRUD access for the License class
  *
  * @author cedric.bodet@tngtech.com
  */
-@Views({
-        @View(name = "all", map = "function(doc) { if (doc.type == 'license') emit(null, doc._id) }"),
-        @View(name = "byname", map = "function(doc) { if(doc.type == 'license') { emit(doc.fullname, doc) } }"),
-        @View(name = "byshortname", map = "function(doc) { if(doc.type == 'license') { emit(doc._id, doc) } }")
-})
+
 public class LicenseRepository extends SummaryAwareRepository<License> {
 
-    public LicenseRepository(DatabaseConnector db) {
-        super(License.class, db, new LicenseSummary());
+    private static final String ALL = "function(doc) { if (doc.type == 'license') emit(null, doc._id) }";
+    private static final String BYNAME = "function(doc) { if(doc.type == 'license') { emit(doc.fullname, doc) } }";
+    private static final String BYSHORTNAME = "function(doc) { if(doc.type == 'license') { emit(doc._id, doc) } }";
+    private static final String BYLICENSETYPEID = "function(doc) { if(doc.type == 'license') { emit(doc.licenseTypeDatabaseId, doc) } }";
 
-        initStandardDesignDocument();
+    public LicenseRepository(DatabaseConnectorCloudant db) {
+        super(License.class, db, new LicenseSummary());
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("all", createMapReduce(ALL, null));
+        views.put("byname", createMapReduce(BYNAME, null));
+        views.put("byshortname", createMapReduce(BYSHORTNAME, null));
+        views.put("bylicensetypeid", createMapReduce(BYLICENSETYPEID, null));
+        initStandardDesignDocument(views, db);
+    }
+
+    public List<License> searchByLicenseTypeId(String id) {
+        return queryByPrefix("bylicensetypeid", id);
     }
 
     public List<License> searchByName(String name) {

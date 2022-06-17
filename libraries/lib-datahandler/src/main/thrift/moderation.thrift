@@ -2,12 +2,11 @@
  * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 include "sw360.thrift"
@@ -22,13 +21,16 @@ namespace php sw360.thrift.moderation
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RemoveModeratorRequestStatus RemoveModeratorStatus
 typedef sw360.ModerationState ModerationState
+typedef sw360.Comment Comment
+typedef sw360.PaginationData PaginationData
 typedef components.Component Component
 typedef components.Release Release
 typedef projects.Project Project
 typedef users.User User
 typedef licenses.License License
-typedef licenses.Todo Todo
+typedef licenses.Obligation Obligation
 typedef components.ComponentType ComponentType
+typedef projects.ClearingRequest ClearingRequest
 
 enum DocumentType {
     COMPONENT = 1,
@@ -64,7 +66,7 @@ struct ModerationRequest {
     20: optional Component componentAdditions,
     21: optional Release releaseAdditions,
     22: optional Project projectAdditions,
-    23: optional License licenseAdditions,//only moderation of todos is supported
+    23: optional License licenseAdditions,//only moderation of obligations is supported
     24: optional User user,
 
     30: optional Component componentDeletions,
@@ -107,7 +109,7 @@ service ModerationService {
 
     /**
       * write moderation request for license to database,
-      * only todos and whitelists can be moderated, so license todos are compared with corresponding todos in database,
+      * only obligations and whitelists can be moderated, so license obligations are compared with corresponding obligations in database,
       * differences are written as additions and deletions to moderation request,
       * set requestingUser of moderation request to user
       **/
@@ -192,6 +194,11 @@ service ModerationService {
     list<ModerationRequest> getRequestsByModerator(1: User user);
 
     /**
+     * get list of moderation requests based on moderation state(open/closed) where user is one of the moderators, with pagination
+     **/
+    map<PaginationData, list<ModerationRequest>> getRequestsByModeratorWithPagination(1: User user, 2: PaginationData pageData, 3: bool open);
+
+    /**
      * get list of moderation requests where user is requesting user
      **/
     list<ModerationRequest> getRequestsByRequestingUser(1: User user);
@@ -200,4 +207,69 @@ service ModerationService {
      * delete moderation request specified by id if user is requesting user of moderation request
      **/
     RequestStatus deleteModerationRequest(1: string id, 2: User user);
+
+    /**
+     * write clearing request for project to database
+     **/
+    string createClearingRequest(1: ClearingRequest clearingRequest, 2: User user);
+
+    /**
+     * update clearing request in database
+     **/
+    RequestStatus updateClearingRequest(1: ClearingRequest clearingRequest, 2: User user, 3: string projectUrl);
+
+    /**
+     * get list of clearing requests where user is requesting user or clearing team
+     **/
+    set<ClearingRequest> getMyClearingRequests(1: User user);
+
+    /**
+     * get list of clearing requests by business unit
+     **/
+    set<ClearingRequest> getClearingRequestsByBU(1: string businessUnit);
+
+    /**
+     * get clearing request by project Id
+     **/
+    ClearingRequest getClearingRequestByProjectId(1: string projectId, 2: User user);
+
+    /**
+     * update clearing request for associated project deletion
+     **/
+    oneway void updateClearingRequestForProjectDeletion(1: Project project, 2: User user);
+
+    /**
+     * get clearing request by Id for view/read
+     **/
+    ClearingRequest getClearingRequestById(1: string id, 2: User user);
+
+    /**
+     * get clearing request by Id for edit
+     **/
+    ClearingRequest getClearingRequestByIdForEdit(1: string id, 2: User user);
+
+    /**
+     * add comment to clearing request
+     **/
+    RequestStatus addCommentToClearingRequest(1: string id, 2: Comment comment, 3: User user);
+
+    /**
+     * search moderation requests in database that match subQueryRestrictions
+     **/
+    list<ModerationRequest> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions);
+
+    /**
+     * get count of moderation requests by moderation state
+     **/
+    map<string, i64> getCountByModerationState(1: User user);
+
+    /**
+     * get requesting users departments
+     **/
+    set<string> getRequestingUserDepts();
+
+    /**
+     * get the count of CR with priority 'critical'
+     **/
+    i32 getCriticalClearingRequestCount();
 }

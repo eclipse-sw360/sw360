@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.portlets.projects;
 
@@ -47,16 +46,16 @@ public class ProjectPortletUtilsTest {
     @Test
     public void testGetExcludedLicensesPerAttachmantIdFromRequest() {
         // checkboxes (note: checked boxes mark licenses NOT to be excluded :-))
-        Mockito.when(request.getParameterValues("a1")).thenReturn(new String[] { "1", "2" });
-        Mockito.when(request.getParameterValues("a2")).thenReturn(new String[] {});
-        Mockito.when(request.getParameterValues("a3")).thenReturn(new String[] { "0", "1", "2", "3", "4" });
+        Mockito.when(request.getParameterValues("a1:checkstatus")).thenReturn(new String[] { "1", "2" });
+        Mockito.when(request.getParameterValues("a2:checkstatus")).thenReturn(new String[] {});
+        Mockito.when(request.getParameterValues("a3:checkstatus")).thenReturn(new String[] { "0", "1", "2", "3", "4" });
         // temporary keys (the key are always completely transmitted, the selection is
         // done by the checkboxes
 
         // which attachment id has which keys
-        Mockito.when(request.getParameterValues("a1_key")).thenReturn(new String[] { "a1l1", "a1l2", "a1l3", "a1l4" });
-        Mockito.when(request.getParameterValues("a2_key")).thenReturn(new String[] { "a2l1", "a2l2", "a2l3" });
-        Mockito.when(request.getParameterValues("a3_key")).thenReturn(new String[] { "a3l1", "a3l2", "a3l3", "a3l4", "a3l5" });
+        Mockito.when(request.getParameterValues("a1:checkstatus_key")).thenReturn(new String[] { "a1l1", "a1l2", "a1l3", "a1l4" });
+        Mockito.when(request.getParameterValues("a2:checkstatus_key")).thenReturn(new String[] { "a2l1", "a2l2", "a2l3" });
+        Mockito.when(request.getParameterValues("a3:checkstatus_key")).thenReturn(new String[] { "a3l1", "a3l2", "a3l3", "a3l4", "a3l5" });
 
         // @formatter:off
         // example of the temporary mapping to keys
@@ -82,15 +81,15 @@ public class ProjectPortletUtilsTest {
         // @formatter:on
 
         Map<String, Set<LicenseNameWithText>> excludedLicenses = ProjectPortletUtils
-                .getExcludedLicensesPerAttachmentIdFromRequest(ImmutableSet.of("a1", "a2", "a3"), request);
+                .getExcludedLicensesPerAttachmentIdFromRequest(ImmutableSet.of("a1:checkstatus", "a2:checkstatus", "a3:checkstatus"), request);
 
         // Every license not checked is excluded now
-        Assert.assertThat(excludedLicenses.keySet(), Matchers.containsInAnyOrder("a1", "a2", "a3"));
-        Assert.assertThat(excludedLicenses.get("a1"),
+        Assert.assertThat(excludedLicenses.keySet(), Matchers.containsInAnyOrder("a1:checkstatus", "a2:checkstatus", "a3:checkstatus"));
+        Assert.assertThat(excludedLicenses.get("a1:checkstatus"),
                 Matchers.containsInAnyOrder(createLicense("a1l1", "a1l1_t"), createLicense("a1l4", "a1l4_t")));
-        Assert.assertThat(excludedLicenses.get("a2"), Matchers.containsInAnyOrder(createLicense("a2l1", "a2l1_t"),
+        Assert.assertThat(excludedLicenses.get("a2:checkstatus"), Matchers.containsInAnyOrder(createLicense("a2l1", "a2l1_t"),
                 createLicense("a2l2", "a2l2_t"), createLicense("a2l3", "a2l3_t")));
-        Assert.assertTrue(excludedLicenses.get("a3").isEmpty());
+        Assert.assertTrue(excludedLicenses.get("a3:checkstatus").isEmpty());
     }
 
     private LicenseNameWithText createLicense(String name, String text) {
@@ -126,7 +125,7 @@ public class ProjectPortletUtilsTest {
         List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.selectedAttachmentUsagesFromRequest(request);
         Assert.assertThat(attachmentUsages, Matchers.containsInAnyOrder(
                 new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
-                        .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet()))),
+                        .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet()).setIncludeConcludedLicense(false))),
                 new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
                         .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()))
         ));

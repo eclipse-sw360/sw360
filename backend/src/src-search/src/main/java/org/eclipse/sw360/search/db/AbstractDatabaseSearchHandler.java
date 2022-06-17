@@ -2,15 +2,15 @@
  * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.search.db;
 
+import com.cloudant.client.api.CloudantClient;
 import com.github.ldriscoll.ektorplucene.LuceneResult;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -20,10 +20,12 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
 
@@ -61,7 +63,14 @@ public abstract class AbstractDatabaseSearchHandler {
 
     public AbstractDatabaseSearchHandler(String dbName) throws IOException {
         // Create the database connector and add the search view to couchDB
-        connector = new LuceneAwareDatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        connector = new LuceneAwareDatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), dbName);
+        connector.addView(luceneSearchView);
+        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+    }
+
+    public AbstractDatabaseSearchHandler(Supplier<HttpClient> client, Supplier<CloudantClient> cclient, String dbName) throws IOException {
+        // Create the database connector and add the search view to couchDB
+        connector = new LuceneAwareDatabaseConnector(client, cclient, dbName);
         connector.addView(luceneSearchView);
         connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
     }

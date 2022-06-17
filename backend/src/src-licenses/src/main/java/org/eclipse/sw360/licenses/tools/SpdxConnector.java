@@ -2,17 +2,19 @@
  * Copyright (c) Bosch Software Innovations GmbH 2017.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.licenses.tools;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.spdx.compare.LicenseCompareHelper;
 import org.spdx.compare.SpdxCompareException;
 import org.spdx.rdfparser.InvalidSPDXAnalysisException;
@@ -20,13 +22,14 @@ import org.spdx.rdfparser.license.LicenseInfoFactory;
 import org.spdx.rdfparser.license.SpdxListedLicense;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class SpdxConnector {
 
-    private static final Logger log = Logger.getLogger(SpdxConnector.class);
+    private static final Logger log = LogManager.getLogger(SpdxConnector.class);
 
     public static List<String> getAllSpdxLicenseIds() {
         return Arrays.asList(LicenseInfoFactory.getSpdxListedLicenseIds());
@@ -49,12 +52,18 @@ public class SpdxConnector {
     }
 
     public static Optional<License> getSpdxLicenseAsSW360License(SpdxListedLicense spdxListedLicense){
+        Quadratic isOSIApproved = spdxListedLicense.isOsiApproved() ? Quadratic.YES : Quadratic.NA;
+        Quadratic isFSFLibre = spdxListedLicense.isFsfLibre() ? Quadratic.YES : Quadratic.NA;
+
         License license = new License()
                 .setId(spdxListedLicense.getLicenseId())
                 .setShortname(spdxListedLicense.getLicenseId())
                 .setFullname(spdxListedLicense.getName())
                 .setText(spdxListedLicense.getLicenseText())
-                .setExternalLicenseLink("https://spdx.org/licenses/" + spdxListedLicense.getLicenseId()+ ".html");
+                .setOSIApproved(isOSIApproved)
+                .setFSFLibre(isFSFLibre)
+                .setExternalLicenseLink("https://spdx.org/licenses/" + spdxListedLicense.getLicenseId()+ ".html")
+                .setExternalIds(Collections.singletonMap("SPDX-License-Identifier", spdxListedLicense.getLicenseId()));
         return Optional.of(license);
     }
 

@@ -1,25 +1,22 @@
 /*
  * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.tags.links;
+
+import static org.eclipse.sw360.portal.tags.urlutils.UrlWriterImpl.renderUrl;
+
+import javax.servlet.jsp.JspException;
 
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.page.PortletDefaultPage;
-import org.eclipse.sw360.portal.common.page.PortletReleasePage;
 import org.eclipse.sw360.portal.portlets.LinkToPortletConfiguration;
-
-import javax.servlet.jsp.JspException;
-
-import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
-import static org.eclipse.sw360.portal.tags.urlutils.UrlWriterImpl.renderUrl;
 
 /**
  * @author alex.borodin@evosoft.com

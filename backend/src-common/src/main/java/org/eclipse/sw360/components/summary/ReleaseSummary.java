@@ -1,16 +1,16 @@
 /*
  * Copyright Siemens AG, 2014-2015. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.components.summary;
 
 import com.google.common.base.Strings;
+
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -48,6 +48,7 @@ public class ReleaseSummary extends DocumentSummary<Release> {
 
         Set<String> vendorIds = fullDocuments
                 .stream()
+                .filter(Objects::nonNull)
                 .map(Release::getVendorId)
                 .filter(Objects::nonNull)
                 .filter(s -> !s.isEmpty())
@@ -56,6 +57,7 @@ public class ReleaseSummary extends DocumentSummary<Release> {
 
         List<Release> documents = new ArrayList<>(fullDocuments.size());
         for (Release fullDocument : fullDocuments) {
+            if (fullDocument == null) continue;
             Release document = summary(type, fullDocument, vendorById::get);
             if (document != null) documents.add(document);
         }
@@ -96,15 +98,17 @@ public class ReleaseSummary extends DocumentSummary<Release> {
 
     private void setShortSummaryFields(Release document, Release copy) {
         copyField(document, copy, _Fields.ID);
+        copyField(document, copy, _Fields.REVISION);
         copyField(document, copy, _Fields.NAME);
         copyField(document, copy, _Fields.VERSION);
         copyField(document, copy, _Fields.COMPONENT_ID);
-        copyField(document, copy, _Fields.CLEARING_TEAM_TO_FOSSOLOGY_STATUS);
-        copyField(document, copy, _Fields.FOSSOLOGY_ID);
+        copyField(document, copy, _Fields.EXTERNAL_TOOL_PROCESSES);
         copyField(document, copy, _Fields.CLEARING_STATE);
         copyField(document, copy, _Fields.MAINLINE_STATE);
         copyField(document, copy, _Fields.CPEID);
         copyField(document, copy, _Fields.RELEASE_DATE);
+        copyField(document, copy, _Fields.SOURCE_CODE_DOWNLOADURL);
+        copyField(document, copy, _Fields.BINARY_DOWNLOADURL);
     }
 
     private void setAdditionalFieldsForSummariesOtherThanShortAndDetailedExport(Release document, Release copy){

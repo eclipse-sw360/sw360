@@ -1,20 +1,23 @@
 /*
  * Copyright Bosch Software Innovations GmbH, 2016.
- * With modifications by Siemens AG, 2018.
+ * With modifications by Siemens AG, 2018-2019.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+
 import org.dom4j.Document;
 import org.dom4j.Element;
+import org.dom4j.Node;
 import org.dom4j.Text;
 import org.dom4j.io.SAXReader;
 import org.junit.BeforeClass;
@@ -121,13 +124,22 @@ public class XhtmlGeneratorTest {
 
         LicenseInfoParsingResult lipresultEmpty = generateLIPResult(liEmpty, releaseName, version1, vendorName);
         lipresultsEmpty = Collections.singletonList(lipresultEmpty);
+        Collection<ObligationParsingResult> obligationResults = new HashSet();
 
         xhtmlGenerator = new XhtmlGenerator(OutputFormatVariant.DISCLOSURE, "License Disclosure as XHTML");
 
-        xmlString = xhtmlGenerator.generateOutputFile(lipresults, "myproject", "1.0", "Lorem Ipsum");
-        xmlString2 = xhtmlGenerator.generateOutputFile(lipresults2, "myproject", "1.0", "Lorem Ipsum");
-        xmlString3 = xhtmlGenerator.generateOutputFile(lipresults3, "myproject", "1.0", "Lorem Ipsum");
-        xmlStringEmpty = xhtmlGenerator.generateOutputFile(lipresultsEmpty, "myproject", "1.0", "Lorem Ipsum");
+        Project p = new Project();
+        p.setName("myproject");
+        p.setVersion("1.0");
+        p.setLicenseInfoHeaderText("Lorem");
+        p.setObligationsText("Ipsum");
+        Map<String, String> externalIds = Collections.emptyMap();
+        Map<String, ObligationStatusInfo> obligationsStatus = Collections.emptyMap();
+
+        xmlString = xhtmlGenerator.generateOutputFile(lipresults, p, obligationResults, null, externalIds, obligationsStatus, "");
+        xmlString2 = xhtmlGenerator.generateOutputFile(lipresults2, p, obligationResults, null, externalIds, obligationsStatus, "");
+        xmlString3 = xhtmlGenerator.generateOutputFile(lipresults3, p, obligationResults, null, externalIds, obligationsStatus, "");
+        xmlStringEmpty = xhtmlGenerator.generateOutputFile(lipresultsEmpty, p, obligationResults, null, externalIds, obligationsStatus, "");
 
         generateDocumentsFromXml();
     }
@@ -196,7 +208,7 @@ public class XhtmlGeneratorTest {
     @Test
     public void testGenerateOutputFile_parseSingleCopyright() throws Exception {
         String copyrights = findCopyrights(document3, releaseNameString(vendorName, releaseName, version1));
-        assertThat(copyrights, is("\n"+ cr));
+        assertThat(copyrights, is("\n"+ cr + "\n"));
     }
 
     @Test
@@ -256,14 +268,18 @@ public class XhtmlGeneratorTest {
 
         for (Iterator iter = list.iterator(); iter.hasNext(); ) {
             Element element = (Element) iter.next();
-            for (Object liObject : element.content()) {
-                Element liElement = (Element) liObject;
-                String licenseEntryId = liElement.attribute("id").getValue();
-                String licenseTextId = licenseEntryId.replace("licenseEntry","licenseText");
-                List licenseTexts = document.selectNodes("//*[local-name()='pre'][@id='" + licenseTextId + "']/text()");
-                Object licenseText = licenseTexts.stream().map(l -> ((Text) l).getStringValue()).reduce("", (BinaryOperator<String>)(l1, l2)-> (String) (l1+l2));
-                result.append(((String) licenseText).trim());
-                result.append("\n");
+            for (Node liObject : element.content()) {
+                if (liObject.getNodeType() == Node.ELEMENT_NODE) {
+                    Element liElement = (Element) liObject;
+                    String licenseEntryId = liElement.attribute("id").getValue();
+                    String licenseTextId = licenseEntryId.replace("licenseEntry", "licenseText");
+                    List licenseTexts = document
+                            .selectNodes("//*[local-name()='pre'][@id='" + licenseTextId + "']/text()");
+                    Object licenseText = licenseTexts.stream().map(l -> ((Text) l).getStringValue()).reduce("",
+                            (BinaryOperator<String>) (l1, l2) -> (String) (l1 + l2));
+                    result.append(((String) licenseText).trim());
+                    result.append("\n");
+                }
             }
         }
 

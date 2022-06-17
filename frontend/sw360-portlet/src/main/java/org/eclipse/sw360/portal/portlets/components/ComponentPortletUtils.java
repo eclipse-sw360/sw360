@@ -1,20 +1,21 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.portlets.components;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -77,8 +78,13 @@ public abstract class ComponentPortletUtils {
                     break;
                 case ROLES:
                     release.setRoles(PortletUtils.getCustomMapFromRequest(request));
+                    break;
                 case EXTERNAL_IDS:
                     release.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
+                    break;
+                case ADDITIONAL_DATA:
+                    release.setAdditionalData(PortletUtils.getAdditionalDataMapFromRequest(request));
+                    break;
                 default:
                     setFieldValue(request, release, field);
             }
@@ -124,14 +130,24 @@ public abstract class ComponentPortletUtils {
     }
 
     static void updateComponentFromRequest(PortletRequest request, Component component) {
-        List<String> requestParams = Collections.list(request.getParameterNames());
-        for (Component._Fields field : extractFieldsForComponentUpdate(requestParams, component)) {
-            setFieldValue(request, component, field);
+        for (Component._Fields field : Component._Fields.values()) {
+            switch (field) {
+                case ATTACHMENTS:
+                    component.setAttachments(PortletUtils.updateAttachmentsFromRequest(request, component.getAttachments()));
+                    break;
+                case ROLES:
+                    component.setRoles(PortletUtils.getCustomMapFromRequest(request));
+                case EXTERNAL_IDS:
+                    component.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
+                    break;
+                case ADDITIONAL_DATA:
+                    component.setAdditionalData(PortletUtils.getAdditionalDataMapFromRequest(request));
+                    break;
+                default:
+                    setFieldValue(request, component, field);
+                    break;
+            }
         }
-
-        component.setAttachments(PortletUtils.updateAttachmentsFromRequest(request, component.getAttachments()));
-        component.setRoles(PortletUtils.getCustomMapFromRequest(request));
-        component.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
     }
 
     private static List<Component._Fields> extractFieldsForComponentUpdate(List<String> requestParams, Component component) {
@@ -146,6 +162,17 @@ public abstract class ComponentPortletUtils {
         setFieldValue(request, vendor, Vendor._Fields.FULLNAME);
         setFieldValue(request, vendor, Vendor._Fields.SHORTNAME);
         setFieldValue(request, vendor, Vendor._Fields.URL);
+    }
+
+    public static void updateTodoFromRequest(PortletRequest request, Obligation oblig) {
+        setFieldValue(request, oblig, Obligation._Fields.TITLE);
+        setFieldValue(request, oblig, Obligation._Fields.TEXT);
+        setFieldValue(request, oblig, Obligation._Fields.OBLIGATION_LEVEL);
+        setFieldValue(request, oblig, Obligation._Fields.OBLIGATION_TYPE);
+    }
+
+    public static void updateLicenseTypeFromRequest(PortletRequest request, LicenseType licenseType) {
+        setFieldValue(request, licenseType, LicenseType._Fields.LICENSE_TYPE);
     }
 
     private static void updateLinkedReleaseFromRequest(PortletRequest request, Map<String, ReleaseRelationship> linkedReleases) {
@@ -186,6 +213,14 @@ public abstract class ComponentPortletUtils {
         PortletUtils.setFieldValue(request, vendor, field, Vendor.metaDataMap.get(field), "");
     }
 
+    private static void setFieldValue(PortletRequest request, Obligation oblig, Obligation._Fields field) {
+        PortletUtils.setFieldValue(request, oblig, field, Obligation.metaDataMap.get(field), "");
+    }
+
+    private static void setFieldValue(PortletRequest request, LicenseType licenseType, LicenseType._Fields field) {
+        PortletUtils.setFieldValue(request, licenseType, field, LicenseType.metaDataMap.get(field), "");
+    }
+
     public static RequestStatus deleteRelease(PortletRequest request, Logger log) {
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
         if (releaseId != null) {
@@ -197,7 +232,11 @@ public abstract class ComponentPortletUtils {
                     user.setCommentMadeDuringModerationRequest(deleteComment);
                 }
                 ComponentService.Iface client = new ThriftClients().makeComponentClient();
-                return client.deleteRelease(releaseId, UserCacheHolder.getUserFromRequest(request));
+                RequestStatus deleteStatus = client.deleteRelease(releaseId, UserCacheHolder.getUserFromRequest(request));
+                if (deleteStatus.equals(RequestStatus.SUCCESS)) {
+                    SW360Utils.removeReleaseVulnerabilityRelation(releaseId, UserCacheHolder.getUserFromRequest(request));
+                }
+                return deleteStatus;
 
             } catch (TException e) {
                 log.error("Could not delete release from DB", e);
@@ -230,9 +269,16 @@ public abstract class ComponentPortletUtils {
                 }
 
                 for (Release release : releases) {
-                    release.unsetVendorId();
+                    if (release.isSetVendorId()) {
+                        release.unsetVendorId();
+                    }
+                    if (release.isSetVendor()) {
+                        release.unsetVendor();
+                    }
                     RequestStatus local_status = componentClient.updateRelease(release, user);
-                    if (local_status != RequestStatus.SUCCESS) global_status = local_status;
+                    if (local_status != RequestStatus.SUCCESS) {
+                        global_status = local_status;
+                    }
                 }
 
                 if (global_status == RequestStatus.SUCCESS) {
@@ -242,7 +288,7 @@ public abstract class ComponentPortletUtils {
                 }
 
             } catch (TException e) {
-                log.error("Could not delete release from DB", e);
+                log.error("Could not delete vendor from DB", e);
             }
         }
         return RequestStatus.FAILURE;

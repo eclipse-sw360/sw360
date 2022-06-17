@@ -3,16 +3,16 @@
  * Copyright Siemens AG, 2016.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.cvesearch.datasource.heuristics;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchApi;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchGuesser;
 import org.eclipse.sw360.cvesearch.datasource.matcher.Match;
@@ -34,7 +34,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString
 
 public class SearchLevels {
 
-    private static final Logger log = Logger.getLogger(SearchLevels.class);
+    private static final Logger log = LogManager.getLogger(SearchLevels.class);
 
     private static final String CPE_PREFIX = "cpe:2.3:";
     private static final String OLD_CPE_PREFIX = "cpe:/";

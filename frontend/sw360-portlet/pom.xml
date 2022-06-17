@@ -1,14 +1,13 @@
 <?xml version="1.0"?>
 
 <!--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
   ~
-  ~ SPDX-License-Identifier: EPL-1.0
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
   ~
-  ~ All rights reserved. This program and the accompanying materials
-  ~ are made available under the terms of the Eclipse Public License v1.0
-  ~ which accompanies this distribution, and is available at
-  ~ http://www.eclipse.org/legal/epl-v10.html
+  ~ SPDX-License-Identifier: EPL-2.0
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -18,47 +17,70 @@
     <parent>
         <artifactId>frontend</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
+    <artifactId>sw360-portlet</artifactId>
+    <packaging>jar</packaging>
+
     <properties>
-        <jquery.version>1.12.4</jquery.version>
         <jquery.ui.version>1.12.1</jquery.ui.version>
-        <jquery.datatables.version>1.10.15</jquery.datatables.version>
-        <jquery.datatables.buttons.version>1.1.2</jquery.datatables.buttons.version>
-        <jquery.datatables.select.version>1.2.2</jquery.datatables.select.version>
-        <jquery.confirm.version>3.0.1</jquery.confirm.version>
+        <jquery.datatables.version>1.10.19</jquery.datatables.version>
+        <jquery.datatables.buttons.version>1.5.3</jquery.datatables.buttons.version>
+        <jquery.datatables.select.version>1.2.7</jquery.datatables.select.version>
+        <jquery.confirm.version>3.3.2</jquery.confirm.version>
         <jquery.treetable.version>3.2.0</jquery.treetable.version>
-        <jquery.validation.version>1.15.1</jquery.validation.version>
-        <resumable.js.version>1.0.3</resumable.js.version>
-        <require.js.version>2.3.3</require.js.version>
+        <jquery.validation.version>1.19.0</jquery.validation.version>
+
+        <liferay.portal.kernel.version>8.1.0</liferay.portal.kernel.version>
+        <liferay.util.bridges.version>7.0.3</liferay.util.bridges.version>
+        <liferay.util.taglib.version>5.1.1</liferay.util.taglib.version>
+        <liferay.util.java.version>5.0.5</liferay.util.java.version>
+
+        <require.js.version>2.3.6</require.js.version>
+
+        <resumable.js.version>1.1.0</resumable.js.version>
+
+	<artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
     </properties>
 
-    <artifactId>sw360-portlet</artifactId>
-    <packaging>war</packaging>
-
+    <profiles>
+    <profile>
+         <id>help-docs</id>
+         <activation>
+             <property>
+                  <name>help-docs</name>
+                  <value>true</value>
+             </property>
+         </activation>
+	 <properties>
+		<packagePhase>prepare-package</packagePhase>
+	 </properties>
+   </profile>
+   </profiles>
     <build>
+	<finalName>org.eclipse.sw360.portlet-${project.version}</finalName>
         <plugins>
             <plugin>
-                <groupId>com.liferay.maven.plugins</groupId>
-                <artifactId>liferay-maven-plugin</artifactId>
-                <version>${liferay.maven.plugin.version}</version>
+                <groupId>com.liferay</groupId>
+                <artifactId>com.liferay.css.builder</artifactId>
+                <version>2.0.2</version>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
+                        <id>default-build-css</id>
+                        <phase>generate-resources</phase>
                         <goals>
-                            <goal>build-css</goal>
+                            <goal>build</goal>
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
-                    <autoDeployDir>${deploy.dir}</autoDeployDir>
-                    <appServerDeployDir>${liferay.app.server.deploy.dir}</appServerDeployDir>
-                    <appServerLibGlobalDir>${liferay.app.server.lib.global.dir}</appServerLibGlobalDir>
-                    <appServerPortalDir>${liferay.app.server.portal.dir}</appServerPortalDir>
-                    <liferayVersion>${liferay.version}</liferayVersion>
-                    <pluginType>portlet</pluginType>
+                    <docrootDirName>src/main/resources/META-INF/resources</docrootDirName>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>biz.aQute.bnd</groupId>
+                <artifactId>bnd-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>com.internetitem</groupId>
@@ -95,6 +117,33 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <configuration>
+                    <archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
+            </plugin>
+	<plugin>
+	    <groupId>com.github.fabienbarbero</groupId>
+	    <artifactId>mkdocs-maven-plugin</artifactId>
+	    <version>1.1.1</version>
+	    <executions>
+		<execution>
+		    <id>generate-mkdocs</id>
+		    <phase>${packagePhase}</phase>
+		    <goals>
+		        <goal>build</goal>
+		    </goals>
+		    <configuration>
+		        <configFile>${basedir}/src/documentation/mkdocs.yml</configFile>
+		    </configuration>
+		</execution>
+	    </executions>
+	</plugin>
         </plugins>
     </build>
 
@@ -106,141 +155,60 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
-            <artifactId>component-importer</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.sw360</groupId>
             <artifactId>exporters</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-
         <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>requirejs</artifactId>
-            <version>${require.js.version}</version>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>importers</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
-        <dependency> <!-- to support Servlet2 containers -->
-            <groupId>org.webjars</groupId>
-            <artifactId>webjars-servlet-2.x</artifactId>
-            <version>1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>jquery</artifactId>
-            <version>${jquery.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>jquery-ui</artifactId>
-            <version>${jquery.ui.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>datatables</artifactId>
-            <version>${jquery.datatables.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.bower</groupId>
-            <artifactId>datatables.net-buttons</artifactId>
-            <version>${jquery.datatables.buttons.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.bower</groupId>
-            <artifactId>datatables.net-buttons-dt</artifactId>
-            <version>${jquery.datatables.buttons.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.bower</groupId>
-            <artifactId>datatables.net-select</artifactId>
-            <version>${jquery.datatables.select.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.bower</groupId>
-            <artifactId>datatables.net-select-bs</artifactId>
-            <version>${jquery.datatables.select.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.npm</groupId>
-            <artifactId>github-com-craftpip-jquery-confirm</artifactId>
-            <version>${jquery.confirm.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars.bower</groupId>
-            <artifactId>jquery-treetable</artifactId>
-            <version>${jquery.treetable.version}</version>
-            <exclusions>
-              <!--
-                Treetable comes with a dependency to jquery-3.2.1 but with groupIs org.webjars.bower instead of org.webjars.
-                This way the jquery webjar does not conflict with the included jquery webjar above and will be included as well.
-                Since the webjars-locator searches the whole classpath, it will included jquery-3.2.1 instead of the defined jquery
-                version in this pom. We exclude the jquery-dependency here to avoid this behaviour.
-              -->
-            <exclusion>
-              <groupId>org.webjars.bower</groupId>
-              <artifactId>jquery</artifactId>
-            </exclusion>
-          </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>jquery-validation</artifactId>
-            <version>${jquery.validation.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.webjars</groupId>
-            <artifactId>resumable.js</artifactId>
-            <version>${resumable.js.version}</version>
-        </dependency>
-
-
         <dependency>
             <groupId>com.liferay.portal</groupId>
-            <artifactId>portal-service</artifactId>
-            <version>${liferay.version}</version>
+            <artifactId>com.liferay.portal.kernel</artifactId>
+            <version>${liferay.portal.kernel.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.liferay.portal</groupId>
-            <artifactId>util-bridges</artifactId>
-            <version>${liferay.version}</version>
+            <artifactId>com.liferay.util.bridges</artifactId>
+            <version>${liferay.util.bridges.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.liferay.portal</groupId>
-            <artifactId>util-taglib</artifactId>
-            <version>${liferay.version}</version>
+            <artifactId>com.liferay.util.taglib</artifactId>
+            <version>${liferay.util.taglib.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.liferay.portal</groupId>
-            <artifactId>util-java</artifactId>
-            <version>${liferay.version}</version>
+            <artifactId>com.liferay.util.java</artifactId>
+            <version>${liferay.util.java.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.portlet</groupId>
             <artifactId>portlet-api</artifactId>
-            <version>2.0</version>
+            <version>3.0.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
-            <version>2.4</version>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.0.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet.jsp</groupId>
-            <artifactId>jsp-api</artifactId>
-            <version>2.0</version>
+            <artifactId>javax.servlet.jsp-api</artifactId>
+            <version>2.2.1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>jstl</groupId>
-            <artifactId>jstl</artifactId>
+            <groupId>javax.servlet.jsp.jstl</groupId>
+            <artifactId>jstl-api</artifactId>
             <version>1.2</version>
         </dependency>
         <dependency>
@@ -250,9 +218,168 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
-            <version>1.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.framework</artifactId>
+            <version>1.9.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.component.annotations</artifactId>
+            <version>1.4.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.cm</artifactId>
+            <version>1.6.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.component</artifactId>
+            <version>1.4.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.web</groupId>
+            <artifactId>jstl-impl</artifactId>
+            <version>1.2</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
+            <version>5.6.4</version>
+            <scope>compile</scope>
         </dependency>
 
+
+        <!--
+          -
+          - WEB JAR DEPENDENCIES
+          -
+        -->
+
+        <!-- Bower GitHub WebJars -->
+        <dependency>
+            <groupId>org.webjars.bowergithub.requirejs</groupId>
+            <artifactId>requirejs-bower</artifactId>
+            <version>${require.js.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.components</groupId>
+            <artifactId>jqueryui</artifactId>
+            <version>${jquery.ui.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.webjars.bowergithub.jquery</groupId>
+                    <artifactId>jquery-dist</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.ludo</groupId>
+            <artifactId>jquery-treetable</artifactId>
+            <version>${jquery.treetable.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.webjars.bowergithub.jquery</groupId>
+                    <artifactId>jquery-dist</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.jquery-validation</groupId>
+            <artifactId>jquery-validation</artifactId>
+            <version>${jquery.validation.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.webjars.bowergithub.jquery</groupId>
+                    <artifactId>jquery-dist</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.datatables</groupId>
+            <artifactId>dist-datatables</artifactId>
+            <version>${jquery.datatables.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.webjars.bowergithub.jquery</groupId>
+                    <artifactId>jquery-dist</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bower</groupId>
+            <artifactId>datatables.net-bs4</artifactId>
+            <version>${jquery.datatables.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.datatables</groupId>
+            <artifactId>dist-datatables-buttons</artifactId>
+            <version>${jquery.datatables.buttons.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.webjars.bowergithub.jquery</groupId>
+                    <artifactId>jquery-dist</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.datatables</groupId>
+            <artifactId>dist-datatables-select</artifactId>
+            <version>${jquery.datatables.select.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.webjars.bowergithub.jquery</groupId>
+                    <artifactId>jquery-dist</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.bowergithub.datatables</groupId>
+            <artifactId>dist-datatables-select-bootstrap4</artifactId>
+            <version>1.3.0</version>
+        </dependency>
+        <!-- Classic WebJars -->
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>datatables-plugins</artifactId>
+            <version>${jquery.datatables.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.webjars</groupId>
+                    <artifactId>jquery</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.webjars</groupId>
+                    <artifactId>datatables</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>resumable.js</artifactId>
+            <version>${resumable.js.version}</version>
+        </dependency>
+
+
+        <!--
+          -
+          - TEST DEPENDENCIES
+          -
+         -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -265,38 +392,9 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.liferay</groupId>
+            <artifactId>com.liferay.petra.lang</artifactId>
+        </dependency>
     </dependencies>
-
-    <!-- For deployment right to your local liferay folder -->
-    <profiles>
-        <profile>
-            <id>deploy</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.liferay.maven.plugins</groupId>
-                        <artifactId>liferay-maven-plugin</artifactId>
-                        <version>${liferay.version}</version>
-                        <executions>
-                            <execution>
-                                <id>deploy-war</id>
-                                <phase>install</phase>
-                                <goals>
-                                    <goal>deploy</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <autoDeployDir>${deploy.dir}</autoDeployDir>
-                            <appServerDeployDir>${liferay.app.server.deploy.dir}</appServerDeployDir>
-                            <appServerLibGlobalDir>${liferay.app.server.lib.global.dir}</appServerLibGlobalDir>
-                            <appServerPortalDir>${liferay.app.server.portal.dir}</appServerPortalDir>
-                            <liferayVersion>${liferay.version}</liferayVersion>
-                            <pluginType>portlet</pluginType>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

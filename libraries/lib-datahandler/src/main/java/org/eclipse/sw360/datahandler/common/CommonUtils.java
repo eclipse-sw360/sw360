@@ -1,41 +1,36 @@
 /*
- * Copyright Siemens AG, 2014-2018.
+ * Copyright Siemens AG, 2014-2019.
  * With modifications by Bosch Software Innovations GmbH, 2016
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.common;
 
+import com.cloudant.client.api.model.Response;
 import com.google.common.base.*;
 import com.google.common.collect.*;
+
+import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
-import org.eclipse.sw360.datahandler.thrift.DocumentState;
-import org.eclipse.sw360.datahandler.thrift.ModerationState;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.ektorp.DocumentOperationResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -47,7 +42,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.apache.log4j.LogManager.getLogger;
+import static org.apache.logging.log4j.LogManager.getLogger;
 
 /**
  * @author Cedric.Bodet@tngtech.com
@@ -70,6 +65,8 @@ public class CommonUtils {
 
     public static final Joiner COMMA_JOINER = Joiner.on(", ");
 
+    public static final Joiner NEW_LINE_JOINER = Joiner.on(", <br>");
+
     private static final Comparator<CheckStatus> CHECK_STATUS_COMPARATOR = Comparator.comparingInt(cs -> {
         switch (cs) {
             case ACCEPTED:
@@ -83,7 +80,7 @@ public class CommonUtils {
     });
 
 
-    public static final String TMP_TODO_ID_PREFIX = "tmp";
+    public static final String TMP_OBLIGATION_ID_PREFIX = "tmp";
 
     private static final Predicate<String> NOT_EMPTY_OR_NULL = new Predicate<String>() {
         @Override
@@ -98,6 +95,24 @@ public class CommonUtils {
      */
     public static List<String> getSortedList(Collection<String> collection) {
         return collection != null ? CASE_INSENSITIVE_ORDERING.immutableSortedCopy(collection) : ImmutableList.<String>of();
+    }
+
+    /**
+     * Returns a sorted map containing the elements of the given unsorted map.
+     * The map is sorted follow the order.
+     */
+    public static Map<String, String> getSortedMap(Map<String, String> unsortedMap, boolean isAscending) {
+        if (CommonUtils.isNullOrEmptyMap(unsortedMap)) {
+            return unsortedMap;
+        }
+        Map<String, String> sortedMap;
+        if (isAscending) {
+            sortedMap = new TreeMap<String, String>(unsortedMap);
+        } else {
+            sortedMap = new TreeMap<String, String>(Collections.reverseOrder());
+            sortedMap.putAll(unsortedMap);
+        }
+        return sortedMap;
     }
 
     public static String joinStrings(Iterable<String> strings) {
@@ -212,6 +227,18 @@ public class CommonUtils {
         return false;
     }
 
+    public static boolean isNullOrEmptyCollection(Collection collection) {
+        return collection == null || collection.isEmpty();
+    }
+
+    public static boolean isNullOrEmptyMap(Map map) {
+        return map == null || map.isEmpty();
+    }
+
+    public static boolean isNotEmpty(Collection collection) {
+        return !isNullOrEmptyCollection(collection);
+    }
+
     public static boolean allAreEmptyOrNull(Collection... collections) {
         return !atLeastOneIsNotEmpty(collections);
     }
@@ -245,6 +272,14 @@ public class CommonUtils {
         return false;
     }
 
+    public static boolean allAreNotEmpty(Collection... collections) {
+        for (Collection collection : collections) {
+            if (isNullOrEmptyCollection(collection)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     public static boolean allAreEmpty(Object... objects) {
         return !atLeastOneIsNotEmpty(objects);
@@ -511,7 +546,7 @@ public class CommonUtils {
     }
 
     @NotNull
-    public static RequestSummary getRequestSummary(List<String> ids, List<DocumentOperationResult> documentOperationResults) {
+    public static RequestSummary getRequestSummary(List<String> ids, List<Response> documentOperationResults) {
         final RequestSummary requestSummary = new RequestSummary();
         requestSummary.requestStatus = documentOperationResults.isEmpty() ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
         requestSummary.setTotalElements(ids.size());
@@ -603,12 +638,13 @@ public class CommonUtils {
     public static Optional<Attachment> getBestClearingReport(Release release) {
         return nullToEmptyCollection(release.getAttachments())
                 .stream()
-                .filter(att -> att.getAttachmentType() == AttachmentType.CLEARING_REPORT)
+                .filter(att -> att.getAttachmentType() == AttachmentType.CLEARING_REPORT
+                        || att.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_XML)
                 .max(Comparator.comparing(Attachment::getCheckStatus, CHECK_STATUS_COMPARATOR));
     }
 
-    public static boolean isTemporaryTodo(Todo todo) {
-        return todo.isSetId() && todo.getId().startsWith(TMP_TODO_ID_PREFIX);
+    public static boolean isTemporaryObligation(Obligation oblig) {
+        return oblig.isSetId() && oblig.getId().startsWith(TMP_OBLIGATION_ID_PREFIX);
     }
 
     public static class AfterFunction<T, V> {
@@ -664,6 +700,10 @@ public class CommonUtils {
 
     public static boolean isNullEmptyOrWhitespace(String string) {
         return string == null || string.trim().length() == 0;
+    }
+
+    public static boolean isNotNullEmptyOrWhitespace(String string) {
+        return !isNullEmptyOrWhitespace(string);
     }
 
     public static <T> java.util.function.Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {

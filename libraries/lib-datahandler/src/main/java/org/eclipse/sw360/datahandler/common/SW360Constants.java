@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.common;
 
@@ -18,7 +17,9 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
 import java.util.*;
 import java.util.function.Function;
@@ -40,9 +41,19 @@ public class SW360Constants {
     public static final String KEY_REV = "_rev";
 
     public static final String PROJECT_VULNERABILITY_RATING_ID_PREFIX = "pvrating_";
+    public static final String LICENSE_TYPE_GLOBAL = "Global";
+    public static final String LICENSE_TYPE_OTHERS = "Others";
+    public static final String NA = "n/a";
+    public static final String LICENSE_NAME_UNKNOWN = "License name unknown";
+    public static final String OBLIGATION_TOPIC_UNKNOWN = "Obligation topic unknown";
+    public static final String NO_ASSERTION = "noassertion";
+    public static final String STATUS = "status";
+    public static final String SUCCESS = "success";
+    public static final String FAILURE = "failure";
+    public static final String MESSAGE = "message";
     // Proper values of the "type" member to deserialize to CouchDB
     public static final String TYPE_OBLIGATION = "obligation";
-    public static final String TYPE_TODO = "todo";
+    public static final String TYPE_OBLIGATIONS = "obligations";
     public static final String TYPE_RISKCATEGORY = "riskCategory";
     public static final String TYPE_RISK = "risk";
     public static final String TYPE_LICENSETYPE = "licenseType";
@@ -53,7 +64,14 @@ public class SW360Constants {
     public static final String TYPE_RELEASE = "release";
     public static final String TYPE_ATTACHMENT = "attachment";
     public static final String TYPE_PROJECT = "project";
+    public static final String TYPE_PROJECT_OBLIGATION = "obligationList";
     public static final String TYPE_MODERATION = "moderation";
+    public static final String TYPE_CLEARING = "clearing";
+    public static final String TYPE_SEARCHRESULT = "searchResult";
+    public static final String TYPE_CHANGELOG = "changeLog";
+    public static final String TYPE_VULNERABILITYDTO = "vulDTO";
+    public static final String TYPE_OBLIGATIONELEMENT = "obligationElement";
+    public static final String TYPE_OBLIGATIONNODE = "obligationNode";
 
     /**
      * Hashmap containing the name field for each type.
@@ -62,13 +80,13 @@ public class SW360Constants {
     public static final Map<String, String> MAP_FULLTEXT_SEARCH_NAME =
             ImmutableMap.<String, String>builder()
                     .put(TYPE_LICENSE, "fullname")
-                    .put(TYPE_TODO, "text")
+                    .put(TYPE_OBLIGATIONS, "text")
                     .put(TYPE_OBLIGATION, "name")
                     .put(TYPE_USER, "email")
                     .put(TYPE_VENDOR, "fullname")
                     .put(TYPE_COMPONENT, "name")
                     .put(TYPE_RELEASE, "name version")
-                    .put(TYPE_PROJECT, "name")
+                    .put(TYPE_PROJECT, "name version")
                     .build();
 
     public static final Collection<AttachmentType> LICENSE_INFO_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.COMPONENT_LICENSE_INFO_XML, AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
@@ -77,6 +95,7 @@ public class SW360Constants {
 
     public static final String NOTIFICATION_CLASS_RELEASE = "release";
     public static final String NOTIFICATION_CLASS_MODERATION_REQUEST = "moderation";
+    public static final String NOTIFICATION_CLASS_CLEARING_REQUEST = "clearing";
     public static final String NOTIFICATION_CLASS_COMPONENT = "component";
     public static final String NOTIFICATION_CLASS_PROJECT = "project";
     public static final Map<String, List<Map.Entry<String, String>>> NOTIFIABLE_ROLES_BY_OBJECT_TYPE = ImmutableMap.<String, List<Map.Entry<String, String>>>builder()
@@ -107,6 +126,9 @@ public class SW360Constants {
                     .add(pair(ModerationRequest._Fields.REQUESTING_USER, "Requesting User"),
                             pair(ModerationRequest._Fields.MODERATORS, "Moderator"))
                     .build())
+            .put(NOTIFICATION_CLASS_CLEARING_REQUEST, ImmutableList.<Map.Entry<String, String>>builder()
+                    .add(pair(ClearingRequest._Fields.REQUESTING_USER, "Requesting User"))
+                    .build())
             .build();
     public static final List<String> NOTIFICATION_EVENTS_KEYS = NOTIFIABLE_ROLES_BY_OBJECT_TYPE.entrySet()
             .stream()
@@ -135,5 +157,4 @@ public class SW360Constants {
     private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName){
         return new AbstractMap.SimpleImmutableEntry<>(field.toString(), displayName);
     }
-
 }

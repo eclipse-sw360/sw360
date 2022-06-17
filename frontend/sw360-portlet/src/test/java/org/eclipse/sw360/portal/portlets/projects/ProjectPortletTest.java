@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2015-2018. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.portlets.projects;
 
@@ -14,25 +13,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import org.apache.thrift.TException;
+
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.portal.common.ThriftJsonSerializer;
+
+import org.apache.thrift.TException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 
 import javax.portlet.PortletException;
 import javax.portlet.PortletRequest;
-import java.util.Collections;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,7 +38,6 @@ import static org.eclipse.sw360.portal.common.PortalConstants.LICENSE_INFO_ATTAC
 import static org.eclipse.sw360.portal.common.PortalConstants.MANUAL_ATTACHMENT_USAGES;
 import static org.eclipse.sw360.portal.common.PortalConstants.SOURCE_CODE_ATTACHMENT_USAGES;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.mockito.Matchers.any;
@@ -71,20 +68,24 @@ public class ProjectPortletTest {
 
     @Test
     public void testJsonOfClearing() throws Exception {
-        ReleaseClearingStateSummary releaseClearingStateSummary = new ReleaseClearingStateSummary().setNewRelease(1).setReportAvailable(5).setUnderClearing(6).setUnderClearingByProjectTeam(17).setApproved(4);
+        ReleaseClearingStateSummary releaseClearingStateSummary = new ReleaseClearingStateSummary().setNewRelease(1)
+                .setSentToClearingTool(17).setUnderClearing(6).setReportAvailable(5).setApproved(4);
 
         ThriftJsonSerializer thriftJsonSerializer = new ThriftJsonSerializer();
         String json = thriftJsonSerializer.toJson(releaseClearingStateSummary);
 
-        assertThat(json, containsString("{\"newRelease\":1,\"underClearing\":6,\"underClearingByProjectTeam\":17,\"reportAvailable\":5,\"approved\":4}"));
+        // assertThat(json, containsString(
+        // "{\"newRelease\":1,\"underClearing\":6,\"sentToClearingTool\":17,\"reportAvailable\":5,\"approved\":4}"));
 
         ObjectMapper objectMapper = new ObjectMapper();
         @SuppressWarnings("unchecked")
         Map<String, Object> map = objectMapper.readValue(json, Map.class);
 
-        assertThat(map, hasEntry("newRelease", (Object) 1));
-
-
+        assertThat(map, hasEntry("newRelease", (int) 1));
+        assertThat(map, hasEntry("sentToClearingTool", (int) 17));
+        assertThat(map, hasEntry("underClearing", (int) 6));
+        assertThat(map, hasEntry("reportAvailable", (int) 5));
+        assertThat(map, hasEntry("approved", (int) 4));
     }
 
     @Test

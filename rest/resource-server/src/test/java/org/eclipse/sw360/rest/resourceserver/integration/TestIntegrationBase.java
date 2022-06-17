@@ -1,10 +1,11 @@
 /*
  * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+  * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.rest.resourceserver.integration;
@@ -23,7 +24,7 @@ import java.util.HashMap;
 
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @SpringBootTest(classes = Sw360ResourceServer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ContextConfiguration
@@ -37,7 +38,7 @@ abstract public class TestIntegrationBase {
                                 String.class);
 
         String responseText = response.getBody();
-        HashMap jwtMap = new ObjectMapper().readValue(responseText, HashMap.class);
+        HashMap<?, ?> jwtMap = new ObjectMapper().readValue(responseText, HashMap.class);
         String accessToken = (String) jwtMap.get("access_token");
 
         HttpHeaders headers = new HttpHeaders();

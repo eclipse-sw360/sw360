@@ -1,12 +1,12 @@
 /*
  * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
+ * With contributions by Siemens Healthcare Diagnostics Inc, 2018.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.projects;
 
@@ -16,20 +16,32 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.ektorp.http.HttpClient;
+
+import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
@@ -40,6 +52,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
  * @author Johannes.Najjar@tngtech.com
  * @author alex.borodin@evosoft.com
  * @author thomas.maier@evosoft.com
+ * @author ksoranko@verifa.io
  */
 public class ProjectHandler implements ProjectService.Iface {
 
@@ -47,8 +60,18 @@ public class ProjectHandler implements ProjectService.Iface {
     private final ProjectSearchHandler searchHandler;
 
     ProjectHandler() throws IOException {
-        handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
-        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
+    }
+
+    ProjectHandler(Supplier<CloudantClient> httpClient, String dbName, String attchmntDbName) throws IOException {
+        handler = new ProjectDatabaseHandler(httpClient, dbName, attchmntDbName);
+        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), dbName);
+    }
+
+    ProjectHandler(Supplier<CloudantClient> cClient,Supplier<HttpClient> hClient, String dbName, String changeLogsDbName, String attchmntDbName) throws IOException {
+        handler = new ProjectDatabaseHandler(cClient, dbName, changeLogsDbName, attchmntDbName);
+        searchHandler = new ProjectSearchHandler(hClient, cClient, dbName);
     }
 
     /////////////////////
@@ -66,10 +89,11 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public List<Project> getMyProjects(String user) throws TException {
-        assertNotEmpty(user);
+    public List<Project> getMyProjects(User user, Map<String, Boolean> userRoles) throws TException {
+        assertNotNull(user);
+        assertNotEmpty(user.getEmail());
 
-        return handler.getMyProjectsSummary(user);
+        return handler.getMyProjectsFull(user, userRoles);
     }
 
     @Override
@@ -77,6 +101,12 @@ public class ProjectHandler implements ProjectService.Iface {
         assertUser(user);
 
         return handler.getAccessibleProjectsSummary(user);
+    }
+
+    @Override
+    public Map<PaginationData, List<Project>> getAccessibleProjectsSummaryWithPagination(User user, PaginationData pageData) throws TException {
+        assertUser(user);
+        return handler.getAccessibleProjectsSummary(user, pageData);
     }
 
     @Override
@@ -92,6 +122,30 @@ public class ProjectHandler implements ProjectService.Iface {
         assertUser(user);
 
         return handler.searchByName(name, user);
+    }
+
+    @Override
+    public ProjectData searchByGroup(String group, User user) throws SW360Exception {
+        assertNotEmpty(group);
+        assertUser(user);
+
+        return handler.searchByGroup(group, user);
+    }
+
+    @Override
+    public ProjectData searchByTag(String tag, User user) throws SW360Exception {
+        assertNotEmpty(tag);
+        assertUser(user);
+
+        return handler.searchByTag(tag, user);
+    }
+
+    @Override
+    public ProjectData searchByType(String type, User user) throws SW360Exception {
+        assertNotEmpty(type);
+        assertUser(user);
+
+        return handler.searchByType(type, user);
     }
 
     @Override
@@ -112,15 +166,27 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     ////////////////////////////
+    // CLEARING REQUEST EMAIL //
+    ////////////////////////////
+    @Override
+    public AddDocumentRequestSummary createClearingRequest(ClearingRequest clearingRequest, User user, String projectUrl) throws TException {
+        assertNotNull(clearingRequest);
+        assertNotEmpty(projectUrl);
+        assertUser(user);
+        return handler.createClearingRequest(clearingRequest, user, projectUrl);
+    }
+
+    ////////////////////////////
     // GET INDIVIDUAL OBJECTS //
     ////////////////////////////
 
     @Override
-    public Project getProjectById(String id, User user) throws TException {
+    public Project getProjectById(String id, User user) throws SW360Exception {
         assertUser(user);
         assertId(id);
 
         Project project = handler.getProjectById(id, user);
+        handler.addSelectLogs(project, user); 
         assertNotNull(project);
 
         return project;
@@ -134,7 +200,7 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public Project getProjectByIdForEdit(String id, User user) throws TException {
+    public Project getProjectByIdForEdit(String id, User user) throws SW360Exception {
         assertUser(user);
         assertId(id);
 
@@ -162,6 +228,13 @@ public class ProjectHandler implements ProjectService.Iface {
         assertUser(user);
 
         return handler.searchByExternalIds(externalIds, user);
+    }
+
+    @Override
+    public RequestSummary importBomFromAttachmentContent(User user, String attachmentContentId) throws TException {
+        assertNotNull(attachmentContentId);
+        assertUser(user);
+        return handler.importBomFromAttachmentContent(user, attachmentContentId);
     }
 
     ////////////////////////////
@@ -226,11 +299,11 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public List<ProjectLink> getLinkedProjects(Map<String, ProjectRelationship> relations, User user) throws TException {
+    public List<ProjectLink> getLinkedProjects(Map<String, ProjectProjectRelationship> relations, User user) throws TException {
         assertNotNull(relations);
         assertUser(user);
 
-        return handler.getLinkedProjects(relations);
+        return handler.getLinkedProjects(relations, user);
     }
 
     @Override
@@ -240,6 +313,7 @@ public class ProjectHandler implements ProjectService.Iface {
 
     @Override
     public List<Project> fillClearingStateSummary(List<Project> projects, User user) throws TException {
+        assertUser(user);
         return handler.fillClearingStateSummary(projects, user);
     }
 
@@ -250,8 +324,13 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public List<ReleaseClearingStatusData> getReleaseClearingStatuses(String projectId, User user) throws TException {
+    public List<ReleaseClearingStatusData> getReleaseClearingStatuses(String projectId, User user) throws SW360Exception {
         return handler.getReleaseClearingStatuses(projectId, user);
+    }
+
+    @Override
+    public List<ReleaseClearingStatusData> getReleaseClearingStatusesWithAccessibility(String projectId, User user) throws SW360Exception {
+        return handler.getReleaseClearingStatusesWithAccessibility(projectId, user);
     }
 
     @Override
@@ -274,4 +353,86 @@ public class ProjectHandler implements ProjectService.Iface {
         return handler.checkIfInUse(projectId);
     }
 
+    @Override
+    public String getCyclicLinkedProjectPath(Project project, User user) throws TException {
+        assertNotNull(project);
+        assertUser(user);
+
+        return handler.getCyclicLinkedProjectPath(project, user);
+    }
+
+    @Override
+    public ObligationList getLinkedObligations(String obligationId, User user) throws TException {
+        assertId(obligationId);
+        assertUser(user);
+        return handler.getLinkedObligations(obligationId, user);
+    }
+
+    @Override
+    public RequestStatus addLinkedObligations(ObligationList obligation, User user) throws TException {
+        assertUser(user);
+        assertNotNull(obligation);
+        assertIdUnset(obligation.getId());
+        return handler.addLinkedObligations(obligation, user);
+    }
+
+    @Override
+    public RequestStatus updateLinkedObligations(ObligationList obligation, User user) throws TException {
+        assertNotNull(obligation);
+        assertId(obligation.getId());
+        assertId(obligation.getProjectId());
+        assertUser(user);
+        return handler.updateLinkedObligations(obligation, user);
+    }
+
+    public void deleteReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
+        assertNotNull(usedReleaseRelations);
+        handler.deleteReleaseRelationsUsage(usedReleaseRelations);
+    }
+
+    @Override
+    public void addReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
+        assertNotNull(usedReleaseRelations);
+        handler.addReleaseRelationsUsage(usedReleaseRelations);
+
+    }
+
+    @Override
+    public void updateReleaseRelationsUsage(UsedReleaseRelations usedReleaseRelations) throws TException {
+        assertNotNull(usedReleaseRelations);
+        handler.updateReleaseRelationsUsage(usedReleaseRelations);
+    }
+
+    @Override
+    public List<UsedReleaseRelations> getUsedReleaseRelationsByProjectId(String projectId) throws TException {
+        assertNotNull(projectId);
+        return handler.getUsedReleaseRelationsByProjectId(projectId);
+    }
+
+    @Override
+    public List<Map<String, String>> getClearingStateInformationForListView(String projectId,User user) throws SW360Exception {
+        assertNotNull(projectId);
+        return handler.getClearingStateInformationForListView(projectId,user,false);
+    }
+    
+    @Override
+    public List<Map<String, String>> getAccessibleClearingStateInformationForListView(String projectId,User user) throws SW360Exception {
+        assertNotNull(projectId);
+        return handler.getClearingStateInformationForListView(projectId,user,true);
+    }
+
+    @Override
+    public Set<String> getGroups() throws TException {
+        return handler.getGroups();
+    }
+
+    @Override
+    public int getMyAccessibleProjectCounts(User user) throws TException {
+        return handler.getMyAccessibleProjects(user);
+    }
+
+    @Override
+    public void sendExportSpreadsheetSuccessMail(String url, String recepient) throws TException {
+        handler.sendExportSpreadsheetSuccessMail(url, recepient);
+    }
 }

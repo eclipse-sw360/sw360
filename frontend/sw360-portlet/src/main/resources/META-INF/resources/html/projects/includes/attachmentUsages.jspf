@@ -1,0 +1,252 @@
+<%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+<%@ page import="javax.portlet.PortletRequest" %>
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%--
+  ~ Copyright Siemens AG, 2018-2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+<%@include file="/html/init.jsp" %>
+
+<portlet:defineObjects/>
+<liferay-theme:defineObjects/>
+
+<portlet:resourceURL var="loadAttachmentUsagesRowsURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_ATTACHMENT_USAGES_ROWS%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="saveAttachmentUsagesURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.SAVE_ATTACHMENT_USAGES%>'/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${requestScope.project.id}"/>
+</portlet:resourceURL>
+
+<form id="attachmentUsagesForm" name="attachmentUsagesForm" action="<%=saveAttachmentUsagesURL%>" method="post">
+    <table class="table table-bordered" id="AttachmentUsagesInfo" style="table-layout: auto"
+    data-load-node-url="<%=loadAttachmentUsagesRowsURL%>"
+    data-portlet-namespace="<portlet:namespace/>"
+    data-parent-branch-key="<%=PortalConstants.PARENT_BRANCH_ID%>"
+    data-scope-group-id="${httpServletRequest.getAttribute('scopeGroupId')}"
+        >
+        <thead>
+        <tr>
+            <th colspan="8" class="headlabel">
+                <div class="row m-0">
+                <core_rt:if test="${projectList.size() > 1 or (projectList.size() == 1 and not empty projectList.get(0).linkedReleases)}">
+                    <div class="pr-2">
+                        <liferay-ui:message key="linked.releases.and.projects" />
+                    </div>
+                    <div>
+                        (<a href="#" id="expandAll" class="text-primary"><liferay-ui:message key="expand.all" /> </a>|
+                        <a href="#" id="collapseAll" class="text-primary"> <liferay-ui:message key="collapse.all" /></a>)
+                    </div>
+                    <div class="col form-group m-0">
+                        <select class="form-control form-control-sm mx-2 w-50" id="releaseFilter">
+                            <option value="" class="textlabel stackedLabel">-- <liferay-ui:message key="release.filter" /> -- </option>
+                            <option value="2" class="textlabel stackedLabel"><liferay-ui:message key="with.cli.attachments" /></option>
+                            <option value="1" class="textlabel stackedLabel"><liferay-ui:message key="with.attachments" /></option>
+                            <option value="3" class="textlabel stackedLabel"><liferay-ui:message key="without.source.attachments" /></option>
+                            <option value="0" class="textlabel stackedLabel"><liferay-ui:message key="without.attachments" /></option>
+                        </select>
+                    </div>
+                    <div class="col form-group m-0">
+                        <input id="nameSearch" type="input" placeholder="<liferay-ui:message key="search" />" class="form-control form-control-sm w-50 float-right">
+                    </div>
+                </core_rt:if>
+                </div>
+            </th>
+        </tr>
+        <tr>
+            <th rowspan="3"><liferay-ui:message key="name" /></th>
+            <th rowspan="3"><liferay-ui:message key="relation" /></th>
+            <th rowspan="3"><liferay-ui:message key="uploaded.by" /></th>
+            <th rowspan="3"><liferay-ui:message key="type" /></th>
+            <th colspan="4"><liferay-ui:message key="used.in" /></th>
+        </tr>
+        <tr>
+            <th colspan="2"><liferay-ui:message key="license.info" /></th>
+            <th rowspan="2"><liferay-ui:message key="source.code.bundle" /></th>
+            <th rowspan="2"><liferay-ui:message key="other" /></th>
+        </tr>
+        <tr>
+            <th></th>
+            <th class="p-1"><liferay-ui:message key="conclusions" /></th>
+        </tr>
+        </thead>
+        <tbody>
+            <%@include file="/html/projects/includes/attachmentUsagesRows.jspf"%>
+            <core_rt:if test="${projectList.size() == 1 and empty projectList.get(0).linkedReleases}">
+                <tr>
+                    <td colspan="7"><liferay-ui:message key="no.linked.releases.or.projects" /></td>
+                </tr>
+            </core_rt:if>
+        </tbody>
+    </table>
+</form>
+
+<script>
+    require(['jquery', 'modules/ajax-treetable', 'modules/alert', 'modules/button'], function($, ajaxTreeTable, alert, button) {
+
+        Liferay.on('allPortletsReady', function() {
+            var config = $('#AttachmentUsagesInfo').data();
+
+            ajaxTreeTable.setup('AttachmentUsagesInfo', config.loadNodeUrl, function(table, node) {
+                var data = {};
+                data[config.portletNamespace + config.parentBranchKey] = node.id;
+                data[config.portletNamespace + 'parentProjectPath'] = $(node.row[0]).attr("data-tt-parentProjectPath");
+                data[config.portletNamespace + 'parentScopeGroupId'] = config.scopeGroupId;
+                return data;
+            }, function(table, node, result) {
+                var rows = $(result).filter("tr");
+                table.treetable("loadBranch", node, rows);
+                // next two lines are a workaround for treetable displaying the node as collapsed,
+                // yet also displaying its children, because it expects that all rows in the loadBranch call above
+                // belong to the node, but in our case we load couple levels at a time
+                table.treetable("collapseNode", node.id);
+                table.treetable("expandNode", node.id);
+                attachCheckboxEventHandlers();
+                attachClickHandlerForLicInfo();
+            });
+            attachCheckboxEventHandlers();
+            attachClickHandlerForLicInfo();
+            $('#saveAttachmentUsagesButton').click(saveAttachmentUsages);
+        });
+
+        $("#nameSearch").on("keyup", function(event) {
+            let value = this.value.toLowerCase().trim(),
+                table = $("#AttachmentUsagesInfo");
+            if (!value) {
+                $("#AttachmentUsagesInfo tbody").find('tr').each(function(index) {
+                    let data = $(this).data();
+                    if (!data.ttParentId) {
+                        $(this).show();
+                        table.treetable("collapseNode", data.ttId);
+                    }
+                });
+                return;
+            }
+            $("#AttachmentUsagesInfo tbody tr").each(function(index) {
+                let data = $(this).data();
+                if (!data.ttParentId) {
+                    let text = $(this).find("td").first().text().trim().toLowerCase();
+                        isMatch = text.indexOf(value) !== -1;
+                    if (isMatch) {
+                        $(this).show();
+                        table.treetable("expandNode", data.ttId);
+                    } else {
+                        table.treetable("collapseNode", data.ttId);
+                        $(this).hide();
+                    }
+                }
+            });
+        });
+
+        $('a[href="#"]').click(function(e) {
+            e.preventDefault();
+            $('#AttachmentUsagesInfo').treetable(e.target.id);
+            return false;
+        });
+
+        $('#releaseFilter').on('change', function(e) {
+            let $filter = $('#releaseFilter'),
+            filterVal = $('#releaseFilter').find(":selected").val(),
+            isFilterWithAttach = filterVal == '1',
+            isFilterWithoutAttach = filterVal == '0',
+            isFilterCliAttach = filterVal == '2',
+            isFilterWithoutSourceAttach = filterVal == '3',
+            isClearFilter = filterVal == '';
+
+            $("#AttachmentUsagesInfo tbody").find('tr').each(function(index) {
+                let data = $(this).data();
+                if (isFilterWithoutAttach) {
+                    if (!data.ttParentId && $(this).hasClass('leaf')) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                } else if (isFilterWithAttach) {
+                    if (!data.ttParentId && $(this).hasClass('branch') && !data.ttParentprojectpath) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                } else if (isFilterCliAttach) {
+                    if (!data.ttParentId && $(this).hasClass('branch') && !data.ttParentprojectpath && data.isCliPresent) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                } else if (isFilterWithoutSourceAttach) {
+                    if (!data.ttParentId && $(this).hasClass('branch') && !data.ttParentprojectpath) {
+                        if (data.isSourcePresent) {
+                            $(this).hide();
+                        } else {
+                            $(this).show();
+                        }
+                    } else {
+                        $(this).hide();
+                    }
+                } else if (isClearFilter && !data.ttParentId) {
+                    $(this).show();
+                }
+            });
+            if (isClearFilter || isFilterWithAttach) {
+                $('#AttachmentUsagesInfo').treetable('collapseAll');
+            }
+        });
+
+        function attachCheckboxEventHandlers(){
+            $("#attachmentUsagesForm .trackChange").change(function() {
+                var $shadow = $("#" + this.id + "_shadow");
+                $shadow.prop('checked', true);
+            });
+
+            $("#attachmentUsagesForm .trackChangeLicInfo").change(function() {
+                var $shadow = $("#attachmentUsagesForm").find('input[id="' + this.id + "_shadow" + '"]');
+                $shadow.prop('checked', true);
+            });
+        }
+
+        function saveAttachmentUsages() {
+            var $form = $("#attachmentUsagesForm");
+
+            button.wait('#saveAttachmentUsagesButton');
+            alert.close($form);
+            $.ajax({
+                method: 'POST',
+                url: $form.prop("action"),
+                data: $form.serialize()
+            }).done(function(){
+                alert.success($form, '<liferay-ui:message key="saved.attachment.usages" />', 4);
+                button.finish('#saveAttachmentUsagesButton');
+            }).fail(function(xhr, status, error){
+                alert.danger($form, "<liferay-ui:message key="couldnt.save.attachment.usages" />" + xhr.responseText, 6);
+                button.finish('#saveAttachmentUsagesButton');
+            });
+        }
+
+        function attachClickHandlerForLicInfo() {
+            $("#AttachmentUsagesInfo").find(".licInfo").on("change",function() {
+                let checked = $(this).prop("checked");
+                let includeConcludedLicense = $(this).parents("tr:eq(0)").find('.includeConcludedLicense');
+                if(checked) {
+                    $(includeConcludedLicense).prop("disabled", false);
+                }
+                else {
+                    $(includeConcludedLicense).prop("checked", false).trigger('change');
+                    $(includeConcludedLicense).prop("disabled", true);
+                }
+            });
+
+            $("#AttachmentUsagesInfo").find(".includeConcludedLicense").on("change",function() {
+                let $shadow = $("#" + $(this).val() + "_shadow");
+                $shadow.prop('checked', true);
+                $("#" + this.id + "_shadow").prop('checked', true);
+            });
+        }
+    });
+</script>

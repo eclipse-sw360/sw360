@@ -2,39 +2,50 @@
 <!--
   ~ Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
   ~
-  ~ SPDX-License-Identifier: EPL-1.0
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
   ~
-  ~ All rights reserved. This program and the accompanying materials
-  ~ are made available under the terms of the Eclipse Public License v1.0
-  ~ which accompanies this distribution, and is available at
-  ~ http://www.eclipse.org/legal/epl-v10.html
+  ~ SPDX-License-Identifier: EPL-2.0
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <dependencies>
-        <dependency>
-            <groupId>org.spdx</groupId>
-            <artifactId>spdx-tools</artifactId>
-            <version>2.1.0</version>
-        </dependency>
-    </dependencies>
 
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-src</artifactId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>src-licenses</artifactId>
     <packaging>jar</packaging>
     <name>src-licenses</name>
+        
+    <properties>
+        <liferay.portal.kernel.version>8.1.0</liferay.portal.kernel.version>
+    </properties>
 
-    <developers>
-        <developer>
-            <name>cedric.bodet@tngtech.com</name>
-        </developer>
-    </developers>
-
+    <dependencies>
+        <dependency>
+            <groupId>org.spdx</groupId>
+            <artifactId>spdx-tools</artifactId>
+        </dependency>
+        <!-- Needed by spdx-tools -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.liferay.portal</groupId>
+            <artifactId>com.liferay.portal.kernel</artifactId>
+            <version>${liferay.portal.kernel.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 </project>

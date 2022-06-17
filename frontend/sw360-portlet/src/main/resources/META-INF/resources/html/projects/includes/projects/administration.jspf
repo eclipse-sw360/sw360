@@ -1,0 +1,143 @@
+<%--
+  ~ Copyright Siemens AG, 2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+<table class="table label-value-table" id="clearing">
+    <thead>
+    <tr>
+        <th colspan="2"><liferay-ui:message key="clearing" /></th>
+    </tr>
+    </thead>
+    <tr>
+        <td><liferay-ui:message key="project.clearing.state" />:</td>
+        <td><sw360:DisplayEnum value="${project.clearingState}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="clearing.details" />:</td>
+        <td>
+            <liferay-ui:message key="new.releases" />:
+            <span>
+                <sw360:out value="${project.releaseClearingStateSummary.newRelease}" default="--"/>
+            </span>,
+
+            <liferay-ui:message key="under.clearing" />:
+            <span>
+                <sw360:out value="${project.releaseClearingStateSummary.underClearing}" default="--"/>
+            </span>
+            (<liferay-ui:message key="and" /> <sw360:out value="${project.releaseClearingStateSummary.sentToClearingTool}" default="--"/> <liferay-ui:message key="already.uploaded" />),
+
+            <liferay-ui:message key="report.available" />:
+            <span>
+                <sw360:out value="${project.releaseClearingStateSummary.reportAvailable}" default="--"/>
+            </span>,
+
+            <liferay-ui:message key="approved" />:
+            <span>
+                <sw360:out value="${project.releaseClearingStateSummary.approved}" default="--"/>
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="clearing.team" />:</td>
+        <td><sw360:out value="${project.clearingTeam}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="deadline.for.pre-evaluation" />:</td>
+        <td><sw360:out value="${project.preevaluationDeadline}"/></td>
+    </tr>
+     <tr>
+        <td><liferay-ui:message key="clearing.summary" />:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="clearingSummaryText" name="<portlet:namespace/><%=Project._Fields.CLEARING_SUMMARY%>" type="text" readonly><sw360:out value="${project.clearingSummary}" /></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="special.risk.open.source.software" />:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="specialRisksOSSText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS_OSS%>" type="text" readonly><sw360:out value="${project.specialRisksOSS}" /></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="general.risks.3rd.party.software" />:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="generalRisks3rdPartyText" name="<portlet:namespace/><%=Project._Fields.GENERAL_RISKS3RD_PARTY%>" type="text" readonly><sw360:out value="${project.generalRisks3rdParty}" /></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="special.risks.3rd.party.software" />:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="specialRisks3rdPartyText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS3RD_PARTY%>" type="text" readonly><sw360:out value="${project.specialRisks3rdParty}" /></textarea>
+        </td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="sales.and.delivery.channels" />:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="deliveryChannelsText" name="<portlet:namespace/><%=Project._Fields.DELIVERY_CHANNELS%>"  type="text" readonly><sw360:out value="${project.deliveryChannels}" /></textarea>
+        </td>
+    </tr>
+        <tr>
+        <td><liferay-ui:message key="remarks.additional.requirements" />:</td>
+        <td>
+            <textarea class="form-control" rows="5" id="remarksAdditionalRequirementsText" name="<portlet:namespace/><%=Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS%>" readonly><sw360:out value="${project.remarksAdditionalRequirements}" /></textarea>
+        </td>
+    </tr>
+</table>
+
+<table class="table label-value-table" id="lifecycle">
+    <thead>
+    <tr>
+        <th colspan="2"><liferay-ui:message key="lifecycle" /></th>
+    </tr>
+    </thead>
+    <tr>
+        <td><liferay-ui:message key="project.state" />:</td>
+        <td><sw360:DisplayEnum value="${project.state}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="system.test.begin" />:</td>
+        <td><sw360:out value="${project.systemTestStart}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="system.test.end" />:</td>
+        <td><sw360:out value="${project.systemTestEnd}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="delivery.start" />:</td>
+        <td><sw360:out value="${project.deliveryStart}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="phase.out.since" />:</td>
+        <td><sw360:out value="${project.phaseOutSince}"/></td>
+    </tr>
+</table>
+
+<table class="table label-value-table" id="LicenseInfoHeader" title="<liferay-ui:message key="license.info.header" />">
+    <thead>
+    <tr>
+        <th><liferay-ui:message key="license.info.header" /></th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <textarea class="form-control" rows="5" id="licenseInfoHeaderText" readonly><sw360:DisplayLicenseInfoHeader project="${project}" defaultText="${defaultLicenseInfoHeaderText}"/></textarea>
+        </td>
+    </tr>
+</table>
+
+<%--for javascript library loading --%>
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+    require(['jquery'], function($) {
+        $('#detailTab a[href="#tab-Administration"]').on('shown.bs.tab', function (event) {
+		if($('#licenseInfoHeaderText').prop('scrollHeight') > 0) {
+		$('#licenseInfoHeaderText').height($('#licenseInfoHeaderText').prop('scrollHeight'));
+		}
+        });
+    });
+</script>

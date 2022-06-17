@@ -2,12 +2,11 @@
  * Copyright (c) Bosch Software Innovations GmbH 2016.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.cvesearch.datasource.json;
 
@@ -18,12 +17,10 @@ import java.io.BufferedReader;
 import java.lang.reflect.Type;
 import java.util.function.Function;
 
-public class CveSearchJsonParser implements Function<BufferedReader, Object> {
-    private Type type;
+public abstract class CveSearchJsonParser<T> implements Function<BufferedReader, T> {
     private Gson gson;
 
-    public CveSearchJsonParser(Type type) {
-        this.type = type;
+    public CveSearchJsonParser() {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(CveSearchData.DateTimeObject.class, new DateTimeObjectDeserializer());
         gsonBuilder.registerTypeAdapter(CveSearchData.VulnerableConfigurationEntry.class, new VulnerableConfigurationEntryDeserializer());
@@ -61,8 +58,10 @@ public class CveSearchJsonParser implements Function<BufferedReader, Object> {
         }
     }
 
+    public abstract Type getType();
+
     @Override
-    public Object apply(BufferedReader json) {
-        return gson.fromJson(json,type);
+    public T apply(BufferedReader json) {
+        return gson.fromJson(json,getType());
     }
 }

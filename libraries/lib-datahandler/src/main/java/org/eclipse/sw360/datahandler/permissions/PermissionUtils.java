@@ -1,15 +1,19 @@
 /*
  * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.permissions;
 
+import java.util.Properties;
+import java.util.Set;
+
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -29,24 +33,64 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
  */
 public class PermissionUtils {
 
+    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+    public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
+    public static final boolean IS_ADMIN_PRIVATE_ACCESS_ENABLED;
+
+    static {
+        Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
+        IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED = Boolean.parseBoolean(
+            System.getProperty("RunComponentVisibilityRestrictionTest", props.getProperty("component.visibility.restriction.enabled", "false")));
+        IS_ADMIN_PRIVATE_ACCESS_ENABLED = Boolean.parseBoolean(
+            System.getProperty("RunPrivateProjectAccessTest", props.getProperty("admin.private.project.access.enabled", "false")));
+    }
+
     public static boolean isNormalUser(User user) {
         return isInGroup(user, UserGroup.USER);
+    }
+
+    public static boolean isNormalUserBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.USER);
     }
 
     public static boolean isAdmin(User user) {
         return isInGroup(user, UserGroup.SW360_ADMIN) || isInGroup(user, UserGroup.ADMIN);
     }
 
+    public static boolean isAdminBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.SW360_ADMIN) || roles.contains(UserGroup.ADMIN);
+    }
+
     public static boolean isClearingAdmin(User user) {
-        return isInGroup(user, UserGroup.CLEARING_ADMIN);
+        return isInGroup(user, UserGroup.CLEARING_ADMIN) || isInGroup(user, UserGroup.CLEARING_EXPERT);
+    }
+
+    public static boolean isClearingAdminBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.CLEARING_ADMIN) || roles.contains(UserGroup.CLEARING_EXPERT);
+    }
+
+    public static boolean isClearingExpert(User user) {
+        return isInGroup(user, UserGroup.CLEARING_EXPERT);
+    }
+
+    public static boolean isClearingExpertBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.CLEARING_EXPERT);
     }
 
     public static boolean isEccAdmin(User user) {
         return isInGroup(user, UserGroup.ECC_ADMIN);
     }
 
+    public static boolean isEccAdminBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.ECC_ADMIN);
+    }
+
     public static boolean isSecurityAdmin(User user) {
         return isInGroup(user, UserGroup.SECURITY_ADMIN);
+    }
+
+    public static boolean isSecurityAdminBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.SECURITY_ADMIN);
     }
 
     private static boolean isInGroup(User user, UserGroup userGroup) {
@@ -59,6 +103,8 @@ public class PermissionUtils {
                 return isNormalUser(user) || isAdmin(user) || isClearingAdmin(user) || isEccAdmin(user) || isSecurityAdmin(user);
             case CLEARING_ADMIN:
                 return isClearingAdmin(user) || isAdmin(user);
+            case CLEARING_EXPERT:
+                return isClearingExpert(user) || isAdmin(user);
             case ECC_ADMIN:
                 return isEccAdmin(user) || isAdmin(user);
             case SECURITY_ADMIN:
@@ -69,6 +115,28 @@ public class PermissionUtils {
                 return isAdmin(user);
             default:
                 throw new IllegalArgumentException("Unknown group: " + group);
+        }
+    }
+
+    public static boolean isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup role, Set<UserGroup> secondaryRoles) {
+        switch (role) {
+            case USER:
+                return isNormalUserBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles) ||
+                        isClearingAdminBySecondaryRoles(secondaryRoles) || isEccAdminBySecondaryRoles(secondaryRoles) || isSecurityAdminBySecondaryRoles(secondaryRoles);
+            case CLEARING_ADMIN:
+                return isClearingAdminBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles);
+            case CLEARING_EXPERT:
+                return isClearingExpertBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles);
+            case ECC_ADMIN:
+                return isEccAdminBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles);
+            case SECURITY_ADMIN:
+                return isSecurityAdminBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles);
+            case SW360_ADMIN:
+                return isAdminBySecondaryRoles(secondaryRoles);
+            case ADMIN:
+                return isAdminBySecondaryRoles(secondaryRoles);
+            default:
+                throw new IllegalArgumentException("Unknown role: " + role);
         }
     }
 

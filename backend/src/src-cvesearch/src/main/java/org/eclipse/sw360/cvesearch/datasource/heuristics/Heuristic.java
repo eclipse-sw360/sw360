@@ -3,19 +3,19 @@
  * Copyright Siemens AG, 2016.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.cvesearch.datasource.heuristics;
 
 import org.eclipse.sw360.cvesearch.datasource.CveSearchApi;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchData;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ public class Heuristic {
     private final SearchLevels searchLevels;
     private final CveSearchApi cveSearchApi;
     private final int maxDepth;
-    private Logger log = Logger.getLogger(Heuristic.class);
+    private Logger log = LogManager.getLogger(Heuristic.class);
 
     public Heuristic(SearchLevels searchLevels, CveSearchApi cveSearchApi) {
         this.searchLevels = searchLevels;

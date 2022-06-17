@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.exporter;
 
@@ -18,6 +17,9 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.exporter.helper.ComponentHelper;
+import org.eclipse.sw360.exporter.helper.ExporterHelper;
+import org.eclipse.sw360.exporter.helper.ReleaseHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -53,23 +55,28 @@ public class ComponentExporter extends ExcelExporter<Component, ComponentHelper>
             .add(RELEASES)
             .build();
 
-    static final List<Component._Fields> COMPONENT_RENDERED_FIELDS = Component.metaDataMap.keySet()
+    public static final List<Component._Fields> COMPONENT_RENDERED_FIELDS = Component.metaDataMap.keySet()
             .stream()
             .filter(k -> ! COMPONENT_IGNORED_FIELDS.contains(k))
             .collect(Collectors.toList());
 
-    static List<String> HEADERS = COMPONENT_RENDERED_FIELDS
+    public static List<String> HEADERS = COMPONENT_RENDERED_FIELDS
             .stream()
             .map(Component._Fields::getFieldName)
             .map(n -> SW360Utils.displayNameFor(n, nameToDisplayName))
             .collect(Collectors.toList());
 
-    static List<String> HEADERS_EXTENDED_BY_RELEASES = ExporterHelper.addSubheadersWithPrefixesAsNeeded(HEADERS, ReleaseExporter.HEADERS, "release: ");
+    public static List<String> HEADERS_EXTENDED_BY_RELEASES = ExporterHelper.addSubheadersWithPrefixesAsNeeded(HEADERS, ReleaseExporter.HEADERS, "release: ");
 
     public ComponentExporter(ComponentService.Iface componentClient, List<Component> components, User user,
             boolean extendedByReleases) throws SW360Exception {
         super(new ComponentHelper(extendedByReleases, new ReleaseHelper(componentClient, user)));
         preloadLinkedReleasesFor(components, extendedByReleases);
+    }
+
+    public ComponentExporter(ComponentService.Iface componentClient, User user,
+            boolean extendedByReleases) throws SW360Exception {
+        super(new ComponentHelper(extendedByReleases, new ReleaseHelper(componentClient, user)));
     }
 
     private void preloadLinkedReleasesFor(List<Component> components, boolean extendedByReleases)

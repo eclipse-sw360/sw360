@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.moderation.db;
@@ -69,6 +68,12 @@ public class ProjectModerationRequestGenerator extends ModerationRequestGenerato
                         break;
                     case EXTERNAL_IDS:
                         dealWithStringtoStringMap(Project._Fields.EXTERNAL_IDS);
+                        break;
+                    case ADDITIONAL_DATA:
+                        dealWithStringKeyedMap(Project._Fields.ADDITIONAL_DATA);
+                        break;
+                    case EXTERNAL_URLS:
+                        dealWithStringtoStringMap(Project._Fields.EXTERNAL_URLS);
                         break;
                     case ROLES:
                         dealWithCustomMap(Project._Fields.ROLES);

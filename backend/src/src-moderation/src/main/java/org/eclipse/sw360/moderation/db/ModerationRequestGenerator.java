@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.moderation.db;
@@ -16,7 +15,8 @@ import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TEnum;
 import org.apache.thrift.TFieldIdEnum;
@@ -46,7 +46,7 @@ public abstract class ModerationRequestGenerator<U extends TFieldIdEnum, T exten
     protected T updateDocument;
     protected T actualDocument;
 
-    Logger log = Logger.getLogger(ModerationRequestGenerator.class);
+    Logger log = LogManager.getLogger(ModerationRequestGenerator.class);
 
     public abstract ModerationRequest setAdditionsAndDeletions(ModerationRequest request, T updateDocument, T actualDocument);
 

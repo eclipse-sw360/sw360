@@ -1,26 +1,16 @@
 /*
  * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.datahandler.db;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.ektorp.http.HttpClient;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 
 import java.net.MalformedURLException;
 import java.util.HashSet;
@@ -29,8 +19,17 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyCollection;
-import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+
+import com.cloudant.client.api.CloudantClient;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 
 public abstract class AttachmentAwareDatabaseHandler {
 
@@ -40,7 +39,7 @@ public abstract class AttachmentAwareDatabaseHandler {
         this.attachmentDatabaseHandler = attachmentDatabaseHandler;
     }
 
-    protected AttachmentAwareDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
+    protected AttachmentAwareDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
         this(new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName));
     }
 

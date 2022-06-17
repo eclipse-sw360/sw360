@@ -1,10 +1,11 @@
 /*
  * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+  * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
@@ -35,11 +36,12 @@ import java.util.HashSet;
 import java.util.List;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -66,7 +68,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
 
     @Before
     public void before() throws TException {
-        List<Attachment> attachmentList = new ArrayList<>();
+        List<Attachment> attachments = new ArrayList<>();
         attachment = new Attachment();
 
         attachment.setAttachmentContentId("76537653");
@@ -82,7 +84,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
         attachment.setCheckedOn("2016-12-18");
         attachment.setCheckStatus(CheckStatus.ACCEPTED);
 
-        attachmentList.add(attachment);
+        attachments.add(attachment);
 
         Release release = new Release();
         release.setId("874687");
@@ -97,19 +99,22 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
         release.setClearingState(ClearingState.APPROVED);
 
         AttachmentInfo attachmentInfo = new AttachmentInfo(attachment);
+        List<AttachmentInfo> attachmentInfos = new ArrayList<>();
+        attachmentInfos.add(attachmentInfo);
         Source owner = new Source();
         owner.setReleaseId(release.getId());
         attachmentInfo.setOwner(owner);
 
         given(this.attachmentServiceMock.getAttachmentById(eq(attachment.getAttachmentContentId()))).willReturn(attachmentInfo);
-        given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), anyObject())).willReturn(release);
+        given(this.attachmentServiceMock.getAttachmentsBySha1(eq(attachment.getSha1()))).willReturn(attachmentInfos);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
 
         User user = new User();
         user.setId("123456789");
         user.setEmail("admin@sw360.org");
         user.setFullname("John Doe");
 
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
     }
 
     @Test
@@ -137,9 +142,25 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("checkedComment").description("Comment of the checking team"),
                                 fieldWithPath("checkedOn").description("The date the attachment was checked"),
                                 fieldWithPath("checkStatus").description("The checking status. possible values are " + Arrays.asList(CheckStatus.values())),
-                                fieldWithPath("_embedded.createdBy").description("The user who created this attachment"),
-                                fieldWithPath("_embedded.sw360:releases").description("The release this attachment belongs to"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                subsectionWithPath("_embedded.createdBy").description("The user who created this attachment"),
+                                subsectionWithPath("_embedded.sw360:releases").description("The release this attachment belongs to"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_get_attachments_by_sha1() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/attachments?sha1=da373e491d3863477568896089ee9457bc316783")
+                .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(linkWithRel("curies").description("Curies are used for online documentation")),
+                        responseFields(
+                                subsectionWithPath("_links")
+                                        .description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:attachments").description(
+                                        "The collection of <<resources-attachments,Attachment resources>>. In most cases the result should contain either one element or an empty collection. If the same binary file is uploaded and attached to multiple sw360 resources, the collection will contain all the attachments with matching sha1 hash."))))
+                .andReturn();
     }
 }

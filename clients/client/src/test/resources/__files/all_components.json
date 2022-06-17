@@ -1,0 +1,39 @@
+{
+  "_embedded": {
+    "sw360:components": [
+      {
+        "name": "jackson-annotations",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/components/xxxxxxyyyyyzzzzz8c34"
+          }
+        }
+      },
+      {
+        "name": "jakarta.validation-api",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/components/xxxxxxyyyyyzzzzz9e53"
+          }
+        }
+      },
+      {
+        "name": "jsoup",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/components/xxxxxxyyyyyzzzzzb9ee"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "curies": [
+      {
+        "href": "https://sw360.test.com/resource/docs/{rel}.html",
+        "name": "sw360",
+        "templated": true
+      }
+    ]
+  }
+}

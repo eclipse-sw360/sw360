@@ -1,18 +1,19 @@
 /*
  * Copyright Siemens AG, 2016-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.components.db;
 
 import com.google.common.collect.ImmutableMap;
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
@@ -57,8 +58,8 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ProjectDatabaseHandlerTest {
 
-    private static final String dbName = DatabaseSettings.COUCH_DB_DATABASE;
-    private static final String attachmentsDbName = DatabaseSettings.COUCH_DB_ATTACHMENTS;
+    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
+    private static final String attachmentsDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
@@ -100,26 +101,26 @@ public class ProjectDatabaseHandlerTest {
         components.add(component2);
 
         projects = new ArrayList<>();
-        Project project1 = new Project().setId("P1").setName("project1").setLinkedProjects(ImmutableMap.of("P2", ProjectRelationship.CONTAINED)).setVisbility(Visibility.EVERYONE);
+        Project project1 = new Project().setId("P1").setName("project1").setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE);
         projects.add(project1);
-        Project project2 = new Project().setId("P2").setName("project2").setLinkedProjects(ImmutableMap.of("P3", ProjectRelationship.REFERRED, "P4", ProjectRelationship.CONTAINED)).setReleaseIdToUsage(ImmutableMap.of("R1A", newDefaultProjectReleaseRelationship(), "R1B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE);
+        Project project2 = new Project().setId("P2").setName("project2").setLinkedProjects(ImmutableMap.of("P3", new ProjectProjectRelationship(ProjectRelationship.REFERRED), "P4", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setReleaseIdToUsage(ImmutableMap.of("R1A", newDefaultProjectReleaseRelationship(), "R1B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE);
         projects.add(project2);
-        Project project3 = new Project().setId("P3").setName("project3").setLinkedProjects(ImmutableMap.of("P2", ProjectRelationship.UNKNOWN)).setReleaseIdToUsage(ImmutableMap.of("R2A", newDefaultProjectReleaseRelationship(), "R2B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE);
+        Project project3 = new Project().setId("P3").setName("project3").setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.UNKNOWN))).setReleaseIdToUsage(ImmutableMap.of("R2A", newDefaultProjectReleaseRelationship(), "R2B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE);
         projects.add(project3);
-        Project project4 = new Project().setId("P4").setName("project4").setLinkedProjects(ImmutableMap.of("P1", ProjectRelationship.UNKNOWN)).setVisbility(Visibility.EVERYONE);
+        Project project4 = new Project().setId("P4").setName("project4").setLinkedProjects(ImmutableMap.of("P1", new ProjectProjectRelationship(ProjectRelationship.UNKNOWN))).setVisbility(Visibility.EVERYONE);
         projects.add(project4);
-        Project project5 = new Project().setId("P5").setName("project5").setLinkedProjects(ImmutableMap.of("P6", ProjectRelationship.CONTAINED, "P7", ProjectRelationship.CONTAINED)).setVisbility(Visibility.EVERYONE);
+        Project project5 = new Project().setId("P5").setName("project5").setLinkedProjects(ImmutableMap.of("P6", new ProjectProjectRelationship(ProjectRelationship.CONTAINED), "P7", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE);
         projects.add(project5);
-        Project project6 = new Project().setId("P6").setName("project6").setLinkedProjects(ImmutableMap.of("P7", ProjectRelationship.CONTAINED)).setVisbility(Visibility.EVERYONE);
+        Project project6 = new Project().setId("P6").setName("project6").setLinkedProjects(ImmutableMap.of("P7", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE);
         projects.add(project6);
         Project project7 = new Project().setId("P7").setName("project7").setVisbility(Visibility.EVERYONE);
         projects.add(project7);
 
         // Create the database
-        TestUtils.createDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         for (Vendor vendor : vendors) {
             databaseConnector.add(vendor);
@@ -134,9 +135,9 @@ public class ProjectDatabaseHandlerTest {
             databaseConnector.add(project);
         }
 
-        ComponentDatabaseHandler componentHandler = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentsDbName);
-        AttachmentDatabaseHandler attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentsDbName);
-        handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentsDbName, moderator, componentHandler, attachmentDatabaseHandler);
+        ComponentDatabaseHandler componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
+        AttachmentDatabaseHandler attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
+        handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName, moderator, componentHandler, attachmentDatabaseHandler);
     }
 
     private ProjectReleaseRelationship newDefaultProjectReleaseRelationship() {
@@ -145,7 +146,7 @@ public class ProjectDatabaseHandlerTest {
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @Test
@@ -162,13 +163,14 @@ public class ProjectDatabaseHandlerTest {
 
         final List<ProjectLink> linkedProjects = completionFuture.get();
 
-        ReleaseLink releaseLinkR1A = new ReleaseLink("R1A", "vendor", "component1", "releaseA", "vendor component1 releaseA", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R1A").setComponentType(ComponentType.OSS);
-        ReleaseLink releaseLinkR1B = new ReleaseLink("R1B", "vendor", "component1", "releaseB", "vendor component1 releaseB", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R1B").setComponentType(ComponentType.OSS);
-        ReleaseLink releaseLinkR2A = new ReleaseLink("R2A", "vendor", "component2", "releaseA", "vendor component2 releaseA", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R2A").setComponentType(ComponentType.COTS);
-        ReleaseLink releaseLinkR2B = new ReleaseLink("R2B", "vendor", "component2", "releaseB", "vendor component2 releaseB", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R2B").setComponentType(ComponentType.COTS);
+        ReleaseLink releaseLinkR1A = new ReleaseLink("R1A", "vendor", "component1", "releaseA", "vendor component1 releaseA", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R1A").setComponentType(ComponentType.OSS).setAccessible(true);
+        ReleaseLink releaseLinkR1B = new ReleaseLink("R1B", "vendor", "component1", "releaseB", "vendor component1 releaseB", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R1B").setComponentType(ComponentType.OSS).setAccessible(true);
+        ReleaseLink releaseLinkR2A = new ReleaseLink("R2A", "vendor", "component2", "releaseA", "vendor component2 releaseA", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R2A").setComponentType(ComponentType.COTS).setAccessible(true);
+        ReleaseLink releaseLinkR2B = new ReleaseLink("R2B", "vendor", "component2", "releaseB", "vendor component2 releaseB", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R2B").setComponentType(ComponentType.COTS).setAccessible(true);
 
         ProjectLink link3 = new ProjectLink("P3", "project3")
                 .setRelation(ProjectRelationship.REFERRED)
+                .setEnableSvm(true)
                 .setNodeId("P3")
                 .setParentNodeId("P2")
                 .setProjectType(ProjectType.CUSTOMER)
@@ -178,6 +180,7 @@ public class ProjectDatabaseHandlerTest {
                 .setSubprojects(Collections.emptyList());
         ProjectLink link4 = new ProjectLink("P4", "project4")
                 .setRelation(ProjectRelationship.CONTAINED)
+                .setEnableSvm(true)
                 .setNodeId("P4")
                 .setParentNodeId("P2")
                 .setProjectType(ProjectType.CUSTOMER)
@@ -186,6 +189,7 @@ public class ProjectDatabaseHandlerTest {
                 .setSubprojects(Collections.emptyList());
         ProjectLink link2 = new ProjectLink("P2", "project2")
                 .setRelation(ProjectRelationship.CONTAINED)
+                .setEnableSvm(true)
                 .setNodeId("P2")
                 .setParentNodeId("P1")
                 .setProjectType(ProjectType.CUSTOMER)
@@ -195,6 +199,7 @@ public class ProjectDatabaseHandlerTest {
                 .setSubprojects(Arrays.asList(link3, link4));
         ProjectLink link1 = new ProjectLink("P1", "project1")
                 .setRelation(ProjectRelationship.UNKNOWN)
+                .setEnableSvm(true)
                 .setNodeId("P1")
                 .setProjectType(ProjectType.CUSTOMER)
                 .setState(ProjectState.ACTIVE)
@@ -222,6 +227,7 @@ public class ProjectDatabaseHandlerTest {
 
         ProjectLink link7_5 = new ProjectLink("P7", "project7")
                 .setRelation(ProjectRelationship.CONTAINED)
+                .setEnableSvm(true)
                 .setNodeId("P7")
                 .setProjectType(ProjectType.CUSTOMER)
                 .setState(ProjectState.ACTIVE)
@@ -229,6 +235,7 @@ public class ProjectDatabaseHandlerTest {
                 .setParentNodeId("P5");
         ProjectLink link7_6 = new ProjectLink("P7", "project7")
                 .setRelation(ProjectRelationship.CONTAINED)
+                .setEnableSvm(true)
                 .setNodeId("P7")
                 .setProjectType(ProjectType.CUSTOMER)
                 .setState(ProjectState.ACTIVE)
@@ -237,6 +244,7 @@ public class ProjectDatabaseHandlerTest {
 
         ProjectLink link6 = new ProjectLink("P6", "project6")
                 .setRelation(ProjectRelationship.CONTAINED)
+                .setEnableSvm(true)
                 .setNodeId("P6")
                 .setParentNodeId("P5")
                 .setProjectType(ProjectType.CUSTOMER)
@@ -245,6 +253,7 @@ public class ProjectDatabaseHandlerTest {
                 .setSubprojects(Arrays.asList(link7_6));
         ProjectLink link5 = new ProjectLink("P5", "project5")
                 .setRelation(ProjectRelationship.UNKNOWN)
+                .setEnableSvm(true)
                 .setNodeId("P5")
                 .setProjectType(ProjectType.CUSTOMER)
                 .setState(ProjectState.ACTIVE)
@@ -274,6 +283,7 @@ public class ProjectDatabaseHandlerTest {
                 .setRelation(ProjectRelationship.CONTAINED)
                 .setNodeId("P7")
                 .setProjectType(ProjectType.CUSTOMER)
+                .setEnableSvm(true)
                 .setState(ProjectState.ACTIVE)
                 .setTreeLevel(1)
                 .setParentNodeId("P5");
@@ -283,11 +293,13 @@ public class ProjectDatabaseHandlerTest {
                 .setNodeId("P6")
                 .setParentNodeId("P5")
                 .setProjectType(ProjectType.CUSTOMER)
+                .setEnableSvm(true)
                 .setState(ProjectState.ACTIVE)
                 .setTreeLevel(1)
                 .setSubprojects(Collections.emptyList());
         ProjectLink link5 = new ProjectLink("P5", "project5")
                 .setRelation(ProjectRelationship.UNKNOWN)
+                .setEnableSvm(true)
                 .setNodeId("P5")
                 .setProjectType(ProjectType.CUSTOMER)
                 .setState(ProjectState.ACTIVE)

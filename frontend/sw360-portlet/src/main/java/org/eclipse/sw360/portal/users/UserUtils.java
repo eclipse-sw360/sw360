@@ -1,36 +1,42 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  * With modifications by Bosch Software Innovations GmbH, 2016.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.users;
 
-import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.kernel.exception.NoSuchUserException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.model.*;
+import com.liferay.portal.kernel.service.OrganizationLocalServiceUtil;
+import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
+import com.liferay.portal.kernel.service.ServiceContextFactory;
+import com.liferay.portal.kernel.service.UserGroupRoleLocalServiceUtil;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.model.*;
-import com.liferay.portal.model.User;
-import com.liferay.portal.service.OrganizationLocalServiceUtil;
-import com.liferay.portal.service.UserLocalServiceUtil;
-import com.liferay.portal.theme.ThemeDisplay;
+
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.users.*;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.portal.common.PortalConstants;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.RenderRequest;
+
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -47,7 +53,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Constants.TYPE_USER;
  */
 public class UserUtils {
 
-    private static final Logger log = Logger.getLogger(UserUtils.class);
+    private static final Logger log = LogManager.getLogger(UserUtils.class);
     private final ThriftClients thriftClients;
 
     public UserUtils(ThriftClients thriftClients) {
@@ -95,7 +101,7 @@ public class UserUtils {
     }
 
     @NotNull
-    private static Set<String> prepareFormerEmailAddresses(org.eclipse.sw360.datahandler.thrift.users.User thriftUser, String email) {
+    public static Set<String> prepareFormerEmailAddresses(org.eclipse.sw360.datahandler.thrift.users.User thriftUser, String email) {
         Set<String> formerEmailAddresses = nullToEmptySet(thriftUser.getFormerEmailAddresses()).stream()
                 .filter(e -> !e.equals(email)) // make sure the current email is not in the former addresses
                 .collect(Collectors.toCollection(HashSet::new));
@@ -128,7 +134,8 @@ public class UserUtils {
     public static void activateLiferayUser(PortletRequest request, org.eclipse.sw360.datahandler.thrift.users.User user) {
         try {
             User liferayUser = findLiferayUser(request, user);
-            UserLocalServiceUtil.updateStatus(liferayUser.getUserId(), WorkflowConstants.STATUS_APPROVED);
+            UserLocalServiceUtil.updateStatus(liferayUser.getUserId(), WorkflowConstants.STATUS_APPROVED,
+                ServiceContextFactory.getInstance(request));
         } catch (SystemException | PortalException e) {
             log.error("Could not activate Liferay user", e);
         }
@@ -156,7 +163,7 @@ public class UserUtils {
         } catch (NoSuchUserException e) {
             log.info("Could not find user with email: '" + email + "'. Will try searching by external id.");
             try {
-                return UserLocalServiceUtil.getUserByOpenId(companyId, externalId);
+                return UserLocalServiceUtil.getUserByScreenName(companyId, externalId);
             } catch (NoSuchUserException nsue) {
                 log.info("Could not find user with externalId: '" + externalId);
                 throw new NoSuchUserException("Couldn't find user either with email or external id", nsue);
@@ -174,15 +181,15 @@ public class UserUtils {
         String userEmailAddress = user.getEmailAddress();
         org.eclipse.sw360.datahandler.thrift.users.User refreshed = UserCacheHolder.getRefreshedUserFromEmail(userEmailAddress);
         if (!equivalent(refreshed, user)) {
-            synchronizeUserWithDatabase(user, thriftClients, user::getEmailAddress, user::getOpenId, UserUtils::fillThriftUserFromLiferayUser);
+            synchronizeUserWithDatabase(user, thriftClients, user::getEmailAddress, user::getScreenName, UserUtils::fillThriftUserFromLiferayUser);
             UserCacheHolder.getRefreshedUserFromEmail(userEmailAddress);
         }
     }
 
-    private boolean equivalent(org.eclipse.sw360.datahandler.thrift.users.User refreshed, User user) {
-        final org.eclipse.sw360.datahandler.thrift.users.User thriftUser = new org.eclipse.sw360.datahandler.thrift.users.User();
-        fillThriftUserFromLiferayUser(thriftUser, user);
-        return thriftUser.equals(refreshed);
+    private boolean equivalent(org.eclipse.sw360.datahandler.thrift.users.User userInSW360, User user) {
+        final org.eclipse.sw360.datahandler.thrift.users.User userFromLiferay = new org.eclipse.sw360.datahandler.thrift.users.User();
+        fillThriftUserFromLiferayUser(userFromLiferay, user);
+        return userFromLiferay.equals(userInSW360);
     }
 
     public static void fillThriftUserFromUserCSV(final org.eclipse.sw360.datahandler.thrift.users.User thriftUser, final UserCSV userCsv) {
@@ -201,7 +208,7 @@ public class UserUtils {
         thriftUser.setEmail(user.getEmailAddress());
         thriftUser.setType(TYPE_USER);
         thriftUser.setUserGroup(getUserGroupFromLiferayUser(user));
-        thriftUser.setExternalid(user.getOpenId());
+        thriftUser.setExternalid(user.getScreenName());
         thriftUser.setFullname(user.getFullName());
         thriftUser.setGivenname(user.getFirstName());
         thriftUser.setLastname(user.getLastName());
@@ -221,17 +228,32 @@ public class UserUtils {
         thriftUser.setWantsMailNotification(user.isWantsMailNotification());
     }
 
-    public static UserGroup getUserGroupFromLiferayUser(com.liferay.portal.model.User user) {
+    public static UserGroup getUserGroupFromLiferayUser(User user) {
 
         try {
             List<String> roleNames = user.getRoles().stream()
                     .map(Role::getName)
                     .collect(Collectors.toList());
 
+            List<com.liferay.portal.kernel.model.UserGroupRole> userGroupRoleList = UserGroupRoleLocalServiceUtil
+                    .getUserGroupRoles(user.getUserId());
+            if (CommonUtils.isNotEmpty(userGroupRoleList)) {
+                userGroupRoleList.forEach(e -> {
+                    /* Get Role object based on userGroupRole */
+                    try {
+                        roleNames.add(e.getRole().getName());
+                    } catch (PortalException e1) {
+                        log.error("Problem retrievig Site / Org roles", e1);
+                    }
+                });
+            }
+
             if (roleNames.contains(PortalConstants.ROLENAME_ADMIN)) {
                 return UserGroup.ADMIN;
             } else if (roleNames.contains(PortalConstants.ROLENAME_SW360_ADMIN)) {
                 return UserGroup.SW360_ADMIN;
+            } else if (roleNames.contains(PortalConstants.ROLENAME_CLEARING_EXPERT)) {
+                return UserGroup.CLEARING_EXPERT;
             } else if (roleNames.contains(PortalConstants.ROLENAME_CLEARING_ADMIN)) {
                 return UserGroup.CLEARING_ADMIN;
             } else if (roleNames.contains(PortalConstants.ROLENAME_ECC_ADMIN)) {
@@ -266,6 +288,8 @@ public class UserUtils {
                 return RoleConstants.ADMINISTRATOR;
             case SW360_ADMIN:
                 return PortalConstants.ROLENAME_SW360_ADMIN;
+            case CLEARING_EXPERT:
+                return PortalConstants.ROLENAME_CLEARING_EXPERT;
             case CLEARING_ADMIN:
                 return PortalConstants.ROLENAME_CLEARING_ADMIN;
             case ECC_ADMIN:

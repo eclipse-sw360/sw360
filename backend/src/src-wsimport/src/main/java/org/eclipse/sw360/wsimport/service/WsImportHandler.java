@@ -2,19 +2,19 @@
  * Copyright (c) Verifa Oy, 2018.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.wsimport.service;
 
 import com.google.gson.JsonSyntaxException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.wsimport.domain.WsProject;
-import org.eclipse.sw360.wsimport.rest.WsImportProjectService;
+import org.eclipse.sw360.wsimport.rest.WsImportService;
 import org.eclipse.sw360.wsimport.thrift.ThriftUploader;
 import org.eclipse.sw360.wsimport.utility.TranslationConstants;
 import org.apache.thrift.TException;
@@ -33,13 +33,13 @@ import java.util.stream.Collectors;
  */
 public class WsImportHandler implements ProjectImportService.Iface {
 
-    private static final Logger LOGGER = Logger.getLogger(WsImportHandler.class);
+    private static final Logger LOGGER = LogManager.getLogger(WsImportHandler.class);
 
     @Override
     public synchronized ImportStatus importData(List<String> projectTokens, User user, TokenCredentials tokenCredentials) throws TException, JsonSyntaxException {
         List<WsProject> toImport = projectTokens
                 .stream()
-                .map(t -> new WsImportProjectService().getWsProject(t, tokenCredentials))
+                .map(t -> new WsImportService().getWsProject(t, tokenCredentials))
                 .collect(Collectors.toList());
 
         return new ThriftUploader().importWsProjects(toImport, user, tokenCredentials);

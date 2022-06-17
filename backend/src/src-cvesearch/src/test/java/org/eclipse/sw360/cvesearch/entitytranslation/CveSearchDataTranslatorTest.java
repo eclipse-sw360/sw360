@@ -3,15 +3,15 @@
  * With modifications by Siemens AG, 2016.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.cvesearch.entitytranslation;
 
+import org.eclipse.sw360.cvesearch.TestWithCveSearchConnection;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchApiImpl;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchData;
 import org.eclipse.sw360.cvesearch.service.CveSearchHandler;
@@ -28,15 +28,14 @@ import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isUrlReachable;
 
-public class CveSearchDataTranslatorTest {
+public class CveSearchDataTranslatorTest extends TestWithCveSearchConnection {
 
-    CveSearchData cveSearchData;
-    String host;
+    private CveSearchData cveSearchData;
 
-    String ID = "1";
-    String CVEYEAR = "2007";
-    String CVENUMBER = "5432";
-    String CVE = "CVE-" + CVEYEAR + "-" + CVENUMBER;
+    private String ID = "1";
+    private String CVEYEAR = "2007";
+    private String CVENUMBER = "5432";
+    private String CVE = "CVE-" + CVEYEAR + "-" + CVENUMBER;
 
     private CveSearchDataTranslator cveSearchDataTranslator;
     private CveSearchDataToVulnerabilityTranslator cveSearchDataToVulnerabilityTranslator;
@@ -99,10 +98,6 @@ public class CveSearchDataTranslatorTest {
         cveSearchData = generateCveSearchData("1");
         cveSearchDataTranslator = new CveSearchDataTranslator();
         cveSearchDataToVulnerabilityTranslator = new CveSearchDataToVulnerabilityTranslator();
-
-        Properties props = CommonUtils.loadProperties(CveSearchDataTranslatorTest.class, "/cvesearch.properties");
-        host = props.getProperty(CveSearchHandler.CVESEARCH_HOST_PROPERTY, "http://localhost:5000");
-        Assume.assumeTrue("CVE Search host is reachable", isUrlReachable(host));
     }
 
     @Test
@@ -141,20 +136,18 @@ public class CveSearchDataTranslatorTest {
 
     @Test
     public void testWithRealData() throws IOException {
-        List<CveSearchData> cveSearchDatas = new CveSearchApiImpl(host).search("zyxel","zywall");
+        List<CveSearchData> cveSearchDatas = cveSearchApi.search("zyxel","zywall");
         List<CveSearchDataTranslator.VulnerabilityWithRelation> vms = cveSearchDatas.stream()
                 .map(cveSearchData -> cveSearchDataTranslator.apply(cveSearchData))
                 .collect(Collectors.toList());
-        assert(vms != null);
     }
 
     @Test
     public void testWithApacheData() throws IOException {
-        List<CveSearchData> cveSearchDatas = new CveSearchApiImpl(host).search("apache",".*");
+        List<CveSearchData> cveSearchDatas = cveSearchApi.search("apache",".*");
         List<CveSearchDataTranslator.VulnerabilityWithRelation> vms = cveSearchDatas.stream()
                 .map(cveSearchData -> cveSearchDataTranslator.apply(cveSearchData))
                 .collect(Collectors.toList());
-        assert(vms != null);
         List<Vulnerability> vs = vms.stream()
                 .map(vm -> vm.vulnerability)
                 .collect(Collectors.toList());

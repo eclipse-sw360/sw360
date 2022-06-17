@@ -1,0 +1,74 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+<%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
+
+<h4 class="mt-4"><liferay-ui:message key="linked.releases" /></h4>
+<table class="table edit-table five-columns-with-actions" id="LinkedReleasesInfo">
+    <thead>
+        <tr>
+            <th><liferay-ui:message key="release.name" /></th>
+            <th><liferay-ui:message key="release.version" /></th>
+            <th><liferay-ui:message key="release.relation" /> <sw360:DisplayEnumInfo type="<%=ReleaseRelationship.class%>"/></th>
+            <th><liferay-ui:message key="project.mainline.state" /> <sw360:DisplayEnumInfo type="<%=MainlineState.class%>"/></th>
+            <th><liferay-ui:message key="comments" /></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <jsp:include page="/html/utils/ajax/linkedReleasesAjax.jsp" />
+    </tbody>
+</table>
+
+<button type="button" class="btn btn-secondary" id="addLinkedReleasesToReleaseButton"><liferay-ui:message key="add.releases" /></button>
+
+<div class="dialogs">
+    <div id="deleteLinkedReleaseDialog" class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+		    <div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">
+					<clay:icon symbol="question-circle" />
+					<liferay-ui:message key="delete.link.to.release" />
+				</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+				<div class="modal-body">
+			        <p>
+                        <liferay-ui:message key="do.you.really.want.to.remove.the.link.to.release.x" />
+                    </p>
+				</div>
+			    <div class="modal-footer">
+			        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+			        <button type="button" class="btn btn-danger"><liferay-ui:message key="delete.link" /></button>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+    require(['jquery', 'modules/dialog'], function($, dialog) {
+        $('#LinkedReleasesInfo').on('click', 'svg[data-row-id]', function(event) {
+            var rowId = $(event.currentTarget).data().rowId,
+                release = $(event.currentTarget).data().releaseName;
+
+            dialog.open('#deleteLinkedReleaseDialog', {
+                release: release
+            }, function(submit, callback) {
+                $('#' + rowId).remove();
+                callback(true);
+            });
+        });
+    });
+</script>

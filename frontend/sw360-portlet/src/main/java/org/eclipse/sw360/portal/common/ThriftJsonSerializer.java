@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.common;
 
@@ -15,14 +14,15 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 
 import java.io.IOException;
-
+import org.apache.thrift.transport.TTransportException;
 /**
  *
  * @author cedric.bodet@tngtech.com
@@ -30,7 +30,7 @@ import java.io.IOException;
 public class ThriftJsonSerializer {
 
 
-    private static final Logger log = Logger.getLogger(ThriftJsonSerializer.class);
+    private static final Logger log = LogManager.getLogger(ThriftJsonSerializer.class);
 
     ObjectMapper mapper;
 
@@ -57,7 +57,11 @@ public class ThriftJsonSerializer {
 
         public TBaseSerializer() {
             // Initialize the serializer with the standard protocol
-            serializer = new TSerializer(new TSimpleJSONProtocol.Factory());
+            try {
+                serializer = new TSerializer(new TSimpleJSONProtocol.Factory());
+            } catch (TTransportException e) {
+                log.error("Error creating TSerializer " + e);
+            }
         }
 
         @Override

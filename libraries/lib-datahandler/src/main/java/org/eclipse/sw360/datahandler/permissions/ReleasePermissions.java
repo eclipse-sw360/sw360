@@ -1,24 +1,27 @@
 /*
  * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.permissions;
 
 import com.google.common.collect.Sets;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
@@ -47,6 +50,13 @@ public class ReleasePermissions extends DocumentPermissions<Release> {
 
     }
 
+    @NotNull
+    public static Predicate<Release> isVisible(final User user) {
+        return input -> {
+            return true;
+        };
+    }
+
     @Override
     public void fillPermissions(Release other, Map<RequestedAction, Boolean> permissions) {
         other.permissions = permissions;
@@ -54,8 +64,14 @@ public class ReleasePermissions extends DocumentPermissions<Release> {
 
     @Override
     public boolean isActionAllowed(RequestedAction action) {
-        if (action == RequestedAction.WRITE_ECC) {
-            return PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user);
+        if (action == RequestedAction.READ) {
+            return isVisible(user).test(document);
+        } else if (action == RequestedAction.WRITE_ECC) {
+            Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())
+                    ? user.getSecondaryDepartmentsAndRoles().entrySet().stream().flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
+                    : new HashSet<UserGroup>();
+            return PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user)
+                    || PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup.ECC_ADMIN, allSecRoles);
         } else {
             return getStandardPermissions(action);
         }
@@ -74,5 +90,15 @@ public class ReleasePermissions extends DocumentPermissions<Release> {
     @Override
     protected Set<String> getAttachmentContentIds() {
         return attachmentContentIds;
+    }
+
+    protected Set<String> getUserEquivalentOwnerGroup() {
+        Set<String> departments = new HashSet<String>();
+        departments.add(user.getDepartment());
+        if (!CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
+            departments.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
+        }
+
+        return departments;
     }
 }

@@ -1,16 +1,15 @@
 /*
  * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -18,13 +17,14 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.AttachmentInputStream;
-import org.ektorp.DocumentNotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import com.cloudant.client.org.lightcouch.NoDocumentException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class AttachmentStreamConnectorTest {
     @Mock
-    public DatabaseConnector connector;
+    public DatabaseConnectorCloudant connector;
     @Mock
     private AttachmentContentDownloader attachmentContentDownloader;
 
@@ -174,7 +174,7 @@ public class AttachmentStreamConnectorTest {
         AttachmentInputStream part1 = mock(AttachmentInputStream.class);
         when(connector.getAttachment(attachmentId, "fil_part1")).thenReturn(part1);
 
-        when(connector.getAttachment(attachmentId, "fil_part2")).thenThrow(new DocumentNotFoundException(""));
+        when(connector.getAttachment(attachmentId, "fil_part2")).thenThrow(new NoDocumentException(""));
 
         when(part1.read()).thenReturn(1, -1);
         InputStream attachmentStream = attachmentStreamConnector.getAttachmentStream(attachment, dummyUser,

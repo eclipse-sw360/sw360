@@ -1,45 +1,66 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.google.common.base.Strings;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.ektorp.support.View;
-
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
-import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
 
 /**
  * CRUD access for the Vendor class
  *
- * @author cedric.bodet@tngtech.com
- * @author Johannes.Najjar@tngtech.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'vendor') emit(null, doc._id) }")
-public class VendorRepository extends DatabaseRepository<Vendor> {
+public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
 
-    public VendorRepository(DatabaseConnector db) {
-        super(Vendor.class, db);
+    private static final String ALL = "function(doc) { if (doc.type == 'vendor') emit(null, doc._id) }";
 
-        initStandardDesignDocument();
+    public VendorRepository(DatabaseConnectorCloudant db) {
+        super(db, Vendor.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("all", createMapReduce(ALL, null));
+        initStandardDesignDocument(views, db);
     }
 
+    public void fillVendor(Component component) {
+        if (component.isSetDefaultVendorId()) {
+            final String vendorId = component.getDefaultVendorId();
+            if (!isNullOrEmpty(vendorId)) {
+                final Vendor vendor = get(vendorId);
+                if (vendor != null)
+                    component.setDefaultVendor(vendor);
+            }
+        }
+    }
+
+    public void fillVendor(Project project) {
+        if (project.isSetVendorId()) {
+            final String vendorId = project.getVendorId();
+            if (!isNullOrEmpty(vendorId)) {
+                final Vendor vendor = get(vendorId);
+                if (vendor != null)
+                    project.setVendor(vendor);
+            }
+            project.unsetVendorId();
+        }
+    }
+    
     public void fillVendor(Release release) {
         if (release.isSetVendorId()) {
             final String vendorId = release.getVendorId();

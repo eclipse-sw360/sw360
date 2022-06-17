@@ -2,12 +2,11 @@
  * Copyright (c) Verifa Oy, 2018.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.wsimport.thrift;
 
@@ -15,7 +14,8 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.wsimport.utility.TranslationConstants;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
@@ -41,7 +41,7 @@ import static org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus.SUCC
  */
 public class ThriftExchange {
 
-    private static final Logger LOGGER = Logger.getLogger(ThriftExchange.class);
+    private static final Logger LOGGER = LogManager.getLogger(ThriftExchange.class);
     private static ThriftClients thriftClients = new ThriftClients();
 
     //public ThriftExchange(ThriftClients thriftClients) {
@@ -155,7 +155,7 @@ public class ThriftExchange {
 
     public Optional<List<Component>> searchComponentByName(String name) {
         try {
-            return Optional.of(thriftClients.makeComponentClient().searchComponentForExport(name));
+            return Optional.of(thriftClients.makeComponentClient().searchComponentForExport(name, true));
         } catch (TException e) {
             LOGGER.error("Could not fetch Component list for name=[" + name + "]:" + e);
             return Optional.empty();

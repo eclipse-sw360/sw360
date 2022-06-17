@@ -1,0 +1,48 @@
+#
+# Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+Bundle-Name: SW360 Exporters
+Bundle-SymbolicName: sw360-exporters
+Bundle-Version: 1.0.0
+
+-check: all
+-sources: false
+-noee: true
+
+Export-Package: \
+	org.eclipse.sw360.exporter.*,
+
+Import-Package: \
+	com.google.common.*, \
+	com.google.gson.*, \
+	javax.xml.*, \
+	org.apache.commons.collections4.*, \
+	org.apache.commons.csv.*, \
+	org.apache.commons.compress.*, \
+	org.apache.logging.log4j, \
+	org.apache.thrift.*, \
+	org.eclipse.sw360.commonIO.*, \
+	org.eclipse.sw360.datahandler.*, \
+	org.xml.sax.*, \
+	org.w3c.dom
+
+# The following resources are not available as OSGI bundles and therefore will be directly included
+Include-Resource: \
+	META-INF/lib/org.apache.poi.poi.jar=poi-[0-9]*.jar;lib:=true, \
+	META-INF/lib/org.apache.poi.poi-ooxml.jar=poi-ooxml-[0-9]*.jar;lib:=true, \
+	META-INF/lib/org.apache.poi.poi-ooxml-schemas.jar=poi-ooxml-schemas-[0-9]*.jar;lib:=true, \
+	META-INF/lib/org.apache.xmlbeans.xmlbeans.jar=xmlbeans-[0-9]*.jar;lib:=true
+
+Bundle-Classpath: \
+	., \
+	META-INF/lib/org.apache.poi.poi.jar, \
+	META-INF/lib/org.apache.poi.poi-ooxml.jar, \
+	META-INF/lib/org.apache.poi.poi-ooxml-schemas.jar, \
+	META-INF/lib/org.apache.xmlbeans.xmlbeans.jar

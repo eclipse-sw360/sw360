@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+  ~ Copyright Siemens AG, 2013-2017, 2019, 2020. Part of the SW360 Portal Project.
+  ~ Copyright Bosch.IO GmbH 2020.
   ~
-  ~ SPDX-License-Identifier: EPL-1.0
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
   ~
-  ~ All rights reserved. This program and the accompanying materials
-  ~ are made available under the terms of the Eclipse Public License v1.0
-  ~ which accompanies this distribution, and is available at
-  ~ http://www.eclipse.org/legal/epl-v10.html
+  ~ SPDX-License-Identifier: EPL-2.0
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -16,65 +16,26 @@
 
     <licenses>
         <license>
-            <name>Eclipse Public License 1.0</name>
-            <url>http://www.eclipse.org/legal/epl-v10.html</url>
+            <name>Eclipse Public License 2.0</name>
+            <url>https://www.eclipse.org/legal/epl-2.0/</url>
         </license>
     </licenses>
-
-    <scm>
-      <connection>scm:git:https://github.com/eclipse/sw360</connection>
-    </scm>
-
-    <distributionManagement>
-      <repository>
-        <id>artifact-repository</id>
-        <url>https://github.com/eclipse/sw360</url>
-      </repository>
-    </distributionManagement>
-
-    <properties>
-        <java.version>1.8</java.version>
-        <liferay.version>6.2.2</liferay.version>
-        <ektorp.version>1.4.4</ektorp.version>
-        <thrift.version>0.9.3</thrift.version>
-        <guava.version>21.0</guava.version>
-        <spring.version>4.3.12.RELEASE</spring.version>
-        <spring-boot.version>1.5.8.RELEASE</spring-boot.version>
-        <spring-restdocs.version>1.1.3.RELEASE</spring-restdocs.version>
-
-        <slf4j.version>1.7.25</slf4j.version>
-        <logback.version>1.2.3</logback.version>
-        <log4j.version>1.2.17</log4j.version>
-        <junit-dataprovider.version>1.12.0</junit-dataprovider.version>
-
-        <junit.version>4.12</junit.version>
-        <hamcrest.version>1.3</hamcrest.version>
-        <mockito.version>1.10.19</mockito.version>
-        <project-lombok.version>1.16.12</project-lombok.version>
-        <maven-source-plugin.version>2.4</maven-source-plugin.version>
-        <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
-
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-        <!--  User should provide below property configuration based on his/her liferay deployment environment -->
-        <deploy.dir>
-            ${env.LIFERAY_PATH}/deploy
-        </deploy.dir>
-        <webapps.dir>
-            ${deploy.dir}
-        </webapps.dir>
-        <liferay.maven.plugin.version>${liferay.version}</liferay.maven.plugin.version>
-
-        <!-- some mem optimization here -->
-        <argLine>-Dcatalina.home=${project.build.directory}/home -Xms64m -Xmx128m -XX:MaxPermSize=512m</argLine>
-
-    </properties>
 
     <groupId>org.eclipse.sw360</groupId>
     <artifactId>sw360</artifactId>
     <packaging>pom</packaging>
-    <version>3.3.0-SNAPSHOT</version>
+    <version>${revision}</version>
+
+    <scm>
+        <connection>scm:git:https://github.com/eclipse/sw360</connection>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>artifact-repository</id>
+            <url>https://github.com/eclipse/sw360</url>
+        </repository>
+    </distributionManagement>
 
     <modules>
         <module>build-configuration</module>
@@ -82,10 +43,98 @@
         <module>backend</module>
         <module>frontend</module>
         <module>rest</module>
+        <module>clients</module>
     </modules>
+
+    <properties>
+        <!-- This is first of two places for changing the version of SW360 -->
+        <!-- note that 6.1.0-SNAPSHOT relates to 6.0.${patchlevel} -->
+        <!-- pls see also the profile cli -->
+        <revision>15.1.${patchlevel}</revision>
+        <patchlevel>0-SNAPSHOT</patchlevel>
+        <java.version>11</java.version>
+        <ektorp.version>1.5.0</ektorp.version>
+        <thrift.version>0.14.0</thrift.version>
+        <guava.version>31.0.1-jre</guava.version>
+        <spring.version>5.3.19</spring.version>
+        <spring-boot.version>2.6.6</spring-boot.version>
+        <spring-restdocs.version>2.0.6.RELEASE</spring-restdocs.version>
+        <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
+        <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
+
+        <slf4j.version>1.7.30</slf4j.version>
+        <log4j2.version>2.17.1</log4j2.version>
+        <gson.version>2.8.9</gson.version>
+        <jcraft.version>0.1.54</jcraft.version>
+        <jackson.version>2.13.2</jackson.version>
+        <jackson-databind.version>2.13.2.2</jackson-databind.version>
+        <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
+        <poi.version>4.1.2</poi.version>
+
+        <junit.version>4.13.2</junit.version>
+        <jgiven.version>0.17.0</jgiven.version>
+        <hamcrest.version>1.3</hamcrest.version>
+        <mockito.version>1.10.19</mockito.version>
+        <project-lombok.version>1.18.2</project-lombok.version>
+        <wiremock.version>2.26.0</wiremock.version>
+
+        <maven-source-plugin.version>2.4</maven-source-plugin.version>
+        <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
+
+        <jakarta-xml-bind.version>2.3.2</jakarta-xml-bind.version>
+        <glassfish-jaxb.version>2.3.2</glassfish-jaxb.version>
+        <javax-annotation.version>1.3.2</javax-annotation.version>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!--  User must provide below property configuration based on his/her liferay deployment environment -->
+        <base.deploy.dir />
+
+        <!--
+            This is were the liferay OSGi modules go to on upload:
+                - frontend/*
+                - libraries/*
+        -->
+        <liferay.deploy.dir>${base.deploy.dir}/liferay</liferay.deploy.dir>
+        <!--
+            This is were the backend services go to on upload:
+                - backend/svc/*
+        -->
+        <backend.deploy.dir>${base.deploy.dir}/tomcat</backend.deploy.dir>
+        <!--
+            This is were the rest services go to on upload:
+                - rest/*
+        -->
+        <rest.deploy.dir>${base.deploy.dir}/tomcat</rest.deploy.dir>
+
+        <!-- some mem optimization here -->
+        <argLine>-Dcatalina.home=${project.build.directory}/home -Xms128m -Xmx256m -XX:MaxPermSize=512m</argLine>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>4.3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.cliftonlabs</groupId>
+                <artifactId>json-simple</artifactId>
+                <version>2.3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.package-url</groupId>
+                <artifactId>packageurl-java</artifactId>
+                <version>1.1.1</version>
+            </dependency>
+            <!-- javax.annotation: java 11 compatibility -->
+            <dependency>
+              <groupId>javax.annotation</groupId>
+              <artifactId>javax.annotation-api</artifactId>
+              <version>${javax-annotation.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
@@ -97,29 +146,216 @@
                 <version>${slf4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>${slf4j.version}</version>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j2.version}</version>
             </dependency>
             <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${log4j.version}</version>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j2.version}</version>
             </dependency>
             <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${logback.version}</version>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-jcl</artifactId>
+                <version>${log4j2.version}</version>
+                <scope>runtime</scope>
             </dependency>
             <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-core</artifactId>
-                <version>${logback.version}</version>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>${log4j2.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-1.2-api</artifactId>
+                <version>${log4j2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-csv</artifactId>
                 <version>1.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.8.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>failureaccess</artifactId>
+                <version>1.0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-cli</groupId>
+                <artifactId>commons-cli</artifactId>
+                <version>1.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libthrift</artifactId>
+                <version>${thrift.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>commons-logging</artifactId>
+                        <groupId>commons-logging</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- API, java.xml.bind module: java 11 compatibility -->
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jakarta-xml-bind.version}</version>
+            </dependency>
+            <!-- Runtime, com.sun.xml.bind module: java 11 compatibility  -->
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>${glassfish-jaxb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.12</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ldriscoll</groupId>
+                <artifactId>ektorplucene</artifactId>
+                <version>0.2.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>net.sourceforge.findbugs</groupId>
+                        <artifactId>annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- Replaces ektorplucene findbugs exclusion-->
+            <dependency>
+                <groupId>com.github.stephenc.findbugs</groupId>
+                <artifactId>findbugs-annotations</artifactId>
+                <version>1.3.9-1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ektorp</groupId>
+                <artifactId>org.ektorp</artifactId>
+                <version>${ektorp.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-io</groupId>
+                        <artifactId>commons-io</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.7</version>
+            </dependency>
+            <!-- jackson is also used by fossology. Keep versions in sync -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson-databind.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpcore</artifactId>
+                <version>4.4.8</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>${gson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jcraft</groupId>
+                <artifactId>jsch</artifactId>
+                <version>${jcraft.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.spdx</groupId>
+                <artifactId>spdx-tools</artifactId>
+                <version>2.2.3</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.velocity</groupId>
+                <artifactId>velocity-engine-core</artifactId>
+                <version>2.3</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.velocity.tools</groupId>
+                <artifactId>velocity-tools-generic</artifactId>
+                <version>3.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>15.0</version>
+            </dependency>
+            <dependency>
+                <groupId>net.sf.saxon</groupId>
+                <artifactId>saxon-dom</artifactId>
+                <version>8.7</version>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>3.11.1</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -132,6 +368,18 @@
                         <artifactId>hamcrest-core</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.dom4j</groupId>
+                <artifactId>dom4j</artifactId>
+                <version>2.1.3</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>jaxen</groupId>
+                <artifactId>jaxen</artifactId>
+                <version>1.1.6</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.tngtech.java</groupId>
@@ -154,7 +402,31 @@
             <dependency>
                 <groupId>com.tngtech.jgiven</groupId>
                 <artifactId>jgiven-junit</artifactId>
-                <version>0.15.1</version>
+                <version>${jgiven.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.liferay</groupId>
+                <artifactId>com.liferay.petra.lang</artifactId>
+                <version>3.0.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>nl.jqno.equalsverifier</groupId>
+                <artifactId>equalsverifier</artifactId>
+                <version>3.1.12</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.github.tomakehurst</groupId>
+                <artifactId>wiremock-jre8</artifactId>
+                <version>${wiremock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>${slf4j.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
@@ -166,7 +438,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.7.2.201409121644</version>
+                    <version>0.8.4</version>
                     <executions>
                         <execution>
                             <goals>
@@ -236,7 +508,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.6</version>
+                    <version>2.7</version>
                     <configuration>
                         <overwrite>true</overwrite>
                     </configuration>
@@ -247,13 +519,38 @@
                     <artifactId>buildnumber-maven-plugin</artifactId>
                     <version>1.4</version>
                 </plugin>
+
+                <plugin>
+                    <groupId>biz.aQute.bnd</groupId>
+                    <artifactId>bnd-maven-plugin</artifactId>
+                    <version>3.5.0</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>bnd-process</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>biz.aQute.bnd</groupId>
+                            <artifactId>biz.aQute.bndlib</artifactId>
+                            <version>3.5.0</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>com.liferay</groupId>
+                            <artifactId>com.liferay.ant.bnd</artifactId>
+                            <version>2.0.50</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
+                <version>3.7.0</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -308,7 +605,162 @@
                     <shortRevisionLength>7</shortRevisionLength>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>deploy</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>copy-jar</id>
+                                    <phase>package</phase>
+                                    <goals>
+                                        <goal>copy</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>${project.groupId}</groupId>
+                                                <artifactId>${project.artifactId}</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>${project.packaging}</type>
+                                                <destFileName>${project.build.finalName}.${project.packaging}</destFileName>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <!--
+                                            This property is set by the submodules themself, depending wether they are backend, frontend or library
+                                            modules.
+                                            All other submodule leave this property blank causing the dependency plugin to copy the artifact inside
+                                            the target folder.
+                                        -->
+                                        <outputDirectory>${artifact.deploy.dir}</outputDirectory>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+                <plugins>
+                    <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-enforcer-plugin</artifactId>
+                            <version>3.0.0-M2</version>
+                            <executions>
+                                <execution>
+                                    <id>enforce</id>
+                                    <goals>
+                                        <goal>enforce</goal>
+                                    </goals>
+                                    <configuration>
+                                        <rules>
+                                            <requireProperty>
+                                                <property>base.deploy.dir</property>
+                                                <message>You must set at least the property 'base.deploy.dir'!</message>
+                                                <regex>^.+$</regex>
+                                                <regexMessage>You must set at least the property 'base.deploy.dir'!</regexMessage>
+                                            </requireProperty>
+                                        </rules>
+                                        <fail>true</fail>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <id>eclipse-ci</id>
+
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>repo.eclipse.org</id>
+                    <url>https://repo.eclipse.org/content/repositories/cbi</url>
+                    <releases>
+                      <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                      <enabled>true</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+
+            <distributionManagement>
+                <repository>
+                    <id>repo.eclipse.org</id>
+                    <name>Project Repository - Releases</name>
+                    <url>https://repo.eclipse.org/content/repositories/sw360-releases/</url>
+                </repository>
+                <snapshotRepository>
+                    <id>repo.eclipse.org</id>
+                    <name>Project Repository - Snapshots</name>
+                    <url>https://repo.eclipse.org/content/repositories/sw360-snapshots/</url>
+                </snapshotRepository>
+            </distributionManagement>
+
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.eclipse.cbi.maven.plugins</groupId>
+                            <artifactId>eclipse-jarsigner-plugin</artifactId>
+                            <version>1.1.5</version>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+                <plugins>
+                    <plugin>
+                        <groupId>org.eclipse.cbi.maven.plugins</groupId>
+                        <artifactId>eclipse-jarsigner-plugin</artifactId>
+                        <configuration>
+                            <resigningStrategy>OVERWRITE</resigningStrategy>
+                            <excludeInnerJars>true</excludeInnerJars>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sign</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                     </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

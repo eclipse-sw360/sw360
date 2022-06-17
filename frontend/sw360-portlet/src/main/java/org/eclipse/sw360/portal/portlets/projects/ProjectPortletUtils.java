@@ -1,26 +1,29 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.portlets.projects;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import com.google.common.collect.*;
+import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.model.Portlet;
+import com.liferay.portal.kernel.portlet.LiferayPortletURL;
+import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
+import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
+import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
+
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
@@ -32,10 +35,16 @@ import org.eclipse.sw360.portal.common.CustomFieldHelper;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.PortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
+
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import javax.portlet.PortletRequest;
+import javax.portlet.RenderRequest;
 import javax.portlet.ResourceRequest;
+
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -55,7 +64,7 @@ import static org.eclipse.sw360.portal.common.PortalConstants.*;
  */
 public class ProjectPortletUtils {
 
-    private static final Logger log = Logger.getLogger(ProjectPortletUtils.class);
+    private static final Logger log = LogManager.getLogger(ProjectPortletUtils.class);
 
     private ProjectPortletUtils() {
         // Utility class with only static functions
@@ -91,11 +100,27 @@ public class ProjectPortletUtils {
                     }
                     break;
 
+                case OBLIGATIONS_TEXT:
+                    // if `OBLIGATIONS_TEXT` is not in the request then we want this to be unset in the `project`
+                    String obligationsText = request.getParameter(field.toString());
+                    if(obligationsText == null) {
+                        project.unsetObligationsText();
+                    } else {
+                        project.setObligationsText(StringEscapeUtils.unescapeHtml(obligationsText));
+                    }
+                    break;
+
                 case ROLES:
                     project.setRoles(PortletUtils.getCustomMapFromRequest(request));
                     break;
                 case EXTERNAL_IDS:
                     project.setExternalIds(PortletUtils.getExternalIdMapFromRequest(request));
+                    break;
+                case ADDITIONAL_DATA:
+                    project.setAdditionalData(PortletUtils.getAdditionalDataMapFromRequest(request));
+                    break;
+                case EXTERNAL_URLS:
+                    project.setExternalUrls(PortletUtils.getExternalUrlMapFromRequest(request));
                     break;
                 default:
                     setFieldValue(request, project, field);
@@ -103,27 +128,36 @@ public class ProjectPortletUtils {
         }
     }
 
+    public static String getCommentsByTodoId(PortletRequest request, String id) {
+        return request.getParameter("projectobligation:" + id);
+    }
+
     private static void updateLinkedReleasesFromRequest(PortletRequest request, Map<String, ProjectReleaseRelationship> releaseUsage) {
         releaseUsage.clear();
         String[] ids = request.getParameterValues(Project._Fields.RELEASE_ID_TO_USAGE.toString() + ReleaseLink._Fields.ID.toString());
         String[] relations = request.getParameterValues(Project._Fields.RELEASE_ID_TO_USAGE.toString() + ProjectReleaseRelationship._Fields.RELEASE_RELATION.toString());
         String[] mainlStates = request.getParameterValues(Project._Fields.RELEASE_ID_TO_USAGE.toString() + ProjectReleaseRelationship._Fields.MAINLINE_STATE.toString());
+        String[] comments = request.getParameterValues(Project._Fields.RELEASE_ID_TO_USAGE.toString() + ProjectReleaseRelationship._Fields.COMMENT.toString());
         if (ids != null && relations != null && mainlStates != null && ids.length == relations.length && ids.length == mainlStates.length) {
             for (int k = 0; k < ids.length; ++k) {
                 ReleaseRelationship relation = ReleaseRelationship.findByValue(Integer.parseInt(relations[k]));
                 MainlineState mainlState = MainlineState.findByValue(Integer.parseInt(mainlStates[k]));
-                releaseUsage.put(ids[k], new ProjectReleaseRelationship(relation, mainlState));
+                releaseUsage.put(ids[k], new ProjectReleaseRelationship(relation, mainlState).setComment(comments[k]));
             }
         }
     }
 
-    private static void updateLinkedProjectsFromRequest(PortletRequest request, Map<String, ProjectRelationship> linkedProjects) {
+    private static void updateLinkedProjectsFromRequest(PortletRequest request, Map<String, ProjectProjectRelationship> linkedProjects) {
         linkedProjects.clear();
         String[] ids = request.getParameterValues(Project._Fields.LINKED_PROJECTS.toString() + ProjectLink._Fields.ID.toString());
         String[] relations = request.getParameterValues(Project._Fields.LINKED_PROJECTS.toString() + ProjectLink._Fields.RELATION.toString());
         if (ids != null && relations != null && ids.length == relations.length)
             for (int k = 0; k < ids.length; ++k) {
-                linkedProjects.put(ids[k], ProjectRelationship.findByValue(Integer.parseInt(relations[k])));
+                String enableSvm = request.getParameter(Project._Fields.LINKED_PROJECTS.toString()
+                        + ProjectLink._Fields.ENABLE_SVM.toString() + ids[k]);
+                linkedProjects.put(ids[k],
+                        new ProjectProjectRelationship(ProjectRelationship.findByValue(Integer.parseInt(relations[k])))
+                                .setEnableSvm(enableSvm != null));
             }
     }
 
@@ -132,7 +166,7 @@ public class ProjectPortletUtils {
     }
 
     public static ProjectVulnerabilityRating updateProjectVulnerabilityRatingFromRequest(Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings, ResourceRequest request) throws SW360Exception {
-        String projectId = request.getParameter(PortalConstants.PROJECT_ID);
+        String projectId = request.getParameter(PortalConstants.ACTUAL_PROJECT_ID);
         ProjectVulnerabilityRating projectVulnerabilityRating = projectVulnerabilityRatings.orElse(
                 new ProjectVulnerabilityRating()
                         .setProjectId(projectId)
@@ -173,7 +207,8 @@ public class ProjectPortletUtils {
                 .setCheckedBy(UserCacheHolder.getUserFromRequest(request).getEmail())
                 .setCheckedOn(SW360Utils.getCreatedOn())
                 .setComment(request.getParameter(PortalConstants.VULNERABILITY_RATING_COMMENT))
-                .setVulnerabilityRating(vulnerabilityRatingForProject);
+                .setVulnerabilityRating(vulnerabilityRatingForProject)
+                .setProjectAction(request.getParameter(PortalConstants.VULNERABILITY_RATING_ACTION));
     }
 
     static void saveStickyProjectGroup(PortletRequest request, User user, String groupFilterValue) {
@@ -184,7 +219,7 @@ public class ProjectPortletUtils {
         return CustomFieldHelper.loadField(String.class, request, user, CUSTOM_FIELD_PROJECT_GROUP_FILTER).orElse(null);
     }
 
-    public static Map<String, Set<String>> getSelectedReleaseAndAttachmentIdsFromRequest(ResourceRequest request) {
+    public static Map<String, Set<String>> getSelectedReleaseAndAttachmentIdsFromRequest(ResourceRequest request, boolean withPath) {
         Map<String, Set<String>> releaseIdToAttachmentIds = new HashMap<>();
         String[] checkboxes = request.getParameterValues(PortalConstants.LICENSE_INFO_RELEASE_TO_ATTACHMENT);
         if (checkboxes == null) {
@@ -193,13 +228,19 @@ public class ProjectPortletUtils {
 
         Arrays.stream(checkboxes).forEach(s -> {
             String[] split = s.split(":");
-            if (split.length == 2) {
-                String releaseId = split[0];
-                String attachmentId = split[1];
-                if (!releaseIdToAttachmentIds.containsKey(releaseId)) {
-                    releaseIdToAttachmentIds.put(releaseId, new HashSet<>());
+            if (split.length >= 2) {
+                String attachmentId = split[split.length - 1];
+                String releaseIdMaybeWithPath;
+                if (withPath) {
+                    releaseIdMaybeWithPath = Arrays.stream(Arrays.copyOf(split, split.length - 1))
+                            .collect(Collectors.joining(":"));
+                } else {
+                    releaseIdMaybeWithPath = split[split.length - 2];
                 }
-                releaseIdToAttachmentIds.get(releaseId).add(attachmentId);
+                if (!releaseIdToAttachmentIds.containsKey(releaseIdMaybeWithPath)) {
+                    releaseIdToAttachmentIds.put(releaseIdMaybeWithPath, new HashSet<>());
+                }
+                releaseIdToAttachmentIds.get(releaseIdMaybeWithPath).add(attachmentId);
             }
         });
         return releaseIdToAttachmentIds;
@@ -213,30 +254,43 @@ public class ProjectPortletUtils {
      * "license-store-&lt;attachmentContentId&gt;" map in the session. This map must
      * contain a mapping from a key to a {@link LicenseNameWithText} object.
      *
-     * @param attachmentContentIds list of attachment content id to check for exclusions in the
+     * @param attachmentContentIdsWithPath list of attachment content id to check for exclusions in the
      *                             request
      * @param request              the request containing the excluded licenses as parameters
      * @return a map containing the licenses to exclude
      * @see ProjectPortletUtilsTest for a better understanding
      */
-    public static Map<String, Set<LicenseNameWithText>> getExcludedLicensesPerAttachmentIdFromRequest(Set<String> attachmentContentIds,
+    public static Map<String, Set<LicenseNameWithText>> getExcludedLicensesPerAttachmentIdFromRequest(Set<String> attachmentContentIdsWithPath,
                                                                                                       ResourceRequest request) {
         Map<String, Set<LicenseNameWithText>> excludedLicenses = Maps.newHashMap();
 
-        for (String attachmentContentId : attachmentContentIds) {
-            String[] checkboxes = request.getParameterValues(attachmentContentId);
-            String[] keys = request.getParameterValues(attachmentContentId + "_key");
-
+        for (String attachmentContentIdWithPath : attachmentContentIdsWithPath) {
+            String[] checkboxes = request.getParameterValues(attachmentContentIdWithPath);
+            String[] keys = request.getParameterValues(attachmentContentIdWithPath + "_key");
+            boolean isOnlyApprovedAttachmentSelected = Boolean.parseBoolean(request.getParameter(PortalConstants.ONLY_APPROVED));
             if (checkboxes == null) {
                 // no details present
                 continue;
             }
 
+            List<String> pathParts = new ArrayList<String>(Arrays.asList(attachmentContentIdWithPath.split(":")));
+            String attachmentCheckStatus = pathParts.get(pathParts.size()-1);
+            if (isOnlyApprovedAttachmentSelected && (CommonUtils.isNullEmptyOrWhitespace(attachmentCheckStatus)
+                    || CheckStatus.valueOf(attachmentCheckStatus) != CheckStatus.ACCEPTED)) {
+                continue;
+            }
+            pathParts.remove(pathParts.size() - 1);
+            if (pathParts.size() > 2) {
+                pathParts.remove(pathParts.size() - 2);
+            }
+            String attachmentContentIdWithPathWithoutRel = pathParts.stream().collect(Collectors.joining(":"));
+
             @SuppressWarnings("unchecked")
             Map<String, LicenseNameWithText> licenseStore = (Map<String, LicenseNameWithText>) request.getPortletSession()
-                    .getAttribute(ProjectPortlet.LICENSE_STORE_KEY_PREFIX + attachmentContentId);
+                    .getAttribute(ProjectPortlet.LICENSE_STORE_KEY_PREFIX + attachmentContentIdWithPathWithoutRel);
             if (licenseStore == null) {
-                throw new IllegalStateException("No license store found for attachment content id " + attachmentContentId);
+                throw new IllegalStateException(
+                        "No license store found for attachment content id with path " + attachmentContentIdWithPathWithoutRel);
             }
 
             Set<Integer> includedIds = Arrays.stream(checkboxes).map(s -> Integer.valueOf(s)).collect(Collectors.toSet());
@@ -257,14 +311,34 @@ public class ProjectPortletUtils {
                 licenseNameWithTexts.add(licenseNameWithText);
             }
 
-            excludedLicenses.put(attachmentContentId, licenseNameWithTexts);
+            excludedLicenses.put(attachmentContentIdWithPath, licenseNameWithTexts);
         }
 
         return excludedLicenses;
     }
 
-    public static List<AttachmentUsage> makeAttachmentUsages(Project project, Map<String, Set<String>> selectedReleaseAndAttachmentIds,
-                                                             Function<String, UsageData> usageDataGenerator) {
+    public static List<AttachmentUsage> makeLicenseInfoAttachmentUsages(Project project,
+            Set<String> selectedAttachmentIdsWithPath, Function<String, UsageData> usageDataGenerator) {
+        List<AttachmentUsage> attachmentUsages = Lists.newArrayList();
+
+        for (String attachmentIdWithPath : selectedAttachmentIdsWithPath) {
+            AttachmentUsage usage = new AttachmentUsage();
+            String[] pathParts = attachmentIdWithPath.split(":");
+            usage.setUsedBy(Source.projectId(pathParts[0]));
+            usage.setOwner(Source.releaseId(pathParts[pathParts.length - 4]));
+            usage.setAttachmentContentId(pathParts[pathParts.length - 2]);
+
+            UsageData usageData = usageDataGenerator.apply(attachmentIdWithPath);
+            usage.setUsageData(usageData);
+
+            attachmentUsages.add(usage);
+        }
+
+        return attachmentUsages;
+    }
+
+    public static List<AttachmentUsage> makeAttachmentUsages(Project project,
+            Map<String, Set<String>> selectedReleaseAndAttachmentIds, Function<String, UsageData> usageDataGenerator) {
         List<AttachmentUsage> attachmentUsages = Lists.newArrayList();
 
         for(String releaseId : selectedReleaseAndAttachmentIds.keySet()) {
@@ -310,25 +384,33 @@ public class ProjectPortletUtils {
     }
 
     public static List<AttachmentUsage> deselectedAttachmentUsagesFromRequest(ResourceRequest request) {
-        return makeAttachmentUsagesFromRequestParameters(request, Sets::difference);
+        return makeAttachmentUsagesFromRequestParameters(request, Sets::difference, true);
     }
 
     public static List<AttachmentUsage> selectedAttachmentUsagesFromRequest(ResourceRequest request) {
-        return makeAttachmentUsagesFromRequestParameters(request, Sets::intersection);
+        return makeAttachmentUsagesFromRequestParameters(request, Sets::intersection, false);
     }
 
-    private static List<AttachmentUsage> makeAttachmentUsagesFromRequestParameters(ResourceRequest request, BiFunction<Set<String>, Set<String>, Set<String>> computeUsagesFromCheckboxes) {
+    private static List<AttachmentUsage> makeAttachmentUsagesFromRequestParameters(ResourceRequest request,
+            BiFunction<Set<String>, Set<String>, Set<String>> computeUsagesFromCheckboxes, boolean deselectUsage) {
         final String projectId = request.getParameter(PROJECT_ID);
         Set<String> selectedUsages = new HashSet<>(arrayToList(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES)));
         Set<String> changedUsages = new HashSet<>(arrayToList(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS)));
+        Set<String> changedIncludeConludedLicenses = new HashSet<>(
+                arrayToList(request.getParameterValues(INCLUDE_CONCLUDED_LICENSE_SHADOWS)));
+        changedUsages = Sets.union(changedUsages, new HashSet(changedIncludeConludedLicenses));
+        List<String> includeConludedLicenses = arrayToList(request.getParameterValues(INCLUDE_CONCLUDED_LICENSE));
         Set<String> usagesSubset = computeUsagesFromCheckboxes.apply(changedUsages, selectedUsages);
+        if (deselectUsage) {
+            usagesSubset = Sets.union(usagesSubset, new HashSet(changedIncludeConludedLicenses));
+        }
         return usagesSubset.stream()
-                .map(s -> parseAttachmentUsageFromString(projectId, s))
+                .map(s -> parseAttachmentUsageFromString(projectId, s, includeConludedLicenses))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
-    private static AttachmentUsage parseAttachmentUsageFromString(String projectId, String s) {
+    private static AttachmentUsage parseAttachmentUsageFromString(String projectId, String s, List<String> includeConludedLicense) {
         String[] split = s.split("_");
         if (split.length != 3) {
             log.warn(String.format("cannot parse attachment usage from %s for project id %s", s, projectId));
@@ -338,12 +420,25 @@ public class ProjectPortletUtils {
         String releaseId = split[0];
         String type = split[1];
         String attachmentContentId = split[2];
+        String projectPath = null;
+        if (UsageData._Fields.findByName(type).equals(UsageData._Fields.LICENSE_INFO)) {
+            String[] projectPath_releaseId = split[0].split("-");
+            if (projectPath_releaseId.length == 2) {
+                releaseId = projectPath_releaseId[1];
+                projectPath = projectPath_releaseId[0];
+            }
+        }
 
         AttachmentUsage usage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
         final UsageData usageData;
         switch (UsageData._Fields.findByName(type)) {
             case LICENSE_INFO:
-                usageData = UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet()));
+                LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
+                licenseInfoUsage.setIncludeConcludedLicense(includeConludedLicense.contains(s));
+                if (projectPath != null) {
+                    licenseInfoUsage.setProjectPath(projectPath);
+                }
+                usageData = UsageData.licenseInfo(licenseInfoUsage);
                 break;
             case SOURCE_PACKAGE:
                 usageData = UsageData.sourcePackage(new SourcePackageUsage());
@@ -407,5 +502,39 @@ public class ProjectPortletUtils {
         }
 
         return mergedUsage;
+    }
+
+    public static String createVulnerabilityFriendlyUrl(ResourceRequest request) {
+        Portlet portlet = PortletLocalServiceUtil.getPortletById(PortalConstants.VULNERABILITIES_PORTLET_NAME);
+        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portlet.getCompanyId()).stream()
+                .filter(l -> ("/vulnerabilities").equals(l.getFriendlyURL())).findFirst();
+        if (layout.isPresent()) {
+            long plId = layout.get().getPlid();
+            LiferayPortletURL vulUrl = PortletURLFactoryUtil.create(request,
+                    PortalConstants.VULNERABILITIES_PORTLET_NAME, plId, PortletRequest.RENDER_PHASE);
+            vulUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_DETAIL);
+            vulUrl.setParameter(PortalConstants.VULNERABILITY_ID, "replacewithexternalid");
+            return vulUrl.toString();
+        }
+
+        return "";
+    }
+
+    public static String createProjectPortletUrlWithViewSizeFriendlyUrl(RenderRequest request, String projectId) {
+        Portlet portlet = PortletLocalServiceUtil.getPortletById(PortalConstants.PROJECT_PORTLET_NAME);
+        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portlet.getCompanyId()).stream()
+                .filter(l -> ("/projects").equals(l.getFriendlyURL())).findFirst();
+        if (layout.isPresent()) {
+            long plId = layout.get().getPlid();
+            LiferayPortletURL projUrl = PortletURLFactoryUtil.create(request, PortalConstants.PROJECT_PORTLET_NAME,
+                    plId, PortletRequest.RENDER_PHASE);
+            projUrl.setParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_DETAIL);
+            projUrl.setParameter(PortalConstants.PROJECT_ID, projectId);
+
+            projUrl.setParameter(PortalConstants.VIEW_SIZE, "replacewithviewsize");
+            return projUrl.toString();
+        }
+
+        return "";
     }
 }

@@ -1,0 +1,127 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.Release" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.ECCStatus" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.EccInformation" %>
+
+<jsp:useBean id="isUserAtLeastECCAdmin" class="java.lang.String" scope="request"/>
+
+<core_rt:if test="${isUserAtLeastECCAdmin != 'Yes'}">
+    <div class="alert alert-info">
+        <liferay-ui:message key="you.will.create.a.moderation.request.if.you.update.any.ecc.data" />
+    </div>
+</core_rt:if>
+
+<table class="table edit-table three-columns" id="ECCInformation">
+    <thead>
+    <tr>
+        <th colspan="3" class="headlabel"><liferay-ui:message key="ecc.information" /></th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="eccStatus"><liferay-ui:message key="ecc.status" /></label>
+                <select class="form-control" id="eccStatus"
+                        name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.ECC_STATUS%>"
+                >
+                    <sw360:DisplayEnumOptions type="<%=ECCStatus.class%>" selected="${release.eccInformation.eccStatus}"/>
+                </select>
+                <small class="form-text">
+                    <sw360:DisplayEnumInfo type="<%=ECCStatus.class%>"/>
+                    <liferay-ui:message key="learn.more.about.ecc.statuses" />
+                </small>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="ECCComment"><liferay-ui:message key="ecc.comment" /></label>
+                <input id="ECCComment"
+                    name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.ECC_COMMENT%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="<liferay-ui:message key="enter.ecc.comment" />"
+                    value="<sw360:out value="${release.eccInformation.eccComment}"/>"/>
+            </div>
+        </td>
+        <td>
+        </td>
+    </tr>
+    <tr>
+
+        <td>
+            <div class="form-group">
+                <label for="AL"><liferay-ui:message key="ausfuhrliste" /></label>
+                <input id="AL"
+                    name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.AL%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="<liferay-ui:message key="enter.al" />"
+                    value="<sw360:out value="${release.eccInformation.AL}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="ECCN"><liferay-ui:message key="eccn" /></label>
+                <input id="ECCN"
+                    name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.ECCN%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="<liferay-ui:message key="enter.eccn" />"
+                    value="<sw360:out value="${release.eccInformation.ECCN}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="materialIndexNumber"><liferay-ui:message key="material.index.number" /></label>
+                <input id="materialIndexNumber"
+                    name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.MATERIAL_INDEX_NUMBER%>"
+                    type="text"
+                    class="form-control"
+                    placeholder="<liferay-ui:message key="enter.material.index.number" />"
+                    value="<sw360:out value="${release.eccInformation.materialIndexNumber}"/>"/>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <sw360:DisplayUserEdit email="${release.eccInformation.assessorContactPerson}"
+                                   id="<%=Release._Fields.ECC_INFORMATION.toString() + EccInformation._Fields.ASSESSOR_CONTACT_PERSON.toString()%>"
+                                   description="assessor.contact.person" multiUsers="false" readonly="true"/>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="assessorDepartment"><liferay-ui:message key="assessor.department" /></label>
+                <input id="assessorDepartment"
+                    name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.ASSESSOR_DEPARTMENT%>"
+                    type="text"
+                    class="form-control"
+                    readonly
+                    placeholder="<liferay-ui:message key="will.be.set.automatically" />"
+                    value="<sw360:out value="${release.eccInformation.assessorDepartment}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="assessmentDate"><liferay-ui:message key="assessment.date" /></label>
+                <input id="assessmentDate"
+                    class="datepicker form-control"
+                    name="<portlet:namespace/><%=Release._Fields.ECC_INFORMATION%><%=EccInformation._Fields.ASSESSMENT_DATE%>"
+                    type="text"
+                    placeholder="<liferay-ui:message key="will.be.set.automatically" />"
+                    pattern="\d{4}-\d{2}-\d{2}"
+                    readonly
+                    value="<sw360:out value="${release.eccInformation.assessmentDate}"/>"/>
+            </div>
+        </td>
+    </tr>
+</table>

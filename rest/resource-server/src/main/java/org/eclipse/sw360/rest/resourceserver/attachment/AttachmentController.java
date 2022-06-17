@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.rest.resourceserver.attachment;
@@ -31,25 +30,23 @@ import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.ResourceProcessor;
-import org.springframework.hateoas.UriTemplate;
-import org.springframework.hateoas.mvc.ControllerLinkBuilder;
+import org.springframework.hateoas.*;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.util.Arrays.asList;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class AttachmentController implements ResourceProcessor<RepositoryLinksResource> {
+public class AttachmentController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String ATTACHMENTS_URL = "/attachments";
 
     @NonNull
@@ -67,26 +64,33 @@ public class AttachmentController implements ResourceProcessor<RepositoryLinksRe
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
-    @RequestMapping(value = ATTACHMENTS_URL + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Resource<Attachment>> getAttachmentForId(
-            @PathVariable("id") String id,
-            OAuth2Authentication oAuth2Authentication) throws TException {
+    @GetMapping(value = ATTACHMENTS_URL + "/{id}")
+    public ResponseEntity<EntityModel<Attachment>> getAttachmentForId(
+            @PathVariable("id") String id) throws TException {
 
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         AttachmentInfo attachmentInfo = attachmentService.getAttachmentById(id);
         HalResource<Attachment> attachmentResource = createHalAttachment(attachmentInfo, sw360User);
         return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
     }
 
-    @RequestMapping(value = ATTACHMENTS_URL, params = "sha1", method = RequestMethod.GET)
-    public ResponseEntity<Resource<Attachment>> getAttachmentForSha1(
-            OAuth2Authentication oAuth2Authentication,
-            @RequestParam String sha1) throws TException {
+    @GetMapping(value = ATTACHMENTS_URL)
+    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getAttachments(@RequestParam String sha1) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<AttachmentInfo> attachmentInfos = attachmentService.getAttachmentsBySha1(sha1);
 
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
-        AttachmentInfo attachmentInfo = attachmentService.getAttachmentBySha1(sha1);
-        HalResource<Attachment> attachmentResource = createHalAttachment(attachmentInfo, sw360User);
-        return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
+        List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
+        for (AttachmentInfo sw360Attachment : attachmentInfos) {
+            HalResource<Attachment> attachmentResource = createHalAttachment(sw360Attachment, sw360User);
+            attachmentResources.add(attachmentResource);
+        }
+        CollectionModel<EntityModel<Attachment>> resources;
+        if (!attachmentResources.isEmpty()) {
+            resources = CollectionModel.of(attachmentResources);
+            return new ResponseEntity<>(resources, HttpStatus.OK);
+        } else {
+            return new ResponseEntity(attachmentResources, HttpStatus.NO_CONTENT);
+        }
     }
 
     private HalResource<Attachment> createHalAttachment(AttachmentInfo attachmentInfo, User sw360User) throws TException {
@@ -99,29 +103,33 @@ public class AttachmentController implements ResourceProcessor<RepositoryLinksRe
             case PROJECT_ID:
                 Project sw360Project = projectService.getProjectForUserById(owner.getProjectId(), sw360User);
                 restControllerHelper.addEmbeddedProject(halAttachment, sw360Project);
-                downloadLink = linkTo(ProjectController.class).slash(sw360Project.getId() + "/attachment/" + sw360Project.getId() + "/" + attachmendId).withRel("downloadLink");
+                downloadLink = linkTo(ProjectController.class).slash("/api/projects/" + sw360Project.getId() + "/attachments/" + attachmendId).withRel("downloadLink");
                 break;
             case COMPONENT_ID:
                 Component sw360Component = componentService.getComponentForUserById(owner.getComponentId(), sw360User);
                 restControllerHelper.addEmbeddedComponent(halAttachment, sw360Component);
-                downloadLink = linkTo(ComponentController.class).slash(sw360Component.getId() + "/attachment/" + sw360Component.getId() + "/" + attachmendId).withRel("downloadLink");
+                downloadLink = linkTo(ComponentController.class).slash("/api/components/" + sw360Component.getId() + "/attachments/" + attachmendId).withRel("downloadLink");
                 break;
             case RELEASE_ID:
                 Release sw360Release = releaseService.getReleaseForUserById(owner.getReleaseId(), sw360User);
                 restControllerHelper.addEmbeddedRelease(halAttachment, sw360Release);
-                downloadLink = linkTo(ComponentController.class).slash("/release/" + sw360Release.getComponentId() + "/" + sw360Release.getId() + "/attachment/" + sw360Release.getId() + "/" + attachmendId).withRel("downloadLink");
+                downloadLink = linkTo(ComponentController.class).slash("/api/releases/" + sw360Release.getId() + "/attachments/" + attachmendId).withRel("downloadLink");
                 break;
         }
 
         halAttachment.add(downloadLink);
-        restControllerHelper.addEmbeddedUser(halAttachment, sw360User, "createdBy");
+
+        if (sw360User != null) {
+            restControllerHelper.addEmbeddedUser(halAttachment, sw360User, "createdBy");
+        }
+
         return halAttachment;
     }
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        final ControllerLinkBuilder controllerLinkBuilder = linkTo(AttachmentController.class);
-        final Link attachments = new Link(new UriTemplate(controllerLinkBuilder.toUri().toString() + "/api/attachments{?sha1}"), "attachments");
+        final WebMvcLinkBuilder controllerLinkBuilder = linkTo(AttachmentController.class);
+        final Link attachments = Link.of(UriTemplate.of(controllerLinkBuilder.toUri().toString() + "/api/attachments{?sha1}"), "attachments");
         resource.add(attachments);
         return resource;
     }

@@ -1,29 +1,34 @@
 /*
- * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  * This displays a user in Edit mode
@@ -38,7 +43,7 @@ public class DisplayUserEdit extends NameSpaceAwareTag {
     private String description;
     private Boolean multiUsers;
     private Boolean readonly = false;
-    private Logger log = Logger.getLogger(DisplayUserEdit.class);
+    private Logger log = LogManager.getLogger(DisplayUserEdit.class);
 
     public void setMultiUsers(Boolean multiUsers) {
         this.multiUsers = multiUsers;
@@ -108,22 +113,27 @@ public class DisplayUserEdit extends NameSpaceAwareTag {
                     userList.add(email);
                 }
             }
-
+            
             Joiner commaJoiner = Joiner.on(", ");
             String mails = getString(commaJoiner.join(emailList));
             String userNames = getString(commaJoiner.join(userList));
 
-            display.append(String.format("<label class=\"textlabel stackedLabel\" for=\"%sDisplay\">%s</label>", id, description))
+            HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+            
+            display.append("<div class=\"form-group\">");
+            display.append(String.format("<label for=\"%sDisplay\">%s</label>", id, LanguageUtil.get(resourceBundle, description)))
                     .append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\"  id=\"%s\" name=\"%s%s\"/>", mails, id, namespace, id))
-                    .append(String.format("<input type=\"text\" readonly=\"\" value=\"%s\" id=\"%sDisplay\" ", userNames, id));
+                    .append(String.format("<input type=\"text\" readonly value=\"%s\" id=\"%sDisplay\" ", userNames, id));
 
             if (!readonly) {
-                display.append(String.format(" placeholder=\"Click to edit\" class=\"clickable userSearchDialogInteractive\" data-id=\"%s\" data-multi-user=\"%s\"", id,  multiUsers ? "true" : "false"));
+                display.append(String.format(" placeholder=\"" + LanguageUtil.get(resourceBundle, "click.to.edit") + "\" class=\"form-control clickable userSearchDialogInteractive\" data-id=\"%s\" data-multi-user=\"%s\"", id,  multiUsers ? "true" : "false"));
             } else {
-                display.append(" placeholder=\"Will be set automatically\" ");
+                display.append(" placeholder=\"" + LanguageUtil.get(resourceBundle, "will.be.set.automatically") + "\" class=\"form-control\"");
             }
 
             display.append("/>");
+            display.append("</div>");
 
             jspWriter.print(display.toString());
         } catch (Exception e) {

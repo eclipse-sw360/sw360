@@ -1,15 +1,15 @@
 /*
  * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.attachments;
 
+import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.ImmutableSet;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
@@ -19,12 +19,14 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 
 import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
@@ -41,7 +43,11 @@ public class AttachmentHandler implements AttachmentService.Iface {
     private final AttachmentDatabaseHandler handler;
 
     public AttachmentHandler() throws MalformedURLException {
-        handler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+        handler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+    }
+
+    public AttachmentHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
+        handler = new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName);
     }
 
     @Override
@@ -53,11 +59,15 @@ public class AttachmentHandler implements AttachmentService.Iface {
 
     @Override
     public List<AttachmentContent> makeAttachmentContents(List<AttachmentContent> attachmentContents) throws TException {
+        for (AttachmentContent attachmentContent : attachmentContents) {
+            validateAttachment(attachmentContent);
+            assertIdUnset(attachmentContent.getId());
+        }
         return handler.makeAttachmentContents(attachmentContents);
     }
 
     @Override
-    public AttachmentContent getAttachmentContent(String id) throws TException {
+    public AttachmentContent getAttachmentContent(String id) throws SW360Exception {
         assertNotEmpty(id);
         return handler.getAttachmentContent(id);
     }
@@ -227,4 +237,14 @@ public class AttachmentHandler implements AttachmentService.Iface {
         return handler.getAttachmentOwnersByIds(ids);
     }
 
+    @Override
+    public List<AttachmentUsage> getAttachmentUsagesByReleaseId(String releaseId) throws TException {
+        assertNotNull(releaseId);
+        return handler.getAttachmentUsagesByReleaseId(releaseId);
+    }
+
+    @Override
+    public RequestStatus deleteOldAttachmentFromFileSystem() throws TException {
+        return handler.deleteOldAttachmentFromFileSystem();
+    }
 }

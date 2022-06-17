@@ -1,10 +1,11 @@
 /*
  * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+  * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.rest.resourceserver.integration;
@@ -25,12 +26,12 @@ import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ProjectTest extends TestIntegrationBase {
@@ -46,20 +47,20 @@ public class ProjectTest extends TestIntegrationBase {
 
     @Before
     public void before() throws TException {
-        List<Project> projectList = new ArrayList<>();
+        Set<Project> projectList = new HashSet<>();
         Project project = new Project();
         project.setName("Project name");
         project.setDescription("Project description");
         projectList.add(project);
 
-        given(this.projectServiceMock.getProjectsForUser(anyObject())).willReturn(projectList);
+        given(this.projectServiceMock.getProjectsForUser(any())).willReturn(projectList);
 
         User user = new User();
         user.setId("123456789");
         user.setEmail("admin@sw360.org");
         user.setFullname("John Doe");
 
-        given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
     }
 
     @Test

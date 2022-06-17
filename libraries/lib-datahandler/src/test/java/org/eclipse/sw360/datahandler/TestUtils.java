@@ -1,36 +1,35 @@
 /*
  * Copyright Siemens AG, 2015. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler;
 
+import com.cloudant.client.api.CloudantClient;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
-import com.google.common.base.Optional;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseInstance;
+
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceTrackerCloudant;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseInstanceTracker;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
-import org.ektorp.http.HttpClient;
 import org.hamcrest.*;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.URL;
+import java.net.*;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -55,10 +54,9 @@ public class TestUtils {
     public static final String BLACK_HOLE_ADDRESS = "100::/64";
 
     private static final List<String> dbNames = ImmutableList.of(
-            DatabaseSettings.COUCH_DB_DATABASE,
-            DatabaseSettings.COUCH_DB_ATTACHMENTS,
-            DatabaseSettings.COUCH_DB_FOSSOLOGY,
-            DatabaseSettings.COUCH_DB_USERS);
+            DatabaseSettingsTest.COUCH_DB_DATABASE,
+            DatabaseSettingsTest.COUCH_DB_ATTACHMENTS,
+            DatabaseSettingsTest.COUCH_DB_USERS);
 
     static {
         assertTestDbNames();
@@ -73,7 +71,7 @@ public class TestUtils {
 
     public static void deleteAllDatabases() throws MalformedURLException {
         for (String dbName : dbNames) {
-            deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+            deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
         }
     }
 
@@ -110,33 +108,39 @@ public class TestUtils {
         doReturn(true).when(user).isSetDepartment();
         doReturn(caller.getPackage().getName()).when(user).getDepartment();
 
+        doReturn(false).when(user).isSetSecondaryDepartmentsAndRoles();
+        doReturn(null).when(user).getSecondaryDepartmentsAndRoles();
+
         return user;
     }
 
-    public static void deleteDatabase(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {
+    public static void deleteDatabase(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         assertTestString(dbName);
 
-        DatabaseInstance instance = new DatabaseInstance(httpClient.get());
+        DatabaseInstanceCloudant instance = new DatabaseInstanceCloudant(httpClient);
         if (instance.checkIfDbExists(dbName))
             instance.deleteDatabase(dbName);
 
         DatabaseInstanceTracker.destroy();
+
+        // Giving 500ms Delay between Deleting and Creating test Db
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+        }
     }
 
-    public static void createDatabase(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {
-        createDatabase(httpClient.get(), dbName);
-    }
-
-    public static void createDatabase(HttpClient httpClient, String dbName) throws MalformedURLException {
+    public static void createDatabase(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
         assertTestString(dbName);
 
-        DatabaseInstance instance = new DatabaseInstance(httpClient);
+        DatabaseInstanceCloudant instance = new DatabaseInstanceCloudant(httpClient);
 
-        if (instance.checkIfDbExists(dbName))
+        if (instance.checkIfDbExists(dbName)) {
             instance.deleteDatabase(dbName);
-        instance.createDatabase(dbName);
+        }
+        instance.createDB(dbName);
 
-        DatabaseInstanceTracker.destroy();
+        DatabaseInstanceTrackerCloudant.destroy();
     }
 
     public static <T extends TBase<T, F>, F extends TFieldIdEnum>

@@ -1,20 +1,24 @@
 /*
  * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.common;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.apache.thrift.meta_data.FieldMetaData;
@@ -27,6 +31,9 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.UpdateType;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
@@ -34,13 +41,21 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.portal.common.customfields.CustomField;
+import org.eclipse.sw360.portal.common.customfields.CustomFieldPageIdentifier;
+import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
 import javax.portlet.PortletRequest;
+import javax.portlet.ResourceRequest;
+import javax.portlet.RenderRequest;
+
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.lang.Math.min;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.lang.Integer.parseInt;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 
@@ -54,7 +69,10 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
  */
 public class PortletUtils {
 
-    private static final Logger LOGGER = Logger.getLogger(PortletUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(PortletUtils.class);
+    private static final String TEMPLATE_FILE = "/welcomePageGuideline.html";
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static ChangeLogsPortletUtils changeLogsPortletUtils = null;
 
     private PortletUtils() {
         // Utility class with only static functions
@@ -109,6 +127,14 @@ public class PortletUtils {
         return  ECCStatus.findByValue(parseInt(enumNumber));
     }
 
+    public static ObligationLevel getObligationLevelFromString(String enumNumber) {
+        return  ObligationLevel.findByValue(parseInt(enumNumber));
+    }
+
+    public static ObligationType getObligationTypeFromString(String enumNumber) {
+        return  ObligationType.findByValue(parseInt(enumNumber));
+    }
+
     public static <U extends TFieldIdEnum, T extends TBase<T, U>> void setFieldValue(PortletRequest request, T instance, U field, FieldMetaData fieldMetaData, String prefix) {
 
         String value = request.getParameter(prefix + field.toString());
@@ -154,10 +180,16 @@ public class PortletUtils {
             return getProjectTypeFromString(value);
         else if (field == Project._Fields.VISBILITY)
             return getVisibilityFromString(value);
+        else if (field == Component._Fields.VISBILITY)
+            return getVisibilityFromString(value);
         else if (field == User._Fields.USER_GROUP)
             return getUserGroupFromString(value);
         else if (field == EccInformation._Fields.ECC_STATUS)
             return getEccStatusFromString(value);
+        else if (field == Obligation._Fields.OBLIGATION_LEVEL)
+            return getObligationLevelFromString(value);
+        else if (field == Obligation._Fields.OBLIGATION_TYPE)
+            return getObligationTypeFromString(value);
         else {
             LOGGER.error("Missing case in enumFromString, unknown field was " + field.toString());
             return null;
@@ -276,7 +308,6 @@ public class PortletUtils {
         Project newProject = project.deepCopy();
 
         //new DB object
-        newProject.unsetId();
         newProject.unsetRevision();
 
         //new Owner
@@ -346,6 +377,9 @@ public class PortletUtils {
                 LOGGER.error("Empty map key found");
             } else {
                 String value = request.getParameter(mapValue + parameterId);
+                if (value == null) {
+                    value = "";
+                }
                 if(!customMap.containsKey(key)){
                     customMap.put(key, new HashSet<>());
                 }
@@ -355,12 +389,188 @@ public class PortletUtils {
         return customMap;
     }
 
-    public static Map<String,String> getExternalIdMapFromRequest(PortletRequest request) {
-        Map<String, Set<String>> customMap = getCustomMapFromRequest(request, PortalConstants.EXTERNAL_ID_KEY, PortalConstants.EXTERNAL_ID_VALUE);
+    public static Map<String,String> getMapWithJoinedValueFromRequest(PortletRequest request, String key, String value) {
+        Map<String, Set<String>> customMap = getCustomMapFromRequest(request, key, value);
+        return customMap.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        e -> {
+                            try {
+                                if(isNotEmpty(e.getValue()) && e.getValue().size() == 1) {
+                                    return e.getValue().stream()
+                                            .findFirst()
+                                            .orElse("");
+                                }
+                                return getObjectMapper().writeValueAsString(e.getValue());
+                            } catch (JsonProcessingException ex) {
+                                return e.getValue().stream()
+                                        .findFirst()
+                                        .orElse("");
+                            }
+                        }));
+    }
+
+    public static Map<String,String> getMapFromRequest(PortletRequest request, String key, String value) {
+        Map<String, Set<String>> customMap = getCustomMapFromRequest(request, key, value);
         return customMap.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
                         e -> e.getValue().stream()
                                 .findFirst()
                                 .orElse("")));
+    }
+
+    public static Map<String,String> getExternalIdMapFromRequest(PortletRequest request) {
+        return getMapWithJoinedValueFromRequest(request, PortalConstants.EXTERNAL_ID_KEY, PortalConstants.EXTERNAL_ID_VALUE);
+    }
+
+    public static Map<String, Set<UserGroup>> getSecondaryDepartmentAndRolesMapFromRequest(PortletRequest request, String primaryDepartment) {
+        Map<String, Set<String>> customMap = getCustomMapFromRequest(request, PortalConstants.USER_SECONDARY_GROUP_KEY,
+                PortalConstants.USER_SECONDARY_GROUP_VALUES);
+        if (!CommonUtils.isNullOrEmptyMap(customMap)) {
+            customMap.remove(primaryDepartment);
+            return customMap.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey(), entry -> {
+                Set<String> userGroups = entry.getValue();
+                if (CommonUtils.isNotEmpty(userGroups)) {
+                    return userGroups.stream().map(grp -> UserGroup.valueOf(grp)).collect(Collectors.toSet());
+                }
+                return new HashSet<>();
+            }));
+        }
+
+        return null;
+    }
+
+    public static Map<String,String> getAdditionalDataMapFromRequest(PortletRequest request) {
+        return getMapFromRequest(request, PortalConstants.ADDITIONAL_DATA_KEY, PortalConstants.ADDITIONAL_DATA_VALUE);
+    }
+
+    public static Map<String,String> getExternalUrlMapFromRequest(PortletRequest request) {
+        return getMapWithJoinedValueFromRequest(request, PortalConstants.EXTERNAL_URL_KEY, PortalConstants.EXTERNAL_URL_VALUE);
+    }
+
+    public static int getProjectDataCount(PaginationParameters projectParameters, int maxSize) {
+        if (projectParameters.getDisplayLength() == -1) {
+            return maxSize;
+        } else {
+            return min(projectParameters.getDisplayStart() + projectParameters.getDisplayLength(), maxSize);
+        }
+    }
+
+    public static void handlePaginationSortOrder(ResourceRequest request, PaginationParameters paginationParameters,
+            final ImmutableList<? extends TFieldIdEnum> entityilteredFields, final int entityNoSort) {
+        if (!paginationParameters.getSortingColumn().isPresent()) {
+            for (TFieldIdEnum filteredField : entityilteredFields) {
+                if (!isNullOrEmpty(request.getParameter(filteredField.toString()))) {
+                    paginationParameters.setSortingColumn(Optional.of(entityNoSort));
+                    break;
+                }
+            }
+        }
+    }
+
+    public static Comparator<Project> compareByName(boolean isAscending) {
+        Comparator<Project> comparator = Comparator.comparing(p -> SW360Utils.printName(p).toLowerCase());
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    public static Comparator<Project> compareByDescription(boolean isAscending) {
+        Comparator<Project> comparator = Comparator.comparing(p -> nullToEmptyString(p.getDescription()));
+        return isAscending ? comparator : comparator.reversed();
+    }
+
+    public static void setWelcomePageGuideLine(RenderRequest request) {
+        String welcomePageGuideLine = null;
+        if (PortalConstants.CUSTOM_WELCOME_PAGE_GUIDELINE) {
+            welcomePageGuideLine = new String(
+                    CommonUtils.loadResource(PortletUtils.class, TEMPLATE_FILE).orElse(new byte[0]));
+        }
+        request.setAttribute("welcomePageGuideLine", welcomePageGuideLine);
+    }
+
+    public static void getBaBlSelection(RenderRequest request, User user) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.PROJECT);
+        if (CommonUtils.isNullOrEmptyMap(customFieldMap)) {
+            return;
+        }
+        CustomField customField = customFieldMap.get("BA BL");
+        if (null != customField) {
+            request.setAttribute("babl", customField);
+        }
+    }
+
+    public static void setCustomFieldsDisplay(RenderRequest request, User user, Project project) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.PROJECT);
+        setCustomFieldsDisplay(customFieldMap, project.getAdditionalData());
+    }
+
+    public static void setCustomFieldsDisplay(RenderRequest request, User user, Component component) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.COMPONENT);
+        setCustomFieldsDisplay(customFieldMap, component.getAdditionalData());
+    }
+
+    public static void setCustomFieldsDisplay(RenderRequest request, User user, Release release) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.RELEASE);
+        setCustomFieldsDisplay(customFieldMap, release.getAdditionalData());
+    }
+
+    private static void setCustomFieldsDisplay(Map<String, CustomField> customFieldMap, Map<String, String> additionalData) {
+        if (CommonUtils.isNullOrEmptyMap(customFieldMap) || CommonUtils.isNullOrEmptyMap(additionalData)) {
+            return;
+        }
+        for (Map.Entry<String, CustomField> entry : customFieldMap.entrySet()) {
+            if (additionalData.containsKey(entry.getKey()) && entry.getValue().isHidden()) {
+                additionalData.remove(entry.getKey());
+            }
+        }
+    }
+
+    public static void setCustomFieldsEdit(RenderRequest request, User user, Project project) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.PROJECT);
+        setCustomFieldsEdit(request, customFieldMap, project.getAdditionalData());
+    }
+
+    public static void setCustomFieldsEdit(RenderRequest request, User user, Component component) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.COMPONENT);
+        setCustomFieldsEdit(request, customFieldMap, component.getAdditionalData());
+    }
+
+    public static void setCustomFieldsEdit(RenderRequest request, User user, Release release) {
+        Map<String, CustomField> customFieldMap = CustomFieldHelper.getCustomFields(request, user, CustomFieldPageIdentifier.RELEASE);
+        setCustomFieldsEdit(request, customFieldMap, release.getAdditionalData());
+    }
+
+    private static void setCustomFieldsEdit(RenderRequest request, Map<String, CustomField> customFieldMap, Map<String, String> additionalData) {
+        if (!(CommonUtils.isNullOrEmptyMap(additionalData) || CommonUtils.isNullOrEmptyMap(customFieldMap))) {
+            Iterator<Map.Entry<String, String>> iter = additionalData.entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry<String, String> entry = iter.next();
+                if (customFieldMap.containsKey(entry.getKey())) {
+                    customFieldMap.get(entry.getKey()).setValue(entry.getValue());
+                    iter.remove();
+                }
+            }
+        }
+        List<CustomField> customFields = new ArrayList<>(CommonUtils.nullToEmptyMap(customFieldMap).values());
+        customFields.sort(Comparator.comparing(CustomField::getFieldId));
+        request.setAttribute("customFields", customFields);
+    }
+
+    public static ChangeLogsPortletUtils getChangeLogsPortletUtils(ThriftClients clients) {
+        if (changeLogsPortletUtils == null) {
+            changeLogsPortletUtils = new ChangeLogsPortletUtils(clients);
+        }
+        return changeLogsPortletUtils;
+    }
+
+    public static ObjectMapper getObjectMapper() {
+        return objectMapper;
+    }
+
+    public static String convertObjectToJsonStr(Object obj) {
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Error occured while converting Object to Json : ", e);
+            throw new RuntimeException(e);
+        }
     }
 }

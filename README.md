@@ -1,26 +1,29 @@
+[![Eclipse Public License 2.0](https://img.shields.io/badge/license-EPL--2.0-green.svg "Eclipse Public License 2.0")](LICENSE)
 [![Build Status](https://travis-ci.org/eclipse/sw360.svg?branch=master)](https://travis-ci.org/eclipse/sw360)
+[![Slack Channel](https://img.shields.io/badge/slack-sw360chat-blue.svg?longCache=true&logo=slack)](https://join.slack.com/t/sw360chat/shared_invite/enQtNzg5NDQxMTQyNjA5LThiMjBlNTRmOWI0ZjJhYjc0OTk3ODM4MjBmOGRhMWRmN2QzOGVmMzQwYzAzN2JkMmVkZTI1ZjRhNmJlNTY4ZGI)
+[![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](https://github.com/eclipse/sw360/blob/master/CHANGELOG.md)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/eclipse/sw360)](https://github.com/eclipse/sw360/releases/latest)
 
-### sw360portal
+### SW360 Portal
 
 A software component catalogue application - designed to work with FOSSology.
 
-SW360 is a liferay portal application to maintain your projects / products and
-the software components within. It can send files to the open source
-license scanner FOSSology for checking the license conditions and 
-maintain license information.
+SW360 is a server with a REST interface and a Liferay CE portal application
+to maintain your projects / products and the software components within.
+
+It can manage SPDX files for maintaining the license conditions and maintain
+license information.
 
 ### Introduction
 
 It is comprised of one frontend (portal) part, backend (services) part and additionally a REST API:
 
-* Frontend: Liferay-(Tomcat-)based portal application using the Alloy UI framework.
+* Frontend: Liferay-CE-(Tomcat-)based portal application using portlets.
 * Backend: Tomcat-based thrift services for being called by different applications.
-* Database: we store software components and metadata about them in couchdb.
-* Rest: this REST API provides access to project resources for external clients.
-        Please note the state of the REST API is experimental and its may exposed by breaking changes.
+* Database: we store software components and metadata about them in CouchDB.
+* Rest: this REST API provides access to project resources for external integration.
 
-The reference platform is the Ubuntu server 14.04 (which is a LTS version). However, it
-runs well on other OSes (see below).
+The reference platform is the Ubuntu server 20.04 (which is an LTS version) as it is supported in sw360vagrant. However, it runs well on other OSes (see below).
 
 ### Project structure
 
@@ -29,49 +32,63 @@ This is a multi module maven file. please consider that we have the following mo
 * frontend: for portlets, themes and layouts, the liferay part.
 * backend: for the thrift based services.
 * libraries: for general stuff that is reused among the above, for example, couchdb access.
-* importers: for provisioning tasks.
 * scripts: for deploying either inside the vagrant or on your development machine.
 * rest: for the REST API which contains an authorization and resource server.
 
 ### Required software
 
-* Java 1.8.X
-* CouchDB, at least 1.5
-* Liferay Portal CE 6.2 GA5
-* Apache Tomcat 7.0.X or 8.0.X
+* Java 11, tested with OpenJDK
+* CouchDB, at least 2.1 (tested, may work with other releases of CouchDB as well), runs best with 3.1.1
+* Liferay Portal CE 7.3.3 GA4 or 7.3.4 GA5
+* Apache Tomcat 9.0.X (which is bundled with Liferay)
+* couchdb-lucene for search, please refer to installation details in the wiki, because a patch is required
+
+In addition, the Liferay instance must provide the following dependecies via OSGi:
+
+* Apache Commons Codec 1.12
+* Apache Commons Collections4 4.4
+* Apache Commons CSV 1.4
+* Apache Commons IO 2.7
+* Apache Commons Lang 2.4
+* Apache Commons Logging 1.2
+* Apache Commons Compress 1.20
+* Google Gson 2.8.9
+* Google Guava 31.0.1-jre
+* Jackson Annotations 2.13.2
+* Jackson Core 2.13.2
+* Jackson Databind 2.13.2.2
+* libthrift 0.14
 
 In order to build you will need:
 
 * A git client
-* Apache Maven 3.0.X
-* Apache Thrift 0.9.3
+* Apache Maven 3.6.X
+* Apache Thrift 0.13
 
 http://maven.apache.org/download.html#Installation
 
 Then, you must install Apache Tomcat, CouchDB. And, Java of course.
 
-The software is tested with
-
-* Maven 3.0.4 / 3.0.5
-* Apache Tomcat 8.0.26 / 7.0.54 / 7.0.61
-* Liferay GA5
-* CouchDB 1.5 / 1.5.1
-* OpenJDK Java 1.8.0_45 (64-bit) 
-* Tested with windows 7 SP1, ubuntu 14.04, macosx 10.8, 10.9 10.10
-* We run Liferay with PostgreSQL 9.3, but HSQL (as of the bundle) runs also OK.
+The software is tested with with debian 8, debian 9, ubuntu 16.04, ubuntu 18.04, ubuntu 20.04 macosx 10.8 - 10.15. We run Liferay with PostgreSQL 9.X or 10 as the Liferay CE requires, but HSQL (provided with the liferay bundle) runs also OK.
 
 ### PROBLEMS
 
-Running with the tested software shows no problems if you encounter some please report them at https://github.com/siemens/sw360portal/issues.
+Running with the tested software shows no problems if you encounter some please report them at:
 
+https://github.com/eclipse/sw360/issues
 
 ### Deployment
 
-There is a vagrant project for one-step-deployment. See the project wiki for details.
+There is a vagrant project for one-step-deployment. See the project wiki for details:
 
-Apart from the vagrant way, the software can be deployed using the provided scripts.
+https://github.com/eclipse/sw360/wiki
+
+Or using sw360vagrant:
+
+https://github.com/sw360/sw360vagrant
 
 ### Commands
+
 Most commands are using maven which is a dependency to build SW360.
 
 #### Compiling, testing and deploying
@@ -84,32 +101,37 @@ Actually, there is a hierarchy of maven files, in general
 2. to run all targets including build the .war file at the end
   - `mvn install`
 
-  this needs a couchdb running on the host on port 5984
+  this needs a couchdb running on the host on port 5984. To start such a couchdb via docker one can use the script `scripts/startCouchdbForTests.sh`
 
 3. to install without running the tests
   - `mvn install -DskipTests`
 
 For deployment run the command
 ```
-mvn install -Pdeploy
+mvn package -P deploy -Dbase.deploy.dir=. -Dliferay.deploy.dir=${LIFERAY_INSTALL}/deploy -Dbackend.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps -Drest.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps -DskipTests
 ```
-which copies the war files to the liferay auto deploy folder (if `LIFERAY_PATH` is set).
-Otherwise one has to specify the absolute path to the deploy folder in the following way:
+which copies the artifacts depending on their type to the following folders:
+  - backend: `<SOME_ABSOLUTE_PATH>/tomcat`
+  - rest: `<SOME_ABSOLUTE_PATH>/tomcat`
+  - frontend: `<SOME_ABSOLUTE_PATH>/liferay`
+  - libraries: `<SOME_ABSOLUTE_PATH>/liferay`
+
+You may also specify the paths using these properties:
+  - backend artifacts: `backend.deploy.dir`
+  - rest artifacts: `rest.deploy.dir`
+  - liferay artifacts (frontend, libraries): `liferay.deploy.dir`
+Be aware that you have to deploy the Liferay artifacts in the Liferay auto-deploy folder.
+On the other hand you must not deploy rest and backend artifacts to the auto-deploy folder.
+
+**Note:** the test framework for the REST API needs the tests running in order to generate the API documentation. So, for building the REST API artefacts, please switch in the rest sub projects and execute:
+
 ```
-mvn install -Pdeploy \
-    -Ddeploy.dir=/ABSOLUTE/PATH/TO/DEPLOY/FOLDER
-```
-It is even better to also pass the path to the webapps folder, thus allowing maven to deploy the backend services directly via the native tomcat hot deploy mechanism.
-This is done in the following way:
-```
-mvn install -Pdeploy \
-    -Ddeploy.dir=/ABSOLUTE/PATH/TO/DEPLOY/FOLDER \
-    -Dwebapps.dir=/ABSOLUTE/PATH/TO/WEBAPPS/FOLDER
+mvn package -P deploy -Dbase.deploy.dir=. -Dliferay.deploy.dir=${LIFERAY_INSTALL}/deploy -Dbackend.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps -Drest.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps
 ```
 
 ### Liferay Configuration
 
-You should provide below property configuration based on his/her liferay deployment
+You should provide below property configuration based on his/her Liferay deployment
 environment as found in the master pom.xml file.
 
 Please note that you should run the Liferay installation procedures as found on the
@@ -117,43 +139,39 @@ Liferay documentation.
 
 ### War file packaging
 
-As backend services are supposedly being deployed in an application Server.
+As backend services are supposedly being deployed in an application server.
 So to avoid conflicts for servlets api (in case of tomcat, tomcat-servlet-api-x.x.x-jar)
 are excluded from the WAR file while packaging. Using below configuration,
 
 ```
-            <plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-				<version>2.1.1</version>
-				<configuration>
-					<webResources>
-						<resource>
-							<directory>${basedir}/src/main/java</directory>
-							<targetPath>WEB-INF/classes</targetPath>
-							<includes>
-								<include>**/*.properties</include>
-								<include>**/*.xml</include>
-								<include>**/*.css</include>
-								<include>**/*.html</include>
-							</includes>
-						</resource>
-					</webResources>
-					<packagingExcludes>
-        					    WEB-INF/lib/tomcat-servlet-api-7.0.47.jar
-         		 	</packagingExcludes>
-				</configuration>
-            </plugin>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>2.1.1</version>
+        <configuration>
+            <webResources>
+                <resource>
+                    <directory>${basedir}/src/main/java</directory>
+                    <targetPath>WEB-INF/classes</targetPath>
+                    <includes>
+                        <include>**/*.properties</include>
+                        <include>**/*.xml</include>
+                        <include>**/*.css</include>
+                        <include>**/*.html</include>
+                    </includes>
+                </resource>
+            </webResources>
+            <packagingExcludes>
+                        WEB-INF/lib/tomcat-servlet-api-7.0.47.jar
+            </packagingExcludes>
+        </configuration>
+    </plugin>
 ```
 
 ### License
 
+SPDX-License-Identifier: EPL-2.0
 
-SPDX Short Identifier: http://spdx.org/licenses/EPL-1.0
-
-SPDX-License-Identifier: EPL-1.0
-
-All rights reserved. This program and the accompanying materials
-are made available under the terms of the Eclipse Public License v1.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v10.html
+This program and the accompanying materials are made
+available under the terms of the Eclipse Public License 2.0
+which is available at https://www.eclipse.org/legal/epl-2.0/

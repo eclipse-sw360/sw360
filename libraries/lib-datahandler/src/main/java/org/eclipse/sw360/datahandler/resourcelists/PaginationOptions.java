@@ -2,25 +2,24 @@
  * Copyright Bosch Software Innovations GmbH, 2018.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.datahandler.resourcelists;
 
 import java.util.Comparator;
 
-public class PaginationOptions {
+public class PaginationOptions<T> {
 
     private final int pageNumber;
     private final int pageSize;
-    private final Comparator sortComparator;
+    private final Comparator<T> sortComparator;
 
-    public PaginationOptions(int pageNumber, int pageSize, Comparator sortComparator) {
+    public PaginationOptions(int pageNumber, int pageSize, Comparator<T> sortComparator) {
         if(pageSize <= 0) {
             pageSize = 10;
         }
@@ -37,7 +36,7 @@ public class PaginationOptions {
         return pageSize;
     }
 
-    Comparator getSortComparator() {
+    Comparator<T> getSortComparator() {
         return sortComparator;
     }
 
@@ -48,7 +47,7 @@ public class PaginationOptions {
         return pageNumber * pageSize;
     }
 
-    public int getPageEndIndex() {
+    int getPageEndIndex() {
         return getOffset() + getPageSize();
     }
 

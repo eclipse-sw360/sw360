@@ -1,10 +1,11 @@
 //
 // Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
 //
-// All rights reserved. This configuration file is provided to you under the
-// terms and conditions of the Eclipse Distribution License v1.0 which
-// accompanies this distribution, and is available at
-// http://www.eclipse.org/org/documents/edl-v10.php
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
 //
 
 [[resources-attachments]]
@@ -29,3 +30,20 @@ include::{snippets}/should_document_get_attachment/http-response.adoc[]
 
 ===== Links
 include::{snippets}/should_document_get_attachment/links.adoc[]
+
+[[should_document_get_attachments_by_sha1]]
+==== Get attachment info by SHA1
+
+A `GET` request will get attachment information with the given sha1 and the resources having it. Please set the request parameter `&sha1=<SHA1>`.
+
+===== Response structure
+include::{snippets}/should_document_get_attachments_by_sha1/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_attachments_by_sha1/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_attachments_by_sha1/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_attachments_by_sha1/links.adoc[]

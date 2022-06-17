@@ -1,0 +1,102 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~ With modifications by Bosch Software Innovations GmbH, 2016.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+<portlet:actionURL var="editExternalLinkURL" name="editExternalLink">
+    <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}" />
+</portlet:actionURL>
+
+<core_rt:if test="${licenseDetail.checked != true}">
+    <div class="alert alert-danger"><liferay-ui:message key="this.license.is.unchecked" /></div>
+</core_rt:if>
+
+<table class="table label-value-table" id="licenseDetailOverview">
+    <thead>
+        <tr>
+            <th colspan="2"><liferay-ui:message key="license.details" /></th>
+        </tr>
+    </thead>
+    <tr>
+        <td><liferay-ui:message key="fullname" />:</td>
+        <td><sw360:out value="${licenseDetail.fullname}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="shortname" />:</td>
+        <td><sw360:out value="${licenseDetail.shortname}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="is.checked" />:</td>
+        <td>
+            <core_rt:if test="${licenseDetail.checked == true}">
+                <span class="text-success">
+                    <clay:icon symbol="check-circle" />
+                </span>
+            </core_rt:if>
+            <core_rt:if test="${licenseDetail.checked != true}">
+                <span class="text-danger">
+                    <clay:icon symbol="times-circle" />
+                </span>
+            </core_rt:if>
+        </td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="type" />:</td>
+        <td><sw360:out value="${licenseDetail.licenseType.licenseType}"/></td>
+    </tr>
+    <%--need nested ifs for the yes no because the values can be undefined--%>
+    <tr>
+        <td><liferay-ui:message key="osi.approved" />:</td>
+        <td>
+            <core_rt:choose>
+                <core_rt:when test="${licenseDetail.OSIApproved == 'YES'}">
+                    <sw360:DisplayBoolean value="true" name="Quadratic"/>
+                </core_rt:when>
+                <core_rt:when test="${licenseDetail.OSIApproved == 'NA'}">
+                    <sw360:DisplayBoolean value="false" name="Quadratic"/>
+                </core_rt:when>
+            </core_rt:choose>
+        </td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="fsf.free.libre" />:</td>
+        <td>
+            <core_rt:choose>
+                <core_rt:when test="${licenseDetail.FSFLibre == 'YES'}">
+                    <sw360:DisplayBoolean value="true" name="Quadratic"/>
+                </core_rt:when>
+                <core_rt:when test="${licenseDetail.FSFLibre == 'NA'}">
+                    <sw360:DisplayBoolean value="false" name="Quadratic"/>
+                </core_rt:when>
+            </core_rt:choose>
+        </td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="external.link.for.more.information" />:</td>
+        <td>
+            <core_rt:choose>
+                <core_rt:when test="${isUserAtLeastClearingAdmin == 'Yes'}" >
+                    <form class="form form-inline justify-content-start" action="<%=editExternalLinkURL%>" method="post" id="ExternalLink">
+                        <div class="form-group">
+                            <input id="<portlet:namespace/><%=License._Fields.EXTERNAL_LICENSE_LINK%>"
+                                name="<portlet:namespace/><%=License._Fields.EXTERNAL_LICENSE_LINK%>"
+                                type="text"
+                                class="form-control"
+                                value="${licenseDetail.externalLicenseLink}">
+                            <button type="submit" id="RemoteLinkSubmit" class="btn btn-secondary"><liferay-ui:message key="save" /></button>
+                        </div>
+                    </form>
+                </core_rt:when>
+                <core_rt:otherwise>
+                    <a href="${licenseDetail.externalLicenseLink}">${licenseDetail.externalLicenseLink}</a>
+                </core_rt:otherwise>
+            </core_rt:choose>
+        </td>
+    </tr>
+</table>

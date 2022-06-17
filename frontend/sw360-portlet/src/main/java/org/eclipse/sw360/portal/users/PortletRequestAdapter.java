@@ -1,24 +1,23 @@
 /*
  * Copyright Siemens AG, 2018. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.users;
 
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.kernel.servlet.SessionMessages;
-import com.liferay.portal.service.ServiceContext;
-import com.liferay.portal.service.ServiceContextFactory;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.ServiceContextFactory;
+import com.liferay.portal.kernel.servlet.SessionErrors;
 
-import javax.portlet.PortletRequest;
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import javax.portlet.PortletRequest;
 
 class PortletRequestAdapter implements RequestAdapter {
 
@@ -35,14 +34,14 @@ class PortletRequestAdapter implements RequestAdapter {
 
     @Override
     public Consumer<String> getErrorMessagesConsumer() {
-        return msg -> SessionMessages.add(request, "request_processed", msg);
+        return msg -> SessionErrors.add(request, msg);
     }
 
     @Override
     public Optional<ServiceContext> getServiceContext() {
         try {
             return Optional.of(ServiceContextFactory.getInstance(request));
-        } catch (PortalException | SystemException e ) {
+        } catch (PortalException e ) {
             return Optional.empty();
         }
     }

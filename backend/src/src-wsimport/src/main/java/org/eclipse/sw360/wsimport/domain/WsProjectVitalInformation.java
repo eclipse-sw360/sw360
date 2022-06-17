@@ -1,12 +1,11 @@
 /*
  * Copyright (c) Verifa Oy, 2018. Part of the SW360 Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.wsimport.domain;
 
@@ -20,6 +19,7 @@ public class WsProjectVitalInformation {
     private String token;
     private String creationDate;
     private String lastUpdatedDate;
+    private String pluginName;
 
     public int getId() {
         return id;
@@ -59,5 +59,13 @@ public class WsProjectVitalInformation {
 
     public void setLastUpdatedDate(String lastUpdatedDate) {
         this.lastUpdatedDate = lastUpdatedDate;
+    }
+
+    public String getPluginName() {
+        return pluginName;
+    }
+
+    public void setPluginName(String pluginName) {
+        this.pluginName = pluginName;
     }
 }

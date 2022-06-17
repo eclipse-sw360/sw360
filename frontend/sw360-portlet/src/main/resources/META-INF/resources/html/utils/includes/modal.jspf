@@ -1,0 +1,60 @@
+<%--
+  ~ Copyright (c) Bosch Software Innovations GmbH 2016.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  --%>
+<script>
+    function showStatusPopup(text, modal, header) {
+        if (!header) {
+            header = "Notice";
+        }
+        if (!modal) {
+            modal = createModal();
+        }
+        modal.setHeader(header);
+        modal.set("bodyContent", text);
+        modal.addToolbar([
+            {
+                label: 'Close',
+                on: {
+                    click: function () {
+                        modal.hide();
+                    }
+                }
+            }
+        ]);
+    }
+    function createModal(modalid, config) {
+        var modal;
+        AUI().use(
+                'aui-modal',
+                function (Y) {
+                    modal = new Y.Modal(
+                            Object.assign({
+                                xy: [parent.innerWidth*0.5-225,100],
+                                destroyOnHide: true,
+                                modal: true,
+                                render: modalid,
+                                width: 450
+                            }, config)
+                    );
+                    modal.setHeader = function (content) {
+                        this.set('headerContent', '<h5>' + content + '</h5>');
+                    };
+                    modal.render();
+                    Y.one('body').on('key', function(event) {
+                       modal.once('visibleChange', function(event) {
+                            if (event.prevVal === true) {
+                                event.newVal = true;
+                            }
+                        });
+                    }, 'esc');
+                }
+        );
+        return modal;
+    }
+</script>

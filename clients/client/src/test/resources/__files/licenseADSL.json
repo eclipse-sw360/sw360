@@ -1,0 +1,14 @@
+{
+  "externalIds": {
+    "SPDX-License-Identifier": "0TST"
+  },
+  "text": "Copyright (C) 2021 Siemens AG \nThis is a demo license text.",
+  "checked": true,
+  "shortName": "AmazonDigitalServicesLicense",
+  "fullName": "Amazon Digital Services License",
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/resource/api/licenses/AmazonDigitalServicesLicense"
+    }
+  }
+}

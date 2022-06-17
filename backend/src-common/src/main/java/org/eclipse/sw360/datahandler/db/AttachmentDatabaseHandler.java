@@ -1,35 +1,32 @@
 /*
- * Copyright Siemens AG, 2016. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2016, 2019. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.db;
 
+import com.cloudant.client.api.CloudantClient;
+import com.cloudant.client.api.model.Response;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
+import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.Logger;
+import org.apache.http.HttpStatus;
+import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
-import org.ektorp.BulkDeleteDocument;
-import org.ektorp.DocumentOperationResult;
-import org.ektorp.http.HttpClient;
 
 import java.net.MalformedURLException;
 import java.util.List;
@@ -49,7 +46,7 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.validateAttach
  * @author: alex.borodin@evosoft.com
  */
 public class AttachmentDatabaseHandler {
-    private final DatabaseConnector db;
+    private final DatabaseConnectorCloudant db;
     private final AttachmentContentRepository attachmentContentRepository;
     private final AttachmentConnector attachmentConnector;
     private final AttachmentUsageRepository attachmentUsageRepository;
@@ -57,15 +54,15 @@ public class AttachmentDatabaseHandler {
     private final AttachmentOwnerRepository attachmentOwnerRepository;
 
 
-    private static final Logger log = Logger.getLogger(AttachmentDatabaseHandler.class);
+    private static final Logger log = LogManager.getLogger(AttachmentDatabaseHandler.class);
 
-    public AttachmentDatabaseHandler(Supplier<HttpClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
-        db = new DatabaseConnector(httpClient, attachmentDbName);
+    public AttachmentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
+        db = new DatabaseConnectorCloudant(httpClient, attachmentDbName);
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         attachmentContentRepository = new AttachmentContentRepository(db);
-        attachmentUsageRepository = new AttachmentUsageRepository(new DatabaseConnector(httpClient, dbName));
-        attachmentRepository = new AttachmentRepository(new DatabaseConnector(httpClient, dbName));
-        attachmentOwnerRepository = new AttachmentOwnerRepository(new DatabaseConnector(httpClient, dbName));
+        attachmentUsageRepository = new AttachmentUsageRepository(new DatabaseConnectorCloudant(httpClient, dbName));
+        attachmentRepository = new AttachmentRepository(new DatabaseConnectorCloudant(httpClient, dbName));
+        attachmentOwnerRepository = new AttachmentOwnerRepository(new DatabaseConnectorCloudant(httpClient, dbName));
     }
 
     public AttachmentConnector getAttachmentConnector(){
@@ -77,13 +74,13 @@ public class AttachmentDatabaseHandler {
         return attachmentContent;
     }
     public List<AttachmentContent> makeAttachmentContents(List<AttachmentContent> attachmentContents) throws TException {
-        final List<DocumentOperationResult> documentOperationResults = attachmentContentRepository.executeBulk(attachmentContents);
-        if (!documentOperationResults.isEmpty())
+        final List<Response> documentOperationResults = attachmentContentRepository.executeBulk(attachmentContents);
+        if (documentOperationResults.isEmpty())
             log.error("Failed Attachment store results " + documentOperationResults);
 
         return attachmentContents.stream().filter(AttachmentContent::isSetId).collect(Collectors.toList());
     }
-    public AttachmentContent getAttachmentContent(String id) throws TException {
+    public AttachmentContent getAttachmentContent(String id) throws SW360Exception {
         AttachmentContent attachment = attachmentContentRepository.get(id);
         assertNotNull(attachment, "Cannot find "+ id + " in database.");
         validateAttachment(attachment);
@@ -94,7 +91,7 @@ public class AttachmentDatabaseHandler {
         attachmentConnector.updateAttachmentContent(attachment);
     }
     public RequestSummary bulkDelete(List<String> ids) {
-        final List<DocumentOperationResult> documentOperationResults = attachmentContentRepository.deleteIds(ids);
+        final List<Response> documentOperationResults = attachmentContentRepository.deleteIds(ids);
         return CommonUtils.getRequestSummary(ids, documentOperationResults);
     }
     public RequestStatus deleteAttachmentContent(String attachmentId) throws TException {
@@ -150,19 +147,29 @@ public class AttachmentDatabaseHandler {
 
     public void makeAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         List<AttachmentUsage> sanitizedUsages = distinctAttachmentUsages(attachmentUsages);
-        List<DocumentOperationResult> results = attachmentUsageRepository.executeBulk(sanitizedUsages);
+        List<Response> results = attachmentUsageRepository.executeBulk(sanitizedUsages);
+        results = results.stream().filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED)
+                .collect(Collectors.toList());
         if (!results.isEmpty()) {
             throw new SW360Exception("Some of the usage documents could not be created: " + results);
         }
     }
 
-    private List<AttachmentUsage> distinctAttachmentUsages(List<AttachmentUsage> attachmentUsages) {
+    @VisibleForTesting
+    protected List<AttachmentUsage> distinctAttachmentUsages(List<AttachmentUsage> attachmentUsages) {
         return attachmentUsages.stream()
                 .filter(CommonUtils.distinctByKey(au -> ImmutableList.of(
                         au.getOwner(),
                         au.getUsedBy(),
                         au.getAttachmentContentId(),
-                        au.isSetUsageData() ? au.getUsageData().getSetField() : "")))
+                        au.isSetUsageData() ? au.getUsageData().getSetField() : "",
+                        au.isSetUsageData() && au.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)
+                                && au.getUsageData().getLicenseInfo().isSetProjectPath()
+                                        ? au.getUsageData().getLicenseInfo().getProjectPath()
+                                        : "",
+                        au.isSetUsageData() && au.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)
+                                ? au.getUsageData().getLicenseInfo().isIncludeConcludedLicense()
+                                : false)))
                 .collect(Collectors.toList());
     }
 
@@ -180,19 +187,23 @@ public class AttachmentDatabaseHandler {
     }
 
     public void updateAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
-        List<DocumentOperationResult> results = attachmentUsageRepository.executeBulk(attachmentUsages);
+        List<Response> results = attachmentUsageRepository.executeBulk(attachmentUsages);
+        results = results.stream().filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED)
+                .collect(Collectors.toList());
         if (!results.isEmpty()) {
             throw new SW360Exception("Some of the usage documents could not be updated: " + results);
         }
     }
 
-    public void deleteAttachmentUsage(AttachmentUsage attachmentUsage) {
+    public void deleteAttachmentUsage(AttachmentUsage attachmentUsage) throws SW360Exception {
         attachmentUsageRepository.remove(attachmentUsage);
     }
 
     public void deleteAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws SW360Exception {
-        List<DocumentOperationResult> results = attachmentUsageRepository.executeBulk(
-                attachmentUsages.stream().map(BulkDeleteDocument::of).collect(Collectors.toList()));
+        List<Response> results = attachmentUsageRepository.deleteIds(
+                attachmentUsages.stream().map(AttachmentUsage::getId).collect(Collectors.toList()));
+        results = results.stream().filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_OK)
+                .collect(Collectors.toList());
         if (!results.isEmpty()) {
             throw new SW360Exception("Some of the usage documents could not be deleted: " + results);
         }
@@ -255,5 +266,12 @@ public class AttachmentDatabaseHandler {
     }
     public List<Source> getAttachmentOwnersByIds(Set<String> ids) {
         return attachmentOwnerRepository.getOwnersByIds(ids);
+    }
+    
+    public List<AttachmentUsage> getAttachmentUsagesByReleaseId(String releaseId) {
+        return attachmentUsageRepository.getUsagesByReleaseId(releaseId);
+    }
+    public RequestStatus deleteOldAttachmentFromFileSystem() throws TException {
+        return DatabaseHandlerUtil.deleteOldAttachmentFromFileSystem();
     }
 }

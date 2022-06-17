@@ -1,23 +1,25 @@
 /*
  * Copyright Siemens AG, 2013-2016. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.entitlement;
 
 import org.eclipse.sw360.datahandler.common.Moderator;
+import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 
 /**
@@ -29,7 +31,7 @@ import org.apache.thrift.TException;
  */
 public class ProjectModerator extends Moderator<Project._Fields, Project> {
 
-    private static final Logger log = Logger.getLogger(ProjectModerator.class);
+    private static final Logger log = LogManager.getLogger(ProjectModerator.class);
 
 
     public ProjectModerator(ThriftClients thriftClients) {
@@ -63,10 +65,55 @@ public class ProjectModerator extends Moderator<Project._Fields, Project> {
         }
     }
 
+    public String createClearingRequest(ClearingRequest clearingRequest, User user) {
+        ModerationService.Iface client = thriftClients.makeModerationClient();
+        try {
+            return client.createClearingRequest(clearingRequest, user);
+        } catch (TException e) {
+            log.error("Could not create CR for Project: " + clearingRequest.getProjectId() + " by User " + user.getEmail(), e);
+            return null;
+        }
+    }
+
+    public RequestStatus addCommentToClearingRequest(String id, Comment comment, User user) {
+        ModerationService.Iface client = thriftClients.makeModerationClient();
+        try {
+            return client.addCommentToClearingRequest(id, comment, user);
+        } catch (TException e) {
+            log.error("Failed to add comment in clearing request: " + id, e);
+            return RequestStatus.FAILURE;
+        }
+    }
+
+    public ClearingRequest getClearingRequestByProjectId(String projectId, User user) {
+        ModerationService.Iface client = thriftClients.makeModerationClient();
+        try {
+            return client.getClearingRequestByProjectId(projectId, user);
+        } catch (TException e) {
+            log.error("Could not find CR for Project: " + projectId + " by User " + user.getEmail(), e);
+            return null;
+        }
+    }
+
+
+    public void unlinkClearingRequestForProjectDeletion(Project project, User user) {
+        try {
+            ModerationService.Iface client = thriftClients.makeModerationClient();
+            client.updateClearingRequestForProjectDeletion(project, user);
+        } catch (TException e) {
+            log.error("Failed to unlink CR : " + project.getClearingRequestId() + " for project: " + project.getId() + ", by User " + user.getEmail(), e);
+        }
+    }
+
     public Project updateProjectFromModerationRequest(Project project, Project projectAdditions, Project projectDeletions){
 
         for (Project._Fields field : Project._Fields.values()) {
             if(!projectAdditions.isSet(field) && !projectDeletions.isSet(field)){
+                continue;
+            }
+
+            if (field == Project._Fields.VISBILITY && projectAdditions != null && projectDeletions != null
+                    && projectAdditions.getVisbility() == projectDeletions.getVisbility()) {
                 continue;
             }
 

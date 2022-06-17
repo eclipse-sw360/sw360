@@ -1,16 +1,19 @@
 /*
  * Copyright Siemens AG, 2014-2016. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
+import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.Sets;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -20,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -32,9 +34,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 
-import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.ektorp.http.HttpClient;
 
 /**
  * Ektorp connector for uploading attachments
@@ -44,17 +44,17 @@ import org.ektorp.http.HttpClient;
  */
 public class AttachmentConnector extends AttachmentStreamConnector {
 
-    private static Logger log = Logger.getLogger(AttachmentConnector.class);
+    private static Logger log = LogManager.getLogger(AttachmentConnector.class);
 
-    public AttachmentConnector(DatabaseConnector connector, Duration downloadTimeout) {
-        super(connector, downloadTimeout);
+    public AttachmentConnector(DatabaseConnectorCloudant databaseConnectorCloudant, Duration downloadTimeout) {
+        super(databaseConnectorCloudant, downloadTimeout);
     }
 
     /**
      * @todo remove this mess of constructors and use dependency injection
      */
-    public AttachmentConnector(Supplier<HttpClient> httpClient, String dbName, Duration downloadTimeout) throws MalformedURLException {
-        this(new DatabaseConnector(httpClient.get(), dbName), downloadTimeout);
+    public AttachmentConnector(Supplier<CloudantClient> httpClient, String dbName, Duration downloadTimeout) throws MalformedURLException {
+        this(new DatabaseConnectorCloudant(httpClient, dbName), downloadTimeout);
     }
 
     /**
@@ -74,7 +74,7 @@ public class AttachmentConnector extends AttachmentStreamConnector {
     }
 
     public void deleteAttachment(String id) {
-        connector.deleteById(id);
+        connector.deleteById(AttachmentContent.class, id);
     }
 
     public void deleteAttachments(Collection<Attachment> attachments) {
@@ -83,10 +83,10 @@ public class AttachmentConnector extends AttachmentStreamConnector {
     }
 
     private void deleteAttachmentsByIds(Collection<String> attachmentContentIds) {
-        connector.deleteIds(attachmentContentIds, AttachmentContent.class);
+        connector.deleteIds(AttachmentContent.class, attachmentContentIds);
     }
 
-    private Set<String> getAttachmentContentIds(Collection<Attachment> attachments) {
+    public Set<String> getAttachmentContentIds(Collection<Attachment> attachments) {
         return nullToEmptyCollection(attachments).stream()
                 .map(Attachment::getAttachmentContentId)
                 .collect(Collectors.toSet());
@@ -97,8 +97,15 @@ public class AttachmentConnector extends AttachmentStreamConnector {
         // otherwise, when `attachmentsAfter` contains the same attachment (with the same id), but with one field changed (e.g. sha1),
         // then they are considered unequal and the set difference will contain this attachment and therefore
         // deleteAttachments(Collection<Attachment>) will delete an attachment that is present in `attachmentsAfter`
-        Set<Attachment> nonAcceptedAttachmentsBefore = nullToEmptySet(attachmentsBefore).stream().filter(a -> a.getCheckStatus() != CheckStatus.ACCEPTED).collect(Collectors.toSet());
-        deleteAttachmentsByIds(Sets.difference(getAttachmentContentIds(nonAcceptedAttachmentsBefore), getAttachmentContentIds(attachmentsAfter)));
+        deleteAttachmentsByIds(getAttachentContentIdsToBeDeleted(attachmentsBefore,attachmentsAfter));
+    }
+
+    public Set<String> getAttachentContentIdsToBeDeleted(Set<Attachment> attachmentsBefore,
+            Set<Attachment> attachmentsAfter) {
+        Set<Attachment> nonAcceptedAttachmentsBefore = nullToEmptySet(attachmentsBefore).stream()
+                .filter(a -> a.getCheckStatus() != CheckStatus.ACCEPTED).collect(Collectors.toSet());
+        return Sets.difference(getAttachmentContentIds(nonAcceptedAttachmentsBefore),
+                getAttachmentContentIds(attachmentsAfter));
     }
 
     public String getSha1FromAttachmentContentId(String attachmentContentId) {
@@ -125,5 +132,11 @@ public class AttachmentConnector extends AttachmentStreamConnector {
                 attachment.setSha1(sha1);
             }
         }
+    }
+
+    public static boolean isDuplicateAttachment(Set<Attachment> attachments) {
+        boolean duplicateSha1 = attachments.parallelStream().collect(Collectors.groupingBy(Attachment::getSha1)).size() < attachments.size();
+        boolean duplicateFileName = attachments.parallelStream().collect(Collectors.groupingBy(Attachment::getFilename)).size() < attachments.size();
+        return (duplicateSha1 || duplicateFileName);
     }
 }

@@ -1,12 +1,11 @@
 /*
- * Copyright Siemens AG, 2015. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2015, 2019. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.tags;
 
@@ -15,12 +14,12 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Maps;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
 import org.apache.thrift.meta_data.FieldMetaData;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,30 +30,31 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 import static org.eclipse.sw360.portal.tags.TagUtils.*;
 
 /**
- * Display the todos that are added or added to/removed from department whitelist
+ * Display the obligations that are added or added to/removed from department whitelist
  *
  * @author birgit.heydenreich@tngtech.com
  */
 public class CompareTodos extends NameSpaceAwareTag {
-    public static final List<Todo._Fields> RELEVANT_FIELDS = FluentIterable
-            .from(copyOf(Todo._Fields.values())).filter(field -> isFieldRelevant(field)).toList();
+    public static final List<Obligation._Fields> RELEVANT_FIELDS = FluentIterable
+            .from(copyOf(Obligation._Fields.values())).filter(field -> isFieldRelevant(field)).toList();
 
-    private List<Todo> old;
-    private List<Todo> update;
-    private List<Todo> delete;
+    private List<Obligation> old;
+    private List<Obligation> update;
+    private List<Obligation> delete;
     private String department;
     private String tableClasses = "";
     private String idPrefix = "";
+    private boolean isClosedModeration = false;
 
-    public void setOld(List<Todo> old) {
+    public void setOld(List<Obligation> old) {
         this.old = nullToEmptyList(old);
     }
 
-    public void setUpdate(List<Todo> update) {
+    public void setUpdate(List<Obligation> update) {
         this.update = nullToEmptyList(update);
     }
 
-    public void setDelete(List<Todo> delete) {
+    public void setDelete(List<Obligation> delete) {
         this.delete = nullToEmptyList(delete);
     }
 
@@ -70,6 +70,10 @@ public class CompareTodos extends NameSpaceAwareTag {
         this.idPrefix = idPrefix;
     }
 
+    public void setIsClosedModeration(boolean isClosedModeration) {
+        this.isClosedModeration = isClosedModeration;
+    }
+
     public int doStartTag() throws JspException {
 
         JspWriter jspWriter = pageContext.getOut();
@@ -77,12 +81,15 @@ public class CompareTodos extends NameSpaceAwareTag {
         String namespace = getNamespace();
 
         try {
+            if (isClosedModeration) {
+                old = new ArrayList<Obligation>();
+            }
             renderTodos(display, old, update, delete);
 
             String renderString = display.toString();
 
             if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<h4> No changes in TODOs </h4>";
+                renderString = "<div class=\"alert alert-danger\">No changes in Obligation</div>";
             }
 
             jspWriter.print(renderString);
@@ -92,45 +99,45 @@ public class CompareTodos extends NameSpaceAwareTag {
         return SKIP_BODY;
     }
 
-    private void renderTodos(StringBuilder display, List<Todo> current, List<Todo> update, List<Todo> delete) {
-        List<Todo> newWhitelistedTodos = update
+    private void renderTodos(StringBuilder display, List<Obligation> current, List<Obligation> update, List<Obligation> delete) {
+        List<Obligation> newWhitelistedTodos = update
                 .stream()
-                .filter(CommonUtils::isTemporaryTodo)
-                .filter(todo -> todo.isSetWhitelist() && todo.getWhitelist().contains(department))
+                .filter(CommonUtils::isTemporaryObligation)
+                .filter(oblig -> oblig.isSetWhitelist() && oblig.getWhitelist().contains(department))
                 .collect(Collectors.toList());
-        Map<String, Todo> newWhitelistedTodosById = getTodosById(newWhitelistedTodos);
+        Map<String, Obligation> newWhitelistedTodosById = getTodosById(newWhitelistedTodos);
         Set<String> newWhitelistedTodoIds = newWhitelistedTodosById.keySet();
         renderTodoList(display, newWhitelistedTodosById, newWhitelistedTodoIds, "Add to database and to whitelist of " + department);
 
-        List<Todo> newBlacklistedTodos = update
+        List<Obligation> newBlacklistedTodos = update
                 .stream()
-                .filter(CommonUtils::isTemporaryTodo)
-                .filter(todo -> !todo.isSetWhitelist() || !todo.getWhitelist().contains(department))
+                .filter(CommonUtils::isTemporaryObligation)
+                .filter(oblig -> !oblig.isSetWhitelist() || !oblig.getWhitelist().contains(department))
                 .collect(Collectors.toList());
-        Map<String, Todo> newBlacklistedTodosById = getTodosById(newBlacklistedTodos);
+        Map<String, Obligation> newBlacklistedTodosById = getTodosById(newBlacklistedTodos);
         Set<String> newBlacklistedTodoIds = newBlacklistedTodosById.keySet();
         renderTodoList(display, newBlacklistedTodosById, newBlacklistedTodoIds, "Add to database and <em>not</em> to whitelist of " + department);
 
-        Map<String, Todo> currentTodosById = getTodosById(current);
+        Map<String, Obligation> currentTodosById = getTodosById(current);
         Set<String> currentTodoIds = currentTodosById.keySet();
-        List<Todo> whitelistedTodos = update
+        List<Obligation> whitelistedTodos = update
                 .stream()
-                .filter(todo -> !CommonUtils.isTemporaryTodo(todo))
-                .filter(todo -> todo.isSetWhitelist() && todo.getWhitelist().contains(department))
-                .filter(todo -> currentTodoIds.contains(todo.getId()))
-                .filter(todo -> !(currentTodosById.get(todo.getId()).isSetWhitelist() &&
-                        currentTodosById.get(todo.getId()).getWhitelist().contains(department)))
+                .filter(oblig -> !CommonUtils.isTemporaryObligation(oblig))
+                .filter(oblig -> oblig.isSetWhitelist() && oblig.getWhitelist().contains(department))
+                .filter(oblig -> currentTodoIds.contains(oblig.getId()))
+                .filter(oblig -> !(currentTodosById.get(oblig.getId()).isSetWhitelist() &&
+                        currentTodosById.get(oblig.getId()).getWhitelist().contains(department)))
                 .collect(Collectors.toList());
 
         Set<String> whitelistedTodoIds = getTodosById(whitelistedTodos).keySet();
         renderTodoList(display, currentTodosById, whitelistedTodoIds, "Add to whitelist of " + department);
 
-        List<Todo> blacklistedTodos = delete
+        List<Obligation> blacklistedTodos = delete
                 .stream()
-                .filter(todo -> todo.isSetWhitelist() && todo.getWhitelist().contains(department))
-                .filter(todo -> currentTodoIds.contains(todo.getId()))
-                .filter(todo -> currentTodosById.get(todo.getId()).isSetWhitelist() &&
-                        currentTodosById.get(todo.getId()).getWhitelist().contains(department))
+                .filter(oblig -> oblig.isSetWhitelist() && oblig.getWhitelist().contains(department))
+                .filter(oblig -> currentTodoIds.contains(oblig.getId()))
+                .filter(oblig -> currentTodosById.get(oblig.getId()).isSetWhitelist() &&
+                        currentTodosById.get(oblig.getId()).getWhitelist().contains(department))
                 .collect(Collectors.toList());
 
         Set<String> blacklistedTodoIds = getTodosById(blacklistedTodos).keySet();
@@ -138,12 +145,12 @@ public class CompareTodos extends NameSpaceAwareTag {
 
     }
 
-    private void renderTodoList(StringBuilder display, Map<String, Todo> allTodos, Set<String> todoIds, String msg) {
-        if (todoIds.isEmpty()) return;
+    private void renderTodoList(StringBuilder display, Map<String, Obligation> allTodos, Set<String> obligIds, String msg) {
+        if (obligIds.isEmpty()) return;
         display.append(String.format("<table class=\"%s\" id=\"%s%s\" >", tableClasses, idPrefix, msg));
 
         renderTodoRowHeader(display, msg);
-        for (String deletedTodoId : todoIds) {
+        for (String deletedTodoId : obligIds) {
             renderTodoRow(display, allTodos.get(deletedTodoId));
         }
 
@@ -153,42 +160,35 @@ public class CompareTodos extends NameSpaceAwareTag {
     private static void renderTodoRowHeader(StringBuilder display, String msg) {
 
         display.append(String.format("<thead><tr><th colspan=\"%d\"> %s</th></tr><tr>", RELEVANT_FIELDS.size(), msg));
-        for (Todo._Fields field : RELEVANT_FIELDS) {
+        for (Obligation._Fields field : RELEVANT_FIELDS) {
             display.append(String.format("<th>%s</th>", field.getFieldName()));
         }
         display.append("</tr></thead>");
     }
 
-    private static void renderTodoRow(StringBuilder display, Todo todo) {
+    private static void renderTodoRow(StringBuilder display, Obligation oblig) {
         display.append("<tr>");
-        for (Todo._Fields field : RELEVANT_FIELDS) {
+        for (Obligation._Fields field : RELEVANT_FIELDS) {
 
-            FieldMetaData fieldMetaData = Todo.metaDataMap.get(field);
-            Object fieldValue = todo.getFieldValue(field);
-            if (field.equals(Todo._Fields.OBLIGATIONS) && fieldValue != null) {
-                fieldValue =
-                        ((List<Obligation>) fieldValue).stream()
-                                .map(Obligation::getName)
-                                .collect(Collectors.toList());
-            }
+            FieldMetaData fieldMetaData = Obligation.metaDataMap.get(field);
+            Object fieldValue = oblig.getFieldValue(field);
             display.append(String.format("<td>%s</td>", getDisplayString(fieldMetaData.valueMetaData.type, fieldValue)));
 
         }
         display.append("</tr>");
     }
 
-    private static Map<String, Todo> getTodosById(List<Todo> currentTodos) {
+    private static Map<String, Obligation> getTodosById(List<Obligation> currentTodos) {
         return Maps.uniqueIndex(currentTodos, input -> input.getId());
     }
 
-    private static boolean isFieldRelevant(Todo._Fields field) {
+    private static boolean isFieldRelevant(Obligation._Fields field) {
         switch (field) {
             //ignored Fields
             case ID:
             case REVISION:
             case TYPE:
-            case OBLIGATION_DATABASE_IDS:
-            case TODO_ID:
+            case TITLE:
             case DEVELOPMENT_STRING:
             case DISTRIBUTION_STRING:
             case WHITELIST:

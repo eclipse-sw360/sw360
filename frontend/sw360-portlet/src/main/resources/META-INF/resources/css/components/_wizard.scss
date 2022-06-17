@@ -1,0 +1,58 @@
+/*
+ * Copyright Siemens AG, 2017.
+ * Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+
+div.wizardHeader {
+    ul {
+        list-style: none;
+
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: space-around;
+        align-items: stretch;
+        align-content: center;
+
+        margin: 0;
+        padding: 0;
+
+        li {
+            margin: 0.75rem;
+            border-radius: 0.35rem;
+            padding: 0.75rem;
+            flex: 1 1 0;
+
+            text-align: center;
+            font-weight: bold;
+
+            small {
+                font-weight: normal;
+            }
+
+            &:first-child {
+                margin-left: 0;
+            }
+
+            &:last-child {
+                margin-right: 0;
+            }
+        }
+    }
+}
+
+div.wizardBody {
+    .step:not(.active) {
+        display: none;
+    }
+}
+
+div.wizardFooter {
+	margin: 2rem 0;
+}

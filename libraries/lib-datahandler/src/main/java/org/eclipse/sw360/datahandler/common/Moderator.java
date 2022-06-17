@@ -1,21 +1,27 @@
 /*
  * Copyright Siemens AG, 2014-2016. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.common;
 
 import com.google.common.collect.Maps;
+
+import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TEnum;
 import org.apache.thrift.TException;
@@ -23,7 +29,9 @@ import org.apache.thrift.TFieldIdEnum;
 import org.apache.thrift.meta_data.FieldMetaData;
 import org.apache.thrift.protocol.TType;
 
+import java.net.MalformedURLException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 
@@ -36,7 +44,8 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
 
     protected final ThriftClients thriftClients;
-    private static final Logger log = Logger.getLogger(Moderator.class);
+    AttachmentConnector attachmentConnector = null;
+    private static final Logger log = LogManager.getLogger(Moderator.class);
 
     public Moderator(ThriftClients thriftClients) {
         this.thriftClients = thriftClients;
@@ -75,6 +84,10 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
 
             case TType.STRING:
             case TType.ENUM:
+                if (document instanceof Release && ((field == Release._Fields.NAME || field == Release._Fields.VERSION)
+                    && "Dummy_Value".equals(documentAdditions.getFieldValue(field)))) {
+                    break;
+                }
                 document.setFieldValue(field, documentAdditions.getFieldValue(field));
                 break;
             case TType.I32:
@@ -117,7 +130,14 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
                         }
                     }
                 } else {
-                    attachments.add(update);
+                    try {
+                        if (CommonUtils.isNotNullEmptyOrWhitespace(id)
+                                && getAttachmentConnector().getAttachmentContent(id) != null) {
+                            attachments.add(update);
+                        }
+                    } catch (SW360Exception e) {
+                        log.error("Error occured while checking attachment exists in DB: ", e);
+                    }
                 }
             }
         }
@@ -157,7 +177,7 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
                 if (!documentAdditions.isSet(field) ||
                         !((Map<String, S>) documentAdditions.getFieldValue(field)).containsKey(entry.getKey())) {
                     //if it's not in documentAdditions, entry must be deleted, not updated
-                    ((HashMap<String, S>) document.getFieldValue(field)).remove(entry.getKey());
+                    ((Map<String, S>) document.getFieldValue(field)).remove(entry.getKey());
                 }
             }
         }
@@ -167,11 +187,11 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
     protected T updateStringMap(U field, T document, T documentAdditions, T documentDeletions) {
 
         if (documentAdditions.isSet(field)) {
-            for (Map.Entry<String, String> entry : ((Map<String,String>) documentAdditions.getFieldValue(field)).entrySet()) {
+            for (Map.Entry<String, ProjectReleaseRelationship> entry : ((Map<String,ProjectReleaseRelationship>) documentAdditions.getFieldValue(field)).entrySet()) {
                 if(!document.isSet(field)){
                     document.setFieldValue(field,new HashMap<>());
                 }
-                Map<String, String> documentMap = (Map<String, String>) document.getFieldValue(field);
+                Map<String, ProjectReleaseRelationship> documentMap = (Map<String, ProjectReleaseRelationship>) document.getFieldValue(field);
                 if (documentMap.containsKey(entry.getKey())) {
                     documentMap.replace(entry.getKey(), entry.getValue());
                 } else {
@@ -180,11 +200,11 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
             }
         }
         if (documentDeletions.isSet(field) && document.isSet(field)) {
-            for (Map.Entry<String, String> entry : ((Map<String, String>) documentDeletions.getFieldValue(field)).entrySet()) {
+            for (Map.Entry<String, ProjectReleaseRelationship> entry : ((Map<String, ProjectReleaseRelationship>) documentDeletions.getFieldValue(field)).entrySet()) {
                 if (!documentAdditions.isSet(field) ||
-                        !((Map<String, String>) documentAdditions.getFieldValue(field)).containsKey(entry.getKey())) {
+                        !((Map<String, ProjectReleaseRelationship>) documentAdditions.getFieldValue(field)).containsKey(entry.getKey())) {
                     //if it's not in documentAdditions, entry must be deleted, not updated
-                    ((HashMap<String, String>) document.getFieldValue(field)).remove(entry.getKey());
+                    ((Map<String, ProjectReleaseRelationship>) document.getFieldValue(field)).remove(entry.getKey());
                 }
             }
         }
@@ -203,5 +223,17 @@ public abstract class Moderator<U extends TFieldIdEnum, T extends TBase<T, U>> {
             resultMap.get(key).removeAll(getNullToEmptyValue(deleteMap, key));
         }
         return resultMap;
+    }
+
+    private AttachmentConnector getAttachmentConnector() {
+        if (attachmentConnector == null) {
+            try {
+                attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredClient(),
+                        DatabaseSettings.COUCH_DB_ATTACHMENTS, Duration.durationOf(30, TimeUnit.SECONDS));
+            } catch (MalformedURLException e) {
+                log.error("Could not create attachment connect for Moderator.", e);
+            }
+        }
+        return attachmentConnector;
     }
 }

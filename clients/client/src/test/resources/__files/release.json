@@ -1,0 +1,42 @@
+{
+  "name": "akka-actor_2.11",
+  "version": "2.4.12",
+  "externalIds": {
+    "hash_1": "501887b9053ef9f4341a",
+    "maven": "pkg:maven/com.typesafe.akka/akka-actor_2.11@2.4.12"
+  },
+  "createdOn": "2019-11-13",
+  "createdBy": "osi9be@bosch.com",
+  "eccInformation": {
+    "eccStatus": "OPEN"
+  },
+  "_links": {
+    "sw360:component": {
+      "href": "https://sw360.test.com/resource/api/components/xxxxxxyyyyyzzzzz7b"
+    },
+    "self": {
+      "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzza4"
+    },
+    "curies": [
+      {
+        "href": "https://sw360.test.com/resource/docs/{rel}.html",
+        "name": "sw360",
+        "templated": true
+      }
+    ]
+  },
+  "_embedded": {
+    "sw360:attachments": [
+      {
+        "filename": "artifact-sources.jar",
+        "sha1": "9fa75ed24ee85514f63046a39697509c78f536de",
+        "attachmentType": "SOURCE",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/attachments/xxxxxxxxxxxyyyyyyyyyyyyyzzz235b"
+          }
+        }
+      }
+    ]
+  }
+}

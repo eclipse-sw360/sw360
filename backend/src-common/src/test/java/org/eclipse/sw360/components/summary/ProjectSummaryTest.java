@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.components.summary;
 
@@ -17,6 +16,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
+import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -41,6 +41,9 @@ public class ProjectSummaryTest {
                     break;
                 case EXTERNAL_IDS:
                     project.externalIds = Collections.emptyMap();
+                    break;
+                case ADDITIONAL_DATA:
+                    project.additionalData = Collections.emptyMap();
                     break;
                 case ATTACHMENTS:
                     project.attachments = Collections.emptySet();
@@ -80,6 +83,12 @@ public class ProjectSummaryTest {
                     break;
                 case ENABLE_VULNERABILITIES_DISPLAY:
                     project.enableVulnerabilitiesDisplay = true;
+                    break;
+                case EXTERNAL_URLS:
+                    project.externalUrls = Collections.emptyMap();
+                    break;
+                case VENDOR:
+                    project.vendor = new Vendor("short", "full", "http://vendor.com");
                     break;
                 default: //most fields are string
                     project.setFieldValue(renderedField, "asd");

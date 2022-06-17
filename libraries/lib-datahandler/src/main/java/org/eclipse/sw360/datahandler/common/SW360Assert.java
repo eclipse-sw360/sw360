@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.common;
 
@@ -40,7 +39,7 @@ public class SW360Assert {
 
     public static <T> T assertNotNull(T object, String messageFormat, Object... args) throws SW360Exception {
         if (object == null) {
-            throw fail(messageFormat, args);
+            throw fail(404, messageFormat, args);
         }
         return object;
     }
@@ -128,6 +127,13 @@ public class SW360Assert {
     public static SW360Exception fail(String messageFormat, Object... args) throws SW360Exception {
         SW360Exception sw360Exception = new SW360Exception();
         throw fail(sw360Exception, messageFormat, args);
+    }
+
+    public static SW360Exception fail(int errorCode, String messageFormat, Object... args) throws SW360Exception {
+        String message = String.format(messageFormat, args);
+        SW360Exception exp = new SW360Exception(message).setErrorCode(errorCode);
+        log.error(message, exp);
+        throw exp;
     }
 
     public static SW360Exception fail(Throwable t, String messageFormat, Object... args) throws SW360Exception {

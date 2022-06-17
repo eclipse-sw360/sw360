@@ -1,0 +1,71 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~ With contributions by Bosch Software Innovations GmbH, 2016.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+<%@ page import="org.eclipse.sw360.datahandler.thrift.users.RequestedAction" %>
+
+<c:set var="READ" value="<%=RequestedAction.READ%>"/>
+
+<core_rt:if test="${usingComponents != null  && usingComponents.size()>0}">
+    <h4>${documentName} <liferay-ui:message key="is.used.by.the.following.components" /></h4>
+
+    <table class="table table-bordered">
+        <colgroup>
+            <col style="width: 20%;" />
+            <col style="width: 40%;" />
+            <col style="width: 20%;" />
+            <col style="width: 20%;" />
+        </colgroup>
+        <thead>
+            <tr>
+                <th><liferay-ui:message key="vendor" /></th>
+                <th><liferay-ui:message key="name" /></th>
+                <th><liferay-ui:message key="main.licenses" /></th>
+                <th><liferay-ui:message key="component.type" /></th>
+            </tr>
+        </thead>
+        <tbody>
+            <core_rt:forEach var="component" items="${usingComponents}" varStatus="loop">
+                <core_rt:choose>
+                    <core_rt:when test="${component.permissions == null || component.permissions[READ]}">
+                        <tr>
+                            <td>
+                                <sw360:DisplayCollection value="${component.vendorNames}"/>
+                            </td>
+                            <td>
+                                <sw360:DisplayComponentLink component="${component}"/>
+                            </td>
+                            <td>
+                                <sw360:DisplayLicenseCollection licenseIds="${component.mainLicenseIds}"
+                                                            scopeGroupId="${pageContext.getAttribute('scopeGroupId')}"/>
+                            </td>
+                            <td>
+                                <sw360:DisplayEnum value="${component.componentType}"/>
+                            </td>
+                        </tr>
+                    </core_rt:when>
+                    <core_rt:otherwise>
+                        <tr>
+                            <td>
+                            </td>
+                            <td>
+                                <liferay-ui:message key="inaccessible.component" />
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                        </tr>
+                    </core_rt:otherwise>
+                </core_rt:choose>
+            </core_rt:forEach>
+        </tbody>
+    </table>
+</core_rt:if>

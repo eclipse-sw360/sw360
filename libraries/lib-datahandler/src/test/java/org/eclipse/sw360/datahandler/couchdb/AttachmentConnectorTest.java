@@ -1,15 +1,15 @@
 /*
  * Copyright Siemens AG, 2016. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
 public class AttachmentConnectorTest {
 
     @Mock
-    DatabaseConnector connector;
+    DatabaseConnectorCloudant connector;
 
     AttachmentConnector attachmentConnector;
 
@@ -66,7 +66,7 @@ public class AttachmentConnectorTest {
         deletedIds.add("a2cid");
 
         attachmentConnector.deleteAttachmentDifference(before, after);
-        verify(connector).deleteIds(deletedIds, AttachmentContent.class);
+        verify(connector).deleteIds(AttachmentContent.class, deletedIds);
     }
 
     @Test
@@ -94,7 +94,7 @@ public class AttachmentConnectorTest {
         expectedIdsToDelete.add("a2");
 
         attachmentConnector.deleteAttachmentDifference(before, after);
-        verify(connector).deleteIds(expectedIdsToDelete, AttachmentContent.class);
+        verify(connector).deleteIds(AttachmentContent.class, expectedIdsToDelete);
     }
 
 

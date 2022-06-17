@@ -1,0 +1,90 @@
+<%--
+  ~ Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  --%>
+<%@ page import="com.liferay.portal.kernel.util.WebKeys" %>
+<%@include file="/html/init.jsp" %>
+
+<portlet:defineObjects/>
+<liferay-theme:defineObjects/>
+
+<%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<jsp:useBean id="project" class="org.eclipse.sw360.datahandler.thrift.projects.Project" scope="request" />
+
+<portlet:resourceURL var="searchProjectsUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.PROJECT_SEARCH%>"/>
+</portlet:resourceURL>
+
+<portlet:resourceURL var="linkToProjectUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.RELEASE_LINK_TO_PROJECT%>"/>
+</portlet:resourceURL>
+
+<div class="dialogs">
+    <div id="linkProjectDialog" data-title="<liferay-ui:message key="link.release.to.project" />" class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+		    <div class="modal-content">
+			<div class="modal-body">
+			        <form class="form">
+                        <div class="row form-group">
+                            <div class="col-4">
+                                <input type="text" name="searchproject" id="searchproject" placeholder="<liferay-ui:message key="enter.search.text" />" class="form-control" autofocus />
+                            </div>
+                            <div class="col-2">
+                                <button type="button" class="btn btn-secondary" id="searchbuttonproject" disabled><liferay-ui:message key="search" /></button>
+                            </div>
+                            <div class="col text-right">
+                                <div class="form-check">
+                                    <input type="checkbox" id="filterlinkedprojects" class="form-check-input" checked="checked"/>
+                                    <label for="filterlinkedprojects" class="form-check-label"><liferay-ui:message key="show.already.linked.projects" /></label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div id="Projectsearchresults">
+                        <table
+                            id="projectSearchResultstable"
+                            class="table table-bordered"
+                            data-search-url="<%=searchProjectsUrl%>"
+                            data-link-url="<%=linkToProjectUrl%>"
+                            data-where-key="<portlet:namespace/><%=PortalConstants.WHERE%>"
+                            data-project-id-key="<portlet:namespace/><%=PortalConstants.PROJECT_ID%>"
+                            data-release-id-key="<portlet:namespace/><%=PortalConstants.RELEASE_ID%>"
+                            >
+                                <colgroup>
+                                    <col width="1.7rem">
+                                    <col width="30%">
+                                    <col width="10%">
+                                    <col width="10%">
+                                    <col width="20%">
+                                    <col width="30%">
+                                    <col>
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th><liferay-ui:message key="project.name" /></th>
+                                        <th><liferay-ui:message key="version" /></th>
+                                        <th><liferay-ui:message key="state" /></th>
+                                        <th><liferay-ui:message key="responsible" /></th>
+                                        <th><liferay-ui:message key="description" /></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                    </div>
+				</div>
+			    <div class="modal-footer">
+			        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+			        <button type="button" class="btn btn-primary"><liferay-ui:message key="link.to.project" /></button>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>

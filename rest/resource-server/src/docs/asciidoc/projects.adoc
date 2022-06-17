@@ -1,10 +1,11 @@
 //
 // Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
 //
-// All rights reserved. This configuration file is provided to you under the
-// terms and conditions of the Eclipse Distribution License v1.0 which
-// accompanies this distribution, and is available at
-// http://www.eclipse.org/org/documents/edl-v10.php
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
 //
 
 [[resources-projects]]
@@ -17,6 +18,9 @@ The Projects resource is used to create and list projects.
 ==== Listing projects
 
 A `GET` request will list all of the service's projects.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects/request-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects/response-fields.adoc[]
@@ -31,11 +35,53 @@ include::{snippets}/should_document_get_projects/http-response.adoc[]
 include::{snippets}/should_document_get_projects/links.adoc[]
 
 
+[[resources-projects-list-all-details]]
+==== Listing projects with all details
+
+A `GET` request will list all of the service's projects.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_with_all_details/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_with_all_details/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_with_all_details/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_with_all_details/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_with_all_details/links.adoc[]
+
+[[resources-projects-list-by-lucene-search]]
+==== Listing by lucene search
+
+A `GET` request will list all of the service's projects by lucene search.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_lucene_search/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_lucene_search/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_lucene_search/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_lucene_search/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_lucene_search/links.adoc[]
+
 [[resources-projects-list-by-name]]
 ==== Listing by name
 
-A `GET` request will list all of the service's projects by project name. +
-Please set the request parameter `&name=<NAME>`.
+A `GET` request will list all of the service's projects by project name.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_name/request-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_name/response-fields.adoc[]
@@ -53,8 +99,10 @@ include::{snippets}/should_document_get_projects_by_name/links.adoc[]
 [[resources-projects-list-by-type]]
 ==== Listing by type
 
-A `GET` request will list all of the service's projects by project type. +
-Project types = `{CUSTOMER, INTERNAL, PRODUCT, SERVICE, INNER_SOURCE}`
+A `GET` request will list all of the service's projects by project type.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_type/request-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_type/response-fields.adoc[]
@@ -69,11 +117,54 @@ include::{snippets}/should_document_get_projects_by_type/http-response.adoc[]
 include::{snippets}/should_document_get_projects_by_type/links.adoc[]
 
 
+[[resources-projects-list-by-group]]
+==== Listing by group
+
+A `GET` request will list all of the service's projects by group.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_group/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_group/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_group/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_group/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_group/links.adoc[]
+
+
+[[resources-projects-list-by-tag]]
+==== Listing by tag
+
+A `GET` request will list all of the service's projects by tag.
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_by_tag/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_tag/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_tag/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_tag/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_tag/links.adoc[]
+
+
 [[resources-project-get-project-by-externalids]]
 ==== Listing by external ids
 
 A `GET` request will get all projects corresponding to external ids +
-The request parameter supports MultiValueMap (allows to add duplicate keys with different values)
+The request parameter supports MultiValueMap (allows to add duplicate keys with different values) +
+It's possible to search for projects only by the external id key by leaving the value.
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_external-ids/response-fields.adoc[]
@@ -99,6 +190,67 @@ include::{snippets}/should_document_get_project_attachment_info/curl-request.ado
 ===== Example response
 include::{snippets}/should_document_get_project_attachment_info/http-response.adoc[]
 
+[[resources-project-attachment-info-update]]
+==== Update attachment info
+
+A `PATCH` request is used to update an attachment info
+
+===== Request structure
+include::{snippets}/should_document_update_project_attachment_info/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_project_attachment_info/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project_attachment_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project_attachment_info/http-response.adoc[]
+
+[[resources-project-attachment-upload]]
+==== Upload attachment to project
+
+A `POST` request is used to upload attachment to project
+
+[red]#Request structure#
+|===
+|Path |Type |Description
+
+|file
+|file
+|File path of the attachment
+
+|attachment.filename
+|String
+|Name of the file
+
+|attachment.attachmentContentId
+|String
+|Id of attachment info
+
+|attachment.attachmentType
+|String
+|Type of attachment, possible values are: [DOCUMENT, SOURCE, DESIGN, REQUIREMENT, CLEARING_REPORT, COMPONENT_LICENSE_INFO_XML, COMPONENT_LICENSE_INFO_COMBINED, SCAN_RESULT_REPORT, SCAN_RESULT_REPORT_XML, SOURCE_SELF, BINARY, BINARY_SELF, DECISION_REPORT, LEGAL_EVALUATION, LICENSE_AGREEMENT, SCREENSHOT, OTHER, README_OSS]
+
+|attachment.checkStatus
+|String
+|Status of attachment, possible values are: [NOTCHECKED, ACCEPTED, REJECTED]
+
+|attachment.createdComment
+|String
+|Comment while uploading attachment.
+|===
+
+[red]#Response structure#
+|===
+|Complete Project will be returned
+|===
+
+===== Example request
+include::{snippets}/should_document_upload_attachment_to_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_upload_attachment_to_project/http-response.adoc[]
 
 [[resources-project-attachment-get]]
 ==== Download attachment
@@ -149,6 +301,26 @@ include::{snippets}/should_document_get_project_releases/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_get_project_releases/links.adoc[]
 
+[[resources-project-get-projects-releases]]
+==== Listing releases of multiple projects
+
+A `GET` request will get releases of multiple projects. Please pass an array of project ids as request body
+
+===== Request parameter
+include::{snippets}/should_document_get_projects_releases/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_projects_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_releases/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_releases/links.adoc[]
+
 
 [[resources-project-get-project-releases-transitive]]
 ==== Listing releases (transitive)
@@ -186,3 +358,223 @@ include::{snippets}/should_document_get_project_releases_ecc_information/http-re
 
 ===== Links
 include::{snippets}/should_document_get_project_releases_ecc_information/links.adoc[]
+
+
+[[resources-projects-create]]
+==== Creating a project
+
+A `POST` request is used to create a project
+
+===== Request structure
+include::{snippets}/should_document_create_project/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_project/http-response.adoc[]
+
+[[resources-projects-create-duplicate]]
+==== Creating a duplicate project
+
+A `POST` request is used to create a duplicate project
+
+===== Request structure
+include::{snippets}/should_document_create_duplicate_project/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_duplicate_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_duplicate_project/http-response.adoc[]
+
+[[resources-projects-update]]
+==== Update a project
+
+A `PATCH` request is used to update an existing project
+
+===== Request structure
+Almost every editable fields can be updated. Only a few fields are explicitly given as an example.
+include::{snippets}/should_document_update_project/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_project/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project/http-response.adoc[]
+
+[[resources-projects-delete]]
+==== Delete a project
+
+A `DELETE` request will delete a project.
+
+===== Example request
+include::{snippets}/should_document_delete_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_project/http-response.adoc[]
+
+[[resources-project-link-releases]]
+==== Link Releases to the project
+
+A `POST` request is used to link releases to the project. Please pass an array of release ids or a map of release id to usage to be linked as request body.
+
+===== Request structure 1
+Pass an array of release ids to be linked as request body.
+
+===== Example request 1
+include::{snippets}/should_document_link_releases/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_link_releases/http-response.adoc[]
+
+===== Request structure 2
+Pass a map of release id to usage to be linked as request body.
+
+===== Example request 2
+include::{snippets}/should_document_link_releases_with_project_release_relation/curl-request.adoc[]
+
+===== Example response 2
+include::{snippets}/should_document_link_releases_with_project_release_relation/http-response.adoc[]
+
+[[resources-project-patch-releases]]
+==== Patch Releases to the project
+
+A `PATCH` request to append new releases to existing releases in a project. Please pass an array of release ids or a map of release id to usage to be linked as request body.
+
+===== Request structure 1
+Pass an array of release ids to be linked as request body.
+
+===== Example request 1
+include::{snippets}/should_document_patch_releases/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_patch_releases/http-response.adoc[]
+
+===== Request structure 2
+Pass a map of release id to usage to be linked as request body.
+
+===== Example request 2
+include::{snippets}/should_document_patch_releases_with_project_release_relation/curl-request.adoc[]
+
+===== Example response 2
+include::{snippets}/should_document_patch_releases_with_project_release_relation/http-response.adoc[]
+
+[[resources-project-patch-release-usage]]
+==== Update Project Release Relationship
+
+A `PATCH` request is used to update Project Release Relationship
+
+===== Request structure
+include::{snippets}/should_document_update_project_release_relationship/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_project_release_relationship/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project_release_relationship/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project_release_relationship/http-response.adoc[]
+
+[[resources-project-get-download-licenseinfo]]
+==== Download License Info
+
+A `GET` request is used to download license info for the project. Please set the request parameter `&template=<TEMPLATE_NAME>` for variant `REPORT` to choose specific template.
+
+===== Request parameter
+include::{snippets}/should_document_get_download_license_info/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_download_license_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_license_info/http-response.adoc[]
+
+[[resources-project-usedby-list]]
+==== Resources using the project
+
+A `GET` request will display all the projects where the project is used.
+
+===== Response structure
+include::{snippets}/should_document_get_usedbyresource_for_project/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_usedbyresource_for_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_usedbyresource_for_project/http-response.adoc[]
+
+[[resources-project-get-attachmentusage]]
+==== AttachmentUsages of the project
+
+A `GET` request will display all attachmentUsages of the projects.
+
+===== Response structure
+include::{snippets}/should_document_get_attachment_usage_for_project/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_attachment_usage_for_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_attachment_usage_for_project/http-response.adoc[]
+
+[[resources-project-get-project-vulnerabilities]]
+==== Listing project vulnerabilities
+
+A `GET` request will get vulnerabilities of a single project.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_vulnerabilities/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_vulnerabilities/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_vulnerabilities/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_vulnerabilities/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_vulnerabilities/links.adoc[]
+
+[[resources-project-get-project-vulnerabilities-by-release-id-and-external-id]]
+==== Listing project vulnerabilities by release id and external id
+
+A `GET` request will get vulnerabilities of a single project by release id and external id.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/links.adoc[]
+
+[[resources-project-update-project-vulnerabilities]]
+==== Update project vulnerabilities
+
+A `PATCH` request will patch vulnerabilities of a single project.
+
+===== Response structure
+include::{snippets}/should_document_update_project_vulnerabilities/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project_vulnerabilities/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project_vulnerabilities/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_update_project_vulnerabilities/links.adoc[]

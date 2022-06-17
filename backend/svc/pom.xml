@@ -4,12 +4,11 @@
   ~ With modifications by Bosch Software Innovations GmbH, 2016.
   ~ With modifacations by Verifa Oy, 2018.
   ~
-  ~ SPDX-License-Identifier: EPL-1.0
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
   ~
-  ~ All rights reserved. This program and the accompanying materials
-  ~ are made available under the terms of the Eclipse Public License v1.0
-  ~ which accompanies this distribution, and is available at
-  ~ http://www.eclipse.org/legal/epl-v10.html
+  ~ SPDX-License-Identifier: EPL-2.0
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -19,7 +18,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend</artifactId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>backend-svc</artifactId>
@@ -40,6 +39,8 @@
         <module>svc-licenseinfo</module>
         <module>svc-schedule</module>
         <module>svc-wsimport</module>
+        <module>svc-changelogs</module>
+        <module>svc-health</module>
     </modules>
 
     <build>
@@ -71,22 +72,6 @@
             </plugin>
         </plugins>
     </build>
-    <profiles>
-      <profile>
-        <id>deploy</id>
-        <build>
-          <plugins>
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-war-plugin</artifactId>
-              <configuration>
-                <outputDirectory>${webapps.dir}</outputDirectory>
-              </configuration>
-            </plugin>
-          </plugins>
-        </build>
-      </profile>
-    </profiles>
 
     <dependencies>
         <dependency>

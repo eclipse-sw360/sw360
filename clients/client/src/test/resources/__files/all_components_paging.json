@@ -1,0 +1,57 @@
+{
+  "_embedded": {
+    "sw360:components": [
+      {
+        "name": "jackson-annotations",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/components/xxxxxxyyyyyzzzzz8c34"
+          }
+        }
+      },
+      {
+        "name": "jakarta.validation-api",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/components/xxxxxxyyyyyzzzzz9e53"
+          }
+        }
+      },
+      {
+        "name": "jsoup",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/components/xxxxxxyyyyyzzzzzb9ee"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "first": {
+      "href": "https://sw360.test.com//resource/api/components?page=0&page_entries=5"
+    },
+    "previous": {
+      "href": "https://sw360.test.com//resource/api/components?page=1&page_entries=5"
+    },
+    "next": {
+      "href": "https://sw360.test.com//resource/api/components?page=2&page_entries=5"
+    },
+    "last": {
+      "href": "https://sw360.test.com//resource/api/components?page=3&page_entries=5"
+    },
+    "curies": [
+      {
+        "href": "https://sw360.test.com//resource/docs/{rel}.html",
+        "name": "sw360",
+        "templated": true
+      }
+    ]
+  },
+  "page": {
+    "size": 5,
+    "totalElements": 12,
+    "totalPages": 3,
+    "number": 1
+  }
+}

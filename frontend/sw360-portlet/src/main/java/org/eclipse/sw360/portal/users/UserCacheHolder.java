@@ -1,19 +1,21 @@
 /*
  * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.users;
 
+import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.theme.ThemeDisplay;
-import org.apache.log4j.Logger;
+
 import org.eclipse.sw360.datahandler.thrift.users.User;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.portlet.PortletRequest;
 import javax.servlet.ServletRequest;
@@ -28,7 +30,7 @@ import java.util.concurrent.ExecutionException;
  * @author alex.borodin@evosoft.com
  */
 public class UserCacheHolder {
-    private static final Logger LOGGER = Logger.getLogger(UserCacheHolder.class);
+    private static final Logger LOGGER = LogManager.getLogger(UserCacheHolder.class);
 
     public static final User EMPTY_USER = new User().setId("").setEmail("").setExternalid("").setDepartment("").setLastname("").setGivenname("");
 
@@ -55,8 +57,8 @@ public class UserCacheHolder {
     protected Optional<String> getCurrentUserEmail(ServletRequest request) {
         ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(WebKeys.THEME_DISPLAY);
 
-        com.liferay.portal.model.User liferayUser = themeDisplay.getUser();
-        return Optional.ofNullable(liferayUser).map(com.liferay.portal.model.User::getEmailAddress);
+        com.liferay.portal.kernel.model.User liferayUser = themeDisplay.getUser();
+        return Optional.ofNullable(liferayUser).map(com.liferay.portal.kernel.model.User::getEmailAddress);
     }
 
     protected User loadUserFromEmail(String email, boolean refresh) {

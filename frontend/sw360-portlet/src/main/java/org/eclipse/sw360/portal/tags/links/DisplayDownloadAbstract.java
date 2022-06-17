@@ -1,12 +1,11 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.tags.links;
 
@@ -27,16 +26,10 @@ import static org.eclipse.sw360.portal.tags.urlutils.UrlWriterImpl.resourceUrl;
  * link.
  */
 abstract class DisplayDownloadAbstract extends ContextAwareTag {
-    protected final static String DOWNLOAD_IMAGE_ENABLED = "download_enabled.jpg";
+    protected final static String DOWNLOAD_IMAGE_ENABLED = "download";
 
     protected String contextType;
     protected String contextId;
-
-    /**
-     * @return the alternative text for the image of the download link. MUST be html
-     *         escaped.
-     */
-    protected abstract String getAlternativeText();
 
     /**
      * @return the title text for the image of the download link. Displayed in a
@@ -79,10 +72,9 @@ abstract class DisplayDownloadAbstract extends ContextAwareTag {
             configureUrlWriter(urlWriter);
             urlWriter.writeUrlToJspWriter();
             jspWriter.write(format(
-                    "'><img src='%s/images/%s' alt='%s' title='%s'/>",
-                    ((HttpServletRequest) pageContext.getRequest()).getContextPath(), getImage(),
-                    getAlternativeText(),
-                    getTitleText()));
+                    "'><svg class='lexicon-icon'><title>%s</title><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#%s'/></svg>",
+                    getTitleText(),
+                    getImage()));
             jspWriter.write("</a>");
         } catch (Exception e) {
             throw new JspException(e);

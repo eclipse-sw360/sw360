@@ -1,0 +1,197 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+<%@ page import="org.eclipse.sw360.datahandler.common.SW360Utils" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.Component" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.Release"%>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
+
+<table class="table edit-table three-columns" id="ComponentBasicInfo">
+    <thead>
+        <tr>
+            <th colspan="3"><liferay-ui:message key="release.summary" /></th>
+        </tr>
+    </thead>
+    <tr>
+        <td>
+            <sw360:DisplayVendorEdit id="<%=Release._Fields.VENDOR_ID.toString()%>" vendor="${release.vendor}" label="vendor"/>
+        </td>
+        <td>
+            <div class="form-group">
+                <label class="mandatory" for="comp_name"><liferay-ui:message key="name" /></label>
+                <input id="comp_name" name="<portlet:namespace/><%=Release._Fields.NAME%>" type="text" readonly
+                    required class="form-control" value="<sw360:out value="${component.name}"/>" />
+                <small class="form-text">
+                    <span title="<liferay-ui:message key="name.of.the.component" />">
+                        <clay:icon symbol="info-circle-open" />
+                        <liferay-ui:message key="name.of.the.component" />
+                    </span>
+                </small>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label class="mandatory" for="comp_version"><liferay-ui:message key="version" /></label>
+                <input id="comp_version" class="form-control" name="<portlet:namespace/><%=Release._Fields.VERSION%>" type="text"
+                    placeholder="<liferay-ui:message key="enter.version" />" required pattern=".*\S.*"
+                    value="<sw360:out value="${release.version}"/>" />
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="programminglanguages"><liferay-ui:message key="programming.languages" /></label>
+                <input class="form-control" name="<portlet:namespace/><%=Component._Fields.LANGUAGES%>"
+                    id="programminglanguages" type="text"
+                    placeholder="<liferay-ui:message key="e.g.java.c" />"
+                    value="<sw360:DisplayCollection value='${release.languages}' />"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="op_systems"><liferay-ui:message key="operating.systems" /></label>
+                <input class="form-control" id="op_systems"
+                    name="<portlet:namespace/><%=Component._Fields.OPERATING_SYSTEMS%>" type="text"
+                    placeholder="<liferay-ui:message key="e.g.linux.mac.windows" />"
+                    value="<sw360:DisplayCollection value="${release.operatingSystems}" />"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="comp_id"><liferay-ui:message key="cpe.id3" /></label>
+                <input id="comp_id" name="<portlet:namespace/><%=Release._Fields.CPEID%>" type="text"
+                    class="form-control"
+                    value="<sw360:out value="${release.cpeid}"/>"
+                    placeholder="<liferay-ui:message key="enter.cpe.id" />"/>
+                <small class="form-text">
+                    <span title="<liferay-ui:message key="the.formula.for.cpe.id.creation.is" /> &#13;'cpe:2.3:a:VENDORNAME:COMPONENTNAME:VERSION'">
+                        <clay:icon symbol="info-circle-open" />
+                        <liferay-ui:message key="learn.more.about.the.cpe.id.format" />
+                    </span>
+                </small>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="platformsTB"><liferay-ui:message key="software.platforms" /></label>
+                <input class="form-control" id="platformsTB"
+                    name="<portlet:namespace/><%=Component._Fields.SOFTWARE_PLATFORMS%>" type="text"
+                    placeholder="<liferay-ui:message key="e.g.adobe.air.net.qt" />"
+                    value="<sw360:DisplayCollection value="${release.softwarePlatforms}" />"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="releaseDate"><liferay-ui:message key="release.date" /></label>
+                <input id="releaseDate" class="datepicker form-control" name="<portlet:namespace/><%=Release._Fields.RELEASE_DATE%>" type="text"
+                    placeholder="<liferay-ui:message key="enter.release.date" />"
+                    pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${release.releaseDate}"/>"/>
+            </div>
+        </td>
+        <td>
+            <sw360:DisplayLicensesEdit id="<%=Release._Fields.MAIN_LICENSE_IDS.toString()%>"
+                                           licenseIds="${release.mainLicenseIds}"/>
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+            <sw360:DisplayLicensesEdit id="<%=Release._Fields.OTHER_LICENSE_IDS.toString()%>" main="false"
+                                           licenseIds="${release.otherLicenseIds}"/>
+        </td>
+
+        <td>
+            <div class="form-group">
+                <label for="downloadUrl"><liferay-ui:message key="source.code.download.url" /></label>
+                <input id="downloadUrl" class="form-control" name="<portlet:namespace/><%=Release._Fields.SOURCE_CODE_DOWNLOADURL%>" type="URL"
+                    placeholder="<liferay-ui:message key="enter.url" />"
+                    value="<sw360:out value="${release.sourceCodeDownloadurl}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="binarydownloadUrl"><liferay-ui:message key="binary.download.url" /></label>
+                <input id="binarydownloadUrl" class="form-control" name="<portlet:namespace/><%=Release._Fields.BINARY_DOWNLOADURL%>" type="URL"
+                    placeholder="<liferay-ui:message key="enter.url" />"
+                    value="<sw360:out value="${release.binaryDownloadurl}"/>"/>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="clearing_state"><liferay-ui:message key="clearing.state" /></label>
+                <input id="clearing_state" class="form-control"
+                        name="<portlet:namespace/><%=Release._Fields.CLEARING_STATE%>"
+                        type="text" readonly
+                        value="<sw360:DisplayEnum value="${release.clearingState}" bare="true"/>"/>
+            </div>
+        </td>
+
+        <td>
+            <div class="form-group">
+                <label for="mainline_state"><liferay-ui:message key="release.mainline.state" /></label>
+                <select class="form-control" id="mainline_state"
+                        name="<portlet:namespace/><%=Release._Fields.MAINLINE_STATE%>"
+                    <core_rt:if test="${not isUserAtLeastClearingAdmin and not mainlineStateEnabledForUserRole}" >
+                        disabled="disabled"
+                    </core_rt:if>
+                >
+                    <sw360:DisplayEnumOptions type="<%=MainlineState.class%>" selected="${release.mainlineState}"/>
+                </select>
+                <small class="form-text">
+                    <sw360:DisplayEnumInfo type="<%=MainlineState.class%>"/>
+                    <liferay-ui:message key="learn.more.about.mainline.states" />
+                </small>
+            </div>
+        </td>
+
+        <td>
+            <div class="form-group">
+                <label for="created_on"><liferay-ui:message key="created.on" /></label>
+                <input id="created_on" name="<portlet:namespace/><%=Release._Fields.CREATED_ON%>" type="date"
+                    placeholder="<liferay-ui:message key="creation.date.yyyy.mm.dd" />" required=""
+                        <core_rt:if test="${addMode}">
+                            value="<%=SW360Utils.getCreatedOn()%>"
+                        </core_rt:if>
+                        <core_rt:if test="${not addMode}">
+                            value="<sw360:out value="${release.createdOn}"/>"
+                        </core_rt:if>
+                    readonly class="form-control"/>
+            </div>
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+            <sw360:DisplayUserEdit email="${release.createdBy}" id="<%=Release._Fields.CREATED_BY.toString()%>"
+                                   description="created.by" multiUsers="false" readonly="true"/>
+        </td>
+
+        <td>
+            <sw360:DisplayUserEdit emails="${release.contributors}" id="<%=Release._Fields.CONTRIBUTORS.toString()%>"
+                                   description="contributors" multiUsers="true" readonly="false"/>
+        </td>
+        <td>
+            <sw360:DisplayUserEdit emails="${release.moderators}" id="<%=Release._Fields.MODERATORS.toString()%>"
+                                   description="moderators" multiUsers="true" readonly="false"/>
+        </td>
+    </tr>
+</table>
+
+<script>
+	require(['jquery', /* jquery-plugins */ 'jquery-ui'], function($) {
+        $(".datepicker").datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
+	});
+</script>

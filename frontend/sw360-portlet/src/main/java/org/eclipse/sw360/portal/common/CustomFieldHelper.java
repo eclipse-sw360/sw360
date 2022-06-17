@@ -2,43 +2,54 @@
  * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2017.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.common;
 
+import com.liferay.expando.kernel.model.*;
+import com.liferay.expando.kernel.service.ExpandoColumnLocalServiceUtil;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.model.ResourceConstants;
-import com.liferay.portal.model.Role;
-import com.liferay.portal.model.RoleConstants;
-import com.liferay.portal.security.permission.ActionKeys;
-import com.liferay.portal.service.ResourcePermissionLocalServiceUtil;
-import com.liferay.portal.service.RoleLocalServiceUtil;
-import com.liferay.portlet.expando.model.ExpandoBridge;
-import com.liferay.portlet.expando.model.ExpandoColumn;
-import com.liferay.portlet.expando.model.ExpandoColumnConstants;
-import com.liferay.portlet.expando.model.ExpandoTableConstants;
-import com.liferay.portlet.expando.service.ExpandoColumnLocalServiceUtil;
-import org.apache.log4j.Logger;
+import com.liferay.portal.kernel.model.ResourceConstants;
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.RoleConstants;
+import com.liferay.portal.kernel.security.permission.ActionKeys;
+import com.liferay.portal.kernel.service.ResourcePermissionLocalServiceUtil;
+import com.liferay.portal.kernel.service.RoleLocalServiceUtil;
+
+import com.liferay.portal.kernel.util.UnicodeProperties;
+
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.portal.common.customfields.CustomField;
+import org.eclipse.sw360.portal.common.customfields.CustomFieldPageIdentifier;
+import org.eclipse.sw360.portal.common.customfields.CustomFieldPropertyKey;
+import org.eclipse.sw360.portal.common.customfields.CustomFieldType;
 import org.eclipse.sw360.portal.users.UserUtils;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.portlet.PortletRequest;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
-import static org.eclipse.sw360.portal.common.PortalConstants.*;
+import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_COMPONENTS_VIEW_SIZE;
+import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT;
+import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_PROJECT_GROUP_FILTER;
+import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_VULNERABILITIES_VIEW_SIZE;
 
 public class CustomFieldHelper {
 
-    private static final Logger log = Logger.getLogger(CustomFieldHelper.class);
+    private static final Logger log = LogManager.getLogger(CustomFieldHelper.class);
 
     private static final int DEFAULT_VIEW_SIZE = 200;
 
@@ -80,15 +91,88 @@ public class CustomFieldHelper {
         }
     }
 
+    public static Map<String, CustomField> getCustomFields(PortletRequest request, User user, CustomFieldPageIdentifier identifier){
+        try {
+            Map<String, CustomField> customFieldsMap = new HashMap<>();
+
+            com.liferay.portal.kernel.model.User liferayUser = UserUtils.findLiferayUser(request, user);
+            ExpandoBridge exp = liferayUser.getExpandoBridge();
+            Map<String, Serializable> attributes = exp.getAttributes();
+
+            attributes.forEach((key, value) -> {
+                if (!CustomFieldPageIdentifier.is(key, identifier)) {
+                    return;
+                }
+
+                String[] fieldProperties = key.split("-");
+
+                if (fieldProperties.length != 3) {
+                    log.warn("Invalid custom field name pattern: " + key);
+                    return;
+                }
+
+                int fieldId;
+                try {
+                    fieldId = Integer.parseInt(fieldProperties[1]);
+                } catch (NumberFormatException nfe) {
+                    log.warn("Invalid custom field name pattern: " + key);
+                    return;
+                }
+                CustomField customField = new CustomField();
+                customField.setFieldKey(key);
+                customField.setFieldId(fieldId);
+                customField.setFieldLabel(fieldProperties[2]);
+                customFieldsMap.put(fieldProperties[2], customField);
+                UnicodeProperties unicodeProperties = exp.getAttributeProperties(key);
+                unicodeProperties.forEach((propertyKey, propertyValue) -> {
+
+                    if (propertyKey == null) {
+                        return;
+                    }
+
+                    if (propertyKey.equals(CustomFieldPropertyKey.DISPLAY_TYPE.getKey())) {
+                        customField.setFieldType(CustomFieldType.getType(propertyValue));
+
+                        // Set options
+                        if (CustomFieldType.isOptionRequiredType(customField.getFieldType())) {
+                            Serializable defaultValue = exp.getAttributeDefault(key);
+                            if (defaultValue == null) {
+                                log.warn("Option for '" + key + "' is required.");
+                                return;
+                            }
+                            String[] options = (String[]) defaultValue;
+                            for (String option : options) {
+                                customField.addOption(option);
+                            }
+                        }
+
+                        if (CustomFieldType.getType(propertyValue) == CustomFieldType.TEXTFIELD) {
+                            customField.setFieldPattern(CommonUtils.nullToEmptyString(value));
+                        }
+                    }
+
+                    if (propertyKey.equals(CustomFieldPropertyKey.HIDDEN.getKey())) {
+                        customField.setHidden(Boolean.parseBoolean(propertyValue));
+                    }
+                });
+            });
+            return customFieldsMap;
+        } catch (PortalException e) {
+            log.error("Could not load custom fields.", e);
+            return null;
+        }
+    }
+
     private static ExpandoBridge getUserExpandoBridge(PortletRequest request, User user) throws PortalException, SystemException {
-        com.liferay.portal.model.User liferayUser = UserUtils.findLiferayUser(request, user);
+        com.liferay.portal.kernel.model.User liferayUser = UserUtils.findLiferayUser(request, user);
         ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_PROJECT_GROUP_FILTER, ExpandoColumnConstants.STRING);
         ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_COMPONENTS_VIEW_SIZE, ExpandoColumnConstants.INTEGER);
         ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_VULNERABILITIES_VIEW_SIZE, ExpandoColumnConstants.INTEGER);
+        ensureUserCustomFieldExists(liferayUser, CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, ExpandoColumnConstants.INTEGER);
         return liferayUser.getExpandoBridge();
     }
 
-    private static void ensureUserCustomFieldExists(com.liferay.portal.model.User liferayUser, String customFieldName, int customFieldType) throws PortalException, SystemException {
+    private static void ensureUserCustomFieldExists(com.liferay.portal.kernel.model.User liferayUser, String customFieldName, int customFieldType) throws PortalException, SystemException {
         ExpandoBridge exp = liferayUser.getExpandoBridge();
         if (!exp.hasAttribute(customFieldName)) {
             exp.addAttribute(customFieldName, customFieldType, false);

@@ -2,12 +2,11 @@
  * Copyright Siemens AG, 2016. Part of the SW360 Portal Project.
  * With modifications from Bosch Software Innovations GmbH, 2016.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.schedule.timer;
@@ -15,20 +14,19 @@ package org.eclipse.sw360.schedule.timer;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.apache.log4j.Logger.getLogger;
-
 /**
  * @author stefan.jaeger@evosoft.com
  */
 public class ScheduleConstants {
-    private static final Logger log = getLogger(ScheduleConstants.class);
+    private static final Logger log = LogManager.getLogger(ScheduleConstants.class);
 
     private ScheduleConstants(){}
 
@@ -38,7 +36,10 @@ public class ScheduleConstants {
     public static final String AUTOSTART_PROPERTY_NAME = "autostart";
     public static final String CVESEARCH_OFFSET_DEFAULT  = 0 + "" ; // default 00:00 am, in seconds
     public static final String CVESEARCH_INTERVAL_DEFAULT  = (24*60*60)+"" ; // default 24h, in seconds
-
+    public static final String DELETE_ATTACHMENT_OFFSET_DEFAULT  = "0"; // default 00:00 am, in seconds
+    public static final String DELETE_ATTACHMENT_INTERVAL_DEFAULT  = (24*60*60) + "" ; // default 24h, in seconds
+    public static final String DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME = "schedule.delete.attachment.firstOffset.seconds";
+    public static final String DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME = "schedule.delete.attachment.interval.seconds";
 
     // scheduler properties
     public static final ConcurrentHashMap<String, Integer> SYNC_FIRST_RUN_OFFSET_SEC = new ConcurrentHashMap<>();
@@ -71,8 +72,29 @@ public class ScheduleConstants {
             invalidConfiguredServices.add(ThriftClients.CVESEARCH_SERVICE);
         }
 
+        if(! props.containsKey(DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME)){
+            log.debug("Property " + DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME + " not set. Using default value.");
+        }
+        String deleteAttachmentOffset  = props.getProperty(DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME, DELETE_ATTACHMENT_OFFSET_DEFAULT);
+        try {
+            SYNC_FIRST_RUN_OFFSET_SEC.put(ThriftClients.DELETE_ATTACHMENT_SERVICE, Integer.parseInt(deleteAttachmentOffset));
+        } catch (NumberFormatException nfe){
+            log.error("Property " + DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME + " is not an integer.");
+            invalidConfiguredServices.add(ThriftClients.DELETE_ATTACHMENT_SERVICE);
+        }
+
+        if(! props.containsKey(DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME)){
+            log.debug("Property "+ DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME + " not set. Using default value.");
+        }
+        String deleteAttachmentInterval  = props.getProperty(DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME, DELETE_ATTACHMENT_INTERVAL_DEFAULT);
+        try {
+            SYNC_INTERVAL_SEC.put(ThriftClients.DELETE_ATTACHMENT_SERVICE, Integer.parseInt(deleteAttachmentInterval));
+        } catch (NumberFormatException nfe){
+            log.error("Property " + DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME + " is not an integer.");
+            invalidConfiguredServices.add(ThriftClients.DELETE_ATTACHMENT_SERVICE);
+        }
+
         String autostartServicesString = props.getProperty(AUTOSTART_PROPERTY_NAME, "");
         autostartServices = autostartServicesString.split(",");
     }
-
 }

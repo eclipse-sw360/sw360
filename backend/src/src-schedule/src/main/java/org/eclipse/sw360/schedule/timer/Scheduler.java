@@ -2,25 +2,23 @@
  * Copyright Siemens AG, 2016. Part of the SW360 Portal Project.
  * With modifications from Bosch Software Innovations GmbH, 2016.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.schedule.timer;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
-
-import static org.apache.log4j.Logger.getLogger;
 
 /**
  * creates new {@link TimerTask} which will be executed on the next valid time
@@ -28,7 +26,7 @@ import static org.apache.log4j.Logger.getLogger;
  * @author stefan.jaeger@evosoft.com
  */
 public class Scheduler {
-    private static final Logger log = getLogger(Scheduler.class);
+    private static final Logger log = LogManager.getLogger(Scheduler.class);
     private static Date nextSync = null;
     private static final ConcurrentHashMap<String, SW360Task> scheduledJobs = new ConcurrentHashMap<>();
 

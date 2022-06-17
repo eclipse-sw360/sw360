@@ -1,0 +1,23 @@
+<%--
+ ~ Copyright Siemens AG, 2017, 2019.
+ ~ Part of the SW360 Portal Project.
+ ~
+ ~ This program and the accompanying materials are made
+ ~ available under the terms of the Eclipse Public License 2.0
+ ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+ ~
+ ~ SPDX-License-Identifier: EPL-2.0
+ --%>
+
+<div id="component-quickfilter" class="card">
+	<div class="card-header">
+		<liferay-ui:message key="quick.filter" />
+	</div>
+	<div class="card-body">
+		<form>
+			<div class="form-group">
+				<input type="text" class="form-control form-control-sm" value="" />
+			</div>
+		</form>
+	</div>
+</div>

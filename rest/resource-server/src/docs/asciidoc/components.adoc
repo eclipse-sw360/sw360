@@ -1,10 +1,11 @@
 //
 // Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
 //
-// All rights reserved. This configuration file is provided to you under the
-// terms and conditions of the Eclipse Distribution License v1.0 which
-// accompanies this distribution, and is available at
-// http://www.eclipse.org/org/documents/edl-v10.php
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
 //
 
 [[resources-components]]
@@ -71,7 +72,7 @@ include::{snippets}/should_document_get_components_by_name/links.adoc[]
 ==== Listing by type
 
 A `GET` request will list all of the service's components by component type. +
-Component types = `{INTERNAL, OSS, COTS, FREESOFTWARE, INNER_SOURCE, SERVICE}`
+Component types = `{INTERNAL, OSS, COTS, FREESOFTWARE, INNER_SOURCE, SERVICE, CODE_SNIPPET}`
 
 ===== Response structure
 include::{snippets}/should_document_get_components_by_type/response-fields.adoc[]
@@ -104,6 +105,23 @@ include::{snippets}/should_document_get_component/http-response.adoc[]
 include::{snippets}/should_document_get_component/links.adoc[]
 
 
+[[resources-components-get-by-externalids]]
+==== Listing by external ids
+
+A `GET` request will get all components corresponding to external ids +
+The request parameter supports MultiValueMap (allows to add duplicate keys with different values) +
+It's possible to search for components only by the external id key by leaving the value.
+
+===== Response structure
+include::{snippets}/should_document_get_components_by_external-ids/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_components_by_external-ids/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_components_by_external-ids/http-response.adoc[]
+
+
 [[resources-component-attachment-info-get]]
 ==== Listing attachment info
 
@@ -118,6 +136,67 @@ include::{snippets}/should_document_get_component_attachment_info/curl-request.a
 ===== Example response
 include::{snippets}/should_document_get_component_attachment_info/http-response.adoc[]
 
+[[resources-component-attachment-info-update]]
+==== Update attachment info
+
+A `PATCH` request is used to update an attachment info
+
+===== Request structure
+include::{snippets}/should_document_update_component_attachment_info/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_component_attachment_info/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_component_attachment_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_component_attachment_info/http-response.adoc[]
+
+[[resources-component-attachment-upload]]
+==== Upload attachment to component
+
+A `POST` request is used to upload attachment to component
+
+[red]#Request structure#
+|===
+|Path |Type |Description
+
+|file
+|file
+|File path of the attachment
+
+|attachment.filename
+|String
+|Name of the file
+
+|attachment.attachmentContentId
+|String
+|Id of attachment info
+
+|attachment.attachmentType
+|String
+|Type of attachment, possible values are: [DOCUMENT, SOURCE, DESIGN, REQUIREMENT, CLEARING_REPORT, COMPONENT_LICENSE_INFO_XML, COMPONENT_LICENSE_INFO_COMBINED, SCAN_RESULT_REPORT, SCAN_RESULT_REPORT_XML, SOURCE_SELF, BINARY, BINARY_SELF, DECISION_REPORT, LEGAL_EVALUATION, LICENSE_AGREEMENT, SCREENSHOT, OTHER, README_OSS]
+
+|attachment.checkStatus
+|String
+|Status of attachment, possible values are: [NOTCHECKED, ACCEPTED, REJECTED]
+
+|attachment.createdComment
+|String
+|Comment while uploading attachment.
+|===
+
+[red]#Response structure#
+|===
+|Complete Component will be returned
+|===
+
+===== Example request
+include::{snippets}/should_document_upload_attachment_to_component/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_upload_attachment_to_component/http-response.adoc[]
 
 [[resources-component-attachment-get]]
 ==== Download attachment
@@ -131,6 +210,28 @@ include::{snippets}/should_document_get_component_attachment/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_get_component_attachment/http-response.adoc[]
 
+[[resources-component-attachment-delete]]
+==== Delete attachments
+
+With a `DELETE` request one or multiple attachments can be deleted from a component.
+To delete multiple attachments at once, just specify a comma-separated list of
+attachment IDs.
+
+Note that attachments can only be deleted if they are not used by a project.
+Requests that cannot delete any of the attachments specified fail with response
+status 500.
+
+===== Example request
+include::{snippets}/should_document_delete_component_attachment/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_component_attachment/http-response.adoc[]
+
+The response contains the updated component. Here the set of attachments is especially
+relevant. If multiple attachments were to be deleted, but the deletion failed for
+some of them, those can still be found in the set. So callers should inspect
+the set of attachments in the result to find out whether all delete operations
+have been successful.
 
 [[resources-components-create]]
 ==== Creating a component
@@ -178,3 +279,17 @@ include::{snippets}/should_document_delete_components/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_delete_components/http-response.adoc[]
+
+[[resources-component-usedby-list]]
+==== Resources using the component
+
+A `GET` request will display all the resources where the component is used.
+
+===== Response structure
+include::{snippets}/should_document_get_usedbyresource_for_components/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_usedbyresource_for_components/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_usedbyresource_for_components/http-response.adoc[]

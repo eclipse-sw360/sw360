@@ -3,44 +3,32 @@
   ~ Copyright (c) Bosch Software Innovations GmbH 2016.
   ~ Part of the SW360 Portal Project.
   ~
-  ~ SPDX-License-Identifier: EPL-1.0
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
   ~
-  ~ All rights reserved. This program and the accompanying materials
-  ~ are made available under the terms of the Eclipse Public License v1.0
-  ~ which accompanies this distribution, and is available at
-  ~ http://www.eclipse.org/legal/epl-v10.html
+  ~ SPDX-License-Identifier: EPL-2.0
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <dependencies>
-        <dependency>
-            <groupId>org.eclipse.sw360</groupId>
-            <artifactId>datahandler</artifactId>
-            <version>3.3.0-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
-
+    
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-src</artifactId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
-
-    <developers>
-        <developer>
-            <name>birgit.heydenreich@tngtech.com</name>
-        </developer>
-        <developer>
-            <name>maximilian.huber@tngtech.com</name>
-        </developer>
-        <developer>
-            <name>stefan.jaeger@evosoft.com</name>
-        </developer>
-    </developers>
 
     <artifactId>src-schedule</artifactId>
     <packaging>jar</packaging>
     <name>src-schedule</name>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>datahandler</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 </project>

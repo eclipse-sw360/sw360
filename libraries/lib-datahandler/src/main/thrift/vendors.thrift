@@ -2,12 +2,11 @@
  * Copyright Siemens AG, 2014-2015. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 include "sw360.thrift"
 include "users.thrift"
@@ -71,4 +70,14 @@ service VendorService {
      * vendor specified by id is updated in database if user has sufficient permissions, otherwise FAILURE is returned
      **/
     RequestStatus updateVendor(1: Vendor vendor, 2: User user);
+
+    /**
+     * merge vendor identified by vendorSourceId into vendor identified by vendorTargetId.
+     * The vendorSelection shows which data has to be set on the target. The source will be deleted afterwards.
+     * If user does not have permissions, RequestStatus.ACCESS_DENIED is returned
+     * If any of the vendor has an active moderation request, it's a noop and RequestStatus.IN_USE is returned.
+     * On any other error, REQUEST_FAILURE is returned.
+     **/
+    RequestStatus mergeVendors(1: string vendorTargetId, 2: string vendorSourceId, 3: Vendor vendorSelection, 4: User user);
+
 }

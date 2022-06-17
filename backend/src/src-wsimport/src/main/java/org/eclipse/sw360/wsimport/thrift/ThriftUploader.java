@@ -1,33 +1,30 @@
 /*
  * Copyright (c) Bosch Software Innovations GmbH 2017.
- * With modifications by Verifa Oy, 2018.
+ * With modifications by Verifa Oy, 2018-2019.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.wsimport.thrift;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.JsonSyntaxException;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.wsimport.domain.WsLibrary;
-import org.eclipse.sw360.wsimport.domain.WsLicense;
-import org.eclipse.sw360.wsimport.domain.WsProject;
+import org.eclipse.sw360.wsimport.domain.*;
 import org.eclipse.sw360.wsimport.entitytranslation.WsLibraryToSw360ComponentTranslator;
 import org.eclipse.sw360.wsimport.entitytranslation.WsLibraryToSw360ReleaseTranslator;
 import org.eclipse.sw360.wsimport.entitytranslation.WsLicenseToSw360LicenseTranslator;
 import org.eclipse.sw360.wsimport.entitytranslation.WsProjectToSw360ProjectTranslator;
 import org.eclipse.sw360.wsimport.entitytranslation.helper.ReleaseRelation;
-import org.eclipse.sw360.wsimport.rest.WsImportProjectService;
+import org.eclipse.sw360.wsimport.rest.WsImportService;
 import org.eclipse.sw360.wsimport.thrift.helper.ProjectImportError;
 import org.eclipse.sw360.wsimport.thrift.helper.ProjectImportResult;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -51,26 +48,13 @@ import static org.eclipse.sw360.wsimport.utility.TranslationConstants.UNKNOWN;
  */
 public class ThriftUploader {
 
-    private static final Logger LOGGER = Logger.getLogger(ThriftUploader.class);
+    private static final Logger LOGGER = LogManager.getLogger(ThriftUploader.class);
     private final WsLibraryToSw360ComponentTranslator libraryToComponentTranslator = new WsLibraryToSw360ComponentTranslator();
     private final WsLibraryToSw360ReleaseTranslator libraryToReleaseTranslator = new WsLibraryToSw360ReleaseTranslator();
     private final WsLicenseToSw360LicenseTranslator licenseToLicenseTranslator = new WsLicenseToSw360LicenseTranslator();
     private final WsProjectToSw360ProjectTranslator projectToProjectTranslator = new WsProjectToSw360ProjectTranslator();
 
     private ThriftExchange thriftExchange;
-//    private final ThriftClients thriftClients;
-    //private ThriftClients thriftClients;
-
-/*
-    public ThriftUploader(ThriftClients thriftClients) {
-        this.thriftClients = thriftClients;
-        this.thriftExchange = new ThriftExchange(this.thriftClients);
-    }
-*/
-    //public ThriftUploader() {
-        //this.thriftClients = thriftClients;
-    //    this.thriftExchange = thriftExchange;
-    //}
 
     public ThriftUploader() {
         this.thriftExchange = new ThriftExchange();
@@ -236,17 +220,16 @@ public class ThriftUploader {
     private Set<ReleaseRelation> createReleases(WsProject wsProject, User sw360User, TokenCredentials tokenCredentials) {
         WsLibrary[] libraries = null;
         try {
-            libraries =  new WsImportProjectService().getProjectLicenses(wsProject.getProjectToken(), tokenCredentials);
+            libraries =  new WsImportService().getProjectLicenses(wsProject.getProjectToken(), tokenCredentials);
         } catch (JsonSyntaxException jse) {
             LOGGER.error(jse);
         }
-
-        List<WsLibrary> libraryList = Arrays.asList(libraries);
-
-        if (libraryList == null) {
+        List<WsLibrary> libraryList;
+        if (libraries == null) {
             return ImmutableSet.of();
+        } else {
+            libraryList = new ArrayList<>(Arrays.asList(libraries));
         }
-
         Set<ReleaseRelation> releases = libraryList.stream()
                 .map(c -> createReleaseRelation(c, sw360User))
                 .filter(Objects::nonNull)

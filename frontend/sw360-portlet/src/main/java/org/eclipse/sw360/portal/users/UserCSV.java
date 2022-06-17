@@ -1,18 +1,18 @@
 /*
  * Copyright Siemens AG, 2013-2016. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.users;
 
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.model.User;
+import com.liferay.portal.kernel.model.User;
+
 import org.apache.commons.csv.CSVRecord;
 
 import javax.portlet.PortletRequest;
@@ -65,6 +65,42 @@ public class UserCSV {
         return wantsMailNotification;
     }
 
+    public void setGivenname(String givenname) {
+        this.givenname = givenname;
+    }
+
+    public void setLastname(String lastname) {
+        this.lastname = lastname;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
+    public void setGid(String gid) {
+        this.gid = gid;
+    }
+
+    public void setMale(boolean isMale) {
+        this.isMale = isMale;
+    }
+
+    public void setHash(String hash) {
+        this.hash = hash;
+    }
+
+    public void setWantsMailNotification(boolean wantsMailNotification) {
+        this.wantsMailNotification = wantsMailNotification;
+    }
+
     public UserCSV(CSVRecord record) {
         givenname = record.get(0);
         lastname = record.get(1);
@@ -77,6 +113,9 @@ public class UserCSV {
         if (record.size() > 8) {
             wantsMailNotification = Boolean.parseBoolean((record.get(8)));
         }
+    }
+
+    public UserCSV() {
     }
 
     public User addLifeRayUser(PortletRequest request) throws PortalException, SystemException {

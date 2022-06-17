@@ -1,28 +1,30 @@
 /*
  * Copyright Bosch Software Innovations GmbH, 2016.
- * Copyright Siemens AG, 2016-2018.
+ * Copyright Siemens AG, 2016-2019.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.users;
 
-import com.liferay.portal.NoSuchOrganizationException;
 import com.liferay.portal.kernel.bean.PortalBeanLocatorUtil;
+import com.liferay.portal.kernel.exception.NoSuchOrganizationException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
-import com.liferay.portal.model.*;
-import com.liferay.portal.security.membershippolicy.OrganizationMembershipPolicyUtil;
-import com.liferay.portal.service.OrganizationLocalService;
-import com.liferay.portal.service.OrganizationLocalServiceUtil;
-import com.liferay.portal.service.UserLocalServiceUtil;
-import org.apache.log4j.Logger;
+import com.liferay.portal.kernel.model.*;
+import com.liferay.portal.kernel.security.membershippolicy.OrganizationMembershipPolicyUtil;
+import com.liferay.portal.kernel.service.OrganizationLocalService;
+import com.liferay.portal.kernel.service.OrganizationLocalServiceUtil;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -41,10 +43,11 @@ public class OrganizationHelper {
     private static boolean matchPrefix = false;
     private static List<Map.Entry<String, String>> sortedOrganizationMappings;
     private static boolean customMappingEnabled = false;
-    private static Logger log = Logger.getLogger(OrganizationHelper.class);
+    private static Logger log = LogManager.getLogger(OrganizationHelper.class);
     private static final String MATCH_PREFIX_KEY = "match.prefix";
     private static final String ENABLE_CUSTOM_MAPPING_KEY = "enable.custom.mapping";
     private static final String PROPERTIES_FILE_PATH = "/orgmapping.properties";
+    private static final String TYPE_REGULAR_ORGANIZATION = "organization";
 
     static {
         loadOrganizationHelperSettings();
@@ -92,7 +95,7 @@ public class OrganizationHelper {
                             user.getUserId(),
                             OrganizationConstants.DEFAULT_PARENT_ORGANIZATION_ID,
                             organizationName,
-                            OrganizationConstants.TYPE_REGULAR_ORGANIZATION,
+                            TYPE_REGULAR_ORGANIZATION,
                             RegionConstants.DEFAULT_REGION_ID,
                             CountryConstants.DEFAULT_COUNTRY_ID,
                             ListTypeConstants.ORGANIZATION_STATUS_DEFAULT,

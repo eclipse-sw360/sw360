@@ -3,37 +3,46 @@
  * Copyright Bosch Software Innovations GmbH, 2017.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.rest.resourceserver.attachment;
 
+import com.google.common.collect.Sets;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.Resources;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,10 +52,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -60,38 +74,101 @@ public class Sw360AttachmentService {
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
-    private static final Logger log = Logger.getLogger(Sw360AttachmentService.class);
+    private static final Logger log = LogManager.getLogger(Sw360AttachmentService.class);
+
+    @NonNull
+    private final ThriftServiceProvider<AttachmentService.Iface> thriftAttachmentServiceProvider;
+
     private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
     private AttachmentConnector attachmentConnector;
+
+    public List<AttachmentUsage> getAttachemntUsages(String projectId) throws TException {
+        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
+        return attachmentClient.getUsedAttachments(Source.projectId(projectId),
+                UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet())));
+    }
 
     public AttachmentInfo getAttachmentById(String id) throws TException {
         AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
         List<Attachment> attachments = attachmentClient.getAttachmentsByIds(Collections.singleton(id));
-        return createAttachmentInfo(attachmentClient, attachments);
+        if (attachments.isEmpty()) {
+            throw new ResourceNotFoundException("Attachment not found.");
+        }
+        return createAttachmentInfo(attachmentClient, attachments.get(0));
     }
 
-    public AttachmentInfo getAttachmentBySha1(String sha1) throws TException {
+    public List<AttachmentInfo> getAttachmentsBySha1(String sha1) throws TException {
         AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
         List<Attachment> attachments = attachmentClient.getAttachmentsBySha1s(Collections.singleton(sha1));
-        return createAttachmentInfo(attachmentClient, attachments);
+        return createAttachmentInfos(attachmentClient, attachments);
     }
 
-    private AttachmentInfo createAttachmentInfo(AttachmentService.Iface attachmentClient, List<Attachment> attachments) throws TException {
-        AttachmentInfo attachmentInfo = new AttachmentInfo(getValidAttachment(attachments));
-        String attachmentId = attachmentInfo.getAttachment().getAttachmentContentId();
-        attachmentInfo.setOwner(attachmentClient.getAttachmentOwnersByIds(Collections.singleton(attachmentId)).get(0));
+    /**
+     * Filters the attachments that can be actually removed before a delete
+     * attachments operation. This method can be called by controllers to
+     * handle a request to delete attachments. For each attachment to be
+     * deleted, it checks whether all criteria are fulfilled: The attachment
+     * must belong to the given owner, it must not be in use by a project, and
+     * its checked status must not be ACCEPTED. The resulting set contains all
+     * the attachments that are safe to be removed.
+     *
+     * @param owner          the {@code Source} referencing the attachment owner
+     * @param allAttachments the full set of attachments of the owner
+     * @param idsToDelete    collection with the IDs of the attachments to delete
+     * @return the filtered set with attachments that can be removed
+     */
+    public Set<Attachment> filterAttachmentsToRemove(Source owner, Set<Attachment> allAttachments,
+                                                     Collection<String> idsToDelete) throws TException {
+        Map<String, Attachment> knownAttachmentIds = allAttachments.stream()
+                .collect(Collectors.toMap(Attachment::getAttachmentContentId, v -> v));
+        AttachmentService.Iface attachmentService = getThriftAttachmentClient();
+
+        return idsToDelete.stream()
+                .map(knownAttachmentIds::get)
+                .filter(Objects::nonNull)
+                .filter(attachment -> canDeleteAttachment(attachmentService, owner, attachment))
+                .collect(Collectors.toSet());
+    }
+
+    private static boolean canDeleteAttachment(AttachmentService.Iface attachmentService, Source owner,
+                                               Attachment attachment) {
+        String id = attachment.getAttachmentContentId();
+        if (attachment.getCheckStatus() == CheckStatus.ACCEPTED) {
+            log.warn("Attachment " + id + " must not be deleted as it is in status checked.");
+            return false;
+        }
+
+        try {
+            List<AttachmentUsage> usages = attachmentService.getAttachmentUsages(owner, id, null);
+            if (usages.stream().anyMatch(usage -> usage.usedBy.isSetProjectId())) {
+                log.warn("Attachment " + id + " must not be deleted as it is used by a project.");
+                return false;
+            }
+            return true;
+        } catch (TException e) {
+            log.error("Could not check attachment usage for " + id);
+            return false;
+        }
+    }
+
+    private AttachmentInfo createAttachmentInfo(AttachmentService.Iface attachmentClient, Attachment attachment)
+            throws TException {
+        AttachmentInfo attachmentInfo = new AttachmentInfo(attachment);
+        attachmentInfo.setOwner(attachmentClient
+                .getAttachmentOwnersByIds(Collections.singleton(attachment.getAttachmentContentId())).get(0));
         return attachmentInfo;
     }
 
-    private Attachment getValidAttachment(List<Attachment> attachments) {
-        if (attachments.isEmpty()) {
-            throw new ResourceNotFoundException();
+    private List<AttachmentInfo> createAttachmentInfos(AttachmentService.Iface attachmentClient,
+            List<Attachment> attachments) throws TException {
+        List<AttachmentInfo> attachmentInfos = new ArrayList<>();
+        for (Attachment attachment : attachments) {
+            attachmentInfos.add(createAttachmentInfo(attachmentClient, attachment));
         }
-        return attachments.get(0);
+        return attachmentInfos;
     }
 
-    public void downloadAttachmentWithContext(Object context, String attachmentId, HttpServletResponse response, OAuth2Authentication oAuth2Authentication) {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication(oAuth2Authentication);
+    public void downloadAttachmentWithContext(Object context, String attachmentId, HttpServletResponse response, User sw360User) {
         AttachmentContent attachmentContent = getAttachmentContent(attachmentId);
 
         String filename = attachmentContent.getFilename();
@@ -101,7 +178,7 @@ public class Sw360AttachmentService {
             response.setContentType(contentType);
             response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
             FileCopyUtils.copy(attachmentStream, response.getOutputStream());
-        } catch (TException|IOException e) {
+        } catch (TException | IOException e) {
             log.error(e.getMessage());
         }
     }
@@ -127,6 +204,23 @@ public class Sw360AttachmentService {
         CheckStatus checkStatus = newAttachment.getCheckStatus();
         if (checkStatus != null) {
             attachment.setCheckStatus(checkStatus);
+        }
+
+        String createdComment = newAttachment.getCreatedComment();
+        if (createdComment != null) {
+            attachment.setCreatedComment(createdComment);
+        }
+
+        if (checkStatus != null &&
+                (checkStatus == CheckStatus.ACCEPTED || checkStatus == CheckStatus.REJECTED))
+        {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(attachment.getCreatedBy())) {
+                attachment.setCheckedBy(attachment.getCreatedBy());
+            }
+
+            if (CommonUtils.isNotNullEmptyOrWhitespace(attachment.getCreatedTeam())) {
+                attachment.setCheckedTeam(attachment.getCreatedTeam());
+            }
         }
 
         return attachment;
@@ -156,6 +250,36 @@ public class Sw360AttachmentService {
         }
     }
 
+    public CollectionModel<EntityModel<Attachment>> getResourcesFromList(Set<Attachment> attachmentList) {
+        final List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
+        if (CommonUtils.isNotEmpty(attachmentList)) {
+            for (final Attachment attachment : attachmentList) {
+                final Attachment embeddedAttachment = restControllerHelper.convertToEmbeddedAttachment(attachment);
+                final EntityModel<Attachment> attachmentResource = EntityModel.of(embeddedAttachment);
+                attachmentResources.add(attachmentResource);
+            }
+        }
+        return CollectionModel.of(attachmentResources);
+    }
+
+    public List<AttachmentUsage> getAllAttachmentUsage(String projectId) throws TException {
+        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
+        return attachmentClient.getUsedAttachments(Source.projectId(projectId), null);
+    }
+
+    public Attachment updateAttachment(Set<Attachment> attachments, Attachment newData, String attachmentId, User user) {
+        if (CommonUtils.isNotEmpty(attachments)) {
+            Optional<Attachment> matchingAttachment = attachments.stream()
+                    .filter(att -> att.attachmentContentId.equals(attachmentId)).findFirst();
+            if (matchingAttachment.isPresent()) {
+                Attachment actualAtt = matchingAttachment.get();
+                updateAttachment(actualAtt, newData, user);
+                return actualAtt;
+            }
+        }
+        throw new ResourceNotFoundException("Requested Attachment Not Found");
+    }
+
     private AttachmentConnector getConnector() throws TException {
         if (attachmentConnector == null) makeConnector();
         return attachmentConnector;
@@ -164,7 +288,7 @@ public class Sw360AttachmentService {
     private synchronized void makeConnector() throws TException {
         if (attachmentConnector == null) {
             try {
-                attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS, downloadTimeout);
+                attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS, downloadTimeout);
             } catch (MalformedURLException e) {
                 log.error("Invalid database address received...", e);
                 throw new TException(e);
@@ -173,18 +297,35 @@ public class Sw360AttachmentService {
     }
 
     private AttachmentService.Iface getThriftAttachmentClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/attachments/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new AttachmentService.Client(protocol);
+        return thriftAttachmentServiceProvider.getService(thriftServerUrl);
     }
 
-    public Resources<Resource<Attachment>> getResourcesFromList(Set<Attachment> attachmentList) {
-        final List<Resource<Attachment>> attachmentResources = new ArrayList<>();
-        for (final Attachment attachment : attachmentList) {
-            final Attachment embeddedAttachment = restControllerHelper.convertToEmbeddedAttachment(attachment);
-            final Resource<Attachment> attachmentResource = new Resource<>(embeddedAttachment);
-            attachmentResources.add(attachmentResource);
+    private void updateAttachment(Attachment attachmentToUpdate, Attachment reqBodyAttachment, User user) {
+        AttachmentType attachmentType = reqBodyAttachment.getAttachmentType();
+        String createdComment = reqBodyAttachment.getCreatedComment();
+        CheckStatus checkStatus = reqBodyAttachment.getCheckStatus();
+        if (attachmentType != null) {
+            attachmentToUpdate.setAttachmentType(attachmentType);
         }
-        return new Resources<>(attachmentResources);
+        if (createdComment != null) {
+            attachmentToUpdate.setCreatedComment(createdComment);
+        }
+        if (checkStatus != null) {
+            attachmentToUpdate.setCheckStatus(checkStatus);
+            String checkedComment = reqBodyAttachment.getCheckedComment();
+            if (checkStatus != CheckStatus.NOTCHECKED) {
+                if (checkedComment != null) {
+                    attachmentToUpdate.setCheckedComment(checkedComment);
+                }
+                attachmentToUpdate.setCheckedBy(user.getEmail());
+                attachmentToUpdate.setCheckedTeam(user.getDepartment());
+                attachmentToUpdate.setCheckedOn(SW360Utils.getCreatedOn());
+            } else {
+                attachmentToUpdate.unsetCheckedBy();
+                attachmentToUpdate.unsetCheckedTeam();
+                attachmentToUpdate.setCheckedComment("");
+                attachmentToUpdate.unsetCheckedOn();
+            }
+        }
     }
 }

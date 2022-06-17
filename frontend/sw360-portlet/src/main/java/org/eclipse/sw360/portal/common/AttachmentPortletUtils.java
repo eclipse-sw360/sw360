@@ -1,22 +1,21 @@
 /*
  * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.portal.common;
 
+import com.cloudant.client.org.lightcouch.NoDocumentException;
 import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
-import com.liferay.portal.util.PortalUtil;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
+import com.liferay.portal.kernel.util.PortalUtil;
+
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
@@ -28,15 +27,20 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
-import org.ektorp.DocumentNotFoundException;
 
-import javax.portlet.PortletRequest;
-import javax.portlet.ResourceRequest;
-import javax.portlet.ResourceResponse;
+import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import javax.portlet.PortletRequest;
+import javax.portlet.ResourceRequest;
+import javax.portlet.ResourceResponse;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.net.URLConnection.guessContentTypeFromName;
@@ -51,9 +55,11 @@ import static java.net.URLConnection.guessContentTypeFromStream;
  * @author birgit.heydenreich@tngtech.com
  */
 public class AttachmentPortletUtils extends AttachmentFrontendUtils {
+    private static final String EMPTY_ATTACHMENT_BUNDLE_NAME = "Empty.zip";
+
     public static final String DEFAULT_ATTACHMENT_BUNDLE_NAME = "AttachmentBundle.zip";
 
-    private static final Logger log = Logger.getLogger(AttachmentPortletUtils.class);
+    private static final Logger log = LogManager.getLogger(AttachmentPortletUtils.class);
     private final ProjectService.Iface projectClient;
     private final ComponentService.Iface componentClient;
 
@@ -62,7 +68,6 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
     }
 
     public AttachmentPortletUtils(ThriftClients thriftClients) {
-        super(thriftClients);
         projectClient = thriftClients.makeProjectClient();
         componentClient = thriftClients.makeComponentClient();
     }
@@ -109,7 +114,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
         List<AttachmentContent> attachments = new ArrayList<>();
         try {
             for(String id : ids){
-                attachments.add(client.getAttachmentContent(id));
+                attachments.add(attchmntClient.get().getAttachmentContent(id));
             }
 
             serveAttachmentBundle(attachments, request, response, downloadFileName);
@@ -126,7 +131,10 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
     private void serveAttachmentBundle(List<AttachmentContent> attachments, ResourceRequest request, ResourceResponse response, Optional<String> downloadFileName){
         String filename;
         String contentType;
-        if(attachments.size() == 1){
+        String isAllAttachment = request.getParameter(PortalConstants.ALL_ATTACHMENTS);
+        boolean downloadAllAttachmentSelected = StringUtils.isNotEmpty(isAllAttachment)
+                && isAllAttachment.equalsIgnoreCase("true");
+        if (attachments.size() == 1 && !downloadAllAttachmentSelected) {
             filename = attachments.get(0).getFilename();
             contentType = attachments.get(0).getContentType();
             if (contentType.equalsIgnoreCase("application/gzip")) {
@@ -136,9 +144,11 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
                 // to prevent auto encoding content (chrome).
                 response.setProperty(HttpHeaders.CONTENT_ENCODING, "identity");
             }
+        } else if (!CommonUtils.isNotEmpty(attachments)) {
+            filename = EMPTY_ATTACHMENT_BUNDLE_NAME;
+            contentType = "application/zip";
         } else {
-            filename = downloadFileName
-                    .orElse(DEFAULT_ATTACHMENT_BUNDLE_NAME);
+            filename = downloadFileName.orElse(DEFAULT_ATTACHMENT_BUNDLE_NAME);
             contentType = "application/zip";
         }
 
@@ -147,7 +157,9 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
             Optional<Object> context = getContextFromRequest(request, user);
 
             if(context.isPresent()){
-                try (InputStream attachmentStream = getStreamToServeAFile(attachments, user, context.get())) {
+                try (InputStream attachmentStream = (downloadAllAttachmentSelected
+                        ? getStreamToServeBundle(attachments, user, context.get())
+                        : getStreamToServeAFile(attachments, user, context.get()))) {
                     PortletResponseUtil.sendFile(request, response, filename, attachmentStream, contentType);
                 } catch (IOException e) {
                     log.error("cannot finish writing response", e);
@@ -179,7 +191,6 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
 
         if (resumableUpload.isValid()) {
             final AttachmentStreamConnector attachmentStreamConnector = getConnector();
-
             attachment = getAttachmentContent(resumableUpload, stream);
 
             if (attachment != null) {
@@ -233,7 +244,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
         AttachmentContent attachment = null;
         if (resumableUpload.hasAttachmentId()) {
             try {
-                attachment = client.getAttachmentContent(resumableUpload.getAttachmentId());
+                attachment = attchmntClient.get().getAttachmentContent(resumableUpload.getAttachmentId());
             } catch (TException e) {
                 log.error("Error retrieving attachment", e);
             }
@@ -248,7 +259,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
                 .setFilename(filename);
 
         try {
-            attachmentContent = client.makeAttachmentContent(attachmentContent);
+            attachmentContent = attchmntClient.get().makeAttachmentContent(attachmentContent);
         } catch (TException e) {
             log.error("Error creating attachment", e);
             attachmentContent = null;
@@ -269,7 +280,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
     public RequestStatus cancelUpload(ResourceRequest request) {
         String attachmentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
         try {
-            return client.deleteAttachmentContent(attachmentId);
+            return attchmntClient.get().deleteAttachmentContent(attachmentId);
         } catch (TException e) {
             log.error("Error deleting attachment from backend", e);
             return RequestStatus.FAILURE;
@@ -303,7 +314,7 @@ public class AttachmentPortletUtils extends AttachmentFrontendUtils {
         } catch (SW360Exception e) {
             log.error("cannot check if part already exists", e);
             return false;
-        } catch (IOException | DocumentNotFoundException ignored) {
+        } catch (IOException | NoDocumentException ignored) {
             return false;
         }
     }

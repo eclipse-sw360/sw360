@@ -1,0 +1,65 @@
+/*
+ * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+
+.sw360-portlet-decorator {
+
+	@import "components/attachments";
+	@import "components/card";
+	@import "components/datatable";
+	@import "components/form";
+	@import "components/jumbotron";
+	@import "components/merge";
+	@import "components/progress";
+	@import "components/statebox";
+	@import "components/table";
+	@import "components/treetable";
+	@import "components/typeicon";
+	@import "components/wizard";
+
+	.portlet-title {
+		color: rgba($secondary, 0.4);
+	}
+
+	:not(.modal-dialog) h4 {
+		color: $box-header-bg;
+		border-bottom-color: $box-header-bg;
+
+		text-transform: uppercase;
+	}
+
+	:not(.modal-header) > h5 {
+		padding: 0.75rem;
+
+		color: $box-header-fg;
+		background-color: $box-header-bg;
+
+		font-weight: bold;
+	}
+
+	.spinner-border {
+		color: $primary;
+	}
+
+	.btn-primary {
+		.spinner-border {
+			color: $secondary;
+		}
+	}
+
+	.actions {
+		a, svg {
+			color: $secondary;
+
+			&:not(.disabled):hover {
+				color: $primary;
+			}
+		}
+	}
+}

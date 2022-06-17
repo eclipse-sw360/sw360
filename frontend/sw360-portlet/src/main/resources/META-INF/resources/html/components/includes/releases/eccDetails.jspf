@@ -1,0 +1,51 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+<core_rt:set var="eccInfo" value="${release.eccInformation}"/>
+
+<table class="table label-value-table" id="ECCInfo">
+    <thead>
+    <tr>
+        <th colspan="2"><liferay-ui:message key="ecc.information" /></th>
+    </tr>
+    </thead>
+    <tr>
+        <td><liferay-ui:message key="ecc.status" />:</td>
+        <td><sw360:DisplayEnum value="${eccInfo.eccStatus}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="al" />:</td>
+        <td><sw360:out value="${eccInfo.AL}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="eccn" />:</td>
+        <td><sw360:out value="${eccInfo.ECCN}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="material.index.number" />:</td>
+        <td><sw360:out value="${eccInfo.materialIndexNumber}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="ecc.comment" />:</td>
+        <td><sw360:out value="${eccInfo.eccComment}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="assessor.contact.person" />:</td>
+        <td><sw360:out value="${eccInfo.assessorContactPerson}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="assessor.department" />:</td>
+        <td><sw360:out value="${eccInfo.assessorDepartment}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="assessment.date" />:</td>
+        <td><sw360:out value="${eccInfo.assessmentDate}"/></td>
+    </tr>
+</table>

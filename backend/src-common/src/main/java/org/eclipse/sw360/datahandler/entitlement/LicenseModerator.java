@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2016. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.entitlement;
 
@@ -15,17 +14,18 @@ import org.eclipse.sw360.datahandler.common.Moderator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.licenses.Todo;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 
-import static org.eclipse.sw360.datahandler.common.CommonUtils.isTemporaryTodo;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isTemporaryObligation;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 
 /**
@@ -35,7 +35,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
  */
 public class LicenseModerator extends Moderator<License._Fields, License> {
 
-    private static final Logger log = Logger.getLogger(LicenseModerator.class);
+    private static final Logger log = LogManager.getLogger(LicenseModerator.class);
 
 
     public LicenseModerator(ThriftClients thriftClients) {
@@ -62,20 +62,20 @@ public class LicenseModerator extends Moderator<License._Fields, License> {
                                                       License licenseAdditions,
                                                       License licenseDeletions,
                                                       String department) {
-        Map<String, Todo> actualTodoMap = Maps.uniqueIndex(nullToEmptyList(license.getTodos()), Todo::getId);
+        Map<String, Obligation> actualTodoMap = Maps.uniqueIndex(nullToEmptyList(license.getObligations()), Obligation::getId);
 
-        for (Todo added : nullToEmptyList(licenseAdditions.getTodos())) {
+        for (Obligation added : nullToEmptyList(licenseAdditions.getObligations())) {
             if (!added.isSetId()) {
-                log.error("Todo id not set in licenseAdditions.");
+                log.error("Obligation id not set in licenseAdditions.");
                 continue;
             }
-            if (isTemporaryTodo(added)) {
-                if(!license.isSetTodos()){
-                    license.setTodos(new ArrayList<>());
+            if (isTemporaryObligation(added)) {
+                if(!license.isSetObligations()){
+                    license.setObligations(new ArrayList<>());
                 }
-                license.getTodos().add(added);
+                license.getObligations().add(added);
             } else {
-                Todo actual = actualTodoMap.get(added.getId());
+                Obligation actual = actualTodoMap.get(added.getId());
                 if (added.isSetWhitelist() && added.getWhitelist().contains(department)) {
                     if(!actual.isSetWhitelist()){
                         actual.setWhitelist(new HashSet<>());
@@ -84,14 +84,14 @@ public class LicenseModerator extends Moderator<License._Fields, License> {
                 }
             }
         }
-        for (Todo deleted : nullToEmptyList(licenseDeletions.getTodos())) {
+        for (Obligation deleted : nullToEmptyList(licenseDeletions.getObligations())) {
             if (!deleted.isSetId()) {
-                log.error("Todo id is not set in licenseDeletions.");
+                log.error("Obligation id is not set in licenseDeletions.");
                 continue;
             }
-            Todo actual = actualTodoMap.get(deleted.getId());
+            Obligation actual = actualTodoMap.get(deleted.getId());
             if (actual == null) {
-                log.info("Todo from licenseDeletions does not exist (any more) in license.");
+                log.info("Obligation from licenseDeletions does not exist (any more) in license.");
                 continue;
             }
             if (deleted.isSetWhitelist() && deleted.getWhitelist().contains(department)) {

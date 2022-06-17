@@ -1,13 +1,12 @@
 /*
- * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 include "users.thrift"
 include "sw360.thrift"
@@ -18,6 +17,7 @@ namespace php sw360.thrift.attachments
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary
 typedef sw360.Source Source
+typedef sw360.SW360Exception SW360Exception
 typedef users.User User
 
 enum AttachmentType {
@@ -38,7 +38,9 @@ enum AttachmentType {
     LICENSE_AGREEMENT = 14,
     SCREENSHOT = 15,
     OTHER = 16,
-    README_OSS = 17
+    README_OSS = 17,
+    SECURITY_ASSESSMENT = 18,
+    INITIAL_SCAN_REPORT = 19
 }
 
 enum CheckStatus {
@@ -66,6 +68,8 @@ struct Attachment {
 
     20: optional set<string> uploadHistory, // just for importing data by now
     21: optional CheckStatus checkStatus; // simple status of checks
+    22: optional string superAttachmentId,
+    23: optional string superAttachmentFilename
 }
 
 struct AttachmentContent {
@@ -113,10 +117,17 @@ union UsageData {
 
 /**
  * Stores specific information if an attachment is used for license info generation. Holds the license ids
- * that were excluded from generation.
+ * that were excluded from generation. In addition it holds the path of project ids as one string separated
+ * with ":", where the project id from the root project in "usedBy" is always included, so this string is never
+ * empty. This means that each usage becomes really unique by the complete path
+ *     projectPath:owner(=releaseId):attachmentContentId
+ * Since the projectPath was added over time, it is not required yet and the code has to deal with the case that
+ * it is empty. This might change in the future.
  */
 struct LicenseInfoUsage {
     1: required set<string> excludedLicenseIds;
+    2: optional string projectPath;
+    3: optional bool includeConcludedLicense = true;
 }
 
 /**
@@ -160,7 +171,7 @@ service AttachmentService {
     /**
      * get validated attachmentContent by id
      **/
-    AttachmentContent getAttachmentContent(1:string id);
+    AttachmentContent getAttachmentContent(1:string id) throws (1: SW360Exception exp);
 
     /**
      * Update attachmentContent in database, no permission check is necessary
@@ -284,4 +295,14 @@ service AttachmentService {
      * Returns the sources/owners (project, component, release) of the attachment by attachmentContentId
      */
     list<Source> getAttachmentOwnersByIds(1: set<string> ids)
+
+    /**
+     * Returns all attachments usages by release id
+     */
+    list<AttachmentUsage> getAttachmentUsagesByReleaseId(1: string releaseId);
+
+    /**
+     * calls deleteAttachmentAndDirectory for identifying the file and delete
+     */
+    RequestStatus deleteOldAttachmentFromFileSystem();
 }

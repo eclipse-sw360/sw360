@@ -1,13 +1,12 @@
 /*
- * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 include "sw360.thrift"
 include "attachments.thrift"
@@ -22,9 +21,12 @@ typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary
 typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
 typedef sw360.DocumentState DocumentState
+typedef sw360.Visibility Visibility
 typedef sw360.ReleaseRelationship ReleaseRelationship
 typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
+typedef sw360.SW360Exception SW360Exception
+typedef sw360.PaginationData PaginationData
 typedef attachments.Attachment Attachment
 typedef attachments.FilledAttachment FilledAttachment
 typedef users.User User
@@ -62,32 +64,79 @@ struct Repository {
     2: optional RepositoryType repositorytype
 }
 
-enum FossologyStatus {
-    CONNECTION_FAILED = 0,
+/**
+ * A list of all known external tools.
+ **/
+enum ExternalTool {
+    FOSSOLOGY = 0
+}
 
-    ERROR = 1,
+/**
+ * The different states a ExternalToolProcessStep can be in.
+ **/
+enum ExternalToolProcessStatus {
+    NEW = 10,
+    IN_WORK = 20,
+    DONE = 30,
+    OUTDATED = 40
+}
 
-    NON_EXISTENT = 2,
-    NOT_SENT = 3,
-    INACCESSIBLE = 4,
+/**
+ * This structure is used to track processes to external tools like FOSSology made for a release. Normally one wants to
+ * send an attachment (like the sources of a release) to an external tool for further analysis and get the results back
+ * at some point. Often these processes do not consist of a single action so there is a list of process steps that need
+ * to be fulfilled until the process can be considered done.
+ **/
+struct ExternalToolProcess {
+    1: optional string id,
+    2: required ExternalTool externalTool,
+    3: required ExternalToolProcessStatus processStatus,
+    4: optional string processIdInTool,
+    5: optional string attachmentId,
+    6: optional string attachmentHash,
+    7: required list<ExternalToolProcessStep> processSteps // ordered
+}
 
-    SENT = 10,
-    SCANNING = 11,
-
-    OPEN = 20,
-    IN_PROGRESS = 21,
-    CLOSED = 22,
-    REJECTED = 23,
-
-    REPORT_AVAILABLE = 30
+/**
+ * This structure represents single steps when working with external tool processes. Please be aware that not all fields
+ * need to be filled for every tool.
+ **/
+struct ExternalToolProcessStep {
+    1: optional string id,
+    2: optional string stepName,
+    3: required ExternalToolProcessStatus stepStatus,
+    4: optional string linkToStep
+    5: required string startedBy,
+    6: required string startedByGroup,
+    7: required string startedOn,
+    8: optional string processStepIdInTool,
+    9: optional string userIdInTool,
+    10: optional string userCredentialsInTool,
+    11: optional string userGroupInTool,
+    12: optional string finishedOn,
+    13: optional string result // value or document
 }
 
 enum ClearingState {
     NEW_CLEARING = 0,
-    SENT_TO_FOSSOLOGY = 1,
+    SENT_TO_CLEARING_TOOL = 1,
     UNDER_CLEARING = 2,
     REPORT_AVAILABLE = 3,
     APPROVED = 4,
+    SCAN_AVAILABLE = 5,
+}
+
+/**
+ * Just an aggregation container used to count ClearingStates of more than one Release. Mainly used in Projects (could
+ * be moved to projects.thrift as well)
+ **/
+struct ReleaseClearingStateSummary {
+    1: required i32 newRelease,
+    2: required i32 sentToClearingTool,
+    3: required i32 underClearing,
+    4: required i32 reportAvailable,
+    5: required i32 approved,
+    6: required i32 scanAvailable, 
 }
 
 enum ECCStatus {
@@ -177,6 +226,7 @@ struct Release {
 
     // information from external data sources
     9: optional  map<string, string> externalIds,
+    300: optional map<string, string> additionalData,
 
     // Additional informations
     10: optional set<Attachment> attachments,
@@ -186,9 +236,11 @@ struct Release {
     17: optional ClearingState clearingState, // TODO we probably need to map by clearing team?
 
     // FOSSology Information
-    20: optional string fossologyId,
-    21: optional map<string, FossologyStatus> clearingTeamToFossologyStatus,
-    22: optional string attachmentInFossology, // id of the attachment currently in fossology
+    // 20: optional string fossologyId,
+    // 21: optional map<string, FossologyStatus> clearingTeamToFossologyStatus,
+    // 22: optional string attachmentInFossology, // id of the attachment currently in fossology
+    // 25: optional set<ExternalToolRequest> externalToolRequests,
+    26: optional set<ExternalToolProcess> externalToolProcesses,
 
     // string details
     30: optional string createdBy, // person who created the release
@@ -206,11 +258,13 @@ struct Release {
     53: optional set<string> operatingSystems,
     54: optional COTSDetails cotsDetails,
     55: optional EccInformation eccInformation,
+    56: optional set<string> softwarePlatforms,
 
     65: optional set<string> mainLicenseIds,
-
+    66: optional set<string> otherLicenseIds,
     // Urls for the project
-    70: optional string downloadurl, // URL for download page for this release
+    70: optional string sourceCodeDownloadurl, // URL for download page for this release source code
+    71: optional string binaryDownloadurl, // URL for download page for this release binaries
 
     80: optional map<string, ReleaseRelationship> releaseIdToRelationship,    //id, comment
 
@@ -227,6 +281,7 @@ enum ComponentType {
     FREESOFTWARE = 3, //freeware
     INNER_SOURCE = 4, //internal software with source open for customers within own company
     SERVICE = 5,
+    CODE_SNIPPET = 6,
 }
 
 struct Component {
@@ -253,15 +308,21 @@ struct Component {
     28: optional string ownerGroup,
     29: optional string ownerCountry,
     30: optional map<string,set<string>> roles, //customized roles with set of mail addresses
+    80: optional Visibility visbility = sw360.Visibility.EVERYONE,
+    81: optional string businessUnit,
 
     // information from external data sources
     31: optional  map<string, string> externalIds,
+    300: optional map<string, string> additionalData,
 
     // Linked objects
     32: optional list<Release> releases,
     33: optional set<string> releaseIds,
 
     35: optional set<string> mainLicenseIds,        //Aggregate of release main licenses
+
+    36: optional Vendor defaultVendor,
+    37: optional string defaultVendorId,
 
     // List of keywords
     40: optional set<string> categories,
@@ -284,14 +345,6 @@ struct Component {
     200: optional map<RequestedAction, bool> permissions,
 }
 
-struct ReleaseClearingStateSummary {
-    1: required i32 newRelease,
-    2: required i32 underClearing,
-    3: required i32 underClearingByProjectTeam,
-    4: required i32 reportAvailable,
-    5: required i32 approved,
-}
-
 struct ReleaseLink{
     1: required string id,
     2: required string vendor,
@@ -311,7 +364,10 @@ struct ReleaseLink{
     32: optional list<Attachment> attachments,
     33: optional ComponentType componentType,
     100: optional set<string> licenseIds,
-    101: optional set<string> licenseNames
+    101: optional set<string> licenseNames,
+    102: optional string comment,
+    103: optional set<string> otherLicenseIds,
+    104: optional bool accessible = true
 }
 
 struct ReleaseClearingStatusData {
@@ -319,6 +375,7 @@ struct ReleaseClearingStatusData {
     2: optional ComponentType componentType,
     3: optional string projectNames, // comma separated list of project names for display; possibly abbreviated
     4: optional string mainlineStates, // comma separated list of mainline states for display; possibly abbreviated
+    5: optional bool accessible = true
 }
 
 service ComponentService {
@@ -340,9 +397,26 @@ service ComponentService {
     list<Component> getRecentComponentsSummary(1: i32 limit, 2: User user);
 
     /**
+     * summary of all components reverse ordered by `createdOn` being returned with pagination
+     **/
+    map<PaginationData, list<Component>> getRecentComponentsSummaryWithPagination(1: User user, 2: PaginationData pageData);
+
+    /**
+     * summary of up to `limit` components reverse ordered by `createdOn`. Negative `limit` will result in
+     * all components being returned.
+     * They are only the components which are visible to user.
+     **/
+    list<Component> getAccessibleRecentComponentsSummary(1: i32 limit, 2: User user);
+
+    /**
      * total number of components in the DB, irrespective of whether the user may see them or not
      **/
     i32 getTotalComponentsCount(1: User user);
+
+    /**
+     * total number of accessible components in the DB, irrespective of whether the user may see them or not
+     **/
+    i32 getAccessibleTotalComponentsCount(1: User user);
 
     /**
      * short summary of all releases visible to user
@@ -350,14 +424,35 @@ service ComponentService {
     list<Release> getReleaseSummary(1: User user);
 
     /**
+     * short summary of all accessible releases.
+     **/
+    list<Release> getAccessibleReleaseSummary(1: User user);
+    
+    /**
      * search components in database that match subQueryRestrictions
      **/
     list<Component> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions);
 
     /**
+     * search components in database that match subQueryRestrictions
+     * They are only the components which are visible to user.
+     **/
+    list<Component> refineSearchAccessibleComponents(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user);
+
+    /**
+     * search components with the accessibility in database that match subQueryRestrictions
+     **/
+    list<Component> refineSearchWithAccessibility(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user);
+
+    /**
      * global search function to list releases which match the text argument
      */
     list<Release> searchReleases(1: string text);
+
+    /**
+     * global search function to list accessible releases which match the text argument
+     */
+    list<Release> searchAccessibleReleases(1: string text, 2: User user);
 
     /**
      * get short summary of release by release name prefix
@@ -384,6 +479,11 @@ service ComponentService {
      **/
     list<Release> getRecentReleases();
 
+    /**
+     * information for home portlet
+     **/
+    list<Release> getRecentReleasesWithAccessibility(1: User user);
+
     // Component CRUD support
     /**
      * add component to database with user as creator,
@@ -398,9 +498,22 @@ service ComponentService {
 
     /**
      * get component from database filled with releases and permissions for user
+     * They are only the components which are visible to user.
+     **/
+    Component getAccessibleComponentById(1: string id, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * get component from database filled with releases and permissions for user
      * with moderation request of user applied if such request exists
      **/
     Component getComponentByIdForEdit(1: string id, 2: User user);
+
+    /**
+     * get component from database filled with releases and permissions for user
+     * with moderation request of user applied if such request exists
+     * They are only the components which are visible to user.
+     **/
+    Component getAccessibleComponentByIdForEdit(1: string id, 2: User user) throws (1: SW360Exception exp);
 
     /**
      * update component in database if user has permissions
@@ -443,7 +556,12 @@ service ComponentService {
     /**
       * get release from database filled with vendor and permissions for user
       **/
-    Release getReleaseById(1: string id, 2: User user);
+    Release getReleaseById(1: string id, 2: User user) throws (1: SW360Exception exp);
+
+     /**
+      * get accessible release from database filled with vendor and permissions for user
+      **/
+    Release getAccessibleReleaseById(1: string id, 2: User user) throws (1: SW360Exception exp);
 
      /**
        * get release from database filled with vendor and permissions for user
@@ -452,14 +570,30 @@ service ComponentService {
     Release getReleaseByIdForEdit(1: string id, 2: User user);
 
     /**
+       * get accessible release from database filled with vendor and permissions for user
+       * with moderation request of user applied if such request exists
+       **/
+    Release getAccessibleReleaseByIdForEdit(1: string id, 2: User user) throws (1: SW360Exception exp);
+
+    /**
       * get short summary of all releases specified by ids
       **/
     list<Release> getReleasesByIdsForExport(1: set<string> ids);
 
     /**
+      * get short summary with accessibility of all releases specified by ids
+      **/
+    list<Release> getReleasesWithAccessibilityByIdsForExport(1: set<string> ids, 2: User user);
+
+    /**
       * get short summary of all releases specified by ids, user is not used
       **/
     list<Release> getReleasesById(1: set<string> ids, 2: User user);
+
+    /**
+      * get short summary of all accessible releases specified by ids, user is not used
+      **/
+    list<Release> getAccessibleReleasesById(1: set<string> ids, 2: User user);
 
     /**
       * get summary of all releases specified by ids, user is not used
@@ -482,13 +616,23 @@ service ComponentService {
     list<Release> getReleasesFromVendorIds(1: set<string> ids);
 
     /**
+      * get short summary of accessible releases with vendor specified by ids
+      **/
+    list<Release> getAccessibleReleasesFromVendorIds(1: set<string> ids, 2: User user);
+
+    /**
+      * get full release documents with the specifed vendor id
+      */
+    set<Release> getReleasesByVendorId(1: string vendorId);
+
+    /**
      * update release in database if user has permissions
      * otherwise create moderation request
      **/
     RequestStatus updateRelease(1: Release release, 2: User user);
 
     /**
-     * update release called by fossology service
+     * update release called only by fossology service - is allowed to manipulate external requests.
      * update release in database if user has permissions
      * otherwise create moderation request
      **/
@@ -498,6 +642,19 @@ service ComponentService {
      * update the bulk of releases in database if user is admin
      **/
     RequestSummary updateReleases(1: set<Release> releases, 2: User user);
+
+     /**
+     * merge release identified by releaseSourceId into release identified by releaseTargetId.
+     * the releaseSelection shows which data has to be set on the target. the source will be deleted afterwards.
+     * if user does not have permissions, RequestStatus.ACCESS_DENIED is returned
+     * if any of the releases has an active moderation request, it's a noop and RequestStatus.IN_USE is returned
+     **/
+    RequestStatus mergeReleases(1: string releaseTargetId, 2: string releaseSourceId, 3: Release releaseSelection, 4: User user);
+
+    /**
+     * Update the set of releases. Do only use for updating simple fields.
+     */ 
+    RequestSummary updateReleasesDirectly(1: set<Release> releases, 2: User user);
 
     /**
      * delete release from database if user has permissions
@@ -522,9 +679,29 @@ service ComponentService {
     set <Component> getUsingComponentsForRelease(1: string releaseId );
 
     /**
+     * get components with accessibility belonging to linked releases of the release specified by releaseId
+     **/
+    set <Component> getUsingComponentsWithAccessibilityForRelease(1: string releaseId, 2: User user);
+
+    /**
      * get components belonging to linked releases of the releases specified by releaseId
      **/
     set <Component> getUsingComponentsForComponent(1: set <string> releaseId );
+
+    /**
+     * get components with accessibility belonging to linked releases of the releases specified by releaseId
+     **/
+    set <Component> getUsingComponentsWithAccessibilityForComponent(1: set <string> releaseId, 2: User user);
+    
+    /**
+     * get components using the given vendor id
+     */
+    set <Component> getComponentsByDefaultVendorId(1: string vendorId);
+
+    /**
+     * Recomputes the fields of a component that are aggregated by its releases.
+     */
+    Component recomputeReleaseDependentFields(1: string componentId);
 
     /**
      * check if release is used by other releases, components or projects
@@ -570,7 +747,7 @@ service ComponentService {
     /**
      * get export summary for components whose name is matching parameter name
      **/
-    list<Component> searchComponentForExport(1: string name);
+    list<Component> searchComponentForExport(1: string name, 2: bool caseSensitive);
 
     /**
      *  get component with fossologyId equal to uploadId, filled with releases and main licenses,
@@ -589,9 +766,19 @@ service ComponentService {
     list<ReleaseLink> getLinkedReleases(1: map<string, ProjectReleaseRelationship> relations);
 
     /**
+     *  make releaseLinks with accessibility from linked releases of a project in order to display project
+     **/
+    list<ReleaseLink> getLinkedReleasesWithAccessibility(1: map<string, ProjectReleaseRelationship> relations, 2: User user);
+
+    /**
      *  make releaseLinks from linked releases of a release in order to display in release detail view
      **/
     list<ReleaseLink> getLinkedReleaseRelations(1: map<string, ReleaseRelationship> relations);
+
+    /**
+     *  make releaseLinks with accessibility from linked releases of a release in order to display in release detail view
+     **/
+    list<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(1: map<string, ReleaseRelationship> relations, 2: User user);
 
     /**
      * get all attachmentContentIds of attachments of projects, components and releases
@@ -616,4 +803,44 @@ service ComponentService {
      * return map of name to ids
      **/
     map <string, list<string>> getDuplicateReleaseSources();
+
+   /**
+     * get a set of components based on the external id external ids can have multiple values to one key
+     */
+    set<Component> searchComponentsByExternalIds(1: map<string, set<string>> externalIds);
+
+   /**
+     * get a set of releases based on the external id external ids can have multiple values to one key
+     */
+    set<Release> searchReleasesByExternalIds(1: map<string, set<string>> externalIds);
+
+    /**
+     * Gets releases referencing the given release id
+     */ 
+    list<Release> getReferencingReleases(1: string releaseId);
+
+    /**
+     * get the cyclic hierarchy of linkedReleases
+     */
+    string getCyclicLinkedReleasePath(1: Release release, 2: User user);
+
+    /**
+     * parse a bom file and write the information to SW360
+     **/
+    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
+
+    /**
+     * split data like releases and attachments from source component to target component.
+     **/
+    RequestStatus splitComponent(1: Component srcComponent,  2: Component targetComponent, 3: User user);
+
+    /**
+     * Gets all releases with complete details
+     */
+    list<Release> getAllReleasesForUser(1: User user);
+
+    /**
+    * Send email to the user once spreadsheet export completed
+    */
+    void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
 }

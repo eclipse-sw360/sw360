@@ -1,29 +1,36 @@
 /*
- * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2019. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 include "users.thrift"
 include "attachments.thrift"
 include "vendors.thrift"
 include "components.thrift"
 include "sw360.thrift"
+include "licenses.thrift"
 
 namespace java org.eclipse.sw360.datahandler.thrift.projects
 namespace php sw360.thrift.projects
 
 typedef sw360.RequestStatus RequestStatus
+typedef sw360.RequestSummary RequestSummary
 typedef sw360.DocumentState DocumentState
 typedef sw360.Visibility Visibility
 typedef sw360.ReleaseRelationship ReleaseRelationship
 typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
+typedef sw360.ObligationStatus ObligationStatus
+typedef sw360.SW360Exception SW360Exception
+typedef sw360.ClearingRequestState ClearingState
+typedef sw360.ClearingRequestPriority ClearingPriority
+typedef sw360.Comment Comment
+typedef sw360.PaginationData PaginationData
 typedef components.Release Release
 typedef components.ReleaseClearingStateSummary ReleaseClearingStateSummary
 typedef users.User User
@@ -32,6 +39,10 @@ typedef attachments.Attachment Attachment
 typedef components.ReleaseLink ReleaseLink
 typedef components.ReleaseClearingStatusData ReleaseClearingStatusData
 typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
+typedef licenses.Obligation Obligation
+typedef licenses.ObligationType ObligationType
+typedef licenses.ObligationLevel ObligationLevel
+typedef vendors.Vendor Vendor
 
 const string CLEARING_TEAM_UNKNOWN = "Unknown"
 
@@ -62,6 +73,16 @@ enum ProjectClearingState {
     CLOSED = 2,
 }
 
+struct ProjectProjectRelationship {
+    1: required ProjectRelationship projectRelationship,
+    2: optional bool enableSvm = true;
+}
+
+struct ProjectData {
+    1: required i32 totalNumberOfProjects,
+    2: required list<Project> first250Projects,
+    3: optional list<string> projectIdsOfRemainingProject
+}
 struct Project {
 
     // General information
@@ -71,9 +92,11 @@ struct Project {
     4: required string name,
     5: optional string description,
     6: optional string version,
+    7: optional string domain,
 
     // information from external data sources
     9: optional map<string, string> externalIds,
+    300: optional map<string, string> additionalData,
 
     // Additional informations
     10: optional set<Attachment> attachments,
@@ -100,7 +123,7 @@ struct Project {
     133: optional string ownerCountry,
 
     // Linked objects
-    30: optional map<string, ProjectRelationship> linkedProjects,
+    30: optional map<string, ProjectProjectRelationship> linkedProjects,
     31: optional map<string, ProjectReleaseRelationship> releaseIdToUsage,
 
     // Admin data
@@ -113,19 +136,30 @@ struct Project {
     46: optional bool enableSvm, // flag for enabling Security Vulnerability Monitoring
     47: optional string licenseInfoHeaderText;
     48: optional bool enableVulnerabilitiesDisplay, // flag for enabling displaying vulnerabilities in project view
-
-    // Urls for the project
-    50: optional string homepage,
-    52: optional string wiki,
+    134: optional string obligationsText,
+    135: optional string clearingSummary,
+    136: optional string specialRisksOSS,
+    137: optional string generalRisks3rdParty,
+    138: optional string specialRisks3rdParty,
+    139: optional string deliveryChannels,
+    140: optional string remarksAdditionalRequirements,
 
     // Information for ModerationRequests
     70: optional DocumentState documentState,
+    80: optional string clearingRequestId,
 
     // Optional fields for summaries!
 //    100: optional set<string> releaseIds, //deleted
     101: optional ReleaseClearingStateSummary releaseClearingStateSummary,
 
+    // linked release obligations
+    102: optional string linkedObligationId,
     200: optional map<RequestedAction, bool> permissions,
+
+    // Urls for the project
+    201: optional map<string, string> externalUrls,
+    202: optional Vendor vendor,
+    203: optional string vendorId,
 }
 
 struct ProjectLink {
@@ -142,6 +176,7 @@ struct ProjectLink {
     10: optional list<ReleaseLink> linkedReleases,
     11: optional list<ProjectLink> subprojects,
     12: optional i32 treeLevel, //zero-based level in the ProjectLink tree, i.e. root has level 0
+    14: optional bool enableSvm = true,
 }
 
 struct ProjectWithReleaseRelationTuple {
@@ -149,13 +184,73 @@ struct ProjectWithReleaseRelationTuple {
     2: required ProjectReleaseRelationship relation,
 }
 
+struct ObligationList {
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "obligationList",
+    4: required string projectId,
+    5: optional map<string, ObligationStatusInfo> linkedObligationStatus
+}
+
+struct ObligationStatusInfo {
+    1: optional string text, // need not be saved in database
+    2: optional string action,
+    3: optional ObligationStatus status,
+    4: optional string comment,
+    5: optional string modifiedBy,
+    6: optional string modifiedOn,
+    7: optional set<Release> releases, // used to display in UI, no need to save this in database
+    8: optional set<string> licenseIds,
+    9: optional map<string, string> releaseIdToAcceptedCLI,
+    10: optional string id,
+    11: optional ObligationLevel obligationLevel,
+    12: optional ObligationType obligationType,
+}
+
+struct UsedReleaseRelations {
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "usedReleaseRelation",
+    4: required string projectId,
+    5: optional set<ReleaseRelationship> usedReleaseRelations = [],
+    6: optional set<ProjectRelationship> usedProjectRelations,
+}
+
+struct ClearingRequest {
+    // Basic information
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "clearingRequest",
+
+    // Clearing Request
+    5: required string requestedClearingDate, // date YYYY-MM-dd
+    6: optional string projectId,
+    7: required ClearingState clearingState,
+    8: required string requestingUser,
+    9: optional string projectBU,
+    10: optional string requestingUserComment,
+    11: required string clearingTeam,
+    13: optional string agreedClearingDate,
+    14: required i64 timestamp,
+    15: optional i64 timestampOfDecision,
+    16: optional list<Comment> comments,
+    17: optional i64 modifiedOn,
+    18: optional list<i64> reOpenOn,
+    19: optional ClearingPriority priority
+}
+
 service ProjectService {
 
     // Summary getters
     /**
-     * get projects for user by emailadress
+     * get projects for user according to roles
      */
-    list<Project> getMyProjects(1: string user);
+    list<Project> getMyProjects(1: User user, 2:  map<string, bool> userRoles);
+
+    /**
+     * get all projects as project summaries which are visible to user with pagination
+     */
+    map<PaginationData, list<Project>> getAccessibleProjectsSummaryWithPagination(1: User user, 2: PaginationData pageData);
 
     /**
      * get all projects as project summaries which are visible to user
@@ -186,6 +281,21 @@ service ProjectService {
     list<Project> searchByName(1: string name, 2: User user);
 
     /**
+     * project data which are visible to the `user` and match the `group`
+     */
+    ProjectData searchByGroup(1: string group, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * project data which are visible to the `user` and match the `tag`
+     */
+    ProjectData searchByTag(1: string tag, 2: User user) throws (1: SW360Exception exp);
+ 
+    /**
+     * project data which are visible to the `user` and match the `type`
+     */
+    ProjectData searchByType(1: string type, 2: User user) throws (1: SW360Exception exp);
+
+    /**
      * list of short project summaries which are visible to the `user` and have `id` in releaseIdToUsage
      */
     set<Project> searchByReleaseId(1: string id, 2: User user);
@@ -211,7 +321,7 @@ service ProjectService {
      * get a project by id, if it is visible for the user
      * (part of project CRUD support)
      */
-    Project getProjectById(1: string id, 2: User user);
+    Project getProjectById(1: string id, 2: User user) throws (1: SW360Exception exp);
 
     /**
      * get multiple projects by id, if they are visible to the user
@@ -222,7 +332,7 @@ service ProjectService {
     /**
      * get project by id, with moderation requests of user applied
      */
-    Project getProjectByIdForEdit(1: string id, 2: User user);
+    Project getProjectByIdForEdit(1: string id, 2: User user) throws (1: SW360Exception exp);
 
     /**
      * try to update a project as a user, if user has no permission, a moderation request is created
@@ -276,7 +386,7 @@ service ProjectService {
      * IMPORTANT:
      * this method is very inefficient as it loads whole DB repositories into memory; its use is dicouraged
      */
-    list<ProjectLink> getLinkedProjects(1:  map<string, ProjectRelationship> relations, 2: User user);
+    list<ProjectLink> getLinkedProjects(1:  map<string, ProjectProjectRelationship> relations, 2: User user);
 
     /**
      * get a list of duplicated projects matched by `.printName()`
@@ -299,7 +409,12 @@ service ProjectService {
     /**
      * get clearing status data for all releases linked by the given project and its subprojects
      */
-    list<ReleaseClearingStatusData> getReleaseClearingStatuses(1: string projectId, 2: User user);
+    list<ReleaseClearingStatusData> getReleaseClearingStatuses(1: string projectId, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * get clearing status data with accessibility for all releases linked by the given project and its subprojects
+     */
+    list<ReleaseClearingStatusData> getReleaseClearingStatusesWithAccessibility(1: string projectId, 2: User user) throws (1: SW360Exception exp);
 
     /**
      * get the count value of projects which have `id` in releaseIdToUsage
@@ -316,4 +431,79 @@ service ProjectService {
      * external ids can have multiple values to one key
      */
     set<Project> searchByExternalIds(1: map<string, set<string>> externalIds, 2: User user);
+
+    /**
+     * get the cyclic hierarchy of linkedProjects
+     */
+    string getCyclicLinkedProjectPath(1: Project project, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * get linked obligation of a project
+     */
+    ObligationList getLinkedObligations(1: string obligationId, 2: User user);
+
+    /**
+     * add linked obligations to a project
+     */
+    RequestStatus addLinkedObligations(1: ObligationList obligation, 2: User user);
+
+    /**
+     * update linked obligations of a project
+     */
+    RequestStatus updateLinkedObligations(1: ObligationList obligation, 2: User user);
+
+    /**
+     * Deletes an UsedReleaseRelations object. The given usage object must exist in the database.
+     */
+    void deleteReleaseRelationsUsage(1: UsedReleaseRelations usedReleaseRelations);
+
+    /**
+     * Add an used release relations for a Project.
+     */
+    void addReleaseRelationsUsage(1: UsedReleaseRelations usedReleaseRelations);
+
+    /**
+     * Update an used release relations for a Project.
+     */
+    void updateReleaseRelationsUsage(1: UsedReleaseRelations usedReleaseRelations);
+
+    /**
+     * Get used release relations by project id
+     */
+    list<UsedReleaseRelations> getUsedReleaseRelationsByProjectId(1: string projectId);
+
+    /**
+     * parse a bom file and write the information to SW360
+     **/
+    RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
+
+    /**
+     * create clearing request for project
+     */
+    AddDocumentRequestSummary createClearingRequest(1: ClearingRequest clearingRequest, 2: User user, 3: string projectUrl);
+
+    /**
+     * get clearing state information for list view
+     */
+    list<map<string,string>> getClearingStateInformationForListView(1:string projectId, 2: User user) throws (1: SW360Exception exp);
+    
+    /**
+     * get accessible clearing state information for list view
+     */
+    list<map<string,string>> getAccessibleClearingStateInformationForListView(1:string projectId, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+    * filter groups from the projects
+    */
+    set<string> getGroups();
+
+    /**
+    * get accessible projects count
+    */
+    i32 getMyAccessibleProjectCounts(1: User user);
+
+    /**
+    * Send email to the user once spreadsheet export completed
+    */
+    void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
 }

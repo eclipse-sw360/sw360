@@ -3,36 +3,40 @@
  * Copyright Siemens AG, 2016-2017.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.licenseinfo.parsers;
 
-import com.google.common.collect.ImmutableList;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.spdx.rdfparser.InvalidSPDXAnalysisException;
-import org.spdx.rdfparser.SPDXDocumentFactory;
-import org.spdx.rdfparser.model.*;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TException;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import static org.eclipse.sw360.licenseinfo.parsers.SPDXParserTools.getLicenseInfoFromSpdx;
 
@@ -41,10 +45,9 @@ import static org.eclipse.sw360.licenseinfo.parsers.SPDXParserTools.getLicenseIn
  * @author: maximilian.huber@tngtech.com
  */
 public class SPDXParser extends LicenseInfoParser {
-    protected static final String FILETYPE_SPDX_INTERNAL = "RDF/XML";
     protected static final String FILETYPE_SPDX_EXTENSION = ".rdf";
 
-    private static final Logger log = Logger.getLogger(SPDXParser.class);
+    private static final Logger log = LogManager.getLogger(SPDXParser.class);
 
     public SPDXParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
         super(attachmentConnector, attachmentContentProvider);
@@ -56,20 +59,30 @@ public class SPDXParser extends LicenseInfoParser {
     }
 
     @Override
-    public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context) throws TException {
-        return Collections.singletonList(getLicenseInfo(attachment, user, context));
+    public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context)
+            throws TException {
+        return Collections.singletonList(getLicenseInfo(attachment, true, false, user, context));
     }
 
-    public <T> LicenseInfoParsingResult getLicenseInfo(Attachment attachment, User user, T context) throws TException {
+    @Override
+    public <T> List<LicenseInfoParsingResult> getLicenseInfosIncludeConcludedLicense(Attachment attachment,
+            boolean includeConcludedLicense, User user, T context) throws TException {
+        return Collections.singletonList(getLicenseInfo(attachment, includeConcludedLicense, false, user, context));
+    }
+
+    public <T> LicenseInfoParsingResult getLicenseInfo(Attachment attachment, boolean includeConcludedLicense, boolean includeFileInformation, User user,
+            T context) throws TException {
         AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
 
-        final Optional<SpdxDocument> spdxDocument = openAsSpdx(attachmentContent, user, context);
+        final Optional<Document> spdxDocument = openAsSpdx(attachmentContent, user, context);
         if(! spdxDocument.isPresent()){
             return new LicenseInfoParsingResult()
                     .setStatus(LicenseInfoRequestStatus.FAILURE);
         }
-
-        return getLicenseInfoFromSpdx(attachmentContent, spdxDocument.get());
+        if (attachment.getAttachmentType().equals(AttachmentType.INITIAL_SCAN_REPORT)) {
+            return getLicenseInfoFromSpdx(attachmentContent, includeConcludedLicense, true, spdxDocument.get());
+        }
+        return getLicenseInfoFromSpdx(attachmentContent, includeConcludedLicense, false, spdxDocument.get());
     }
 
     protected String getUriOfAttachment(AttachmentContent attachmentContent) throws URISyntaxException {
@@ -78,23 +91,27 @@ public class SPDXParser extends LicenseInfoParser {
         return new URI("file", filePath, null).toString();
     }
 
-    protected <T> Optional<SpdxDocument> openAsSpdx(AttachmentContent attachmentContent, User user, T context) throws SW360Exception {
+    protected <T> Optional<Document> openAsSpdx(AttachmentContent attachmentContent, User user, T context) throws SW360Exception {
         try (InputStream attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, context)) {
-            return Optional.ofNullable(SPDXDocumentFactory.createSpdxDocument(attachmentStream,
-                    getUriOfAttachment(attachmentContent),
-                    FILETYPE_SPDX_INTERNAL));
-        } catch (InvalidSPDXAnalysisException e) {
-            String msg = "Unable to parse SPDX for attachment=" + attachmentContent.getFilename() + " with id=" + attachmentContent.getId()+
-                    "\nThe message was: " + e.getMessage();
-            log.info(msg);
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            dbFactory.setNamespaceAware(true);
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(attachmentStream);
+            doc.getDocumentElement().normalize();
+            return Optional.ofNullable(doc);
+        } catch (ParserConfigurationException e) {
+            String msg = "Unable to parse SPDX for attachment=" + attachmentContent.getFilename() + " with id="
+                    + attachmentContent.getId() + "\nThe message was: " + e.getMessage();
+            log.info(msg, e);
             return Optional.empty();
-        } catch (URISyntaxException e) {
-            String msg = "Invalid URI syntax for attachment=" + attachmentContent.getFilename() + " with id=" + attachmentContent.getId();
+        } catch (IOException | TException e) {
+            String msg = "failed to read attachment=" + attachmentContent.getFilename() + " with id="
+                    + attachmentContent.getId();
             log.error(msg, e);
             throw new SW360Exception(msg);
-        } catch (IOException | TException e) {
-            String msg = "failed to read attachment=" + attachmentContent.getFilename() + " with id=" + attachmentContent.getId();
-            log.error(msg, e);
+        } catch (SAXException e) {
+            String msg = "failed to parse attachment=" + attachmentContent.getFilename() + " with id="
+                    + attachmentContent.getId();
             throw new SW360Exception(msg);
         }
     }

@@ -1,0 +1,93 @@
+<%--
+  ~ Copyright (c) Bosch Software Innovations GmbH 2016.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  --%>
+
+<table class="table label-value-table">
+    <thead>
+        <tr>
+            <th colspan="2"><liferay-ui:message key="vulnerability.summary" /></th>
+        </tr>
+    </thead>
+    <tr>
+        <td><liferay-ui:message key="title" />:</td>
+        <td><sw360:out value="${vulnerability.title}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="description" />:</td>
+        <td><sw360:out value="${vulnerability.description}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="external.id" />:</td>
+        <td><sw360:out value="${vulnerability.externalId}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="publish.date" />:</td>
+        <td><sw360:out value="${vulnerability.publishDate}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="last.update" />:</td>
+        <td><sw360:out value="${vulnerability.lastExternalUpdate}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="priority" />:</td>
+        <td><sw360:out value="${vulnerability.priority}"/></td>
+    </tr>
+
+    <tr>
+        <td><liferay-ui:message key="priority.text" />:</td>
+        <td><sw360:out value="${vulnerability.priorityText}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="action" />:</td>
+        <td><sw360:out value="${vulnerability.action}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="impact" />:</td>
+        <td><sw360:DisplayMap value ="${vulnerability.impact}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="legal.notice" />:</td>
+        <td><sw360:out value="${vulnerability.legalNotice}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="assigned.external.component.ids" />:</td>
+        <td><sw360:DisplayCollection value="${vulnerability.assignedExtComponentIds}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="cve.references" />:</td>
+        <td><sw360:DisplayCVEReferences value="${vulnerability.cveReferences}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="vendor.advisories" />:</td>
+        <td><sw360:DisplayVendorAdvisories value="${vulnerability.vendorAdvisories}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="vulnerability.scoring.cvss" />:</td>
+        <td>
+            <core_rt:if test="${vulnerability.isSetCvss}">
+                <sw360:out value="${vulnerability.cvss}"/>&nbsp;(as&nbsp;of:&nbsp;<sw360:out value="${vulnerability.cvssTime}" default="--"/>)
+            </core_rt:if>
+        </td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="access" />:</td>
+        <td><sw360:DisplayMap value ="${vulnerability.access}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="common.weakness.enumeration" />:</td>
+        <td><sw360:DisplayLink target="https://cve.circl.lu/cwe/${vulnerability.cwe.substring(4)}" text ="${vulnerability.cwe}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="vulnerable.configurations" />:</td>
+        <td><sw360:DisplayMap value ="${vulnerability.vulnerableConfiguration}"/></td>
+    </tr>
+</table>
+
+<core_rt:set var="documentName"><sw360:out value="${vulnerability.title}"/></core_rt:set>
+<%@include file="/html/utils/includes/usingReleasesTable.jspf" %>

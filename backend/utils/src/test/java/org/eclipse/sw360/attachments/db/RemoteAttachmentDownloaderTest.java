@@ -1,16 +1,17 @@
 /*
  * Copyright Siemens AG, 2015. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.attachments.db;
 
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
@@ -54,8 +55,8 @@ import static org.junit.Assume.assumeThat;
  */
 public class RemoteAttachmentDownloaderTest {
 
-    private static final String url = DatabaseSettings.COUCH_DB_URL;
-    private static final String dbName = DatabaseSettings.COUCH_DB_ATTACHMENTS;
+    private static final String url = DatabaseSettingsTest.COUCH_DB_URL;
+    private static final String dbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
 
     private AttachmentConnector attachmentConnector;
     private AttachmentContentRepository repository;
@@ -68,13 +69,13 @@ public class RemoteAttachmentDownloaderTest {
     @BeforeClass
     public static void setUpClass() throws Exception {
         assertTestString(dbName);
-        deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @Before
     public void setUp() throws Exception {
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
-        attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredHttpClient(), dbName, downloadTimeout);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        attachmentConnector = new AttachmentConnector(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout);
         repository = new AttachmentContentRepository(databaseConnector);
 
         garbage = new ArrayList<>();
@@ -91,7 +92,7 @@ public class RemoteAttachmentDownloaderTest {
     public void testIntegration() throws Exception {
         AttachmentContent attachmentContent = saveRemoteAttachment(url);
 
-        assertThat(retrieveRemoteAttachments(DatabaseSettings.getConfiguredHttpClient(), dbName, downloadTimeout), is(1));
+        assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout), is(1));
 
         assertThat(attachmentConnector.getAttachmentStream(attachmentContent, dummyUser,
                         new Project()
@@ -100,7 +101,7 @@ public class RemoteAttachmentDownloaderTest {
                                 .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentContent.getId())))),
                 hasLength(greaterThan(0l)));
 
-        assertThat(retrieveRemoteAttachments(DatabaseSettings.getConfiguredHttpClient(), dbName, downloadTimeout), is(0));
+        assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout), is(0));
     }
 
     @Test
@@ -116,7 +117,7 @@ public class RemoteAttachmentDownloaderTest {
             Future<Integer> future = executor.submit(new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
-                    return retrieveRemoteAttachments(DatabaseSettings.getConfiguredHttpClient(), dbName, downloadTimeout);
+                    return retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout);
                 }
             });
 
@@ -141,7 +142,7 @@ public class RemoteAttachmentDownloaderTest {
         AttachmentContent attachmentGood = saveRemoteAttachment(url);
 
         assertThat(repository.getOnlyRemoteAttachments(), hasSize(2));
-        assertThat(retrieveRemoteAttachments(DatabaseSettings.getConfiguredHttpClient(), dbName, downloadTimeout), is(1));
+        assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout), is(1));
         assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
 
         assertThat(attachmentConnector.getAttachmentStream(attachmentGood, dummyUser,
@@ -152,7 +153,7 @@ public class RemoteAttachmentDownloaderTest {
                 hasLength(greaterThan(0l)));
 
         assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
-        assertThat(retrieveRemoteAttachments(DatabaseSettings.getConfiguredHttpClient(), dbName, downloadTimeout), is(0));
+        assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout), is(0));
         assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
 
         try {

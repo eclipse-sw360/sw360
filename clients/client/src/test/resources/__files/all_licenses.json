@@ -1,0 +1,60 @@
+{
+  "_embedded": {
+    "sw360:licenses": [
+      {
+        "checked": true,
+        "fullName": "BSD Zero Clause License",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/licenses/0BSD"
+          }
+        }
+      },
+      {
+        "checked": true,
+        "fullName": "Attribution Assurance License",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/licenses/AAL"
+          }
+        }
+      },
+      {
+        "checked": true,
+        "fullName": "Amazon Digital Services License",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/licenses/ADSL"
+          }
+        }
+      },
+      {
+        "checked": true,
+        "fullName": "Academic Free License v1.1",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/licenses/AFL-1.1"
+          }
+        }
+      },
+      {
+        "checked": false,
+        "fullName": "XPP License",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/licenses/xpp"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "curies": [
+      {
+        "href": "https://sw360.test.com/resource/docs/{rel}.html",
+        "name": "sw360",
+        "templated": true
+      }
+    ]
+  }
+}

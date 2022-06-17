@@ -1,17 +1,14 @@
 /*
  * Copyright Siemens AG, 2014-2015. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.components.summary;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
@@ -19,7 +16,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
 
@@ -71,6 +69,7 @@ public class ComponentSummary extends DocumentSummary<Component> {
         copyField(document, copy, Component._Fields.NAME);
         copyField(document, copy, Component._Fields.VENDOR_NAMES);
         copyField(document, copy, Component._Fields.COMPONENT_TYPE);
+        copyField(document, copy, Component._Fields.CATEGORIES);
 
         if (type == SummaryType.SUMMARY) {
             for (Component._Fields field : Component.metaDataMap.keySet()) {

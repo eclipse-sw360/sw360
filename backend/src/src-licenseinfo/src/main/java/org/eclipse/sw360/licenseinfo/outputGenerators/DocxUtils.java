@@ -3,18 +3,19 @@
  * With modifications by Siemens AG, 2018.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.poi.xwpf.usermodel.*;
 import org.apache.xmlbeans.XmlException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
 
 import java.math.BigInteger;
@@ -28,6 +29,7 @@ public class DocxUtils {
     public static final String ALERT_COLOR = "e95850";
     public static final String FONT_FAMILY = "Calibri";
     public static final String STYLE_HEADING = "Heading2";
+    public static final String STYLE_HEADING_3 = "Heading 3";
     private static final int BUFFER_SIZE = 16;
     private static final int ANCHOR_MAX_SIZE = 40;
     private static final String BOOKMARK_PREFIX = "bookmark_";
@@ -65,12 +67,22 @@ public class DocxUtils {
     }
 
     public static void setText(XWPFRun run, String text) {
-        String[] split = text.split("\n");
-        run.setText(split[0]);
-        for (int i = 1; i < split.length; i++) {
-            run.addBreak();
-            run.setText(split[i]);
+        if (CommonUtils.isNullEmptyOrWhitespace(text)) {
+            run.setText("");
+        } else {
+            String[] split = text.split("\n");
+            run.setText(split[0]);
+            for (int i = 1; i < split.length; i++) {
+                run.addBreak();
+                run.setText(split[i]);
+            }
         }
+    }
+
+    public static void addFormattedTextInTableCell(XWPFTableCell cell, String text) {
+        XWPFParagraph cellParagraph = cell.getParagraphs().get(0);
+        XWPFRun run = cellParagraph.createRun();
+        addFormattedText(run, text, "Arial", 9, false, null);
     }
 
     public static void addFormattedText(XWPFRun run, String text, String fontFamily, int fontSize, boolean bold, String rrggbbColor) {
@@ -92,9 +104,19 @@ public class DocxUtils {
     }
 
     public static void replaceText(XWPFDocument document, String placeHolder, String replaceText) {
-        for (XWPFHeader header : document.getHeaderList())
+        for (XWPFHeader header : document.getHeaderList()) {
             replaceAllBodyElements(header.getBodyElements(), placeHolder, replaceText);
+        }
+
         replaceAllBodyElements(document.getBodyElements(), placeHolder, replaceText);
+
+        for (XWPFTable table : document.getTables()) {
+            for(XWPFTableRow row : table.getRows()) {
+                for(XWPFTableCell cell : row.getTableCells()) {
+                    replaceAllBodyElements(cell.getBodyElements(), placeHolder, replaceText);
+                }
+            }
+        }
     }
 
     private static void replaceAllBodyElements(List<IBodyElement> bodyElements, String placeHolder, String replaceText) {
@@ -187,5 +209,14 @@ public class DocxUtils {
         byteBuffer.putLong(uuid.getMostSignificantBits());
         byteBuffer.putLong(uuid.getLeastSignificantBits());
         return new BigInteger(byteBuffer.array()).abs();
+    }
+
+    public static void removeParagraph(XWPFDocument document, String paragraphText) {
+        XWPFParagraph paragraphToDelete = document.getParagraphs().stream()
+                .filter(p -> StringUtils.equalsIgnoreCase(paragraphText, p.getParagraphText()))
+                .findFirst().orElse(null);
+        if (paragraphToDelete != null) {
+            document.removeBodyElement(document.getPosOfParagraph(paragraphToDelete));
+        }
     }
 }

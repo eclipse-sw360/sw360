@@ -1,0 +1,29 @@
+/*
+ * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+
+.stateBox {
+	color: $statebox-bg;
+
+	&.clearingStateOpen {
+		background-color: rgba($red, 0.7);
+	}
+
+	&.clearingStateInProgress {
+		background-color: rgba($yellow, 0.7);
+	}
+
+	&.projectStateActive, &.clearingStateClosed {
+		background-color: rgba($green, 0.7);
+	}
+
+	&.projectStateInactive, &.clearingStateUnknown {
+		background-color: $gray-300;
+	}
+}

@@ -1,0 +1,66 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2019. Part of the SW360 Portal Project.
+  ~ With contributions by Bosch Software Innovations GmbH, 2016.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+<core_rt:if test="${usingProjects != null && allUsingProjectsCount > 0}">
+    <div class="alert alert-info mt-default">
+        ${documentName} is used by a total of ${allUsingProjectsCount}
+                        (${usingProjects.size()} visible / ${allUsingProjectsCount - usingProjects.size()} restricted) projects.
+    </div>
+
+    <table id="usingProjectsTable" class="table table-bordered mt-1">
+        <colgroup>
+            <col style="width: 50%;" />
+            <col style="width: 25%;" />
+            <col style="width: 25%;" />
+        </colgroup>
+        <thead>
+            <tr>
+                <th><liferay-ui:message key="project.name" /></th>
+                <th><liferay-ui:message key="group" /></th>
+                <th><liferay-ui:message key="responsible" /></th>
+            </tr>
+        </thead>
+    </table>
+
+    <%--for javascript library loading --%>
+    <%@ include file="/html/utils/includes/requirejs.jspf" %>
+    <script>
+        require(['bridges/datatables'], function (datatables) {
+            var result = [];
+
+            <core_rt:forEach items="${usingProjects}" var="project">
+                result.push([
+                    "<sw360:DisplayProjectLink project="${project}"/>",
+                    '<sw360:out value="${project.businessUnit}"/>',
+                    '<sw360:DisplayUserEmail email="${project.projectResponsible}" bare="true"/>'
+                ]);
+            </core_rt:forEach>
+
+            datatables.create('#usingProjectsTable', {
+                data: result,
+                lengthChange: false,
+                language: {
+                    paginate: {
+                        previous: "<liferay-ui:message key="previous" />",
+                        next: "<liferay-ui:message key="next" />"
+                    },
+                    info: "<liferay-ui:message key="showing" />",
+                    processing: "<liferay-ui:message key="processing" />",
+                    loadingRecords: "<liferay-ui:message key="loading" />",
+                    infoEmpty: "<liferay-ui:message key="infoempty" />",
+                    infoFiltered: "<liferay-ui:message key="filtered.from.max.total.entries" />",
+                    zeroRecords: "<liferay-ui:message key="no.matching.records.found" />",
+                    search: "<liferay-ui:message key="search" />"
+                }
+            }, undefined, undefined, true);
+        });
+    </script>
+</core_rt:if>

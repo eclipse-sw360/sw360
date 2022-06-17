@@ -2,28 +2,44 @@
  * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
  * With modifications by Bosch Software Innovations GmbH, 2016.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.licenses.db;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
+import com.cloudant.client.api.model.DesignDocument.MapReduce;
 import org.ektorp.support.View;
+import org.ektorp.support.Views;
+
+import java.util.List;
 
 /**
  * @author johannes.najjar@tngtech.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'licenseType') emit(null, doc._id) }")
-public class LicenseTypeRepository extends DatabaseRepository<LicenseType> {
-    public LicenseTypeRepository(DatabaseConnector db) {
-        super(LicenseType.class, db);
 
-        initStandardDesignDocument();
+public class LicenseTypeRepository extends DatabaseRepositoryCloudantClient<LicenseType> {
+    private static final String ALL = "function(doc) { if (doc.type == 'licenseType') emit(null, doc._id) }";
+    private static final String BYLICENSETYPE = "function(doc) { if(doc.type == 'licenseType') { emit(doc.licenseType, doc) } }";
+
+    public LicenseTypeRepository(DatabaseConnectorCloudant db) {
+        super(db, LicenseType.class);
+        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        views.put("all", createMapReduce(ALL, null));
+        views.put("bylicensetype", createMapReduce(BYLICENSETYPE, null));
+        initStandardDesignDocument(views, db);
     }
+
+    public List<LicenseType> searchByLicenseType(String name) {
+        return queryByPrefix("bylicensetype", name);
+    }
+
 }

@@ -1,0 +1,29 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+<table class="table label-value-table" id="ReleaseDetailVendor">
+    <thead>
+        <tr>
+            <th colspan="2"><liferay-ui:message key="release.vendor" /></th>
+        </tr>
+    </thead>
+    <tr>
+        <td><liferay-ui:message key="full.name" />:</td>
+        <td><sw360:out value="${release.vendor.fullname}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="short.name" />:</td>
+        <td><sw360:out value="${release.vendor.shortname}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="url" />:</td>
+        <td><sw360:out value="${release.vendor.url}"/></td>
+    </tr>
+</table>

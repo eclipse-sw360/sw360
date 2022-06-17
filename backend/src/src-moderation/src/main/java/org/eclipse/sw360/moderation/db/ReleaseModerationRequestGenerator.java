@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.moderation.db;
@@ -25,6 +24,8 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  */
 public class ReleaseModerationRequestGenerator extends ModerationRequestGenerator<Release._Fields, Release> {
 
+    private static final String DUMMY_VALUE = "Dummy_Value";
+
     @Override
     public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, Release updateRelease, Release actualRelease){
         updateDocument = updateRelease;
@@ -33,13 +34,13 @@ public class ReleaseModerationRequestGenerator extends ModerationRequestGenerato
         documentAdditions = new Release();
         documentDeletions = new Release();
         //required fields:
-        documentAdditions.setName(updateRelease.getName());
+        documentAdditions.setName(DUMMY_VALUE);
         documentAdditions.setId(updateRelease.getId());
-        documentAdditions.setVersion(updateRelease.getVersion());
+        documentAdditions.setVersion(DUMMY_VALUE);
         documentAdditions.setComponentId(updateRelease.getComponentId());
-        documentDeletions.setName(actualRelease.getName());
+        documentDeletions.setName(DUMMY_VALUE);
         documentDeletions.setId(actualRelease.getId());
-        documentDeletions.setVersion(actualRelease.getVersion());
+        documentDeletions.setVersion(DUMMY_VALUE);
         documentDeletions.setComponentId(actualRelease.getComponentId());
 
         for (Release._Fields field : Release._Fields.values()) {
@@ -75,6 +76,9 @@ public class ReleaseModerationRequestGenerator extends ModerationRequestGenerato
                         break;
                     case EXTERNAL_IDS:
                         dealWithStringtoStringMap(Release._Fields.EXTERNAL_IDS);
+                        break;
+                    case ADDITIONAL_DATA:
+                        dealWithStringKeyedMap(Release._Fields.ADDITIONAL_DATA);
                         break;
                     default:
                         dealWithBaseTypes(field, Release.metaDataMap.get(field));

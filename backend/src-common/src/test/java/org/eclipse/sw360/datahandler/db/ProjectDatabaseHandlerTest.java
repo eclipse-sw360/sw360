@@ -1,34 +1,29 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.datahandler.db;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.SetMultimap;
+
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectWithReleaseRelationTuple;
+import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -39,7 +34,10 @@ import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
@@ -47,9 +45,9 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ProjectDatabaseHandlerTest {
 
-    private static final String dbName = DatabaseSettings.COUCH_DB_DATABASE;
-    private static final String attachmentDbName = DatabaseSettings.COUCH_DB_ATTACHMENTS;
-    private static final String attachmentsDbName = DatabaseSettings.COUCH_DB_ATTACHMENTS;
+    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
+    private static final String attachmentsDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
+    private static final String changeLogsDbName = DatabaseSettingsTest.COUCH_CHANGELOGS;
 
     private static final User user1 = new User().setEmail("user1").setDepartment("AB CD EF");
     private static final User user2 = new User().setEmail("user2").setDepartment("AB CD FE");
@@ -93,7 +91,7 @@ public class ProjectDatabaseHandlerTest {
                         .put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
                         .put("r2", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
                         .build())
-                .setLinkedProjects(ImmutableMap.<String, ProjectRelationship>builder().put("P5", ProjectRelationship.CONTAINED).build());
+                .setLinkedProjects(ImmutableMap.<String, ProjectProjectRelationship>builder().put("P5", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)).build());
         projects.add(p4);
         projects.add(new Project().setId("P5").setName("Project5").setBusinessUnit("AB CD EF").setCreatedBy("user1"));
 
@@ -106,10 +104,10 @@ public class ProjectDatabaseHandlerTest {
         releases.add(new Release().setId("r6").setComponentId("c1"));
 
         // Create the database
-        TestUtils.createDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
         for (Project project : projects) {
             databaseConnector.add(project);
         }
@@ -120,15 +118,15 @@ public class ProjectDatabaseHandlerTest {
 
         databaseConnector.add(new Component("comp1").setId("c1"));
 
-        componentHandler = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentsDbName);
-        attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentsDbName);
-        handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentDbName, moderator, componentHandler, attachmentDatabaseHandler);
+        componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName);
+        attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
+        handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, moderator, componentHandler, attachmentDatabaseHandler);
     }
 
     @After
     public void tearDown() throws Exception {
         // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
 
@@ -263,10 +261,8 @@ public class ProjectDatabaseHandlerTest {
         assertEquals(false, deleted);
     }
 
-
-    @Ignore("One is no longer able to create duplicate projects in the db")
-    public void testDuplicateProjectIsFound() throws Exception {
-
+    @Ignore("One is no longer able to create duplicate projects via the service, so if you want enable the test, you cannot create the duplicate project via addProject()")
+    public void testGetDuplicateProjects() throws Exception {
         String originalProjectId = "P1";
         final Project tmp = handler.getProjectById(originalProjectId, user1);
         tmp.unsetId();
@@ -277,6 +273,37 @@ public class ProjectDatabaseHandlerTest {
 
         assertThat(duplicateProjects.size(), is(1));
         assertThat(duplicateProjects.get(printName(tmp)), containsInAnyOrder(newProjectId,originalProjectId));
+    }
+
+    public void testAddProjectWithDuplicateFails() throws Exception {
+        // given:
+        String originalProjectId = "P1";
+        final Project tmp = handler.getProjectById(originalProjectId, user1);
+        tmp.unsetId();
+        tmp.unsetRevision();
+
+        // when:
+        AddDocumentRequestSummary addProjectResult = handler.addProject(tmp, user1);
+
+        // then:
+        assertThat(addProjectResult.getRequestStatus(), is(RequestStatus.DUPLICATE));
+        assertThat(addProjectResult.getId(), is(nullValue()));
+    }
+
+    public void testUpdateProjectWithDuplicateFails() throws Exception {
+        // given:
+        String originalProjectId = "P1";
+        String duplicateProjectId = "P2";
+        final Project tmp = handler.getProjectById(originalProjectId, user1);
+        tmp.unsetId();
+        tmp.unsetRevision();
+        tmp.setId(duplicateProjectId);
+
+        // when:
+        RequestStatus updateProjectResult = handler.updateProject(tmp, user1);
+
+        // then:
+        assertThat(updateProjectResult, is(RequestStatus.DUPLICATE));
     }
 
     @Test
@@ -315,7 +342,7 @@ public class ProjectDatabaseHandlerTest {
     @Test
     public void testReleaseIdToProjects() throws Exception {
         Project p1 = handler.getProjectById("P1", user1);
-        p1.setLinkedProjects(ImmutableMap.<String, ProjectRelationship>builder().put("P2", ProjectRelationship.CONTAINED).build());
+        p1.setLinkedProjects(ImmutableMap.<String, ProjectProjectRelationship>builder().put("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)).build());
         handler.updateProject(p1, user1);
         Project p2 = handler.getProjectById("P2", user2);
 
@@ -347,7 +374,6 @@ public class ProjectDatabaseHandlerTest {
     public void testGetLinkedProjectsOfProjectForClonedProject() throws Exception {
         Project p = handler.getProjectById("P4", user1);
         Project clone = p.deepCopy();
-        clone.unsetId();
         clone.unsetRevision();
 
         List<ProjectLink> projectLinks = handler.getLinkedProjects(clone, false, user1);

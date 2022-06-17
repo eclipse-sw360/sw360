@@ -11,7 +11,13 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
+# Maven artifacts
 target/
+.flattened-pom.xml
+jgiven-reports/
+
+# sass cache directory
+.sass-cache/
 
 # Ignore private and public keys
 *id_rsa*
@@ -25,6 +31,10 @@ target/
 .classpath
 .project
 .settings
+.factorypath
+
+#Ignore VSCode files
+.vscode/
 
 #ignore backup files
 *.bak
@@ -34,4 +44,9 @@ target/
 #ignore any log files
 *.log
 
-/backend/src-common/src/main/resources/sw360.properties
+# Ignore docker local files
+deps
+data
+config
+.tmp
+.env

@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.db;
 
@@ -16,6 +15,8 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.http.HttpClient;
+
+import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -65,8 +66,14 @@ public class ProjectSearchHandler {
                     "    if(doc.state !== undefined && doc.state != null && doc.state.length >0) {  "+
                     "      ret.add(doc.state, {\"field\": \"state\"} );" +
                     "    }" +
+                    "    if(doc.clearingState) {  "+
+                    "      ret.add(doc.clearingState, {\"field\": \"clearingState\"} );" +
+                    "    }" +
                     "    if(doc.tag !== undefined && doc.tag != null && doc.tag.length >0) {  "+
                     "      ret.add(doc.tag, {\"field\": \"tag\"} );" +
+                    "    }" +
+                    "    for(var [key, value] in doc.additionalData) {" +
+                    "      ret.add(doc.additionalData[key], {\"field\": \"additionalData\"} );" +
                     "    }" +
                     "    return ret;" +
                     "}");
@@ -74,8 +81,8 @@ public class ProjectSearchHandler {
 
     private final LuceneAwareDatabaseConnector connector;
 
-    public ProjectSearchHandler(Supplier<HttpClient> httpClient, String dbName) throws IOException {
-        connector = new LuceneAwareDatabaseConnector(httpClient, dbName);
+    public ProjectSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cCLient, String dbName) throws IOException {
+        connector = new LuceneAwareDatabaseConnector(httpClient, cCLient, dbName);
         connector.addView(luceneSearchView);
         connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
     }

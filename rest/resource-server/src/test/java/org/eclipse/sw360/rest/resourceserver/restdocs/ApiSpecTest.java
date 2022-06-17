@@ -1,10 +1,11 @@
 /*
  * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+  * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.rest.resourceserver.restdocs;
@@ -13,6 +14,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,18 +22,18 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.springframework.restdocs.headers.HeaderDocumentation.headerWithName;
 import static org.springframework.restdocs.headers.HeaderDocumentation.responseHeaders;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -82,6 +84,11 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    @Ignore
+    // SecurityContextHolder.getContext in test filter chain supports no mocking.
+    // The authentication object is always null in the test class.
+    // As result the test filter automatically authenticates the request
+    // thus the unauthorized case is not testable
     public void should_document_error_unauthorized() throws Exception {
         this.mockMvc.perform(RestDocumentationRequestBuilders.get("/api")
                 .header("Authorization", "Bearer " + "123456789"))
@@ -136,7 +143,7 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_error_internal_error() throws Exception {
-        given(this.projectServiceMock.getProjectForUserById(anyString(), anyObject())).willThrow(new RuntimeException(new TException("Internal error processing getProjectById")));
+        given(this.projectServiceMock.getProjectForUserById(anyString(), any())).willThrow(new RuntimeException(new TException("Internal error processing getProjectById")));
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(RestDocumentationRequestBuilders.get("/api/projects/12321")
                 .header("Authorization", "Bearer " + accessToken))
@@ -167,10 +174,15 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("sw360:licenses").description("The <<resources-licenses,Licenses resource>>"),
                                 linkWithRel("sw360:licenseinfo").description("The <<resources-licenseinfo,Licenseinfo resource>>"),
                                 linkWithRel("sw360:vulnerabilities").description("The <<resources-vulnerabilities,Vulnerabilities resource>>"),
+                                linkWithRel("sw360:vulnerabilities").description("The <<resources-vulnerabilities,Vulnerabilities resource>>"),
+                                linkWithRel("sw360:searchs").description("The <<resources-search,Vulnerabilities resource>>"),
+                                linkWithRel("sw360:changeLogs").description("The <<resources-changelog,Changelog resource>>"),
+                                linkWithRel("sw360:clearingRequest").description("The <<resources-clearingRequest,ClearingRequest resource>>"),
+                                linkWithRel("sw360:obligations").description("The <<resources-obligations,Obligation resource>>"),
                                 linkWithRel("curies").description("The Curies for documentation"),
                                 linkWithRel("profile").description("The profiles of the REST resources")
                         ),
                         responseFields(
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"))));
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"))));
     }
 }

@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2013-2016. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.portal.tags.urlutils;
@@ -17,9 +16,16 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import java.util.HashSet;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.PageContext;
 
 /**
  * Helper class to render linked Releases
@@ -41,10 +47,11 @@ public class LinkedReleaseRenderer {
     }
 
 
-    public <T> void renderReleaseLinkList(StringBuilder display, Map<String, T> releaseRelationshipMap, Set<String> releaseIds, String msg) {
+    public <T> void renderReleaseLinkList(StringBuilder display, Map<String, T> releaseRelationshipMap, Set<String> releaseIds, String msg, HttpServletRequest request) {
         if (releaseIds.isEmpty()) return;
 
 
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         StringBuilder candidate = new StringBuilder();
         try {
             ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
@@ -60,16 +67,17 @@ public class LinkedReleaseRenderer {
         if (!tableContent.isEmpty()) {
 
             display.append(String.format("<table class=\"%s\" id=\"%s%s\" >", tableClasses, idPrefix, msg));
-            display.append(String.format("<thead><tr><th colspan=\"2\">%s</th></tr><tr><th>Release name</th><th>Release relationship</th></tr></thead><tbody>", msg));
+            display.append(String.format("<thead><tr><th colspan=\"2\">%s</th></tr><tr><th>"+LanguageUtil.get(resourceBundle,"release.name")+"</th><th>"+LanguageUtil.get(resourceBundle,"release.relationship")+"</th></tr></thead><tbody>", msg));
             display.append(tableContent);
             display.append("</tbody></table>");
         }
     }
 
-    public <T> void renderReleaseLinkListCompare(StringBuilder display, Map<String,T> oldReleaseRelationshipMap, Map<String, T> deleteReleaseRelationshipMap, Map<String, T> updateReleaseRelationshipMap, Set<String> releaseIds) {
+    public <T> void renderReleaseLinkListCompare(StringBuilder display, Map<String,T> oldReleaseRelationshipMap, Map<String, T> deleteReleaseRelationshipMap, Map<String, T> updateReleaseRelationshipMap, Set<String> releaseIds, HttpServletRequest request, boolean isClosedModeration) {
         if (releaseIds.isEmpty()) return;
 
 
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         StringBuilder candidate = new StringBuilder();
         try {
             ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
@@ -79,8 +87,13 @@ public class LinkedReleaseRenderer {
             for (String releaseId : releaseIds) {
                 T oldReleaseRelationship = oldReleaseRelationshipMap.get(releaseId);
                 T updateReleaseRelationship = updateReleaseRelationshipMap.get(releaseId);
+                T deleteReleaseRelationship = deleteReleaseRelationshipMap.get(releaseId);
 
-                if (!oldReleaseRelationship.equals(updateReleaseRelationship)) {
+                if (!isClosedModeration && !oldReleaseRelationship.equals(updateReleaseRelationship)) {
+                    changedIds.add(releaseId);
+                }
+
+                if (isClosedModeration && !deleteReleaseRelationship.equals(updateReleaseRelationship)) {
                     changedIds.add(releaseId);
                 }
             }
@@ -99,7 +112,7 @@ public class LinkedReleaseRenderer {
         String tableContent = candidate.toString();
         if (!tableContent.isEmpty()) {
             display.append(String.format("<table class=\"%s\" id=\"%sUpdated\" >", tableClasses, idPrefix));
-            display.append("<thead><tr><th colspan=\"4\">Updated Release Links</th></tr><tr><th>Release name</th><th>Current Release relationship</th><th>Deleted Release relationship</th><th>Suggested release relationship</th></tr></thead><tbody>");
+            display.append("<thead><tr><th colspan=\"4\">"+LanguageUtil.get(resourceBundle,"updated.release.links")+"</th></tr><tr><th>"+LanguageUtil.get(resourceBundle,"release.name")+"</th><th>"+LanguageUtil.get(resourceBundle,"current.release.relationship")+"</th><th>Deleted Release relationship</th><th>Suggested release relationship</th></tr></thead><tbody>");
             display.append(tableContent);
             display.append("</tbody></table>");
         }

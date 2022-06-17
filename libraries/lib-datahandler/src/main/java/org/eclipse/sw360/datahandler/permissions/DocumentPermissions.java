@@ -1,20 +1,22 @@
 /*
  * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.permissions;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -62,10 +64,6 @@ public abstract class DocumentPermissions<T> {
         return result;
     }
 
-    protected boolean isUserInEquivalentToOwnerGroup(){
-        return true;
-    }
-
     protected Set<String> getAttachmentContentIds() {
         return Collections.emptySet();
     }
@@ -95,25 +93,64 @@ public abstract class DocumentPermissions<T> {
     }
 
     protected boolean getStandardPermissions(RequestedAction action) {
+        ImmutableSet<UserGroup> clearingAdminRoles = ImmutableSet.of(UserGroup.CLEARING_ADMIN,
+                UserGroup.CLEARING_EXPERT);
+        ImmutableSet<UserGroup> adminRoles = ImmutableSet.of(UserGroup.ADMIN, UserGroup.SW360_ADMIN);
         switch (action) {
             case READ:
                 return true;
             case WRITE:
             case ATTACHMENTS:
-                return isClearingAdminOfOwnGroup() || PermissionUtils.isUserAtLeast(ADMIN, user) || isContributor() ;
+                return PermissionUtils.isUserAtLeast(ADMIN, user) || isContributor() || isUserOfOwnGroupHasRole(clearingAdminRoles, UserGroup.CLEARING_ADMIN) || isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN);
             case DELETE:
             case USERS:
             case CLEARING:
-                return PermissionUtils.isAdmin(user) || isModerator();
+                return PermissionUtils.isAdmin(user) || isModerator() || isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN);
             case WRITE_ECC:
-                return PermissionUtils.isAdmin(user);
+                return PermissionUtils.isAdmin(user) || isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN);
             default:
                 throw new IllegalArgumentException("Unknown action: " + action);
         }
     }
 
-    protected boolean isClearingAdminOfOwnGroup() {
-        return PermissionUtils.isClearingAdmin(user) && isUserInEquivalentToOwnerGroup();
+    public boolean isUserOfOwnGroupHasRole(Set<UserGroup> desiredRoles, UserGroup checkPermissionForGroup) {
+        Set<String> userEquivalentOwnerGroups = getUserEquivalentOwnerGroup();
+        if (CommonUtils.isNullOrEmptyCollection(userEquivalentOwnerGroups)) {
+            return false;
+        }
+        for (String userEquivalentOwnerGroup : userEquivalentOwnerGroups) {
+            if (userEquivalentOwnerGroup.isEmpty() || userEquivalentOwnerGroup.equals(user.getDepartment())) {
+                switch (checkPermissionForGroup) {
+                case CLEARING_ADMIN:
+                    boolean isClearingAdmin = PermissionUtils.isClearingAdmin(user);
+                    if (isClearingAdmin) {
+                        return true;
+                    }
+                    break;
+                case ADMIN:
+                    boolean isAdmin = PermissionUtils.isAdmin(user);
+                    if (isAdmin) {
+                        return true;
+                    }
+                    break;
+                case CLEARING_EXPERT:
+                    boolean isClearingExpert = PermissionUtils.isClearingExpert(user);
+                    if (isClearingExpert) {
+                        return true;
+                    }
+                    break;
+                }
+            } else {
+                Set<UserGroup> secondaryRoles = user.getSecondaryDepartmentsAndRoles().get(userEquivalentOwnerGroup);
+                for (UserGroup role : secondaryRoles) {
+                    if (desiredRoles.contains(role)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     // useful for tests, maybe this needs to go somewhere else
@@ -132,5 +169,11 @@ public abstract class DocumentPermissions<T> {
     public boolean isAllowedToDownload(String attachmentContentId){
         return nullToEmptySet(getAttachmentContentIds()).contains(attachmentContentId) &&
                 isActionAllowed(RequestedAction.READ);
+    }
+
+    protected Set<String> getUserEquivalentOwnerGroup() {
+        Set<String> userEquivalentOwnerGroup = new HashSet<String>();
+        userEquivalentOwnerGroup.add("");
+        return userEquivalentOwnerGroup;
     }
 }

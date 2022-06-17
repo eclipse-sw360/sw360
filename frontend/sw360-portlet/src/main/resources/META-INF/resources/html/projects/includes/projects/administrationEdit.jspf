@@ -1,0 +1,238 @@
+<%--
+  ~ Copyright Siemens AG, 2017-2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  --%>
+
+<%@page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState"%>
+<%@page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectState"%>
+<%@page import="org.eclipse.sw360.datahandler.thrift.projects.Project" %>
+<core_rt:set var="isUnknownCTeamEnabled" value='<%=PortalConstants.IS_CLEARING_TEAM_UNKNOWN_ENABLED%>'/>
+<core_rt:set var="clearingStateClosedAndUserNotAdmin" value="${(project.clearingState eq 'CLOSED') && (isUserAdmin != 'Yes')}"/>
+
+<table class="table edit-table three-columns" id="ProjectClearingInfo" title="<liferay-ui:message key="clearing" />">
+    <thead>
+    <tr>
+        <th colspan="3" class="headlabel"><liferay-ui:message key="clearing" /></th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="proj_projectclearingstate"><liferay-ui:message key="project.clearing.state" />
+                <core_rt:if test = "${clearingStateClosedAndUserNotAdmin}">
+                    <clay:icon symbol="lock" />
+                </core_rt:if></label>
+                <select class="form-control" id="proj_projectclearingstate"
+                        name="<portlet:namespace/><%=Project._Fields.CLEARING_STATE%>"
+                        <core_rt:if test = "${clearingStateClosedAndUserNotAdmin}">
+                            disabled="disabled"
+                        </core_rt:if>
+                >
+                    <sw360:DisplayEnumOptions type="<%=ProjectClearingState.class%>" selected="${project.clearingState}"/>
+                </select>
+                <small class="form-text">
+                    <sw360:DisplayEnumInfo type="<%=ProjectClearingState.class%>"/>
+                    <liferay-ui:message key="learn.more.about.the.project.clearing.state" />
+                </small>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="clearingTeam"><liferay-ui:message key="clearing.team" /></label>
+                <select class="form-control" id="clearingTeam"
+                        name="<portlet:namespace/><%=Project._Fields.CLEARING_TEAM%>">
+                        <core_rt:if test="${isUnknownCTeamEnabled}">
+                            <option value="<%=CLEARING_TEAM_UNKNOWN%>"
+                                <core_rt:if test='${empty project.clearingTeam}'>
+                                    selected="selected"
+                                </core_rt:if>><liferay-ui:message key="unknown" /></option>
+                        </core_rt:if>
+                    <core_rt:forEach items="${clearingTeamsStringSet}" var="entry">
+                        <option value="${entry}" class="textlabel stackedLabel"
+                            <core_rt:if test='${project.clearingTeam == entry}'>
+                                selected="selected"
+                            </core_rt:if>>
+                            <c:set var="key" value="${fn:toLowerCase(entry)}"/> 
+                            <liferay-ui:message key="${key}" />
+                        </option>
+                    </core_rt:forEach>
+                </select>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_deadline"><liferay-ui:message key="deadline.for.pre-evaluation" /></label>
+                <input class="form-control datepicker" id="proj_deadline"
+                    name="<portlet:namespace/><%=Project._Fields.PREEVALUATION_DEADLINE%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${project.preevaluationDeadline}"/>" placeholder="<liferay-ui:message key="pre.evaluation.date.yyyy.mm.dd" />"/>
+            </div>
+        </td>
+    </tr>
+     <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="clearingSummary"><liferay-ui:message key="clearing.summary" /></label>
+                <textarea id="clearingSummaryText" name="<portlet:namespace/><%=Project._Fields.CLEARING_SUMMARY%>"
+                        class="form-control" rows="5" type="text"><sw360:out value="${project.clearingSummary}"/></textarea>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="specialRisksOSSText"><liferay-ui:message key="special.risk.open.source.software" /></label>
+                <textarea id="specialRisksOSSText" name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS_OSS%>"
+                        class="form-control" rows="5" type="text"><sw360:out value="${project.specialRisksOSS}"/></textarea>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="generalRisks3rdParty"><liferay-ui:message key="general.risk.3rd.party.software" /></label>
+                <textarea id="generalRisks3rdPartyText"
+                        name="<portlet:namespace/><%=Project._Fields.GENERAL_RISKS3RD_PARTY%>" class="form-control" rows="5"
+                        type="text"><sw360:out value="${project.generalRisks3rdParty}"/></textarea>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="specialRisks3rdParty"><liferay-ui:message key="special.risks.3rd.party.software" /></label>
+                <textarea id="specialRisks3rdPartyText"
+                        name="<portlet:namespace/><%=Project._Fields.SPECIAL_RISKS3RD_PARTY%>" class="form-control" rows="5"
+                        type="text"><sw360:out value="${project.specialRisks3rdParty}"/></textarea>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="deliveryChannels"><liferay-ui:message key="sales.and.delivery.channels" /></label>
+                <textarea id="deliveryChannelsText" name="<portlet:namespace/><%=Project._Fields.DELIVERY_CHANNELS%>"
+                        class="form-control" rows="5" type="text"><sw360:out value="${project.deliveryChannels}"/></textarea>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div class="form-group">
+                <label for="remarksAdditionalRequirements"><liferay-ui:message key="remarks.additional.requirements" /></label>
+                <textarea id="remarksAdditionalRequirementsText"
+                        name="<portlet:namespace/><%=Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS%>" class="form-control"
+                        rows="5" type="text"><sw360:out value="${project.remarksAdditionalRequirements}"/></textarea>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<table class="table edit-table three-columns" id="ProjectLifecycleInfo" title="<liferay-ui:message key="" /><liferay-ui:message key="lifecycle" />">
+    <thead>
+    <tr>
+        <th colspan="3" class="headlabel"><liferay-ui:message key="lifecycle" /></th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label class="mandatory" for="projectState"><liferay-ui:message key="project.state" /></label>
+                <select class="form-control" id="projectState" name="<portlet:namespace/><%=Project._Fields.STATE%>">
+                    <sw360:DisplayEnumOptions type="<%=ProjectState.class%>" selected="${project.state}"/>
+                </select>
+                <small class="form-text">
+                    <sw360:DisplayEnumInfo type="<%=ProjectState.class%>"/>
+                    <liferay-ui:message key="learn.more.about.the.project.state" />
+                </small>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_systemTestStart"><liferay-ui:message key="system.test.begin" /></label>
+                <input class="form-control datepicker" id="proj_systemTestStart"
+                    name="<portlet:namespace/><%=Project._Fields.SYSTEM_TEST_START%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${project.systemTestStart}"/>" placeholder="<liferay-ui:message key="system.test.begin.date.yyyy.mm.dd" />"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_systemTestEnd"><liferay-ui:message key="system.test.end" /></label>
+                <input class="form-control datepicker" id="proj_systemTestEnd"
+                    name="<portlet:namespace/><%=Project._Fields.SYSTEM_TEST_END%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${project.systemTestEnd}"/>" placeholder="<liferay-ui:message key="system.test.end.date.yyyy.mm.dd" />"/>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="proj_delivery"><liferay-ui:message key="delivery.start.date" /></label>
+                <input class="form-control datepicker" id="proj_delivery"
+                    name="<portlet:namespace/><%=Project._Fields.DELIVERY_START%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${project.deliveryStart}"/>" placeholder="<liferay-ui:message key="delivery.start.date.yyyy.mm.dd" />"/>
+            <div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="proj_phaseout"><liferay-ui:message key="phase.out.date" /></label>
+                <input class="form-control datepicker" id="proj_phaseout"
+                    name="<portlet:namespace/><%=Project._Fields.PHASE_OUT_SINCE%>" type="text" pattern="\d{4}-\d{2}-\d{2}"
+                    value="<sw360:out value="${project.phaseOutSince}"/>" placeholder="<liferay-ui:message key="phase.out.since.yyyy.mm.dd" />"/>
+            </div>
+        </td>
+        <td>
+        </td>
+    </tr>
+</table>
+
+<table class="table edit-table" id="LicenseInfoHeader" title="<liferay-ui:message key="license.info.header" />">
+    <thead>
+    <tr>
+        <th class="headlabel"><liferay-ui:message key="license.info.header" /></th>
+    </tr>
+    </thead>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label><!-- necessary to style following button --></label>
+                <button id="setToDefaultLicenseInfoHeaderTextButton" type="button" class="btn btn-link btn-right"><liferay-ui:message key="set.to.default.text" /></button>
+                <textarea name="<portlet:namespace/><%=Project._Fields.LICENSE_INFO_HEADER_TEXT%>" rows="5"
+                        class="form-control" id="licenseInfoHeaderText"
+                        data-defaulttext="<c:out value='${defaultLicenseInfoHeaderText}'/>"><sw360:DisplayLicenseInfoHeader
+                        project="${project}" defaultText="${defaultLicenseInfoHeaderText}"/></textarea>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<script>
+    require(['jquery', /* jquery-plugins */ 'jquery-ui'], function ($) {
+        $('#detailTab a[href="#tab-Administration"]').on('shown.bs.tab', function (event) {
+		if($('#licenseInfoHeaderText').prop('scrollHeight') > 0) {
+		$('#licenseInfoHeaderText').height($('#licenseInfoHeaderText').prop('scrollHeight'));
+		}
+        });
+        <core_rt:if test="${addMode and pageName ne 'duplicate' }" >
+            setDefaultTextAndResize($('#obligationsText'));
+            setDefaultTextAndResize($('#licenseInfoHeaderText'))
+        </core_rt:if>
+
+        $('#setToDefaultLicenseInfoHeaderTextButton').click(function () {
+            setDefaultTextAndResize($('#licenseInfoHeaderText'));
+        });
+
+        $('.datepicker').datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd"});
+
+        function setDefaultTextAndResize(textarea) {
+            if(!textarea) return;
+            $(textarea).val($(textarea).data("defaulttext"));
+            if(!$(textarea)[0]) return;
+            $(textarea).height($(textarea)[0].scrollHeight);
+        }
+    });
+</script>

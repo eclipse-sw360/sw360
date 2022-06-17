@@ -3,15 +3,15 @@
  * With modifications by Siemens AG, 2016.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.cvesearch.datasource;
 
+import org.eclipse.sw360.cvesearch.TestWithCveSearchConnection;
 import org.eclipse.sw360.cvesearch.datasource.matcher.Match;
 import org.eclipse.sw360.cvesearch.service.CveSearchHandler;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -27,22 +27,18 @@ import java.util.Properties;
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isUrlReachable;
 import static org.junit.Assert.*;
 
-public class CveSearchGuesserTest {
+public class CveSearchGuesserTest extends TestWithCveSearchConnection {
 
     private CveSearchGuesser cveSearchGuesser;
-    private CveSearchApiImpl cveSearchApi;
+    private String PUBLIC_CVE_SEARCH_SERVER = "https://cve.circl.lu";
 
     @Before
-    public void setup() throws IOException {
-        Properties props = CommonUtils.loadProperties(CveSearchGuesserTest.class, "/cvesearch.properties");
-        String host = props.getProperty(CveSearchHandler.CVESEARCH_HOST_PROPERTY, "https://cve.circl.lu");
-        Assume.assumeTrue("CVE Search host is reachable", isUrlReachable(host));
-        cveSearchApi = new CveSearchApiImpl(host);
-        this.cveSearchGuesser = new CveSearchGuesser(cveSearchApi);
+    public void setup() {
+        cveSearchGuesser = new CveSearchGuesser(cveSearchApi);
     }
 
     @Test
-    public void getBestZERO() throws Exception {
+    public void getBestZERO() {
         assert(cveSearchGuesser.getBest(Collections.emptyList(), Integer.MAX_VALUE).size() == 0);
     }
 

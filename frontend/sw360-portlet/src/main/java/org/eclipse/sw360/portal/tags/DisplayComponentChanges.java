@@ -1,17 +1,19 @@
 /*
- * Copyright Siemens AG, 2016. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2016, 2019. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
@@ -24,10 +26,12 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.apache.thrift.TException;
 import org.apache.thrift.meta_data.FieldMetaData;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 import static org.eclipse.sw360.portal.tags.TagUtils.*;
@@ -43,6 +47,7 @@ public class DisplayComponentChanges extends NameSpaceAwareTag {
     private Component deletions;
     private String tableClasses = "";
     private String idPrefix = "";
+    private boolean isClosedModeration = false;
 
     public void setActual(Component actual) {
         this.actual = actual;
@@ -62,6 +67,10 @@ public class DisplayComponentChanges extends NameSpaceAwareTag {
 
     public void setIdPrefix(String idPrefix) {
         this.idPrefix = idPrefix;
+    }
+
+    public void setIsClosedModeration(boolean isClosedModeration) {
+        this.isClosedModeration = isClosedModeration;
     }
 
     public int doStartTag() throws JspException {
@@ -99,19 +108,21 @@ public class DisplayComponentChanges extends NameSpaceAwareTag {
 
                     default:
                         FieldMetaData fieldMetaData = Component.metaDataMap.get(field);
-                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "");
+                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "", isClosedModeration);
                 }
             }
 
             String renderString = display.toString();
+            HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
 
             if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<h4> No changes in basic fields </h4>";
+                renderString = "<div class=\"alert alert-info\">"+LanguageUtil.get(resourceBundle,"no.changes.in.basic.fields")+"</div>";
             } else {
                 renderString = String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
-                        + "<thead><tr><th colspan=\"4\"> Changes for Basic fields</th></tr>"
+                        + "<thead><tr><th colspan=\"4\">"+ LanguageUtil.get(resourceBundle, "changes.for.basic.fields")+"</th></tr>"
                         + String.format("<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
-                        FIELD_NAME, CURRENT_VAL, DELETED_VAL, SUGGESTED_VAL)
+                        LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"), LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
                         + renderString + "</tbody></table>";
             }
 

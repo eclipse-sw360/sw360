@@ -1,36 +1,40 @@
 /*
  * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.rest.resourceserver.core;
 
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.resourcelists.PaginationOptions;
-import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
-import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
-import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
+import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.MainlineState;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.rest.resourceserver.obligation.ObligationController;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
@@ -38,15 +42,33 @@ import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TBase;
+import org.apache.thrift.TException;
+import org.apache.thrift.TFieldIdEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.PagedResources;
-import org.springframework.hateoas.Resource;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.hateoas.*;
+import org.springframework.hateoas.server.core.EmbeddedWrapper;
+import org.springframework.hateoas.server.core.EmbeddedWrappers;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+
+import javax.servlet.http.HttpServletRequest;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -54,12 +76,13 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.util.*;
 
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class RestControllerHelper {
+public class RestControllerHelper<T> {
+
     @NonNull
     private final Sw360UserService userService;
 
@@ -70,9 +93,12 @@ public class RestControllerHelper {
     private final Sw360LicenseService licenseService;
 
     @NonNull
-    private final ResourceComparatorGenerator resourceComparatorGenerator = new ResourceComparatorGenerator();
+    private final ResourceComparatorGenerator<T> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
 
-    private static final Logger LOGGER = Logger.getLogger(RestControllerHelper.class);
+    @NonNull
+    private final ResourceListController<T> resourceListController = new ResourceListController<>();
+
+    private static final Logger LOGGER = LogManager.getLogger(RestControllerHelper.class);
 
     private static final String PAGINATION_KEY_FIRST = "first";
     private static final String PAGINATION_KEY_PREVIOUS = "previous";
@@ -80,35 +106,72 @@ public class RestControllerHelper {
     private static final String PAGINATION_KEY_LAST = "last";
     private static final String PAGINATION_PARAM_PAGE = "page";
     public static final String PAGINATION_PARAM_PAGE_ENTRIES = "page_entries";
+    public static final ImmutableSet<ProjectReleaseRelationship._Fields> SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE = ImmutableSet
+            .of(ProjectReleaseRelationship._Fields.CREATED_ON, ProjectReleaseRelationship._Fields.CREATED_BY);
 
-    public User getSw360UserFromAuthentication(OAuth2Authentication oAuth2Authentication) {
-        String userId = oAuth2Authentication.getName();
-        return userService.getUserByEmail(userId);
+    public User getSw360UserFromAuthentication() {
+        try {
+            String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            return userService.getUserByEmailOrExternalId(userId);
+        } catch (RuntimeException e) {
+            throw new AuthenticationServiceException("Could not load user from authentication.");
+        }
     }
 
-    public PagedResources generatePagesResource(PaginationResult paginationResult, List resources) throws URISyntaxException {
+    public PaginationResult<T> createPaginationResult(HttpServletRequest request, Pageable pageable, List<T> resources, String resourceType) throws ResourceClassNotFoundException, PaginationParameterException {
+        PaginationResult<T> paginationResult;
+        if (requestContainsPaging(request)) {
+            PaginationOptions<T> paginationOptions = paginationOptionsFromPageable(pageable, resourceType);
+            paginationResult = resourceListController.applyPagingToList(resources, paginationOptions);
+        } else {
+            paginationResult = new PaginationResult<>(resources);
+        }
+        return paginationResult;
+    }
+
+    private boolean requestContainsPaging(HttpServletRequest request) {
+        return request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE) || request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE_ENTRIES);
+    }
+
+    public <T extends TBase<?, ? extends TFieldIdEnum>> CollectionModel<EntityModel<T>> generatePagesResource(PaginationResult paginationResult, List<EntityModel<T>> resources) throws URISyntaxException {
+        if (paginationResult.isPagingActive()) {
+            PagedModel.PageMetadata pageMetadata = createPageMetadata(paginationResult);
+            List<Link> pagingLinks = this.getPaginationLinks(paginationResult, this.getAPIBaseUrl());
+            return PagedModel.of(resources, pageMetadata, pagingLinks);
+        } else {
+            return CollectionModel.of(resources);
+        }
+    }
+
+    public PagedModel emptyPageResource(Class resourceClass, PaginationResult paginationResult) {
+        EmbeddedWrappers embeddedWrappers = new EmbeddedWrappers(true);
+        EmbeddedWrapper embeddedWrapper = embeddedWrappers.emptyCollectionOf(resourceClass);
+        List<EmbeddedWrapper> list = Collections.singletonList(embeddedWrapper);
+        PagedModel.PageMetadata pageMetadata = createPageMetadata(paginationResult);
+        return PagedModel.of(list, pageMetadata, new ArrayList<>());
+    }
+
+    private PagedModel.PageMetadata createPageMetadata(PaginationResult paginationResult) {
         PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
-        List<Link> pagingLinks = this.getPaginationLinks(paginationResult, this.getAPIBaseUrl());
-        PagedResources.PageMetadata pageMetadata = new PagedResources.PageMetadata(
+        return new PagedModel.PageMetadata(
                 paginationOptions.getPageSize(),
                 paginationOptions.getPageNumber(),
                 paginationResult.getTotalCount(),
                 paginationResult.getTotalPageCount());
-        return new PagedResources<>(resources, pageMetadata, pagingLinks);
     }
 
     private List<Link> getPaginationLinks(PaginationResult paginationResult, String baseUrl) {
         PaginationOptions paginationOptions = paginationResult.getPaginationOptions();
         List<Link> paginationLinks = new ArrayList<>();
 
-        paginationLinks.add(new Link(createPaginationLink(baseUrl, 0, paginationOptions.getPageSize()),PAGINATION_KEY_FIRST));
+        paginationLinks.add(Link.of(createPaginationLink(baseUrl, 0, paginationOptions.getPageSize()),PAGINATION_KEY_FIRST));
         if(paginationOptions.getPageNumber() > 0) {
-            paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationOptions.getPageNumber() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_PREVIOUS));
+            paginationLinks.add(Link.of(createPaginationLink(baseUrl, paginationOptions.getPageNumber() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_PREVIOUS));
         }
         if(paginationOptions.getOffset() + paginationOptions.getPageSize() < paginationResult.getTotalCount()) {
-            paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationOptions.getPageNumber() + 1, paginationOptions.getPageSize()),PAGINATION_KEY_NEXT));
+            paginationLinks.add(Link.of(createPaginationLink(baseUrl, paginationOptions.getPageNumber() + 1, paginationOptions.getPageSize()),PAGINATION_KEY_NEXT));
         }
-        paginationLinks.add(new Link(createPaginationLink(baseUrl, paginationResult.getTotalPageCount() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_LAST));
+        paginationLinks.add(Link.of(createPaginationLink(baseUrl, paginationResult.getTotalPageCount() - 1, paginationOptions.getPageSize()),PAGINATION_KEY_LAST));
 
         return paginationLinks;
     }
@@ -126,17 +189,17 @@ public class RestControllerHelper {
                 uri.getFragment()).toString();
     }
 
-    public PaginationOptions paginationOptionsFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
-        Comparator comparator = this.comparatorFromPageable(pageable, resourceClassName);
-        return new PaginationOptions(pageable.getPageNumber(), pageable.getPageSize(), comparator);
+    private PaginationOptions<T> paginationOptionsFromPageable(Pageable pageable, String resourceClassName) throws ResourceClassNotFoundException {
+        Comparator<T> comparator = this.comparatorFromPageable(pageable, resourceClassName);
+        return new PaginationOptions<>(pageable.getPageNumber(), pageable.getPageSize(), comparator);
     }
 
-    private Comparator comparatorFromPageable(Pageable pageable,  String resourceClassName) throws ResourceClassNotFoundException {
+    private Comparator<T> comparatorFromPageable(Pageable pageable,  String resourceClassName) throws ResourceClassNotFoundException {
         Sort.Order order = firstOrderFromPageable(pageable);
         if(order == null) {
             return resourceComparatorGenerator.generateComparator(resourceClassName);
         }
-        Comparator comparator = resourceComparatorGenerator.generateComparator(resourceClassName, order.getProperty());
+        Comparator<T> comparator = resourceComparatorGenerator.generateComparator(resourceClassName, order.getProperty());
         if(order.isDescending()) {
             comparator = comparator.reversed();
         }
@@ -157,17 +220,35 @@ public class RestControllerHelper {
     }
 
     public void addEmbeddedModerators(HalResource halResource, Set<String> moderators) {
-        User sw360User;
+
         for (String moderatorEmail : moderators) {
-            try {
-                sw360User = userService.getUserByEmail(moderatorEmail);
-            } catch (RuntimeException e) {
-                sw360User = new User();
-                sw360User.setId(moderatorEmail).setEmail(moderatorEmail);
-                LOGGER.debug("Could not get user object from backend with email: " + moderatorEmail);
-            }
+            User sw360User = getUserByEmail(moderatorEmail);
             addEmbeddedUser(halResource, sw360User, "sw360:moderators");
         }
+    }
+
+    public User getUserByEmail(String emailId) {
+        User sw360User;
+        try {
+            sw360User = userService.getUserByEmail(emailId);
+        } catch (RuntimeException e) {
+            sw360User = new User();
+            sw360User.setId(emailId).setEmail(emailId);
+            LOGGER.debug("Could not get user object from backend with email: " + emailId);
+        }
+        return sw360User;
+    }
+
+    public void addEmbeddedContributors(HalResource halResource, Set<String> contributors) {
+        for (String contributorEmail : contributors) {
+            User sw360User = getUserByEmail(contributorEmail);
+            addEmbeddedUser(halResource, sw360User, "sw360:contributors");
+        }
+    }
+
+    public void addEmbeddedLeadArchitect(HalResource halResource, String leadArchitect) {
+        User sw360User = getUserByEmail(leadArchitect);
+        addEmbeddedUser(halResource, sw360User, "leadArchitect");
     }
 
     public void addEmbeddedReleases(
@@ -191,9 +272,9 @@ public class RestControllerHelper {
 
     public void addEmbeddedUser(HalResource halResource, User user, String relation) {
         User embeddedUser = convertToEmbeddedUser(user);
-        Resource<User> embeddedUserResource = new Resource<>(embeddedUser);
+        EntityModel<User> embeddedUserResource = EntityModel.of(embeddedUser);
         try {
-            Link userLink = linkTo(UserController.class).slash("api/users/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
+            Link userLink = linkTo(UserController.class).slash("api/users/byid/" + URLEncoder.encode(user.getId(), "UTF-8")).withSelfRel();
             embeddedUserResource.add(userLink);
             halResource.addEmbeddedResource(relation, embeddedUserResource);
         } catch (UnsupportedEncodingException e) {
@@ -201,8 +282,8 @@ public class RestControllerHelper {
         }
     }
 
-    public void addEmbeddedVendors(HalResource<Component> halComponent, Set<String> vendors) {
-        for (String vendorFullName : vendors) {
+    public void addEmbeddedVendors(HalResource<Component> halComponent, Set<String> vendorFullnames) {
+        for (String vendorFullName : vendorFullnames) {
             HalResource<Vendor> vendorHalResource = addEmbeddedVendor(vendorFullName);
             halComponent.addEmbeddedResource("sw360:vendors", vendorHalResource);
         }
@@ -285,6 +366,24 @@ public class RestControllerHelper {
         halResource.addEmbeddedResource("sw360:projects", halProject);
     }
 
+    public Project updateProject(Project projectToUpdate, Project requestBodyProject, Map<String, Object> reqBodyMap,
+            ImmutableMap<Project._Fields, String> mapOfProjectFieldsToRequestBody) {
+        for (Project._Fields field : Project._Fields.values()) {
+            Object fieldValue = requestBodyProject.getFieldValue(field);
+            if (fieldValue != null) {
+                String reqBodyStr = field.getFieldName();
+                if (mapOfProjectFieldsToRequestBody.containsKey(field)) {
+                    reqBodyStr = mapOfProjectFieldsToRequestBody.get(field);
+                }
+                if (!reqBodyMap.containsKey(reqBodyStr)) {
+                    continue;
+                }
+                projectToUpdate.setFieldValue(field, fieldValue);
+            }
+        }
+        return projectToUpdate;
+    }
+
     public Component updateComponent(Component componentToUpdate, Component requestBodyComponent) {
         for(Component._Fields field:Component._Fields.values()) {
             Object fieldValue = requestBodyComponent.getFieldValue(field);
@@ -296,20 +395,34 @@ public class RestControllerHelper {
     }
 
     public Release updateRelease(Release releaseToUpdate, Release requestBodyRelease) {
-        for(Release._Fields field:Release._Fields.values()) {
+        for (Release._Fields field : Release._Fields.values()) {
             Object fieldValue = requestBodyRelease.getFieldValue(field);
-            if(fieldValue != null) {
+            if (fieldValue != null) {
                 releaseToUpdate.setFieldValue(field, fieldValue);
             }
         }
         return releaseToUpdate;
     }
 
+    public ProjectReleaseRelationship updateProjectReleaseRelationship(
+            ProjectReleaseRelationship actualProjectReleaseRelationship,
+            ProjectReleaseRelationship requestBodyProjectReleaseRelationship) {
+        for (ProjectReleaseRelationship._Fields field : ProjectReleaseRelationship._Fields.values()) {
+            Object fieldValue = requestBodyProjectReleaseRelationship.getFieldValue(field);
+            if (fieldValue != null && !SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE.contains(field)) {
+                actualProjectReleaseRelationship.setFieldValue(field, fieldValue);
+            }
+        }
+        return actualProjectReleaseRelationship;
+    }
+
     public Project convertToEmbeddedProject(Project project) {
-        Project embeddedProject = new Project(project.getName());
+        Project embeddedProject = new EmbeddedProject();
+        embeddedProject.setName(project.getName());
         embeddedProject.setId(project.getId());
         embeddedProject.setProjectType(project.getProjectType());
         embeddedProject.setVersion(project.getVersion());
+        embeddedProject.setVisbility(project.getVisbility());
         embeddedProject.setType(null);
         return embeddedProject;
     }
@@ -355,6 +468,14 @@ public class RestControllerHelper {
         return embeddedRelease;
     }
 
+    public Release convertToEmbeddedReleaseWithDet(Release release) {
+        List<String> fields = List.of("id", "name", "version", "cpeid", "createdBy", "createdOn", "componentId",
+                "additionalData", "clearingState", "mainLicenseIds", "binaryDownloadurl", "sourceCodeDownloadurl",
+                "releaseDate", "externalIds", "languages", "operatingSystems", "softwarePlatforms", "vendor",
+                "mainlineState");
+        return convertToEmbeddedRelease(release, fields);
+    }
+
     public Release convertToEmbeddedRelease(Release release, List<String> fields) {
         Release embeddedRelease = this.convertToEmbeddedRelease(release);
         if (fields != null) {
@@ -373,6 +494,8 @@ public class RestControllerHelper {
         License embeddedLicense = new License();
         embeddedLicense.setId(license.getId());
         embeddedLicense.setFullname(license.getFullname());
+        embeddedLicense.unsetOSIApproved();
+        embeddedLicense.unsetFSFLibre();
         embeddedLicense.setType(null);
         return embeddedLicense;
     }
@@ -390,6 +513,41 @@ public class RestControllerHelper {
         embeddedUser.setEmail(user.getEmail());
         embeddedUser.setType(null);
         return embeddedUser;
+    }
+
+    public void addEmbeddedObligations(HalResource<License> halLicense, List<Obligation> obligations) {
+        for (Obligation obligation : obligations) {
+            HalResource<Obligation> obligationHalResource = addEmbeddedObligation(obligation);
+            halLicense.addEmbeddedResource("sw360:obligations", obligationHalResource);
+        }
+    }
+
+    public HalResource<Obligation> addEmbeddedObligation(Obligation obligation) {
+        Obligation embeddedObligation = convertToEmbeddedObligation(obligation);
+        HalResource<Obligation> halObligation = new HalResource<>(embeddedObligation);
+        try {
+            Link obligationSelfLink = linkTo(UserController.class)
+                    .slash("api" + ObligationController.OBLIGATION_URL + "/" + obligation.getId()).withSelfRel();
+            halObligation.add(obligationSelfLink);
+            return halObligation;
+        } catch (Exception e) {
+            LOGGER.error("cannot create self link for obligation with id: " +obligation.getId());
+        }
+        return null;
+    }
+
+    public Obligation convertToEmbeddedObligation(Obligation obligation) {
+        Obligation embeddedObligation = new Obligation();
+        embeddedObligation.setTitle(obligation.getTitle());
+        embeddedObligation.setId(obligation.getId());
+        embeddedObligation.setType(null);
+        return embeddedObligation;
+    }
+
+    public Vendor convertToEmbeddedVendor(Vendor vendor) {
+        Vendor embeddedVendor = convertToEmbeddedVendor(vendor.getFullname());
+        embeddedVendor.setId(vendor.getId());
+        return embeddedVendor;
     }
 
     public Vendor convertToEmbeddedVendor(String fullName) {
@@ -410,5 +568,99 @@ public class RestControllerHelper {
         attachment.setCheckedComment(null);
         attachment.setCheckStatus(null);
         return attachment;
+    }
+
+    public Vulnerability convertToEmbeddedVulnerability(Vulnerability vulnerability) {
+        Vulnerability embeddedVulnerability = new Vulnerability(vulnerability.getExternalId());
+        embeddedVulnerability.setId(vulnerability.getId());
+        embeddedVulnerability.setTitle(vulnerability.getTitle());
+        return embeddedVulnerability;
+    }
+
+    /**
+     * Generic Entity response method to get externalIds (projects, components, releases)
+     */
+    public <T> ResponseEntity searchByExternalIds(MultiValueMap<String, String> externalIdsMultiMap,
+                                                  AwareOfRestServices<T> service,
+                                                  User user) throws TException {
+
+        Map<String, Set<String>> externalIds = getExternalIdsFromMultiMap(externalIdsMultiMap);
+        Set<T> sw360Objects = service.searchByExternalIds(externalIds, user);
+        List<EntityModel> resourceList = new ArrayList<>();
+
+        sw360Objects.forEach(sw360Object -> {
+            T embeddedResource = service.convertToEmbeddedWithExternalIds(sw360Object);
+            EntityModel<T> releaseResource = EntityModel.of(embeddedResource);
+            resourceList.add(releaseResource);
+        });
+
+        CollectionModel<EntityModel> resources = CollectionModel.of(resourceList);
+        return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    public CollectionModel<EntityModel<T>> createResources(List<EntityModel<T>> listOfResources) {
+        CollectionModel<EntityModel<T>> resources = null;
+        if (!listOfResources.isEmpty()) {
+            resources = CollectionModel.of(listOfResources);
+        }
+        return resources;
+    }
+
+    private Map<String, Set<String>> getExternalIdsFromMultiMap(MultiValueMap<String, String> externalIdsMultiMap) {
+        Map<String, Set<String>> externalIds = new HashMap<>();
+        for (String externalIdKey : externalIdsMultiMap.keySet()) {
+            externalIds.put(externalIdKey, new HashSet<>(externalIdsMultiMap.get(externalIdKey)));
+        }
+
+        return externalIds;
+    }
+
+    public <P, R> void checkForCyclicOrInvalidDependencies(P client, R element, User user) throws TException {
+        String cyclicLinkedElementPath = null;
+        try {
+            if (client instanceof ProjectService.Iface) {
+                ProjectService.Iface projectClient = (ProjectService.Iface) client;
+                cyclicLinkedElementPath = projectClient.getCyclicLinkedProjectPath((Project) element, user);
+            } else if (client instanceof ComponentService.Iface) {
+                ComponentService.Iface componentClient = (ComponentService.Iface) client;
+                cyclicLinkedElementPath = componentClient.getCyclicLinkedReleasePath((Release) element, user);
+            }
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+            } else if (sw360Exp.getErrorCode() == 403) {
+                if (element instanceof Project) {
+                    throw new AccessDeniedException(
+                            "Project or its Linked Projects are restricted and / or not accessible");
+                }
+            } else {
+                throw sw360Exp;
+            }
+        }
+        if (!isNullEmptyOrWhitespace(cyclicLinkedElementPath)) {
+            if (element instanceof Project) {
+                throw new HttpMessageNotReadableException("Cyclic linked Project : " + cyclicLinkedElementPath);
+            } else if (element instanceof Release) {
+                throw new HttpMessageNotReadableException("Cyclic linked Release : " + cyclicLinkedElementPath);
+            }
+        }
+    }
+
+    public void addEmbeddedFields(String relation,Object value,HalResource<? extends TBase> halResource) {
+        if (value instanceof String) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace((String) value)) {
+                halResource.addEmbeddedResource(relation, value);
+            }
+        } else if (value instanceof Set) {
+            if (CommonUtils.isNotEmpty((Set) value)) {
+                halResource.addEmbeddedResource(relation, value);
+            }
+        } else if (value instanceof Map) {
+            if (!CommonUtils.isNullOrEmptyMap((Map) value)) {
+                halResource.addEmbeddedResource(relation, value);
+            }
+        } else if (value != null) {
+            halResource.addEmbeddedResource(relation, value);
+        }
     }
 }

@@ -1,0 +1,77 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+<%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship" %>
+
+<h4><liferay-ui:message key="linked.projects" /></h4>
+<table class="table edit-table four-columns-with-actions" id="LinkedProjectsInfo">
+    <col style="width:30%">
+    <col style="width:26%">
+    <col style="width:30%">
+    <col style="width:7%">
+    <col style="width:7%">
+    <thead>
+        <tr>
+            <th><liferay-ui:message key="project.name" /></th>
+            <th><liferay-ui:message key="project.version" /></th>
+            <th><liferay-ui:message key="project.relation" /> <sw360:DisplayEnumInfo type="<%=ProjectRelationship.class%>"/></th>
+            <th><liferay-ui:message key="enable.svm" /></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <jsp:include page="/html/projects/ajax/linkedProjectsAjax.jsp" />
+    </tbody>
+</table>
+
+<button type="button" class="btn btn-secondary" id="addLinkedProjectButton"><liferay-ui:message key="add.projects" /></button>
+
+<div class="dialogs">
+    <div id="deleteLinkedProjectDialog" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <clay:icon symbol="question-circle" />
+                        <liferay-ui:message key="delete.link.to.project" />
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        <liferay-ui:message key="do.you.really.want.to.remove.the.link.to.project.x" />
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+                    <button type="button" class="btn btn-danger"><liferay-ui:message key="delete.link" /></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    require(['jquery', 'modules/dialog'], function($, dialog) {
+        $('#LinkedProjectsInfo').on('click', 'svg[data-row-id]', function(event) {
+            var rowId = $(event.currentTarget).data().rowId,
+                project = $(event.currentTarget).parents('tr').find('input[data-content="projectName"]').val();
+
+            dialog.open('#deleteLinkedProjectDialog', {
+                project: project
+            }, function(submit, callback) {
+                $('#' + rowId).remove();
+                callback(true);
+            });
+        });
+    });
+</script>

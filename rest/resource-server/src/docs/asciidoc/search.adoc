@@ -1,0 +1,35 @@
+//
+// Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+[[resources-search]]
+=== Search
+
+The search resource is used get the search result
+
+
+[[resources-search-list]]
+==== Listing search results
+
+A `GET` request will list all the search results based on the search text and type
+
+===== Request parameter
+include::{snippets}/should_document_get_searchresult/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_searchresult/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_searchresult/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_searchresult/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_searchresult/links.adoc[]

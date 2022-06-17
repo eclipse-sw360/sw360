@@ -1,27 +1,29 @@
 /*
  * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.exporter;
 
 import com.google.common.collect.ImmutableList;
+
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.exporter.helper.ReleaseHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.SW360Utils.displayNameFor;
 import static org.eclipse.sw360.datahandler.thrift.components.Release._Fields.*;
+import static org.eclipse.sw360.datahandler.thrift.components.EccInformation._Fields.*;
 
 
 public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
@@ -39,26 +41,45 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
         nameToDisplayName.put(Release._Fields.CREATED_BY.getFieldName(), "created by");
         nameToDisplayName.put(Release._Fields.MAINLINE_STATE.getFieldName(), "mainline state");
         nameToDisplayName.put(Release._Fields.CLEARING_STATE.getFieldName(), "clearing state");
-        nameToDisplayName.put(Release._Fields.FOSSOLOGY_ID.getFieldName(), "fossology id");
-        nameToDisplayName.put(Release._Fields.CLEARING_TEAM_TO_FOSSOLOGY_STATUS.getFieldName(), "clearing team with FOSSology status");
-        nameToDisplayName.put(Release._Fields.ATTACHMENT_IN_FOSSOLOGY.getFieldName(), "attachment in FOSSology");
+        nameToDisplayName.put(Release._Fields.EXTERNAL_TOOL_PROCESSES.getFieldName(), "external tool process");
         nameToDisplayName.put(Release._Fields.CLEARING_INFORMATION.getFieldName(), "clearing information");
         nameToDisplayName.put(Release._Fields.ECC_INFORMATION.getFieldName(), "ECC information");
         nameToDisplayName.put(Release._Fields.COTS_DETAILS.getFieldName(), "COTS details");
         nameToDisplayName.put(Release._Fields.MAIN_LICENSE_IDS.getFieldName(), "main license IDs");
-        nameToDisplayName.put(Release._Fields.DOWNLOADURL.getFieldName(), "downloadurl");
+        nameToDisplayName.put(Release._Fields.SOURCE_CODE_DOWNLOADURL.getFieldName(), "Source Code Downloadurl");
+        nameToDisplayName.put(Release._Fields.BINARY_DOWNLOADURL.getFieldName(), "Binary Downloadurl");
         nameToDisplayName.put(Release._Fields.RELEASE_ID_TO_RELATIONSHIP.getFieldName(), "releases with relationship");
         nameToDisplayName.put(Release._Fields.OPERATING_SYSTEMS.getFieldName(), "operating systems");
     }
 
-    static final List<Release._Fields> RELEASE_IGNORED_FIELDS = ImmutableList.<Release._Fields>builder()
+    public static final List<Release._Fields> RELEASE_IGNORED_FIELDS = ImmutableList.<Release._Fields>builder()
             .add(REVISION)
             .add(DOCUMENT_STATE)
             .add(PERMISSIONS)
             .add(VENDOR_ID)
             .build();
 
-    static final List<Vendor._Fields> VENDOR_IGNORED_FIELDS = ImmutableList.<Vendor._Fields>builder()
+   public static final List<Release._Fields> RELEASE_REQUIRED_FIELDS = ImmutableList.<Release._Fields>builder()
+            .add(COMPONENT_ID)
+            .add(NAME)
+            .add(VERSION)
+            .add(CLEARING_STATE)
+            .add(ECC_INFORMATION)
+            .build();
+
+   public static final List<EccInformation._Fields> ECC_IGNORE_FIELDS = ImmutableList.<EccInformation._Fields>builder()
+            .add(AL)
+            .add(MATERIAL_INDEX_NUMBER)
+            .add(ASSESSOR_CONTACT_PERSON)
+            .add(ECC_COMMENT)
+            .build();
+
+   public static final List<Release._Fields> RELEASE_RENDERED_FIELDS_PROJECTS = Release.metaDataMap.keySet()
+            .stream()
+            .filter(k -> RELEASE_REQUIRED_FIELDS.contains(k))
+            .collect(Collectors.toList());
+
+    public static final List<Vendor._Fields> VENDOR_IGNORED_FIELDS = ImmutableList.<Vendor._Fields>builder()
             .add(Vendor._Fields.PERMISSIONS)
             .add(Vendor._Fields.REVISION)
             .add(Vendor._Fields.ID)
@@ -70,9 +91,61 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
             .filter(k -> !RELEASE_IGNORED_FIELDS.contains(k))
             .collect(Collectors.toList());
 
-    static final List<String> HEADERS = makeHeaders();
+    public static final List<String> HEADERS = makeHeaders();
 
-    static final List<String> HEADERS_EXTENDED_BY_ADDITIONAL_DATA = makeHeadersForExtendedExport();
+    public static final List<String> HEADERS_EXTENDED_BY_ADDITIONAL_DATA = makeHeadersForExtendedExport();
+
+    public static final List<String> RELEASE_HEADERS_PROJECT_EXPORT = makeReleaseHeadersForProjectExport();
+
+    public static final List<String> HEADERS_EXTENDED_BY_ADDITIONAL_DATA_PROJECT = makeHeadersForExtendedExportProject();
+
+    private static List<String> makeReleaseHeadersForProjectExport() {
+        List<String> headers = new ArrayList<>();
+        for (Release._Fields field : RELEASE_RENDERED_FIELDS_PROJECTS) {
+            addToHeadersForProjectExport(headers, field);
+        }
+        return headers;
+    }
+
+    private static void addToHeadersForProjectExport(List<String> headers, Release._Fields field) {
+        switch (field) {
+        case COMPONENT_ID:
+            headers.add(displayNameFor("component type", nameToDisplayName));
+            break;
+        case VENDOR:
+            Vendor.metaDataMap.keySet().stream().filter(f -> !VENDOR_IGNORED_FIELDS.contains(f))
+                    .forEach(f -> headers.add("vendor " + f.getFieldName()));
+            break;
+        case COTS_DETAILS:
+            COTSDetails.metaDataMap.keySet().forEach(f -> headers.add("COTS details: " + f.getFieldName()));
+            break;
+        case CLEARING_INFORMATION:
+            ClearingInformation.metaDataMap.keySet()
+                    .forEach(f -> headers.add("clearing information: " + f.getFieldName()));
+            break;
+        case ECC_INFORMATION:
+            EccInformation.metaDataMap.keySet().stream().filter(f -> !ECC_IGNORE_FIELDS.contains(f))
+                    .forEach(f -> headers.add("ECC information: " + f.getFieldName()));
+            break;
+        default:
+            headers.add(displayNameFor(field.getFieldName(), nameToDisplayName));
+        }
+    }
+
+    private static List<String> makeHeadersForExtendedExportProject() {
+        List<String> additionalHeaders = new ArrayList<>();
+        additionalHeaders.add(displayNameFor("project origin", nameToDisplayName));
+        additionalHeaders.add(displayNameFor("project mainline state", nameToDisplayName));
+
+        List<String> completeHeaders = new ArrayList<>();
+        completeHeaders.addAll(makeHeadersForExtendedExport());
+        completeHeaders.addAll(
+                // add after component type which is directly after component_id
+                completeHeaders.indexOf(displayNameFor(COMPONENT_ID.getFieldName(), nameToDisplayName)) + 2,
+                additionalHeaders);
+
+        return completeHeaders;
+    }
 
     public ReleaseExporter(ComponentService.Iface cClient, List<Release> releases, User user,
             List<ReleaseClearingStatusData> releaseClearingStatuses) throws SW360Exception {
@@ -108,6 +181,7 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
             case COMPONENT_ID:
                 headers.add(displayNameFor(field.getFieldName(), nameToDisplayName));
                 headers.add(displayNameFor("component type", nameToDisplayName));
+                headers.add(displayNameFor("categories", nameToDisplayName));
                 break;
             case VENDOR:
                 Vendor.metaDataMap.keySet().stream()

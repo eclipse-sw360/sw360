@@ -1,0 +1,118 @@
+<%--
+  ~ Copyright (c) Bosch Software Innovations GmbH 2016-2017.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  --%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<table class="table edit-table two-columns-with-actions" id="mapEditTable">
+    <thead>
+    <tr>
+        <th colspan="3" class="headlabel"><liferay-ui:message key="additional.roles" /></th>
+    </tr>
+    </thead>
+    <tbody>
+    <core_rt:if test="${customMap != null}">
+        <core_rt:forEach items="${customMap.entrySet()}" var="mapEntry" varStatus="loop1">
+            <core_rt:forEach items="${mapEntry.value}" var="setItem" varStatus="loop2">
+                <tr id="mapEditTableRow${loop1.count}_${loop2.count}" >
+                    <td>
+                        <select class="form-control" id="<%=PortalConstants.CUSTOM_MAP_KEY%>${loop1.count}_${loop2.count}"
+                                name="<portlet:namespace/><%=PortalConstants.CUSTOM_MAP_KEY%>${loop1.count}_${loop2.count}">
+
+                            <core_rt:forEach items="${keys}" var="key">
+                                <option value="${key}" <core_rt:if
+                                        test='${mapEntry.key == key}'>selected="selected"</core_rt:if>> ${key} </option>
+                            </core_rt:forEach>
+                        </select>
+                    </td>
+                    <td>
+                        <input id="<%=PortalConstants.CUSTOM_MAP_VALUE%>${loop1.count}_${loop2.count}" name="<portlet:namespace/><%=PortalConstants.CUSTOM_MAP_VALUE%>${loop1.count}_${loop2.count}" type="email" class="form-control" placeholder="${inputSubtitle}" title="${inputSubtitle}"
+                               value="<sw360:out value='${setItem}'/>"/>
+                    </td>
+
+                    <td class="content-middle">
+                        <svg class="action lexicon-icon" data-row-id="mapEditTableRow${loop1.count}_${loop2.count}">
+                            <title><liferay-ui:message key="delete" /></title>
+                            <use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>
+                        </svg>
+                    </td>
+                </tr>
+            </core_rt:forEach>
+        </core_rt:forEach>
+    </core_rt:if>
+    </tbody>
+</table>
+
+<button class="btn btn-secondary" data-action="add-row" type="button"><liferay-ui:message key="click.to.add.row.to" /> <liferay-ui:message key="additional.roles" /></button>
+
+<div class="dialogs">
+    <div id="deleteMapEditDialog" class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-centered modal-danger" role="document">
+		    <div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">
+					<clay:icon symbol="question-circle" />
+					<liferay-ui:message key="delete.item" />?
+				</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+				<div class="modal-body">
+			        <p data-name="text"></p>
+				</div>
+			    <div class="modal-footer">
+			        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="cancel" /></button>
+			        <button type="button" class="btn btn-danger"><liferay-ui:message key="delete.item" /></button>
+			    </div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+    require(['jquery', 'modules/dialog'], function($, dialog) {
+
+        $('#mapEditTable + button[data-action="add-row"]').on('click', function() {
+            var randomRowId = "mapItemRow" + Date.now();
+            var newRowAsString =
+                '<tr id="' + randomRowId + '" >'+
+                '<td width="46%">'+
+                '<select class="form-control" id="<%=PortalConstants.CUSTOM_MAP_KEY%>'+randomRowId+'" name="<portlet:namespace/><%=PortalConstants.CUSTOM_MAP_KEY%>'+randomRowId+'">' +
+                <core_rt:forEach items="${keys}" var="key">
+                <c:set var="key_lower" value="${fn:toLowerCase(key)}"/>
+                <c:set var="key_mgs" value="${fn:replace(key_lower, ' ', '.')}"/>
+                '<option value="${key}"> <liferay-ui:message key="${key_mgs}" /> </option>'+
+                </core_rt:forEach>
+                '</select>'+
+                '</td>'+
+                '<td width="46%">'+
+                '<input id="<%=PortalConstants.CUSTOM_MAP_VALUE%>'+randomRowId+'" name="<portlet:namespace/><%=PortalConstants.CUSTOM_MAP_VALUE%>'+randomRowId+'" type="email" class="form-control" placeholder="<liferay-ui:message key="enter.mail.address" />" title="<liferay-ui:message key="enter.mail.address" />" />'+
+                '</td>'+
+                '<td class="content-middle">'+
+                '<svg class="action lexicon-icon" data-row-id="' + randomRowId + '">' +
+                '<title><liferay-ui:message key="delete" /></title>' +
+                '<use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>' +
+                '</svg>' +
+                '</td>'+
+                '</tr>';
+            $('#mapEditTable tr:last').after(newRowAsString);
+        });
+
+        $('#mapEditTable').on('click', 'svg[data-row-id]', function(event) {
+            var rowId = $(event.currentTarget).data().rowId;
+
+            dialog.open('#deleteMapEditDialog', {
+                text: "<liferay-ui:message key="do.you.really.want.to.remove.this.item" />",
+            }, function(submit, callback) {
+                $('#' + rowId).remove();
+                callback(true);
+            });
+        });
+    });
+</script>

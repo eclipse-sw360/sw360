@@ -1,18 +1,21 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.tags;
 
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspTagException;
 import javax.servlet.jsp.JspWriter;
@@ -22,7 +25,9 @@ import javax.servlet.jsp.jstl.core.LoopTagSupport;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 
@@ -31,14 +36,14 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
  */
 public class DisplayDownloadReport extends LoopTagSupport {
 
-    protected AttachmentType attachmentType;
+    protected Predicate<AttachmentType> attachmentTypePredicate;
     protected Set<Attachment> unfilteredAttachments = Collections.emptySet();
     protected Iterator<Attachment> attachmentIterator = unfilteredAttachments.iterator();
 
     @Override
     protected void prepare() throws JspTagException {
         this.attachmentIterator = unfilteredAttachments.stream().filter((attachment) -> {
-            return attachmentType == null || attachment.getAttachmentType() == attachmentType;
+            return attachmentTypePredicate.test(attachment.getAttachmentType());
         }).iterator();
     }
 
@@ -66,11 +71,13 @@ public class DisplayDownloadReport extends LoopTagSupport {
 
     @Override
     public int doEndTag() throws JspException {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         JspWriter jspWriter = pageContext.getOut();
         try {
             LoopTagStatus status = getLoopStatus();
             if (status.getCount() <= 1) {
-                jspWriter.print("no report");
+                jspWriter.print(LanguageUtil.get(resourceBundle,"no.report"));
             }
 
             jspWriter.write("</span>");
@@ -85,7 +92,7 @@ public class DisplayDownloadReport extends LoopTagSupport {
         this.unfilteredAttachments = Collections.unmodifiableSet(nullToEmptySet(attachments));
     }
 
-    public void setFilterAttachmentType(AttachmentType attachmentType) {
-        this.attachmentType = attachmentType;
+    public void setAttachmentTypePredicate(Predicate<AttachmentType> attachmentTypePredicate) {
+        this.attachmentTypePredicate = attachmentTypePredicate;
     }
 }

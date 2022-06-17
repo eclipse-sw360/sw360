@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2016. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 include "sw360.thrift"
 include "users.thrift"
@@ -16,6 +15,7 @@ namespace php sw360.thrift.vulnerabilities
 
 typedef sw360.RequestSummary RequestSummary
 typedef users.User User
+typedef sw360.SW360Exception SW360Exception
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.VerificationStateInfo VerificationStateInfo
 
@@ -100,6 +100,10 @@ struct VulnerabilityDTO{
     // meta information
    100: optional string matchedBy,
    101: optional string usedNeedle,
+
+   // Used in REST API
+   300: optional string projectRelevance,
+   301: optional string comment
 }
 
 struct CVEReference{
@@ -130,13 +134,15 @@ enum VulnerabilityRatingForProject {
     IRRELEVANT = 1,
     RESOLVED = 2,
     APPLICABLE = 3,
+    IN_ANALYSIS = 4,
 }
 
 struct VulnerabilityCheckStatus{
     1: required string checkedOn,
     2: required string checkedBy,
     3: optional string comment,
-    4: required VulnerabilityRatingForProject vulnerabilityRating,
+    4: optional string projectAction,
+    5: required VulnerabilityRatingForProject vulnerabilityRating,
 }
 
 struct ProjectVulnerabilityRating{
@@ -231,9 +237,9 @@ service VulnerabilityService {
 
     /**
       * returns the vulnerability with given externalId if it exists in the database and if user is valid
-      * returns null otherwise
+      * throws SW360Exception with error code otherwise
       **/
-    Vulnerability getVulnerabilityByExternalId(1: string externalId, 2: User user);
+    Vulnerability getVulnerabilityByExternalId(1: string externalId, 2: User user) throws (1: SW360Exception exp);
 
     /**
       * returns the vulnerability with given externalId if it exists in the database and if user is valid
@@ -243,7 +249,47 @@ service VulnerabilityService {
 
     /**
       * returns the vulnerability with given externalId if it exists in the database and if user is valid
-      * returns null otherwise
+      * throws SW360Exception with error code otherwise
       **/
-    VulnerabilityWithReleaseRelations getVulnerabilityWithReleaseRelationsByExternalId(1: string externalId, 2: User user);
+    VulnerabilityWithReleaseRelations getVulnerabilityWithReleaseRelationsByExternalId(1: string externalId, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * returns a list of relations where the given release id is involved.
+     */
+    list<ReleaseVulnerabilityRelation> getReleaseVulnerabilityRelationsByReleaseId(1: string releaseId, 2: User user);
+
+    /**
+     * returns a list of all ratings involving the given release id
+     */
+    list<ProjectVulnerabilityRating> getProjectVulnerabilityRatingsByReleaseId(1: string releaseId, 2: User user);
+
+    /**
+     * Add Vulnerability and return RequestStatus
+     * throws SW360Exception with error code otherwise
+     */
+    RequestStatus addVulnerability(1: Vulnerability vulnerability, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * Update Vulnerability and return RequestStatus
+     * throws SW360Exception with error code otherwise
+     */
+    RequestStatus updateVulnerability(1: Vulnerability vulnerability, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * Delete Vulnerability and return RequestStatus
+     * throws SW360Exception with error code otherwise
+     */
+    RequestStatus deleteVulnerability(1: Vulnerability vulnerability, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * Add ReleaseVulnerabilityRelation and return RequestStatus
+     * throws SW360Exception with error code otherwise
+     */
+    RequestStatus addReleaseVulnerabilityRelation(1: ReleaseVulnerabilityRelation releaseVulnerabilityRelation, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+     * Delete ReleaseVulnerabilityRelation and return RequestStatus
+     * throws SW360Exception with error code otherwise
+     */
+    RequestStatus deleteReleaseVulnerabilityRelation(1: ReleaseVulnerabilityRelation releaseVulnerabilityRelation, 2: User user) throws (1: SW360Exception exp);
 }

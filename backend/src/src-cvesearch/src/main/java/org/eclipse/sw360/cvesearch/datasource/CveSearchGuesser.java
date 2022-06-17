@@ -2,18 +2,18 @@
  * Copyright (c) Bosch Software Innovations GmbH 2016.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.cvesearch.datasource;
 
 import org.eclipse.sw360.cvesearch.datasource.matcher.ListMatcher;
 import org.eclipse.sw360.cvesearch.datasource.matcher.Match;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.*;
@@ -29,7 +29,7 @@ public class CveSearchGuesser {
     private int productThreshold = 0;
     private int cutoff = Integer.MAX_VALUE;
 
-    Logger log = Logger.getLogger(CveSearchGuesser.class);
+    private Logger log = LogManager.getLogger(CveSearchGuesser.class);
 
     public CveSearchGuesser(CveSearchApi cveSearchApi) {
         this.cveSearchApi=cveSearchApi;
@@ -75,7 +75,7 @@ public class CveSearchGuesser {
 
     public List<Match> getBest(List<Match> matches, int threshold) {
         if(matches.size() == 0){
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         List<Match> bestMatches = new ArrayList<>();
         int minDistance = matches.get(0).getDistance();

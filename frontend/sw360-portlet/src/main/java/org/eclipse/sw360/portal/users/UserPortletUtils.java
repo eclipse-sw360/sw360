@@ -1,41 +1,45 @@
 /*
  * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.users;
 
-import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.kernel.exception.NoSuchUserException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.model.Organization;
+import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Indexer;
 import com.liferay.portal.kernel.search.IndexerRegistryUtil;
+import com.liferay.portal.kernel.service.*;
+import com.liferay.portal.kernel.service.persistence.RoleUtil;
+import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.model.Role;
-import com.liferay.portal.model.User;
-import com.liferay.portal.service.*;
-import com.liferay.portal.service.persistence.RoleUtil;
+
 import org.eclipse.sw360.portal.common.ErrorMessages;
-import org.apache.log4j.Logger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.portlet.PortletRequest;
 import javax.servlet.http.HttpServletRequest;
+
 import java.util.Optional;
 import java.util.function.Consumer;
-
-import static com.google.common.base.Strings.isNullOrEmpty;
 
 /**
  * @author alex.borodin@evosoft.com
  */
 public class UserPortletUtils {
-    private static final Logger log = Logger.getLogger(UserPortletUtils.class);
-
+    private static final Logger log = LogManager.getLogger(UserPortletUtils.class);
+    private static final OrganizationHelper orgHelper = new OrganizationHelper();
     private UserPortletUtils() {
         // Utility class with only static functions
     }
@@ -50,6 +54,87 @@ public class UserPortletUtils {
         return addLiferayUser(requestAdapter, firstName, lastName, emailAddress, organizationName, roleName, male, externalId, password, passwordEncrypted, activateImmediately);
     }
 
+    public static User updateLiferayUser(PortletRequest request, User user, String department, String primaryRole,
+            String oldEmailId, String oldExternalId) {
+        PortletRequestAdapter requestAdapter = new PortletRequestAdapter(request);
+        return updateLiferayUser(requestAdapter, user, department, primaryRole, oldEmailId, oldExternalId);
+    }
+
+    public static User deactivateLiferayUser(User user, boolean deactivate) {
+        user.setStatus(!deactivate ? WorkflowConstants.STATUS_APPROVED : WorkflowConstants.STATUS_INACTIVE);
+        return UserLocalServiceUtil.updateUser(user);
+    }
+
+    private static User updateLiferayUser(RequestAdapter requestAdapter, User user, String department,
+            String primaryRole, String oldEmailId, String oldExternalId) {
+        long companyId = requestAdapter.getCompanyId();
+        Consumer<String> errorMessagesConsumer = requestAdapter.getErrorMessagesConsumer();
+        try {
+            if (!user.getEmailAddress().equals(oldEmailId)) {
+                boolean sameEmailExists = userByFieldExists(user.getEmailAddress(),
+                        UserLocalServiceUtil::getUserByEmailAddress, companyId);
+                if (sameEmailExists) {
+                    log.info(ErrorMessages.EMAIL_ALREADY_EXISTS);
+                    errorMessagesConsumer.accept(ErrorMessages.EMAIL_ALREADY_EXISTS);
+                    return null;
+                }
+            }
+            if (!user.getScreenName().equals(oldExternalId)) {
+                boolean sameExternalIdExists = userByFieldExists(user.getScreenName(),
+                        UserLocalServiceUtil::getUserByScreenName, companyId);
+                if (sameExternalIdExists) {
+                    log.info(ErrorMessages.EXTERNAL_ID_ALREADY_EXISTS);
+                    errorMessagesConsumer.accept(ErrorMessages.EXTERNAL_ID_ALREADY_EXISTS);
+                    return null;
+                }
+            }
+        } catch (PortalException | SystemException e) {
+            log.error(e);
+            // won't try to create user if even checking for existing user failed
+            return null;
+        }
+
+        try {
+            String organizationName = orgHelper.mapOrganizationName(department);
+            Organization organization = orgHelper.addOrGetOrganization(organizationName, companyId);
+            log.info(String.format("Mapped orgcode %s to %s", department, organizationName));
+
+            Role role = RoleLocalServiceUtil.getRole(companyId, primaryRole);
+            final Role userRole = RoleLocalServiceUtil.getRole(companyId, "USER");
+            long roleIdNew = role.getRoleId();
+            long userRoleId = userRole.getRoleId();
+            long[] roleIds = user.getRoleIds();
+            if (roleIds != null) {
+                for (long roleId : roleIds) {
+                    if (userRoleId == roleId) {
+                        continue;
+                    }
+                    UserLocalServiceUtil.deleteRoleUser(roleId, user.getUserId());
+                }
+            }
+            UserGroupRoleLocalServiceUtil.deleteUserGroupRolesByUserId(user.getUserId());
+            if (primaryRole.equalsIgnoreCase("Administrator") || primaryRole.equalsIgnoreCase("User")) {
+                UserLocalServiceUtil.addRoleUser(roleIdNew, user.getUserId());
+                RoleUtil.addUser(role.getRoleId(), user.getUserId());
+            } else {
+                ThemeDisplay themeDisplay = (ThemeDisplay) requestAdapter.getServiceContext().get()
+                        .getLiferayPortletRequest().getAttribute(WebKeys.THEME_DISPLAY);
+                UserGroupRoleLocalServiceUtil.addUserGroupRole(user.getUserId(), themeDisplay.getSiteGroupId(),
+                        roleIdNew);
+            }
+
+            User userUpdated = UserLocalServiceUtil.updateUser(user);
+            orgHelper.reassignUserToOrganizationIfNecessary(userUpdated, organization);
+
+            Indexer indexer = IndexerRegistryUtil.getIndexer(User.class);
+            indexer.reindex(userUpdated);
+            return userUpdated;
+        } catch (PortalException | SystemException e) {
+            log.error(e);
+            return null;
+        }
+    }
+
     private static User addLiferayUser(RequestAdapter requestAdapter, String firstName, String lastName, String emailAddress, String organizationName, String roleName, boolean male, String externalId, String password, boolean passwordEncrypted, boolean activateImmediately) throws SystemException, PortalException {
         long companyId = requestAdapter.getCompanyId();
 
@@ -58,7 +143,7 @@ public class UserPortletUtils {
         long roleId = role.getRoleId();
 
         try {
-            if (userAlreadyExists(requestAdapter.getErrorMessagesConsumer(), emailAddress, externalId, externalId, companyId)){
+            if (userAlreadyExists(requestAdapter.getErrorMessagesConsumer(), emailAddress, externalId, companyId)){
                 return null;
             }
         } catch (PortalException | SystemException e) {
@@ -118,27 +203,24 @@ public class UserPortletUtils {
             UserLocalServiceUtil.updateUser(user);
             RoleLocalServiceUtil.updateRole(role);
 
-            UserLocalServiceUtil.updateStatus(user.getUserId(), activateImmediately ? WorkflowConstants.STATUS_APPROVED : WorkflowConstants.STATUS_INACTIVE, serviceContext);
+            User updatedUser = UserLocalServiceUtil.updateStatus(user.getUserId(), activateImmediately ? WorkflowConstants.STATUS_APPROVED : WorkflowConstants.STATUS_INACTIVE, serviceContext);
             Indexer indexer = IndexerRegistryUtil.getIndexer(User.class);
             indexer.reindex(user);
-            return user;
+            return updatedUser;
         } catch (PortalException | SystemException e) {
             log.error(e);
             return null;
         }
     }
 
-    private static boolean userAlreadyExists(Consumer<String> errorMessageConsumer, String emailAddress, String externalId, String screenName, long companyId) throws PortalException, SystemException {
+    private static boolean userAlreadyExists(Consumer<String> errorMessageConsumer, String emailAddress, String externalId, long companyId) throws PortalException, SystemException {
         boolean sameEmailExists = userByFieldExists(emailAddress, UserLocalServiceUtil::getUserByEmailAddress, companyId);
-        boolean sameScreenNameExists = userByFieldExists(screenName, UserLocalServiceUtil::getUserByScreenName, companyId);
-        boolean sameExternalIdExists = userByFieldExists(externalId, UserLocalServiceUtil::getUserByOpenId, companyId);
-        boolean alreadyExists = sameScreenNameExists || sameEmailExists || sameExternalIdExists;
+        boolean sameExternalIdExists = userByFieldExists(externalId, UserLocalServiceUtil::getUserByScreenName, companyId);
+        boolean alreadyExists = sameEmailExists || sameExternalIdExists;
 
         if(alreadyExists) {
             String errorMessage;
-            if(sameScreenNameExists) {
-                errorMessage = ErrorMessages.FULL_NAME_ALREADY_EXISTS;
-            } else if(sameEmailExists) {
+            if(sameEmailExists) {
                 errorMessage = ErrorMessages.EMAIL_ALREADY_EXISTS;
             } else {
                 errorMessage = ErrorMessages.EXTERNAL_ID_ALREADY_EXISTS;

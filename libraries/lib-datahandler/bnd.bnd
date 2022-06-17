@@ -1,0 +1,55 @@
+#
+# Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+Bundle-Name: SW360 Datahandler
+Bundle-SymbolicName: sw360-datahandler
+Bundle-Version: 1.0.0
+
+-check: all
+-sources: false
+-noee: true
+
+Export-Package: \
+	com.github.ldriscoll.ektorplucene.*, \
+	org.apache.thrift.*, \
+	org.eclipse.sw360.datahandler.*, \
+	org.ektorp.*, \
+	com.cloudant.*, \
+	com.google.gson.*, \
+	com.google.common.*, \
+	com.google.common.util.concurrent.*
+
+
+Import-Package: \
+	com.fasterxml.jackson.*, \
+	com.google.common.*, \
+	javax.net.ssl.*, \
+    org.apache.commons.io.*, \
+	org.apache.commons.codec.binary.*, \
+	org.apache.commons.csv.*, \
+	org.apache.commons.logging.*, \
+	org.apache.logging.log4j, \
+	org.slf4j.*, \
+
+Conditional-Package: \
+	com.github.ldriscoll.ektorplucene.*, \
+	org.apache.http.*, \
+	org.apache.thrift.*, \
+	org.ektorp.*, \
+	com.cloudant.*, \
+	com.google.gson.*
+
+# The following resources are not available as OSGI bundles and therefore will be directly included
+Include-Resource: \
+    META-INF/lib/com.google.guava.failureaccess.jar=failureaccess-[0-9]*.jar;lib:=true
+
+Bundle-Classpath: \
+    ., \
+    META-INF/lib/com.google.guava.failureaccess.jar,

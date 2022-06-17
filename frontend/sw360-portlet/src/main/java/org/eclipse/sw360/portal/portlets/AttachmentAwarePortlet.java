@@ -1,12 +1,11 @@
 /*
  * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.portlets;
 
@@ -18,10 +17,10 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
-import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
@@ -61,10 +60,10 @@ public abstract class AttachmentAwarePortlet extends Sw360Portlet {
     private static final Map<String, String> ATTACHMENT_TYPE_MAP = Maps.newHashMap();
     private static final Map<String, String> CHECK_STATUS_MAP = Maps.newHashMap();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final Logger log = Logger.getLogger(AttachmentAwarePortlet.class);
+    private static final Logger log = LogManager.getLogger(AttachmentAwarePortlet.class);
 
     private static class AttachmentSerializer extends StdSerializer<Attachment> {
-        private static final TSerializer JSON_SERIALIZER = new TSerializer(new TSimpleJSONProtocol.Factory());
+        private static final TSerializer JSON_SERIALIZER = getJsonSerializer();
 
         public AttachmentSerializer(Class<Attachment> clazz) {
             super(clazz);

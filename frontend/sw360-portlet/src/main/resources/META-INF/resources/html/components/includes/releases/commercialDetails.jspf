@@ -1,0 +1,65 @@
+<%--
+  ~ Copyright Siemens AG, 2015-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+<core_rt:set var="cotsDetails" value="${release.cotsDetails}"/>
+<table class="table label-value-table" id="cotsDetailOverview">
+    <thead>
+    <tr>
+        <th colspan="2"><liferay-ui:message key="commercial.details.administration" /></th>
+    </tr>
+    </thead>
+    <tr>
+        <td><liferay-ui:message key="usage.right.available" />:</td>
+        <td><sw360:DisplayBoolean defined="${cotsDetails.setUsageRightAvailable}"
+                                  value="${cotsDetails.usageRightAvailable}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="cots.responsible" />:</td>
+        <td><sw360:DisplayUserEmail email="${cotsDetails.cotsResponsible}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="cots.clearing.deadline" />:</td>
+        <td><sw360:out value="${cotsDetails.clearingDeadline}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="cots.clearing.report.url" />:</td>
+        <td><sw360:out value="${cotsDetails.licenseClearingReportURL}"/></td>
+    </tr>
+</table>
+
+<table class="table label-value-table" id="cotsOssInformation">
+    <thead>
+    <tr>
+        <th colspan="2"><liferay-ui:message key="cots.oss.information" /></th>
+    </tr>
+    </thead>
+    <tr>
+        <td><liferay-ui:message key="used.license" />:</td>
+        <td><sw360:out value="${cotsDetails.usedLicense}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="contains.open.source.software" />:</td>
+        <td><sw360:DisplayBoolean defined="${cotsDetails.setContainsOSS}"
+                                  value="${cotsDetails.containsOSS}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="oss.contract.signed" />:</td>
+        <td><sw360:DisplayBoolean defined="${cotsDetails.setOssContractSigned}"
+                                  value="${cotsDetails.ossContractSigned}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="oss.information.url" />:</td>
+        <td><sw360:out value="${cotsDetails.ossInformationURL}"/></td>
+    </tr>
+    <tr>
+        <td><liferay-ui:message key="source.code.available" />:</td>
+        <td><sw360:DisplayBoolean defined="${cotsDetails.setSourceCodeAvailable}"
+                                  value="${cotsDetails.sourceCodeAvailable}"/></td>
+    </tr>
+</table>

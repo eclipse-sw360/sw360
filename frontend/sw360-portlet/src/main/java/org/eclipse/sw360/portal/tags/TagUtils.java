@@ -1,18 +1,17 @@
 /*
  * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.tags;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.apache.thrift.meta_data.FieldMetaData;
@@ -58,7 +57,8 @@ public class TagUtils {
                                                                                                T deletions,
                                                                                                U field,
                                                                                                FieldMetaData fieldMetaData,
-                                                                                               String prefix) {
+                                                                                               String prefix,
+                                                                                               boolean isClosedModeration) {
         Object oldFieldValue = oldInstance.getFieldValue(field);
         Object deletedFieldValue = deletions.getFieldValue(field);
         Object updateFieldValue = additions.getFieldValue(field);
@@ -69,13 +69,13 @@ public class TagUtils {
         if (updateFieldValue != null && updateFieldValue.equals(deletedFieldValue)) {
             return; //no intent to change something
         }
-        if (updateFieldValue != null && updateFieldValue.equals(oldFieldValue)) {
+        if (updateFieldValue != null && !isClosedModeration && updateFieldValue.equals(oldFieldValue)) {
             return; //no actual change
         }
         if (oldFieldValue == null && updateFieldValue == null) {
             return; //no actual change
         }
-        if ((oldFieldValue != null && !oldFieldValue.equals(updateFieldValue)) || oldFieldValue == null) {
+        if ((oldFieldValue != null && !oldFieldValue.equals(updateFieldValue)) || oldFieldValue == null || isClosedModeration) {
             if (fieldMetaData.valueMetaData.type == TType.SET) {
                 displaySet(
                         display,
@@ -85,7 +85,7 @@ public class TagUtils {
                         field,
                         prefix);
             } else if(fieldMetaData.valueMetaData.type == TType.MAP &&
-                    CommonUtils.isMapFieldMapOfStringSets(field, oldInstance, additions, deletions, Logger.getLogger(TagUtils.class))) {
+                    CommonUtils.isMapFieldMapOfStringSets(field, oldInstance, additions, deletions, LogManager.getLogger(TagUtils.class))) {
                 displayCustomMap(display,
                         (Map<String, Set<String>>) oldFieldValue,
                         (Map<String, Set<String>>) updateFieldValue,
@@ -211,7 +211,7 @@ public class TagUtils {
                     StringBuilder sb = new StringBuilder();
                     sb.append("<ul>");
                     for (Object o : ((List<Object>) fieldValue)) {
-                        sb.append("<li>" + o.toString() + "</li>");
+                        sb.append("<li>" + StringEscapeUtils.escapeXml(o.toString()) + "</li>");
                     }
                     sb.append("</ul>");
                     fieldDisplay = sb.toString();
@@ -222,7 +222,7 @@ public class TagUtils {
                     StringBuilder sb = new StringBuilder();
                     sb.append("<ul>");
                     for (Object o : ((Set<Object>) fieldValue)) {
-                        sb.append("<li>" + o.toString() + "</li>");
+                        sb.append("<li>" + StringEscapeUtils.escapeXml(o.toString()) + "</li>");
                     }
                     sb.append("</ul>");
                     fieldDisplay = sb.toString();
@@ -237,7 +237,7 @@ public class TagUtils {
                 fieldDisplay = DisplayMap.getMapAsString(stringMapValue);
                 break;
             default:
-                fieldDisplay = fieldValue == null ? "" : fieldValue.toString();
+                fieldDisplay = fieldValue == null ? "" : StringEscapeUtils.escapeXml(fieldValue.toString());
         }
         return fieldDisplay;
     }

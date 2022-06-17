@@ -2,15 +2,15 @@
  * Copyright Bosch Software Innovations GmbH, 2017.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.rest.resourceserver.licenseinfo;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,7 +19,9 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
@@ -46,11 +48,21 @@ public class Sw360LicenseInfoService {
         }
     }
 
-    public LicenseInfoFile getLicenseInfoFile(Project project, User sw360User, String generatorClassName,
-                                              Map<String, Set<String>> selectedReleaseAndAttachmentIds, Map<String, Set<LicenseNameWithText>> excludedLicenses) {
+    public LicenseInfoFile getLicenseInfoFile(Project project, User sw360User, String generatorClassNameWithVariant,
+            Map<String, Map<String, Boolean>> selectedReleaseAndAttachmentIds,
+            Map<String, Set<LicenseNameWithText>> excludedLicenses, String externalIds, String fileName) {
         try {
             LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
-            return sw360LicenseInfoClient.getLicenseInfoFile(project, sw360User, generatorClassName, selectedReleaseAndAttachmentIds, excludedLicenses);
+            return sw360LicenseInfoClient.getLicenseInfoFile(project, sw360User, generatorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicenses, externalIds, fileName);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<LicenseInfoParsingResult> getLicenseInfoForAttachment(Release release, User sw360User, String attachmentContentId, boolean includeConcludedLicense) {
+        try {
+            LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
+            return sw360LicenseInfoClient.getLicenseInfoForAttachment(release, attachmentContentId, includeConcludedLicense, sw360User);
         } catch (TException e) {
             throw new RuntimeException(e);
         }

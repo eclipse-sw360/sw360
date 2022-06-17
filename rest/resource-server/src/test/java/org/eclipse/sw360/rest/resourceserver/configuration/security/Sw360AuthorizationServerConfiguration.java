@@ -1,10 +1,11 @@
 /*
  * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+  * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.rest.resourceserver.configuration.security;
@@ -36,7 +37,7 @@ public class Sw360AuthorizationServerConfiguration extends AuthorizationServerCo
     private final String GRANTED_AUTHORITY_BASIC = "BASIC";
 
     @Override
-    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) {
         endpoints
                 .tokenStore(tokenStore())
                 .tokenEnhancer(jwtAccessTokenConverter())
@@ -44,7 +45,7 @@ public class Sw360AuthorizationServerConfiguration extends AuthorizationServerCo
     }
 
     @Override
-    public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
+    public void configure(AuthorizationServerSecurityConfigurer oauthServer) {
         oauthServer.tokenKeyAccess("isAnonymous() || hasAuthority('" + GRANTED_AUTHORITY_BASIC + "')")
                 .checkTokenAccess("hasAuthority('" + GRANTED_AUTHORITY_BASIC + "')");
     }

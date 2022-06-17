@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) Bosch.IO GmbH 2021.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v2.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v20.html
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+
+pipeline {
+    agent {
+        kubernetes {
+            label 'sw360-agent-pod'
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: sw360buildenv
+    image: eclipse/sw360buildenv:2
+    tty: true
+    command:
+    - cat
+    env:
+    - name: "MAVEN_OPTS"
+      value: "-Duser.home=/home/jenkins -Xms2G -Xmx2G"
+    resources:
+      requests:
+        memory: "2048Mi"
+      limits:
+        memory: "2048Mi"
+    volumeMounts:
+    - name: settings-xml
+      mountPath: /home/jenkins/.m2/settings.xml
+      subPath: settings.xml
+      readOnly: true
+    - name: settings-security-xml
+      mountPath: /home/jenkins/.m2/settings-security.xml
+      subPath: settings-security.xml
+      readOnly: true
+    - name: m2-repo
+      mountPath: /home/jenkins/.m2/repository
+  volumes:
+  - name: settings-xml
+    secret:
+      secretName: m2-secret-dir
+      items:
+      - key: settings.xml
+        path: settings.xml
+  - name: settings-security-xml
+    secret:
+      secretName: m2-secret-dir
+      items:
+      - key: settings-security.xml
+        path: settings-security.xml
+  - name: m2-repo
+    emptyDir: {}
+"""
+        }
+    }
+
+    environment {
+        COUNT = sh(
+                script: "printf \$(git rev-list `git rev-list --tags --no-walk --max-count=1`..HEAD --count)",
+                returnStdout: true
+        )
+    }
+
+    parameters {
+        booleanParam(
+            name: 'RELEASE',
+            defaultValue: false,
+            description: 'If true, it is a milestone build with a m1 version suffix, or, if false, an intermediate build with a version suffix based on the commit count')
+    }
+    stages {
+        stage('Deploy SW360') {
+            steps {
+                container('sw360buildenv') {
+                    script {
+                        if (params.RELEASE) {
+                            VERSION_SUFFIX = "0-m1"
+                        } else {
+                            VERSION_SUFFIX = "0-" + COUNT
+                        }
+                    }
+                    // FIXME: Removed the frontend from the build, because it does not build in the Container environment
+                    // Plugin liferay-themes breaks the build
+                    // FIXME: Removed backend utils form the build, it causes issues with signing the fat jar
+                    sh """
+                        mvn --batch-mode -Peclipse-ci \
+                            clean deploy \
+                            -pl '!frontend/sw360-portlet,!frontend/liferay-theme,!frontend,!backend/utils' \
+                            -DskipTests -DskipITs -Dpatchlevel=$VERSION_SUFFIX
+                    """
+                }
+            }
+        }
+    }
+}

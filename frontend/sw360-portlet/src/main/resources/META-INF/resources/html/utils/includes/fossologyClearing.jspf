@@ -1,0 +1,101 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2017, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+<%@ page import="org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus" %>
+<%@ page import="org.eclipse.sw360.datahandler.common.FossologyUtils" %>
+
+<portlet:resourceURL var="statusURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_ACTION_STATUS%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="processURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_ACTION_PROCESS%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="outdatedURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_ACTION_OUTDATED%>'/>
+</portlet:resourceURL>
+<portlet:resourceURL var="triggerReportGenURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_ACTION_RELOAD_REPORT%>'/>
+</portlet:resourceURL>
+
+
+<div class="dialogs">
+	<div id="fossologyClearingDialog" data-title="<liferay-ui:message key="fossology.process" />" class="modal fade" tabindex="-1" role="dialog"
+        data-portlet-namespace="<portlet:namespace/>"
+        data-fossology-status-url="<%=statusURL%>"
+        data-fossology-process-url="<%=processURL%>"
+        data-fossology-outdated-url="<%=outdatedURL%>"
+        data-fossology-generate-report-url="<%=triggerReportGenURL%>"
+        data-step-name-upload="<%=FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD %>"
+        data-step-name-scan="<%=FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN %>"
+        data-step-name-report="<%=FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT %>"
+        data-step-status-new="<%=ExternalToolProcessStatus.NEW %>"
+        data-step-status-inwork="<%=ExternalToolProcessStatus.IN_WORK %>"
+        data-step-status-done="<%=ExternalToolProcessStatus.DONE %>"
+    >
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-body container">
+                    <div class="row mt-4">
+                        <div class="col">
+                            <small class="form-text portlet-msg-info"">
+                                <h3><liferay-ui:message key="how.it.works" />:</h3>
+                                <p>
+                                    <liferay-ui:message key="if.the.source.of.a.release.is.attached.to.it.a.basic.fossology.process.can.be.invoked.by.just.opening.this.dialog.it.consists.of" />
+                                    <ol>
+                                        <li><liferay-ui:message key="upload.the.sources.to.fossology" /></li>
+                                        <li><liferay-ui:message key="scan.the.sources" /></li>
+                                        <li><liferay-ui:message key="generate.a.report.out.of.the.scan.results.and.attach.it.to.this.release" /></li>
+                                    </ol>
+                                </p>
+                                <p>
+                                    <liferay-ui:message key="if.a.fossology.process.got.stuck.or.if.the.source.attachment.was.not.correct.you.can.start.all.over.by.setting.the.current.fossology.process.to.status.outdated.a.new.one.will.be.started.automatically.so.make.sure.you.corrected.all.attachments.or.other.problems.first.before.changing.the.state" />
+                                </p>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="source-attachment">
+                                <liferay-ui:message key="found.source.attachment" /> <span id="name-of-source-attachment" class="ml-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="progress" style="height: 40px;">
+                                <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="auto-refresh">
+                                <liferay-ui:message key="auto.refresh.in" /> <span id="auto-refresh-seconds" class="ml-2">5</span>
+                            </div>
+                        </div>
+                        <core_rt:if test="${not empty fossologyJobViewLink}">
+                            <div class="col-md-12">
+                                <div class="fossology-link">
+                                    <a target="_blank" href="${fossologyJobViewLink}">Job view of FOSSology</a>
+                                </div>
+                            </div>
+                        </core_rt:if>
+                    </div>
+				</div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-submit="outdated"><liferay-ui:message key="set.outdated" /></button>
+                    <button type="button" class="btn btn-light" data-submit="reload_report"><liferay-ui:message key="reload.report" /></button>
+                    <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+                </div>
+			</div>
+		</div>
+	</div>
+</div>

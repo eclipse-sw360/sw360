@@ -1,0 +1,68 @@
+<%--
+  ~ Copyright Siemens AG, 2013-2015, 2019. Part of the SW360 Portal Project.
+  ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+--%>
+
+<portlet:resourceURL var="addVendorURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.ADD_VENDOR%>"/>
+</portlet:resourceURL>
+
+<div class="dialogs">
+    <div id="addVendorDialog" data-title="<liferay-ui:message key="create.new.vendor" />" class="modal fade" tabindex="-1" role="dialog" data-add-vendor-url="<%=addVendorURL%>">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body container">
+                    <form class="needs-validation" novalidate>
+                        <table class="table edit-table three-columns">
+                            <thead>
+                                <tr>
+                                    <th colspan="3"><liferay-ui:message key="edit.vendor" /></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="vendorFullname"><liferay-ui:message key="full.name" /></label>
+                                            <input id="vendorFullname" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.vendor.fullname" />" data-name="fullname" autofocus/>
+                                                <div class="invalid-feedback">
+                                                <liferay-ui:message key="please.enter.a.full.name" />
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="vendorShortname"><liferay-ui:message key="short.name" /></label>
+                                            <input id="vendorShortname" type="text" required class="form-control" placeholder="<liferay-ui:message key="enter.vendor.short.name" />" data-name="shortname" />
+                                            <div class="invalid-feedback">
+                                                <liferay-ui:message key="please.enter.a.short.name" />
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="form-group">
+                                            <label for="vendorURL"><liferay-ui:message key="url" /></label>
+                                            <input id="vendorURL" type="url" required class="form-control" placeholder="<liferay-ui:message key="enter.vendor.url" />" data-name="url" />
+                                            <div class="invalid-feedback">
+                                                <liferay-ui:message key="please.enter.an.url" />
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </form>
+                </div>
+                <div class="modal-footer">
+		        <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+			        <button name="add-vendor" data-submit="add" type="button" class="btn btn-primary"><liferay-ui:message key="add.vendor" /></button>
+			    </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,29 +1,33 @@
 /*
- * Copyright Siemens AG, 2016. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2016, 2019. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.tags;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
-import org.apache.thrift.meta_data.FieldMetaData;
-import org.apache.thrift.protocol.TType;
-import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
-import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import com.liferay.portal.kernel.language.LanguageUtil;
+import com.liferay.portal.kernel.util.ResourceBundleUtil;
+
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.tags.urlutils.LinkedReleaseRenderer;
 
+import org.apache.thrift.meta_data.FieldMetaData;
+import org.apache.thrift.protocol.TType;
+
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
+
 import java.util.HashMap;
+import java.util.ResourceBundle;
 import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
@@ -31,7 +35,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInfor
 import static org.eclipse.sw360.portal.tags.TagUtils.*;
 
 /**
- * Display the fields that have changed in the project
+ * Display the fields that have changed in the release
  *
  * @author birgit.heydenreich@tngtech.com
  */
@@ -41,6 +45,7 @@ public class DisplayReleaseChanges extends UserAwareTag {
     private Release deletions;
     private String tableClasses = "";
     private String idPrefix = "";
+    private boolean isClosedModeration = false;
 
     public void setActual(Release actual) {
         this.actual = actual;
@@ -62,12 +67,15 @@ public class DisplayReleaseChanges extends UserAwareTag {
         this.idPrefix = idPrefix;
     }
 
+    public void setIsClosedModeration(boolean isClosedModeration) {
+        this.isClosedModeration = isClosedModeration;
+    }
+
     public int doStartTag() throws JspException {
 
         JspWriter jspWriter = pageContext.getOut();
 
         StringBuilder display = new StringBuilder();
-        String namespace = getNamespace();
 
         if (additions == null || deletions == null) {
             return SKIP_BODY;
@@ -86,7 +94,7 @@ public class DisplayReleaseChanges extends UserAwareTag {
                     case DOCUMENT_STATE:
                     case COMPONENT_ID:
                     case VENDOR_ID:
-                    case CLEARING_TEAM_TO_FOSSOLOGY_STATUS:
+                case EXTERNAL_TOOL_PROCESSES:
                         //Taken care of externally or in extra tables
                     case ATTACHMENTS:
                     case RELEASE_ID_TO_RELATIONSHIP:
@@ -96,19 +104,21 @@ public class DisplayReleaseChanges extends UserAwareTag {
                         break;
                     default:
                         FieldMetaData fieldMetaData = Release.metaDataMap.get(field);
-                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "");
+                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "", isClosedModeration);
                 }
             }
 
             String renderString = display.toString();
+            HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
 
             if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<h4> No changes in basic fields </h4>";
+                renderString = "<div class=\"alert alert-danger\">"+LanguageUtil.get(resourceBundle,"no.changes.in.basic.fields")+"</div>";
             } else {
                 renderString = String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
-                        + "<thead><tr><th colspan=\"4\"> Changes for Basic fields</th></tr>"
+                        + "<thead><tr><th colspan=\"4\">"+LanguageUtil.get(resourceBundle,"changes.for.basic.fields")+" </th></tr>"
                         + String.format("<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
-                        FIELD_NAME, CURRENT_VAL, DELETED_VAL, SUGGESTED_VAL)
+                        LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"), LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
                         + renderString + "</tbody></table>";
             }
 
@@ -129,6 +139,8 @@ public class DisplayReleaseChanges extends UserAwareTag {
 
     private void renderReleaseIdToRelationship(StringBuilder display, User user) {
 
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (ensureSomethingTodoAndNoNull(Release._Fields.RELEASE_ID_TO_RELATIONSHIP)) {
 
             Set<String> changedReleaseIds = Sets.intersection(
@@ -143,16 +155,24 @@ public class DisplayReleaseChanges extends UserAwareTag {
 
             Set<String> addedReleaseIds = Sets.difference(additions.getReleaseIdToRelationship().keySet(), changedReleaseIds);
 
-            display.append("<h3> Changes in linked releases </h3>");
+            if (isClosedModeration) {
+                addedReleaseIds = Sets.difference(additions.getReleaseIdToRelationship().keySet(),
+                        deletions.getReleaseIdToRelationship().keySet());
+                removedReleaseIds = Sets.difference(deletions.getReleaseIdToRelationship().keySet(),
+                        releaseIdsInDb);
+            }
+            display.append("<h3>"+LanguageUtil.get(resourceBundle,"changes.in.linked.releases")+" </h3>");
             LinkedReleaseRenderer renderer = new LinkedReleaseRenderer(display, tableClasses, idPrefix, user);
-            renderer.renderReleaseLinkList(display, deletions.getReleaseIdToRelationship(), removedReleaseIds, "Removed Release Links");
-            renderer.renderReleaseLinkList(display, additions.getReleaseIdToRelationship(), addedReleaseIds, "Added Release Links");
+            renderer.renderReleaseLinkList(display, deletions.getReleaseIdToRelationship(), removedReleaseIds, LanguageUtil.get(resourceBundle,"removed.release.links"), request);
+            renderer.renderReleaseLinkList(display, additions.getReleaseIdToRelationship(), addedReleaseIds, LanguageUtil.get(resourceBundle,"added.release.links"), request);
             renderer.renderReleaseLinkListCompare(
                     display,
                     actual.getReleaseIdToRelationship(),
                     deletions.getReleaseIdToRelationship(),
                     additions.getReleaseIdToRelationship(),
-                    changedReleaseIds);
+                    changedReleaseIds,
+                    request,
+                    isClosedModeration);
         }
     }
 
@@ -193,6 +213,8 @@ public class DisplayReleaseChanges extends UserAwareTag {
     }
 
     private String renderClearingInformation() {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (!ensureSomethingTodoAndNoNull(Release._Fields.CLEARING_INFORMATION)) {
             return "";
         }
@@ -207,18 +229,20 @@ public class DisplayReleaseChanges extends UserAwareTag {
                     actual.getClearingInformation(),
                     additions.getClearingInformation(),
                     deletions.getClearingInformation(),
-                    field, fieldMetaData, "");
+                    field, fieldMetaData, "", isClosedModeration);
         }
-        return "<h3> Changes in Clearing Information </h3>"
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.clearing.information")+ "</h3>"
                 + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
                 + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
-                FIELD_NAME, CURRENT_VAL, DELETED_VAL, SUGGESTED_VAL)
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"), LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
                 + display.toString() + "</tbody></table>";
 
 
     }
 
     private String renderEccInformation() {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (!ensureSomethingTodoAndNoNull(Release._Fields.ECC_INFORMATION)) {
             return "";
         }
@@ -233,18 +257,20 @@ public class DisplayReleaseChanges extends UserAwareTag {
                     actual.getEccInformation(),
                     additions.getEccInformation(),
                     deletions.getEccInformation(),
-                    field, fieldMetaData, "");
+                    field, fieldMetaData, "", isClosedModeration);
         }
-        return "<h3> Changes in ECC Information </h3>"
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.ecc.information")+"</h3>"
                 + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
                 + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
-                FIELD_NAME, CURRENT_VAL, DELETED_VAL, SUGGESTED_VAL)
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"), LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
                 + display.toString() + "</tbody></table>";
 
 
     }
 
     private String renderCOTSDetails() {
+        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (!ensureSomethingTodoAndNoNull(Release._Fields.COTS_DETAILS)) {
             return "";
         }
@@ -259,12 +285,12 @@ public class DisplayReleaseChanges extends UserAwareTag {
                     actual.getCotsDetails(),
                     additions.getCotsDetails(),
                     deletions.getCotsDetails(),
-                    field, fieldMetaData, "");
+                    field, fieldMetaData, "", isClosedModeration);
         }
-        return "<h3> Changes in COTS Details </h3>"
+        return "<h3>"+LanguageUtil.get(resourceBundle,"changes.in.cots.details")+"</h3>"
                 + String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
                 + String.format("<thead><tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
-                FIELD_NAME, CURRENT_VAL, DELETED_VAL, SUGGESTED_VAL)
+                LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"), LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
                 + display.toString() + "</tbody></table>";
 
 

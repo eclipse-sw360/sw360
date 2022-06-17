@@ -1,19 +1,18 @@
 /*
  * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.projects;
 
 import com.google.common.collect.ImmutableMap;
 import org.eclipse.sw360.datahandler.TestUtils;
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
@@ -22,6 +21,7 @@ import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -31,7 +31,10 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getProjectIds;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,12 +43,14 @@ import static org.junit.Assert.assertEquals;
 
 public class ProjectHandlerTest {
 
-    private static final String dbName = DatabaseSettings.COUCH_DB_DATABASE;
-    private static final String attachmentDbName = DatabaseSettings.COUCH_DB_ATTACHMENTS;
+    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
+    private static final String attachmentDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
+    private static final String changeLogDbName = DatabaseSettingsTest.COUCH_CHANGELOGS;
 
     private static final User user1 = new User().setEmail("user1").setDepartment("AB CD EF");
     private static final User user2 = new User().setEmail("user2").setDepartment("AB CD FE");
     private static final User user3 = new User().setEmail("user3").setDepartment("AB CD EF");
+    private static final Map<String, Boolean> userRoles = new HashMap<>();
 
     ProjectHandler handler;
 
@@ -53,35 +58,35 @@ public class ProjectHandlerTest {
     public void setUp() throws Exception {
         List<Project> projects = new ArrayList<>();
 
-        projects.add(new Project().setId("P1").setName("Project1").setBusinessUnit("AB CD EF").setCreatedBy("user1"));
-        projects.add(new Project().setId("P2").setName("Project2").setBusinessUnit("AB CD FE").setCreatedBy("user2"));
+        projects.add(new Project().setId("P1").setName("Project1").setBusinessUnit("AB CD EF").setCreatedBy("user1").setReleaseIdToUsage(Collections.emptyMap()));
+        projects.add(new Project().setId("P2").setName("Project2").setBusinessUnit("AB CD FE").setCreatedBy("user2").setReleaseIdToUsage(Collections.emptyMap()));
         projects.get(1).addToContributors("user1");
-        projects.add(new Project().setId("P3").setName("Project3").setBusinessUnit("AB CD EF").setCreatedBy("user3"));
+        projects.add(new Project().setId("P3").setName("Project3").setBusinessUnit("AB CD EF").setCreatedBy("user3").setReleaseIdToUsage(Collections.emptyMap()));
 
         // Create the database
-        TestUtils.createDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
         for (Project project : projects) {
             databaseConnector.add(project);
         }
 
         // Create the connector
-        handler = new ProjectHandler();
+        handler = new ProjectHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.getConfiguredHttpClient(), dbName, changeLogDbName, attachmentDbName);
     }
 
     @After
     public void tearDown() throws Exception {
         // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @Test
     public void testGetMyProjects() throws Exception {
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
     }
 
 
@@ -159,9 +164,9 @@ public class ProjectHandlerTest {
         assertEquals(SW360Utils.getCreatedOn(), projectActual.getCreatedOn());
         assertEquals("AB CD FE", projectActual.getBusinessUnit());
 
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(2, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(2, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(3, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(2, handler.getAccessibleProjectsSummary(user2).size());
@@ -203,10 +208,9 @@ public class ProjectHandlerTest {
         assertEquals("Project1new", handler.getProjectById("P1", user1).getName());
         assertEquals("AB CD FE", handler.getProjectById("P1", user1).getBusinessUnit());
 
-
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(3, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(2, handler.getAccessibleProjectsSummary(user2).size());
@@ -218,9 +222,9 @@ public class ProjectHandlerTest {
     public void testUpdateProject2_1() throws Exception {
         ProjectModerator moderator = Mockito.mock(ProjectModerator.class);
 
-        ProjectDatabaseHandler handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentDbName, moderator,
-                new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentDbName),
-                new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), dbName, attachmentDbName));
+        ProjectDatabaseHandler handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName, moderator,
+                new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentDbName),
+                new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentDbName));
         Project project2 = handler.getProjectById("P2", user1);
         project2.setName("Project2new");
 
@@ -249,10 +253,9 @@ public class ProjectHandlerTest {
         assertEquals("Project2new", handler.getProjectById("P2", user2).getName());
         assertEquals("AB CD EF", handler.getProjectById("P2", user2).getBusinessUnit());
 
-
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(3, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(1, handler.getAccessibleProjectsSummary(user2).size());
@@ -272,9 +275,9 @@ public class ProjectHandlerTest {
         assertEquals("AB CD FE", handler.getProjectById("P3", user3).getBusinessUnit());
 
 
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(2, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(2, handler.getAccessibleProjectsSummary(user2).size());
@@ -290,9 +293,9 @@ public class ProjectHandlerTest {
 
         assertEquals(RequestStatus.SUCCESS, status);
 
-        assertEquals(1, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(1, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(2, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(1, handler.getAccessibleProjectsSummary(user2).size());
@@ -304,17 +307,17 @@ public class ProjectHandlerTest {
     @Test
     public void testDontDeleteUsedProject1_1() throws Exception {
 
-        final Project p2 = handler.getProjectById("P2", user2);
-        p2.setLinkedProjects(ImmutableMap.of("P1", ProjectRelationship.CONTAINED));
-        handler.updateProject(p2,user2);
+        final Project p1 = handler.getProjectById("P1", user1);
+        p1.setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)));
+        handler.updateProject(p1,user1);
 
-        RequestStatus status = handler.deleteProject("P1", user1);
+        RequestStatus status = handler.deleteProject("P2", user2);
 
         assertEquals(RequestStatus.IN_USE, status);
 
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(3, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(1, handler.getAccessibleProjectsSummary(user2).size());
@@ -329,9 +332,9 @@ public class ProjectHandlerTest {
 
         assertEquals(RequestStatus.SUCCESS, status);
 
-        assertEquals(1, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(0, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(1, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(0, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(2, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(0, handler.getAccessibleProjectsSummary(user2).size());
@@ -347,9 +350,9 @@ public class ProjectHandlerTest {
 
         assertEquals(RequestStatus.SUCCESS, status);
 
-        assertEquals(2, handler.getMyProjects(user1.getEmail()).size());
-        assertEquals(1, handler.getMyProjects(user2.getEmail()).size());
-        assertEquals(0, handler.getMyProjects(user3.getEmail()).size());
+        assertEquals(2, handler.getMyProjects(user1, userRoles).size());
+        assertEquals(1, handler.getMyProjects(user2, userRoles).size());
+        assertEquals(0, handler.getMyProjects(user3, userRoles).size());
 
         assertEquals(2, handler.getAccessibleProjectsSummary(user1).size());
         assertEquals(1, handler.getAccessibleProjectsSummary(user2).size());

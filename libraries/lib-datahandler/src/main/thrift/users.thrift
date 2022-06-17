@@ -2,18 +2,18 @@
  * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
  * With contributions by Bosch Software Innovations GmbH, 2016.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 include "sw360.thrift"
 namespace java org.eclipse.sw360.datahandler.thrift.users
 namespace php sw360.thrift.users
 
 typedef sw360.RequestStatus RequestStatus
+typedef sw360.PaginationData PaginationData
 
 enum UserGroup {
     USER = 0,
@@ -21,7 +21,8 @@ enum UserGroup {
     CLEARING_ADMIN = 2,
     ECC_ADMIN = 3,
     SECURITY_ADMIN = 4,
-    SW360_ADMIN = 5
+    SW360_ADMIN = 5,
+    CLEARING_EXPERT = 6
 }
 
 enum LocalGroup {
@@ -40,7 +41,6 @@ enum RequestedAction {
     ATTACHMENTS = 6,
     WRITE_ECC = 7,
 }
-
 struct User {
 
     1: optional string id,
@@ -57,6 +57,19 @@ struct User {
     12: optional string commentMadeDuringModerationRequest,
     13: optional map<string, bool> notificationPreferences,
     14: optional set<string> formerEmailAddresses,
+    20: optional list<RestApiToken> restApiTokens,
+    21: optional map<string, bool> myProjectsPreferenceSelection,
+    22: optional map<string, set<UserGroup>> secondaryDepartmentsAndRoles,
+    23: optional list<string> primaryRoles,
+    24: optional bool deactivated
+}
+
+struct RestApiToken {
+    1: optional string token,
+    2: optional string name,
+    3: optional string createdOn
+    4: optional i32 numberOfDaysValid,
+    5: optional set<string> authorities,
 }
 
 service UserService {
@@ -70,6 +83,11 @@ service UserService {
      * returns SW360-user with given email
      **/
     User getByEmail(1:string email);
+
+    /**
+     * returns SW360-user with given token
+     **/
+    User getByApiToken(1:string token);
 
     /**
      * searches for a SW360 user by email, or, if no such user is found, by externalId
@@ -106,4 +124,23 @@ service UserService {
      **/
     string getDepartmentByEmail(1:string email);
 
+    /**
+     * get list of users with pagination
+     **/
+    map<PaginationData, list<User>> getUsersWithPagination(1: User user, 2: PaginationData pageData);
+
+    /**
+     * search users in database
+     **/
+    list<User> refineSearch(1: string text, 2: map<string, set<string>> subQueryRestrictions);
+
+    /**
+     * get departments of all user
+     **/
+    set<string> getUserDepartments();
+
+    /**
+     * get email of all user
+     **/
+    set<string> getUserEmails();
 }

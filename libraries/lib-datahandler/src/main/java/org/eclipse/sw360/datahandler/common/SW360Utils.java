@@ -1,12 +1,11 @@
 /*
- * Copyright Siemens AG, 2014-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2017, 2019. Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.datahandler.common;
 
@@ -19,33 +18,50 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
-import org.apache.thrift.TEnum;
-import org.apache.thrift.TException;
+
+import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectProjectRelationshipMixin;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.projects.*;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TEnum;
+import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.base.Strings.nullToEmpty;
-import static org.apache.log4j.Logger.getLogger;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 
 /**
  * @author Cedric.Bodet@tngtech.com
@@ -55,15 +71,29 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
  */
 public class SW360Utils {
 
-    private final static Logger log = getLogger(SW360Utils.class);
+    private final static Logger log = LogManager.getLogger(SW360Utils.class);
 
     public static final String FORMAT_DATE = "yyyy-MM-dd";
     public static final String FORMAT_DATE_TIME = "yyyy-MM-dd HH:mm:ss";
     public static final Comparator<ReleaseLink> RELEASE_LINK_COMPARATOR = Comparator.comparing(rl -> getReleaseFullname(rl.getVendor(), rl.getName(), rl.getVersion()).toLowerCase());
-
     private static final ObjectMapper objectMapper;
+    private static final String DIGIT_AND_DECIMAL_REGEX = "[^\\d.]";
+    private static final Comparator<Entry<String, ObligationStatusInfo>> COMPARE_BY_OBLIGATIONTYPE = Comparator
+            .comparing(Entry<String, ObligationStatusInfo>::getValue, (osi1, osi2) -> {
+                String type1 = "", type2 = "";
+                if (Objects.nonNull(osi1) && Objects.nonNull(osi1.getObligationType())) {
+                    type1 = osi1.getObligationType().name();
+                }
+                if (Objects.nonNull(osi2) && Objects.nonNull(osi2.getObligationType())) {
+                    type2 = osi2.getObligationType().name();
+                }
+                return type1.compareToIgnoreCase(type2);
+            });
 
-    private static Joiner spaceJoiner = Joiner.on(" ");
+    public static Joiner spaceJoiner = Joiner.on(" ");
+    public static Joiner commaJoiner = Joiner.on(", ");
+
+    public static String INACCESSIBLE_RELEASE ="RestrictedRelease";
 
     private SW360Utils() {
         // Utility class with only static functions
@@ -72,6 +102,7 @@ public class SW360Utils {
     static{
         objectMapper = new ObjectMapper();
         SimpleModule customModule = new SimpleModule("SW360 serializers");
+        customModule.setMixInAnnotation(ProjectProjectRelationship.class, ProjectProjectRelationshipMixin.class);
         customModule.addSerializer(TEnum.class, new TEnumSerializer());
         customModule.addSerializer(ProjectReleaseRelationship.class, new ProjectReleaseRelationshipSerializer());
         objectMapper.registerModule(customModule);
@@ -189,6 +220,42 @@ public class SW360Utils {
         return getVersionedName(release.getName(), release.getVersion());
     }
 
+    public static List<Attachment> getApprovedClxAttachmentForRelease(Release release) {
+        Predicate<Attachment> isApprovedCLI = attachment -> CheckStatus.ACCEPTED.equals(attachment.getCheckStatus())
+                && AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType());
+        if (release.getAttachments() == null) {
+            return new ArrayList<Attachment>();
+        }
+        return release.getAttachments().stream().filter(isApprovedCLI).collect(Collectors.toList());
+    }
+
+    public static Map<String, String> getReleaseIdtoAcceptedCLIMappings(Map<String, ObligationStatusInfo> obligationStatusMap) {
+        if (null == obligationStatusMap) {
+            return Maps.newHashMap();
+        }
+        return obligationStatusMap.values().stream().flatMap(e -> (e.getReleaseIdToAcceptedCLI() != null ? e.getReleaseIdToAcceptedCLI() : new HashMap<String,String>()).entrySet().stream())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue));
+    }
+
+    public static String dropCommentedLine(Class<?> clazz, String TEMPLATE_FILE) {
+        String text = new String(CommonUtils.loadResource(clazz, TEMPLATE_FILE).orElse(new byte[0]));
+        return text.replaceAll("(?m)^#.*(?:\r?\n)?", ""); // ignore comments in template file
+    }
+
+    public static boolean isValidDate(String date, DateTimeFormatter format, Long greaterThanDays) {
+        try {
+            LocalDate selectedDate = LocalDate.parse(date, format);
+            LocalDate currentDate = LocalDate.now();
+            long difference = ChronoUnit.DAYS.between(currentDate, selectedDate);
+            if (null != greaterThanDays) {
+                return difference >= greaterThanDays;
+            }
+            return true;
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+    }
+
     public static String printFullname(Release release) {
         if (release == null || isNullOrEmpty(release.getName())) {
             return "New Release";
@@ -238,6 +305,15 @@ public class SW360Utils {
         return user.getEmail();
     }
 
+    public static String printFullname(User user) {
+        if (user == null || isNullOrEmpty(user.getEmail())) {
+            return "New User";
+        }
+        StringBuilder sb = new StringBuilder(CommonUtils.nullToEmptyString(user.getFullname())).append(" (")
+                .append(user.getEmail()).append(")");
+        return sb.toString();
+    }
+
     public static Collection<ProjectLink> getLinkedProjects(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
         if (project != null) {
             try {
@@ -285,6 +361,28 @@ public class SW360Utils {
         return result;
     }
 
+    public static Collection<ProjectLink> getLinkedProjectsAsFlatList(Project project, boolean deep,
+            ThriftClients thriftClients, Logger log, User user,
+            Set<ProjectRelationship> selectedProjectRelationAsList) {
+        Collection<ProjectLink> linkedProjects = getLinkedProjects(project, deep, thriftClients, log, user);
+        if (CommonUtils.isNotEmpty(linkedProjects)) {
+            filteredListOfLinkedProject(linkedProjects.iterator().next().getSubprojects(),
+                    selectedProjectRelationAsList);
+        }
+        return flattenProjectLinkTree(linkedProjects);
+    }
+
+    public static void filteredListOfLinkedProject(Collection<ProjectLink> linkedProjects,
+            Set<ProjectRelationship> selectedProjectRelationAsList) {
+        if (CommonUtils.isNotEmpty(linkedProjects)) {
+            Collection<ProjectLink> linkedProjectsFiltered=linkedProjects.stream()
+                    .filter(projectLink -> selectedProjectRelationAsList.contains(projectLink.getRelation())).collect(Collectors.toSet());
+            linkedProjects.retainAll(linkedProjectsFiltered);
+            linkedProjects.forEach(projectLink -> filteredListOfLinkedProject(projectLink.getSubprojects(),
+                            selectedProjectRelationAsList));
+        }
+    }
+
     public static List<ReleaseLink> getLinkedReleases(Project project, ThriftClients thriftClients, Logger log) {
         if (project != null && project.getReleaseIdToUsage() != null) {
             try {
@@ -297,6 +395,18 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
+    public static List<ReleaseLink> getLinkedReleasesWithAccessibility(Project project, ThriftClients thriftClients, Logger log, User user) {
+        if (project != null && project.getReleaseIdToUsage() != null) {
+            try {
+                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+                return componentClient.getLinkedReleasesWithAccessibility(project.getReleaseIdToUsage(), user);
+            } catch (TException e) {
+                log.error("Could not get linked releases", e);
+            }
+        }
+        return Collections.emptyList();
+    }
+    
     public static List<ReleaseLink> getLinkedReleaseRelations(Release release, ThriftClients thriftClients, Logger log) {
         if (release != null && release.getReleaseIdToRelationship() != null) {
             try {
@@ -309,6 +419,18 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
+    public static List<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(Release release, ThriftClients thriftClients, Logger log, User user) {
+        if (release != null && release.getReleaseIdToRelationship() != null) {
+            try {
+                ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+                return componentClient.getLinkedReleaseRelationsWithAccessibility(release.getReleaseIdToRelationship(), user);
+            } catch (TException e) {
+                log.error("Could not get linked releases", e);
+            }
+        }
+        return Collections.emptyList();
+    }
+    
     public static Predicate<String> startsWith(final String prefix) {
         return new Predicate<String>() {
             @Override
@@ -417,6 +539,9 @@ public class SW360Utils {
             jgen.writeStartObject();
             jgen.writeObjectField("releaseRelation", value.getReleaseRelation());
             jgen.writeObjectField("mainlineState", value.getMainlineState());
+            jgen.writeObjectField("comment", nullToEmpty(value.getComment()));
+            jgen.writeObjectField("createdBy", nullToEmpty(value.getCreatedBy()));
+            jgen.writeObjectField("createdOn", nullToEmpty(value.getCreatedOn()));
             jgen.writeEndObject();
         }
     }
@@ -435,6 +560,25 @@ public class SW360Utils {
         return releaseNamesMap;
     }
 
+    public static <T> Map<String, T> putAccessibleReleaseNamesInMap(Map<String, T> map, List<Release> releases, User user, T inaccessibleValue) {
+        if (map == null || releases == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, T> releaseNamesMap = new HashMap<>();
+        int inaccessbileReleaseCount = 0;
+        if (!CommonUtils.isNullOrEmptyCollection(releases)) {
+            for (Release release : releases) {
+                if (release.isSetPermissions() && release.getPermissions().get(RequestedAction.READ)) {
+                    releaseNamesMap.put(printName(release), map.get(release.getId()));
+                } else {
+                    inaccessbileReleaseCount++;
+                    releaseNamesMap.put(String.format("%s%d", INACCESSIBLE_RELEASE, inaccessbileReleaseCount), inaccessibleValue);
+                }
+            }
+        }
+        return releaseNamesMap;
+    }
+    
     public static <T> Map<String, T> putProjectNamesInMap(Map<String, T> map, List<Project> projects) {
         if(map == null || projects == null) {
             return Collections.emptyMap();
@@ -457,5 +601,156 @@ public class SW360Utils {
     @NotNull
     public static <T> Set<T> unionValues(Map<?, Set<T>>map){
         return nullToEmptyMap(map).values().stream().filter(Objects::nonNull).reduce(Sets::union).orElse(Sets.newHashSet());
+    }
+
+    public static Set<ExternalToolProcess> getExternalToolProcessesForTool(Release release, ExternalTool et) {
+        if (release == null || et == null) {
+            return new HashSet<>();
+        }
+
+        return nullToEmptySet(release.getExternalToolProcesses()) //
+                .stream() //
+                .filter(etp -> et.equals(etp.getExternalTool())) //
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<ExternalToolProcess> getNotOutdatedExternalToolProcessesForTool(Release release,
+            ExternalTool et) {
+        return getExternalToolProcessesForTool(release, et) //
+                .stream() //
+                .filter(etp -> !ExternalToolProcessStatus.OUTDATED.equals(etp.getProcessStatus())) //
+                .collect(Collectors.toSet());
+    }
+
+    public static int getTotalReleaseCount(ReleaseClearingStateSummary clearingSummary) {
+        return clearingSummary.getNewRelease() + clearingSummary.getReportAvailable() + clearingSummary.getUnderClearing()
+                + clearingSummary.getSentToClearingTool()+ clearingSummary.getApproved();
+    }
+
+    /**
+     * Assumes that the process exists.
+     */
+    public static ExternalToolProcessStep getExternalToolProcessStepOfFirstProcessForTool(Release release,
+            ExternalTool et, String stepName) {
+        if (release == null || et == null || CommonUtils.isNullEmptyOrWhitespace(stepName)) {
+            return null;
+        }
+
+        return getNotOutdatedExternalToolProcessesForTool(release, et) //
+                .stream() //
+                .findFirst() //
+                .map(ExternalToolProcess::getProcessSteps) //
+                .orElseGet(Lists::newArrayList)//
+                .stream() //
+                .filter(etps -> stepName.equals(etps.getStepName())) //
+                .findFirst() //
+                .orElse(null);
+    }
+
+    public static Integer parseStringToNumber(String input) {
+        final String digitsOnly = input.replaceAll(DIGIT_AND_DECIMAL_REGEX, "");
+
+        if ("".equals(digitsOnly))
+            return 0;
+        try {
+            return Integer.parseInt(digitsOnly);
+        } catch (NumberFormatException nfe) {
+            log.error("Number Format Exception while parsing clearing request Id: "+digitsOnly);
+            return 0;
+        }
+    }
+
+    public static Map<String, ObligationStatusInfo> getProjectComponentOrganisationLicenseObligationToDisplay(
+            Map<String, ObligationStatusInfo> obligationStatusMap, List<Obligation> obligations,
+            ObligationLevel oblLevel, boolean addFromDB) {
+        Map<String, ObligationStatusInfo> obligationAlreadyPresent = obligationStatusMap.entrySet().stream()
+                .filter(Objects::nonNull).filter(e -> Objects.nonNull(e.getValue()))
+                .filter(e -> Objects.nonNull(e.getValue().getObligationLevel()))
+                .filter(e -> e.getValue().getObligationLevel().equals(oblLevel)).collect(Collectors.toMap(
+                        e -> e.getKey(), e -> e.getValue().setText(e.getKey()), (oldValue, newValue) -> oldValue));
+        obligationAlreadyPresent.entrySet().stream().forEach(e -> obligationStatusMap.remove(e.getKey()));
+
+        Map<String, ObligationStatusInfo> mapOfObligations = obligations.stream().filter(Objects::nonNull)
+                .filter(o -> Objects.nonNull(o.getObligationLevel()) && oblLevel.equals(o.getObligationLevel()))
+                .filter(o -> addFromDB || obligationAlreadyPresent
+                        .containsKey(CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " ")))
+                .collect(Collectors.toMap(
+                        o -> CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " "), o -> {
+                            String key = CommonUtils.nullToEmptyString(o.getTitle()).replaceAll("\r\n", " ");
+                            if (obligationAlreadyPresent.containsKey(key)) {
+                                return obligationAlreadyPresent.remove(key);
+                            } else {
+                                return new ObligationStatusInfo().setComment(o.getComments())
+                                        .setObligationLevel(oblLevel).setObligationType(o.getObligationType())
+                                        .setReleaseIdToAcceptedCLI(new HashMap<>()).setText(o.getText());
+                            }
+                        }, (oldValue, newValue) -> oldValue));
+
+        obligationAlreadyPresent.entrySet().stream().forEach(e -> mapOfObligations.put(e.getKey(), e.getValue()));
+
+        return mapOfObligations;
+    }
+
+    public static List<Obligation> getObligations() {
+        final LicenseService.Iface licenseClient = new ThriftClients().makeLicenseClient();
+        List<Obligation> obligations = new ArrayList<>();
+
+        try {
+            obligations = licenseClient.getObligations();
+        } catch (TException e) {
+            log.error("Could not get Obligations from Admin Section!", e);
+        }
+        return obligations;
+    }
+
+    public static Map<String, ObligationStatusInfo> sortMapOfObligationOnType(
+            Map<String, ObligationStatusInfo> mapOfObligations) {
+        return mapOfObligations.entrySet().stream().sorted(COMPARE_BY_OBLIGATIONTYPE)
+                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue(), (oldValue, newValue) -> oldValue,
+                        LinkedHashMap<String, ObligationStatusInfo>::new));
+    }
+
+    public static boolean isModeratorOrCreator(Project project, User user) {
+        Set<String> users = new HashSet<String>();
+        Set<String> moderators = project.getModerators();
+        users.addAll(moderators);
+        users.add(project.getCreatedBy());
+        return users.contains(user.getEmail());
+    }
+
+    public static void copyLinkedObligationsForClonedProject(Project newProject, Project sourceProject, ProjectService.Iface client, User user) {
+        try {
+            ObligationList obligation = client.getLinkedObligations(sourceProject.getLinkedObligationId(), user);
+            Set<String> newLinkedReleaseIds = newProject.getReleaseIdToUsage().keySet();
+            Set<String> sourceLinkedReleaseIds = sourceProject.getReleaseIdToUsage().keySet();
+            Map<String, ObligationStatusInfo> linkedObligations = obligation.getLinkedObligationStatus();
+            if (!newLinkedReleaseIds.equals(sourceLinkedReleaseIds)) {
+                linkedObligations = obligation.getLinkedObligationStatus().entrySet().stream().filter(entry -> {
+                    Set<String> releaseIds = entry.getValue().getReleaseIdToAcceptedCLI().keySet();
+                    releaseIds.retainAll(newLinkedReleaseIds);
+                    if (releaseIds.isEmpty()) {
+                        return false;
+                    }
+                    return true;
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            }
+            if (!linkedObligations.isEmpty()) {
+                client.addLinkedObligations(new ObligationList().setProjectId(newProject.getId()).setLinkedObligationStatus(linkedObligations), user);
+            }
+        } catch (TException e) {
+            log.error("Error duplicating obligations for project: " + newProject.getId(), e);
+        }
+    }
+
+    public static void removeReleaseVulnerabilityRelation(String releaseId, User user){
+        VulnerabilityService.Iface vulnerabilityService = new ThriftClients().makeVulnerabilityClient();
+        try {
+            List<ReleaseVulnerabilityRelation> releaseVulnerabilityRelations = vulnerabilityService.getReleaseVulnerabilityRelationsByReleaseId(releaseId, user);
+            for (ReleaseVulnerabilityRelation relation : releaseVulnerabilityRelations) {
+                vulnerabilityService.deleteReleaseVulnerabilityRelation(relation, user);
+            }
+        } catch (TException e) {
+            log.error(e.getMessage());
+        }
     }
 }

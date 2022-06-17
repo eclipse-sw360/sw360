@@ -3,12 +3,11 @@
  * With modifications by Siemens AG, 2017-2018.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.licenseinfo.outputGenerators;
@@ -24,8 +23,11 @@ import org.apache.velocity.runtime.resource.loader.FileResourceLoader;
 import org.apache.velocity.tools.ToolManager;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.licenseinfo.util.LicenseNameWithTextUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,7 +46,9 @@ public abstract class OutputGenerator<T> {
     protected static final String LICENSE_INFO_RESULTS_CONTEXT_PROPERTY = "licenseInfoResults";
     protected static final String LICENSE_INFO_ERROR_RESULTS_CONTEXT_PROPERTY = "licenseInfoErrorResults";
     protected static final String LICENSE_INFO_HEADER_TEXT = "licenseInfoHeader";
+    protected static final String OBLIGATIONS_TEXT = "obligations";
     protected static final String LICENSE_INFO_PROJECT_TITLE = "projectTitle";
+    protected static final String EXTERNAL_IDS = "externalIds";
 
     private final String outputType;
     private final String outputDescription;
@@ -60,7 +64,7 @@ public abstract class OutputGenerator<T> {
         this.outputVariant = variant;
     }
 
-    public abstract T generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, String projectName, String projectVersion, String licenseInfoHeaderText) throws SW360Exception;
+    public abstract T generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String,String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception;
 
     public String getOutputType() {
         return outputType;
@@ -94,6 +98,10 @@ public abstract class OutputGenerator<T> {
 
     public String getComponentLongName(LicenseInfoParsingResult li) {
         return SW360Utils.getReleaseFullname(li.getVendor(), li.getName(), li.getVersion());
+    }
+
+    public String getComponentShortName(LicenseInfoParsingResult li) {
+        return SW360Utils.getReleaseFullname("", li.getName(), li.getVersion());
     }
 
     public VelocityContext getConfiguredVelocityContext() {
@@ -175,8 +183,8 @@ public abstract class OutputGenerator<T> {
                 .filter(Objects::nonNull)
                 .map(LicenseInfo::getLicenseNamesWithTexts)
                 .filter(Objects::nonNull)
-                .reduce(Sets::union)
-                .orElse(Collections.emptySet());
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet());
 
         return licenseNamesWithText.stream()
                 .filter(licenseNameWithText -> !LicenseNameWithTextUtils.isEmpty(licenseNameWithText))
@@ -219,19 +227,20 @@ public abstract class OutputGenerator<T> {
      *            parsing results to be rendered
      * @param file
      *            name of template file
+     * @param externalIds
      * @return rendered template
      */
     protected String renderTemplateWithDefaultValues(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, String file,
-                                                     String projectTitle, String licenseInfoHeaderText) {
+                                                     String projectTitle, String licenseInfoHeaderText, String obligationsText, Map<String, String> externalIds) {
         VelocityContext vc = getConfiguredVelocityContext();
         // set header
         vc.put(LICENSE_INFO_PROJECT_TITLE, projectTitle);
         vc.put(LICENSE_INFO_HEADER_TEXT, licenseInfoHeaderText);
+        vc.put(OBLIGATIONS_TEXT, obligationsText);
 
         // sorted lists of all license to be displayed at the end of the file at once
         List<LicenseNameWithText> licenseNamesWithTexts = getSortedLicenseNameWithTexts(projectLicenseInfoResults);
         vc.put(ALL_LICENSE_NAMES_WITH_TEXTS, licenseNamesWithTexts);
-
         // assign a reference id to each license in order to only display references for
         // each release. The references will point to
         // the list with all details at the and of the file (see above)
@@ -259,6 +268,8 @@ public abstract class OutputGenerator<T> {
         // also display acknowledgments
         SortedMap<String, Set<String>> acknowledgements = getSortedAcknowledgements(sortedLicenseInfos);
         vc.put(ACKNOWLEDGEMENTS_CONTEXT_PROPERTY, acknowledgements);
+
+        vc.put(EXTERNAL_IDS, externalIds);
 
         StringWriter sw = new StringWriter();
         Velocity.mergeTemplate(file, "utf-8", vc, sw);

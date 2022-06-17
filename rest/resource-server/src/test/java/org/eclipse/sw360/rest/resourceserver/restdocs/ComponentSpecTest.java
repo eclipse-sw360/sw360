@@ -2,10 +2,11 @@
  * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  * Copyright Bosch Software Innovations GmbH, 2018.
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+  * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
  */
 
 package org.eclipse.sw360.rest.resourceserver.restdocs;
@@ -15,29 +16,37 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.hateoas.Resource;
-import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
@@ -46,6 +55,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -70,20 +80,49 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     private Attachment attachment;
 
+    private Project project;
+
     @Before
-    public void before() throws TException {
+    public void before() throws TException, IOException {
         Set<Attachment> attachmentList = new HashSet<>();
-        List<Resource<Attachment>> attachmentResources = new ArrayList<>();
+        List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
         attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
         attachment.setSha1("da373e491d3863477568896089ee9457bc316783");
         attachmentList.add(attachment);
-        attachmentResources.add(new Resource<>(attachment));
+        attachmentResources.add(EntityModel.of(attachment));
+        Attachment attachment2 = new Attachment("1231231255", "spring-mvc-4.3.4.RELEASE.jar");
+        attachment2.setSha1("da373e491d3863477568896089ee9457bc316784");
+        attachmentList.add(attachment2);
+        attachmentResources.add(EntityModel.of(attachment2));
 
-        given(this.attachmentServiceMock.getAttachmentContent(anyObject())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
-        given(this.attachmentServiceMock.getResourcesFromList(anyObject())).willReturn(new Resources<>(attachmentResources));
+        Set<Attachment> setOfAttachment = new HashSet<Attachment>();
+        Attachment att1 = new Attachment("1234", "test.zip").setAttachmentType(AttachmentType.SOURCE)
+                .setCreatedBy("user@sw360.org").setSha1("da373e491d312365483589ee9457bc316783").setCreatedOn("2021-04-27")
+                .setCreatedTeam("DEPARTMENT");
+        Attachment att2 = att1.deepCopy().setAttachmentType(AttachmentType.BINARY).setCreatedComment("Created Comment")
+                .setCheckStatus(CheckStatus.ACCEPTED).setCheckedComment("Checked Comment").setCheckedOn("2021-04-27")
+                .setCheckedBy("admin@sw360.org").setCheckedTeam("DEPARTMENT1");
+
+        given(this.attachmentServiceMock.getAttachmentContent(any())).willReturn(new AttachmentContent().setId("1231231254").setFilename("spring-core-4.3.4.RELEASE.jar").setContentType("binary"));
+        given(this.attachmentServiceMock.getResourcesFromList(any())).willReturn(CollectionModel.of(attachmentResources));
+        given(this.attachmentServiceMock.uploadAttachment(any(), any(), any())).willReturn(attachment);
+        given(this.attachmentServiceMock.filterAttachmentsToRemove(any(), any(), any())).willReturn(Collections.singleton(attachment));
+        given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
+
+        Map<String, Set<String>> externalIds = new HashMap<>();
+        externalIds.put("component-id-key", ImmutableSet.of("1831A3", "c77321"));
+
+        Component testComponent = new Component().setAttachments(setOfAttachment).setId("98745")
+                .setName("Test Component").setComponentType(ComponentType.CODE_SNIPPET)
+                .setCreatedOn("2021-04-27").setCreatedBy("admin@sw360.org")
+                .setCategories(ImmutableSet.of("java", "javascript", "sql"));
 
         List<Component> componentList = new ArrayList<>();
+        Set<Component> usedByComponent = new HashSet<>();
         List<Component> componentListByName = new ArrayList<>();
+        Map<String, String> angularComponentExternalIds = new HashMap<>();
+        angularComponentExternalIds.put("component-id-key", "1831A3");
+        angularComponentExternalIds.put("ws-component-id", "[\"123\",\"598752\"]");
         angularComponent = new Component();
         angularComponent.setId("17653524");
         angularComponent.setName("Angular");
@@ -101,10 +140,18 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         angularComponent.setLanguages(ImmutableSet.of("EN", "DE"));
         angularComponent.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
         angularComponent.setAttachments(attachmentList);
+        angularComponent.setExternalIds(angularComponentExternalIds);
+        angularComponent.setMailinglist("test@liferay.com");
+        angularComponent.setAdditionalData(Collections.singletonMap("Key", "Value"));
+        angularComponent.setHomepage("https://angular.io");
         componentList.add(angularComponent);
         componentListByName.add(angularComponent);
 
         Component springComponent = new Component();
+        Map<String, String> springComponentExternalIds = new HashMap<>();
+        springComponentExternalIds.put("component-id-key", "c77321");
+        springComponentExternalIds.put("ws-component-id", "[\"125\",\"698452\"]");
+
         springComponent.setId("678dstzd8");
         springComponent.setName("Spring Framework");
         springComponent.setComponentOwner("Jane");
@@ -120,25 +167,52 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         springComponent.setCategories(ImmutableSet.of("jdbc", "java"));
         springComponent.setLanguages(ImmutableSet.of("EN", "DE"));
         springComponent.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
+        springComponent.setExternalIds(springComponentExternalIds);
+        springComponent.setMailinglist("test@liferay.com");
         componentList.add(springComponent);
+        usedByComponent.add(springComponent);
 
-        when(this.componentServiceMock.createComponent(anyObject(), anyObject())).then(invocation -> {
-            springComponent.setType("component");
-            springComponent.setCreatedOn("2016-12-20");
-            springComponent.setModerators(null);
-            springComponent.setVendorNames(null);
-            return springComponent;
-        });
+        Set<Project> projectList = new HashSet<>();
+        project = new Project();
+        project.setId("376576");
+        project.setName("Emerald Web");
+        project.setProjectType(ProjectType.PRODUCT);
+        project.setVersion("1.0.2");
+        projectList.add(project);
 
-        given(this.componentServiceMock.getComponentsForUser(anyObject())).willReturn(componentList);
-        given(this.componentServiceMock.getComponentForUserById(eq("17653524"), anyObject())).willReturn(angularComponent);
+        when(this.componentServiceMock.createComponent(any(), any())).then(invocation ->
+                new Component("Spring Framework")
+                        .setDescription("The Spring Framework provides a comprehensive programming and configuration model for modern Java-based enterprise applications.")
+                        .setComponentType(ComponentType.OSS)
+                        .setId("1234567890")
+                        .setCreatedBy("admin@sw360.org")
+                        .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
+
+        given(this.componentServiceMock.getComponentsForUser(any())).willReturn(componentList);
+        given(this.componentServiceMock.getComponentForUserById(eq("17653524"), any())).willReturn(angularComponent);
+        given(this.componentServiceMock.getComponentForUserById(eq("98745"), any())).willReturn(testComponent);
+        given(this.componentServiceMock.getProjectsByComponentId(eq("17653524"), any())).willReturn(projectList);
+        given(this.componentServiceMock.getUsingComponentsForComponent(eq("17653524"), any())).willReturn(usedByComponent);
         given(this.componentServiceMock.searchComponentByName(eq(angularComponent.getName()))).willReturn(componentListByName);
-        given(this.componentServiceMock.deleteComponent(eq(angularComponent.getId()), anyObject())).willReturn(RequestStatus.SUCCESS);
+        given(this.componentServiceMock.deleteComponent(eq(angularComponent.getId()), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.componentServiceMock.searchByExternalIds(eq(externalIds), any())).willReturn((new HashSet<>(componentList)));
+        given(this.componentServiceMock.convertToEmbeddedWithExternalIds(eq(angularComponent))).willReturn(
+                new Component("Angular")
+                        .setId("17653524")
+                        .setComponentType(ComponentType.OSS)
+                        .setExternalIds(Collections.singletonMap("component-id-key", "1831A3"))
+        );
+        given(this.componentServiceMock.convertToEmbeddedWithExternalIds(eq(springComponent))).willReturn(
+                new Component("Spring Framework")
+                        .setId("678dstzd8")
+                        .setComponentType(ComponentType.OSS)
+                        .setExternalIds(Collections.singletonMap("component-id-key", "c77321"))
+        );
 
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789"));
         given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
-        given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(
-                new User("jane@sw360.org", "sw360").setId("209582812"));
         given(this.userServiceMock.getUserByEmail("john@sw360.org")).willReturn(
                 new User("john@sw360.org", "sw360").setId("74427996"));
 
@@ -192,15 +266,55 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
-                                fieldWithPath("_embedded.sw360:components[]name").description("The name of the component"),
-                                fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
-                                fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:components.[]name").description("The name of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of components per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all existing components"),
                                 fieldWithPath("page.totalPages").description("Total number of pages"),
                                 fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_usedbyresource_for_components() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/components/usedBy/17653524")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:components.[]name").description("The name of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:projects.[]name").description("The name of the project"),
+                                subsectionWithPath("_embedded.sw360:projects.[]version").description("The project version"),
+                                subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_components_no_paging_params() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/components")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:components.[]name").description("The name of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
 
@@ -228,12 +342,12 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
-                                fieldWithPath("_embedded.sw360:components[]name").description("The name of the component"),
-                                fieldWithPath("_embedded.sw360:components[]ownerGroup").description("The ownerGroup of the component"),
-                                fieldWithPath("_embedded.sw360:components[]ownerCountry").description("The ownerCountry of the component"),
-                                fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
-                                fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:components.[]name").description("The name of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]ownerGroup").description("The ownerGroup of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]ownerCountry").description("The ownerCountry of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of components per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all existing components"),
@@ -264,24 +378,30 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("ownerCountry").description("The owner country of the component"),
                                 fieldWithPath("categories").description("The component categories"),
                                 fieldWithPath("languages").description("The language of the component"),
+                                subsectionWithPath("externalIds").description("When components are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
+                                subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("operatingSystems").description("The OS on which the component operates"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
-                                fieldWithPath("_embedded.createdBy").description("The user who created this component"),
-                                fieldWithPath("_embedded.sw360:releases").description("An array of all component releases with version and link to their <<resources-releases,Releases resource>>"),
-                                fieldWithPath("_embedded.sw360:moderators").description("An array of all component moderators with email and link to their <<resources-user-get,User resource>>"),
-                                fieldWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
-                                fieldWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>")
+                                fieldWithPath("mailinglist").description("Component mailing lists"),
+                                fieldWithPath("homepage").description("The homepage url of the component"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.createdBy").description("The user who created this component"),
+                                subsectionWithPath("_embedded.sw360:releases").description("An array of all component releases with version and link to their <<resources-releases,Releases resource>>"),
+                                subsectionWithPath("_embedded.sw360:moderators").description("An array of all component moderators with email and link to their <<resources-user-get,User resource>>"),
+                                subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
+                                subsectionWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                                fieldWithPath("visbility").description("The visibility type of the component"),
+                                fieldWithPath("setVisbility").description("The visibility of the component"),
+                                fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component")
                         )));
     }
 
     @Test
     public void should_document_create_component() throws Exception {
         Map<String, String> component = new HashMap<>();
-
         component.put("name", "Spring Framework");
         component.put("description", "The Spring Framework provides a comprehensive programming and configuration model for modern Java-based enterprise applications.");
-        component.put("createdBy", "jane@sw360.org");
         component.put("componentType", ComponentType.OSS.toString());
+        component.put("homepage", "https://angular.io");
 
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(
@@ -290,27 +410,24 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .content(this.objectMapper.writeValueAsString(component))
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
                 .andDo(this.documentationHandler.document(
                         requestFields(
                                 fieldWithPath("name").description("The name of the component"),
                                 fieldWithPath("description").description("The component description"),
-                                fieldWithPath("createdBy").description("The user who created this component"),
-                                fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values()))
+                                fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                fieldWithPath("homepage").description("The homepage url of the component")
                         ),
                         responseFields(
                                 fieldWithPath("name").description("The name of the component"),
                                 fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
-                                fieldWithPath("componentOwner").description("The owner name of the component"),
                                 fieldWithPath("description").description("The component description"),
                                 fieldWithPath("createdOn").description("The date the component was created"),
-                                fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the component"),
-                                fieldWithPath("ownerGroup").description("The owner group of the component"),
-                                fieldWithPath("ownerCountry").description("The owner country of the component"),
-                                fieldWithPath("categories").description("The component categories"),
-                                fieldWithPath("languages").description("The language of the component"),
-                                fieldWithPath("operatingSystems").description("The OS on which the component operates"),
-                                fieldWithPath("_embedded.createdBy").description("The user who created this component"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                subsectionWithPath("_embedded.createdBy").description("The user who created this component"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("visbility").description("The visibility type of the component"),
+                                fieldWithPath("setVisbility").description("The visibility of the component"),
+                                fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component")
                         )));
     }
 
@@ -337,10 +454,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
-                                fieldWithPath("_embedded.sw360:components[]name").description("The name of the component"),
-                                fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
-                                fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:components.[]name").description("The name of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of components per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all existing components"),
@@ -372,10 +489,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
-                                fieldWithPath("_embedded.sw360:components[]name").description("The name of the component"),
-                                fieldWithPath("_embedded.sw360:components[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
-                                fieldWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:components.[]name").description("The name of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of components per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all existing components"),
@@ -396,29 +513,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", "Bearer " + accessToken)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
-                .andDo(this.documentationHandler.document(
-                        links(
-                                linkWithRel("self").description("The <<resources-components,Component resource>>")
-                        ),
-                        responseFields(
-                                fieldWithPath("name").description("The name of the component"),
-                                fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
-                                fieldWithPath("description").description("The component description"),
-                                fieldWithPath("createdOn").description("The date the component was created"),
-                                fieldWithPath("componentOwner").description("The owner name of the component"),
-                                fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the component"),
-                                fieldWithPath("ownerGroup").description("The owner group of the component"),
-                                fieldWithPath("ownerCountry").description("The owner country of the component"),
-                                fieldWithPath("categories").description("The component categories"),
-                                fieldWithPath("languages").description("The language of the component"),
-                                fieldWithPath("operatingSystems").description("The OS on which the component operates"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
-                                fieldWithPath("_embedded.createdBy").description("The user who created this component"),
-                                fieldWithPath("_embedded.sw360:releases").description("An array of all component releases with version and link to their <<resources-releases,Releases resource>>"),
-                                fieldWithPath("_embedded.sw360:moderators").description("An array of all component moderators with email and link to their <<resources-user-get,User resource>>"),
-                                fieldWithPath("_embedded.sw360:vendors").description("An array of all component vendors with ful name and link to their <<resources-vendor-get,Vendor resource>>"),
-                                fieldWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>")
-                        )));
+                .andDo(documentComponentProperties());
     }
 
     @Test
@@ -444,11 +539,45 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         responseFields(
-                                fieldWithPath("_embedded.sw360:attachments").description("An array of <<resources-attachment, Attachments resources>>"),
-                                fieldWithPath("_embedded.sw360:attachments[]filename").description("The attachment filename"),
-                                fieldWithPath("_embedded.sw360:attachments[]sha1").description("The attachment sha1 value"),
-                                fieldWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                subsectionWithPath("_embedded.sw360:attachments").description("An array of <<resources-attachment, Attachments resources>>"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]filename").description("The attachment filename"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]sha1").description("The attachment sha1 value"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_update_component_attachment_info() throws Exception {
+        Attachment updateAttachment = new Attachment().setAttachmentType(AttachmentType.BINARY)
+                .setCreatedComment("Created Comment").setCheckStatus(CheckStatus.ACCEPTED)
+                .setCheckedComment("Checked Comment");
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc
+                .perform(patch("/api/components/98745/attachment/1234").contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(updateAttachment))
+                        .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                requestFields(
+                        fieldWithPath("attachmentType").description("The type of Attachment. Possible Values are: "+Arrays.asList(AttachmentType.values())),
+                        fieldWithPath("createdComment").description("The upload Comment of Attachment"),
+                        fieldWithPath("checkStatus").description("The checkStatus of Attachment. Possible Values are: "+Arrays.asList(CheckStatus.values())),
+                        fieldWithPath("checkedComment").description("The checked Comment of Attachment")),
+                responseFields(
+                        fieldWithPath("filename").description("The attachment filename"),
+                        fieldWithPath("sha1").description("The attachment sha1 value"),
+                        fieldWithPath("attachmentType").description("The type of attachment. Possible Values are: "+Arrays.asList(AttachmentType.values())),
+                        fieldWithPath("createdBy").description("The email of user who uploaded the attachment"),
+                        fieldWithPath("createdTeam").description("The department of user who uploaded the attachment"),
+                        fieldWithPath("createdOn").description("The date when attachment was uploaded"),
+                        fieldWithPath("createdComment").description("The upload Comment of attachment"),
+                        fieldWithPath("checkStatus").description("The checkStatus of attachment. Possible Values are: "+Arrays.asList(CheckStatus.values())),
+                        fieldWithPath("checkedComment").description("The checked comment of attachment"),
+                        fieldWithPath("checkedBy").description("The email of user who checked the attachment"),
+                        fieldWithPath("checkedTeam").description("The department of user who checked the attachment"),
+                        fieldWithPath("checkedOn").description("The date when attachment was checked"),
+                        subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                )));
     }
 
     @Test
@@ -459,5 +588,70 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .accept("application/*"))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document());
+    }
+
+    @Test
+    public void should_document_get_components_by_externalIds() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/components/searchByExternalIds?component-id-key=1831A3&component-id-key=c77321")
+                .contentType(MediaTypes.HAL_JSON)
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                subsectionWithPath("_embedded.sw360:components.[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:components.[]name").description("The name of the component, optional"),
+                                subsectionWithPath("_embedded.sw360:components.[]externalIds").description("External Ids of the component. Return as 'Single String' when single value, or 'Array of String' when multi-values"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_upload_attachment_to_component() throws Exception {
+        testAttachmentUpload("/api/components/", angularComponent.getId());
+    }
+
+    @Test
+    public void should_document_delete_component_attachment() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(delete("/api/components/" + angularComponent.getId() + "/attachments/" + attachment.getAttachmentContentId())
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(documentComponentProperties());
+    }
+
+    private RestDocumentationResultHandler documentComponentProperties() {
+        return this.documentationHandler.document(
+                links(
+                        linkWithRel("self").description("The <<resources-components,Component resource>>")
+                ),
+                responseFields(
+                        fieldWithPath("name").description("The name of the component"),
+                        fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                        fieldWithPath("description").description("The component description"),
+                        fieldWithPath("createdOn").description("The date the component was created"),
+                        fieldWithPath("componentOwner").description("The owner name of the component"),
+                        fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the component"),
+                        fieldWithPath("ownerGroup").description("The owner group of the component"),
+                        fieldWithPath("ownerCountry").description("The owner country of the component"),
+                        subsectionWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
+                        subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
+                        fieldWithPath("categories").description("The component categories"),
+                        fieldWithPath("languages").description("The language of the component"),
+                        fieldWithPath("mailinglist").description("Component mailing lists"),
+                        fieldWithPath("operatingSystems").description("The OS on which the component operates"),
+                        fieldWithPath("homepage").description("The homepage url of the component"),
+                        subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                        subsectionWithPath("_embedded.createdBy").description("The user who created this component"),
+                        subsectionWithPath("_embedded.sw360:releases").description("An array of all component releases with version and link to their <<resources-releases,Releases resource>>"),
+                        subsectionWithPath("_embedded.sw360:moderators").description("An array of all component moderators with email and link to their <<resources-user-get,User resource>>"),
+                        subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with ful name and link to their <<resources-vendor-get,Vendor resource>>"),
+                        subsectionWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                        fieldWithPath("visbility").description("The visibility type of the component"),
+                        fieldWithPath("setVisbility").description("The visibility of the component"),
+                        fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component")
+                ));
     }
 }

@@ -2,17 +2,19 @@
  * Copyright (c) Bosch Software Innovations GmbH 2016.
  * Part of the SW360 Portal Project.
  *
- * SPDX-License-Identifier: EPL-1.0
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.portal.tags;
 
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.SimpleTagSupport;
+
+import org.apache.commons.lang.StringEscapeUtils;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -54,9 +56,9 @@ public class DisplayMap extends SimpleTagSupport {
         sb.append("<ul class=\"mapDisplayRootItem\">");
         map.entrySet().stream().forEach(e -> sb.append(
                 "<li><span class=\"mapDisplayChildItemLeft\">"
-                        + e.getKey()
+                        + StringEscapeUtils.escapeXml(e.getKey())
                         + "</span><span class=\"mapDisplayChildItemRight\"> "
-                        + e.getValue()
+                        + StringEscapeUtils.escapeXml(e.getValue())
                         + "</span></li>"
         ));
         sb.append("</ul>");
