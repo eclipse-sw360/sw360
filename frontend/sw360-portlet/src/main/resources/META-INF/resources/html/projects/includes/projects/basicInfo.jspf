@@ -136,6 +136,24 @@
     <tr>
         <td>
             <div class="form-group">
+                <label for="modified_on"><liferay-ui:message key="modified.on" /></label>
+                <input id="modified_on" name="<portlet:namespace/><%=Project._Fields.MODIFIED_ON%>" type="date"
+                    placeholder="<liferay-ui:message key="modified.date.yyyy.mm.dd" />"
+                    value="<sw360:out value="${project.modifiedOn}"/>" readonly class="form-control"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <sw360:DisplayUserEdit email="${project.modifiedBy}" id="<%=Project._Fields.MODIFIED_BY.toString()%>"
+                                    description="modified.by" multiUsers="false" readonly="true"/>
+            </div>
+        </td>
+        <td>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <div class="form-group">
                 <input id="enable_svm" type="checkbox" class="form-check-input"
                     name="<portlet:namespace/><%=Project._Fields.ENABLE_SVM%>"
                     value="<sw360:out value="${project.enableSvm}"/>"
