@@ -143,7 +143,7 @@ public class ModerationPortletUtils {
         AddDocumentRequestSummary requestSummary = new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE);
         try {
             ModerationService.Iface client = new ThriftClients().makeModerationClient();
-            Integer criticalCount = client.getCriticalClearingRequestCount();
+            Integer criticalCount = client.getOpenCriticalCrCountByGroup(user.getDepartment());
             String preferredDate = request.getParameter(ClearingRequest._Fields.REQUESTED_CLEARING_DATE.toString());
             String commentText = request.getParameter(ClearingRequest._Fields.REQUESTING_USER_COMMENT.toString());
             String priority = (criticalCount > 1) ? "" : request.getParameter(ClearingRequest._Fields.PRIORITY.toString());

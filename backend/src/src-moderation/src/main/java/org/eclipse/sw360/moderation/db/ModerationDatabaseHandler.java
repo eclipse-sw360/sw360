@@ -141,8 +141,8 @@ public class ModerationDatabaseHandler {
         return new HashSet<ClearingRequest>(clearingRequestRepository.getClearingRequestsByBU(businessUnit));
     }
 
-    public Integer getCriticalClearingRequestCount() {
-        return clearingRequestRepository.getCriticalClearingRequestCount();
+    public Integer getOpenCriticalCrCountByGroup(String group) {
+        return clearingRequestRepository.getOpenCriticalClearingRequestCount(group);
     }
 
     public ModerationRequest getRequest(String requestId) {

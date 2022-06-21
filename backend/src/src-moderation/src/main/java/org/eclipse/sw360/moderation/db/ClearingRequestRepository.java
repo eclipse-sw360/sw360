@@ -15,11 +15,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
@@ -94,7 +96,12 @@ public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<
         return new HashSet<ClearingRequest>(queryView("byBusinessUnit", businessUnit));
     }
 
-    public Integer getCriticalClearingRequestCount() {
-        return new HashSet<ClearingRequest>(queryView("byPriority", ClearingRequestPriority.CRITICAL.name())).size();
+    public Integer getOpenCriticalClearingRequestCount(String group) {
+        Set<ClearingRequest> criticalCr = new HashSet<ClearingRequest>(queryView("byPriority", ClearingRequestPriority.CRITICAL.name()));
+        // filter the CLOSED / REJECTED and CR belong to same group as user
+        return (int) CommonUtils.nullToEmptySet(criticalCr).stream()
+                .filter(cr -> !(ClearingRequestState.CLOSED.equals(cr.getClearingState()) || ClearingRequestState.REJECTED.equals(cr.getClearingState()))
+                        && cr.getProjectBU().trim().toUpperCase().startsWith(group.trim().toUpperCase()))
+                .distinct().count();
     }
 }
