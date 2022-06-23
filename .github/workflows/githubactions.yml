@@ -24,7 +24,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v2
@@ -40,24 +40,23 @@ jobs:
 
     - name: Update properties with DB credentials
       run: |
-        sudo apt-get update -qq
         sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' build-configuration/test-resources/couchdb-test.properties
         sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' build-configuration/test-resources/couchdb-test.properties
         sudo mkdir /etc/sw360
         sudo cp ./scripts/sw360BackendRestDockerConfig/etc_sw360/couchdb-test.properties /etc/sw360/
+
+    - name: Prepare build environment
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install python3 python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git
 
     - name: Verify license headers
       run: |
         chmod +x .github/testForLicenseHeaders.sh
         bash .github/testForLicenseHeaders.sh
 
-    - name: Install Thrift and mkdocs
+    - name: Install Thrift
       run: |
-        sudo apt-get update
-        sudo apt-get install python3
-        sudo apt-get install python3-pip
-        sudo pip3 install mkdocs
-        sudo pip3 install mkdocs-material
         chmod +x scripts/install-thrift.sh
         bash scripts/install-thrift.sh --no-cleanup
 
@@ -81,7 +80,7 @@ jobs:
     - name: Create users and oauth client
       run: bash scripts/sw360BackendRestDockerConfig/scripts/createUserAndOauthClient.sh
 
-    - name: Run Client Itegration Test for Rest Api
+    - name: Run Client Integration Test for Rest Api
       run: |
         cd clients
         mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true
