@@ -182,7 +182,7 @@ public class VendorDatabaseHandler {
 
         // update computed fields of affected components
         for(String componentId : componentIds) {
-            componentsClient.recomputeReleaseDependentFields(componentId);
+            componentsClient.recomputeReleaseDependentFields(componentId, user);
         }
 
         return result;

@@ -485,8 +485,10 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
-    public Component recomputeReleaseDependentFields(String componentId) throws TException {
-        return handler.updateReleaseDependentFieldsForComponentId(componentId);
+    public Component recomputeReleaseDependentFields(String componentId, User user) throws TException {
+        assertUser(user);
+        assertId(componentId);
+        return handler.updateReleaseDependentFieldsForComponentId(componentId, user);
     }
 
     //////////////////////////////////
@@ -657,5 +659,10 @@ public class ComponentHandler implements ComponentService.Iface {
     public Map<PaginationData, List<Component>> getRecentComponentsSummaryWithPagination(User user,
             PaginationData pageData) throws TException {
         return handler.getRecentComponentsSummaryWithPagination(user, pageData);
+    }
+
+    @Override
+    public void sendExportSpreadsheetSuccessMail(String url, String recepient) throws TException {
+        handler.sendExportSpreadsheetSuccessMail(url, recepient);
     }
 }

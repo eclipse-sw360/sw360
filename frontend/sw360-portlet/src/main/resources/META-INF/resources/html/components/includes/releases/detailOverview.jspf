@@ -210,7 +210,7 @@
 <script>
 	document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
-    require(['jquery','components/includes/releases/regexjs','components/includes/releases/linkProject', 'modules/button', 'modules/listgroup', 'utils/includes/clipboard'], function($,regexjs,linkProject, button, listgroup, clipboard) {
+    require(['jquery','components/includes/releases/regexjs','components/includes/releases/linkProject', 'modules/button', 'modules/listgroup', 'utils/includes/clipboard', 'modules/dialog'], function($,regexjs,linkProject, button, listgroup, clipboard, dialog) {
         linkProject.initialize();
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 

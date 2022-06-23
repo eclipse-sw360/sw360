@@ -411,6 +411,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             setReleaseRelations(project, user, actual);
             updateProjectDependentLinkedFields(project, actual);
             project.unsetVendor();
+            updateModifiedFields(project, user.getEmail());
             repository.update(project);
 
             List<ChangeLogs> referenceDocLogList=new LinkedList<>();
@@ -570,6 +571,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         obligationRepository.add(obligation);
         Project project = getProjectById(obligation.getProjectId(), user);
         project.setLinkedObligationId(obligation.getId());
+        updateModifiedFields(project, user.getEmail());
         repository.update(project);
         project.unsetLinkedObligationId();
         dbHandlerUtil.addChangeLogs(obligation, null, user.getEmail(), Operation.CREATE, attachmentConnector,
@@ -1556,7 +1558,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public void sendExportSpreadsheetSuccessMail(String url, String recepient) throws TException {
         mailUtil.sendMail(recepient, MailConstants.SUBJECT_SPREADSHEET_EXPORT_SUCCESS,
                 MailConstants.TEXT_SPREADSHEET_EXPORT_SUCCESS, SW360Constants.NOTIFICATION_CLASS_PROJECT, "", false,
-                url);
+                "project", url);
     }
 
     private Map<String, String> createProjectCSRow(String relation, Project prj,

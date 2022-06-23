@@ -273,8 +273,10 @@ struct Release {
     90: optional DocumentState documentState,
 
     200: optional map<RequestedAction, bool> permissions,
-
+    
     400: optional string spdxId,
+    204: optional string modifiedBy, // Last Modified By User Email
+    205: optional string modifiedOn, // Last Modified Date YYYY-MM-dd
 }
 
 enum ComponentType {
@@ -346,6 +348,8 @@ struct Component {
     70: optional DocumentState documentState,
 
     200: optional map<RequestedAction, bool> permissions,
+    204: optional string modifiedBy, // Last Modified By User Email
+    205: optional string modifiedOn, // Last Modified Date YYYY-MM-dd
 }
 
 struct ReleaseLink{
@@ -704,7 +708,7 @@ service ComponentService {
     /**
      * Recomputes the fields of a component that are aggregated by its releases.
      */
-    Component recomputeReleaseDependentFields(1: string componentId);
+    Component recomputeReleaseDependentFields(1: string componentId, 2: User user);
 
     /**
      * check if release is used by other releases, components or projects
@@ -851,4 +855,8 @@ service ComponentService {
      * parse a bom file and write the information to SW360
      **/
     RequestSummary exportSPDX(1: User user, 2:string releaseId, 3:string outputFormat);
+    /**
+    * Send email to the user once spreadsheet export completed
+    */
+    void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
 }
