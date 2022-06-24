@@ -49,6 +49,7 @@ public class PortalConstants {
     public static final Boolean SEND_COMPONENT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED;
     public static final String LOAD_OPEN_MODERATION_REQUEST = "loadOpenModerationRequest";
     public static final String LOAD_CLOSED_MODERATION_REQUEST = "loadClosedModerationRequest";
+    public static final String LICENSE_INFO_HEADER_TEXT_FILE_NAME_BY_PROJECT_GROUP;
 
     // DO NOT CHANGE THIS UNLESS YOU KNOW WHAT YOU ARE DOING !!!
     // - friendly url mapping files must be changed
@@ -696,6 +697,7 @@ public class PortalConstants {
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
         API_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", UserGroup.ADMIN.name()));
         USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT = UserGroup.valueOf(props.getProperty("user.role.allowed.to.merge.or.split.component", UserGroup.ADMIN.name()));
+        LICENSE_INFO_HEADER_TEXT_FILE_NAME_BY_PROJECT_GROUP = props.getProperty("org.eclipse.sw360.licensinfo.header.by.group", "");
         CLEARING_REPORT_TEMPLATE_TO_FILENAMEMAPPING = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templatemapping", "");
         CLEARING_REPORT_TEMPLATE_FORMAT = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templateformat", "docx");
         PREDEFINED_TAGS = props.getProperty("project.tag", "[]");
