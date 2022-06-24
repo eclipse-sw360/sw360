@@ -256,7 +256,6 @@
 <script>
 AUI().use('liferay-portlet-url', function () {
 require(['jquery', 'modules/dialog', 'modules/validation', 'bridges/jquery-ui' ], function($, dialog, validation) {
-    $("div.alert-container").removeClass("cadmin");
     document.title = $("<span></span>").html("<sw360:UserName user="${userObj}"/> - " + document.title).text();
 
     validation.enableForm('#userEditForm');

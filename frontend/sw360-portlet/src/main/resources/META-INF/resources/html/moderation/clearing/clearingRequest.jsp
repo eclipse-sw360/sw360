@@ -420,7 +420,6 @@
 </div>
 <script>
 require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'bridges/jquery-ui' ], function($, dialog, validation, button) {
-    $("div.alert-container").removeClass("cadmin");
     validation.enableForm('#updateCRForm');
     let pcdLimit = ${PreferredClearingDateLimit};
     var clearingTeamEmailEditable = $("#CLEARING_TEAM");

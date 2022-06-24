@@ -146,7 +146,6 @@
     }
 
     require(['jquery', 'modules/dialog', 'modules/validation' ], function($, dialog, validation) {
-        $("div.alert-container").removeClass("cadmin");
         var action = '${obligationAction}';
 
         let obligationObj = jQuery.parseJSON(JSON.stringify(${ obligationJson }));

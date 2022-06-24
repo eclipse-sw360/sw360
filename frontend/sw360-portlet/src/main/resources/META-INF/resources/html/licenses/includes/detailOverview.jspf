@@ -93,7 +93,6 @@
 	document.title = "${licenseDetail.shortname} - " + document.title;
 
 	require(['jquery', 'modules/listgroup'], function($, listgroup) {
-        $("div.alert-container").removeClass("cadmin");
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Details');
 	});
 </script>

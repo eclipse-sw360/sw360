@@ -91,7 +91,6 @@
         var PortletURL = Liferay.PortletURL;
 
         require(['jquery', 'utils/includes/quickfilter', 'bridges/datatables'], function($, quickfilter, datatables) {
-            $("div.alert-container").removeClass("cadmin");
             var eccInfoTable;
 
             // initializing

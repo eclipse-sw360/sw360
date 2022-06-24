@@ -213,7 +213,6 @@
     <script>
     require(['jquery', 'components/includes/vendors/searchVendor','components/includes/departments/searchDepartment', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation' ], function($, vendorsearch, departmentsearch, autocomplete, dialog, listgroup, validation) {
         document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
-        $("div.alert-container").removeClass("cadmin");
 
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
 

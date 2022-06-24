@@ -221,7 +221,6 @@
         var PortletURL = Liferay.PortletURL;
 
         require(['jquery', 'modules/autocomplete', 'modules/dialog', 'bridges/datatables', 'utils/render' ], function($, autocomplete, dialog, datatables, render) {
-            $("div.alert-container").removeClass("cadmin");
             var componentsTable,
                 vendorNames = new Array();
             <core_rt:forEach items="${vendorList}" var="vendorName">

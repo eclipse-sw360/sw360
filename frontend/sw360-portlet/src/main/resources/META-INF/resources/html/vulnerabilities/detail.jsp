@@ -53,7 +53,6 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'modules/listgroup'], function($, listgroup) {
-        $("div.alert-container").removeClass("cadmin");
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
     });
 </script>

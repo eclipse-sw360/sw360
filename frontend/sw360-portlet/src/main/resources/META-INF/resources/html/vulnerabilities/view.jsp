@@ -102,7 +102,6 @@
         var PortletURL = Liferay.PortletURL;
 
         require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'bridges/jquery-ui'], function($, datatables, quickfilter) {
-            $("div.alert-container").removeClass("cadmin");
             var vulnerabilityTable;
 
             // initializing

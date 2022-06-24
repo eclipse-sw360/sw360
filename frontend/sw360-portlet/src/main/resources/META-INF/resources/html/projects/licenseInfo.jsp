@@ -177,7 +177,6 @@
 
 <script>
 require(['jquery', 'modules/dialog'], function($, dialog) {
-    $("div.alert-container").removeClass("cadmin");
     var onlyClearingReport = '${onlyClearingReport}';
     let downloadEmptyTemplate = '${showSessionError}';
     var outputFormat = '${lcInfoSelectedOutputFormat}';

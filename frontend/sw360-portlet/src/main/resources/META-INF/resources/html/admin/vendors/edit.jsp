@@ -141,7 +141,6 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'modules/dialog', 'modules/validation' ], function($, dialog, validation) {
-        $("div.alert-container").removeClass("cadmin");
 
         validation.enableForm('#vendorEditForm');
 

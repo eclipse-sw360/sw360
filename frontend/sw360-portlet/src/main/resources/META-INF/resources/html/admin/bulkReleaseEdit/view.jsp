@@ -117,7 +117,6 @@
         var PortletURL = Liferay.PortletURL;
 
         require(['jquery', 'bridges/datatables', 'components/includes/vendors/searchVendor', 'utils/includes/quickfilter'], function($, datatables, vendorsearch, quickfilter) {
-            $("div.alert-container").removeClass("cadmin");
 
             $(".clearSelection").click(function(event) {
                 var vendorTextBoxData = $(event.currentTarget.previousSibling).data();
