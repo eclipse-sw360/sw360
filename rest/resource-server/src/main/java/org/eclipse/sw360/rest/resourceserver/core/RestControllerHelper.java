@@ -23,6 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityApiDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
@@ -30,6 +31,7 @@ import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
+import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
@@ -622,6 +624,12 @@ public class RestControllerHelper<T> {
         embeddedVulnerability.setLastExternalUpdate(vulnerability.getLastExternalUpdate());
 
         embeddedVulnerability.setPublishDate(vulnerability.getPublishDate());
+        return embeddedVulnerability;
+    }
+
+    public Vulnerability convertToEmbeddedVulnerability(VulnerabilityDTO vulnerabilityDto) {
+        Vulnerability embeddedVulnerability = new Vulnerability(vulnerabilityDto.getExternalId());
+        embeddedVulnerability.setId(vulnerabilityDto.getId());
         return embeddedVulnerability;
     }
 
