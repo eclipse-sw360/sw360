@@ -87,7 +87,6 @@
 <script>
     AUI().use('liferay-portlet-url', function () {
         require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/validation', 'bridges/datatables', 'utils/render', 'bridges/jquery-ui'], function($, autocomplete, dialog, validation, datatables, render) {
-            $("div.alert-container").removeClass("cadmin");
             var changeLogTable;
             var cardsScreen = $("#cardScreen");
             var cardId = 0;

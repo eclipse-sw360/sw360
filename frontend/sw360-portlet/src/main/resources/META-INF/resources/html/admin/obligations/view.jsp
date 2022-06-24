@@ -76,7 +76,6 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
         require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter', 'utils/render'], function($, datatables, dialog, quickfilter, render) {
-        $("div.alert-container").removeClass("cadmin");
             var todoTable = createTodoTable();
             quickfilter.addTable(todoTable);
 

@@ -79,7 +79,6 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery'], function($) {
-        $("div.alert-container").removeClass("cadmin");
 
         $('.portlet-toolbar button[data-action="cancel"]').on('click', function() {
             var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';

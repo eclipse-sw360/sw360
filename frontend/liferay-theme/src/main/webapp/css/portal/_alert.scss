@@ -10,9 +10,9 @@
 
 .alert-notifications-fixed {
 	top: 0;
-	left: 0;
+	left: 0 !important;
 	right: 0;
-	bottom: auto;
+	bottom: auto !important;
 
 	.alert {
 		width: auto;

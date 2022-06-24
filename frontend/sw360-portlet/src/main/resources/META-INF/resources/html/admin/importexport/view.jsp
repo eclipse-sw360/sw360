@@ -147,8 +147,7 @@
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'modules/validation' ], function($, validation) {
-        $("div.alert-container").removeClass("cadmin");
+    require(['modules/validation' ], function(validation) {
         validation.enableForm('form[name="uploadForm"]');
         validation.enableForm('form[name="uploadAttachmentsForm"]');
         validation.enableForm('form[name="uploadRelaseLinksForm"]');

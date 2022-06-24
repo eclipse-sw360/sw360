@@ -120,7 +120,6 @@
     }
 
     require(['jquery', 'bridges/datatables', 'utils/link' ], function($, datatables, link, event) {
-        $("div.alert-container").removeClass("cadmin");
         var table;
 
         $('#my-projects h4 svg').not($("#configId svg"))

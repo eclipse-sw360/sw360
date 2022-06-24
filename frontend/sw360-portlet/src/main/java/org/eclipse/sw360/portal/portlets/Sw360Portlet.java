@@ -293,7 +293,6 @@ abstract public class Sw360Portlet extends MVCPortlet {
         case SUCCESS:
             statusMessage = new StringBuilder(type).append(" ").append(name).append(" ").append(verb).append("d successfully!").toString();
             SessionMessages.add(request, "request_processed", statusMessage);
-            SessionMessages.clear(request);
             break;
         case SENT_TO_MODERATOR:
             statusMessage = "Moderation request was sent to " + verb + " the " + type + name + "!";

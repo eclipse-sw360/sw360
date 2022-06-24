@@ -137,7 +137,6 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/render', 'utils/includes/clipboard'], function($, datatables, dialog, render, clipboard) {
-         $("div.alert-container").removeClass("cadmin");
          function loadListOfClient() {
             $.ajax({
                 url: '/authorization/client-management',

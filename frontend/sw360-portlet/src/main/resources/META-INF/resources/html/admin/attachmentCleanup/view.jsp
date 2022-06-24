@@ -45,7 +45,6 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
     require(['jquery', 'modules/dialog' ], function($, dialog) {
-        $("div.alert-container").removeClass("cadmin");
         $('.portlet-toolbar button[data-action="cleanup"]').on("click", function() {
             var $dialog;
 
