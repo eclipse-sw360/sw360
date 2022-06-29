@@ -141,6 +141,17 @@
         </attribute>
     </tag>
     <tag>
+        <name>DisplayMapOfOidcClientAndAcess</name>
+        <tag-class>org.eclipse.sw360.portal.tags.DisplayMapOfOidcClientAndAcess</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>value</name>
+            <required>true</required>
+            <type>java.util.Map</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
         <name>DisplayMapOfEmailSets</name>
         <tag-class>org.eclipse.sw360.portal.tags.DisplayMapOfEmailStringSets</tag-class>
         <body-content>empty</body-content>

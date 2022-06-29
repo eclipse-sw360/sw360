@@ -282,7 +282,9 @@ public class JacksonCustomizations {
                 "primaryRoles",
                 "primaryRolesSize",
                 "setPrimaryRoles",
-                "setDeactivated"
+                "setDeactivated",
+                "oidcClientInfosSize",
+                "setOidcClientInfos"
         })
         static abstract class UserMixin extends User {
             @Override

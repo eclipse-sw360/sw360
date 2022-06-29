@@ -25,6 +25,11 @@ enum UserGroup {
     CLEARING_EXPERT = 6
 }
 
+enum UserAccess {
+    READ = 0,
+    READ_WRITE =1
+}
+
 enum LocalGroup {
     BU = 0,
     CONTRIBUTOR = 1,
@@ -62,6 +67,12 @@ struct User {
     22: optional map<string, set<UserGroup>> secondaryDepartmentsAndRoles,
     23: optional list<string> primaryRoles,
     24: optional bool deactivated
+    25: optional map<string, ClientMetadata> oidcClientInfos,
+}
+
+struct ClientMetadata {
+    1: required string name,
+    2: required UserAccess access
 }
 
 struct RestApiToken {
@@ -88,6 +99,11 @@ service UserService {
      * returns SW360-user with given token
      **/
     User getByApiToken(1:string token);
+
+    /**
+     * returns SW360-user with given client id
+     **/
+    User getByOidcClientId(1:string clientId);
 
     /**
      * searches for a SW360 user by email, or, if no such user is found, by externalId

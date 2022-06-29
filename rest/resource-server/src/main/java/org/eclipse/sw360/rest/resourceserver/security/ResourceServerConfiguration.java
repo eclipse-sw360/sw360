@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.security;
 
+import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @Profile("!SECURITY_MOCK")
@@ -67,7 +69,7 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
     public void configure(HttpSecurity http) throws Exception {
         // TODO Thomas Maier 15-12-2017
         // Use Sw360GrantedAuthority from authorization server
-
+        SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
         http
                 .addFilterBefore(filter, BasicAuthenticationFilter.class)
                 .authenticationProvider(authProvider)
@@ -82,6 +84,6 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
                 .antMatchers(HttpMethod.PUT, "/api/**").hasAuthority("WRITE")
                 .antMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE")
                 .antMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE").and()
-                .csrf().disable();
+                .csrf().disable().exceptionHandling().authenticationEntryPoint(saep);
     }
 }

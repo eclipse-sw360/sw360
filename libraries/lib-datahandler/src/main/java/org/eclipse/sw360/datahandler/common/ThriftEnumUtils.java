@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
+import org.eclipse.sw360.datahandler.thrift.users.UserAccess;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 
@@ -312,6 +313,11 @@ public class ThriftEnumUtils {
             ClearingRequestPriority.CRITICAL, "Critical"
     );
 
+    private static final ImmutableMap<UserAccess, String> MAP_USER_ACCESS_STRING = ImmutableMap.<UserAccess, String>builder()
+            .put(UserAccess.READ, "Read")
+            .put(UserAccess.READ_WRITE, "Read and Write")
+            .build();
+
     public static final ImmutableMap<Class<? extends TEnum>, Map<? extends TEnum, String>>
             MAP_ENUMTYPE_MAP = ImmutableMap.<Class<? extends TEnum>, Map<? extends TEnum, String>>builder()
             .put(ComponentType.class, MAP_COMPONENT_TYPE_STRING)
@@ -342,6 +348,7 @@ public class ThriftEnumUtils {
             .put(ObligationLevel.class, MAP_OBLIGATION_LEVEL_STRING)
             .put(ObligationType.class, MAP_OBLIGATION_TYPE_STRING)
             .put(ClearingRequestPriority.class, MAP_CLEARING_REQUEST_PRIORITY_STRING)
+            .put(UserAccess.class, MAP_USER_ACCESS_STRING)
             .build();
 
     public static String enumToString(TEnum value) {
