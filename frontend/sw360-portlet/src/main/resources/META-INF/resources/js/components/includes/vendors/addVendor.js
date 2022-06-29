@@ -40,8 +40,13 @@ define('components/includes/vendors/addVendor', ['jquery', 'modules/dialog', 'mo
             url: addVendorUrl,
             data: data,
             success: function (data) {
-                vendorAddedCb(data.id + ',' + fullname);
-                callback(true);
+                if (data.id) {
+                    vendorAddedCb(data.id + ',' + fullname);
+                    callback(true);
+                } else {
+                    $dialog.alert(data.error ? data.error : "Failed to add vendor!");
+                    callback();
+                }
             },
             error: function() {
                 $dialog.alert('Cannot add vendor.');

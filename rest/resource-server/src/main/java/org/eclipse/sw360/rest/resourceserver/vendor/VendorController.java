@@ -11,7 +11,6 @@ package org.eclipse.sw360.rest.resourceserver.vendor;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -37,7 +36,6 @@ import java.util.List;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
-@Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class VendorController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String VENDORS_URL = "/vendors";
@@ -46,7 +44,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
     private final Sw360VendorService vendorService;
 
     @NonNull
-    private final RestControllerHelper restControllerHelper;
+    private final RestControllerHelper<?> restControllerHelper;
 
     @RequestMapping(value = VENDORS_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Vendor>>> getVendors() {
@@ -72,7 +70,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
 
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = VENDORS_URL, method = RequestMethod.POST)
-    public ResponseEntity createVendor(
+    public ResponseEntity<?> createVendor(
             @RequestBody Vendor vendor) {
         vendor = vendorService.createVendor(vendor);
         HalResource<Vendor> halResource = createHalVendor(vendor);

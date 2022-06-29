@@ -16,6 +16,8 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.db.VendorRepository;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -64,10 +66,25 @@ public class VendorDatabaseHandler {
         return repository.getAll();
     }
 
-    public String addVendor(Vendor vendor) throws TException {
-        prepareVendor(vendor);
+    public AddDocumentRequestSummary addVendor(Vendor vendor) {
+        trimVendorFields(vendor);
+        if (isDuplicate(vendor)) {
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
+        }
+        try {
+            prepareVendor(vendor);
+        } catch (SW360Exception e) {
+            log.error("Error creating the vendor: " + e.why);
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE).setMessage(e.why);
+        }
         repository.add(vendor);
-        return vendor.getId();
+        return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(vendor.getId());
+    }
+
+    // always perform for case insensitive check
+    private boolean isDuplicate(Vendor vendor) {
+        List<Vendor> duplicates = repository.searchByFullname(vendor.getFullname().toLowerCase());
+        return duplicates.size() > 0;
     }
 
     public RequestStatus deleteVendor(String id, User user) throws SW360Exception {
@@ -83,14 +100,41 @@ public class VendorDatabaseHandler {
         }
     }
 
-    public RequestStatus updateVendor(Vendor vendor, User user) {
-        if (makePermission(vendor, user).isActionAllowed(RequestedAction.WRITE)) {
+    public RequestStatus updateVendor(Vendor vendor, User user) throws SW360Exception {
+        Vendor actual = repository.get(vendor.getId());
+        assertNotNull(actual);
+        trimVendorFields(vendor);
+        trimVendorFields(actual);
+        if (isChangeResultInDuplicate(actual, vendor)) {
+            return RequestStatus.DUPLICATE;
+        } else if (makePermission(vendor, user).isActionAllowed(RequestedAction.WRITE)) {
+            try {
+                prepareVendor(vendor);
+            } catch (SW360Exception e) {
+                log.error("Error updating the vendor: " + e.why);
+                return RequestStatus.FAILURE;
+            }
             repository.update(vendor);
             return RequestStatus.SUCCESS;
         } else {
-            log.error("User is not allowed to delete!");
+            log.error("User is not allowed to update!");
             return RequestStatus.FAILURE;
         }
+    }
+
+    private void trimVendorFields(Vendor vendor) {
+        vendor.setUrl(CommonUtils.nullToEmptyString(vendor.getUrl()).trim());
+        vendor.setFullname(CommonUtils.nullToEmptyString(vendor.getFullname()).trim());
+        vendor.setShortname(CommonUtils.nullToEmptyString(vendor.getShortname()).trim());
+    }
+
+    private boolean isChangeResultInDuplicate(Vendor before, Vendor after) {
+        if (CommonUtils.nullToEmptyString(before.getFullname()).equals(after.getFullname()) &&
+                CommonUtils.nullToEmptyString(before.getUrl()).equals(after.getUrl())) {
+            // not duplicated, because fullname and url is same
+            return false;
+        }
+        return isDuplicate(after);
     }
 
     public void fillVendor(Release release){

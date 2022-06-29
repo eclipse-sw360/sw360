@@ -13,12 +13,15 @@ import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
+import org.eclipse.sw360.portal.common.ErrorMessages;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.portlets.components.ComponentPortletUtils;
@@ -147,9 +150,17 @@ public class BulkReleaseEditPortlet extends Sw360Portlet {
 
         try {
             VendorService.Iface client = thriftClients.makeVendorClient();
-            String vendorId = client.addVendor(vendor);
+            AddDocumentRequestSummary summary = client.addVendor(vendor);
+            AddDocumentRequestStatus status = summary.getRequestStatus();
             JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-            jsonObject.put("id", vendorId);
+
+            if (AddDocumentRequestStatus.SUCCESS.equals(status)) {
+                jsonObject.put("id", summary.getId());
+            } else if (AddDocumentRequestStatus.DUPLICATE.equals(status)) {
+                jsonObject.put("error", ErrorMessages.VENDOR_DUPLICATE);
+            } else if (AddDocumentRequestStatus.FAILURE.equals(status)) {
+                jsonObject.put("error", summary.getMessage());
+            }
             try {
                 writeJSON(request, response, jsonObject);
             } catch (IOException e) {

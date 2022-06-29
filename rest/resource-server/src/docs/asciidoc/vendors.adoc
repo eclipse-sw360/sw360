@@ -48,3 +48,21 @@ include::{snippets}/should_document_get_vendor/http-response.adoc[]
 
 ===== Links
 include::{snippets}/should_document_get_vendor/links.adoc[]
+
+
+[[resources-vendor-create]]
+==== Creating a vendor
+
+A `POST` request is used to create a vendor.
+
+===== Request structure
+include::{snippets}/should_document_create_vendor/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_vendor/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_vendor/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_create_vendor/links.adoc[]

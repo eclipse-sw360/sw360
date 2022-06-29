@@ -63,6 +63,9 @@ public class ErrorMessages {
     public static final String LICENSE_TYPE_ACCESS_DENIED = "User does not have the permission to add license type.";
     public static final String OBLIGATION_NOT_ADDED = "Obligation could not be added.";
     public static final String OBLIGATION_NOT_UPDATED = "Obligation could not be updated.";
+    public static final String VENDOR_DUPLICATE = "A vendor with the same name already exists.";
+    public static final String ERROR_VENDOR = "Error: Invalid vendor Name or Url.";
+
 
     //this map is used in errorKeyToMessage.jspf to generate key-value pairs for the liferay-ui error tag
     public static final ImmutableList<String> allErrorMessages = ImmutableList.<String>builder()
@@ -113,6 +116,8 @@ public class ErrorMessages {
             .add(ERROR_USER_ACTIVATE_DEACTIVATE)
             .add(OBLIGATION_NOT_ADDED)
             .add(OBLIGATION_NOT_UPDATED)
+            .add(VENDOR_DUPLICATE)
+            .add(ERROR_VENDOR)
             .build();
 
     private ErrorMessages() {

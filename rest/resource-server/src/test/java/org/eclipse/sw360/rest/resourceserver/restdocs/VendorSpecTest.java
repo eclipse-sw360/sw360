@@ -21,15 +21,22 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -66,6 +73,9 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
 
         given(this.vendorServiceMock.getVendors()).willReturn(vendorList);
         given(this.vendorServiceMock.getVendorById(eq(vendor.getId()))).willReturn(vendor);
+
+        when(this.vendorServiceMock.createVendor(any())).then(invocation ->
+        new Vendor ("Apache", "Apache Software Foundation", "https://www.apache.org/").setId("987567468"));
     }
 
     @Test
@@ -96,6 +106,36 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                 .andDo(this.documentationHandler.document(
                         links(
                                 linkWithRel("self").description("The <<resources-vendors,Vendors resource>>")
+                        ),
+                        responseFields(
+                                subsectionWithPath("fullName").description("The full name of the vendor"),
+                                subsectionWithPath("shortName").description("The short name of the vendor, optional"),
+                                subsectionWithPath("url").description("The vendor's home page URL"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+
+    @Test
+    public void should_document_create_vendor() throws Exception {
+        Map<String, Object> vendor = new HashMap<>();
+        vendor.put("fullName", "Apache Software Foundation");
+        vendor.put("shortName", "Apache");
+        vendor.put("url", "https://www.apache.org/");
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(post("/api/vendors/")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(vendor))
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isCreated())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("self").description("The <<resources-vendors,Vendors resource>>")
+                        ),
+                        requestFields(
+                                fieldWithPath("fullName").description("The full name of the vendor"),
+                                fieldWithPath("shortName").description("The short name of the vendor"),
+                                fieldWithPath("url").description("The vendor's home page URL")
                         ),
                         responseFields(
                                 subsectionWithPath("fullName").description("The full name of the vendor"),

@@ -13,6 +13,7 @@ import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseInstance;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.junit.After;
 import org.junit.Before;
@@ -78,11 +79,11 @@ public class VendorHandlerTest {
     @Test
     public void testAddVendor() throws Exception {
         Vendor oracle = new Vendor().setShortname("Oracle").setFullname("Oracle Corporation Inc").setUrl("http://www.oracle.com");
-        String id = vendorHandler.addVendor(oracle);
-        assertNotNull(id);
+        AddDocumentRequestSummary summary = vendorHandler.addVendor(oracle);
+        assertNotNull(summary.getId());
         assertEquals(vendorList.size() + 1, vendorHandler.getAllVendors().size());
 
-        Vendor actual = vendorHandler.getByID(id);
+        Vendor actual = vendorHandler.getByID(summary.getId());
 
         assertVendorEquals(oracle, actual);
     }
