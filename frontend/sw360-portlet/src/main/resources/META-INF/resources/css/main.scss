@@ -191,6 +191,14 @@
 	}
 
 	table {
+            thead.cursor {
+                cursor: pointer;
+            }
+            td {
+                svg.cursor {
+                    cursor: pointer;
+                }
+            }
 		div.actions {
 			display: flex;
 			justify-content: space-evenly;
@@ -220,14 +228,6 @@
 			}
 		}
 	}
-
-    table {
-        td {
-            svg.cursor {
-               cursor: pointer;
-            }
-        }
-    }
 
 	.stateBox {
 	    height: 25px;

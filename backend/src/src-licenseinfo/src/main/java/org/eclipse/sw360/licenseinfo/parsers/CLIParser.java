@@ -57,6 +57,7 @@ public class CLIParser extends AbstractCLIParser {
     private static final String COPYRIGHTS_XPATH = "/ComponentLicenseInformation/Copyright/Content";
     private static final String LICENSES_XPATH = "/ComponentLicenseInformation/License";
     private static final String OBLIGATIONS_XPATH = "/ComponentLicenseInformation/Obligation";
+    private static final String ASSESSMENT_SUMMARY_XPATH = "/ComponentLicenseInformation/AssessmentSummary";
     private static final String CLI_ROOT_ELEMENT_NAME = "ComponentLicenseInformation";
     private static final String CLI_ROOT_XPATH = "/ComponentLicenseInformation";
     private static final String CLI_ROOT_ELEMENT_NAMESPACE = null;
@@ -130,6 +131,7 @@ public class CLIParser extends AbstractCLIParser {
             }
 
             licenseInfo.setLicenseNamesWithTexts(getLicenseNameWithTexts(doc, includeFilesHash));
+            licenseInfo.setAssessmentSummary(getAssessmentSummary(doc));
 
             licenseInfo.setSha1Hash(getSha1Hash(doc));
             licenseInfo.setComponentName(getComponent(doc));
@@ -152,6 +154,23 @@ public class CLIParser extends AbstractCLIParser {
     private Set<LicenseNameWithText> getLicenseNameWithTexts(Document doc, boolean includeFilesHash) throws XPathExpressionException {
         NodeList licenseNodes = getNodeListByXpath(doc, LICENSES_XPATH);
         return nodeListToLicenseNamesWithTextsSet(licenseNodes, includeFilesHash);
+    }
+
+    private Map<String, String> getAssessmentSummary(Document doc) throws XPathExpressionException {
+        NodeList assessmentSummaryList = getNodeListByXpath(doc, ASSESSMENT_SUMMARY_XPATH);
+        Map<String, String> assessmentSummaryMap = new HashMap<String, String>();
+        if (assessmentSummaryList.getLength() == 1) {
+            Node node = assessmentSummaryList.item(0);
+            NodeList childNodes = node.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
+                String nodeName = childNodes.item(i).getNodeName();
+                String textContent = childNodes.item(i).getTextContent();
+                assessmentSummaryMap.put(nodeName, textContent);
+            }
+        } else {
+            log.error("AssessmentSummary not found in CLI!");
+        }
+        return assessmentSummaryMap;
     }
 
     private Set<String> getCopyrights(Document doc) throws XPathExpressionException {

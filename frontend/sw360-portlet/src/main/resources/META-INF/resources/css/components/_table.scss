@@ -88,6 +88,10 @@ table  {
         }
 	}
 
+    td.comment-text {
+        white-space: pre-wrap;
+    }
+
 	&.aligned-top td {
 		vertical-align: top;
 	}
