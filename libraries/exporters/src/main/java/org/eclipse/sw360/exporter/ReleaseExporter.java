@@ -65,10 +65,10 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
             .add(VERSION)
             .add(CLEARING_STATE)
             .add(ECC_INFORMATION)
+            .add(VENDOR)
             .build();
 
    public static final List<EccInformation._Fields> ECC_IGNORE_FIELDS = ImmutableList.<EccInformation._Fields>builder()
-            .add(AL)
             .add(MATERIAL_INDEX_NUMBER)
             .add(ASSESSOR_CONTACT_PERSON)
             .add(ECC_COMMENT)
