@@ -33,6 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.resourceserver.obligation.ObligationController;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
@@ -51,6 +52,7 @@ import org.apache.thrift.TFieldIdEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.*;
 import org.springframework.hateoas.server.core.EmbeddedWrapper;
 import org.springframework.hateoas.server.core.EmbeddedWrappers;
@@ -318,9 +320,18 @@ public class RestControllerHelper<T> {
         try {
             License licenseById = licenseService.getLicenseById(licenseId);
             embeddedLicense.setFullname(licenseById.getFullname());
+            embeddedLicense.setShortname(licenseId);
             Link licenseSelfLink = linkTo(UserController.class)
                     .slash("api" + LicenseController.LICENSES_URL + "/" + licenseById.getId()).withSelfRel();
             halLicense.add(licenseSelfLink);
+            return halLicense;
+        } catch (ResourceNotFoundException rne) {
+            LOGGER.error("cannot create a self link for license with id" + licenseId);
+            embeddedLicense.setShortname(licenseId);
+            embeddedLicense.setOSIApproved(Quadratic.NA);
+            embeddedLicense.setFSFLibre(Quadratic.NA);
+            embeddedLicense.setChecked(false);
+            embeddedLicense.setFullname(null);
             return halLicense;
         } catch (Exception e) {
             LOGGER.error("cannot create self link for license with id: " + licenseId);
