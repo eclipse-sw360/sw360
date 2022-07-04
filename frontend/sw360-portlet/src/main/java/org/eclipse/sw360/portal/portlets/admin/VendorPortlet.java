@@ -22,6 +22,8 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -31,6 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.exporter.VendorExporter;
+import org.eclipse.sw360.portal.common.ErrorMessages;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.UsedAsLiferayAction;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
@@ -206,7 +209,13 @@ public class VendorPortlet extends Sw360Portlet {
                 Vendor vendor = vendorClient.getByID(id);
                 ComponentPortletUtils.updateVendorFromRequest(request, vendor);
                 RequestStatus requestStatus = vendorClient.updateVendor(vendor, user);
-                setSessionMessage(request, requestStatus, "Vendor", "update", vendor.getShortname());
+                if (RequestStatus.SUCCESS.equals(requestStatus)) {
+                    setSessionMessage(request, requestStatus, "Vendor", "update", vendor.getFullname());
+                } else if (RequestStatus.DUPLICATE.equals(requestStatus)) {
+                    setSW360SessionError(request, ErrorMessages.VENDOR_DUPLICATE);
+                } else if (RequestStatus.FAILURE.equals(requestStatus)) {
+                    setSW360SessionError(request, ErrorMessages.ERROR_VENDOR);
+                }
             } catch (TException e) {
                 log.error("Error fetching vendor from backend!", e);
             }
@@ -223,13 +232,22 @@ public class VendorPortlet extends Sw360Portlet {
         response.setRenderParameter(PAGENAME, PAGENAME_VIEW);
     }
 
-    private void addVendor(ActionRequest request)  {
+    private void addVendor(ActionRequest request) throws PortletException {
         final Vendor vendor = new Vendor();
         ComponentPortletUtils.updateVendorFromRequest(request, vendor);
 
         try {
-            VendorService.Iface vendorClient = thriftClients.makeVendorClient();
-            String vendorId = vendorClient.addVendor(vendor);
+            VendorService.Iface client = thriftClients.makeVendorClient();
+            AddDocumentRequestSummary summary = client.addVendor(vendor);
+            AddDocumentRequestStatus status = summary.getRequestStatus();
+
+            if (AddDocumentRequestStatus.SUCCESS.equals(status)) {
+                setSessionMessage(request, RequestStatus.SUCCESS, "Vendor", "adde", vendor.getFullname());
+            } else if (AddDocumentRequestStatus.DUPLICATE.equals(status)) {
+                setSW360SessionError(request, ErrorMessages.VENDOR_DUPLICATE);
+            } else if (AddDocumentRequestStatus.FAILURE.equals(status)) {
+                setSW360SessionError(request, ErrorMessages.ERROR_VENDOR);
+            }
         } catch (TException e) {
             log.error("Error adding vendor", e);
         }

@@ -130,11 +130,25 @@
     </core_rt:choose>
     
     <tr>
-        <td colspan="3">
+        <td >
             <div class="form-group">
                 <label for="comp_desc"><liferay-ui:message key="short.description" /></label>
-                <textarea class="form-control" id="comp_desc" name="<portlet:namespace/><%=Component._Fields.DESCRIPTION%>" rows="4"
+                <textarea class="form-control" id="comp_desc" name="<portlet:namespace/><%=Component._Fields.DESCRIPTION%>" rows="3"
                         placeholder="<liferay-ui:message key="enter.description" />"><sw360:out value="${component.description}"/></textarea>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <label for="modified_on"><liferay-ui:message key="modified.on" /></label>
+                <input id="modified_on" name="<portlet:namespace/><%=Component._Fields.MODIFIED_ON%>" type="date"
+                    placeholder="<liferay-ui:message key="modified.date.yyyy.mm.dd" />"
+                    value="<sw360:out value="${component.modifiedOn}"/>" readonly class="form-control"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
+                <sw360:DisplayUserEdit email="${component.modifiedBy}" id="<%=Component._Fields.MODIFIED_BY.toString()%>"
+                                    description="modified.by" multiUsers="false" readonly="true"/>
             </div>
         </td>
     </tr>

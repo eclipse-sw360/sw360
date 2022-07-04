@@ -11,8 +11,11 @@ package org.eclipse.sw360.datahandler.db;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
@@ -31,11 +34,19 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'vendor') emit(null, doc._id) }";
 
+    private static final String BY_FULL_NAME = "function(doc) { if (doc.type == 'vendor' && doc.fullname != null) emit(doc.fullname.toLowerCase(), doc._id) }";
+
     public VendorRepository(DatabaseConnectorCloudant db) {
         super(db, Vendor.class);
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
         views.put("all", createMapReduce(ALL, null));
+        views.put("vendorbyfullname", createMapReduce(BY_FULL_NAME, null));
         initStandardDesignDocument(views, db);
+    }
+
+    public List<Vendor> searchByFullname(String fullname) {
+        List<Vendor> vendorsMatchingFullname =  new ArrayList<Vendor>(get(queryForIdsAsValue("vendorbyfullname", fullname)));
+        return vendorsMatchingFullname;
     }
 
     public void fillVendor(Component component) {

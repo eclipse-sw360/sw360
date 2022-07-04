@@ -17,6 +17,7 @@ namespace php sw360.thrift.vendors
 typedef sw360.RequestStatus RequestStatus
 typedef users.User User
 typedef users.RequestedAction RequestedAction
+typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
 
 struct Vendor {
     1: optional string id,
@@ -57,9 +58,9 @@ service VendorService {
     list<string> searchVendorIds(1: string searchText);
 
     /**
-     * write vendor to database and return id
+     * write vendor to database and return id with status summary
      **/
-    string addVendor(1: Vendor vendor);
+    AddDocumentRequestSummary addVendor(1: Vendor vendor);
 
     /**
      * vendor specified by id is deleted from database if user has sufficient permissions, otherwise FAILURE is returned

@@ -39,6 +39,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserAccess;
+import org.eclipse.sw360.datahandler.thrift.users.ClientMetadata;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.portal.common.customfields.CustomField;
@@ -389,6 +391,36 @@ public class PortletUtils {
         return customMap;
     }
 
+    public static Map<String, List<String>> getCustomMapFromOidcClientDetails(PortletRequest request,
+            String mapKeyClientId, String mapValueName, String mapValueAccess) {
+        Map<String, List<String>> customMap = new HashMap<>();
+        Enumeration<String> parameterNames = request.getParameterNames();
+        List<String> keyAndValueParameterIds = Collections.list(parameterNames).stream()
+                .filter(p -> p.startsWith(mapKeyClientId)).map(s -> s.replace(mapKeyClientId, ""))
+                .collect(Collectors.toList());
+        for (String parameterId : keyAndValueParameterIds) {
+            String key = request.getParameter(mapKeyClientId + parameterId);
+            if (isNullEmptyOrWhitespace(key)) {
+                LOGGER.error("Empty map key found");
+            } else {
+                String valueName = request.getParameter(mapValueName + parameterId);
+                String valueAccess = request.getParameter(mapValueAccess + parameterId);
+                if (valueName == null) {
+                    valueName = "";
+                }
+                if (valueAccess == null) {
+                    valueAccess = "READ";
+                }
+                if (!customMap.containsKey(key)) {
+                    customMap.put(key, new ArrayList<>());
+                }
+                customMap.get(key).add(valueName);
+                customMap.get(key).add(valueAccess);
+            }
+        }
+        return customMap;
+    }
+
     public static Map<String,String> getMapWithJoinedValueFromRequest(PortletRequest request, String key, String value) {
         Map<String, Set<String>> customMap = getCustomMapFromRequest(request, key, value);
         return customMap.entrySet().stream()
@@ -433,6 +465,24 @@ public class PortletUtils {
                     return userGroups.stream().map(grp -> UserGroup.valueOf(grp)).collect(Collectors.toSet());
                 }
                 return new HashSet<>();
+            }));
+        }
+
+        return null;
+    }
+
+    public static Map<String, ClientMetadata> getOidcClientMapFromRequest(PortletRequest request) {
+        Map<String, List<String>> customMap = getCustomMapFromOidcClientDetails(request,
+                PortalConstants.USER_CLIENT_ID_KEY, PortalConstants.USER_CLIENT_ID_NAME_VALUE,
+                PortalConstants.USER_CLIENT_ID_ACCESS_VALUE);
+        if (!CommonUtils.isNullOrEmptyMap(customMap)) {
+            return customMap.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey(), entry -> {
+                String userAccess = entry.getValue().get(1);
+                ClientMetadata clientMetadata = new ClientMetadata(entry.getValue().get(0), UserAccess.READ);
+                if (CommonUtils.isNotNullEmptyOrWhitespace(userAccess)) {
+                    return clientMetadata.setAccess(UserAccess.valueOf(userAccess));
+                }
+                return clientMetadata;
             }));
         }
 

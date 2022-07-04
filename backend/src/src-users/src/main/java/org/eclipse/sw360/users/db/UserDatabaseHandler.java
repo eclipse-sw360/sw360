@@ -130,4 +130,8 @@ public class UserDatabaseHandler {
     public Map<PaginationData, List<User>> getUsersWithPagination(PaginationData pageData) {
         return repository.getUsersWithPagination(pageData);
     }
+
+    public User getByOidcClientId(String clientId) {
+        return repository.getByOidcClientId(clientId);
+    }
 }

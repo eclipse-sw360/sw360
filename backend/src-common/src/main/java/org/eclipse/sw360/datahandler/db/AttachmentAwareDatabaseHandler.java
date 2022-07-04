@@ -19,6 +19,9 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.apache.thrift.TBase;
+import org.apache.thrift.TFieldIdEnum;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -83,5 +86,21 @@ public abstract class AttachmentAwareDatabaseHandler {
         Sets.SetView<String> deletedLinkedReleaseIds = Sets.difference(actualLinkedReleaseIds, updatedLinkedReleaseIds);
         Set<Source> owners = deletedLinkedReleaseIds.stream().map(Source::releaseId).collect(Collectors.toSet());
         attachmentDatabaseHandler.deleteUsagesBy(usedBy, owners);
+    }
+
+    protected <T extends TBase<T, ? extends TFieldIdEnum>> void updateModifiedFields(T type, String userEmail) {
+        if (type instanceof Release) {
+            Release release = (Release) type;
+            release.setModifiedBy(userEmail);
+            release.setModifiedOn(SW360Utils.getCreatedOn());
+        } else if (type instanceof Component) {
+            Component component = (Component) type;
+            component.setModifiedBy(userEmail);
+            component.setModifiedOn(SW360Utils.getCreatedOn());
+        } else if (type instanceof Project) {
+            Project project = (Project) type;
+            project.setModifiedBy(userEmail);
+            project.setModifiedOn(SW360Utils.getCreatedOn());
+        }
     }
 }

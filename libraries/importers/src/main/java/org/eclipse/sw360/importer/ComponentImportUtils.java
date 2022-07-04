@@ -26,6 +26,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -453,8 +454,8 @@ public class ComponentImportUtils {
                 String vendorName = componentCSVRecord.getVendorName();
                 if (!vendorNameToVendorId.containsKey(vendorName)) {
                     Vendor vendor = componentCSVRecord.getVendor();
-                    String vendorId = vendorClient.addVendor(vendor);
-
+                    AddDocumentRequestSummary summary = vendorClient.addVendor(vendor);
+                    String vendorId = summary.getId();
                     vendorNameToVendorId.put(vendorName, vendorId);
                     log.trace(format("created vendor with name '%s' as %s: %s", vendorName, vendorId, vendor));
                 } else {

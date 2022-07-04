@@ -32,6 +32,7 @@
     <core_rt:set var="addMode" value="${empty userObj.email}" />
     <core_rt:set var="ssoLoginEnabled" value='<%=PortalConstants.SSO_LOGIN_ENABLED%>' />
     <core_rt:set var="secondaryDepartmentsAndRolesEntrySet" value="${userObj.secondaryDepartmentsAndRoles.entrySet()}" />
+    <core_rt:set var="clientInfosEntrySet" value="${userObj.oidcClientInfos.entrySet()}" />
 </c:catch>
 
 <portlet:actionURL var="updateURL" name="update">
@@ -192,6 +193,8 @@
                             <core_rt:set var="externalIdsSet" value="${project.externalIds.entrySet()}" />
                             <core_rt:set var="externalIdKeys" value="<%=PortalConstants.PROJECT_EXTERNAL_ID_KEYS%>" />
                             <%@include file="/html/utils/includes/editSecondaryDepartmentAndRoles.jsp"%>
+                            <br/>
+                            <%@include file="/html/utils/includes/editOauthClientId.jsp"%>
                         </div>
                     </form>
                 </div>

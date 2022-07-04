@@ -186,7 +186,11 @@ public class JacksonCustomizations {
                 "setExternalUrls",
                 "externalUrls",
                 "setVendor",
-                "setVendorId"
+                "setVendorId",
+                "setModifiedOn",
+                "modifiedOn",
+                "setModifiedBy",
+                "modifiedBy"
         })
         static abstract class ProjectMixin extends Project {
 
@@ -278,7 +282,9 @@ public class JacksonCustomizations {
                 "primaryRoles",
                 "primaryRolesSize",
                 "setPrimaryRoles",
-                "setDeactivated"
+                "setDeactivated",
+                "oidcClientInfosSize",
+                "setOidcClientInfos"
         })
         static abstract class UserMixin extends User {
             @Override
@@ -373,6 +379,10 @@ public class JacksonCustomizations {
                 "setRoles",
                 "additionalDataSize",
                 "setAdditionalData",
+                "setModifiedOn",
+                "modifiedOn",
+                "setModifiedBy",
+                "modifiedBy"
         })
         static abstract class ComponentMixin extends Component {
             @Override
@@ -451,7 +461,11 @@ public class JacksonCustomizations {
                 "setBinaryDownloadurl",
                 "otherLicenseIds",
                 "otherLicenseIdsSize",
-                "setOtherLicenseIds"
+                "setOtherLicenseIds",
+                "setModifiedOn",
+                "modifiedOn",
+                "setModifiedBy",
+                "modifiedBy"
         })
         static abstract class ReleaseMixin extends Release {
             @Override
