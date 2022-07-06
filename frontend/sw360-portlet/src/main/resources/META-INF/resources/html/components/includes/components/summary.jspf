@@ -17,11 +17,12 @@
 </core_rt:if>
 
 <table class="table label-value-table" id="componentOverview">
-    <thead>
+    <thead data-toggle="collapse" data-target="#componentOverviewBody" aria-expanded="true" aria-controls="componentOverviewBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
         <tr>
             <th colspan="2"><liferay-ui:message key="general" /></th>
         </tr>
     </thead>
+    <tbody id="componentOverviewBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="id" />:</td>
         <td id="documentId"><sw360:out value="${component.id}"/>
@@ -92,14 +93,16 @@
         <td><liferay-ui:message key="additional.data" />:</td>
         <td><ul id="list-data-additional-contentComponent" class="mapDisplayRootItem"></ul> </td>
     </tr>
+    </tbody>
 </table>
 
 <table class="table label-value-table" id="releaseAggregateTable">
-    <thead>
+    <thead data-toggle="collapse" data-target="#releaseAggregateTableBody" aria-expanded="true" aria-controls="releaseAggregateTableBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
         <tr>
             <th colspan="2"><liferay-ui:message key="release.aggregate.data" /></th>
         </tr>
     </thead>
+    <tbody id="releaseAggregateTableBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="vendors" />:</td>
         <td><sw360:DisplayCollection value="${component.vendorNames}"/></td>
@@ -122,14 +125,16 @@
             <sw360:DisplayCollection value="${component.mainLicenseIds}" />
         </td>
     </tr>
+    </tbody>
 </table>
 
 <table class="table label-value-table" id="componentRolesTable">
-    <thead>
+    <thead data-toggle="collapse" data-target="#componentRolesTableBody" aria-expanded="true" aria-controls="componentRolesTableBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
         <tr>
             <th colspan="2"><liferay-ui:message key="roles" /></th>
         </tr>
     </thead>
+    <tbody id="componentRolesTableBody" class="collapse show">
     <core_rt:if test="${componentVisibilityRestriction}">
         <tr>
             <td><liferay-ui:message key="group" />:</td>
@@ -164,4 +169,5 @@
         <td><liferay-ui:message key="additional.roles" />:</td>
         <td><sw360:DisplayMapOfEmailSets value="${component.roles}"/></td>
     </tr>
+    </tbody>
 </table>

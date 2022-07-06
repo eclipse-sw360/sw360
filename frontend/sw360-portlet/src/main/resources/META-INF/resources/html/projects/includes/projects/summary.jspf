@@ -16,11 +16,12 @@
 </core_rt:if>
 
 <table class="table label-value-table" id="general">
-    <thead>
+    <thead data-toggle="collapse" data-target="#generalBody" aria-expanded="true" aria-controls="generalBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
     <tr>
         <th colspan="2"><liferay-ui:message key="general.information" /></th>
     </tr>
     </thead>
+    <tbody id="generalBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="id" />:</td>
         <td id="documentId"><sw360:out value="${project.id}"/>
@@ -81,14 +82,16 @@
         <td><liferay-ui:message key="external.urls" />:</td>
         <td><sw360:DisplayMapOfExternalUrls value="${project.externalUrls}"/></td>
     </tr>
+    </tbody>
 </table>
 
 <table class="table label-value-table" id="roles">
-    <thead>
+    <thead data-toggle="collapse" data-target="#rolesBody" aria-expanded="true" aria-controls="rolesBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
     <tr>
         <th colspan="2"><liferay-ui:message key="roles" /></th>
     </tr>
     </thead>
+    <tbody id="rolesBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="group" />:</td>
         <td><sw360:out value="${project.businessUnit}"/></td>
@@ -133,4 +136,5 @@
         <td><liferay-ui:message key="additional.roles" />:</td>
         <td><sw360:DisplayMapOfEmailSets value="${project.roles}"/></td>
     </tr>
+    </tbody>
 </table>

@@ -9,11 +9,12 @@
 --%>
 
 <table class="table label-value-table" id="projectDetailVendor">
-    <thead>
+    <thead data-toggle="collapse" data-target="#vendorBody" aria-expanded="true" aria-controls="vendorBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
         <tr>
             <th colspan="2"><liferay-ui:message key="project.vendor" /></th>
         </tr>
     </thead>
+    <tbody id="vendorBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="full.name" />:</td>
         <td><sw360:out value="${project.vendor.fullname}"/></td>
@@ -26,4 +27,5 @@
         <td><liferay-ui:message key="url" />:</td>
         <td><sw360:out value="${project.vendor.url}"/></td>
     </tr>
+    </tbody>
 </table>
