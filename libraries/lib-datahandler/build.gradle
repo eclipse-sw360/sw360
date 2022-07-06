@@ -42,6 +42,9 @@ dependencies {
 }
 
 description = 'datahandler'
+tasks.build.dependsOn(deployJar)
+tasks.deployJar.dependsOn(jar)
+
 
 tasks.register('testsJar', Jar) {
     archiveClassifier = 'tests'
@@ -58,7 +61,6 @@ compileThrift {
 
 sourceSets {
     main.java.srcDirs += 'build/generated-sources/thrift'
-    //test.java.destinationDirectory.set(file('boogle'))
 }
 
 publishing.publications.maven.artifact(testsJar)

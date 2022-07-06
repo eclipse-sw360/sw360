@@ -17,4 +17,7 @@ dependencies {
     implementation project(':src-attachments')
 }
 
-description = 'svc-attachments'
+description = 'attachments'
+tasks.war.archiveBaseName = description
+tasks.build.dependsOn(deployWar)
+tasks.deployWar.dependsOn(war)

@@ -17,4 +17,7 @@ dependencies {
     implementation project(':src-licenses')
 }
 
-description = 'svc-licenses'
+description = 'licenses'
+tasks.war.archiveBaseName = description
+tasks.build.dependsOn(deployWar)
+tasks.deployWar.dependsOn(war)

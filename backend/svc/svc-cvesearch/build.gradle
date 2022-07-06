@@ -17,4 +17,7 @@ dependencies {
     implementation project(':src-cvesearch')
 }
 
-description = 'svc-cvesearch'
+description = 'cvesearch'
+tasks.war.archiveBaseName = description
+tasks.build.dependsOn(deployWar)
+tasks.deployWar.dependsOn(war)

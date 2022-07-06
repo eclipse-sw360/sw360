@@ -22,5 +22,3 @@ dependencies {
     testImplementation libs.junit
     testImplementation libs.hamcrest.all
 }
-
-description = 'src-attachments'

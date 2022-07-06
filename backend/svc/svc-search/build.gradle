@@ -17,4 +17,8 @@ dependencies {
     implementation project(':src-search')
 }
 
-description = 'svc-search'
+description = 'search'
+tasks.war.archiveBaseName = description
+tasks.build.dependsOn(deployWar)
+tasks.deployWar.dependsOn(war)
+

@@ -21,7 +21,7 @@ wait_couchdb() {
       sleep 1
   done
 
-  # Check id atabase is already created
+  # Check if database is already created
   error=$(curl --noproxy couchdb --head http://admin:password@couchdb:5984/_bla | head -n 1 | cut -d' ' -f2)
   [ ! "$error" == "404" ] && return
 

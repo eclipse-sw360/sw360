@@ -17,4 +17,7 @@ dependencies {
     implementation project(':src-wsimport')
 }
 
-description = 'svc-wsimport'
+description = 'wsimport'
+tasks.war.archiveBaseName = description
+tasks.build.dependsOn(deployWar)
+tasks.deployWar.dependsOn(war)

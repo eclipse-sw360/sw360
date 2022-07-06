@@ -51,3 +51,6 @@ dependencies {
 }
 
 description = 'resource-server'
+tasks.bootWar.archiveBaseName = "resource"
+tasks.build.dependsOn(deployWar)
+tasks.deployWar.dependsOn(bootWar)

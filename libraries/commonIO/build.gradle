@@ -25,3 +25,5 @@ dependencies {
 }
 
 description = 'commonIO'
+tasks.build.dependsOn(deployJar)
+tasks.deployJar.dependsOn(jar)

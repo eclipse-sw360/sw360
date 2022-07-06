@@ -17,4 +17,7 @@ dependencies {
     implementation project(':src-licenseinfo')
 }
 
-description = 'svc-licenseinfo'
+description = 'licenseinfo'
+tasks.war.archiveBaseName = description
+tasks.build.dependsOn(deployWar)
+tasks.deployWar.dependsOn(war)

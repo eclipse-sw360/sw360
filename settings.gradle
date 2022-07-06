@@ -9,6 +9,7 @@
 */
 
 rootProject.name = 'sw360'
+
 include(':backend')
 include(':backend-svc')
 include(':svc-search')
@@ -41,7 +42,6 @@ include(':importers')
 include(':build-configuration')
 include(':src-health')
 include(':svc-components')
-//include(':backend-utils')
 include(':src-attachments')
 include(':rest')
 include(':datahandler')

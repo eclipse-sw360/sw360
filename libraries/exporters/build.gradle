@@ -31,6 +31,9 @@ dependencies {
 }
 
 description = 'exporters'
+tasks.build.dependsOn(deployJar)
+tasks.deployJar.dependsOn(jar)
+
 
 tasks.register('testsJar', Jar) {
     archiveClassifier = 'tests'

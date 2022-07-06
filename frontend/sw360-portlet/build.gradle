@@ -51,3 +51,5 @@ dependencies {
 }
 
 description = 'sw360-portlet'
+tasks.build.dependsOn(deployJar)
+tasks.deployJar.dependsOn(jar)

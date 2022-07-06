@@ -21,6 +21,7 @@ on:
 env:
   COUCHDB_USER: admin
   COUCHDB_PASSWORD: password
+  COUCHDB_VERSION: 3
 
 jobs:
   build:
@@ -29,33 +30,37 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Setup CouchDB
-      uses: iamssen/couchdb-github-action@master
-      with:
-          couchdb-version: '3.1'
-
-    - name: Update properties with DB credentials
-      run: |
-        sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' build-configuration/test-resources/couchdb-test.properties
-        sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' build-configuration/test-resources/couchdb-test.properties
-        sudo mkdir -p /etc/sw360
-        sudo cp ./scripts/sw360BackendRestDockerConfig/etc_sw360/couchdb-test.properties /etc/sw360/
-
-    - name: Set up JDK 11
-      run: |
-        wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo tee /usr/share/keyrings/adoptium.asc
-        echo "deb [signed-by=/usr/share/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | sudo tee /etc/apt/sources.list.d/adoptium.list
-
-    - name: Prepare build environment
-      run: |
-        sudo apt-get update -qq
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git temurin-11-jdk maven
-        pip install mkdocs mkdocs-material
-
     - name: Verify license headers
       run: |
         chmod +x .github/testForLicenseHeaders.sh
         bash .github/testForLicenseHeaders.sh
+
+    - name: Set up JDK 11
+      run: |
+        wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /usr/share/keyrings/adoptium.asc
+        echo "deb [signed-by=/usr/share/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
+
+    - name: Prepare proxy if is set in env
+      run: |
+        [[ -z "$HTTP_PROXY" ]] || echo "Acquire::http::Proxy \"$HTTP_PROXY\";" | sudo tee /etc/apt/apt.conf.d/01proxy
+        [[ -z "$HTTPS_PROXY" ]] || echo "Acquire::https::Proxy \"$HTTPS_PROXY\";" | sudo tee -a /etc/apt/apt.conf.d/01proxy
+
+    - name: Prepare build environment
+      run: |
+        apt-get update -qq
+        DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git temurin-11-jdk net-tools curl
+        pip install mkdocs mkdocs-material
+        curl -s "https://get.sdkman.io" | bash
+        source "/root/.sdkman/bin/sdkman-init.sh"
+        sdk install gradle
+
+    - name: Setup CouchDB
+      run: |
+        bash scripts/startCouchdb.sh
+        sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' build-configuration/test-resources/couchdb-test.properties
+        sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' build-configuration/test-resources/couchdb-test.properties
+        mkdir -p /etc/sw360
+        cp ./scripts/sw360BackendRestDockerConfig/etc_sw360/couchdb-test.properties /etc/sw360/
 
     - name: Install Thrift
       run: |
@@ -63,7 +68,9 @@ jobs:
         bash scripts/install-thrift.sh --no-cleanup
 
     - name: Build SW360
-      run: mvn clean package --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false
+      run: |
+        source "/root/.sdkman/bin/sdkman-init.sh"
+        gradle clean build -PjarDeployDir=${PWD}/deploy -PwarDeployDir=${PWD}/deploy/webapps
 
     - name: Run PrivateProjectAccessTest
       run: |

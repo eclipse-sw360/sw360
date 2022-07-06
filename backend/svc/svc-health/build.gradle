@@ -17,4 +17,7 @@ dependencies {
     implementation project(':src-health')
 }
 
-description = 'svc-health'
+description = 'health'
+tasks.war.archiveBaseName = description
+tasks.build.dependsOn(deployWar)
+tasks.deployWar.dependsOn(war)

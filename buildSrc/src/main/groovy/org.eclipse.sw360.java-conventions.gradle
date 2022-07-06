@@ -16,10 +16,6 @@ repositories {
     }
 }
 
-group = 'org.eclipse.sw360'
-version = '15.1.0-SNAPSHOT'
-java.sourceCompatibility = JavaVersion.VERSION_11
-
 publishing {
     publications {
         maven(MavenPublication) {
@@ -31,3 +27,13 @@ publishing {
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
+
+group = 'org.eclipse.sw360'
+
+version = "${sw360_version}-SNAPSHOT"
+
+if(release == true) {
+    version = "${sw360_version}-RELEASE"
+}
+
+java.sourceCompatibility = JavaVersion.VERSION_11

@@ -17,4 +17,7 @@ dependencies {
     implementation project(':src-fossology')
 }
 
-description = 'svc-fossology'
+description = 'fossology'
+tasks.war.archiveBaseName = description
+tasks.build.dependsOn(deployWar)
+tasks.deployWar.dependsOn(war)
