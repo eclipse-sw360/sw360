@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
@@ -28,15 +28,14 @@ jar_dependencies=(
   https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-core/2.13.2/jackson-core-2.13.2.jar
   https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-databind/2.13.2.2/jackson-databind-2.13.2.2.jar
   https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.20/commons-compress-1.20.jar
-  https://repo1.maven.org/maven2/org/apache/thrift/libthrift/0.14.0/libthrift-0.14.0.jar
+  https://repo1.maven.org/maven2/org/apache/thrift/libthrift/"$THRIFT_VERSION"/libthrift-"$THRIFT_VERSION".jar
 )
 
 dependencies=(
   https://github.com/liferay/liferay-portal/releases/download/7.3.4-ga5/liferay-ce-portal-tomcat-7.3.4-ga5-20200811154319029.tar.gz
-  https://sourceforge.net/projects/lportal/files/Liferay%20Portal/7.3.4%20GA5/liferay-ce-portal-tomcat-7.3.4-ga5-20200811154319029.tar.gz
-  http://archive.apache.org/dist/thrift/0.14.0/thrift-0.14.0.tar.gz
-  https://github.com/rnewson/couchdb-lucene/archive/v2.1.0.tar.gz
-  https://raw.githubusercontent.com/sw360/sw360vagrant/master/shared/couchdb-lucene.patch
+  https://github.com/rnewson/couchdb-lucene/archive/v"$CLUCENE_VERSION".tar.gz
+  http://archive.apache.org/dist/thrift/0.16.0/thrift-"$THRIFT_VERSION".tar.gz
+  https://dlcdn.apache.org/maven/maven-3/"$MAVEN_VERSION"/binaries/apache-maven-"$MAVEN_VERSION"-bin.tar.gz
 )
 
 download_dependency() {

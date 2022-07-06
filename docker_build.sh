@@ -15,13 +15,12 @@
 
 set -e
 
+# Set default versions
+CLUCENE_VERSION=${CLUCENE_VERSION:-2.1.0}
+THRIFT_VERSION=${THRIFT_VERSION:-0.16.0}
+MAVEN_VERSION=${MAVEN_VERSION:-3.8.6}
+
 GIT_ROOT=$(git rev-parse --show-toplevel)
-
-# Download dependencies outside container
-"$GIT_ROOT"/scripts/docker-config/download_dependencies.sh
-
-# To avoid excessive copy, we will export the git archive of the sources to deps
-git archive --output=deps/sw360.tar --format=tar --prefix=sw360/ HEAD
 
 COMPOSE_DOCKER_CLI_BUILD=1
 DOCKER_BUILDKIT=1
@@ -29,27 +28,33 @@ export DOCKER_BUILDKIT COMPOSE_DOCKER_CLI_BUILD
 
 usage() {
     echo "Usage:"
-    echo "-v Verbose build"
+    echo "--help This messaqge"
+    echo "--verbose Verbose build"
+    echo "--no-cache Invalidate buildkit cache"
     exit 0;
 }
 
-while getopts "hv" arg; do
-    case $arg in
-        h)
-            usage
-            ;;
-        v)
-            docker_verbose="--progress=plain"
-            ;;
-        *)
-            ;;
-    esac
+for arg in "$@"; do
+    if [ "$arg" == "--help" ]; then
+        usage
+    elif [ "$arg" == "--verbose" ]; then
+        docker_verbose="--progress=plain"
+    elif [ "$arg" == "--no-cache" ]; then
+        docker_no_cache="--no-cache"
+    else
+        echo "Unsupported parameter: $arg"
+        usage
+    fi
+    shift
 done
 
 #shellcheck disable=SC2086
-docker-compose \
+docker compose \
     --file "$GIT_ROOT"/docker-compose.yml \
     build \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
+    --build-arg CLUCENE_VERSION="$CLUCENE_VERSION" \
+    --build-arg THRIFT_VERSION="$THRIFT_VERSION" \
+    --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
     $docker_verbose \
-    "$@"
+    $docker_no_cache
