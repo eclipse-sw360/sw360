@@ -19,6 +19,7 @@ dependencies {
     implementation project(':datahandler')
     implementation project(':commonIO')
     implementation project(':rest-common')
+    implementation libs.activation
     implementation libs.annotations
     implementation libs.apache.commons.lang
     implementation libs.spring.boot.starter.web
@@ -26,6 +27,7 @@ dependencies {
     implementation libs.ektorp
     implementation libs.ektorplucene
     implementation libs.guava
+    implementation libs.jose4j
     implementation libs.slf4j.api
     implementation libs.spring.boot.starter.actuator
     implementation libs.spring.boot.starter.web
@@ -40,7 +42,6 @@ dependencies {
     implementation libs.jakarta.xml.bind.api
     implementation libs.jaxb.runtime
     implementation libs.javax.annotation.api
-    implementation libs.activation
     runtimeOnly libs.spring.boot.devtools
     testImplementation libs.junit
     testImplementation libs.spring.boot.starter.test

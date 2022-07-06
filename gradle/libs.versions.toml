@@ -37,6 +37,7 @@ javax-servlet-jsp-api = "2.2.1"
 jaxb-runtime = "2.3.2"
 jaxen = "1.1.6"
 jgiven-junit = "0.17.0"
+jose4j = "0.7.12"
 json-simple = "2.3.1"
 jsch = "0.1.54"
 jstl = "1.2"
@@ -116,6 +117,7 @@ javax-servlet-api = { group = "javax.servlet", name = "javax.servlet-api", versi
 javax-servlet-jsp-api = { group = "javax.servlet.jsp", name = "javax.servlet.jsp-api", version.ref = "javax.servlet.jsp-api" }
 jaxb-runtime = { group = "org.glassfish.jaxb", name = "jaxb-runtime", version.ref = "jaxb-runtime" }
 jaxen = { group = "jaxen", name = "jaxen", version.ref = "jaxen" }
+jose4j = { group = "org.bitbucket.b_c", name="jose4j", version.ref = "jose4j"}
 jsch = { group = "com.jcraft", name = "jsch", version.ref = "jsch" }
 json-simple = { group = "com.github.cliftonlabs", name = "json-simple", version.ref = "json-simple" }
 jstl-api = { group = "javax.servlet.jsp.jstl", name = "jstl-api", version.ref = "jstl" }
