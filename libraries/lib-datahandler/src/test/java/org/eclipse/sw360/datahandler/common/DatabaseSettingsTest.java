@@ -50,8 +50,8 @@ public class DatabaseSettingsTest {
         COUCH_DB_URL = props.getProperty("couchdb.url", "http://localhost:5984");
         COUCH_DB_LUCENE_URL = props.getProperty("couchdb.lucene.url", "http://localhost:8080/couchdb-lucene");
         COUCH_DB_DATABASE = props.getProperty("couchdb.database", "sw360_test_db");
-        COUCH_DB_USERNAME = props.getProperty("couchdb.user", "");
-        COUCH_DB_PASSWORD = props.getProperty("couchdb.password", "");
+        COUCH_DB_USERNAME = props.getProperty("couchdb.user", "admin");
+        COUCH_DB_PASSWORD = props.getProperty("couchdb.password", "password");
         COUCH_DB_ATTACHMENTS = props.getProperty("couchdb.attachments", "sw360_test_attachments");
         COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360_test_config");
         COUCH_DB_USERS = props.getProperty("couchdb.usersdb", "sw360_test_users");

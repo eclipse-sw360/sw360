@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Copyright (c) Bosch Software Innovations GmbH 2019.
+# Copyright BMW CarIT GmbH 2022
 # Part of the SW360 Portal Project.
 #
 # SPDX-License-Identifier: EPL-2.0
@@ -11,23 +12,25 @@
 set -e
 
 NAME=sw360_development_couchdb
+COUCHDB_USER=${COUCHDB_USER:-admin}
+COUCHDB_PASSWORD=${COUCHDB_PASSWORD:-password}
 COUCHDB_VERSION=${COUCHDB_VERSION:-3}
 COUCHDB_HOST=${COUCHDB_HOST:-localhost}
 
 wait_couchdb() {
-  # Wait for it to be up
-  until curl --noproxy ${COUCHDB_HOST} -s http://${COUCHDB_HOST}:5984 >/dev/null 2>&1; do
-      sleep 1
-  done
+    # Wait for it to be up
+    until curl --noproxy "${COUCHDB_HOST}" -s "http://${COUCHDB_HOST}:5984" >/dev/null 2>&1; do
+        sleep 1
+    done
 
-  # Check if database is already created
-  error=$(curl --noproxy localhost --head http://admin:password@${COUCHDB_HOST}:5984/_bla | head -n 1 | cut -d' ' -f2)
-  [ ! "$error" == "404" ] && return
+    # Check if database is already created
+    error=$(curl --noproxy localhost --head http://admin:password@${COUCHDB_HOST}:5984/_bla | head -n 1 | cut -d' ' -f2)
+    [ ! "$error" == "404" ] && return
 
-  # Couchdb docker no cluster
-  curl --noproxy ${COUCHDB_HOST} -X PUT http://admin:password@${COUCHDB_HOST}:5984/_users
-  curl --noproxy ${COUCHDB_HOST} -X PUT http://admin:password@${COUCHDB_HOST}:5984/_replicator
-  curl --noproxy ${COUCHDB_HOST} -X PUT http://admin:password@${COUCHDB_HOST}:5984/_global_changes
+    # Couchdb docker no cluster
+    for entry in _users _replicator _global_changes; do
+        curl --noproxy "${COUCHDB_HOST}" -X PUT "http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@${COUCHDB_HOST}:5984/$entry"
+    done
 }
 
 
@@ -50,7 +53,7 @@ docker run \
         -p 5984:5984 \
         -d \
         --name "$NAME" \
-        couchdb:${COUCHDB_VERSION}
+        "couchdb:${COUCHDB_VERSION}"
 echo "Test container is started and listening on 5984."
 
 wait_couchdb
