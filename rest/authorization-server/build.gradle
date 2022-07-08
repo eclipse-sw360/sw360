@@ -38,6 +38,9 @@ dependencies {
 }
 
 description = 'authorization-server'
+
 tasks.war.archiveBaseName = "authorization"
 tasks.build.dependsOn(deployWar)
 tasks.deployWar.dependsOn(war)
+
+test.onlyIf { !project.hasProperty('enableRestTests') }
