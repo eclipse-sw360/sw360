@@ -51,6 +51,9 @@ config
 .tmp
 .env
 
+# Ignore gradle deploy
+deploy
+
 # Gradle generated files
 bin/**
 gen/**
