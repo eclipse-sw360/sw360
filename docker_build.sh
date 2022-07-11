@@ -49,7 +49,7 @@ for arg in "$@"; do
 done
 
 #shellcheck disable=SC2086
-docker compose \
+docker-compose \
     --file "$GIT_ROOT"/docker-compose.yml \
     build \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
