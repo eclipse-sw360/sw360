@@ -44,10 +44,12 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.CveSearchService;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
@@ -227,6 +229,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             linkReleaseToProject(request, response);
         } else if (PortalConstants.LOAD_SPDX_LICENSE_INFO.equals(action)) {
             loadSpdxLicenseInfo(request, response);
+        } else if (PortalConstants.LOAD_ASSESSMENT_SUMMARY_INFO.equals(action)) {
+            loadAssessmentSummaryInfo(request, response);
         } else if (PortalConstants.WRITE_SPDX_LICENSE_INFO_INTO_RELEASE.equals(action)) {
             writeSpdxLicenseInfoIntoRelease(request, response);
         } else if (PortalConstants.IMPORT_BOM.equals(action)) {
@@ -763,6 +767,52 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             log.error("Cannot write JSON response for attachment id " + attachmentContentId + " in release " + releaseId
                     + ".", e);
             response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+        }
+    }
+
+    private void loadAssessmentSummaryInfo(ResourceRequest request, ResourceResponse response) {
+        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+        String attachmentContentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
+
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
+        Map<String, String> assessmentSummaryMap = new HashMap<>();
+
+        try {
+            Release release = componentClient.getReleaseById(releaseId, user);
+            List<LicenseInfoParsingResult> licenseInfoResult = licenseInfoClient.getLicenseInfoForAttachment(release,
+                    attachmentContentId, true, user);
+            if (CommonUtils.isNotEmpty(licenseInfoResult) && Objects.nonNull(licenseInfoResult.get(0).getLicenseInfo())) {
+                assessmentSummaryMap = licenseInfoResult.get(0).getLicenseInfo().getAssessmentSummary();
+            }
+        } catch (TException e) {
+            log.error("Cannot retrieve license information for attachment id " + attachmentContentId + " in release "
+                    + releaseId + ".", e);
+            response.setProperty("statusText", "Cannot retrieve license information for CLI");
+            response.setStatus(500);
+        }
+        try {
+            JsonGenerator jsonGenerator = JSON_FACTORY.createGenerator(response.getWriter());
+            jsonGenerator.writeStartObject();
+            if (CommonUtils.isNullOrEmptyMap(assessmentSummaryMap)) {
+                jsonGenerator.writeStringField("status", "failure");
+                jsonGenerator.writeStringField("msg", LanguageUtil.get(resourceBundle,"assessment.summary.information.is.not.present.in.CLI.file"));
+            } else {
+                for (Map.Entry<String, String> entry : assessmentSummaryMap.entrySet()) {
+                    jsonGenerator.writeStringField(entry.getKey(), entry.getValue());
+                }
+                jsonGenerator.writeStringField("status", "success");
+            }
+            jsonGenerator.writeEndObject();
+            jsonGenerator.close();
+        } catch (IOException | RuntimeException e) {
+            log.error("Cannot write JSON response for attachment id " + attachmentContentId + " in release " + releaseId
+                    + ".", e);
+            response.setProperty("statusText", "Cannot retrieve license information for CLI");
+            response.setStatus(500);
         }
     }
 

@@ -63,7 +63,8 @@ struct LicenseInfo {
     23: optional string componentName,
     24: optional set<string> concludedLicenseIds,
     25: optional i32 totalObligations,
-    26: optional map<string, set<string>> copyrightsWithFilesHash
+    26: optional map<string, set<string>> copyrightsWithFilesHash,
+    27: optional map<string, string> assessmentSummary
 }
 
 struct LicenseInfoParsingResult {
