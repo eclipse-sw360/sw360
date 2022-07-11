@@ -2290,9 +2290,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         int sortParam = -1;
         if (paginationParameters.getSortingColumn().isPresent()) {
             sortParam = paginationParameters.getSortingColumn().get();
-            if (sortParam == 1 && Integer.valueOf(paginationParameters.getEcho()) == 1) {
-                sortParam = -1;
-            }
         }
         pageData.setSortColumnNumber(sortParam);
 
