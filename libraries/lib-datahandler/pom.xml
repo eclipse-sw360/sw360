@@ -188,7 +188,6 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
-			<!-- commons-logging API required by apache httpclient -->
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-jcl</artifactId>
         </dependency>

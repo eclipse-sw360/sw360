@@ -38,6 +38,9 @@
 
 <#assign preferences = freeMarkerPortletPreferences.getPreferences({"portletSetupPortletDecoratorId": "sw360", "destination": "/search"}) />
 <#assign login_css = is_signed_in?then("signed-in", "not-signed-in") />
+<#assign liferay_user = themeDisplay.getUser() />
+<#assign js_folder = theme_display.getPathThemeJavaScript() />
+<#assign js_banner_file = htmlUtil.escape(portalUtil.getStaticResourceURL(request, "${js_folder}/banner.js")) />
 <#assign overflow_hidden_css = "hide_overflow" />
 <html class="${root_css_class} ${overflow_hidden_css}" dir="<@liferay.language key="lang.dir" />" lang="${w3c_language_id}">
 
