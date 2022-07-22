@@ -649,7 +649,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private boolean updateProjectAllowed(Project project, User user) {
         if (project.clearingState != null && project.clearingState.equals(ProjectClearingState.CLOSED)
-                && !PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) && !SW360Utils.isModeratorOrCreator(project, user)) {
+                && !PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) && !SW360Utils.isUserAllowedToEditClosedProject(project, user)) {
             return false;
         }
         return true;
