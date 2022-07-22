@@ -15,14 +15,14 @@ plugins {
 subprojects {
     task deployWar (type: Copy) {
         from layout.buildDirectory.dir("libs")
-        into "${deployDir}/webapps"
+        into "${layout.projectDirectory}/${deployDir}/webapps"
         include "*.war"
         rename '(.*)-.*-SNAPSHOT(.*)', '$1$2'
     }
 
     task deployJar (type: Copy) {
         from layout.buildDirectory.dir("libs")
-        into "${deployDir}/jar"
+        into "${layout.projectDirectory}/${deployDir}/jar"
         include "*.jar"
         exclude "*-tests.jar"
     }

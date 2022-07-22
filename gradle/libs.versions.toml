@@ -20,6 +20,7 @@ commons-codec = "1.12"
 commons-io = "2.7"
 commons-lang3 = "3.8.1"
 dom4j = "2.1.3"
+failureaccess = "1.0.1"
 findbugs-annotations = "1.3.9-1"
 ektorp = "1.5.0"
 ektorplucene = "0.2.0"
@@ -102,10 +103,10 @@ dom4j = { group = "org.dom4j", name = "dom4j", version.ref = "dom4j" }
 ektorp = { group = "org.ektorp", name = "org.ektorp", version.ref = "ektorp" }
 ektorplucene = { group = "com.github.ldriscoll", name = "ektorplucene", version.ref = "ektorplucene" }
 equalsverifier = { group = "nl.jqno.equalsverifier", name = "equalsverifier", version.ref = "equalsverifier" }
+failureaccess = { group = "com.google.guava", name = "failureaccess", version.ref = "failureaccess"}
 findbugs-annotations = { group = "com.github.stephenc.findbugs", name = "findbugs-annotations", version.ref = "findbugs-annotations" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
-guava-failureaccess = { group = "com.google.guava", name = "failureaccess", version.ref = "guava" }
 httpcore = { group = "org.apache.httpcomponents", name = "httpcore", version.ref = "httpcore" }
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jackson" }
 jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jackson" }

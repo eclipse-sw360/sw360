@@ -9,36 +9,38 @@
 */
 
 plugins {
+    id "biz.aQute.bnd.builder"
     id 'org.eclipse.sw360.java-conventions'
-    id "org.jruyi.thrift" version "0.4.2"
+    id "org.jruyi.thrift"
     id 'java-library'
 }
 
 dependencies {
-    implementation libs.commons.csv
+    compileOnly libs.annotations
+    compileOnly libs.findbugs.annotations
+    implementation libs.cloudant.client
     implementation libs.commons.codec
-    implementation libs.log4j.api
-    implementation libs.log4j.core
+    implementation libs.commons.csv
     implementation libs.commons.io
     implementation libs.ektorp
     implementation libs.ektorplucene
-    implementation libs.cloudant.client
+    implementation libs.guava
+    implementation libs.failureaccess
+    implementation libs.httpcore
     implementation libs.jackson.annotations
     implementation libs.jackson.core
     implementation libs.jackson.databind
-    implementation libs.httpcore
     implementation libs.libthrift
+    implementation libs.log4j.api
+    implementation libs.log4j.core
     implementation libs.slf4j.api
-    implementation libs.guava
-    compileOnly libs.annotations
-    compileOnly libs.findbugs.annotations
-    runtimeOnly libs.log4j.slf4j.impl
     runtimeOnly libs.log4j.jcl
+    runtimeOnly libs.log4j.slf4j.impl
     testImplementation libs.hamcrest.all
-    testImplementation libs.junit
-    testImplementation libs.mockito.all
     testImplementation libs.jgiven.junit
+    testImplementation libs.junit
     testImplementation libs.junit.dataprovider
+    testImplementation libs.mockito.all
 }
 
 description = 'datahandler'
