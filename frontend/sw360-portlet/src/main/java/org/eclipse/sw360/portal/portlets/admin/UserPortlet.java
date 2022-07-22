@@ -736,6 +736,7 @@ public class UserPortlet extends Sw360Portlet {
         jsonObject.put("givenname", user.getGivenname());
         jsonObject.put("lastname", user.getLastname());
         jsonObject.put("email", user.getEmail());
+        jsonObject.put("deactivated", user.isDeactivated() ? "Inactive" : "Active");
         jsonObject.put("primaryDepartment", user.getDepartment());
         if (isAbsentInCouchDB) {
             jsonObject.put("primaryDepartmentRole",
