@@ -47,46 +47,44 @@
     </modules>
 
     <properties>
-        <!-- This is first of two places for changing the version of SW360 -->
-        <!-- note that 6.1.0-SNAPSHOT relates to 6.0.${patchlevel} -->
-        <!-- pls see also the profile cli -->
         <revision>15.1.${patchlevel}</revision>
         <patchlevel>0-SNAPSHOT</patchlevel>
-        <java.version>11</java.version>
-        <ektorp.version>1.5.0</ektorp.version>
-        <thrift.version>0.14.0</thrift.version>
-        <guava.version>31.0.1-jre</guava.version>
-        <spring.version>5.3.19</spring.version>
-        <spring-boot.version>2.6.6</spring-boot.version>
-        <spring-restdocs.version>2.0.6.RELEASE</spring-restdocs.version>
-        <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
-        <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
-
-        <slf4j.version>1.7.30</slf4j.version>
-        <log4j2.version>2.17.1</log4j2.version>
-        <gson.version>2.8.9</gson.version>
-        <jcraft.version>0.1.54</jcraft.version>
-        <jackson.version>2.13.2</jackson.version>
-        <jackson-databind.version>2.13.2.2</jackson-databind.version>
-        <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
-        <poi.version>4.1.2</poi.version>
-
-        <junit.version>4.13.2</junit.version>
-        <jgiven.version>0.17.0</jgiven.version>
-        <hamcrest.version>1.3</hamcrest.version>
-        <mockito.version>1.10.19</mockito.version>
-        <project-lombok.version>1.18.2</project-lombok.version>
-        <wiremock.version>2.26.0</wiremock.version>
-
-        <maven-source-plugin.version>2.4</maven-source-plugin.version>
-        <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
-
-        <jakarta-xml-bind.version>2.3.2</jakarta-xml-bind.version>
-        <glassfish-jaxb.version>2.3.2</glassfish-jaxb.version>
-        <javax-annotation.version>1.3.2</javax-annotation.version>
-
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>11</java.version>
+
+        <!-- We define dependency versions here -->
+        <byte-buddy.version>1.12.10</byte-buddy.version>
+        <ektorp.version>1.5.0</ektorp.version>
+        <glassfish-jaxb.version>2.3.2</glassfish-jaxb.version>
+        <gson.version>2.8.9</gson.version>
+        <guava.version>31.0.1-jre</guava.version>
+        <hamcrest.version>1.3</hamcrest.version>
+        <jackson-databind.version>2.13.2.2</jackson-databind.version>
+        <jackson.version>2.13.2</jackson.version>
+        <jakarta-xml-bind.version>2.3.2</jakarta-xml-bind.version>
+        <javax-annotation.version>1.3.2</javax-annotation.version>
+        <jcraft.version>0.1.54</jcraft.version>
+        <jgiven.version>0.17.0</jgiven.version>
+        <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
+        <junit.version>4.13.2</junit.version>
+        <log4j2.version>2.17.1</log4j2.version>
+        <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
+        <maven-source-plugin.version>2.4</maven-source-plugin.version>
+        <mockito.version>4.6.1</mockito.version>
+        <okhttp.version>4.3.1</okhttp.version>
+        <package-url.version>1.1.1</package-url.version>
+        <poi.version>4.1.2</poi.version>
+        <project-lombok.version>1.18.2</project-lombok.version>
+        <slf4j.version>1.7.30</slf4j.version>
+        <spring-boot.version>2.6.6</spring-boot.version>
+        <spring-restdocs.version>2.0.6.RELEASE</spring-restdocs.version>
+        <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
+        <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
+        <spring.version>5.3.19</spring.version>
+        <thrift.version>0.14.0</thrift.version>
+        <wiremock.version>2.26.0</wiremock.version>
+
 
         <!--  User must provide below property configuration based on his/her liferay deployment environment -->
         <base.deploy.dir />
@@ -115,9 +113,14 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${byte-buddy.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
-                <version>4.3.1</version>
+                <version>${okhttp.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.cliftonlabs</groupId>
@@ -127,7 +130,7 @@
             <dependency>
                 <groupId>com.github.package-url</groupId>
                 <artifactId>packageurl-java</artifactId>
-                <version>1.1.1</version>
+                <version>${package-url.version}</version>
             </dependency>
             <!-- javax.annotation: java 11 compatibility -->
             <dependency>
@@ -395,7 +398,7 @@
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
-                <artifactId>mockito-all</artifactId>
+                <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
