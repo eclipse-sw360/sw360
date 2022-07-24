@@ -9,8 +9,8 @@
 */
 
 plugins {
+    id "biz.aQute.bnd.builder"
     id 'org.eclipse.sw360.java-conventions'
-    id 'java-library'
 }
 
 dependencies {

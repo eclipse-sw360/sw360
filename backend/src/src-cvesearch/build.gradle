@@ -30,7 +30,7 @@ dependencies {
     implementation 'com.cloudant:cloudant-client:2.20.1'
     testImplementation libs.junit
     testImplementation libs.hamcrest.all
-    testImplementation libs.mockito.all
+    testImplementation libs.mockito.core
 }
 
 description = 'src-cvesearch'

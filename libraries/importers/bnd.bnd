@@ -1,0 +1,28 @@
+#
+# Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+Bundle-Name: SW360 Importers
+Bundle-SymbolicName: sw360-importers
+Bundle-Version: 1.0.0
+
+-check: all
+-sources: false
+-noee: true
+
+Export-Package: \
+	org.eclipse.sw360.importer.*
+
+Import-Package: \
+	com.google.common.*, \
+	org.apache.commons.csv.*, \
+	org.apache.logging.log4j, \
+	org.eclipse.sw360.commonIO.*, \
+	org.eclipse.sw360.datahandler.*, \
+	org.eclipse.sw360.exporter.*, \

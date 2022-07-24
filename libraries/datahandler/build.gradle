@@ -12,7 +12,6 @@ plugins {
     id "biz.aQute.bnd.builder"
     id 'org.eclipse.sw360.java-conventions'
     id "org.jruyi.thrift"
-    id 'java-library'
 }
 
 dependencies {
@@ -40,7 +39,7 @@ dependencies {
     testImplementation libs.jgiven.junit
     testImplementation libs.junit
     testImplementation libs.junit.dataprovider
-    testImplementation libs.mockito.all
+    testImplementation libs.mockito.core
 }
 
 description = 'datahandler'

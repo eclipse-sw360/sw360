@@ -9,6 +9,7 @@
 */
 
 plugins {
+    id "biz.aQute.bnd.builder"
     id 'org.eclipse.sw360.java-conventions'
 }
 
@@ -22,12 +23,14 @@ dependencies {
     implementation libs.slf4j.api
     implementation libs.guava
     implementation libs.gson
+    implementation libs.poi
     implementation libs.poi.ooxml
     implementation libs.libthrift
+    implementation libs.xmlbeans
     runtimeOnly libs.log4j.slf4j.impl
     testImplementation libs.junit
     testImplementation libs.hamcrest.all
-    testImplementation libs.mockito.all
+    testImplementation libs.mockito.core
 }
 
 description = 'exporters'

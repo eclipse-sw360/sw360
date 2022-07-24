@@ -9,6 +9,7 @@
 */
 
 plugins {
+    id "biz.aQute.bnd.builder"
     id 'org.eclipse.sw360.java-conventions'
 }
 
@@ -31,7 +32,7 @@ dependencies {
     testImplementation project(':datahandler').sourceSets.test.output
     testImplementation libs.junit
     testImplementation libs.hamcrest.all
-    testImplementation libs.mockito.all
+    testImplementation libs.mockito.core
 }
 
 description = 'importers'

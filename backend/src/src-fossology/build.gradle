@@ -26,7 +26,7 @@ dependencies {
     implementation libs.cloudant.client
     testImplementation libs.junit
     testImplementation libs.hamcrest.all
-    testImplementation libs.mockito.all
+    testImplementation libs.mockito.core
 }
 
 description = 'src-fossology'
