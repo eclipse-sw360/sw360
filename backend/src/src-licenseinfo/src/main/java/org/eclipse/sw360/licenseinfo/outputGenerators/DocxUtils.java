@@ -179,9 +179,9 @@ public class DocxUtils {
 
         // format the hyperlink (underline + color)
         CTRPr rpr = ctr.addNewRPr();
-        CTColor colour = CTColor.Factory.newInstance();
-        colour.setVal("0000FF");
-        rpr.setColor(colour);
+        CTColor color = CTColor.Factory.newInstance();
+        color.setVal("0000FF");
+        rpr.setColorArray(new CTColor[]{color});
         CTRPr rpr1 = ctr.addNewRPr();
         rpr1.addNewU().setVal(STUnderline.SINGLE);
 

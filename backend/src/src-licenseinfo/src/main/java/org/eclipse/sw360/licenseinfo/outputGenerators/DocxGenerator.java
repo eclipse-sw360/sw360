@@ -456,9 +456,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         CTFonts ctFont = CTFonts.Factory.newInstance();
         ctFont.setAscii("Arial");
         CTRPr ctrpr = ctr.addNewRPr();
-        CTColor colour = CTColor.Factory.newInstance();
-        colour.setVal("0000FF");
-        ctrpr.setColor(colour);
+        CTColor color = CTColor.Factory.newInstance();
+        color.setVal("0000FF");
+        ctrpr.setColorArray(new CTColor[]{color});
         ctrpr.addNewU().setVal(STUnderline.SINGLE);
         ctrpr.addNewSz().setVal(new BigInteger("18"));
     }
