@@ -28,6 +28,12 @@ subprojects {
     }
 }
 
+task cleanDeploy(type:Delete) {
+   delete project.hasProperty('deployDir') ? "${deployDir}" : "${rootProject.projectDir}/deploy"
+}
+
+tasks.clean.dependsOn(tasks.cleanDeploy)
+
 // Setup proxy dinamically if exists
 
 task setHttpProxyFromEnv {
