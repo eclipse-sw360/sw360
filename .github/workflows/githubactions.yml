@@ -77,7 +77,7 @@ jobs:
         cd build-configuration
         mvn install
         cd ..
-        cd libraries/lib-datahandler
+        cd libraries/datahandler
         mvn test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true
 
     - name: Deploy Backend and Rest Server
