@@ -16,9 +16,11 @@ plugins {
 dependencies {
     implementation project(':src-common')
     implementation project(':datahandler')
-    implementation 'org.apache.thrift:libthrift:0.14.0'
-    implementation 'com.google.guava:guava:21.0'
-    implementation group: 'com.cloudant', name: 'cloudant-client', version: '2.20.1'
+    implementation libs.libthrift
+    implementation libs.guava
+    implementation libs.cloudant.client
     testImplementation libs.junit
     testImplementation libs.hamcrest.all
+    testImplementation project(':src-common')
+    testImplementation project(':datahandler').sourceSets.test.output
 }

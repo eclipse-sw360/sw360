@@ -16,9 +16,9 @@ plugins {
 dependencies {
     implementation project(':src-common')
     implementation project(':datahandler')
-    implementation 'org.apache.thrift:libthrift:0.14.0'
-    implementation 'com.google.guava:guava:21.0'
-    implementation 'com.cloudant:cloudant-client:2.20.1'
+    implementation libs.libthrift
+    implementation libs.guava
+    implementation libs.cloudant.client
 }
 
 description = 'src-changelogs'
