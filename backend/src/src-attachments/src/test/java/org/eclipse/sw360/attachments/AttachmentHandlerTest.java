@@ -24,19 +24,15 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.hamcrest.Matchers;
 import org.junit.*;
-import org.junit.rules.ExpectedException;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AttachmentHandlerTest {
 
@@ -44,9 +40,6 @@ public class AttachmentHandlerTest {
 
     private AttachmentHandler handler;
 
-
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     @Before
     public void setUp() throws Exception {
@@ -71,9 +64,9 @@ public class AttachmentHandlerTest {
     @Test
     public void testGetAttachmentContent() throws Exception {
         AttachmentContent attachment = handler.getAttachmentContent("A1");
-        assertEquals("A1", attachment.id);
-        assertEquals("a.txt", attachment.filename);
-        assertEquals("text", attachment.contentType);
+        assertThat("A1", equalTo(attachment.id));
+        assertThat("a.txt", equalTo(attachment.filename));
+        assertThat("text", equalTo(attachment.contentType));
     }
 
     @Test
@@ -90,9 +83,9 @@ public class AttachmentHandlerTest {
         assertThat(requestSummary.totalAffectedElements, is(0));
 
         final AttachmentContent a1 = handler.getAttachmentContent("A1");
-        assertNotNull(a1);
+        assertThat(a1, is(notNullValue()));
         final AttachmentContent a2 = handler.getAttachmentContent("A2");
-        assertNotNull(a2);
+        assertThat(a2, is(notNullValue()));
     }
 
 
@@ -104,10 +97,9 @@ public class AttachmentHandlerTest {
         assertThat(requestSummary.totalAffectedElements, is(1));
 
         final AttachmentContent a1 = handler.getAttachmentContent("A1");
-        assertNotNull(a1);
-        exception.expect(SW360Exception.class);
+        assertThat(a1, is(notNullValue()));
         final AttachmentContent a2 = handler.getAttachmentContent("A2");
-        assert(a2==null);
+        assertThat(a2, is(nullValue()));
 
     }
 
@@ -125,8 +117,8 @@ public class AttachmentHandlerTest {
         usage2.setAttachmentContentId("a2");
         usage2 = handler.makeAttachmentUsage(usage2);
 
-        Assert.assertThat(handler.getAttachmentUsage(usage1.getId()), is(usage1));
-        Assert.assertThat(handler.getAttachmentUsage(usage2.getId()), is(usage2));
+        assertThat(handler.getAttachmentUsage(usage1.getId()), is(usage1));
+        assertThat(handler.getAttachmentUsage(usage2.getId()), is(usage2));
     }
 
     @Test
@@ -140,7 +132,7 @@ public class AttachmentHandlerTest {
         usage1.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l1", "l2"))));
         handler.updateAttachmentUsage(usage1);
 
-        Assert.assertThat(handler.getAttachmentUsage(usage1.getId()), is(usage1));
+        assertThat(handler.getAttachmentUsage(usage1.getId()), is(usage1));
     }
 
     @Test(expected = SW360Exception.class)
@@ -168,7 +160,7 @@ public class AttachmentHandlerTest {
         Assert.assertTrue(usage3.isSetId());
 
         handler.deleteAttachmentUsages(Lists.newArrayList(usage1, usage3));
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), Matchers.containsInAnyOrder(usage2));
+        assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), containsInAnyOrder(usage2));
     }
 
     @Test
@@ -180,8 +172,8 @@ public class AttachmentHandlerTest {
         AttachmentUsage usage5 = createUsage("p4", "r1", "a11");
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
-        Assert.assertThat(handler.getAttachmentUsages(Source.releaseId("r1"), "a11", null),
-                Matchers.containsInAnyOrder(usage1, usage4, usage5));
+        assertThat(handler.getAttachmentUsages(Source.releaseId("r1"), "a11", null),
+                containsInAnyOrder(usage1, usage4, usage5));
     }
 
     @Test
@@ -193,8 +185,8 @@ public class AttachmentHandlerTest {
         AttachmentUsage usage5 = createUsage("p4", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
-        Assert.assertThat(handler.getAttachmentUsages(Source.releaseId("r1"), "a11", UsageData.licenseInfo(new LicenseInfoUsage())),
-                Matchers.containsInAnyOrder(usage1, usage5));
+        assertThat(handler.getAttachmentUsages(Source.releaseId("r1"), "a11", UsageData.licenseInfo(new LicenseInfoUsage())),
+                containsInAnyOrder(usage1, usage5));
     }
 
     @Test
@@ -206,10 +198,10 @@ public class AttachmentHandlerTest {
         AttachmentUsage usage5 = createUsage("p4", "r1", "a11");
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
-        Assert.assertThat(handler.getAttachmentsUsages(Source.releaseId("r1"), ImmutableSet.of("a11", "a12"), null),
-                Matchers.containsInAnyOrder(usage1, usage2, usage4, usage5));
-        Assert.assertThat(handler.getAttachmentsUsages(Source.releaseId("r1"), Collections.emptySet(), null),
-                Matchers.empty());
+        assertThat(handler.getAttachmentsUsages(Source.releaseId("r1"), ImmutableSet.of("a11", "a12"), null),
+                containsInAnyOrder(usage1, usage2, usage4, usage5));
+        assertThat(handler.getAttachmentsUsages(Source.releaseId("r1"), Collections.emptySet(), null),
+                empty());
     }
 
     @Test
@@ -221,8 +213,8 @@ public class AttachmentHandlerTest {
         AttachmentUsage usage5 = createUsage("p4", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
-        Assert.assertThat(handler.getAttachmentsUsages(Source.releaseId("r1"), ImmutableSet.of("a11", "a12", "a13"), UsageData.licenseInfo(new LicenseInfoUsage())),
-                Matchers.containsInAnyOrder(usage1, usage2, usage5));
+        assertThat(handler.getAttachmentsUsages(Source.releaseId("r1"), ImmutableSet.of("a11", "a12", "a13"), UsageData.licenseInfo(new LicenseInfoUsage())),
+                containsInAnyOrder(usage1, usage2, usage5));
     }
 
     @Test
@@ -234,7 +226,7 @@ public class AttachmentHandlerTest {
         AttachmentUsage usage5 = createUsage("p4", "r1", "a11");
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), Matchers.containsInAnyOrder(usage1, usage2, usage3));
+        assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), containsInAnyOrder(usage1, usage2, usage3));
     }
 
     @Test
@@ -246,8 +238,8 @@ public class AttachmentHandlerTest {
         AttachmentUsage usage5 = createUsage("p4", "r1", "a11", UsageData.licenseInfo(new LicenseInfoUsage()));
         handler.makeAttachmentUsages(Lists.newArrayList(usage1, usage2, usage3, usage4, usage5));
 
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p1"), UsageData.licenseInfo(new LicenseInfoUsage())),
-                Matchers.containsInAnyOrder(usage1, usage2));
+        assertThat(handler.getUsedAttachments(Source.projectId("p1"), UsageData.licenseInfo(new LicenseInfoUsage())),
+                containsInAnyOrder(usage1, usage2));
     }
 
     @Test
@@ -266,9 +258,9 @@ public class AttachmentHandlerTest {
         usage6.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet("l9"))));
         handler.replaceAttachmentUsages(Source.projectId("p1"), Lists.newArrayList(usage6));
 
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), Matchers.containsInAnyOrder(usage3, usage6));
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p2"), null), Matchers.containsInAnyOrder(usage4));
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p3"), null), Matchers.containsInAnyOrder(usage5));
+        assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), containsInAnyOrder(usage3, usage6));
+        assertThat(handler.getUsedAttachments(Source.projectId("p2"), null), containsInAnyOrder(usage4));
+        assertThat(handler.getUsedAttachments(Source.projectId("p3"), null), containsInAnyOrder(usage5));
     }
 
     @Test
@@ -288,9 +280,9 @@ public class AttachmentHandlerTest {
 
         handler.replaceAttachmentUsages(Source.projectId("p1"), Lists.newArrayList(usage6, usage7));
 
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), Matchers.containsInAnyOrder(usage1, usage2, usage6, usage7));
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p2"), null), Matchers.containsInAnyOrder(usage4));
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p3"), null), Matchers.containsInAnyOrder(usage5));
+        assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), containsInAnyOrder(usage1, usage2, usage6, usage7));
+        assertThat(handler.getUsedAttachments(Source.projectId("p2"), null), containsInAnyOrder(usage4));
+        assertThat(handler.getUsedAttachments(Source.projectId("p3"), null), containsInAnyOrder(usage5));
     }
 
     @Test
@@ -307,9 +299,9 @@ public class AttachmentHandlerTest {
 
         handler.replaceAttachmentUsages(Source.projectId("p1"), Lists.newArrayList());
 
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), Matchers.containsInAnyOrder(usage1, usage2, usage3));
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p2"), null), Matchers.containsInAnyOrder(usage4));
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p3"), null), Matchers.containsInAnyOrder(usage5));
+        assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), containsInAnyOrder(usage1, usage2, usage3));
+        assertThat(handler.getUsedAttachments(Source.projectId("p2"), null), containsInAnyOrder(usage4));
+        assertThat(handler.getUsedAttachments(Source.projectId("p3"), null), containsInAnyOrder(usage5));
     }
 
     @Test
@@ -326,9 +318,9 @@ public class AttachmentHandlerTest {
 
         handler.deleteAttachmentUsagesByUsageDataType(Source.projectId("p1"), UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet())));
 
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), Matchers.containsInAnyOrder(usage3));
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p2"), null), Matchers.containsInAnyOrder(usage4));
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p3"), null), Matchers.containsInAnyOrder(usage5));
+        assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), containsInAnyOrder(usage3));
+        assertThat(handler.getUsedAttachments(Source.projectId("p2"), null), containsInAnyOrder(usage4));
+        assertThat(handler.getUsedAttachments(Source.projectId("p3"), null), containsInAnyOrder(usage5));
     }
 
     @Test
@@ -345,9 +337,9 @@ public class AttachmentHandlerTest {
 
         handler.deleteAttachmentUsagesByUsageDataType(Source.projectId("p1"), null);
 
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), Matchers.containsInAnyOrder(usage1, usage2));
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p2"), null), Matchers.containsInAnyOrder(usage4));
-        Assert.assertThat(handler.getUsedAttachments(Source.projectId("p3"), null), Matchers.containsInAnyOrder(usage5));
+        assertThat(handler.getUsedAttachments(Source.projectId("p1"), null), containsInAnyOrder(usage1, usage2));
+        assertThat(handler.getUsedAttachments(Source.projectId("p2"), null), containsInAnyOrder(usage4));
+        assertThat(handler.getUsedAttachments(Source.projectId("p3"), null), containsInAnyOrder(usage5));
     }
 
     @Test
@@ -371,7 +363,7 @@ public class AttachmentHandlerTest {
                 ImmutableMap.of(Source.releaseId("r1"), "a12"), 1, ImmutableMap.of(Source.releaseId("r3"), "a31"), 1);
 
         for (Entry<Map<Source, String>, Integer> entry : expected.entrySet()) {
-            Assert.assertThat(counts.get(entry.getKey()), is(entry.getValue()));
+            assertThat(counts.get(entry.getKey()), is(entry.getValue()));
         }
     }
 
@@ -393,7 +385,7 @@ public class AttachmentHandlerTest {
         Map<Map<Source, String>, Integer> expected = ImmutableMap.of(ImmutableMap.of(Source.releaseId("r1"), "a11"), 2);
 
         for (Entry<Map<Source, String>, Integer> entry : expected.entrySet()) {
-            Assert.assertThat(counts.get(entry.getKey()), is(entry.getValue()));
+            assertThat(counts.get(entry.getKey()), is(entry.getValue()));
         }
     }
 
