@@ -23,14 +23,11 @@ Export-Package: \
 	org.ektorp.*, \
 	com.cloudant.*, \
 	com.google.gson.*, \
-	com.google.common.*, \
-	com.google.common.util.concurrent.*
-
+	com.google.common.*
 
 Import-Package: \
 	com.fasterxml.jackson.*, \
 	com.google.common.*, \
-	javax.net.ssl.*, \
     org.apache.commons.io.*, \
 	org.apache.commons.codec.binary.*, \
 	org.apache.commons.csv.*, \

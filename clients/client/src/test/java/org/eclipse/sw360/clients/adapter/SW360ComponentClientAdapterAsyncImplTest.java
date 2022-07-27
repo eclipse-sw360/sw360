@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.eclipse.sw360.clients.utils.FutureUtils.block;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class SW360ComponentClientAdapterAsyncImplTest {
@@ -218,7 +218,7 @@ public class SW360ComponentClientAdapterAsyncImplTest {
         MultiStatusResponse response = block(componentClientAdapter.deleteComponents(Collections.emptySet()));
 
         assertThat(response.responseCount()).isEqualTo(0);
-        verifyZeroInteractions(componentClient);
+        verifyNoMoreInteractions(componentClient);
     }
 
     @Test

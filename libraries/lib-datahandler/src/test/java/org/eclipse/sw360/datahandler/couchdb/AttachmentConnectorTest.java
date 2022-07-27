@@ -13,11 +13,12 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -43,12 +44,13 @@ public class AttachmentConnectorTest {
     public void testDeleteAttachmentsDifference() throws Exception {
         Attachment a1 = mock(Attachment.class);
         when(a1.getAttachmentContentId()).thenReturn("a1cid");
-        when(a1.getSha1()).thenReturn(null);
-        when(a1.isSetSha1()).thenReturn(false);
+        Assert.assertNull(a1.getSha1());
+        Assert.assertEquals(false, a1.isSetSha1());
+
         Attachment a2 = mock(Attachment.class);
         when(a2.getAttachmentContentId()).thenReturn("a2cid");
-        when(a2.getSha1()).thenReturn(null);
-        when(a2.isSetSha1()).thenReturn(false);
+        Assert.assertNull(a2.getSha1());
+        Assert.assertEquals(false, a2.isSetSha1());
 
         Set<Attachment> before = new HashSet<>();
         before.add(a1);
@@ -56,8 +58,8 @@ public class AttachmentConnectorTest {
 
         Attachment a3 = mock(Attachment.class);
         when(a3.getAttachmentContentId()).thenReturn("a1cid");
-        when(a3.getSha1()).thenReturn("sha1");
-        when(a3.isSetSha1()).thenReturn(true);
+        Assert.assertNull(a3.getSha1());
+        Assert.assertEquals(false, a3.isSetSha1());
 
         Set<Attachment> after = new HashSet<>();
         after.add(a3);
@@ -79,7 +81,7 @@ public class AttachmentConnectorTest {
         when(a2.getCheckStatus()).thenReturn(CheckStatus.REJECTED);
 
         Attachment a3 = mock(Attachment.class);
-        when(a3.getAttachmentContentId()).thenReturn("a3");
+        lenient().when(a3.getAttachmentContentId()).thenReturn("a3");
         when(a3.getCheckStatus()).thenReturn(CheckStatus.ACCEPTED);
 
         Set<Attachment> before = new HashSet<>();

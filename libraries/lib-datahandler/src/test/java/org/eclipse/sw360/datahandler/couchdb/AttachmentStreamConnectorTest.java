@@ -20,9 +20,9 @@ import org.ektorp.AttachmentInputStream;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloudant.client.org.lightcouch.NoDocumentException;
 
@@ -70,14 +70,14 @@ public class AttachmentStreamConnectorTest {
         InputStream returnedStream = mock(InputStream.class);
 
         AttachmentContent rereadAttachment = mock(AttachmentContent.class);
-        when(rereadAttachment.getId()).thenReturn(id);
-        when(rereadAttachment.getFilename()).thenReturn(filename);
+        lenient().when(rereadAttachment.getId()).thenReturn(id);
+        lenient().when(rereadAttachment.getFilename()).thenReturn(filename);
 
         attachmentStreamConnector = spy(attachmentStreamConnector);
         doReturn(returnedStream).when(attachmentStreamConnector).readAttachmentStream(rereadAttachment);
-        doNothing().when(attachmentStreamConnector).uploadAttachmentPart(attachment, 1, downloadUrlStream);
+        lenient().doNothing().when(attachmentStreamConnector).uploadAttachmentPart(attachment, 1, downloadUrlStream);
 
-        when(attachmentContentDownloader.download(eq(attachment), Matchers.any(Duration.class))).thenReturn(downloadUrlStream);
+        when(attachmentContentDownloader.download(eq(attachment), ArgumentMatchers.any(Duration.class))).thenReturn(downloadUrlStream);
 
         when(connector.get(AttachmentContent.class, id)).thenReturn(rereadAttachment);
         doReturn(rereadAttachment).when(rereadAttachment).setOnlyRemote(anyBoolean());
@@ -89,7 +89,7 @@ public class AttachmentStreamConnectorTest {
                              .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(id)))),
                 sameInstance(returnedStream));
 
-        verify(attachmentContentDownloader).download(eq(attachment), Matchers.any(Duration.class));
+        verify(attachmentContentDownloader).download(eq(attachment), ArgumentMatchers.any(Duration.class));
         verify(attachmentStreamConnector).uploadAttachment(attachment, downloadUrlStream);
         verify(attachmentStreamConnector).readAttachmentStream(rereadAttachment);
 
@@ -150,7 +150,7 @@ public class AttachmentStreamConnectorTest {
                         .setCreatedBy(dummyUser.getEmail())
                         .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentId))));
 
-        verifyZeroInteractions(part2);
+        verifyNoMoreInteractions(part2);
         assertThat(attachmentStream.read(), is(1));
         assertThat(attachmentStream.read(), is(2));
         verify(part1).close();

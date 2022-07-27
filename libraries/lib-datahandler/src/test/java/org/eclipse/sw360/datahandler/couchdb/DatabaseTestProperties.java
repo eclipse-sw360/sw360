@@ -38,8 +38,8 @@ public class DatabaseTestProperties {
 
         COUCH_DB_URL = props.getProperty("couchdb.url", "http://localhost:5984");
         COUCH_DB_DATABASE = props.getProperty("couchdb.database", "sw360_test_db");
-        COUCH_DB_USERNAME = Optional.ofNullable(props.getProperty("couchdb.user", null));
-        COUCH_DB_PASSWORD = Optional.ofNullable(props.getProperty("couchdb.password", null));
+        COUCH_DB_USERNAME = Optional.ofNullable(props.getProperty("couchdb.user", ""));
+        COUCH_DB_PASSWORD = Optional.ofNullable(props.getProperty("couchdb.password", ""));
     }
 
     public static HttpClient getConfiguredHttpClient() throws MalformedURLException {

@@ -18,9 +18,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.InputStream;
 
@@ -46,15 +46,15 @@ public class SpdxBOMImporterTest {
              .getClassLoader().getResourceAsStream("bom.spdx.rdf");
 
         when(spdxBOMImporterSink.addProject(any(Project.class))).then(i -> {
-            Project project = i.getArgumentAt(0, Project.class);
+            Project project = i.getArgument(0);
             return new SpdxBOMImporterSink.Response(project.getName() + "-" + project.getVersion());
         });
         when(spdxBOMImporterSink.addRelease(any(Release.class))).then(i -> {
-            Release release = i.getArgumentAt(0, Release.class);
+            Release release = i.getArgument(0);
             return new SpdxBOMImporterSink.Response(release.getName() + "-" + release.getVersion());
         });
         when(spdxBOMImporterSink.addComponent(any(Component.class))).then(i -> {
-            Component component = i.getArgumentAt(0, Component.class);
+            Component component = i.getArgument(0);
             return new SpdxBOMImporterSink.Response(component.getName());
         });
 
@@ -76,9 +76,9 @@ public class SpdxBOMImporterTest {
         final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
         assertNotNull(requestSummary);
 
-        verify(spdxBOMImporterSink, times(1)).addProject(Matchers.any());
-        verify(spdxBOMImporterSink, times(3)).addComponent(Matchers.any());
-        verify(spdxBOMImporterSink, times(3)).addRelease(Matchers.any());
+        verify(spdxBOMImporterSink, times(1)).addProject(ArgumentMatchers.any());
+        verify(spdxBOMImporterSink, times(3)).addComponent(ArgumentMatchers.any());
+        verify(spdxBOMImporterSink, times(3)).addRelease(ArgumentMatchers.any());
     }
 
     @Test
@@ -86,7 +86,7 @@ public class SpdxBOMImporterTest {
         final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
         assertNotNull(requestSummary);
 
-        verify(spdxBOMImporterSink, times(4)).addComponent(Matchers.any());
-        verify(spdxBOMImporterSink, times(4)).addRelease(Matchers.any());
+        verify(spdxBOMImporterSink, times(4)).addComponent(ArgumentMatchers.any());
+        verify(spdxBOMImporterSink, times(4)).addRelease(ArgumentMatchers.any());
     }
 }

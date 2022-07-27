@@ -30,7 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.StringReader;
 import java.util.List;
@@ -43,7 +43,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -117,7 +117,7 @@ public class CombinedCLIParserTest {
     @Test
     public void testGetCLI() throws Exception {
         Attachment cliAttachment = new Attachment("A1", "a.xml");
-        when(connector.getAttachmentStream(anyObject(), anyObject(), anyObject())).thenReturn(new ReaderInputStream(new StringReader(cliTestfile)));
+        when(connector.getAttachmentStream(any(), any(), any())).thenReturn(new ReaderInputStream(new StringReader(cliTestfile)));
         List<LicenseInfoParsingResult> results = parser.getLicenseInfos(cliAttachment, new User(), new Project());
         assertThat(results.size(), is(1));
         LicenseInfoParsingResult res = results.get(0);
