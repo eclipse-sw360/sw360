@@ -25,9 +25,9 @@ dependencies {
     implementation libs.libthrift
     implementation libs.log4j.core
     implementation libs.javax.servlet.api
-    compileOnly libs.annotations
+    compileOnly  libs.jetbrains.annotations
     testImplementation libs.junit
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
 }
 
 description = 'src-moderation'

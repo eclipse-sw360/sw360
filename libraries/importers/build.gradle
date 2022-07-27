@@ -27,11 +27,11 @@ dependencies {
     implementation libs.guava
     implementation libs.cloudant.client
     implementation libs.ektorp
-    compileOnly libs.annotations
+    compileOnly  libs.jetbrains.annotations
     runtimeOnly libs.log4j.slf4j.impl
     testImplementation project(':datahandler').sourceSets.test.output
     testImplementation libs.junit
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
     testImplementation libs.mockito.core
 }
 

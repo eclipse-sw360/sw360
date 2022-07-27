@@ -20,7 +20,7 @@ dependencies {
     implementation project(':commonIO')
     implementation project(':rest-common')
     implementation libs.activation
-    implementation libs.annotations
+    implementation  libs.jetbrains.annotations
     implementation libs.apache.commons.lang
     implementation libs.spring.boot.starter.web
     implementation libs.cloudant.client

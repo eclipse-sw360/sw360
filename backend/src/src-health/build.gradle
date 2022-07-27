@@ -20,7 +20,7 @@ dependencies {
     implementation libs.libthrift
     implementation libs.guava
     testImplementation libs.junit
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
     testImplementation libs.mockito.core
 }
 

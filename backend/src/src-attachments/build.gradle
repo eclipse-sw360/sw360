@@ -20,7 +20,7 @@ dependencies {
     implementation libs.guava
     implementation libs.cloudant.client
     testImplementation libs.junit
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
     testImplementation project(':src-common')
     testImplementation project(':datahandler').sourceSets.test.output
 }

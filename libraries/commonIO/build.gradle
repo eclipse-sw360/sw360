@@ -21,7 +21,7 @@ dependencies {
     implementation libs.libthrift
     implementation libs.guava
     testImplementation libs.junit
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
 }
 
 description = 'commonIO'

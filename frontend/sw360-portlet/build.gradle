@@ -29,7 +29,7 @@ dependencies {
     compileOnly libs.osgi.service.cm
     compileOnly libs.osgi.service.component
     compileOnly libs.osgi.service.component.annotations
-    implementation libs.annotations
+    implementation  libs.jetbrains.annotations
     implementation libs.apache.commons.lang
     implementation libs.cloudant.client
     implementation libs.commons.csv
@@ -51,7 +51,7 @@ dependencies {
     testCompileOnly libs.liferay.util.taglib
     testCompileOnly libs.osgi.service.component.annotations
     testImplementation libs.commons.collections4
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
     testImplementation libs.junit
     testImplementation libs.liferay.portal.kernel
     testImplementation libs.liferay.petra.lang

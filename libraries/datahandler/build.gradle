@@ -15,7 +15,7 @@ plugins {
 }
 
 dependencies {
-    compileOnly libs.annotations
+    compileOnly  libs.jetbrains.annotations
     compileOnly libs.findbugs.annotations
     implementation libs.cloudant.client
     implementation libs.commons.codec
@@ -35,7 +35,7 @@ dependencies {
     implementation libs.slf4j.api
     runtimeOnly libs.log4j.jcl
     runtimeOnly libs.log4j.slf4j.impl
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
     testImplementation libs.jgiven.junit
     testImplementation libs.junit
     testImplementation libs.junit.dataprovider

@@ -27,12 +27,12 @@ dependencies {
     implementation libs.saxon.dom
     implementation libs.cloudant.client
     implementation libs.javax.servlet.api
-    compileOnly libs.annotations
+    compileOnly  libs.jetbrains.annotations
     testImplementation libs.junit.dataprovider
     testImplementation libs.dom4j
     testImplementation libs.jaxen
     testImplementation libs.junit
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
     testImplementation libs.mockito.core
 }
 

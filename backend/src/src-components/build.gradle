@@ -21,8 +21,12 @@ dependencies {
     implementation libs.guava
     implementation libs.ektorp
     implementation libs.cloudant.client
+    testImplementation project(':src-common')
+    testImplementation project(':datahandler')
+    testImplementation project(':datahandler').sourceSets.test.output
+    testCompileOnly libs.jetbrains.annotations
     testImplementation libs.junit
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
     testImplementation libs.mockito.core
 }
 

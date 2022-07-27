@@ -19,7 +19,7 @@ dependencies {
     implementation libs.commons.csv
     implementation libs.log4j.api
     implementation libs.log4j.core
-    implementation libs.annotations
+    implementation  libs.jetbrains.annotations
     implementation libs.slf4j.api
     implementation libs.guava
     implementation libs.gson
@@ -29,7 +29,7 @@ dependencies {
     implementation libs.xmlbeans
     runtimeOnly libs.log4j.slf4j.impl
     testImplementation libs.junit
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
     testImplementation libs.mockito.core
 }
 

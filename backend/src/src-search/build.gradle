@@ -26,7 +26,7 @@ dependencies {
     implementation libs.log4j.core
     implementation libs.javax.servlet.api
     testImplementation libs.junit
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
 }
 
 description = 'src-search'

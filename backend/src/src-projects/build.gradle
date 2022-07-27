@@ -21,7 +21,7 @@ dependencies {
     implementation libs.libthrift
     implementation libs.cloudant.client
     testImplementation libs.junit
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
     testImplementation libs.mockito.core
 }
 

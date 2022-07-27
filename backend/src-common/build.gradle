@@ -23,11 +23,11 @@ dependencies {
     implementation libs.ektorp
     implementation libs.ektorplucene
     implementation libs.javax.mail
-    compileOnly libs.annotations
+    compileOnly  libs.jetbrains.annotations
     compileOnly libs.javax.servlet.api
     testImplementation project(':datahandler').sourceSets.test.output
     testImplementation libs.junit
-    testImplementation libs.hamcrest.all
+    testImplementation libs.hamcrest
     testImplementation libs.mockito.core
 }
 

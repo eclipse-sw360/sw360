@@ -22,7 +22,7 @@ dependencies {
     implementation libs.ektorp
     implementation libs.cloudant.client
     implementation libs.javax.servlet.api
-    compileOnly libs.annotations
+    compileOnly  libs.jetbrains.annotations
     compileOnly libs.liferay.portal.kernel
     testImplementation libs.junit
 }
