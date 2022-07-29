@@ -13,6 +13,8 @@ plugins {
 }
 
 subprojects {
+    tasks.withType(JavaCompile) { options.encoding = 'UTF-8' }
+
     task deployWar (type: Copy) {
         from layout.buildDirectory.dir("libs")
         into project.hasProperty('deployDir') ? "${deployDir}/webapps" : "${rootProject.projectDir}/deploy/webapps"
@@ -25,6 +27,12 @@ subprojects {
         into project.hasProperty('deployDir') ? "${deployDir}/jars" : "${rootProject.projectDir}/deploy/jars"
         include "*.jar"
         exclude "*-tests.jar"
+    }
+
+    test {
+        testLogging {
+            exceptionFormat = 'full'
+        }
     }
 }
 

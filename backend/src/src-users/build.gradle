@@ -23,6 +23,7 @@ dependencies {
     implementation libs.libthrift
     implementation libs.log4j.core
     implementation libs.javax.servlet.api
+    testImplementation project(':datahandler').sourceSets.test.output
     testImplementation libs.junit
 }
 

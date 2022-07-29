@@ -10,8 +10,8 @@
 
 package org.eclipse.sw360.datahandler.test;
 
-import org.eclipse.sw360.testthrift.TestObject;
-import org.eclipse.sw360.testthrift.TestService;
+import org.eclipse.sw360.datahandler.thrift.test.TestObject;
+import org.eclipse.sw360.datahandler.thrift.test.TestService;
 import org.apache.thrift.TException;
 
 /**

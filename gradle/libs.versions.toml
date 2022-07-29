@@ -172,7 +172,7 @@ spring-security-oauth2 = { group = "org.springframework.security.oauth", name = 
 spring-security-oauth2-autoconfigure = { group = "org.springframework.security.oauth.boot", name = "spring-security-oauth2-autoconfigure", version.ref = "spring-security-oauth2-autoconfigure" }
 spring-security-jwt = { group = "org.springframework.security", name = "spring-security-jwt", version.ref = "spring-security-jwt" }
 spring-security-test = { group = "org.springframework.security", name = "spring-security-test", version.ref = "spring-security-test" }
-hamcrest-all = { group = "org.hamcrest", name = "hamcrest", version.ref = "hamcrest" }
+hamcrest = { group = "org.hamcrest", name = "hamcrest", version.ref = "hamcrest" }
 jgiven-junit = { group = "com.tngtech.jgiven", name = "jgiven-junit", version.ref = "jgiven-junit" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 junit-dataprovider = { group = "com.tngtech.java", name = "junit-dataprovider", version.ref = "junit-dataprovider" }

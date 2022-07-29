@@ -17,6 +17,7 @@ plugins {
 dependencies {
     compileOnly  libs.jetbrains.annotations
     compileOnly libs.findbugs.annotations
+    compileOnly libs.javax.annotation.api
     implementation libs.cloudant.client
     implementation libs.commons.codec
     implementation libs.commons.csv
@@ -56,12 +57,12 @@ compileThrift {
     Set<File> files = new HashSet<>()
     files.add(file("src/test/thrift/test.thrift"))
     sourceItems += files
-    outputDir = file('build/generated-sources/thrift')
+    outputDir = file('build/thrift')
     createGenFolder = false
 }
 
 sourceSets {
-    main.java.srcDirs += 'build/generated-sources/thrift'
+    main.java.srcDirs += 'build/thrift'
 }
 
 publishing.publications.maven.artifact(testsJar)

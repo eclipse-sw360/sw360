@@ -23,6 +23,7 @@ dependencies {
     implementation libs.cloudant.client
     implementation libs.libthrift
     implementation libs.log4j.core
+    testImplementation project(':datahandler').sourceSets.test.output
     testImplementation libs.junit
 }
 

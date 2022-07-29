@@ -16,9 +16,11 @@ plugins {
 dependencies {
     implementation project(":datahandler")
     implementation project(":src-common")
+    implementation libs.cloudant.client
     implementation libs.ektorp
     implementation libs.libthrift
     implementation libs.guava
+    testImplementation project(':datahandler').sourceSets.test.output
     testImplementation libs.junit
     testImplementation libs.hamcrest
     testImplementation libs.mockito.core

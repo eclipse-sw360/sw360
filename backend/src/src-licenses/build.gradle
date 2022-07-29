@@ -24,6 +24,7 @@ dependencies {
     implementation libs.javax.servlet.api
     compileOnly  libs.jetbrains.annotations
     compileOnly libs.liferay.portal.kernel
+    testImplementation project(':datahandler').sourceSets.test.output
     testImplementation libs.junit
 }
 

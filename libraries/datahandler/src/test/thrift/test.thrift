@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-namespace java org.eclipse.sw360.testthrift
+namespace java org.eclipse.sw360.datahandler.thrift.test
 
 enum Status {
   ACTIVE,

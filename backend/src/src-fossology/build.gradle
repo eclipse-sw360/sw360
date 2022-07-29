@@ -24,6 +24,7 @@ dependencies {
     implementation libs.spring.webmvc
     implementation libs.jackson.databind
     implementation libs.cloudant.client
+    testImplementation project(':datahandler').sourceSets.test.output
     testImplementation libs.junit
     testImplementation libs.hamcrest
     testImplementation libs.mockito.core

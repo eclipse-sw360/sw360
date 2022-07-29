@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import org.eclipse.sw360.testthrift.TestObject;
+import org.eclipse.sw360.datahandler.thrift.test.TestObject;
 import org.junit.Before;
 import org.junit.Test;
 

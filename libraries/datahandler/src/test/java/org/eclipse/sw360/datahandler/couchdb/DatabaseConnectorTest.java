@@ -12,7 +12,7 @@ package org.eclipse.sw360.datahandler.couchdb;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import org.eclipse.sw360.testthrift.TestObject;
+import org.eclipse.sw360.datahandler.thrift.test.TestObject;
 import org.ektorp.CouchDbConnector;
 import org.ektorp.CouchDbInstance;
 import org.ektorp.http.HttpClient;

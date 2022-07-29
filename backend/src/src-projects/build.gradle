@@ -18,8 +18,10 @@ dependencies {
     implementation project(":src-common")
     implementation project(':src-attachments')
     implementation libs.ektorp
+    implementation libs.guava
     implementation libs.libthrift
     implementation libs.cloudant.client
+    testImplementation project(':datahandler').sourceSets.test.output
     testImplementation libs.junit
     testImplementation libs.hamcrest
     testImplementation libs.mockito.core

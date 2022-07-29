@@ -27,9 +27,8 @@ dependencies {
     implementation libs.guava
     implementation libs.ektorp
     implementation libs.cloudant.client
+    testImplementation project(':datahandler').sourceSets.test.output
     testImplementation libs.junit
     testImplementation libs.hamcrest
     testImplementation libs.mockito.core
 }
-
-description = 'src-cvesearch'

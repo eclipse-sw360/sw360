@@ -28,6 +28,7 @@ dependencies {
     implementation libs.cloudant.client
     implementation libs.javax.servlet.api
     compileOnly  libs.jetbrains.annotations
+    testImplementation project(':datahandler').sourceSets.test.output
     testImplementation libs.junit.dataprovider
     testImplementation libs.dom4j
     testImplementation libs.jaxen
