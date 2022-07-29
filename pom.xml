@@ -77,11 +77,11 @@
         <poi.version>4.1.2</poi.version>
         <project-lombok.version>1.18.2</project-lombok.version>
         <slf4j.version>1.7.30</slf4j.version>
-        <spring-boot.version>2.6.6</spring-boot.version>
+        <spring-boot.version>2.7.1</spring-boot.version>
         <spring-restdocs.version>2.0.6.RELEASE</spring-restdocs.version>
         <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
         <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
-        <spring.version>5.3.19</spring.version>
+        <spring.version>5.3.22</spring.version>
         <thrift.version>0.14.0</thrift.version>
         <wiremock.version>2.26.0</wiremock.version>
 
