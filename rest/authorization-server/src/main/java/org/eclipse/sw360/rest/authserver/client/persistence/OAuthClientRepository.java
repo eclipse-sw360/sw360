@@ -33,8 +33,8 @@ import java.util.List;
 @Component
 @Views({
         @View(name = "all", map = "function(doc) { emit(null, doc._id); }"),
-        @View(name = "byId", map = "function(doc) { emit(doc._id, doc); }"),
-        @View(name = "byClientId", map = "function(doc) { emit(doc.client_id, doc); }")
+        @View(name = "byId", map = "function(doc) { emit(doc._id, null); }"),
+        @View(name = "byClientId", map = "function(doc) { emit(doc.client_id, null); }")
 })
 public class OAuthClientRepository extends CouchDbRepositorySupport<OAuthClientEntity> {
 

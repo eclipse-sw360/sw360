@@ -44,9 +44,9 @@ public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<
             "function(doc) { " +
             "   if (doc.type == 'attachmentUsage') {" +
             "       if(doc.owner && doc.owner.setField_ == 'RELEASE_ID') {" +
-            "           emit(doc.owner.value_, doc);" +
+            "           emit(doc.owner.value_, null);" +
             "       } else if(doc.usedBy && doc.usedBy.setField_ == 'RELEASE_ID') {" +
-            "           emit(doc.usedBy.value_, doc);" +
+            "           emit(doc.usedBy.value_, null);" +
             "       }" +
             "   }" +
             "}";

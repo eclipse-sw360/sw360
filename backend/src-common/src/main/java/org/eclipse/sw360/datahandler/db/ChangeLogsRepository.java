@@ -27,29 +27,29 @@ import com.cloudant.client.api.model.DesignDocument.MapReduce;
  */
 public class ChangeLogsRepository extends DatabaseRepositoryCloudantClient<ChangeLogs> {
 
-    private static final String ALL = "function(doc) { if (doc.type == 'changeLogs') emit(doc._id, doc) }";
+    private static final String ALL = "function(doc) { if (doc.type == 'changeLogs') emit(doc._id, null) }";
     private static final String BY_DOCUMENT_ID =
             "function(doc) {" +
                     "  if (doc.type == 'changeLogs') {" +
-                    "    emit(doc.documentId, doc);" +
+                    "    emit(doc.documentId, null);" +
                     "  }" +
                     "}";
     private static final String BY_PARENT_DOCUMENT_ID =
             "function(doc) {" +
                     "  if (doc.type == 'changeLogs') {" +
-                    "    emit(doc.parentDocId, doc);" +
+                    "    emit(doc.parentDocId, null);" +
                     "  }" +
                     "}";
     private static final String BY_USER_EDITED =
             "function(doc) {" +
                     "  if (doc.type == 'changeLogs') {" +
-                    "    emit(doc.userEdited, doc);" +
+                    "    emit(doc.userEdited, null);" +
                     "  }" +
                     "}";
     private static final String BY_TIMESTAMP =
             "function(doc) {" +
                     "  if (doc.type == 'changeLogs') {" +
-                    "    emit(doc.changeTimestamp, doc);" +
+                    "    emit(doc.changeTimestamp, null);" +
                     "  }" +
                     "}";
 

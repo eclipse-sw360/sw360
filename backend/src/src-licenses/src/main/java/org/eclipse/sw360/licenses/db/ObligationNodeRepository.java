@@ -26,9 +26,9 @@ import com.cloudant.client.api.model.DesignDocument.MapReduce;
 public class ObligationNodeRepository extends DatabaseRepositoryCloudantClient<ObligationNode> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'obligationNode') emit(null, doc._id) }";
-    private static final String BYNODETYPE = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.nodeType, doc) } }";
-    private static final String BYNODETEXT = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.nodeText, doc) } }";
-    private static final String BYOBLIGATIONID = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.oblElementId, doc) } }";
+    private static final String BYNODETYPE = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.nodeType, null) } }";
+    private static final String BYNODETEXT = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.nodeText, null) } }";
+    private static final String BYOBLIGATIONID = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.oblElementId, null) } }";
 
     public ObligationNodeRepository(DatabaseConnectorCloudant db) {
         super(db, ObligationNode.class);
