@@ -223,6 +223,7 @@ struct Release {
     6: required string version, // version or release name (e.g. 0.9.1)
     7: required string componentId, // Id of the parent component
     8: optional string releaseDate,
+    99: optional ComponentType componentType,
 
     // information from external data sources
     9: optional  map<string, string> externalIds,
