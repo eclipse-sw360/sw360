@@ -14,9 +14,9 @@ name: SW360
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 env:
   COUCHDB_USER: admin
