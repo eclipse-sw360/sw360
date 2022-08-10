@@ -5,6 +5,124 @@ This is the changelog file of the sw360 project. It starts with the first releas
 https://github.com/sw360/sw360portal/releases
 
 
+## sw360-16.0.0-M1
+This tag covers many corrections/bug fixes after the 15.0 release.
+
+This release provides features, muliple bug fixes for release 15.0, for example, new REST endpoints, new integration test suite.
+
+### Migrations
+
+For existing installations, a data migration is required. Please go to the readme file in scripts/migrations to see more information:
+
+https://github.com/eclipse/sw360/blob/master/scripts/migrations/README.md
+
+For running the migrations scripts, you will need python and the couchdb package. Please note that you will need to change manually in the python file: the DRYRUN variable and the couchdb URL (if that is not on localhost or requires password or both).
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in alphabetical order):
+
+```
+Abdul Kapti <abdul.kapti@siemens-healthineers.com>
+Alberto Pianon <alberto@pianon.eu>
+Anupam Ghosh <anupam.ghosh@siemens.com>
+dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Helio Chissini de Castro <helio.chissini-de-castro@bmw.de>
+hoangnt2 <hoang2.nguyenthai@toshiba.co.jp>
+Jaideep Palit <jaideep.palit@siemens.com>
+Kouki Hama <kouki1.hama@toshiba.co.jp>
+Pham Van Hieu <hieu1.phamvan@toshiba.co.jp>
+Smruti Prakash Sahoo <smruti.sahoo@siemens.com>
+Tran Vu Quan <quan1.tranvu@toshiba.co.jp>
+tuan99123 <tuan2.nguyennhu@toshiba.co.jp>
+```
+
+Please note that also many other persons usually contribute to the project with reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `1f6db6db` upd(mockito): Update the deprecated old mockito-all to mockito-core
+* `29d019b6` feat(ui): Ability to filter for active users
+* `0d0de03c` feat(ReleaseUi):Display AssessmentSummary info from CLi in Release details page
+* `709a5ec9` feat(UI): ModifiedOn & MOdifiedBy fields for Project/COmponent/Release
+* `73fe7e68` feat(export): Enable mailing for exported spreadsheet for components
+* `bbc37a93` feat(ProjectUI): added filter for linked release/projects table
+* `a9053df2` feat(ProjectUI): AttachmentUsages - Added option to filter for releases without source attachments
+* `f7aebb1e` feat(rest): Add upload description to trigger fossology process
+* `26226fbb` feat(exportExcel): Send an email to user with download link once export completed
+* `860e420d` feat(exportExcel): Generate and save excel to file system, Download generated file with token
+* `07b54e93` feat(UI): Display Licenses from Scanner findings in ISR attachments
+* `9511adb7` feat(obligation): add function Edit/Duplicate/Changelog for Obligation
+* `830f463a` feat(ui) : Strengthen sw360 admin privileges about Read and Write
+* `7dd31343` feat(compose): Common network adn Fossology decoupling
+* `5974152f` feat(ProjectUI): Disabled CR based on project Group
+* `0f2e4c14` feat(rest): Get Project Vulnerability by external id and release id
+* `3dfe2bbc` feat(projectUi): Update some fields in a Project in closed state
+* `440a6fda` feat(docker): Overhaul SW360 docker
+* `0dc962d0` feat(script): Addition to update project field starting with some value
+* `e5516c21` feature(docker): Run sw360 as non-priv user
+* `cec73056` feature(docker): Use volumes with tomcat
+* `33481c32` feature(docker): Add fossology on the mix
+* `4036a822` feat(project): Added  vendor for project
+
+### Corrections
+* `00271e79` Fix (Component): Fix bug component list sorting
+* `3eb27362` fix(closedproject): Fixed issue w.r.t. editing close project
+* `8911a4c4` fix(project): Added write permissions for closed project
+* `1bef35d3` update(ghactions): Improve gh actions process
+* `bcdfad6b` update(docker): Docker to use latest Ubuntu LTS
+* `728acb20` fix(export): Added missing ECC AL column and release vendor in project export
+* `8efc4871` fix(rest): Added release main licenses in the response
+* `5f5bca8a` fix(ISR):Fixed source file not found in ISR & Total files count mismatch
+* `b4f0b870` Fix (Release): Fixed vulnerability can't be deleted when it is linked with a deleted release
+* `f8052466` fix(UI): fix Some long sentence can't show property in License Obligation
+* `8ead75c3` fix(ui): Display url, email, text  of Additional Data for Component and Release
+* `bafd477f` fix(CR-UI): fixed the count mismatch in Open Components column of CR table
+* `e776a969` fix(excel-export): fixed project filter issue while exporting excel
+* `bcc2d89c` fix(Obligation): Save Admin Level Obligation based on Obligation topic
+* `1bec6af2` fix bug Invalid GitHub action #1519
+* `9bc9b9bb` Fix(License): Fix bug one license cound add only 10 obligations
+* `4b7197b4` Fix(REST): fix visibility of Project Rest API
+* `aef08989` fix(docker): Add better proxy documentation to docker-compose
+* `534ee6f7` fix(ui): Fixed Obligation count in project view
+* `cac1b13e` fix(thrift): Updated thrift configuration to adopt configurable max message size and max framesize
+* `2fab647b` typo in the docker run command
+* `8d1ddfc3` fix(compoent-visibility): Moderation request for clearing admin
+* `d92ecace` fix(ui) : modify translation for search function
+* `3792db20` fix(ModerationRequestUI): Fixed project Moderation Request UI is not loading
+* `1c0dd050` fix(Dockerfile): Make Dockerfile more consistent
+* `a8c2334e` fix(merge): Optimized code to check for write permission of release and components before starting to merge
+* `9bbb49ba` fix(modReq): Fixed moderation request for release with version overwrite
+* `d1fd4307` fix(ReleaseClearingState): ClearingState not changing to New from Scan Available
+* `cbec94a4` fix(api): Correct the ECC status when release is created by API
+* `f0f9ff62` fix(docker): Added missing license
+* `6fb1f415` fix(docker): Add Document Library as volume to enable keep custom settings
+* `fde1f460` fix(docker): Add proper missing clucene config
+* `b719f989` fix(docker): Add better proxy handling
+* `11e24172` fix(docker): Get liferay from github releases
+* `6bddc2bf` fix(docker): Reduce first bootstrapping
+* `5df8eb4a` fix(docker): Update README_DOCKER.md
+* `0e917987` fix(docker): Update documentation with CSS issue
+* `e1a21e07` fix(docker): Update documentation with CSS issue
+* `cfe7e413` fix(docker): Improve documentation and persist porta-ext.properties
+* `e335c374` fix(docker): README update and cert ignore for curl
+* `ab23d0cc` fix(docker): Thrift builds now under tmpfs
+* `ff9409fd` fix(docker): Improve build speed and build layers size
+* `5467abf9` Update docker base using Eclipse Temurin
+* `681eb0c4` fix(ui): Restrict visibility of each component/release like Project
+* `0b06f3ee` fix(ui): Fixed pagination of component list with search params
+* `f14298a4` Fix search function with key is empty
+
+### Infrastructure
+* `7332bec0` chore(dependencies): spring vulnerbility - cve-2022-22970,cve-2022-22971
+* `3efa3a56` (chores): updated README.md and download_dependencies.sh files
+* `7541ec8d` chore(deps): bump spring-security-core in /frontend/sw360-portlet
+* `a17efda8` chore(deps): bump gson from 2.8.6 to 2.8.9
+* `18763b51` chore(deps): bump jackson-databind from 2.11.3 to 2.12.6.1
+* `2502b58d` (chores): fix security vulnerabilities
+* `ce57d9b5` Update information about port redirection
+* `ea798093` Update README_DOCKER with typos fixing
+* `a7a75336` chore(rel): Changing back to 15.1.0-SNAPSHOT
+
 ## sw360-15.0.0-M1
 
 This tag covers many corrections/bug fixes after the 14.0 release.
