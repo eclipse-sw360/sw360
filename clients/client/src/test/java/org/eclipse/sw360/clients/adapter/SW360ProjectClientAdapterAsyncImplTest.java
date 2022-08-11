@@ -192,7 +192,7 @@ public class SW360ProjectClientAdapterAsyncImplTest {
     public void testDeleteProject() {
         Map<String, Integer> responses = new HashMap<String, Integer>();
         responses.put(PROJECT_ID, 200);
-        when(projectClient.deleteProject(Mockito.anyObject()))
+        when(projectClient.deleteProject(Mockito.any()))
                 .thenReturn(CompletableFuture.completedFuture(200));
 
         Integer responseCode = block(projectClientAdapter.deleteProject(PROJECT_ID));

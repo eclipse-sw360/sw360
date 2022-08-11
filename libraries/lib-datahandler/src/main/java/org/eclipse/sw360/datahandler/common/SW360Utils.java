@@ -23,6 +23,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectProjectRelationshipMixin;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
@@ -35,6 +36,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
@@ -710,12 +712,16 @@ public class SW360Utils {
                         LinkedHashMap<String, ObligationStatusInfo>::new));
     }
 
-    public static boolean isModeratorOrCreator(Project project, User user) {
+    public static boolean isUserAllowedToEditClosedProject(Project project, User user) {
         Set<String> users = new HashSet<String>();
         Set<String> moderators = project.getModerators();
         users.addAll(moderators);
         users.add(project.getCreatedBy());
-        return users.contains(user.getEmail());
+        users.add(project.getProjectResponsible());
+        Set<String> contributors = project.getContributors();
+        users.addAll(contributors);
+        users.add(project.getLeadArchitect());
+        return PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user) || users.contains(user.getEmail());
     }
 
     public static void copyLinkedObligationsForClonedProject(Project newProject, Project sourceProject, ProjectService.Iface client, User user) {

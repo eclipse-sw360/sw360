@@ -1621,7 +1621,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 PortletUtils.setCustomFieldsDisplay(request, user, project);
                 addProjectBreadcrumb(request, response, project);
                 request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? YES : NO);
-                request.setAttribute(IS_PROJECT_MEMBER, SW360Utils.isModeratorOrCreator(project, user));
+                request.setAttribute(IS_PROJECT_MEMBER, SW360Utils.isUserAllowedToEditClosedProject(project, user));
                 String dateLimit = CommonUtils.nullToEmptyString(ModerationPortletUtils.loadPreferredClearingDateLimit(request, UserCacheHolder.getUserFromRequest(request)));
                 request.setAttribute(CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, dateLimit);
                 ModerationService.Iface modClient = thriftClients.makeModerationClient();
@@ -2279,7 +2279,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectCount);
             Map<RequestedAction, Boolean> permissions = project.getPermissions();
             DocumentState documentState = project.getDocumentState();
-            request.setAttribute(IS_PROJECT_MEMBER, SW360Utils.isModeratorOrCreator(project, user));
+            request.setAttribute(IS_PROJECT_MEMBER, SW360Utils.isUserAllowedToEditClosedProject(project, user));
 
             addEditDocumentMessage(request, permissions, documentState);
         } else {
@@ -3046,7 +3046,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 jsonObject.put("isCrDisabledForProjectBU", true);
             }
             jsonObject.put(IS_PROJECT_MEMBER,
-                    SW360Utils.isModeratorOrCreator(project, UserCacheHolder.getUserFromRequest(request)));
+                    SW360Utils.isUserAllowedToEditClosedProject(project, UserCacheHolder.getUserFromRequest(request)));
             projectData.put(jsonObject);
         }
 

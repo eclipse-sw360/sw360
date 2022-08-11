@@ -90,12 +90,12 @@ public class ProjectPermissionsTest extends ScenarioTest<GivenProject, WhenCompu
         return new Object[][] {
                 //own permissions checks
                 //very privileged
-                {GivenProject.ProjectRole.CREATED_BY, theUser, theUser, USER, theDept, READ_ACTION},
-                {GivenProject.ProjectRole.MODERATOR, theUser, theUser, USER, theDept, READ_ACTION},
-                {GivenProject.ProjectRole.PROJECT_RESPONSIBLE, theUser, theUser, USER, theDept, READ_ACTION},
+                {GivenProject.ProjectRole.CREATED_BY, theUser, theUser, USER, theDept, PRIVILEGED_ACTIONS_EXCEPT_ECC},
+                {GivenProject.ProjectRole.MODERATOR, theUser, theUser, USER, theDept, PRIVILEGED_ACTIONS_EXCEPT_ECC},
+                {GivenProject.ProjectRole.PROJECT_RESPONSIBLE, theUser, theUser, USER, theDept, PRIVILEGED_ACTIONS_EXCEPT_ECC},
                 //less privileged
-                {GivenProject.ProjectRole.LEAD_ARCHITECT, theUser, theUser, USER, theDept, READ_ACTION},
-                {GivenProject.ProjectRole.CONTRIBUTOR, theUser, theUser, USER, theDept, READ_ACTION},
+                {GivenProject.ProjectRole.LEAD_ARCHITECT, theUser, theUser, USER, theDept, PRIVILEGED_ACTIONS_EXCEPT_ECC},
+                {GivenProject.ProjectRole.CONTRIBUTOR, theUser, theUser, USER, theDept, PRIVILEGED_ACTIONS_EXCEPT_ECC},
 
                 //strangers: rights increase with user group
                 {GivenProject.ProjectRole.CREATED_BY, theUser, theOtherUser, USER, theDept, READ_ACTION},

@@ -12,6 +12,10 @@
 <portlet:resourceURL var="loadSpdxLicenseInfoUrl">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_SPDX_LICENSE_INFO%>'/>
 </portlet:resourceURL>
+<portlet:resourceURL var="loadAssessmentSummaryInfoUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_ASSESSMENT_SUMMARY_INFO%>'/>
+    <portlet:param name="<%=PortalConstants.RELEASE_ID%>" value="${release.id}"/>
+</portlet:resourceURL>
 <portlet:resourceURL var="writeSpdxLicenseInfoIntoReleaseUrl">
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.WRITE_SPDX_LICENSE_INFO_INTO_RELEASE%>'/>
 </portlet:resourceURL>
@@ -20,6 +24,10 @@
 
 <core_rt:set var="clearingInfo" value="${release.clearingInformation}"/>
 <core_rt:set var="FOSSOLOGY_CONNECTION_ENABLED" value="<%=FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled()%>"/>
+<core_rt:set var="totalCliCount" value="0"/>
+<core_rt:set var="approvedCliCount" value="0"/>
+<core_rt:set var="cliDbid" value=""/>
+<core_rt:set var="approvedCliDbid" value=""/>
 
 <table class="table table-bordered" id="spdxAttachments"
         data-load-spdx-license-info-url="<%=loadSpdxLicenseInfoUrl%>"
@@ -42,7 +50,15 @@
     </thead>
 
     <tbody>
-        <core_rt:forEach items="${spdxAttachments}" var="spdxAttachment">
+        <core_rt:forEach items="${spdxAttachments}" var="spdxAttachment" varStatus="loop">
+        <core_rt:if test="${spdxAttachment.attachmentType eq 'COMPONENT_LICENSE_INFO_XML'}">
+            <core_rt:set var="cliDbid" value="${spdxAttachment.attachmentContentId}"/>
+            <core_rt:set var="totalCliCount" value="${totalCliCount + 1}"/>
+            <core_rt:if test="${spdxAttachment.checkStatus eq 'ACCEPTED'}">
+                <core_rt:set var="approvedCliDbid" value="${spdxAttachment.attachmentContentId}"/>
+                <core_rt:set var="approvedCliCount" value="${approvedCliCount + 1}"/>
+            </core_rt:if>
+        </core_rt:if>
             <tr id="${spdxAttachment.attachmentContentId}">
                 <td>
                     <div <core_rt:if test="${spdxAttachment.attachmentType eq 'INITIAL_SCAN_REPORT'}">class="actions d-inline" </core_rt:if> >
@@ -60,12 +76,76 @@
                 <td class="result actions">
                 </td>
             </tr>
+            <core_rt:if test="${loop.last}">
+                <core_rt:if test="${totalCliCount ne 1}">
+                    <core_rt:if test="${approvedCliCount ne 1}">
+                        <core_rt:set var="cliDbid" value=""/>
+                        <core_rt:set var="approvedCliDbid" value=""/>
+                    </core_rt:if>
+                </core_rt:if>
+            </core_rt:if>
         </core_rt:forEach>
     </tbody>
 </table>
 
-<table class="table label-value-table" id="ReleaseClearingOverview">
+<table class="table label-value-table" id="assessmentSummary"
+        data-load-assessment-summary-info-url="<%=loadAssessmentSummaryInfoUrl%>"
+        data-attachment-content-id="${cliDbid}" data-approved-attachment-content-id="${approvedCliDbid}">
     <thead>
+        <tr>
+            <th colspan="2"><liferay-ui:message key="assessment.summary" /> <liferay-ui:message key="info" />:</th>
+        </tr>
+    </thead>
+
+    <tbody class="btnBody">
+        <tr>
+            <td colspan="2">
+            <core_rt:choose>
+                <core_rt:when test="${totalCliCount eq 1 or approvedCliCount eq 1}">
+                    <button class="btn btn-secondary showAssessmentSummaryBtn"><liferay-ui:message key="show"/> <liferay-ui:message key="assessment.summary"/> <liferay-ui:message key="info"/></button>
+                </core_rt:when>
+                <core_rt:when test="${approvedCliCount gt 1}">
+                    <liferay-ui:message key="multiple.approved.cli.are.found.in.the.release" />!
+                </core_rt:when>
+                <core_rt:when test="${totalCliCount gt 1}">
+                    <liferay-ui:message key="multiple.cli.are.found.in.the.release"/>!
+                </core_rt:when>
+                <core_rt:otherwise>
+                    <liferay-ui:message key="cli.attachment.not.found.in.the.release" />!
+                </core_rt:otherwise>
+            </core_rt:choose>
+            </td>
+        </tr>
+    </tbody>
+    <tbody class="dataBody d-none">
+        <tr data-key="GeneralAssessment">
+            <td>General Assessment</td>
+            <td class="comment-text"></td>
+        </tr>
+        <tr data-key="CriticalFilesFound">
+            <td>Critical Files Found</td>
+            <td></td>
+        </tr>
+        <tr data-key="DependencyNotes">
+            <td>Dependency Notes</td>
+            <td></td>
+        </tr>
+        <tr data-key="ExportRestrictionsFound">
+            <td>Export Restrictions Found</td>
+            <td></td>
+        </tr>
+        <tr data-key="UsageRestrictionsFound">
+            <td>Usage Restrictions Found</td>
+            <td></td>
+        </tr>
+        <tr data-key="AdditionalNotes">
+            <td>Additional Notes</td>
+            <td class="comment-text"></td>
+        </tr>
+    </tbody>
+</table>
+
+<table class="table label-value-table" id="ReleaseClearingOverview">
     <tr>
         <th colspan="2"><liferay-ui:message key="clearing.details" />: <sw360:ReleaseName release="${release}" /></th>
     </tr>
@@ -244,6 +324,45 @@
                 attName = $(event.currentTarget).closest('tr').find('td:first div')[0].innerText;
             displayLicenseToSrcMapping(attId, attName, licenseName);
         });
+
+        $(".showAssessmentSummaryBtn").on('click', function(event) {
+            button.wait(".showAssessmentSummaryBtn")
+            loadCliAssessmentSummary($(event.currentTarget));
+        });
+
+        function loadCliAssessmentSummary($btn) {
+            var tableData = $('#assessmentSummary').data(),
+            rawUrl = tableData.loadAssessmentSummaryInfoUrl,
+            url = Liferay.PortletURL.createURL(rawUrl),
+            attachmentId = tableData.approvedAttachmentContentId ? tableData.approvedAttachmentContentId : tableData.attachmentContentId;
+
+            $.ajax({
+                type: 'GET',
+                data: {
+                    "<portlet:namespace/><%=PortalConstants.ATTACHMENT_ID%>": attachmentId
+                },
+                dataType: 'json',
+                url: url.toString(),
+            }).done(function(result) {
+                if (!result || result.length == 0 || Object.getOwnPropertyNames(result).length == 0) {
+                    $("tbody.btnBody tr td").html('Assessment Summary not found in CLI!');
+                } else if (result.status === "success") {
+                    $('tbody.dataBody  > tr').each(function(index, tr) {
+                        let key = $(tr).attr("data-key"),
+                        val = result[key];
+                        $(tr).find("td:eq(1)").html(val);
+                    });
+                    $("tbody.btnBody").addClass("d-none");
+                    $("tbody.dataBody").removeClass("d-none");
+                } else if (result.status === "failure") {
+                    $("tbody.btnBody tr td").html(result.msg);
+                }
+            }).fail(function(error) {
+                $("tbody.btnBody tr td span.alert").remove();
+                $("tbody.btnBody tr td").append("<span class='alert alert-danger mb-0'>"+error.status + ": "+ error.statusText + "</span>")
+            });
+            button.finish(".showAssessmentSummaryBtn");
+        }
 
         function displayLicenseToSrcMapping(attId, attName, licenseName) {
             let data,

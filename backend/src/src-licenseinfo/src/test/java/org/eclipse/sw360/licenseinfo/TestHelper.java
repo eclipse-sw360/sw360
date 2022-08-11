@@ -31,8 +31,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.number.OrderingComparison.greaterThan;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
@@ -83,7 +83,7 @@ public class TestHelper {
         public AttachmentContentStore put(String filename, String fileContent) throws TException {
             AttachmentContent attachmentContent = makeAttachmentContent(filename);
             store.put(attachmentContent.getId(), attachmentContent);
-            when(connectorMock.getAttachmentStream(eq(attachmentContent), anyObject(), anyObject())).thenReturn(new ReaderInputStream(new StringReader(fileContent)));
+            when(connectorMock.getAttachmentStream(eq(attachmentContent), any(), any())).thenReturn(new ReaderInputStream(new StringReader(fileContent)));
             return this;
         }
 
@@ -93,7 +93,7 @@ public class TestHelper {
 
         public AttachmentContentStore put(AttachmentContent attachmentContent) throws TException {
             store.put(attachmentContent.getId(), attachmentContent);
-            when(connectorMock.getAttachmentStream(eq(attachmentContent), anyObject(), anyObject())).thenReturn(makeAttachmentContentStream(attachmentContent.getFilename()));
+            when(connectorMock.getAttachmentStream(eq(attachmentContent), any(), any())).thenReturn(makeAttachmentContentStream(attachmentContent.getFilename()));
             return this;
         }
     }

@@ -389,6 +389,7 @@
                         {title: "<liferay-ui:message key="given.name" />", data: "givenname", "defaultContent": ""},
                         {title: "<liferay-ui:message key="last.name" />", data: "lastname", "defaultContent": ""},
                         {title: "<liferay-ui:message key="email" />", data: "email", "defaultContent": "", render: {display: displayUserLink}, className: "email"},
+                        {title: "<liferay-ui:message key="active.status" />", data: "deactivated", "defaultContent": ""},
                         {title: "<liferay-ui:message key="primary.department" />", data: "primaryDepartment", "defaultContent": ""},
                         {title: "<liferay-ui:message key="primary.department.role" />", data: "primaryDepartmentRole", "defaultContent": ""},
                         {title: "<liferay-ui:message key="secondary.departments.and.roles" />", data: "secondaryDepartmentsAndRoles", "defaultContent": "", className: "secondaryGrpRoles"},
@@ -401,7 +402,7 @@
                         order: [[2, 'asc']],
                         columnDefs: [
                             {
-                                'targets': [6],
+                                'targets': [7],
                                 'orderable': false,
                             }
                         ],
@@ -409,7 +410,7 @@
                             $(".editSecondaryGrp").click(editSecondaryGroup);
                             $("#userPresentSpinner").remove();
                         }
-                    }, [0, 1, 2, 3, 4, 5], undefined);
+                    }, [0, 1, 2, 3, 4, 5, 6], undefined);
             }
         
             function createUsersAbsentInCouchDBTable(usersAbsentInCouchDBJsonData) {

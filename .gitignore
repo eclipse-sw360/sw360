@@ -50,3 +50,13 @@ data
 config
 .tmp
 .env
+
+# Gradle generated files
+bin/**
+gen/**
+.gradletasknamecache
+.gradle/
+build/
+bin/
+tmp/**
+tmp/**/*

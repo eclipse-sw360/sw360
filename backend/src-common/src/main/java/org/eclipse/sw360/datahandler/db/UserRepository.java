@@ -101,6 +101,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
         createIndex("byDepartment", new String[] {"department"}, databaseConnector);
         createIndex("byFirstName", new String[] {"givenname"}, databaseConnector);
         createIndex("byLastName", new String[] {"lastname"}, databaseConnector);
+        createIndex("byActiveStatus", new String[] {"deactivated"}, databaseConnector);
         createIndex("byUserGroup", new String[] {"userGroup"}, databaseConnector);
         createIndex("bySecondaryDepartmentsAndRoles", new String[] {"secondaryDepartmentsAndRoles"}, databaseConnector);
     }
@@ -199,16 +200,21 @@ public class UserRepository extends SummaryAwareRepository<User> {
             query = qb.build();
             break;
         case 3:
+            qb = qb.useIndex("byActiveStatus");
+            qb = ascending ? qb.sort(Sort.asc("deactivated")) : qb.sort(Sort.desc("deactivated"));
+            query = qb.build();
+            break;
+        case 4:
             qb = qb.useIndex("byDepartment");
             qb = ascending ? qb.sort(Sort.asc("department")) : qb.sort(Sort.desc("department"));
             query = qb.build();
             break;
-        case 4:
+        case 5:
             qb = qb.useIndex("byUserGroup");
             qb = ascending ? qb.sort(Sort.asc("userGroup")) : qb.sort(Sort.desc("userGroup"));
             query = qb.build();
             break;
-        case 5:
+        case 6:
             if (ascending) {
                 qb.skip(0);
             }
@@ -225,7 +231,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
             QueryResult<User> queryResult = getConnector().getQueryResult(query, User.class);
             users = queryResult.getDocs();
 
-            if (sortColumnNo == 5) {
+            if (sortColumnNo == 6) {
                 final Selector selectorSecondaryGroupsAndRoles = and(typeSelector,
                         emptySecondaryDepartmentsAndRolesSelector);
                 QueryBuilder emptySecondaryGroupsAndRolesQb = new QueryBuilder(selectorSecondaryGroupsAndRoles);

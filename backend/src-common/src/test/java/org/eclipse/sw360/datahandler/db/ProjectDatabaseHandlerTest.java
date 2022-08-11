@@ -26,7 +26,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.*;
 
@@ -38,8 +38,8 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -136,7 +136,7 @@ public class ProjectDatabaseHandlerTest {
         Project project2 = handler.getProjectById("P2", user1);
         project2.setName("Project2new");
 
-        Mockito.doReturn(RequestStatus.SENT_TO_MODERATOR).when(moderator).updateProject(project2, user1);
+        Mockito.lenient().doReturn(RequestStatus.SENT_TO_MODERATOR).when(moderator).updateProject(project2, user1);
 
         RequestStatus status = handler.updateProject(project2, user1);
 

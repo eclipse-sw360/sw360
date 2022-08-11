@@ -489,6 +489,7 @@ public class PortalConstants {
     public static final String DOWNLOAD_LICENSE_BACKUP = "DownloadLicenseBackup";
     public static final String LOAD_SPDX_LICENSE_INFO = "LoadSpdxLicenseInfo";
     public static final String WRITE_SPDX_LICENSE_INFO_INTO_RELEASE = "WriteSpdxLicenseInfoIntoRelease";
+    public static final String LOAD_ASSESSMENT_SUMMARY_INFO = "LoadAssessmentSummaryInfo";
 
     // linked projects and releases actions
     public static final String LINKED_OBJECTS_PREFIX = "load_linked_";

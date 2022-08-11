@@ -25,7 +25,7 @@ import java.util.concurrent.CompletionException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class HttpUtilsTest {
@@ -132,7 +132,7 @@ public class HttpUtilsTest {
             assertThat(e.getMessage()).contains(String.valueOf(status));
             assertThat(e.getStatusCode()).isEqualTo(status);
             assertThat(e.getTag()).isNull();
-            verifyZeroInteractions(processor);
+            verifyNoMoreInteractions(processor);
         }
     }
 
@@ -153,7 +153,7 @@ public class HttpUtilsTest {
             assertThat(e.getMessage()).contains(String.valueOf(status), tag);
             assertThat(e.getStatusCode()).isEqualTo(status);
             assertThat(e.getTag()).isEqualTo(tag);
-            verifyZeroInteractions(processor);
+            verifyNoMoreInteractions(processor);
         }
     }
 
@@ -181,7 +181,7 @@ public class HttpUtilsTest {
             assertThat(e.getMessage()).contains(String.valueOf(status), tag);
             assertThat(e.getStatusCode()).isEqualTo(status);
             assertThat(e.getTag()).isEqualTo(tag);
-            verifyZeroInteractions(processor);
+            verifyNoMoreInteractions(processor);
         }
     }
 
@@ -275,7 +275,7 @@ public class HttpUtilsTest {
         ResponseProcessor<Void> processor = HttpUtils.nullProcessor();
 
         assertThat(processor.process(response)).isNull();
-        verifyZeroInteractions(response);
+        verifyNoMoreInteractions(response);
     }
 
     @Test

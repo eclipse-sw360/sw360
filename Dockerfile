@@ -9,10 +9,22 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-FROM maven:3.8-eclipse-temurin-11 AS builder
+FROM eclipse-temurin:11-jdk-jammy AS builder
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+# Set versiona as arguments
+ARG CLUCENE_VERSION=2.1.0
+ARG THRIFT_VERSION=0.16.0
+ARG MAVEN_VERSION=3.8.6
+
+# Lets get dependencies as buildkit cached
+ENV SW360_DEPS_DIR=/var/cache/deps
+COPY ./scripts/docker-config/download_dependencies.sh /var/tmp/deps.sh
+RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
+    chmod +x /var/tmp/deps.sh \
+    && /var/tmp/deps.sh
+
+RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
     apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     automake \
@@ -31,9 +43,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     pkg-config \
     procps \
     wget \
+    unzip \
+    zip \
     && rm -rf /var/lib/apt/lists/*
 
-# Prepare proxy for maven
+# Prepare maven from binary to avoid wrong java dependencies and proxy
+RUN --mount=type=cache,mode=0755,target=/var/cache/deps \
+    tar -xzf "/var/cache/deps/apache-maven-$MAVEN_VERSION-bin.tar.gz" --strip-components=1 -C /usr/local
 COPY scripts/docker-config/mvn-proxy-settings.xml /etc
 COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
 RUN chmod a+x /usr/local/bin/setup_maven_proxy
@@ -42,15 +58,15 @@ RUN chmod a+x /usr/local/bin/setup_maven_proxy
 # Thrift
 FROM builder AS thriftbuild
 
-ARG THRIFT_VERSION=0.14.0
+ARG BASEDIR="/build"
+ARG THRIFT_VERSION=0.16.0
 
-COPY deps/thrift-*.tar.gz /deps/
-COPY ./scripts/docker-config/install_scripts/build_thrift.sh build_thrift.sh
+COPY ./scripts/install-thrift.sh build_thrift.sh
 
 RUN --mount=type=tmpfs,target=/build \
-    tar -xzf "deps/thrift-$THRIFT_VERSION.tar.gz" --strip-components=1 -C /build \
-    && ./build_thrift.sh \
-    && rm -rf /deps
+    --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
+    tar -xzf "/var/cache/deps/thrift-$THRIFT_VERSION.tar.gz" --strip-components=1 -C /build \
+    && ./build_thrift.sh --tarball
 
 #--------------------------------------------------------------------------------------------------
 # Couchdb-Lucene
@@ -60,20 +76,21 @@ ARG CLUCENE_VERSION=2.1.0
 
 WORKDIR /build
 
-COPY deps/couchdb* /deps/
-COPY ./scripts/docker-config/couchdb-lucene.ini /deps
-
 # Prepare source code
-RUN --mount=type=tmpfs,target=/build \
-    --mount=type=cache,target=/root/.m2,rw,sharing=locked \
-    tar -C /build -xvf /deps/couchdb-lucene-$CLUCENE_VERSION.tar.gz --strip-components=1 \
-    && patch -p1 < /deps/couchdb-lucene.patch \
-    && cp /deps/couchdb-lucene.ini ./src/main/resources/couchdb-lucene.ini \
+COPY ./scripts/docker-config/couchdb-lucene.ini /var/tmp/couchdb-lucene.ini
+COPY ./scripts/patches/couchdb-lucene.patch /var/tmp/couchdb-lucene.patch
+
+# Build CLucene
+RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
+    --mount=type=tmpfs,target=/build \
+    --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
+    tar -C /build -xf /var/cache/deps/couchdb-lucene-$CLUCENE_VERSION.tar.gz --strip-components=1 \
+    && patch -p1 < /var/tmp/couchdb-lucene.patch \
+    && cp /var/tmp/couchdb-lucene.ini src/main/resources/couchdb-lucene.ini \
     && setup_maven_proxy \
-    && mvn dependency:go-offline \
+    && mvn dependency:go-offline -B \
     && mvn install war:war \
-    && cp ./target/*.war /couchdb-lucene.war \
-    && rm -rf /deps
+    && cp ./target/*.war /couchdb-lucene.war
 
 #--------------------------------------------------------------------------------------------------
 # SW360
@@ -81,45 +98,37 @@ RUN --mount=type=tmpfs,target=/build \
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-FROM builder AS sw360build
-
-# Copy thrft from builder
-COPY --from=thriftbuild /thrift-bin.tar.gz /deps/
-RUN tar xzf /deps/thrift-bin.tar.gz -C /
+FROM thriftbuild AS sw360build
 
 # Install mkdocs to generate documentation
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    mkdocs \
+RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
+    apt-get update -qq \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
     python3-pip \
     python3-wheel \
     && rm -rf /var/lib/apt/lists/* \
     && pip install mkdocs-material
 
-# Copy the exported sw360 directory
-COPY deps/sw360.tar /deps/
+# Copy the sw360 directory
+COPY . /build/sw360
 
-RUN --mount=type=tmpfs,target=/build \
-    --mount=type=cache,target=/root/.m2,rw,sharing=locked \
-    tar -C /build -xf /deps/sw360.tar \
-    && cd /build/sw360 \
+RUN --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
+    cd /build/sw360 \
     && setup_maven_proxy \
-    && mvn package \
+    && mvn clean package \
     -P deploy -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
     -DfailIfNoTests=false \
     -Dbase.deploy.dir=. \
     -Dliferay.deploy.dir=/sw360_deploy \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
     -Drest.deploy.dir=/sw360_tomcat_webapps \
-    -Dhelp-docs=true \
-    && rm -rf /deps
+    -Dhelp-docs=true
 
 #--------------------------------------------------------------------------------------------------
 # Runtime image
 # We need use JDK, JRE is not enough as Liferay do runtime changes and require javac
-FROM eclipse-temurin:11-jdk-focal
+FROM eclipse-temurin:11-jdk-jammy
 
 WORKDIR /app/
 
@@ -129,9 +138,10 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update \
+RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
+    --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
+    apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -150,9 +160,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     unzip \
     zip \
     && rm -rf /var/lib/apt/lists/*
-
-COPY deps/jars/* /deps/jars/
-COPY deps/liferay-ce* /deps/
 
 COPY --from=thriftbuild /thrift-bin.tar.gz .
 RUN tar xzf thrift-bin.tar.gz -C / \
@@ -182,12 +189,12 @@ RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
 
 # Unpack liferay as sw360 and link current tomcat version
 # to tomcat to make future proof updates
-RUN mkdir sw360 \
-    && tar xzf /deps/$LIFERAY_SOURCE -C $USERNAME --strip-components=1 \
-    && cp /deps/jars/* sw360/deploy \ 
+RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
+    mkdir sw360 \
+    && tar xzf /var/cache/deps/$LIFERAY_SOURCE -C $USERNAME --strip-components=1 \
+    && cp /var/cache/deps/jars/* sw360/deploy \
     && chown -R $USERNAME:$USERNAME sw360 \
-    && ln -s /app/sw360/tomcat-* /app/sw360/tomcat \
-    && rm -rf /deps
+    && ln -s /app/sw360/tomcat-* /app/sw360/tomcat
 
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_deploy/* /app/sw360/deploy
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/* /app/sw360/tomcat/webapps/

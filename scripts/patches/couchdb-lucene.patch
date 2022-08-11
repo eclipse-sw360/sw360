@@ -1,0 +1,98 @@
+# Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
+#
+# Copying and distribution of this file, with or without modification,
+# are permitted in any medium without royalty provided the copyright
+# notice and this notice are preserved.  This file is offered as-is,
+# without any warranty.
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+From a332d09f9045ce3976d71823ebd9a4fe4a736cb3 Mon Sep 17 00:00:00 2001
+From: Birgit Heydenreich <birgit.heydenreich@tngtech.com>
+Date: Sat, 7 Nov 2015 15:31:24 +0100
+Subject: [PATCH] patched with context pull request jalpedersen
+
+
+---
+ .../java/com/github/rnewson/couchdb/lucene/LuceneServlet.java    | 9 ++++++---
+ src/main/java/com/github/rnewson/couchdb/lucene/PathParts.java   | 4 +++-
+ .../com/github/rnewson/couchdb/lucene/util/ServletUtils.java     | 6 ++++++
+ 3 files changed, 15 insertions(+), 4 deletions(-)
+
+diff --git a/src/main/java/com/github/rnewson/couchdb/lucene/LuceneServlet.java b/src/main/java/com/github/rnewson/couchdb/lucene/LuceneServlet.java
+index ecb200d..9426e58 100644
+--- a/src/main/java/com/github/rnewson/couchdb/lucene/LuceneServlet.java
++++ b/src/main/java/com/github/rnewson/couchdb/lucene/LuceneServlet.java
+@@ -41,6 +41,8 @@
+ import java.io.IOException;
+ import java.util.*;
+ 
++import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getUri;
++
+ public final class LuceneServlet extends HttpServlet {
+ 
+     private static final Logger LOG = Logger.getLogger(LuceneServlet.class);
+@@ -176,7 +178,7 @@ protected void doGet(final HttpServletRequest req,
+ 
+     private void doGetInternal(final HttpServletRequest req, final HttpServletResponse resp)
+             throws ServletException, IOException, JSONException {
+-        switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
++        switch (StringUtils.countMatches(getUri(req), "/")) {
+             case 1:
+                 handleWelcomeReq(req, resp);
+                 return;
+@@ -211,9 +213,9 @@ protected void doPost(final HttpServletRequest req,
+ 
+     private void doPostInternal(final HttpServletRequest req, final HttpServletResponse resp)
+             throws IOException, JSONException {
+-        switch (StringUtils.countMatches(req.getRequestURI(), "/")) {
++       switch (StringUtils.countMatches(getUri(req), "/")) {
+             case 3:
+-                if (req.getPathInfo().endsWith("/_cleanup")) {
++               if (req.getRequestURI().endsWith("/_cleanup")) {
+                     cleanup(req, resp);
+                     return;
+                 }
+@@ -235,4 +237,5 @@ private void doPostInternal(final HttpServletRequest req, final HttpServletRespo
+         ServletUtils.sendJsonError(req, resp, 400, "bad_request");
+     }
+ 
++
+ }
+diff --git a/src/main/java/com/github/rnewson/couchdb/lucene/PathParts.java b/src/main/java/com/github/rnewson/couchdb/lucene/PathParts.java
+index d73222d..b4bd898 100644
+--- a/src/main/java/com/github/rnewson/couchdb/lucene/PathParts.java
++++ b/src/main/java/com/github/rnewson/couchdb/lucene/PathParts.java
+@@ -20,6 +20,8 @@
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
+ 
++import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getUri;
++
+ public class PathParts {
+ 
+     private static final Pattern QUERY_REGEX = Pattern
+@@ -31,7 +33,7 @@
+     private Matcher matcher;
+ 
+     public PathParts(final HttpServletRequest req) {
+-        this(req.getRequestURI());
++        this(getUri(req));
+     }
+ 
+     public PathParts(final String path) {
+diff --git a/src/main/java/com/github/rnewson/couchdb/lucene/util/ServletUtils.java b/src/main/java/com/github/rnewson/couchdb/lucene/util/ServletUtils.java
+index de0da0f..2c57695 100644
+--- a/src/main/java/com/github/rnewson/couchdb/lucene/util/ServletUtils.java
++++ b/src/main/java/com/github/rnewson/couchdb/lucene/util/ServletUtils.java
+@@ -102,4 +102,10 @@ public static void sendJsonSuccess(final HttpServletRequest req, final HttpServl
+         }
+     }
+ 
++   //Strip of context part of URI
++   public static String getUri(HttpServletRequest request) {
++       //Strip of context path if present
++       return request.getRequestURI().substring(request.getContextPath().length());
++   }
++
+ }

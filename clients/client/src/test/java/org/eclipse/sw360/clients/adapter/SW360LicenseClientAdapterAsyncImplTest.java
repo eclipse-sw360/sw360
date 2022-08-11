@@ -111,7 +111,7 @@ public class SW360LicenseClientAdapterAsyncImplTest {
     public void testDeleteLicense() {
         Map<String, Integer> responses = new HashMap<String, Integer>();
         responses.put(LICENSE_ID, 200);
-        when(licenseClient.deleteLicense(Mockito.anyObject()))
+        when(licenseClient.deleteLicense(Mockito.any()))
                 .thenReturn(CompletableFuture.completedFuture(200));
 
         Integer responseCode = block(licenseClientAdapter.deleteLicense(LICENSE_ID));

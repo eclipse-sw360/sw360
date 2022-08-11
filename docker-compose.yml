@@ -11,6 +11,7 @@ version: '3.8'
 services:
   sw360:
     image: 'sw360:latest'
+    restart: unless-stopped
     build:
       context: .
       args:
@@ -49,6 +50,7 @@ services:
 
   couchdb:
     image: couchdb
+    restart: unless-stopped
     environment:
       - COUCHDB_USER=admin
       - COUCHDB_PASSWORD=password
