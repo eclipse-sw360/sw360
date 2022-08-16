@@ -99,6 +99,7 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapExceptio
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.portlets.projects.ProjectPortletUtils.isUsageEquivalent;
+import static org.eclipse.sw360.portal.common.PortletUtils.setDepartmentSearchAttribute;
 
 @org.osgi.service.component.annotations.Component(
     immediate = true,
@@ -291,6 +292,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             serveViewVendor(request, response);
         } else if (ADD_VENDOR.equals(action)) {
             serveAddVendor(request, response);
+        } else if (VIEW_DEPARTMENT.equals(action)) {
+            serveViewDepartment(request, response);
         }
     }
 
@@ -356,6 +359,11 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
         request.setAttribute("vendorsSearch", nullToEmptyList(vendors));
         include("/html/components/ajax/vendorSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
+    
+    private void serveViewDepartment(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+        PortletUtils.setDepartmentSearchAttribute(request, response);
+        include("/html/components/ajax/departmentSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 
     private void prepareVulnerabilitiesView(ResourceRequest request, ResourceResponse response) {
@@ -2401,7 +2409,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     prepareRequestForEditAfterDuplicateError(request, project, user);
                     return;
                 }
-
                 AddDocumentRequestSummary summary = client.addProject(project, user);
                 String newProjectId = summary.getId();
                 String sourceProjectId = request.getParameter(SOURCE_PROJECT_ID);

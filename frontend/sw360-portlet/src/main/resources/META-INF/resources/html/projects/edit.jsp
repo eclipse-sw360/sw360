@@ -234,11 +234,12 @@
 <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
 <jsp:include page="/html/utils/includes/searchUsers.jsp" />
 <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
+<%@include file="/html/components/includes/departments/searchDepartment.jspf" %>
 </core_rt:if>
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'bridges/jquery-ui', 'components/includes/vendors/searchVendor' ], function($, autocomplete, dialog, listgroup, validation, jqui, vendorsearch) {
+require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'bridges/jquery-ui', 'components/includes/vendors/searchVendor','components/includes/departments/searchDepartment' ], function($, autocomplete, dialog, listgroup, validation, jqui, vendorsearch,departmentsearch) {
     document.title = $("<span></span>").html("<sw360:ProjectName project="${project}"/> - " + document.title).text();
 
     listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
@@ -252,7 +253,12 @@ require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup'
         vendorsearch.openSearchDialog('<portlet:namespace/>what', '<portlet:namespace/>where',
                   '<portlet:namespace/>FULLNAME', '<portlet:namespace/>SHORTNAME', '<portlet:namespace/>URL', fillVendorInfo);
     });
-    
+
+    $('#ProjectRolesInfo input.edit-department').on('click',function(){
+    	departmentsearch.openSearchDialog('<portlet:namespace/>what', '<portlet:namespace/>where',
+                '<portlet:namespace/>DEPARTMENTID', '<portlet:namespace/>PRIORITY',fillDepartmentInfo);
+    })
+
     $('#formSubmit').click(
         function () {
             <core_rt:choose>
@@ -390,7 +396,7 @@ require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup'
         $("form#projectEditForm button").prop("disabled", true);
         $("form#projectEditForm button[id='add-external-id']").prop("disabled", false);
         $("form#projectEditForm button[id='formSubmit']").prop("disabled", false);
-        
+
         $("#enable_svm").prop("disabled", false);
         $("#enable_vulnerabilities_display").prop("disabled", false);
         $("#projectState").prop("disabled", false);
@@ -411,7 +417,7 @@ require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup'
             $("#tab-Obligations").html("").append(result);
       }});
     </core_rt:if>
-    
+
 
     function fillVendorInfo(vendorInfo) {
         var beforeComma = vendorInfo.substr(0, vendorInfo.indexOf(","));
@@ -425,5 +431,17 @@ require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup'
         $('#<%=Project._Fields.VENDOR_ID.toString()%>').val("");
         $('#<%=Project._Fields.VENDOR_ID.toString()%>Display').val("").attr("placeholder", "Click to set vendor");
     });
+
+    function fillDepartmentInfo(departmentInfo) {
+
+        $('#<%=Project._Fields.BUSINESS_UNIT.toString()%>').val(departmentInfo.trim());
+        $('#<%=Project._Fields.BUSINESS_UNIT.toString()%>Display').val(departmentInfo.trim());
+    }
+
+    $("#clearDepartment").click(function() {
+        $('#<%=Project._Fields.BUSINESS_UNIT.toString()%>').val("");
+        $('#<%=Project._Fields.BUSINESS_UNIT.toString()%>Display').val("").attr("placeholder", "Click to set Department");
+    });
+
 });
 </script>

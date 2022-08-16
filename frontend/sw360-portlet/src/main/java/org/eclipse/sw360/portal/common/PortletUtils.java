@@ -49,6 +49,7 @@ import org.eclipse.sw360.portal.users.UserCacheHolder;
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
 import javax.portlet.RenderRequest;
+import javax.portlet.ResourceResponse;
 
 import java.util.*;
 import java.util.function.Function;
@@ -573,4 +574,18 @@ public class PortletUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static void setDepartmentSearchAttribute(ResourceRequest request, ResourceResponse response) {
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        
+        List<String> secondaryDepartmentList = new ArrayList<String>();
+        Map<String, Set<UserGroup>> secondaryRoleMap = user.getSecondaryDepartmentsAndRoles();
+        if (!CommonUtils.isNullOrEmptyMap(secondaryRoleMap)) {
+            secondaryDepartmentList.addAll(secondaryRoleMap.keySet());
+        }
+        
+        request.setAttribute("primaryDepartment", user.getDepartment());
+        request.setAttribute("secondaryDepartmentList", nullToEmptyList(secondaryDepartmentList));
+    }
+
 }

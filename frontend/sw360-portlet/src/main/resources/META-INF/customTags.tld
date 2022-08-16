@@ -421,6 +421,29 @@
         </attribute>
     </tag>
     <tag>
+    	<name>DisplayDepartmentEdit</name>
+    	<tag-class>org.eclipse.sw360.portal.tags.DisplayDepartmentEdit</tag-class>
+    	<body-content>empty</body-content>
+        <attribute>
+            <name>id</name>
+            <required>true</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>departmentId</name>
+            <required>false</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>label</name>
+            <required>false</required>
+            <type>java.lang.String</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    	</tag>
+    <tag>
         <name>DisplayLicensesEdit</name>
         <tag-class>org.eclipse.sw360.portal.tags.DisplayLicensesEdit</tag-class>
         <body-content>empty</body-content>
