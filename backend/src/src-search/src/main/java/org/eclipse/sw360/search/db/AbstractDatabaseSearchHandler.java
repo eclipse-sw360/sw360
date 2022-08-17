@@ -84,6 +84,19 @@ public abstract class AbstractDatabaseSearchHandler {
     }
 
     /**
+     * Search the database for a given string without wildcard
+     */
+    public List<SearchResult> searchWithoutWildcard(String text, User user, final List<String> typeMask) {
+        String query = text;
+        if (typeMask == null || typeMask.isEmpty()) {
+            return getSearchResults(query, user);
+        }
+        final Function<String, String> addType = input -> "type:" + input;
+        query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND " + text;
+        return getSearchResults(query, user);
+    }
+
+    /**
      * Search the database for a given string and types
      */
     public List<SearchResult> search(String text, final List<String> typeMask, User user) {
@@ -136,4 +149,5 @@ public abstract class AbstractDatabaseSearchHandler {
 
         return result;
     }
+
 }
