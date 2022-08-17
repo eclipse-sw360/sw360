@@ -128,7 +128,7 @@
             <!--  if Component visibility restriction is disabled. -->
         </core_rt:otherwise>
     </core_rt:choose>
-    
+
     <tr>
         <td >
             <div class="form-group">
@@ -157,7 +157,7 @@
 <core_rt:choose>
     <core_rt:when test="${componentVisibilityRestriction}">
         <!--  if Component visibility restriction is eabled. -->
-        
+
         <table class="table edit-table three-columns" id="RolesData">
             <thead>
                <tr>
@@ -166,16 +166,9 @@
             </thead>
             <tr>
                 <td>
-                    <div class="form-group">
-                        <label class="mandatory" for="group"><liferay-ui:message key="group" /></label>
-                        <input id="group" class="form-control" name="<portlet:namespace/><%=Component._Fields.BUSINESS_UNIT%>" type="text"
-                            placeholder="<liferay-ui:message key="enter.group" />" required
-                            value="<sw360:out value="${component.businessUnit}"/>"/>
-                        <div class="invalid-feedback">
-                                <liferay-ui:message key="please.enter.a.group" />
-                        </div>
-                    </div>
+                    <sw360:DisplayDepartmentEdit id="<%=Component._Fields.BUSINESS_UNIT.toString()%>" departmentId="${component.businessUnit}" label="group"/>
                 </td>
+
                 <td>
                     <sw360:DisplayUserEdit email="${component.componentOwner}"
                                            id="<%=Component._Fields.COMPONENT_OWNER.toString()%>"
@@ -216,7 +209,7 @@
     </core_rt:when>
     <core_rt:otherwise>
         <!--  if Component visibility restriction is disabled. -->
-        
+
         <table class="table edit-table three-columns" id="RolesData">
             <thead>
                <tr>
@@ -261,7 +254,7 @@
                 <td></td>
             </tr>
         </table>
-        
+
     </core_rt:otherwise>
 </core_rt:choose>
 

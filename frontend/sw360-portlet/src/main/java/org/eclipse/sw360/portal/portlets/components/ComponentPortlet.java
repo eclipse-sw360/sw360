@@ -101,6 +101,7 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapExceptio
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.common.PortletUtils.getVerificationState;
+import static org.eclipse.sw360.portal.common.PortletUtils.setDepartmentSearchAttribute;
 
 import org.apache.thrift.transport.TTransportException;
 
@@ -191,6 +192,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             serveViewVendor(request, response);
         } else if (ADD_VENDOR.equals(action)) {
             serveAddVendor(request, response);
+        } else if (VIEW_DEPARTMENT.equals(action)) {
+            serveViewDepartment(request, response);
         } else if (CHECK_COMPONENT_NAME.equals(action)) {
             serveCheckComponentName(request, response);
         } else if (DELETE_COMPONENT.equals(action)) {
@@ -412,6 +415,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } catch (TException e) {
             log.error("Error adding vendor", e);
         }
+    }
+    
+    private void serveViewDepartment(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+        PortletUtils.setDepartmentSearchAttribute(request, response);
+        include("/html/components/ajax/departmentSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
 
     private void serveCheckComponentName(ResourceRequest request, ResourceResponse response) throws IOException {

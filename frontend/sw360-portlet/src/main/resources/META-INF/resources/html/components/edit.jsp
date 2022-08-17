@@ -207,10 +207,11 @@
     <jsp:include page="/html/utils/includes/searchAndSelectUsers.jsp" />
     <jsp:include page="/html/utils/includes/searchUsers.jsp" />
     <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
+    <%@include file="/html/components/includes/departments/searchDepartment.jspf" %>
 
 
     <script>
-    require(['jquery', 'components/includes/vendors/searchVendor', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation' ], function($, vendorsearch, autocomplete, dialog, listgroup, validation) {
+    require(['jquery', 'components/includes/vendors/searchVendor','components/includes/departments/searchDepartment', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation' ], function($, vendorsearch, departmentsearch, autocomplete, dialog, listgroup, validation) {
         document.title = $("<span></span>").html("<sw360:out value='${component.name}'/> - " + document.title).text();
 
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
@@ -241,6 +242,11 @@
         $('#ComponentGeneralInfo input.edit-vendor').on('click', function() {
             vendorsearch.openSearchDialog('<portlet:namespace/>what', '<portlet:namespace/>where',
                     '<portlet:namespace/>FULLNAME', '<portlet:namespace/>SHORTNAME', '<portlet:namespace/>URL', fillVendorInfo);
+        });
+
+        $('#RolesData input.edit-department').on('click', function() {
+            departmentsearch.openSearchDialog('<portlet:namespace/>what', '<portlet:namespace/>where',
+                    '<portlet:namespace/>DEPARTMENTID', '<portlet:namespace/>PRIORITY',fillDepartmentInfo);
         });
 
         function cancel() {
@@ -328,6 +334,17 @@
         $("#clearVendor").click(function() {
             $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>').val("");
             $('#<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>Display').val("").attr("placeholder", "Click to set vendor");
+        });
+
+        function fillDepartmentInfo(departmentInfo) {
+
+            $('#<%=Component._Fields.BUSINESS_UNIT.toString()%>').val(departmentInfo.trim());
+            $('#<%=Component._Fields.BUSINESS_UNIT.toString()%>Display').val(departmentInfo.trim());
+        }
+
+        $("#clearDepartment").click(function() {
+            $('#<%=Component._Fields.BUSINESS_UNIT.toString()%>').val("");
+            $('#<%=Component._Fields.BUSINESS_UNIT.toString()%>Display').val("").attr("placeholder", "Click to set Department");
         });
     });
     </script>
