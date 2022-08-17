@@ -197,16 +197,9 @@
 
     <tr>
         <td>
-            <div class="form-group">
-                <label class="mandatory" for="group"><liferay-ui:message key="group" /></label>
-                <input id="group" class="form-control" name="<portlet:namespace/><%=Project._Fields.BUSINESS_UNIT%>" type="text"
-                    placeholder="<liferay-ui:message key="enter.group" />" required
-                    value="<sw360:out value="${project.businessUnit}"/>"/>
-                <div class="invalid-feedback">
-                        <liferay-ui:message key="please.enter.a.group" />
-                </div>
-            </div>
+             <sw360:DisplayDepartmentEdit id="<%=Project._Fields.BUSINESS_UNIT.toString()%>" departmentId="${project.businessUnit}" label="group"/>
         </td>
+
         <td>
             <sw360:DisplayUserEdit email="${project.projectResponsible}"
                                 id="<%=Project._Fields.PROJECT_RESPONSIBLE.toString()%>"

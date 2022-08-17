@@ -525,6 +525,7 @@ public class PortalConstants {
     //component actions
     public static final String ADD_VENDOR = "add_vendor";
     public static final String VIEW_VENDOR = "view_vendor";
+    public static final String VIEW_DEPARTMENT = "view_department";
     public static final String CHECK_COMPONENT_NAME = "check_component_name";
     public static final String DELETE_COMPONENT = "delete_component";
     public static final String DELETE_RELEASE = "delete_release";

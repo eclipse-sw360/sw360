@@ -11,7 +11,9 @@
 package org.eclipse.sw360.search;
 
 import com.cloudant.client.api.CloudantClient;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableMap;
+
+import org.apache.jena.ext.com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -24,11 +26,16 @@ import org.eclipse.sw360.search.db.Sw360dbDatabaseSearchHandler;
 import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of the Thrift service
@@ -41,6 +48,7 @@ public class SearchHandler implements SearchService.Iface {
 
     private final AbstractDatabaseSearchHandler dbSw360db;
     private final AbstractDatabaseSearchHandler dbSw360users;
+    ImmutableMap<String, String> specialCharToURLEncodedValue = ImmutableMap.of(" ", "%20", "+", "%2B", "@", "%40", "&", "%26", "#", "%23", "?", "%3F");
 
     public SearchHandler() throws IOException {
         dbSw360db = new Sw360dbDatabaseSearchHandler();
@@ -62,19 +70,72 @@ public class SearchHandler implements SearchService.Iface {
         }
 
         // Query user and other database
-        List<SearchResult> results = Lists.newArrayList();
+        Set<SearchResult> results = Sets.newLinkedHashSet();
         if (typeMask.isEmpty() || typeMask.contains(SW360Constants.TYPE_USER)) {
-            results.addAll(dbSw360users.search(text, Arrays.asList(SW360Constants.TYPE_USER), user));
+            if (text.contains("pkg:")) {
+                dealWithSpecialCharacters(text, user, results, dbSw360users, Arrays.asList(SW360Constants.TYPE_USER));
+            } else {
+                results.addAll(dbSw360users.search(text, Arrays.asList(SW360Constants.TYPE_USER), user));
+            }
         }
         if(typeMask.isEmpty() || !typeMask.get(0).equals(SW360Constants.TYPE_USER) || typeMask.size() > 1) {
-            results.addAll(dbSw360db.search(text, typeMask, user));
+            if (text.contains("pkg:")) {
+                dealWithSpecialCharacters(text, user, results, dbSw360db, typeMask);
+            } else {
+                results.addAll(dbSw360db.search(text, typeMask, user));
+            }
         }
-        Collections.sort(results, new SearchResultComparator());
+
+        List<SearchResult> srs = new ArrayList<SearchResult>(results);
+        Collections.sort(srs, new SearchResultComparator());
 
         if (log.isTraceEnabled())
             log.trace("Search for " + text + " returned " + results.size() + " results");
 
-        return results;
+        return srs;
+    }
+
+    private void dealWithSpecialCharacters(String text, User user, Set<SearchResult> results, AbstractDatabaseSearchHandler dbSearchHandler, final List<String> typeMask) {
+        String queryStringQuoted = "\""+text+"\"";
+        results.addAll(dbSearchHandler.searchWithoutWildcard(queryStringQuoted, user, typeMask));
+        searchWithDifferentCombinations(queryStringQuoted, user, results, dbSearchHandler,
+                typeMask, specialCharToURLEncodedValue);
+
+        Map<String, String> urlEncodedValToSPecialChar = specialCharToURLEncodedValue.entrySet().stream()
+                .collect(Collectors.toMap(entry -> entry.getValue(), entry -> entry.getKey()));
+
+        searchWithDifferentCombinations(queryStringQuoted, user, results, dbSearchHandler,
+                typeMask, urlEncodedValToSPecialChar);
+
+    }
+
+    private void searchWithDifferentCombinations(String queryStringQuoted, User user,
+            Set<SearchResult> results, AbstractDatabaseSearchHandler dbSearchHandler, final List<String> typeMask,
+            Map<String, String> specialCharToURLEncodedValue) {
+
+        Set<String> specialChars = specialCharToURLEncodedValue.keySet();
+        List<String> spCharsFoundInQuery = new ArrayList<>();
+
+        for (String sc : specialChars) {
+            String temp;
+            if (queryStringQuoted.contains(sc)) {
+                spCharsFoundInQuery.add(sc);
+                temp = queryStringQuoted.replaceAll(Pattern.quote(sc), specialCharToURLEncodedValue.get(sc));
+                results.addAll(dbSearchHandler.searchWithoutWildcard(temp, user, typeMask));
+            }
+        }
+
+        String temp = queryStringQuoted;
+        for (int i = 0; i < spCharsFoundInQuery.size(); i++) {
+            for (int j = i + 1; j < spCharsFoundInQuery.size(); j++) {
+                temp = temp
+                        .replaceAll(Pattern.quote(spCharsFoundInQuery.get(i)),
+                                specialCharToURLEncodedValue.get(spCharsFoundInQuery.get(i)))
+                        .replaceAll(Pattern.quote(spCharsFoundInQuery.get(j)),
+                                specialCharToURLEncodedValue.get(spCharsFoundInQuery.get(j)));
+                results.addAll(dbSearchHandler.searchWithoutWildcard(temp, user, typeMask));
+            }
+        }
     }
 
     @Override

@@ -10,7 +10,6 @@
  */
 package org.eclipse.sw360.licenses.db;
 
-import org.apache.xmlbeans.impl.xb.xsdschema.Attribute;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
@@ -594,17 +593,9 @@ public class LicenseDatabaseHandler {
     }
 
     private boolean isDuplicate(LicenseType licenseType) {
-        List<String> existLicenseTypes = new ArrayList<>();
-        String type = licenseType.getLicenseType();
+        String type = licenseType.getLicenseType().trim().toLowerCase();
         List<LicenseType> duplicates = licenseTypeRepository.searchByLicenseType(type);
-
-        for (LicenseType duplicate : duplicates) {
-            existLicenseTypes.add(duplicate.getLicenseType());
-        }
-        if (existLicenseTypes.contains(type)) {
-            return true;
-        }
-        return false;
+        return isNotEmpty(duplicates);
     }
 
     public List<LicenseType> addLicenseTypes(List<LicenseType> licenseTypes, User user) {
