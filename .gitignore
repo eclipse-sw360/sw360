@@ -60,3 +60,6 @@ build/
 bin/
 tmp/**
 tmp/**/*
+
+# Sometimes we do use vim
+.swp

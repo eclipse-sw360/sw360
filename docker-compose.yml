@@ -17,6 +17,11 @@ services:
       args:
         - COUCHDB_USER
         - COUCHDB_PASSWORD
+        - HTTP_PROXY
+        - HTTPS_PROXY
+        - LIFERAY_SOURCE
+        - LIFERAY_VERSION
+        - MAVEN_VERSION
     container_name: sw360
     depends_on:
       - postgresdb

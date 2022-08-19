@@ -19,6 +19,8 @@ set -e
 CLUCENE_VERSION=${CLUCENE_VERSION:-2.1.0}
 THRIFT_VERSION=${THRIFT_VERSION:-0.16.0}
 MAVEN_VERSION=${MAVEN_VERSION:-3.8.6}
+LIFERAY_VERSION=${LIFERAY_VERSION:-7.4.3.18-ga18}
+LIFERAY_SOURCE=${LIFERAY_SOURCE:-liferay-ce-portal-tomcat-7.4.3.18-ga18-20220329092001364.tar.gz}
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
@@ -56,5 +58,7 @@ docker compose \
     --build-arg CLUCENE_VERSION="$CLUCENE_VERSION" \
     --build-arg THRIFT_VERSION="$THRIFT_VERSION" \
     --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
+    --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" \
+    --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE" \
     $docker_verbose \
     $docker_no_cache
