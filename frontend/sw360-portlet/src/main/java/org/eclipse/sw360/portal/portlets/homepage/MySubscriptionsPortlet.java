@@ -23,9 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-import org.eclipse.sw360.portal.common.CustomFieldHelper;
-import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_BANNER_MESSAGE;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -60,7 +57,6 @@ public class MySubscriptionsPortlet extends Sw360Portlet {
 
         try {
             final User user = UserCacheHolder.getUserFromRequest(request);
-            CustomFieldHelper.loadField(String.class, request, user, CUSTOM_FIELD_BANNER_MESSAGE);
             ComponentService.Iface componentClient = thriftClients.makeComponentClient();
             components = componentClient.getSubscribedComponents(user);
             releases  = componentClient.getSubscribedReleases(user);

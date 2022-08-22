@@ -22,15 +22,3 @@
 <%@ taglib uri="http://liferay.com/tld/util" prefix="liferay-util"%>
 
 <%@ taglib uri="http://example.com/tld/customTags.tld" prefix="sw360"%>
-
-<script>
-
-function portletLoad() {
-    if (sessionStorage.getItem('header') == 'true') {
-	    document.getElementById('updateMessage').style.display = 'none';
-    }
-}
-
-Liferay.on('allPortletsReady', portletLoad);
-
-</script>
