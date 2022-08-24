@@ -24,7 +24,7 @@ jar_dependencies=(
   https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-annotations/2.13.3/jackson-annotations-2.13.3.jar
   https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-core/2.13.3/jackson-core-2.13.3.jar
   https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-databind/2.13.3/jackson-databind-2.13.3.jar
-  https://search.maven.org/remotecontent?filepath=com/google/guava/guava/31.0.1-jre/guava-31.1-jre.jar
+  https://search.maven.org/remotecontent?filepath=com/google/guava/guava/31.1-jre/guava-31.1-jre.jar
   https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.20/commons-compress-1.20.jar
   https://repo1.maven.org/maven2/org/apache/thrift/libthrift/"$THRIFT_VERSION"/libthrift-"$THRIFT_VERSION".jar
 )

@@ -18,14 +18,6 @@ ARG MAVEN_VERSION
 ARG LIFERAY_VERSION
 ARG LIFERAY_SOURCE
 
-# Lets get dependencies as buildkit cached
-ENV SW360_DEPS_DIR=/var/cache/deps
-COPY ./scripts/download_dependencies.sh /var/tmp/deps.sh
-
-RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
-    chmod +x /var/tmp/deps.sh \
-    && /var/tmp/deps.sh
-
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
     apt-get update \
@@ -49,6 +41,14 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     unzip \
     zip \
     && rm -rf /var/lib/apt/lists/*
+
+# Lets get dependencies as buildkit cached
+ENV SW360_DEPS_DIR=/var/cache/deps
+COPY ./scripts/download_dependencies.sh /var/tmp/deps.sh
+
+RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
+    chmod +x /var/tmp/deps.sh \
+    && /var/tmp/deps.sh
 
 # Prepare maven from binary to avoid wrong java dependencies and proxy
 RUN --mount=type=cache,mode=0755,target=/var/cache/deps \
