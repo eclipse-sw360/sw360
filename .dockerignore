@@ -1,0 +1,4 @@
+# Ignore base files on copy
+deploy?
+*/*/build
+*/*/target
