@@ -20,19 +20,17 @@ jar_dependencies=(
   https://search.maven.org/remotecontent?filepath=org/apache/commons/commons-collections4/4.4/commons-collections4-4.4.jar
   https://search.maven.org/remotecontent?filepath=org/apache/commons/commons-csv/1.4/commons-csv-1.4.jar
   https://search.maven.org/remotecontent?filepath=commons-io/commons-io/2.7/commons-io-2.7.jar
-  https://search.maven.org/remotecontent?filepath=commons-lang/commons-lang/2.4/commons-lang-2.4.jar
-  https://search.maven.org/remotecontent?filepath=commons-logging/commons-logging/1.2/commons-logging-1.2.jar
   https://search.maven.org/remotecontent?filepath=com/google/code/gson/gson/2.8.9/gson-2.8.9.jar
-  https://search.maven.org/remotecontent?filepath=com/google/guava/guava/31.0.1-jre/guava-31.0.1-jre.jar
-  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-annotations/2.13.2/jackson-annotations-2.13.2.jar
-  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-core/2.13.2/jackson-core-2.13.2.jar
-  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-databind/2.13.2.2/jackson-databind-2.13.2.2.jar
+  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-annotations/2.13.3/jackson-annotations-2.13.3.jar
+  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-core/2.13.3/jackson-core-2.13.3.jar
+  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-databind/2.13.3/jackson-databind-2.13.3.jar
+  https://search.maven.org/remotecontent?filepath=com/google/guava/guava/31.0.1-jre/guava-31.1-jre.jar
   https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.20/commons-compress-1.20.jar
   https://repo1.maven.org/maven2/org/apache/thrift/libthrift/"$THRIFT_VERSION"/libthrift-"$THRIFT_VERSION".jar
 )
 
 dependencies=(
-  https://github.com/liferay/liferay-portal/releases/download/7.3.4-ga5/liferay-ce-portal-tomcat-7.3.4-ga5-20200811154319029.tar.gz
+  https://github.com/liferay/liferay-portal/releases/download/"$LIFERAY_VERSION"/"$LIFERAY_SOURCE"
   https://github.com/rnewson/couchdb-lucene/archive/v"$CLUCENE_VERSION".tar.gz
   http://archive.apache.org/dist/thrift/0.16.0/thrift-"$THRIFT_VERSION".tar.gz
   https://dlcdn.apache.org/maven/maven-3/"$MAVEN_VERSION"/binaries/apache-maven-"$MAVEN_VERSION"-bin.tar.gz

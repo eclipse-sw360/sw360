@@ -38,7 +38,8 @@
 
 <#assign preferences = freeMarkerPortletPreferences.getPreferences({"portletSetupPortletDecoratorId": "sw360", "destination": "/search"}) />
 <#assign login_css = is_signed_in?then("signed-in", "not-signed-in") />
-<html class="${root_css_class}" dir="<@liferay.language key="lang.dir" />" lang="${w3c_language_id}">
+<#assign overflow_hidden_css = "hide_overflow" />
+<html class="${root_css_class} ${overflow_hidden_css}" dir="<@liferay.language key="lang.dir" />" lang="${w3c_language_id}">
 
 <head>
 	<title>${the_title} - ${company_name}</title>
