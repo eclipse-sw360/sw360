@@ -1598,12 +1598,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     private void prepareDetailView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
-        setDefaultRequestAttributes(request);
         request.setAttribute(DOCUMENT_ID, id);
         if (id != null) {
             try {
                 ProjectService.Iface client = thriftClients.makeProjectClient();
                 Project project = client.getProjectById(id, user);
+                setDefaultRequestAttributes(request, project.getBusinessUnit());
                 project = getWithFilledClearingStateSummary(project, user);
                 Map<String, String> sortedAdditionalData = getSortedMap(project.getAdditionalData(), true);
                 project.setAdditionalData(sortedAdditionalData);
@@ -2245,7 +2245,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
-        setDefaultRequestAttributes(request);
         Project project;
         Set<Project> usingProjects;
         int allUsingProjectCount = 0;
@@ -2259,6 +2258,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             try {
                 ProjectService.Iface client = thriftClients.makeProjectClient();
                 project = client.getProjectByIdForEdit(id, user);
+                setDefaultRequestAttributes(request, project.getBusinessUnit());
                 Map<String, String> sortedAdditionalData = getSortedMap(project.getAdditionalData(), true);
                 project.setAdditionalData(sortedAdditionalData);
                 usingProjects = client.searchLinkingProjects(id, user);
@@ -2295,6 +2295,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 project = new Project();
                 project.setBusinessUnit(user.getDepartment());
                 request.setAttribute(PROJECT, project);
+                setDefaultRequestAttributes(request, user.getDepartment());
                 PortletUtils.setCustomFieldsEdit(request, user, project);
                 setAttachmentsInRequest(request, project);
                 try {
@@ -2316,7 +2317,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
         request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
-        setDefaultRequestAttributes(request);
         List<Organization> organizations = UserUtils.getOrganizations(request);
         request.setAttribute(ORGANIZATIONS, organizations);
 
@@ -2325,8 +2325,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 ProjectService.Iface client = thriftClients.makeProjectClient();
                 String emailFromRequest = LifeRayUserSession.getEmailFromRequest(request);
                 String department = user.getDepartment();
-
                 Project newProject = PortletUtils.cloneProject(emailFromRequest, department, client.getProjectById(id, user));
+                setDefaultRequestAttributes(request, newProject.getBusinessUnit());
                 Map<String, String> sortedAdditionalData = getSortedMap(newProject.getAdditionalData(), true);
                 newProject.setAdditionalData(sortedAdditionalData);
                 setAttachmentsInRequest(request, newProject);
@@ -2342,7 +2342,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 Project project = new Project();
                 project.setBusinessUnit(user.getDepartment());
                 setAttachmentsInRequest(request, project);
-
+                setDefaultRequestAttributes(request, user.getDepartment());
                 request.setAttribute(PROJECT, project);
                 PortletUtils.setCustomFieldsEdit(request, user, project);
                 putDirectlyLinkedProjectsInRequest(request, project, user);
@@ -2590,11 +2590,16 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         writer.write(responseData.toString());
     }
 
-    private String getProjectDefaultLicenseInfoHeaderText() {
+    private String getProjectDefaultLicenseInfoHeaderText(String group) {
         final LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
         try {
-            String defaultLicenseInfoHeaderText = licenseInfoClient.getDefaultLicenseInfoHeaderText();
-            return defaultLicenseInfoHeaderText;
+            String fileName = "";
+            if (CommonUtils.isNotNullEmptyOrWhitespace(PortalConstants.LICENSE_INFO_HEADER_TEXT_FILE_NAME_BY_PROJECT_GROUP) ) {
+                Map<String, String> groupToFileName = Arrays.stream(PortalConstants.LICENSE_INFO_HEADER_TEXT_FILE_NAME_BY_PROJECT_GROUP.split(","))
+                        .collect(Collectors.toMap(k -> k.split(":")[0].trim().toUpperCase(), v -> v.split(":")[1], (oldValue, newValue) -> newValue));
+                fileName = groupToFileName.get(group.trim().toUpperCase());
+            }
+            return licenseInfoClient.getDefaultLicenseInfoHeaderText(fileName);
         } catch (TException e) {
             log.error("Could not load default license info header text from backend.", e);
             return "";
@@ -3060,9 +3065,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         return projectData;
     }
 
-    private void setDefaultRequestAttributes(RenderRequest request) {
+    private void setDefaultRequestAttributes(RenderRequest request, String group) {
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
-        request.setAttribute(DEFAULT_LICENSE_INFO_HEADER_TEXT, getProjectDefaultLicenseInfoHeaderText());
+        request.setAttribute(DEFAULT_LICENSE_INFO_HEADER_TEXT, getProjectDefaultLicenseInfoHeaderText(CommonUtils.nullToEmptyString(group)));
         request.setAttribute(DEFAULT_OBLIGATIONS_TEXT, getProjectDefaultObligationsText());
     }
 
