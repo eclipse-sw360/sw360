@@ -20,14 +20,13 @@ dependencies {
     implementation libs.jackson.databind
     implementation libs.commons.lang3
     implementation libs.packageurl.java
-    testImplementation libs.assertj.core
+    testImplementation libs.asm
+    testImplementation libs.asm.commons
+    testImplementation libs.asm.util
+    testImplementation libs.byte.buddy
+    testImplementation libs.equalsverifier
     testImplementation libs.junit
     testImplementation libs.mockito.core
-    testImplementation libs.byte.buddy
-    testImplementation libs.asm
-    testImplementation libs.asm.util
-    testImplementation libs.asm.commons
-    testImplementation libs.equalsverifier
     testImplementation libs.wiremock.jre8
 }
 

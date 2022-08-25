@@ -11,7 +11,6 @@ activation = "1.1.1"
 jetbrains-annotations = "23.0.0"
 apache-commons-lang = "2.6"
 asm = "7.1"
-assertj-core = "3.11.1"
 byte-buddy = "1.10.18"
 cloudant-client = "2.19.1"
 commons-csv = "1.4"
@@ -92,7 +91,6 @@ apache-commons-lang = { group = "org.apache.directory.studio", name = "org.apach
 asm = { group = "org.ow2.asm", name = "asm", version.ref = "asm" }
 asm-util = { group = "org.ow2.asm", name = "asm-util", version.ref = "asm" }
 asm-commons = { group = "org.ow2.asm", name = "asm-commons", version.ref = "asm" }
-assertj-core = { group = "org.assertj", name = "assertj-core", version.ref = "assertj-core" }
 byte-buddy = { group = "net.bytebuddy", name = "byte-buddy", version.ref = "byte-buddy" }
 cloudant-client = { group = "com.cloudant", name = "cloudant-client", version.ref = "cloudant-client" }
 commons-csv = { group = "org.apache.commons", name = "commons-csv", version.ref = "commons-csv" }
