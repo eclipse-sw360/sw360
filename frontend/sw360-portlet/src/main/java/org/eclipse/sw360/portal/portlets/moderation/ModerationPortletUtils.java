@@ -30,12 +30,11 @@ import org.eclipse.sw360.portal.common.CustomFieldHelper;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.model.Layout;
-import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
-import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 
 import static java.lang.Integer.parseInt;
 import static org.eclipse.sw360.portal.common.PortalConstants.CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT;
@@ -185,9 +184,8 @@ public class ModerationPortletUtils {
     }
 
     private static LiferayPortletURL getProjectPortletUrl(PortletRequest request, String projectId) {
-        Portlet portlet = PortletLocalServiceUtil.getPortletById(PortalConstants.PROJECT_PORTLET_NAME);
-        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portlet.getCompanyId()).stream()
-                .filter(l -> ("/" + PortalConstants.PROJECTS.toLowerCase()).equals(l.getFriendlyURL())).findFirst();
+        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(QueryUtil.ALL_POS, QueryUtil.ALL_POS).stream()
+            .filter(l -> ("/projects").equals(l.getFriendlyURL())).findFirst();
         if (layout.isPresent()) {
             long plId = layout.get().getPlid();
             LiferayPortletURL projectUrl = PortletURLFactoryUtil.create(request, PortalConstants.PROJECT_PORTLET_NAME, plId, PortletRequest.RENDER_PHASE);

@@ -10,12 +10,11 @@
 package org.eclipse.sw360.portal.portlets.projects;
 
 import com.google.common.collect.*;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.model.Layout;
-import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
-import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -505,8 +504,7 @@ public class ProjectPortletUtils {
     }
 
     public static String createVulnerabilityFriendlyUrl(ResourceRequest request) {
-        Portlet portlet = PortletLocalServiceUtil.getPortletById(PortalConstants.VULNERABILITIES_PORTLET_NAME);
-        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portlet.getCompanyId()).stream()
+        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(QueryUtil.ALL_POS, QueryUtil.ALL_POS).stream()
                 .filter(l -> ("/vulnerabilities").equals(l.getFriendlyURL())).findFirst();
         if (layout.isPresent()) {
             long plId = layout.get().getPlid();
@@ -521,8 +519,7 @@ public class ProjectPortletUtils {
     }
 
     public static String createProjectPortletUrlWithViewSizeFriendlyUrl(RenderRequest request, String projectId) {
-        Portlet portlet = PortletLocalServiceUtil.getPortletById(PortalConstants.PROJECT_PORTLET_NAME);
-        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portlet.getCompanyId()).stream()
+        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(QueryUtil.ALL_POS, QueryUtil.ALL_POS).stream()
                 .filter(l -> ("/projects").equals(l.getFriendlyURL())).findFirst();
         if (layout.isPresent()) {
             long plId = layout.get().getPlid();
