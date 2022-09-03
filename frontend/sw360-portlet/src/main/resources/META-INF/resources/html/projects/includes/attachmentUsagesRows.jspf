@@ -109,7 +109,7 @@
                             }
                         </script>
                         </core_rt:if>
-                        <core_rt:if test="${attachment.attachmentType eq 'SOURCE'}">
+                        <core_rt:if test="${attachment.attachmentType eq 'SOURCE' or attachment.attachmentType eq 'SOURCE_SELF'}">
                         <script>
                             parId = "${releaseLink.nodeId}",
                             $tr = $('tr[data-tt-id='+parId+']');
