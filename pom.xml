@@ -50,11 +50,22 @@
         <patchlevel>0-SNAPSHOT</patchlevel>
 
         <!-- Build version properties -->
-        <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
-        <maven-source-plugin.version>2.4</maven-source-plugin.version>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- Plugin version properties -->
+        <bnd-maven-plugin.version>6.3.1</bnd-maven-plugin.version>
+        <bnd.aQute.bndlib.version>6.3.1</bnd.aQute.bndlib.version>
+        <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
+        <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
+        <maven-war-plugin.version>3.3.2</maven-war-plugin.version>
+        <maven-bundle-plugin.version>5.1.8</maven-bundle-plugin.version>
+        <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
+        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
+        <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
+        <versions-maven-plugin.version>2.11.0</versions-maven-plugin.version>
 
         <!-- Dependencies version properties -->
         <byte-buddy.version>1.12.13</byte-buddy.version>
@@ -471,51 +482,13 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.10</version>
-                    <executions>
-                        <execution>
-                            <id>add-build-configuration-resources</id>
-                            <phase>generate-resources</phase>
-                            <goals>
-                                <goal>unpack</goal>
-                            </goals>
-                            <configuration>
-                                <artifactItems combine.children="append">
-                                    <artifactItem>
-                                        <groupId>org.eclipse.sw360</groupId>
-                                        <artifactId>build-configuration</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>jar</type>
-                                        <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                    </artifactItem>
-                                </artifactItems>
-                            </configuration>
-                        </execution>
-                        <execution>
-                            <id>add-build-configuration-test-resources</id>
-                            <phase>generate-test-resources</phase>
-                            <goals>
-                                <goal>unpack</goal>
-                            </goals>
-                            <configuration>
-                                <artifactItems combine.children="append">
-                                    <artifactItem>
-                                        <groupId>org.eclipse.sw360</groupId>
-                                        <artifactId>build-configuration</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>test-jar</type>
-                                        <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
-                                    </artifactItem>
-                                </artifactItems>
-                            </configuration>
-                        </execution>
-                    </executions>
+                    <version>${maven-dependency-plugin.version}</version>
                 </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.7</version>
+                    <version>${maven-resources-plugin.version}</version>
                     <configuration>
                         <overwrite>true</overwrite>
                     </configuration>
@@ -530,7 +503,7 @@
                 <plugin>
                     <groupId>biz.aQute.bnd</groupId>
                     <artifactId>bnd-maven-plugin</artifactId>
-                    <version>3.5.0</version>
+                    <version>${bnd-maven-plugin.version}</version>
                     <executions>
                         <execution>
                             <goals>
@@ -542,12 +515,12 @@
                         <dependency>
                             <groupId>biz.aQute.bnd</groupId>
                             <artifactId>biz.aQute.bndlib</artifactId>
-                            <version>3.5.0</version>
+                            <version>${bnd.aQute.bndlib.version}</version>
                         </dependency>
                         <dependency>
                             <groupId>com.liferay</groupId>
                             <artifactId>com.liferay.ant.bnd</artifactId>
-                            <version>2.0.50</version>
+                            <version>3.2.9</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -557,10 +530,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>11</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -587,7 +560,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
-                <version>2.2</version>
+                <version>${versions-maven-plugin.version}</version>
             </plugin>
             <plugin>
                 <artifactId>maven-scm-plugin</artifactId>

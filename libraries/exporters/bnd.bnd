@@ -32,17 +32,3 @@ Import-Package: \
 	org.eclipse.sw360.datahandler.*, \
 	org.xml.sax.*, \
 	org.w3c.dom
-
-# The following resources are not available as OSGI bundles and therefore will be directly included
-Include-Resource: \
-	META-INF/lib/org.apache.poi.poi.jar=poi-[0-9]*.jar;lib:=true, \
-	META-INF/lib/org.apache.poi.poi-ooxml.jar=poi-ooxml-[0-9]*.jar;lib:=true, \
-	META-INF/lib/org.apache.poi.poi-ooxml-schemas.jar=poi-ooxml-schemas-[0-9]*.jar;lib:=true, \
-	META-INF/lib/org.apache.xmlbeans.xmlbeans.jar=xmlbeans-[0-9]*.jar;lib:=true
-
-Bundle-Classpath: \
-	., \
-	META-INF/lib/org.apache.poi.poi.jar, \
-	META-INF/lib/org.apache.poi.poi-ooxml.jar, \
-	META-INF/lib/org.apache.poi.poi-ooxml-schemas.jar, \
-	META-INF/lib/org.apache.xmlbeans.xmlbeans.jar
