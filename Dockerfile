@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-FROM eclipse-temurin:11-jdk-jammy AS builder
+FROM eclipse-temurin:17-jdk-jammy AS builder
 
 # Set versiona as arguments
 ARG CLUCENE_VERSION
@@ -120,8 +120,9 @@ RUN --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
     cd /build/sw360 \
     && setup_maven_proxy \
     && mvn clean package \
-    -P deploy -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
-    -DfailIfNoTests=false \
+    -P deploy \
+    -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
+    -Dsurefire.failIfNoSpecifiedTests=false \
     -Dbase.deploy.dir=. \
     -Dliferay.deploy.dir=/sw360_deploy \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
@@ -131,7 +132,7 @@ RUN --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
 #--------------------------------------------------------------------------------------------------
 # Runtime image
 # We need use JDK, JRE is not enough as Liferay do runtime changes and require javac
-FROM eclipse-temurin:11-jdk-jammy
+FROM eclipse-temurin:17-jdk-jammy
 
 WORKDIR /app/
 
@@ -140,6 +141,10 @@ ARG LIFERAY_SOURCE
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
+
+RUN echo $LANG > /etc/locale.gen \
+    && locale-gen en_US.UTF-8 \
+    && update-locale LANG=en_US.UTF-8
 
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \

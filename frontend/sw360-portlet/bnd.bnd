@@ -85,18 +85,5 @@ Conditional-Package: \
 	org.apache.taglibs.*, \
 	org.springframework.security.crypto.bcrypt
 
-Include-Resource: \
-	@requirejs-bower-[0-9]*.jar, \
-	@jqueryui-[0-9]*.jar, \
-	@jquery-treetable-[0-9]*.jar, \
-	@jquery-validation-[0-9]*.jar, \
-	@dist-datatables-[0-9]*.jar, \
-	@datatables.net-bs4-[0-9]*.jar, \
-	@dist-datatables-buttons-[0-9]*.jar, \
-	@dist-datatables-select-[0-9]*.jar, \
-	@dist-datatables-select-bootstrap4-[0-9]*.jar, \
-	@datatables-plugins-[0-9]*.jar, \
-	@resumable.js-[0-9]*.jar
-
 Bundle-Classpath: \
 	.

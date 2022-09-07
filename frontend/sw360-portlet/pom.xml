@@ -32,11 +32,6 @@
         <jquery.treetable.version>3.2.0</jquery.treetable.version>
         <jquery.validation.version>1.19.0</jquery.validation.version>
 
-        <liferay.portal.kernel.version>8.1.0</liferay.portal.kernel.version>
-        <liferay.util.bridges.version>7.0.3</liferay.util.bridges.version>
-        <liferay.util.taglib.version> 8.4.8</liferay.util.taglib.version>
-        <liferay.util.java.version>5.0.5</liferay.util.java.version>
-
         <require.js.version>2.3.6</require.js.version>
 
         <resumable.js.version>1.1.0</resumable.js.version>
@@ -120,7 +115,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
                 <configuration>
                     <archive>
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
@@ -189,6 +183,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>com.liferay</groupId>
+            <artifactId>com.liferay.petra.function</artifactId>
+            <version>${liferay.petra.function.version}</version>
+        </dependency>
+        <dependency>
             <groupId>javax.portlet</groupId>
             <artifactId>portlet-api</artifactId>
             <version>3.0.1</version>
@@ -218,6 +217,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
+            <version>1.9.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>

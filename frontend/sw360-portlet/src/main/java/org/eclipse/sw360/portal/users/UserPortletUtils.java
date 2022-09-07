@@ -168,13 +168,11 @@ public class UserPortletUtils {
                     defaultUser.getUserId()/*creator*/,
                     companyId,
                     false,/*autoPassword*/
-                    password,
-                    password,
+                    password,/*password1*/
+                    password,/*password2*/
                     false,/*autoScreenName*/
-                    externalId,
+                    "",/*screenName*/
                     emailAddress,
-                    0/*facebookId*/,
-                    externalId/*openId*/,
                     defaultUser.getLocale(),
                     firstName,
                     ""/*middleName*/,
