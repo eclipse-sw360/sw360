@@ -106,8 +106,8 @@
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'modules/autocomplete', 'modules/dialog', 'bridges/datatables', 'utils/render'], function($, autocomplete, dialog, datatables, render) {
-
+    require(['jquery', 'modules/autocomplete', 'modules/dialog', 'bridges/datatables', 'utils/render', 'modules/bannerMessage'], function($, autocomplete, dialog, datatables, render, bannerMessage) {
+        bannerMessage.portletLoad();
         createSearchTable();
 
         $('#keyword-search button[data-action="deselect"]').on("click", function() {

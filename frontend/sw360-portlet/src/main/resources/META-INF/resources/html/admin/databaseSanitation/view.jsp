@@ -55,7 +55,8 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'bridges/datatables' ], function($, datatables) {
+    require(['jquery', 'bridges/datatables', 'modules/bannerMessage' ], function($, datatables, bannerMessage) {
+        bannerMessage.portletLoad();
         $('.portlet-toolbar button[data-action="search-duplicates"]').on("click", function() {
             var $container = $('#duplicateSearch'),
                 $tables = $container.find('div[data-type="tables"]'),

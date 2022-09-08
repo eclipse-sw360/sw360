@@ -147,7 +147,8 @@
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['modules/validation' ], function(validation) {
+    require(['modules/validation', 'modules/bannerMessage' ], function(validation, bannerMessage) {
+        bannerMessage.portletLoad();
         validation.enableForm('form[name="uploadForm"]');
         validation.enableForm('form[name="uploadAttachmentsForm"]');
         validation.enableForm('form[name="uploadRelaseLinksForm"]');

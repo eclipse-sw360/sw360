@@ -90,7 +90,8 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'utils/includes/quickfilter', 'bridges/datatables'], function($, quickfilter, datatables) {
+        require(['jquery', 'utils/includes/quickfilter', 'bridges/datatables', 'modules/bannerMessage'], function($, quickfilter, datatables, bannerMessage) {
+            bannerMessage.portletLoad();
             var eccInfoTable;
 
             // initializing

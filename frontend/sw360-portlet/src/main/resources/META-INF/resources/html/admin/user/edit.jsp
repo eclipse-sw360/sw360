@@ -255,7 +255,8 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
 AUI().use('liferay-portlet-url', function () {
-require(['jquery', 'modules/dialog', 'modules/validation', 'bridges/jquery-ui' ], function($, dialog, validation) {
+require(['jquery', 'modules/dialog', 'modules/validation', 'modules/bannerMessage', 'bridges/jquery-ui' ], function($, dialog, validation, bannerMessage) {
+    bannerMessage.portletLoad();
     document.title = $("<span></span>").html("<sw360:UserName user="${userObj}"/> - " + document.title).text();
 
     validation.enableForm('#userEditForm');

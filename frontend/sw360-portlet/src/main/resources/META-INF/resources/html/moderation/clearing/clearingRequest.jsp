@@ -419,7 +419,8 @@
 </core_rt:if>
 </div>
 <script>
-require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'bridges/jquery-ui' ], function($, dialog, validation, button) {
+require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'modules/bannerMessage', 'bridges/jquery-ui' ], function($, dialog, validation, button, bannerMessage) {
+    bannerMessage.portletLoad();
     validation.enableForm('#updateCRForm');
     let pcdLimit = ${PreferredClearingDateLimit};
     var clearingTeamEmailEditable = $("#CLEARING_TEAM");

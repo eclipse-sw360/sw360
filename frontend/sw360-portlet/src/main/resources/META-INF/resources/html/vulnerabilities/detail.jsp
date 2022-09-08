@@ -52,7 +52,8 @@
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'modules/listgroup'], function($, listgroup) {
+    require(['jquery', 'modules/listgroup', 'modules/bannerMessage'], function($, listgroup, bannerMessage) {
+        bannerMessage.portletLoad();
         listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');
     });
 </script>
