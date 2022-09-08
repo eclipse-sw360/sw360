@@ -11,6 +11,8 @@
 package org.eclipse.sw360.clients.rest;
 
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTO;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTOList;
 import org.eclipse.sw360.http.utils.FailedRequestException;
 import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.http.utils.HttpUtils;
@@ -125,8 +127,8 @@ public class SW360ClientIT extends AbstractMockServerTest {
      * @return the converted JSON data received from the server
      * @throws IOException if an error occurs
      */
-    private SW360ProjectList whenClientInvokedSuccessfully() throws IOException {
-        return HttpUtils.waitFor(whenClientInvoked());
+    private SW360ProjectDTOList whenClientInvokedSuccessfully() throws IOException {
+        return HttpUtils.waitFor(whenClientInvokedDTOList());
     }
 
     /**
@@ -134,8 +136,8 @@ public class SW360ClientIT extends AbstractMockServerTest {
      *
      * @param projectList the project list returned by a request
      */
-    private void thenCorrectResultsShouldHaveBeenRetrieved(SW360ProjectList projectList) {
-        List<SW360Project> projects = projectList.getEmbedded().getProjects();
+    private void thenCorrectResultsShouldHaveBeenRetrieved(SW360ProjectDTOList projectList) {
+        List<SW360ProjectDTO> projects = projectList.getEmbedded().getProjects();
         if (RUN_REST_INTEGRATION_TEST) {
             assertThat(projects).isNotNull();
         } else {
@@ -149,12 +151,12 @@ public class SW360ClientIT extends AbstractMockServerTest {
      *
      * @param projects the list with projects to be checked
      */
-    private static void checkTestProjects(List<SW360Project> projects) {
+    private static void checkTestProjects(List<SW360ProjectDTO> projects) {
         String[] expectedProjects = {
                 "Project_Foo", "Project_Bar", "Project_other", "Project_test"
         };
         List<String> actualProjectNames = projects.stream()
-                .map(SW360Project::getName)
+                .map(SW360ProjectDTO::getName)
                 .collect(Collectors.toList());
         assertThat(actualProjectNames).containsExactly(expectedProjects);
     }
@@ -225,7 +227,7 @@ public class SW360ClientIT extends AbstractMockServerTest {
         
         givenAccessTokenAvailable();
 
-        SW360ProjectList projectList = whenClientInvokedSuccessfully();
+        SW360ProjectDTOList projectList = whenClientInvokedSuccessfully();
 
         thenCorrectResultsShouldHaveBeenRetrieved(projectList);
     }
@@ -257,7 +259,7 @@ public class SW360ClientIT extends AbstractMockServerTest {
                         .withBodyFile("all_projects.json")));
         givenExpiredAccessToken(expiredToken);
 
-        SW360ProjectList projectList = whenClientInvokedSuccessfully();
+        SW360ProjectDTOList projectList = whenClientInvokedSuccessfully();
 
         thenCorrectResultsShouldHaveBeenRetrieved(projectList);
         thenTokenIsInvalidated(expiredToken);
@@ -283,5 +285,13 @@ public class SW360ClientIT extends AbstractMockServerTest {
             thenTokenIsInvalidated(ACCESS_TOKEN.getToken());
             assertThat(wireMockRule.getAllServeEvents()).hasSize(2);
         }
+    }
+
+    private CompletableFuture<SW360ProjectDTOList> whenClientInvokedDTOList() {
+        String endpointUrl = client.resourceUrl(StringUtils.stripStart(ENDPOINT, "/"));
+        if (RUN_REST_INTEGRATION_TEST) {
+            endpointUrl = client.resourceUrl();
+        }
+        return client.executeJsonRequest(HttpUtils.get(endpointUrl), SW360ProjectDTOList.class, TAG);
     }
 }

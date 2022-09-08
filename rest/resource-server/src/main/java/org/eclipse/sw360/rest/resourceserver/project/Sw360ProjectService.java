@@ -12,6 +12,10 @@
 
 package org.eclipse.sw360.rest.resourceserver.project;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -38,6 +42,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLinkJSON;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
@@ -190,15 +196,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         String cyclicLinkedProjectPath = null;
         rch.checkForCyclicOrInvalidDependencies(sw360ProjectClient, project, sw360User);
 
-        // TODO: Move this logic to backend
-        if (project.getReleaseIdToUsage() != null) {
-            for (String releaseId : project.getReleaseIdToUsage().keySet()) {
-                if (isNullEmptyOrWhitespace(releaseId)) {
-                    throw new HttpMessageNotReadableException("Release Id can't be empty");
-                }
-            }
-        }
-
         if (project.getVendor() != null && project.getVendorId() == null) {
             project.setVendorId(project.getVendor().getId());
         }
@@ -259,41 +256,21 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return getAllRequiredProjects(projectData, sw360User);
     }
 
-    public Set<String> getReleaseIds(String projectId, User sw360User, String transitive) throws TException {
-        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        if (Boolean.parseBoolean(transitive)) {
-            List<ReleaseClearingStatusData> releaseClearingStatusData = sw360ProjectClient.getReleaseClearingStatuses(projectId, sw360User);
-            return releaseClearingStatusData.stream().map(r -> r.release.getId()).collect(Collectors.toSet());
-        } else {
-            final Project project = getProjectForUserById(projectId, sw360User);
-            if (project.getReleaseIdToUsage() == null) {
-                return new HashSet<String>();
-            }
-            return project.getReleaseIdToUsage().keySet();
-        }
-    }
-
-    public void addEmbeddedlinkedRelease(Release sw360Release, User sw360User, HalResource<Release> releaseResource,
-            Sw360ReleaseService releaseService, Set<String> releaseIdsInBranch) throws TException {
-        releaseIdsInBranch.add(sw360Release.getId());
-        Map<String, ReleaseRelationship> releaseIdToRelationship = sw360Release.getReleaseIdToRelationship();
-        if (releaseIdToRelationship != null) {
-            releaseIdToRelationship.keySet().forEach(linkedReleaseId -> wrapTException(() -> {
-                if (releaseIdsInBranch.contains(linkedReleaseId)) {
-                    return;
-                }
-                Release linkedRelease = releaseService.getReleaseForUserById(linkedReleaseId, sw360User);
+    public void addEmbeddedlinkedRelease(ReleaseLinkJSON sw360Release, User sw360User, HalResource<Release> releaseResource,
+                                         Sw360ReleaseService releaseService) throws TException {
+        List<ReleaseLinkJSON> releaseInRelationShip = sw360Release.getReleaseLink();
+        if (releaseInRelationShip != null) {
+            releaseInRelationShip.forEach(release -> wrapTException(() -> {
+                Release linkedRelease = releaseService.getReleaseForUserById(release.getReleaseId(), sw360User);
                 Release embeddedLinkedRelease = rch.convertToEmbeddedRelease(linkedRelease);
                 HalResource<Release> halLinkedRelease = new HalResource<>(embeddedLinkedRelease);
                 Link releaseLink = linkTo(ReleaseController.class)
                         .slash("api/releases/" + embeddedLinkedRelease.getId()).withSelfRel();
                 halLinkedRelease.add(releaseLink);
-                addEmbeddedlinkedRelease(linkedRelease, sw360User, halLinkedRelease, releaseService,
-                        releaseIdsInBranch);
+                addEmbeddedlinkedRelease(release, sw360User, halLinkedRelease, releaseService);
                 releaseResource.addEmbeddedResource("sw360:releases", halLinkedRelease);
             }));
         }
-        releaseIdsInBranch.remove(sw360Release.getId());
     }
 
     @Override
@@ -338,77 +315,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     protected List<ProjectLink> createLinkedProjects(Project project,
             Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep, User user) {
         final Collection<ProjectLink> linkedProjects = SW360Utils
-                .flattenProjectLinkTree(SW360Utils.getLinkedProjects(project, deep, new ThriftClients(), log, user));
+                .flattenProjectLinkTree(SW360Utils.getLinkedProjectsWithAllReleases(project, deep, new ThriftClients(), log, user));
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
-    }
-
-    public Set<Release> getReleasesFromProjectIds(List<String> projectIds, String transitive, final User sw360User, Sw360ReleaseService releaseService) {
-        final List<Callable<List<Release>>> callableTasksToGetReleases = new ArrayList<Callable<List<Release>>>();
-
-        projectIds.stream().forEach(id -> {
-            Callable<List<Release>> getReleasesByProjectId = () -> {
-                final Set<String> releaseIds = getReleaseIds(id, sw360User, transitive);
-
-                List<Release> releases = releaseIds.stream().map(relId -> wrapTException(() -> {
-                    final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
-                    return sw360Release;
-                })).collect(Collectors.toList());
-                return releases;
-            };
-            callableTasksToGetReleases.add(getReleasesByProjectId);
-        });
-
-        List<Future<List<Release>>> releasesFuture = new ArrayList<Future<List<Release>>>();
-        try {
-            releasesFuture = releaseExecutor.invokeAll(callableTasksToGetReleases);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Error getting releases: " + e.getMessage());
-        }
-
-        List<List<Release>> listOfreleases = releasesFuture.stream().map(fut -> {
-            List<Release> rels = new ArrayList<Release>();
-            try {
-                rels = fut.get();
-            } catch (InterruptedException | ExecutionException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof ResourceNotFoundException) {
-                    throw (ResourceNotFoundException) cause;
-                }
-
-                if (cause instanceof AccessDeniedException) {
-                    throw (AccessDeniedException) cause;
-                }
-                throw new RuntimeException("Error getting releases: " + e.getMessage());
-            }
-            return rels;
-        }).collect(Collectors.toList());
-
-        final Set<Release> relList = new HashSet<Release>();
-        listOfreleases.stream().forEach(listOfRel -> {
-            for(Release rel : listOfRel) {
-                relList.add(rel);
-            }
-        });
-        return relList;
-    }
-
-    public ProjectReleaseRelationship updateProjectReleaseRelationship(
-            Map<String, ProjectReleaseRelationship> releaseIdToUsage,
-            ProjectReleaseRelationship requestBodyProjectReleaseRelationship, String releaseId) {
-        if (!CommonUtils.isNullOrEmptyMap(releaseIdToUsage)) {
-            Optional<Entry<String, ProjectReleaseRelationship>> actualProjectReleaseRelationshipEntry = releaseIdToUsage
-                    .entrySet().stream().filter(entry -> CommonUtils.isNotNullEmptyOrWhitespace(entry.getKey())
-                            && entry.getKey().equals(releaseId))
-                    .findFirst();
-            if (actualProjectReleaseRelationshipEntry.isPresent()) {
-                ProjectReleaseRelationship actualProjectReleaseRelationship = actualProjectReleaseRelationshipEntry
-                        .get().getValue();
-                rch.updateProjectReleaseRelationship(actualProjectReleaseRelationship,
-                        requestBodyProjectReleaseRelationship);
-                return actualProjectReleaseRelationship;
-            }
-        }
-        throw new ResourceNotFoundException("Requested Release Not Found");
     }
 
     @PreDestroy
@@ -445,5 +353,145 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         }
         return listOfProjects;
+    }
+
+    public List<ReleaseLinkJSON> getReleasesLinkDirectlyByProjectId(String projectId, User sw360User, boolean transitive) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        Project sw360Project = sw360ProjectClient.getProjectById(projectId, sw360User);
+        List<ReleaseLinkJSON> releaseLinkedDirectly = new ArrayList<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        if (sw360Project.getReleaseRelationNetwork() != null) {
+            try {
+                List<ReleaseLinkJSON> releaseLinkJSONS = objectMapper.readValue(sw360Project.getReleaseRelationNetwork(), new TypeReference<>() {
+                });
+                releaseLinkedDirectly.addAll(releaseLinkJSONS);
+                if(transitive) {
+                    if(sw360Project.getLinkedProjects() != null) {
+                        List<String> subProjectIds = sw360Project.getLinkedProjects().keySet().stream().collect(Collectors.toList());
+                        subProjectIds.forEach((proId) -> {
+                            try {
+                                releaseLinkedDirectly.addAll(getReleasesLinkDirectlyByProjectId(proId, sw360User, transitive));
+                            } catch (TException e) {
+                                log.error("Error when fetch Project " + proId);
+                            }
+                        });
+                    }
+                }
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage());
+            }
+        }
+        return releaseLinkedDirectly;
+    }
+
+    public List<ReleaseLinkJSON> getReleasesInDependencyNetworkFromProjectIds(List<String> projectIds, final User sw360User, boolean transitive) {
+        List<ReleaseLinkJSON> releasesLinked = new ArrayList<>();
+
+        projectIds.forEach(id -> {
+            try {
+                releasesLinked.addAll(getReleasesLinkDirectlyByProjectId(id, sw360User, transitive));
+            } catch (TException e) {
+                log.error("Error when fetch Project " + id);
+            }
+        });
+
+        return releasesLinked;
+    }
+
+    public Set<String> getReleasesIdByProjectId(String projectId, User sw360User, String transitive) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        Project sw360Project = sw360ProjectClient.getProjectById(projectId, sw360User);
+        Set<String> releaseIds = new HashSet<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        if (sw360Project.getReleaseRelationNetwork() != null) {
+            try {
+                List<ReleaseLinkJSON> releaseLinkJSONS = objectMapper.readValue(sw360Project.getReleaseRelationNetwork(), new TypeReference<>() {
+                });
+                if (!Boolean.parseBoolean(transitive)) {
+                    releaseIds.addAll(releaseLinkJSONS.stream()
+                            .map(ReleaseLinkJSON::getReleaseId)
+                            .collect(Collectors.toSet()));
+                } else {
+                    for (ReleaseLinkJSON release : releaseLinkJSONS) {
+                        getReleaseIdInDependency(release, releaseIds);
+                    }
+                    if(sw360Project.getLinkedProjects() != null) {
+                        List<String> subProjectIds = sw360Project.getLinkedProjects().keySet().stream().collect(Collectors.toList());
+                        subProjectIds.forEach((proId) -> {
+                            try {
+                                releaseIds.addAll(getReleasesIdByProjectId(proId, sw360User, transitive));
+                            } catch (TException e) {
+                                log.error("Error when fetch project: " + proId);
+                            }
+                        });
+                    }
+                }
+
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage());
+            }
+        }
+        return releaseIds;
+    }
+    private Set<String> getReleaseIdInDependency(ReleaseLinkJSON node, Set<String> flatList) {
+
+        if (node != null) {
+            flatList.add(node.getReleaseId());
+        }
+
+        List<ReleaseLinkJSON> children = node.getReleaseLink();
+        for (ReleaseLinkJSON child : children) {
+            if(child.getReleaseLink() != null) {
+                getReleaseIdInDependency(child, flatList);
+            } else {
+                flatList.add(node.getReleaseId());
+            }
+        }
+
+        return flatList;
+    }
+
+    public List<Release> getDirectDependenciesOfReleaseInNetwork(Project project, String releaseId, User sw360User) throws TException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ComponentService.Iface releaseClient = getThriftComponentClient();
+        Set<String> dependenciesId = new HashSet<>();
+        try {
+            List<ReleaseLinkJSON> dependencyNetwork = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+            });
+            for (ReleaseLinkJSON releaseNode : dependencyNetwork) {
+                if (releaseNode.getReleaseId().equals(releaseId)) {
+                    Set<String> subReleaseIds = releaseNode.getReleaseLink().stream().map(ReleaseLinkJSON::getReleaseId).collect(Collectors.toSet());
+                    dependenciesId.addAll(subReleaseIds);
+                } else {
+                    dependenciesId.addAll(getDependenciesOfSubNodeByReleaseId(releaseNode.getReleaseLink(), releaseId));
+                }
+            }
+        } catch (JsonProcessingException e) {
+            return Collections.emptyList();
+        }
+
+        List<Release> dependenceReleases = releaseClient.getReleasesById(dependenciesId, sw360User);
+        return dependenceReleases;
+    }
+
+    public Set<String> getDependenciesOfSubNodeByReleaseId(List<ReleaseLinkJSON> subNode, String releaseId) {
+        Set<String> dependenciesId = new HashSet<>();
+        for (ReleaseLinkJSON releaseNode : subNode) {
+            if (releaseNode.getReleaseId().equals(releaseId)) {
+                Set<String> subReleaseIds = releaseNode.getReleaseLink().stream().map(ReleaseLinkJSON::getReleaseId).collect(Collectors.toSet());
+                dependenciesId.addAll(subReleaseIds);
+            } else {
+                dependenciesId.addAll(getDependenciesOfSubNodeByReleaseId(releaseNode.getReleaseLink(), releaseId));
+            }
+        }
+        return dependenciesId;
+    }
+
+    public ComponentService.Iface getThriftComponentClient() {
+        ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
+        return componentClient;
     }
 }

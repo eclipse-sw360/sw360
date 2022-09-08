@@ -374,7 +374,14 @@ struct ReleaseLink{
     101: optional set<string> licenseNames,
     102: optional string comment,
     103: optional set<string> otherLicenseIds,
-    104: optional bool accessible = true
+    104: optional bool accessible = true,
+
+    105: optional list<Release> releaseWithSameComponent,
+    106: optional i32 layer,
+    107: optional i32 index,
+    108: optional string defaultValue,
+    109: optional string projectId,
+    110: optional MainlineState releaseMainLineState
 }
 
 struct ReleaseClearingStatusData {
@@ -383,6 +390,16 @@ struct ReleaseClearingStatusData {
     3: optional string projectNames, // comma separated list of project names for display; possibly abbreviated
     4: optional string mainlineStates, // comma separated list of mainline states for display; possibly abbreviated
     5: optional bool accessible = true
+}
+
+struct ReleaseLinkJSON {
+     1: required string releaseId,
+     3: optional list<ReleaseLinkJSON> releaseLink,
+     4: optional string releaseRelationship,
+     5: optional string mainlineState,
+     10: optional string comment,
+     12: optional string createOn,
+     13: optional string createBy
 }
 
 service ComponentService {
@@ -857,4 +874,19 @@ service ComponentService {
     * Send email to the user once spreadsheet export completed
     */
     void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
+
+    /**
+    * Gets list releases with list release id
+    */
+    list<Release> getReleasesByListIds(1: list<string> ids, 2:User user)
+
+    /**
+    * Get releases dependency network of release
+    */
+    list<ReleaseLinkJSON> getReleaseRelationNetworkOfRelease(1: Release release, 2:User user)
+
+    /**
+    * Check accessible of release
+    */
+    bool isReleaseActionAllowed(1: Release release, 2:User user, 3:RequestedAction action)
 }

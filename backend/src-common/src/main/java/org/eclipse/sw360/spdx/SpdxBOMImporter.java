@@ -11,8 +11,11 @@
  */
 package org.eclipse.sw360.spdx;
 
+import com.google.gson.Gson;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -21,12 +24,14 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLinkJSON;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.spdx.library.model.enumerations.RelationshipType;
 import org.spdx.library.model.*;
 import org.spdx.library.InvalidSPDXAnalysisException;
 import org.spdx.tools.InvalidFileNameException;
 import org.spdx.tools.SpdxToolsHelper;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -85,33 +90,33 @@ public class SpdxBOMImporter {
         return requestPreparation;
     }
 
-    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent)
-            throws SW360Exception, IOException {
-        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE);
-    }
-
-    private SpdxDocument openAsSpdx(File file){
+    private SpdxDocument openAsSpdx(File file) {
         try {
             log.info("Read file: " + file.getName());
             return SpdxToolsHelper.deserializeDocument(file);
         } catch (InvalidSPDXAnalysisException | IOException | InvalidFileNameException e) {
-            log.error("Error read file " + file.getName() + " to SpdxDocument:" + e.getMessage() );
+            log.error("Error read file " + file.getName() + " to SpdxDocument:" + e.getMessage());
             return null;
         }
     }
 
-    public RequestSummary importSpdxBOMAsProject(InputStream inputStream, AttachmentContent attachmentContent)
-            throws SW360Exception, IOException {
-        return importSpdxBOM(attachmentContent, SW360Constants.TYPE_PROJECT , inputStream);
+    private RequestSummary importSpdxBOM(AttachmentContent attachmentContent, String type, InputStream inputStream, User user)
+            throws TException, IOException, InvalidSPDXAnalysisException {
+        return importSpdxBOM(inputStream, attachmentContent, type, user);
     }
 
-    private RequestSummary importSpdxBOM( AttachmentContent attachmentContent, String type, InputStream inputStream)
-            throws SW360Exception, IOException {
-        return importSpdxBOM(inputStream, attachmentContent, type);
+    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent, User user)
+            throws InvalidSPDXAnalysisException, TException, IOException {
+        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE, user);
     }
 
-    private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type)
-            throws SW360Exception, IOException {
+    public RequestSummary importSpdxBOMAsProject(InputStream inputStream, AttachmentContent attachmentContent, User user)
+            throws InvalidSPDXAnalysisException, TException, IOException {
+        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_PROJECT, user);
+    }
+
+    private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type, User user)
+            throws  TException, IOException {
         final RequestSummary requestSummary = new RequestSummary();
         List<SpdxElement> describedPackages = new ArrayList<>();
         String fileType = getFileType(attachmentContent.getFilename());
@@ -142,12 +147,12 @@ public class SpdxBOMImporter {
                 return requestSummary;
             }
 
-            final SpdxPackage spdxElement = (SpdxPackage) packages.get(0);
+            final SpdxItem spdxItem = (SpdxItem) describedPackages.get(0);
             final Optional<SpdxBOMImporterSink.Response> response;
             if (SW360Constants.TYPE_PROJECT.equals(type)) {
-                response = importAsProject(spdxElement, attachmentContent);
+                response = importAsProject(spdxItem, attachmentContent, user);
             } else if (SW360Constants.TYPE_RELEASE.equals(type)) {
-                response = importAsRelease(spdxElement, attachmentContent);
+                response = importAsRelease(spdxItem, attachmentContent);
             } else {
                 throw new SW360Exception("Unsupported type=[" + type + "], can not import BOM");
             }
@@ -287,17 +292,21 @@ public class SpdxBOMImporter {
                 }));
     }
 
-
-    private Optional<SpdxBOMImporterSink.Response> importAsProject(SpdxElement spdxElement, AttachmentContent attachmentContent) throws SW360Exception, InvalidSPDXAnalysisException {
+    private Optional<SpdxBOMImporterSink.Response> importAsProject(SpdxElement spdxElement, AttachmentContent attachmentContent, User user) throws SW360Exception, InvalidSPDXAnalysisException {
         if (spdxElement instanceof SpdxPackage) {
             final SpdxPackage spdxPackage = (SpdxPackage) spdxElement;
-
             final Project project = creatProjectFromSpdxPackage(spdxPackage);
 
             final Relationship[] relationships = spdxPackage.getRelationships().toArray(new Relationship[spdxPackage.getRelationships().size()]);
-            List<SpdxBOMImporterSink.Response> releases = importAsReleases(relationships);
-            Map<String, ProjectReleaseRelationship> releaseIdToProjectRelationship = makeReleaseIdToProjectRelationship(releases);
-            project.setReleaseIdToUsage(releaseIdToProjectRelationship);
+            List<ReleaseLinkJSON> releaseLinkJSONS = getReleaseLinkJSONByRelationship(relationships, user);
+
+            List<SpdxBOMImporterSink.Response> releases = new ArrayList<>();
+            releaseLinkJSONS.forEach(releaseLinkJSON -> {
+                SpdxBOMImporterSink.Response response = new SpdxBOMImporterSink.Response(releaseLinkJSON.releaseId);
+                response.setReleaseRelationship(ReleaseRelationship.valueOf(releaseLinkJSON.releaseRelationship));
+                releases.add(response);
+            });
+            project.setReleaseRelationNetwork(new Gson().toJson(releaseLinkJSONS));
 
             if(attachmentContent != null) {
                 Attachment attachment = makeAttachmentFromContent(attachmentContent);
@@ -333,5 +342,95 @@ public class SpdxBOMImporter {
             }
         }
         return ext;
+    }
+
+    private List<ReleaseLinkJSON> getReleaseLinkJSONByRelationship(Relationship[] relationships, User user){
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+        Arrays.stream(relationships).forEach(
+                relationship -> {
+                    try {
+                        SpdxElement relatedSpdxElement = relationship.getRelatedSpdxElement().get();
+                        SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
+
+                        Optional<SpdxBOMImporterSink.Response> response = importAsProjectRelease(relatedSpdxElement);
+                        releaseLinkJSONS.add(buildReleaseLinkJSONByRelationship(new ReleaseLinkJSON(
+                                response.get().getId()), spdxPackage.getRelationships().toArray(new Relationship[spdxPackage.getRelationships().size()]), user));
+                    } catch (SW360Exception | InvalidSPDXAnalysisException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
+        return releaseLinkJSONS;
+    }
+
+    private ReleaseLinkJSON buildReleaseLinkJSONByRelationship(ReleaseLinkJSON releaseLinkJSON,
+                                                               Relationship[] relationships, User user) throws SW360Exception, InvalidSPDXAnalysisException {
+        List<ReleaseLinkJSON> linkedReleasesJSON = new ArrayList<>();
+        releaseLinkJSON.setMainlineState(MainlineState.OPEN.toString());
+        releaseLinkJSON.setReleaseRelationship(ReleaseRelationship.CONTAINED.toString());
+        releaseLinkJSON.setComment("");
+        releaseLinkJSON.setCreateOn(SW360Utils.getCreatedOn());
+        releaseLinkJSON.setCreateBy(user.getEmail());
+
+        Map<RelationshipType, ReleaseRelationship> typeToSupplierMap = new HashMap<>();
+        typeToSupplierMap.put(RelationshipType.CONTAINS,  ReleaseRelationship.CONTAINED);
+
+        for (Relationship relationship : relationships) {
+            final RelationshipType relationshipType = relationship.getRelationshipType();
+            if(! typeToSupplierMap.keySet().contains(relationshipType)) {
+                log.debug("Unsupported RelationshipType: " + relationshipType.toString());
+                continue;
+            }
+            final SpdxElement relatedSpdxElement = relationship.getRelatedSpdxElement().get();
+            final SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
+
+            Optional<SpdxBOMImporterSink.Response> response = importAsProjectRelease(relatedSpdxElement);
+
+            ReleaseLinkJSON linkJSON = new ReleaseLinkJSON(response.get().getId());
+            linkJSON.setMainlineState(MainlineState.OPEN.toString());
+            linkJSON.setReleaseRelationship(ReleaseRelationship.CONTAINED.toString());
+            linkJSON.setComment("");
+            linkJSON.setCreateOn(SW360Utils.getCreatedOn());
+            linkJSON.setCreateBy(user.getEmail());
+            linkedReleasesJSON.add(buildReleaseLinkJSONByRelationship(linkJSON, spdxPackage.getRelationships().toArray(new Relationship[spdxPackage.getRelationships().size()]), user));
+        }
+        releaseLinkJSON.setReleaseLink(linkedReleasesJSON);
+
+        return releaseLinkJSON;
+    }
+
+    /**
+     * Import as project release
+     *
+     * @param relatedSpdxElement element related spdx
+     * @return response
+     * @throws SW360Exception exception throws when build response
+     */
+    private Optional<SpdxBOMImporterSink.Response> importAsProjectRelease(SpdxElement relatedSpdxElement) throws SW360Exception, InvalidSPDXAnalysisException {
+        return importAsProjectRelease(relatedSpdxElement, null);
+    }
+
+    private Optional<SpdxBOMImporterSink.Response> importAsProjectRelease(SpdxElement relatedSpdxElement, AttachmentContent attachmentContent) throws SW360Exception, InvalidSPDXAnalysisException {
+        if (relatedSpdxElement instanceof SpdxPackage) {
+            final SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
+
+            SpdxBOMImporterSink.Response component = importAsComponent(spdxPackage);
+            final String componentId = component.getId();
+
+            final Release release = createReleaseFromSpdxPackage(spdxPackage);
+            release.setComponentId(componentId);
+
+            if(attachmentContent != null) {
+                Attachment attachment = makeAttachmentFromContent(attachmentContent);
+                release.setAttachments(Collections.singleton(attachment));
+            }
+
+            final SpdxBOMImporterSink.Response response = sink.addRelease(release);
+            response.addChild(component);
+            return Optional.of(response);
+        } else {
+            log.debug("Unsupported SpdxElement: " + relatedSpdxElement.getClass().getCanonicalName());
+            return Optional.empty();
+        }
     }
 }

@@ -12,12 +12,14 @@ package org.eclipse.sw360.portal.portlets.components;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.gson.Gson;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -549,8 +551,22 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private void serveDeleteRelease(PortletRequest request, ResourceResponse response) throws IOException {
-        final RequestStatus requestStatus = ComponentPortletUtils.deleteRelease(request, log);
-        serveRequestStatus(request, response, requestStatus, "Problem removing release", log);
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
+        String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+        Set<String> releaseIdToSet = new HashSet<>();
+        releaseIdToSet.add(releaseId);
+        Set<Project> allProjects = new HashSet<>();
+        try {
+            allProjects.addAll(projectClient.getAll());
+        } catch (TException e) {
+            log.error(e.getMessage());
+        }
+        if (SW360Utils.getUsingProjectByReleaseIds(releaseIdToSet, null).size() > 0) {
+            serveRequestStatus(request, response, RequestStatus.IN_USE, "Problem removing release", log);
+        } else {
+            final RequestStatus requestStatus = ComponentPortletUtils.deleteRelease(request, log);
+            serveRequestStatus(request, response, requestStatus, "Problem removing release", log);
+        }
     }
 
     private void exportExcel(ResourceRequest request, ResourceResponse response) {
@@ -1601,24 +1617,24 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private void setUsingDocs(RenderRequest request, User user, ComponentService.Iface client, Set<String> releaseIds) {
-        Set<Project> usingProjects = null;
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         Set<Component> usingComponentsForComponent = null;
-        int allUsingProjectsCount = 0;
+        List<Project> usingProjectInDependencyNetwork;
 
         if (releaseIds != null && releaseIds.size() > 0) {
             try {
-                ProjectService.Iface projectClient = thriftClients.makeProjectClient();
-                usingProjects = projectClient.searchByReleaseIds(releaseIds, user);
-                allUsingProjectsCount = projectClient.getCountByReleaseIds(releaseIds);
                 usingComponentsForComponent = client.getUsingComponentsWithAccessibilityForComponent(releaseIds, user);
+                usingProjectInDependencyNetwork = SW360Utils.getUsingProjectByReleaseIds(releaseIds, user);
+                request.setAttribute(USING_PROJECTS, new HashSet<>(usingProjectInDependencyNetwork));
+                request.setAttribute(ALL_USING_PROJECTS_COUNT, SW360Utils.getUsingProjectByReleaseIds(releaseIds, null).size());
             } catch (TException e) {
                 log.error("Problem filling using docs", e);
             }
+        } else {
+            request.setAttribute(USING_PROJECTS, Collections.emptySet());
+            request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
         }
-
-        request.setAttribute(USING_PROJECTS, nullToEmptySet(usingProjects));
         request.setAttribute(USING_COMPONENTS, nullToEmptySet(usingComponentsForComponent));
-        request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectsCount);
     }
 
     private void prepareReleaseDetailView(RenderRequest request, RenderResponse response) throws PortletException {
@@ -1854,19 +1870,20 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
 
     private void setUsingDocs(RenderRequest request, String releaseId, User user, ComponentService.Iface client) throws TException {
+        ProjectService.Iface projectClient = thriftClients.makeProjectClient();
         if (releaseId != null) {
-            ProjectService.Iface projectClient = thriftClients.makeProjectClient();
-            Set<Project> usingProjects = projectClient.searchByReleaseId(releaseId, user);
-            request.setAttribute(USING_PROJECTS, nullToEmptySet(usingProjects));
-            int allUsingProjectsCount = projectClient.getCountByReleaseIds(Collections.singleton(releaseId));
-            request.setAttribute(ALL_USING_PROJECTS_COUNT, allUsingProjectsCount);
             final Set<Component> usingComponentsForRelease = client.getUsingComponentsWithAccessibilityForRelease(releaseId, user);
+            Set<String> releaseIdSet = new HashSet<>();
+            releaseIdSet.add(releaseId);
+            List<Project> usingProjectInDependencyNetwork = SW360Utils.getUsingProjectByReleaseIds(releaseIdSet, user);
             request.setAttribute(USING_COMPONENTS, nullToEmptySet(usingComponentsForRelease));
+            request.setAttribute(USING_PROJECTS, new HashSet<>(usingProjectInDependencyNetwork));
+            request.setAttribute(ALL_USING_PROJECTS_COUNT, SW360Utils.getUsingProjectByReleaseIds(releaseIdSet, null).size());
         } else {
-            request.setAttribute(USING_PROJECTS, Collections.emptySet());
-            request.setAttribute(USING_COMPONENTS, Collections.emptySet());
+            request.setAttribute(USING_PROJECTS,  Collections.emptySet());
             request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
         }
+        request.setAttribute(USING_COMPONENTS, Collections.emptySet());
     }
 
     private void addComponentBreadcrumb(RenderRequest request, RenderResponse response, Component component) {
@@ -2370,21 +2387,41 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         String projectId = request.getParameter(PortalConstants.PROJECT_ID);
         String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
 
+        ObjectMapper objectMapper = new ObjectMapper();
 
         try {
             log.debug("Link release [" + releaseId + "] to project [" + projectId + "]");
 
             ProjectService.Iface client = thriftClients.makeProjectClient();
+            ComponentService.Iface releaseClient = thriftClients.makeComponentClient();
             Project project = client.getProjectByIdForEdit(projectId, user);
 
-            project.putToReleaseIdToUsage(releaseId,
-                    new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
+            Release releaseById = releaseClient.getAccessibleReleaseById(releaseId, user);
+            ReleaseLinkJSON dependencyOfRelease = releaseClient.getReleaseRelationNetworkOfRelease(releaseById, user).get(0);
+
+            List<ReleaseLinkJSON> currentDependencyNetwork = new ArrayList<>();
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            if (project.getReleaseRelationNetwork() != null) {
+                currentDependencyNetwork = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseLinkJSON>>() {
+                });
+                if (currentDependencyNetwork.stream().map(ReleaseLinkJSON::getReleaseId).collect(Collectors.toList()).contains(releaseId)) {
+                    jsonObject.put("success", false);
+                } else {
+                    jsonObject.put("success", true);
+                    jsonObject.put("releaseId", releaseId);
+                    jsonObject.put("projectId", projectId);
+                    currentDependencyNetwork.add(dependencyOfRelease);
+                }
+            } else {
+                jsonObject.put("success", true);
+                jsonObject.put("releaseId", releaseId);
+                jsonObject.put("projectId", projectId);
+                currentDependencyNetwork = Collections.singletonList(dependencyOfRelease);
+            }
+
+            project.setReleaseRelationNetwork(new Gson().toJson(currentDependencyNetwork));
             client.updateProject(project, user);
 
-            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-            jsonObject.put("success", true);
-            jsonObject.put("releaseId", releaseId);
-            jsonObject.put("projectId", projectId);
             writeJSON(request, response, jsonObject);
         } catch (TException exception) {
             log.error("Cannot link release [" + releaseId + "] to project [" + projectId + "].");

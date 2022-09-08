@@ -16,7 +16,7 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-<%--<jsp:useBean id="parent_branch_id" class="java.lang.String" scope="request"/>--%>
+<%--<jsp:useBean id="network_parent_branch_id" class="java.lang.String" scope="request"/>--%>
 <%--These variables are used as a trick to allow referencing constant values in EL expressions below--%>
 <core_rt:set var="licenseInfoAttachmentTypes" value="<%=SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES%>"/>
 <core_rt:set var="sourceCodeAttachmentTypes" value="<%=SW360Constants.SOURCE_CODE_ATTACHMENT_TYPES%>"/>
@@ -35,7 +35,7 @@
     <core_rt:if test="${loop.index!=0}">
         <tr data-tt-id="${projectLink.nodeId}" data-tt-branch="true" data-tt-parentProjectPath="${parentProjectPath}"
             <%--attach children of the new root node to the existing node being expanded--%>
-            <core_rt:if test="${projectLink.parentNodeId == new_root_id}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
+            <core_rt:if test="${projectLink.parentNodeId == new_root_id}">data-tt-parent-id="${network_parent_branch_id}"</core_rt:if>
             <core_rt:if test="${projectLink.parentNodeId != new_root_id}">data-tt-parent-id="${projectLink.parentNodeId}"</core_rt:if>
         >
             <td>
@@ -59,7 +59,7 @@
         <core_rt:if test="${releaseLink.accessible}">
 
             <tr data-tt-id="${releaseLink.nodeId}"
-                <core_rt:if test="${loop.index==0 and not empty parent_branch_id}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
+                <core_rt:if test="${loop.index==0 and not empty network_parent_branch_id}">data-tt-parent-id="${network_parent_branch_id}"</core_rt:if>
                 <core_rt:if test="${loop.index!=0}">data-tt-parent-id="${projectLink.nodeId}"</core_rt:if>
             >
                 <td>
@@ -194,7 +194,7 @@
     <core_rt:forEach items="${projectLink.linkedReleases}" var="releaseLink" varStatus="releaseloop">
         <core_rt:if test="${not releaseLink.accessible}">
             <tr data-tt-id="releaseLinkRow${loop.count}_${releaseloop.count}"
-                <core_rt:if test="${loop.index==0 and not empty parent_branch_id}">data-tt-parent-id="${parent_branch_id}"</core_rt:if>
+                <core_rt:if test="${loop.index==0 and not empty network_parent_branch_id}">data-tt-parent-id="${network_parent_branch_id}"</core_rt:if>
                 <core_rt:if test="${loop.index!=0}">data-tt-parent-id="${projectLink.nodeId}"</core_rt:if>
             >
                 <td>

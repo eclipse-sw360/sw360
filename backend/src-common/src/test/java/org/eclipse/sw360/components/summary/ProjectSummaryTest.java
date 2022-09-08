@@ -66,9 +66,6 @@ public class ProjectSummaryTest {
                 case LINKED_PROJECTS:
                     project.linkedProjects = Collections.emptyMap();
                     break;
-                case RELEASE_ID_TO_USAGE:
-                    project.releaseIdToUsage = Collections.emptyMap();
-                    break;
                 case RELEASE_CLEARING_STATE_SUMMARY:
                     project.releaseClearingStateSummary = new ReleaseClearingStateSummary();
                     break;

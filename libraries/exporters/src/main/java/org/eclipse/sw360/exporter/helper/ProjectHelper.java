@@ -10,10 +10,17 @@
  */
 package org.eclipse.sw360.exporter.helper;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLinkJSON;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -66,7 +73,10 @@ public class ProjectHelper implements ExporterHelper<Project> {
     private SubTable makeRowsWithReleases(Project project) throws SW360Exception {
         List<Release> releases = getReleases(project);
         SubTable table = new SubTable();
-        Set<String> releaseIdsNotAvaialbleInDB = Sets.difference(nullToEmptyMap(project.getReleaseIdToUsage()).keySet(),
+        Map<String, ProjectReleaseRelationship> projectReleaseRelationship = getProjectReleationShipWithReleaseInNetwork(project);
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        Set<String> releaseIdsNotAvaialbleInDB = Sets.difference(nullToEmptyMap(projectReleaseRelationship).keySet(),
                 releases.stream().map(Release::getId).collect(Collectors.toSet()));
 
         if (releases.size() > 0) {
@@ -112,10 +122,6 @@ public class ProjectHelper implements ExporterHelper<Project> {
         if (project.isSet(field)) {
             Object fieldValue = project.getFieldValue(field);
             switch (field) {
-                case RELEASE_ID_TO_USAGE:
-                    ProjectReleaseRelationship inaccessibleRelationship = new ProjectReleaseRelationship();
-                    row.add(fieldValueAsString(putAccessibleReleaseNamesInMap(project.releaseIdToUsage, getReleases(project), user, inaccessibleRelationship)));
-                    break;
                 case LINKED_PROJECTS:
                     row.add(fieldValueAsString(putProjectNamesInMap(project.getLinkedProjects(), getProjects(project
                             .getLinkedProjects()
@@ -142,7 +148,7 @@ public class ProjectHelper implements ExporterHelper<Project> {
     }
 
     public List<Release> getReleases(Project project) throws SW360Exception {
-        return getReleases(nullToEmptyMap(project.getReleaseIdToUsage()).keySet());
+        return getReleases(nullToEmptyMap(getProjectReleationShipWithReleaseInNetwork(project)).keySet());
     }
     public List<Release> getReleases(Set<String> ids) throws SW360Exception {
         return releaseHelper.getReleases(ids);
@@ -168,4 +174,47 @@ public class ProjectHelper implements ExporterHelper<Project> {
     public void setPreloadedLinkedProjects(Map<String, Project> preloadedLinkedProjects) {
         this.preloadedLinkedProjects = preloadedLinkedProjects;
     }
+
+    private Map<String, ProjectReleaseRelationship> getProjectReleationShipWithReleaseInNetwork(Project project) {
+        Map<String, ProjectReleaseRelationship> projectReleaseRelationshipMap = new HashMap<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        List<ReleaseLinkJSON> releaseLinkJSONS = new ArrayList<>();
+        if (project.getReleaseRelationNetwork() != null) {
+            try {
+                releaseLinkJSONS = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<>() {
+                });
+                for (ReleaseLinkJSON release : releaseLinkJSONS) {
+                    projectReleaseRelationshipMap.putAll(flattenNetwork(release));
+                }
+                return projectReleaseRelationshipMap;
+            } catch (JsonProcessingException e) {
+                return Collections.emptyMap();
+            }
+        }
+        return Collections.emptyMap();
+    }
+
+    private Map<String, ProjectReleaseRelationship> flattenNetwork(ReleaseLinkJSON node) {
+        Map<String, ProjectReleaseRelationship> projectReleaseRelationshipMap = new HashMap<>();
+        if (node != null) {
+            ProjectReleaseRelationship prr = new ProjectReleaseRelationship();
+            prr.setComment(node.getComment());
+            prr.setCreatedOn(node.getCreateOn());
+            prr.setMainlineState(MainlineState.valueOf(node.getMainlineState()));
+            prr.setReleaseRelation(ReleaseRelationship.valueOf(node.getReleaseRelationship()));
+            projectReleaseRelationshipMap.put(node.getReleaseId(), prr);
+        }
+        if (!node.getReleaseLink().isEmpty()) {
+            List<ReleaseLinkJSON> children = node.getReleaseLink();
+            for (ReleaseLinkJSON child : children) {
+                if (child.getReleaseLink() != null || !child.getReleaseLink().isEmpty()) {
+                    projectReleaseRelationshipMap.putAll(flattenNetwork(child));
+                }
+            }
+        }
+        return projectReleaseRelationshipMap;
+    }
+
 }

@@ -17,6 +17,7 @@ import org.eclipse.sw360.clients.rest.resource.LinkObjects;
 import org.eclipse.sw360.clients.rest.resource.Self;
 import org.eclipse.sw360.clients.rest.resource.projects.ProjectSearchParams;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTO;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 import org.eclipse.sw360.clients.utils.FutureUtils;
@@ -46,7 +47,7 @@ class SW360ProjectClientAdapterAsyncImpl implements SW360ProjectClientAdapterAsy
     }
 
     @Override
-    public CompletableFuture<Optional<SW360Project>> getProjectByNameAndVersion(String projectName, String projectVersion) {
+    public CompletableFuture<Optional<SW360ProjectDTO>> getProjectByNameAndVersion(String projectName, String projectVersion) {
         ProjectSearchParams nameSearchParams = ProjectSearchParams.builder()
                 .withName(projectName)
                 .build();
@@ -57,17 +58,17 @@ class SW360ProjectClientAdapterAsyncImpl implements SW360ProjectClientAdapterAsy
     }
 
     @Override
-    public CompletableFuture<List<SW360Project>> search(ProjectSearchParams params) {
+    public CompletableFuture<List<SW360ProjectDTO>> search(ProjectSearchParams params) {
         return getProjectClient().search(params);
     }
 
     @Override
-    public CompletableFuture<SW360Project> createProject(SW360Project project) {
+    public CompletableFuture<SW360Project> createProject(SW360ProjectDTO project) {
         return validateProjectAndProcess(project, getProjectClient()::createProject);
     }
 
     @Override
-    public CompletableFuture<SW360Project> updateProject(SW360Project project) {
+    public CompletableFuture<SW360Project> updateProject(SW360ProjectDTO project) {
         return validateProjectAndProcess(project, getProjectClient()::updateProject);
     }
 
@@ -102,9 +103,9 @@ class SW360ProjectClientAdapterAsyncImpl implements SW360ProjectClientAdapterAsy
      * @param func    the processing function
      * @return the result of the processing function
      */
-    private static CompletableFuture<SW360Project> validateProjectAndProcess(SW360Project project,
-                                                                             Function<SW360Project, CompletableFuture<SW360Project>> func) {
-        if (!SW360ProjectAdapterUtils.isValidProject(project)) {
+    private static CompletableFuture<SW360Project> validateProjectAndProcess(SW360ProjectDTO project,
+                                                                             Function<SW360ProjectDTO, CompletableFuture<SW360Project>> func) {
+        if (!SW360ProjectAdapterUtils.isValidProjectDTO(project)) {
             Throwable exception = new SW360ClientException("Can not create invalid project with name=" +
                     project.getName() + " and version=" + project.getVersion());
             return FutureUtils.failedFuture(exception);

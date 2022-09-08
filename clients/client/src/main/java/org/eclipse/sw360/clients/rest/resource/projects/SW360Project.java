@@ -30,7 +30,7 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
     private String businessUnit;
     private String clearingTeam;
     private SW360Visibility visibility;
-    private Map<String, SW360ProjectReleaseRelationship> releaseIdToUsage;
+    private String releaseRelationNetwork;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getName() {
@@ -122,15 +122,13 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
         return this;
     }
 
-    public Map<String, SW360ProjectReleaseRelationship> getReleaseIdToUsage() {
-        if (this.releaseIdToUsage == null) {
-            this.releaseIdToUsage = new HashMap<>();
-        }
-        return this.releaseIdToUsage;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getReleaseRelationNetwork() {
+        return this.releaseRelationNetwork;
     }
 
-    public SW360Project setReleaseIdToUsage(Map<String, SW360ProjectReleaseRelationship> releaseIdToUsage) {
-        this.releaseIdToUsage = releaseIdToUsage;
+    public SW360Project setReleaseRelationNetwork(String releaseRelationNetwork) {
+        this.releaseRelationNetwork = releaseRelationNetwork;
         return this;
     }
 
@@ -157,14 +155,14 @@ public final class SW360Project extends SW360HalResource<LinkObjects, SW360Proje
                 Objects.equals(createdOn, that.createdOn) &&
                 Objects.equals(businessUnit, that.businessUnit) &&
                 visibility == that.visibility &&
-                Objects.equals(releaseIdToUsage, that.releaseIdToUsage) &&
+                Objects.equals(releaseRelationNetwork, that.releaseRelationNetwork) &&
                 Objects.equals(clearingTeam, that.clearingTeam);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), name, version, projectType, description, externalIds, createdOn,
-                businessUnit, visibility, releaseIdToUsage, clearingTeam);
+                businessUnit, visibility, releaseRelationNetwork, clearingTeam);
     }
 
     @Override

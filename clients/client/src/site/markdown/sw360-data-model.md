@@ -12,19 +12,19 @@ In the following section there is an outline what data of SW360 the client maps.
 
 #[[###]]# Projects
   
-  | Variable Name         | Meaning                       |
-  |-----------------------|-------------------------------|
-  | Type | the name of the component |
-  | Name | the name of the project |
-  | Version | Current version of the project |
-  | Project Type | What type of project. E.g. "Product" |
-  | Description | Description of the project. E.g what it does and who is responsible for it. |
-  | Created On| Date of creation in SW360 instance |
-  | Business Unit | Business Unit |
-  | Clearing Team | Clearing Team |
-  | Visibility | Which roles can see the project |
-  | ReleaseIDToUsage | The release ID to the project usage |
-  | External Ids | Additional information can be put here in a `Map<String,String>` format |
+  | Variable Name            | Meaning                                                                    |
+  |--------------------------|----------------------------------------------------------------------------|
+  | Type                     | the name of the component                                                  |
+  | Name                     | the name of the project                                                    |
+  | Version                  | Current version of the project                                             |
+  | Project Type             | What type of project. E.g. "Product"                                       |
+  | Description              | Description of the project. E.g what it does and who is responsible for it.|
+  | Created On               | Date of creation in SW360 instance                                         |
+  | Business Unit            | Business Unit                                                              |
+  | Clearing Team            | Clearing Team                                                              |
+  | Visibility               | Which roles can see the project                                            |
+  | Release Relation Network | Present dependencies of project and releases                               |
+  | External Ids             | Additional information can be put here in a `Map<String,String>` format    |
 
 #[[###]]# Licenses
  All licenses are stored separately from the components and releases.

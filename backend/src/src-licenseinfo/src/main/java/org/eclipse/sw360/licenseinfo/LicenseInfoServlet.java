@@ -13,6 +13,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
 import org.apache.thrift.protocol.TCompactProtocol;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 
 /**
@@ -22,7 +23,7 @@ import java.net.MalformedURLException;
  */
 public class LicenseInfoServlet extends Sw360ThriftServlet {
 
-    public LicenseInfoServlet() throws MalformedURLException {
+    public LicenseInfoServlet() throws IOException {
         // Create a service processor using the provided handler
         super(new LicenseInfoService.Processor<>(new LicenseInfoHandler()), new TCompactProtocol.Factory());
     }

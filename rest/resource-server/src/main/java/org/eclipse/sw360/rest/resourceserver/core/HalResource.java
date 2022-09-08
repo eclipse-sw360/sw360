@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
@@ -57,6 +58,8 @@ public class HalResource<T> extends EntityModel<T> {
             ((VulnerabilityDTO) content).setType(null);
         } else if (content instanceof ClearingRequest) {
             ((ClearingRequest) content).setType(null);
+        } else if (content instanceof ProjectDTO) {
+            ((ProjectDTO) content).setType(null);
         }
     }
 

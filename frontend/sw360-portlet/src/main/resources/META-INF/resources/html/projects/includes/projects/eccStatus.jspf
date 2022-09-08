@@ -24,7 +24,14 @@
     require(['jquery', 'bridges/datatables'], function ($, datatables) {
 
         $('#exportReleasesSpreadsheetECCButton').on('click', exportReleasesSpreadsheet);
-        createECCTable();
+
+        let eccTabLoaded = false;
+        $("#ecc").on('click', function() {
+            if (eccTabLoaded == false) {
+                createECCTable();
+                eccTabLoaded = true;
+            }
+        });
 
         function createECCTable() {
             var result = [];

@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.SetMultimap;
 
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
@@ -58,6 +59,11 @@ public class ProjectDatabaseHandlerTest {
     ProjectDatabaseHandler handler;
     ComponentDatabaseHandler componentHandler;
     AttachmentDatabaseHandler attachmentDatabaseHandler;
+
+    ReleaseRepository releaseRepository;
+
+    VendorRepository vendorRepository;
+
     @Before
     public void setUp() throws Exception {
         assertTestString(dbName);
@@ -66,31 +72,129 @@ public class ProjectDatabaseHandlerTest {
         List<Project> projects = new ArrayList<>();
 
         Project p1 = new Project().setId("P1").setName("Project1").setBusinessUnit("AB CD EF").setCreatedBy("user1").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS)
-                .setReleaseIdToUsage(ImmutableMap.<String, ProjectReleaseRelationship>builder()
-                        .put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r2", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r3", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r4", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r5", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r6", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .build());
+                .setReleaseRelationNetwork("[\n" +
+                    "  {\n" +
+                    "    \"releaseId\": \"r1\",\n" +
+                    "    \"releaseLink\": [],\n" +
+                    "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                    "    \"mainlineState\": \"OPEN\",\n" +
+                    "    \"comment\": \"\",\n" +
+                    "    \"createOn\": \"2022-09-12\",\n" +
+                    "    \"createBy\": \"admin@sw360.org\"\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"releaseId\": \"r2\",\n" +
+                    "    \"releaseLink\": [],\n" +
+                    "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                    "    \"mainlineState\": \"OPEN\",\n" +
+                    "    \"comment\": \"\",\n" +
+                    "    \"createOn\": \"2022-09-12\",\n" +
+                    "    \"createBy\": \"admin@sw360.org\"\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"releaseId\": \"r3\",\n" +
+                    "    \"releaseLink\": [],\n" +
+                    "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                    "    \"mainlineState\": \"OPEN\",\n" +
+                    "    \"comment\": \"\",\n" +
+                    "    \"createOn\": \"2022-09-12\",\n" +
+                    "    \"createBy\": \"admin@sw360.org\"\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"releaseId\": \"r4\",\n" +
+                    "    \"releaseLink\": [],\n" +
+                    "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                    "    \"mainlineState\": \"OPEN\",\n" +
+                    "    \"comment\": \"\",\n" +
+                    "    \"createOn\": \"2022-09-12\",\n" +
+                    "    \"createBy\": \"admin@sw360.org\"\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"releaseId\": \"r5\",\n" +
+                    "    \"releaseLink\": [],\n" +
+                    "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                    "    \"mainlineState\": \"OPEN\",\n" +
+                    "    \"comment\": \"\",\n" +
+                    "    \"createOn\": \"2022-09-12\",\n" +
+                    "    \"createBy\": \"admin@sw360.org\"\n" +
+                    "  },\n" +
+                    "  {\n" +
+                    "    \"releaseId\": \"r6\",\n" +
+                    "    \"releaseLink\": [],\n" +
+                    "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                    "    \"mainlineState\": \"OPEN\",\n" +
+                    "    \"comment\": \"\",\n" +
+                    "    \"createOn\": \"2022-09-12\",\n" +
+                    "    \"createBy\": \"admin@sw360.org\"\n" +
+                    "  }\n" +
+                    "]");
         projects.add(p1);
         Project p2 = new Project().setId("P2").setName("Project2").setBusinessUnit("AB CD FE").setCreatedBy("user2").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS)
-                .setReleaseIdToUsage(ImmutableMap.<String, ProjectReleaseRelationship>builder()
-                        .put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r2", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r3", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .build());
+                .setReleaseRelationNetwork("[\n" +
+                        "  {\n" +
+                        "    \"releaseId\": \"r1\",\n" +
+                        "    \"releaseLink\": [],\n" +
+                        "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                        "    \"mainlineState\": \"OPEN\",\n" +
+                        "    \"comment\": \"\",\n" +
+                        "    \"createOn\": \"2022-09-12\",\n" +
+                        "    \"createBy\": \"admin@sw360.org\"\n" +
+                        "  },\n" +
+                        "  {\n" +
+                        "    \"releaseId\": \"r2\",\n" +
+                        "    \"releaseLink\": [],\n" +
+                        "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                        "    \"mainlineState\": \"OPEN\",\n" +
+                        "    \"comment\": \"\",\n" +
+                        "    \"createOn\": \"2022-09-12\",\n" +
+                        "    \"createBy\": \"admin@sw360.org\"\n" +
+                        "  },\n" +
+                        "  {\n" +
+                        "    \"releaseId\": \"r3\",\n" +
+                        "    \"releaseLink\": [],\n" +
+                        "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                        "    \"mainlineState\": \"OPEN\",\n" +
+                        "    \"comment\": \"\",\n" +
+                        "    \"createOn\": \"2022-09-12\",\n" +
+                        "    \"createBy\": \"admin@sw360.org\"\n" +
+                        "  }\n" +
+                        "]");
 
         projects.add(p2);
         projects.get(1).addToContributors("user1");
         projects.add(new Project().setId("P3").setName("Project3").setBusinessUnit("AB CD EF").setCreatedBy("user3").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
         Project p4 = new Project().setId("P4").setName("Project4").setBusinessUnit("AB CD EF").setCreatedBy("user1")
                 .setVisbility(Visibility.PRIVATE)
-                .setReleaseIdToUsage(ImmutableMap.<String, ProjectReleaseRelationship>builder()
-                        .put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .put("r2", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                        .build())
+                .setReleaseRelationNetwork("[\n" +
+                        "  {\n" +
+                        "    \"releaseId\": \"r1\",\n" +
+                        "    \"releaseLink\": [],\n" +
+                        "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                        "    \"mainlineState\": \"OPEN\",\n" +
+                        "    \"comment\": \"\",\n" +
+                        "    \"createOn\": \"2022-09-12\",\n" +
+                        "    \"createBy\": \"admin@sw360.org\"\n" +
+                        "  },\n" +
+                        "  {\n" +
+                        "    \"releaseId\": \"r2\",\n" +
+                        "    \"releaseLink\": [\n" +
+                        "      {\n" +
+                        "        \"releaseId\": \"r3\",\n" +
+                        "        \"releaseLink\": [],\n" +
+                        "        \"releaseRelationship\": \"CONTAINED\",\n" +
+                        "        \"mainlineState\": \"OPEN\",\n" +
+                        "        \"comment\": \"\",\n" +
+                        "        \"createOn\": \"2022-09-12\",\n" +
+                        "        \"createBy\": \"admin@sw360.org\"\n" +
+                        "      }\n" +
+                        "    ],\n" +
+                        "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                        "    \"mainlineState\": \"OPEN\",\n" +
+                        "    \"comment\": \"\",\n" +
+                        "    \"createOn\": \"2022-09-12\",\n" +
+                        "    \"createBy\": \"admin@sw360.org\"\n" +
+                        "  }\n" +
+                        "]")
                 .setLinkedProjects(ImmutableMap.<String, ProjectProjectRelationship>builder().put("P5", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)).build());
         projects.add(p4);
         projects.add(new Project().setId("P5").setName("Project5").setBusinessUnit("AB CD EF").setCreatedBy("user1").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
@@ -118,9 +222,13 @@ public class ProjectDatabaseHandlerTest {
 
         databaseConnector.add(new Component("comp1").setId("c1"));
 
-        componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName);
+        componentHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName);
         attachmentDatabaseHandler = new AttachmentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, attachmentsDbName);
         handler = new ProjectDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, moderator, componentHandler, attachmentDatabaseHandler);
+
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        vendorRepository = new VendorRepository(db);
+        releaseRepository = new ReleaseRepository(db, vendorRepository);
     }
 
     @After
@@ -309,7 +417,7 @@ public class ProjectDatabaseHandlerTest {
     @Test
     public void testSanityCheckFails() throws Exception {
         Project project = handler.getProjectById("P1", user1);
-        project.setReleaseIdToUsage(Collections.emptyMap());
+        project.setReleaseRelationNetwork("[]");
         RequestStatus status = handler.updateProject(project, user1);
         assertThat(status, is(RequestStatus.FAILED_SANITY_CHECK));
     }
@@ -317,17 +425,42 @@ public class ProjectDatabaseHandlerTest {
     @Test
     public void testSanityCheckSucceeds() throws Exception {
         Project project = handler.getProjectById("P1", user1);
-        project.setReleaseIdToUsage(ImmutableMap.<String, ProjectReleaseRelationship>builder()
-                .put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                .put("r2", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                .put("r3", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
-                .build());
+        project.setReleaseRelationNetwork(
+                "[\n" +
+                "  {\n" +
+                "    \"releaseId\": \"r1\",\n" +
+                "    \"releaseLink\": [],\n" +
+                "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                "    \"mainlineState\": \"OPEN\",\n" +
+                "    \"comment\": \"\",\n" +
+                "    \"createOn\": \"2022-09-12\",\n" +
+                "    \"createBy\": \"admin@sw360.org\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"releaseId\": \"r2\",\n" +
+                "    \"releaseLink\": [],\n" +
+                "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                "    \"mainlineState\": \"OPEN\",\n" +
+                "    \"comment\": \"\",\n" +
+                "    \"createOn\": \"2022-09-12\",\n" +
+                "    \"createBy\": \"admin@sw360.org\"\n" +
+                "  },\n" +
+                "  {\n" +
+                "    \"releaseId\": \"r3\",\n" +
+                "    \"releaseLink\": [],\n" +
+                "    \"releaseRelationship\": \"CONTAINED\",\n" +
+                "    \"mainlineState\": \"OPEN\",\n" +
+                "    \"comment\": \"\",\n" +
+                "    \"createOn\": \"2022-09-12\",\n" +
+                "    \"createBy\": \"admin@sw360.org\"\n" +
+                "  }\n" +
+                "]");
 
         RequestStatus status = handler.updateProject(project, user1);
         assertThat(status, is(RequestStatus.SUCCESS));
 
         Project project2 = handler.getProjectById("P2", user1);
-        project2.setReleaseIdToUsage(Collections.emptyMap());
+        project2.setReleaseRelationNetwork("[]");
         RequestStatus status2 = handler.updateProject(project2, user1);
         assertThat(status2, is(RequestStatus.SUCCESS));
     }
@@ -337,27 +470,6 @@ public class ProjectDatabaseHandlerTest {
         SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdToProjects = handler.releaseIdToProjects(new Project().setId("p4"), user1);
         Set<String> releaseIds = releaseIdToProjects.keySet();
         assertTrue("Release IDs size", releaseIds.size() == 0);
-    }
-
-    @Test
-    public void testReleaseIdToProjects() throws Exception {
-        Project p1 = handler.getProjectById("P1", user1);
-        p1.setLinkedProjects(ImmutableMap.<String, ProjectProjectRelationship>builder().put("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)).build());
-        handler.updateProject(p1, user1);
-        Project p2 = handler.getProjectById("P2", user2);
-
-        SetMultimap<String, ProjectWithReleaseRelationTuple> releaseIdToProjects = handler.releaseIdToProjects(p1, user1);
-
-        Set<String> releaseIds = releaseIdToProjects.keySet();
-
-        assertThat(releaseIds, containsInAnyOrder("r1", "r2","r3","r4","r5","r6"));
-        assertThat(releaseIdToProjects.get("r1"), containsInAnyOrder(createTuple(p1),createTuple(p2)));
-        assertThat(releaseIdToProjects.get("r2"), containsInAnyOrder(createTuple(p1),createTuple(p2)));
-        assertThat(releaseIdToProjects.get("r3"), containsInAnyOrder(createTuple(p1),createTuple(p2)));
-        assertThat(releaseIdToProjects.get("r4"), containsInAnyOrder(createTuple(p1)));
-        assertThat(releaseIdToProjects.get("r5"), containsInAnyOrder(createTuple(p1)));
-        assertThat(releaseIdToProjects.get("r6"), containsInAnyOrder(createTuple(p1)));
-
     }
 
     @Test
@@ -380,13 +492,5 @@ public class ProjectDatabaseHandlerTest {
         assertThat(projectLinks.size(), is(1));
         assertThat(projectLinks.get(0).getSubprojects().size(), is(1));
         assertThat(projectLinks.get(0).getLinkedReleases().size(), is(2));
-    }
-
-    private ProjectWithReleaseRelationTuple createTuple(Project p) {
-        return new ProjectWithReleaseRelationTuple(p, newDefaultProjectReleaseRelationship());
-    }
-
-    private ProjectReleaseRelationship newDefaultProjectReleaseRelationship() {
-        return new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE);
     }
 }

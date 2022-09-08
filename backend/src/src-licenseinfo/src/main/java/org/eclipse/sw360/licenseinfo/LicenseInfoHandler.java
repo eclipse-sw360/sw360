@@ -45,6 +45,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.Map.Entry;
@@ -81,10 +82,10 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     protected Cache<String, List<ObligationParsingResult>> obligationCacheForEvaluation;
     protected Cache<String, LicenseInfoParsingResult> licenseObligationMappingCache;
 
-    public LicenseInfoHandler() throws MalformedURLException {
+    public LicenseInfoHandler() throws IOException {
         this(new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS),
-                new ComponentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS),
-                new ProjectDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS));
+                new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS),
+                new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS));
     }
 
     @VisibleForTesting
@@ -145,7 +146,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         }
 
         Map<String, ObligationStatusInfo> obligationsStatusInfoMap = Maps.newHashMap();
-        if (project.getReleaseIdToUsageSize() > 0) {
+        if (project.getReleaseRelationNetwork() != null && SW360Utils.getReleaseIdsLinkedWithProject(project).size() > 0) {
             obligationsStatusInfoMap = createLicenseToObligationMappingForReport(project, projectLicenseInfoResults,
                     obligationsResults, releaseToAttachmentId, user);
         }
@@ -710,7 +711,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     private Map<String, ObligationStatusInfo> createLicenseToObligationMappingForReport(Project project, Collection<LicenseInfoParsingResult> licenseResults,
             Collection<ObligationParsingResult> obligationResults, Map<Release, Map<String, Boolean>> releaseToSelectedAttachmentIds, User user) throws TException {
 
-        Set<String> linkedReleaseIds = project.getReleaseIdToUsage().keySet();
+        Set<String> linkedReleaseIds = SW360Utils.getReleaseIdsLinkedWithProject(project);
         Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
 
         Map<Release, Map<String,Boolean>> filteredRelToSelAttIds = releaseToSelectedAttachmentIds.entrySet().stream()

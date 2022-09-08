@@ -14,11 +14,11 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -37,6 +37,9 @@ public class SpdxBOMImporterTest {
     private SpdxBOMImporterSink spdxBOMImporterSink;
 
     private SpdxBOMImporter spdxBOMImporter;
+
+    @Mock
+    private User user;
 
     @Before
     public void before() throws Exception {
@@ -73,20 +76,20 @@ public class SpdxBOMImporterTest {
 
     @Test
     public void testProject() throws  Exception {
-        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
+        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent, user);
         assertNotNull(requestSummary);
 
-        verify(spdxBOMImporterSink, times(1)).addProject(ArgumentMatchers.any());
-        verify(spdxBOMImporterSink, times(3)).addComponent(ArgumentMatchers.any());
-        verify(spdxBOMImporterSink, times(3)).addRelease(ArgumentMatchers.any());
+        verify(spdxBOMImporterSink, times(1)).addProject(any());
+        verify(spdxBOMImporterSink, times(3)).addComponent(any());
+        verify(spdxBOMImporterSink, times(3)).addRelease(any());
     }
 
     @Test
     public void testRelease() throws  Exception {
-        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
+        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent, user);
         assertNotNull(requestSummary);
 
-        verify(spdxBOMImporterSink, times(4)).addComponent(ArgumentMatchers.any());
-        verify(spdxBOMImporterSink, times(4)).addRelease(ArgumentMatchers.any());
+        verify(spdxBOMImporterSink, times(4)).addComponent(any());
+        verify(spdxBOMImporterSink, times(4)).addRelease(any());
     }
 }

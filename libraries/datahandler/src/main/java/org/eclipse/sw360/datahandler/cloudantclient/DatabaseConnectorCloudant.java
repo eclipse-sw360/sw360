@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.ArrayList;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -304,5 +305,23 @@ public class DatabaseConnectorCloudant {
             log.error("Error in getting project groups", e);
         }
         return Collections.emptySet();
+    }
+
+    public <T> List<T> getDocsByListIds(Class<T> type, Collection<String> ids) {
+        if (!CommonUtils.isNotEmpty(ids))
+            return Collections.emptyList();
+        try {
+            List<String> idList = new ArrayList<>(ids);
+            String[] keys = new String[idList.size()];
+            int index = 0;
+            for (String str : idList)
+                keys[index++] = str;
+            List<T> docs = database.getAllDocsRequestBuilder().includeDocs(true).keys(keys).build().getResponse()
+                    .getDocsAs(type);
+            return docs.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        } catch (IOException e) {
+            log.error("Error fetching documents", e);
+            return Collections.emptyList();
+        }
     }
 }

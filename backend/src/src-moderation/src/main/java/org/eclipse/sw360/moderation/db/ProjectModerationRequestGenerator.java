@@ -63,9 +63,6 @@ public class ProjectModerationRequestGenerator extends ModerationRequestGenerato
                     case LINKED_PROJECTS:
                         dealWithEnumMap(Project._Fields.LINKED_PROJECTS, ProjectRelationship.class);
                         break;
-                    case RELEASE_ID_TO_USAGE:
-                        dealWithStringKeyedMap(Project._Fields.RELEASE_ID_TO_USAGE);
-                        break;
                     case EXTERNAL_IDS:
                         dealWithStringtoStringMap(Project._Fields.EXTERNAL_IDS);
                         break;

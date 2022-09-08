@@ -30,7 +30,6 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -54,8 +53,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.Map.Entry;
@@ -95,7 +96,7 @@ public class ModerationDatabaseHandler {
 
     private final MailUtil mailUtil = new MailUtil();
 
-    public ModerationDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
+    public ModerationDatabaseHandler(Supplier<HttpClient> client, Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws IOException {
         db = new DatabaseConnectorCloudant(httpClient, dbName);
 
         // Create the repository
@@ -103,14 +104,14 @@ public class ModerationDatabaseHandler {
         clearingRequestRepository = new ClearingRequestRepository(db);
 
         licenseDatabaseHandler = new LicenseDatabaseHandler(httpClient, dbName);
-        projectDatabaseHandler = new ProjectDatabaseHandler(httpClient, dbName, attachmentDbName);
-        componentDatabaseHandler = new ComponentDatabaseHandler(httpClient, dbName, attachmentDbName);
+        projectDatabaseHandler = new ProjectDatabaseHandler(client, httpClient, dbName, attachmentDbName);
+        componentDatabaseHandler = new ComponentDatabaseHandler(client, httpClient, dbName, attachmentDbName);
         DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
     }
 
-    public ModerationDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName) throws MalformedURLException {
-        this(httpClient, dbName, attachmentDbName);
+    public ModerationDatabaseHandler(Supplier<HttpClient> client, Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName) throws IOException {
+        this(client, httpClient, dbName, attachmentDbName);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, changeLogsDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(db);
 
@@ -501,8 +502,6 @@ public class ModerationDatabaseHandler {
             return RequestStatus.FAILURE;
         }
 
-        // set created on and created by
-        setCreatedOnAndCreatedBy(project, dbproject);
 
         // Define moderators
         Set<String> moderators = getProjectModerators(dbproject, user.getDepartment());
@@ -517,37 +516,6 @@ public class ModerationDatabaseHandler {
         request = generator.setAdditionsAndDeletions(request, project, dbproject);
         addOrUpdate(request, user);
         return RequestStatus.SENT_TO_MODERATOR;
-    }
-
-    private void setCreatedOnAndCreatedBy(Project project, Project dbproject) {
-        Map<String, ProjectReleaseRelationship> releaseIdToUsageOriginal = dbproject.getReleaseIdToUsage();
-        Map<String, ProjectReleaseRelationship> releaseIdToUsageModeration = project.getReleaseIdToUsage();
-
-        if (!CommonUtils.isNullOrEmptyMap(releaseIdToUsageOriginal)
-                && !CommonUtils.isNullOrEmptyMap(releaseIdToUsageModeration)) {
-            releaseIdToUsageModeration.entrySet().stream().filter(Objects::nonNull)
-                    .filter(entry -> Objects.nonNull(entry.getKey()) && Objects.nonNull(entry.getValue()))
-                    .forEach(entry -> {
-                        String releaseIdModeration = entry.getKey();
-                        ProjectReleaseRelationship projectReleaseRelationshipModeration = entry.getValue();
-                        if (releaseIdToUsageOriginal.containsKey(releaseIdModeration)) {
-                            ProjectReleaseRelationship projectReleaseRelationshipOrig = releaseIdToUsageOriginal
-                                    .get(releaseIdModeration);
-                            if (projectReleaseRelationshipOrig == null) {
-                                return;
-                            }
-                            if (projectReleaseRelationshipOrig.isSetCreatedOn()) {
-                                projectReleaseRelationshipModeration
-                                        .setCreatedOn(projectReleaseRelationshipOrig.getCreatedOn());
-                            }
-
-                            if (projectReleaseRelationshipOrig.isSetCreatedBy()) {
-                                projectReleaseRelationshipModeration
-                                        .setCreatedBy(projectReleaseRelationshipOrig.getCreatedBy());
-                            }
-                        }
-                    });
-        }
     }
 
     @NotNull

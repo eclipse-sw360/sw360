@@ -463,23 +463,6 @@ include::{snippets}/should_document_patch_releases_with_project_release_relation
 ===== Example response 2
 include::{snippets}/should_document_patch_releases_with_project_release_relation/http-response.adoc[]
 
-[[resources-project-patch-release-usage]]
-==== Update Project Release Relationship
-
-A `PATCH` request is used to update Project Release Relationship
-
-===== Request structure
-include::{snippets}/should_document_update_project_release_relationship/request-fields.adoc[]
-
-===== Response structure
-include::{snippets}/should_document_update_project_release_relationship/response-fields.adoc[]
-
-===== Example request
-include::{snippets}/should_document_update_project_release_relationship/curl-request.adoc[]
-
-===== Example response
-include::{snippets}/should_document_update_project_release_relationship/http-response.adoc[]
-
 [[resources-project-get-download-licenseinfo]]
 ==== Download License Info
 
@@ -578,3 +561,54 @@ include::{snippets}/should_document_update_project_vulnerabilities/http-response
 
 ===== Links
 include::{snippets}/should_document_update_project_vulnerabilities/links.adoc[]
+
+==== Get project's dependency network
+A `GET` request will get project and releases dependency network of a single project.
+
+===== Response structure
+include::{snippets}/should_document_get_project_network/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_network/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_network/links.adoc[]
+
+==== Create a project with a readable format.
+A `POST` request is used to create a project with readable format.
+
+===== Response structure
+include::{snippets}/should_document_create_project_with_readable_format/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_project_with_readable_format/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_project_with_readable_format/http-response.adoc[]
+
+==== Update a project with a readable format.
+A `PATCH` request is used to update a project with readable format.
+
+===== Response structure
+include::{snippets}/should_document_update_project_with_readable_format/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project_with_readable_format/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project_with_readable_format/http-response.adoc[]
+
+==== Get direct dependencies of a release in project's dependency network
+A `GET` request is used to get direct dependencies of a release in project's dependency network
+
+===== Response structure
+include::{snippets}/should_document_get_dependencies_of_release_in_project/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_dependencies_of_release_in_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_dependencies_of_release_in_project/http-response.adoc[]

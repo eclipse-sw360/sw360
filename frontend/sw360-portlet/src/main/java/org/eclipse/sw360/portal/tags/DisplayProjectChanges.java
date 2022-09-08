@@ -18,6 +18,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.meta_data.FieldMetaData;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -116,7 +117,7 @@ public class DisplayProjectChanges extends UserAwareTag {
 
                         //Done in extra tables
                     case LINKED_PROJECTS:
-                    case RELEASE_ID_TO_USAGE:
+                    case RELEASE_RELATION_NETWORK:
                         break;
 
                     default:
@@ -144,7 +145,7 @@ public class DisplayProjectChanges extends UserAwareTag {
             renderLinkedProjects(linkedProjectsDisplay, user);
 
             StringBuilder releaseUsageDisplay = new StringBuilder();
-            renderReleaseIdToUsage(releaseUsageDisplay, user);
+            renderReleaseWithRelationship(releaseUsageDisplay, user);
 
             jspWriter.print(renderString + linkedProjectsDisplay.toString() + releaseUsageDisplay.toString());
         } catch (Exception e) {
@@ -302,55 +303,48 @@ public class DisplayProjectChanges extends UserAwareTag {
         }
     }
 
-    private void renderReleaseIdToUsage(StringBuilder display, User user) {
+    private void renderReleaseWithRelationship(StringBuilder display, User user) {
 
        if (ensureSomethingTodoAndNoNullReleaseIdUsage()) {
-           if (actual.getReleaseIdToUsage() == null) {
-               actual.setReleaseIdToUsage(new HashMap<>());
+           if (actual.getReleaseRelationNetwork() == null) {
+               actual.setReleaseRelationNetwork("[]");
            }
-           Set<String> changedReleaseIds = Sets.intersection(
-                   additions.getReleaseIdToUsage().keySet(),
-                   deletions.getReleaseIdToUsage().keySet());
-           changedReleaseIds = Sets.intersection(
-                   changedReleaseIds,
-                   actual.getReleaseIdToUsage().keySet());//remove projects already deleted in database
-           Set<String> removedReleaseIds = Sets.difference(
-                   deletions.getReleaseIdToUsage().keySet(),
-                   changedReleaseIds);
-           removedReleaseIds = Sets.intersection(
-                   removedReleaseIds,
-                   actual.getReleaseIdToUsage().keySet());
-           Set<String> addedReleaseIds = Sets.difference(
-                   additions.getReleaseIdToUsage().keySet(),
-                   changedReleaseIds);
+           Set<String> actualReleaseIds = SW360Utils.getReleaseIdsLinkedWithProject(actual);
+           Set<String> additionsReleaseIds = SW360Utils.getReleaseIdsLinkedWithProject(additions);
+           Set<String> deletionsReleaseIds = SW360Utils.getReleaseIdsLinkedWithProject(deletions);
+
+           Set<String> changedReleaseIds = Sets.intersection(additionsReleaseIds, deletionsReleaseIds);
+           changedReleaseIds = Sets.intersection(changedReleaseIds, actualReleaseIds);//remove projects already deleted in database
+           Set<String> removedReleaseIds = Sets.difference(deletionsReleaseIds, changedReleaseIds);
+           removedReleaseIds = Sets.intersection(removedReleaseIds, actualReleaseIds);
+           Set<String> addedReleaseIds = Sets.difference(additionsReleaseIds, changedReleaseIds);
 
            if (isClosedModeration) {
-                addedReleaseIds = Sets.difference(additions.getReleaseIdToUsage().keySet(),
-                        deletions.getReleaseIdToUsage().keySet());
-                removedReleaseIds = Sets.difference(deletions.getReleaseIdToUsage().keySet(),
-                        CommonUtils.nullToEmptySet(actual.getReleaseIdToUsage().keySet()));
+                addedReleaseIds = Sets.difference(additionsReleaseIds, deletionsReleaseIds);
+                removedReleaseIds = Sets.difference(deletionsReleaseIds, CommonUtils.nullToEmptySet(actualReleaseIds));
            }
            LinkedReleaseRenderer renderer = new LinkedReleaseRenderer(display, tableClasses, idPrefix, user);
            HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-           renderer.renderReleaseLinkList(display, deletions.getReleaseIdToUsage(), removedReleaseIds, LanguageUtil.get(resourceBundle,"removed.release.links"), request);
-           renderer.renderReleaseLinkList(display, additions.getReleaseIdToUsage(), addedReleaseIds, LanguageUtil.get(resourceBundle,"added.release.links"), request);
+
+           renderer.renderReleaseLinkList(display, SW360Utils.getProjectRelationShipWithReleaseInNetwork(deletions), removedReleaseIds, LanguageUtil.get(resourceBundle,"removed.release.links"), request);
+           renderer.renderReleaseLinkList(display, SW360Utils.getProjectRelationShipWithReleaseInNetwork(additions), addedReleaseIds, LanguageUtil.get(resourceBundle,"added.release.links"), request);
            renderer.renderReleaseLinkListCompare(display,
-                   actual.getReleaseIdToUsage(),
-                   deletions.getReleaseIdToUsage(),
-                   additions.getReleaseIdToUsage(), changedReleaseIds, request, isClosedModeration);
+                   SW360Utils.getProjectRelationShipWithReleaseInNetwork(actual),
+                   SW360Utils.getProjectRelationShipWithReleaseInNetwork(deletions),
+                   SW360Utils.getProjectRelationShipWithReleaseInNetwork(additions), changedReleaseIds, request, isClosedModeration);
         }
     }
 
     private boolean ensureSomethingTodoAndNoNullReleaseIdUsage() {
-        if (!deletions.isSetReleaseIdToUsage() && !additions.isSetReleaseIdToUsage()) {
+        if (!deletions.isSetReleaseRelationNetwork() && !additions.isSetReleaseRelationNetwork()) {
             return false;
         }
-        if(!deletions.isSetReleaseIdToUsage()){
-            deletions.setReleaseIdToUsage(new HashMap<>());
+        if(!deletions.isSetReleaseRelationNetwork()){
+            deletions.setReleaseRelationNetwork("[]");
         }
-        if(!additions.isSetReleaseIdToUsage()){
-            additions.setReleaseIdToUsage(new HashMap<>());
+        if(!additions.isSetReleaseRelationNetwork()){
+            additions.setReleaseRelationNetwork("[]");
         }
         return true;
     }

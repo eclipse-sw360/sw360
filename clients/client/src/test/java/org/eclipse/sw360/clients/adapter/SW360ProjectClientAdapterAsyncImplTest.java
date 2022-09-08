@@ -36,6 +36,7 @@ import org.eclipse.sw360.clients.rest.resource.SW360Visibility;
 import org.eclipse.sw360.clients.rest.resource.Self;
 import org.eclipse.sw360.clients.rest.resource.projects.ProjectSearchParams;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTO;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectType;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseLinkObjects;
@@ -55,7 +56,7 @@ public class SW360ProjectClientAdapterAsyncImplTest {
 
     private SW360ProjectClient projectClient;
 
-    private SW360Project projectWithLink;
+    private SW360ProjectDTO projectWithLink;
     private LinkObjects linkObjects;
 
     @Before
@@ -68,7 +69,7 @@ public class SW360ProjectClientAdapterAsyncImplTest {
         linkObjects = new LinkObjects()
                 .setSelf(projectSelf);
 
-        projectWithLink = new SW360Project();
+        projectWithLink = new SW360ProjectDTO();
         projectWithLink.setName(PROJECT_NAME);
         projectWithLink.setVersion(PROJECT_VERSION);
         projectWithLink.setDescription(PROJECT_NAME + " " + PROJECT_VERSION);
@@ -85,7 +86,7 @@ public class SW360ProjectClientAdapterAsyncImplTest {
         when(projectClient.search(searchParams))
                 .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(projectWithLink)));
 
-        Optional<SW360Project> projectIdByNameAndVersion =
+        Optional<SW360ProjectDTO> projectIdByNameAndVersion =
                 block(projectClientAdapter.getProjectByNameAndVersion(PROJECT_NAME, PROJECT_VERSION));
 
         assertThat(projectIdByNameAndVersion).isPresent();
@@ -96,7 +97,7 @@ public class SW360ProjectClientAdapterAsyncImplTest {
     public void testGetProjectByNameAndVersionNotFound() {
         when(projectClient.search(any())).thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
 
-        Optional<SW360Project> optProject =
+        Optional<SW360ProjectDTO> optProject =
                 block(projectClientAdapter.getProjectByNameAndVersion(PROJECT_NAME, PROJECT_VERSION));
         assertThat(optProject).isEmpty();
     }
@@ -110,7 +111,7 @@ public class SW360ProjectClientAdapterAsyncImplTest {
         when(projectClient.search(searchParams))
                 .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(projectWithLink)));
 
-        List<SW360Project> projects = block(projectClientAdapter.search(searchParams));
+        List<SW360ProjectDTO> projects = block(projectClientAdapter.search(searchParams));
         assertThat(projects).containsOnly(projectWithLink);
     }
 
@@ -130,7 +131,7 @@ public class SW360ProjectClientAdapterAsyncImplTest {
 
     @Test
     public void testCreateProjectInvalidName() throws InterruptedException {
-        SW360Project newProject = new SW360Project();
+        SW360ProjectDTO newProject = new SW360ProjectDTO();
         newProject.setVersion(PROJECT_VERSION);
         CompletableFuture<SW360Project> future = projectClientAdapter.createProject(newProject);
 
@@ -159,7 +160,7 @@ public class SW360ProjectClientAdapterAsyncImplTest {
 
     @Test
     public void testUpdateProjectInvalidNoVersion() throws InterruptedException {
-        SW360Project project = new SW360Project();
+        SW360ProjectDTO project = new SW360ProjectDTO();
         project.setName(PROJECT_NAME);
         CompletableFuture<SW360Project> future = projectClientAdapter.updateProject(project);
 

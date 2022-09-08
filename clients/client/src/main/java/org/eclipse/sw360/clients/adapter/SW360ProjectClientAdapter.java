@@ -13,6 +13,7 @@ package org.eclipse.sw360.clients.adapter;
 import org.eclipse.sw360.clients.rest.SW360ProjectClient;
 import org.eclipse.sw360.clients.rest.resource.projects.ProjectSearchParams;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTO;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 
@@ -43,7 +44,7 @@ public interface SW360ProjectClientAdapter {
      * @param projectVersion the desired project version
      * @return an {@code Optional} with the project that was found
      */
-    Optional<SW360Project> getProjectByNameAndVersion(String projectName, String projectVersion);
+    Optional<SW360ProjectDTO> getProjectByNameAndVersion(String projectName, String projectVersion);
 
     /**
      * Searches for projects based on the given search criteria. This method
@@ -52,7 +53,7 @@ public interface SW360ProjectClientAdapter {
      * @param params the search parameters
      * @return a list with the projects that were found
      */
-    List<SW360Project> search(ProjectSearchParams params);
+    List<SW360ProjectDTO> search(ProjectSearchParams params);
 
     /**
      * Creates a new {@code SW360Project} entity based on the given data
@@ -62,7 +63,7 @@ public interface SW360ProjectClientAdapter {
      * @param project the data object defining the project properties
      * @return the newly created {@code SW360Project} entity
      */
-    SW360Project createProject(SW360Project project);
+    SW360Project createProject(SW360ProjectDTO project);
 
     /**
      * Updates a project based on the passed in data object. The
@@ -71,7 +72,7 @@ public interface SW360ProjectClientAdapter {
      * @param project the data object with the updated properties
      * @return the updated {@code SW360Project} entity
      */
-    SW360Project updateProject(SW360Project project);
+    SW360Project updateProject(SW360ProjectDTO project);
 
     /**
      * Assigns a number of releases to a project.

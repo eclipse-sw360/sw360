@@ -153,7 +153,7 @@ public class ComponentDatabaseHandlerTest {
         componentMap= ThriftUtils.getIdMap(components);
 
         // Prepare the handler
-        handler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, moderator, releaseModerator, projectModerator);
+        handler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, moderator, releaseModerator, projectModerator);
         handler.setSvmConnector(svmConnector);
     }
 

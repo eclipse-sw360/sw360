@@ -11,6 +11,7 @@
 package org.eclipse.sw360.clients.rest;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTO;
 import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.clients.auth.AccessTokenProvider;
 import org.eclipse.sw360.clients.auth.SW360AuthenticationClient;
@@ -107,7 +108,7 @@ public class SW360ClientTokenManagementIT extends AbstractMockServerTest {
         CountDownLatch latchCompletion = new CountDownLatch(concurrentRequestCount);
         for (int i = 0; i < concurrentRequestCount; i++) {
             new Thread(() -> {
-                List<SW360Project> projects = null;
+                List<SW360ProjectDTO> projects = null;
                 try {
                     // for maximum parallelism, wait for all threads to be started
                     barrierStart.await();

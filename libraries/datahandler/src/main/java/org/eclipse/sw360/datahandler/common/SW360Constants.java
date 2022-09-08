@@ -74,6 +74,7 @@ public class SW360Constants {
     public static final String TYPE_OBLIGATIONELEMENT = "obligationElement";
     public static final String TYPE_OBLIGATIONNODE = "obligationNode";
     public static final String TYPE_DOCUMENT = "document";
+    public static final String TYPE_RELEASE_LINK_JSON = "releaseLinkJson";
 
     public static final String SVM_COMPONENT_ID;
     public static final String SVM_MONITORINGLIST_ID;

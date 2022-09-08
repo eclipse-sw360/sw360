@@ -56,7 +56,6 @@
     <jsp:useBean id="usingProjects" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.projects.Project>" scope="request"/>
     <jsp:useBean id="allUsingProjectsCount" type="java.lang.Integer" scope="request"/>
     <jsp:useBean id="projectList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.projects.ProjectLink>"  scope="request"/>
-    <jsp:useBean id="releaseList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.ReleaseLink>"  scope="request"/>
     <jsp:useBean id="attachments" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment>" scope="request"/>
     <jsp:useBean id="defaultLicenseInfoHeaderText" class="java.lang.String" scope="request" />
     <jsp:useBean id="defaultObligationsText" class="java.lang.String" scope="request" />
@@ -76,7 +75,8 @@
 
 <core_rt:if test="${empty attributeNotFoundException}">
 
-<core_rt:set var="isObligationPresent" value="${not empty project.releaseIdToUsage}" />
+<core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${true}" scope="request"/>
+<core_rt:set var="isObligationPresent" value="${isObligationPresent}" />
 <core_rt:set var="isProjectObligationsEnabled"  value="${isProjectObligationsEnabled and hasWritePermissions}" />
 
 <div class="container" style="display: none;">
@@ -120,6 +120,9 @@
                         <div class="btn-group" role="group">
                             <button id="cancelEditButton" type="button" class="btn btn-light"><liferay-ui:message key="cancel" /></button>
                         </div>
+                        <div class="btn-group" role="group">
+                            <button id="checkDependency" type="button" class="btn btn-outline-success"><liferay-ui:message key="check.dependency.network" /></button>
+                        </div>
                         <div class="list-group-companion" data-belong-to="tab-Obligations">
                             <core_rt:if test="${not addMode and isProjectObligationsEnabled and isObligationPresent}">
                                 <div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
@@ -142,7 +145,6 @@
                         data-delete-url="<%=deleteURL%>"
                         data-comment-parameter-name="<%=PortalConstants.MODERATION_REQUEST_COMMENT%>"
                         data-linked-projects="${project.linkedProjectsSize}"
-                        data-linked-releases="${project.releaseIdToUsageSize}"
                         data-attachments="${project.attachmentsSize}"
                     >
                         <div class="tab-content">
@@ -165,7 +167,7 @@
                             </div>
                             <div id="tab-linkedProjects" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedProjects'}">active show</core_rt:if>">
                                 <%@include file="/html/projects/includes/linkedProjectsEdit.jspf" %>
-                                <%@include file="/html/utils/includes/linkedReleasesEdit.jspf" %>
+                                <%@include file="/html/utils/includes/editLinkedReleasesInNetwork.jspf" %>
                             </div>
                             <core_rt:if test="${not addMode}" >
                                 <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
@@ -228,7 +230,6 @@
     </div>
 </div>
 
-<core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${true}" scope="request"/>
 
 <jsp:include page="/html/projects/includes/searchProjects.jsp" />
 <jsp:include page="/html/utils/includes/searchReleases.jsp" />

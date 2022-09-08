@@ -45,7 +45,7 @@
 <core_rt:set var="isEditable" value="${not isClosedOrRejected and pageName eq 'editClearingRequest'}"/>
 <core_rt:set var="isEditableForRequestingUser" value="${isRequestingUser and isEditable}"/>
 <core_rt:set var="isEditableForClearingTeam" value="${isClearingTeam and isEditable}"/>
-<core_rt:set var="isProgressBarVisible" value="${not isClosedOrRejected and clearingRequest.clearingState ne 'NEW' and project.releaseIdToUsageSize gt 0}"/>
+<core_rt:set var="isProgressBarVisible" value="${not isClosedOrRejected and clearingRequest.clearingState ne 'NEW' and totalReleaseCount gt 0}"/>
 <core_rt:set var="isCRreOpened" value="${not empty clearingRequest.reOpenOn and clearingRequest.reOpenOn.size() gt 0}"/>
 <core_rt:set var="isReOpenButtonVisible" value="${isProjectPresent and isClosedOrRejected and (isClearingTeam or isRequestingUser)}" />
 <core_rt:set var="criticalCount" value="3"/>
@@ -499,7 +499,7 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
 
     $(document).ready(function() {
         if ("${isProgressBarVisible}" === "true") {
-        let totalRelease = "${project.releaseIdToUsageSize}",
+        let totalRelease = "${totalReleaseCount}",
             approvedReleaseCount = "${approvedReleaseCount}",
             $progressBar = $("#crProgress"),
             $td = $("#crProgress").closest("tr").find("td:eq(1)");

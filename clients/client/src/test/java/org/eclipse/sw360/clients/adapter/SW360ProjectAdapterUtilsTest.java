@@ -11,6 +11,7 @@
 package org.eclipse.sw360.clients.adapter;
 
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTO;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,7 +54,7 @@ public class SW360ProjectAdapterUtilsTest {
 
     @Test
     public void testHasEqualCoordinatesTrue() {
-        SW360Project project = new SW360Project()
+        SW360ProjectDTO project = new SW360ProjectDTO()
                 .setName(PROJECT_NAME)
                 .setVersion(PROJECT_VERSION);
 
@@ -64,7 +65,7 @@ public class SW360ProjectAdapterUtilsTest {
 
     @Test
     public void testHasEqualCoordinatesFalseByVersion() {
-        SW360Project project = new SW360Project()
+        SW360ProjectDTO project = new SW360ProjectDTO()
                 .setName(PROJECT_NAME)
                 .setVersion(PROJECT_VERSION);
 
@@ -75,7 +76,7 @@ public class SW360ProjectAdapterUtilsTest {
 
     @Test
     public void testHasEqualCoordinatesFalseByName() {
-        SW360Project project = new SW360Project()
+        SW360ProjectDTO project = new SW360ProjectDTO()
                 .setName(PROJECT_NAME)
                 .setVersion(PROJECT_VERSION);
 

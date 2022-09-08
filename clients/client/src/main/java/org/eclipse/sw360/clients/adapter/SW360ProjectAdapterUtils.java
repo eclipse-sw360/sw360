@@ -13,6 +13,7 @@ package org.eclipse.sw360.clients.adapter;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTO;
 
 class SW360ProjectAdapterUtils {
 
@@ -22,9 +23,13 @@ class SW360ProjectAdapterUtils {
         return StringUtils.isNotEmpty(project.getName()) && StringUtils.isNotEmpty(project.getVersion());
     }
 
-    public static boolean hasEqualCoordinates(SW360Project sw360Project, String projectName, String projectVersion) {
+    public static boolean hasEqualCoordinates(SW360ProjectDTO sw360Project, String projectName, String projectVersion) {
         boolean isAppIdEqual = sw360Project.getName().equalsIgnoreCase(projectName);
         boolean isProjectVersionEqual = sw360Project.getVersion().equalsIgnoreCase(projectVersion);
         return isAppIdEqual && isProjectVersionEqual;
+    }
+
+    public static boolean isValidProjectDTO(SW360ProjectDTO project) {
+        return StringUtils.isNotEmpty(project.getName()) && StringUtils.isNotEmpty(project.getVersion());
     }
 }

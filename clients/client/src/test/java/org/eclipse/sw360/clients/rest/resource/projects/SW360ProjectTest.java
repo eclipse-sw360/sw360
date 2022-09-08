@@ -28,12 +28,7 @@ public class SW360ProjectTest extends SW360ResourcesTestUtils<SW360Project> {
         sw360Project.setDescription("This is a test project");
         sw360Project.setProjectType(SW360ProjectType.SERVICE);
         sw360Project.setVisibility(SW360Visibility.EVERYONE);
-        Map<String, SW360ProjectReleaseRelationship> releaseRelationshipMap = new LinkedHashMap<>();
-                releaseRelationshipMap.put("releaseName",
-                new SW360ProjectReleaseRelationship(
-                        SW360ReleaseRelationship.OPTIONAL,
-                        SW360MainlineState.OPEN));
-        sw360Project.setReleaseIdToUsage(releaseRelationshipMap);
+        sw360Project.setReleaseRelationNetwork("[{\"releaseLink\":[],\"releaseId\":\"123456789\",\"releaseRelationship\":\"CONTAINED\",\"mainlineState\":\"OPEN\",\"comment\":\"\",\"createOn\":\"2022-08-10\",\"createBy\":\"admin@sw360.org\"}]");
         return sw360Project;
     }
 

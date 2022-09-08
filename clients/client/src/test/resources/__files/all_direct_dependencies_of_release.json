@@ -1,0 +1,69 @@
+{
+  "_embedded": {
+    "sw360:releases": [
+      {
+        "name": "handlebars",
+        "version": "4.0.1",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/releaseMe"
+          }
+        }
+      },
+      {
+        "name": "springdoc-openapi-ui",
+        "version": "1.1.45",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz6aa23"
+          }
+        }
+      },
+      {
+        "name": "resteasy-rxjava2",
+        "version": "3.7.0.Final",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzz05bdf"
+          }
+        }
+      },
+      {
+        "name": "akka-actor_2.11",
+        "version": "2.4.12",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzza46a4"
+          }
+        }
+      },
+      {
+        "name": "spring-boot-starter-web",
+        "version": "2.2.1.RELEASE",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzzdca6b"
+          }
+        }
+      },
+      {
+        "name": "jackson-module-kotlin",
+        "version": "2.9.8",
+        "_links": {
+          "self": {
+            "href": "https://sw360.test.com/resource/api/releases/xxxxxxyyyyyzzzzza536d"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "curies": [
+      {
+        "href": "https://sw360.test.com/resource/docs/{rel}.html",
+        "name": "sw360",
+        "templated": true
+      }
+    ]
+  }
+}

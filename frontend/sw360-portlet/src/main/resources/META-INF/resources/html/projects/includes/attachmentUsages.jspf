@@ -24,19 +24,31 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.SAVE_ATTACHMENT_USAGES%>'/>
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${requestScope.project.id}"/>
 </portlet:resourceURL>
+<portlet:resourceURL var="loadAttachmentUsageOnClick">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.ATTACHMENT_USAGE_ON_CLICK%>'/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${requestScope.project.id}"/>
+</portlet:resourceURL>
+
+<core_rt:if test="${numberLinkedRelease == 0 and (empty allSubProjectLink)}">
+    <core_rt:set var="isEmpty" value="true"/>
+</core_rt:if>
+
+<core_rt:if test="${numberLinkedRelease > 0 or (not empty allSubProjectLink)}">
+    <core_rt:set var="isEmpty" value="false"/>
+</core_rt:if>
 
 <form id="attachmentUsagesForm" name="attachmentUsagesForm" action="<%=saveAttachmentUsagesURL%>" method="post">
     <table class="table table-bordered" id="AttachmentUsagesInfo" style="table-layout: auto"
     data-load-node-url="<%=loadAttachmentUsagesRowsURL%>"
     data-portlet-namespace="<portlet:namespace/>"
-    data-parent-branch-key="<%=PortalConstants.PARENT_BRANCH_ID%>"
+    data-parent-branch-key="<%=PortalConstants.NETWORK_PARENT_BRANCH_ID%>"
     data-scope-group-id="${httpServletRequest.getAttribute('scopeGroupId')}"
         >
         <thead>
         <tr>
             <th colspan="8" class="headlabel">
                 <div class="row m-0">
-                <core_rt:if test="${projectList.size() > 1 or (projectList.size() == 1 and not empty projectList.get(0).linkedReleases)}">
+                <core_rt:if test="${numberLinkedRelease > 0 or (not empty allSubProjectLink)}">
                     <div class="pr-2">
                         <liferay-ui:message key="linked.releases.and.projects" />
                     </div>
@@ -78,8 +90,7 @@
         </tr>
         </thead>
         <tbody>
-            <%@include file="/html/projects/includes/attachmentUsagesRows.jspf"%>
-            <core_rt:if test="${projectList.size() == 1 and empty projectList.get(0).linkedReleases}">
+            <core_rt:if test="${numberLinkedRelease == 0 and (empty allSubProjectLink)}">
                 <tr>
                     <td colspan="7"><liferay-ui:message key="no.linked.releases.or.projects" /></td>
                 </tr>
@@ -87,30 +98,57 @@
         </tbody>
     </table>
 </form>
+<br/>
+<div class="spinner text-center attachment-usage-spinner" style="display: none;">
+    <div class="spinner-border" role="status">
+        <span class="sr-only"><liferay-ui:message key="loading" /></span>
+    </div>
+</div>
 
 <script>
     require(['jquery', 'modules/ajax-treetable', 'modules/alert', 'modules/button'], function($, ajaxTreeTable, alert, button) {
 
         Liferay.on('allPortletsReady', function() {
             var config = $('#AttachmentUsagesInfo').data();
-
-            ajaxTreeTable.setup('AttachmentUsagesInfo', config.loadNodeUrl, function(table, node) {
-                var data = {};
-                data[config.portletNamespace + config.parentBranchKey] = node.id;
-                data[config.portletNamespace + 'parentProjectPath'] = $(node.row[0]).attr("data-tt-parentProjectPath");
-                data[config.portletNamespace + 'parentScopeGroupId'] = config.scopeGroupId;
-                return data;
-            }, function(table, node, result) {
-                var rows = $(result).filter("tr");
-                table.treetable("loadBranch", node, rows);
-                // next two lines are a workaround for treetable displaying the node as collapsed,
-                // yet also displaying its children, because it expects that all rows in the loadBranch call above
-                // belong to the node, but in our case we load couple levels at a time
-                table.treetable("collapseNode", node.id);
-                table.treetable("expandNode", node.id);
-                attachCheckboxEventHandlers();
-                attachClickHandlerForLicInfo();
+            let attachmentUsageLoaded = false;
+            let isEmpty = '${isEmpty}';
+            $('#attachmentUsage').on('click', function() {
+                if (attachmentUsageLoaded == false) {
+                    if (isEmpty == 'false') {
+                        loadAttachmentUsageTable();
+                        attachmentUsageLoaded = true;
+                    }
+                }
             });
+
+            async function loadAttachmentUsageTable() {
+                $('.attachment-usage-spinner').show();
+                let attachmentUsageRows = await loadAttachmentUsageOnClick();
+                attachmentUsageRows = attachmentUsageRows.replace(/\s+/g,' ').trim();
+                $("#AttachmentUsagesInfo tbody").html("").html(attachmentUsageRows);
+                setupAttachmentUsageTable();
+                $('.attachment-usage-spinner').hide();
+            }
+
+            function setupAttachmentUsageTable() {
+                ajaxTreeTable.setup('AttachmentUsagesInfo', config.loadNodeUrl, function(table, node) {
+                    var data = {};
+                    data[config.portletNamespace + config.parentBranchKey] = node.id;
+                    data[config.portletNamespace + 'parentProjectPath'] = $(node.row[0]).attr("data-tt-parentProjectPath");
+                    data[config.portletNamespace + 'parentScopeGroupId'] = config.scopeGroupId;
+                    return data;
+                }, function(table, node, result) {
+                    var rows = $(result).filter("tr");
+                    table.treetable("loadBranch", node, rows);
+                    // next two lines are a workaround for treetable displaying the node as collapsed,
+                    // yet also displaying its children, because it expects that all rows in the loadBranch call above
+                    // belong to the node, but in our case we load couple levels at a time
+                    table.treetable("collapseNode", node.id);
+                    table.treetable("expandNode", node.id);
+                    attachCheckboxEventHandlers();
+                    attachClickHandlerForLicInfo();
+                });
+            }
             attachCheckboxEventHandlers();
             attachClickHandlerForLicInfo();
             $('#saveAttachmentUsagesButton').click(saveAttachmentUsages);
@@ -246,6 +284,23 @@
                 let $shadow = $("#" + $(this).val() + "_shadow");
                 $shadow.prop('checked', true);
                 $("#" + this.id + "_shadow").prop('checked', true);
+            });
+        }
+
+        function loadAttachmentUsageOnClick(){
+            return new Promise(function(resolve, reject) {
+                jQuery.ajax({
+                    type: 'GET',
+                    url: '<%=loadAttachmentUsageOnClick%>',
+                    data: {
+                    },
+                    success: function (data) {
+                        resolve(data);
+                    },
+                    error: function() {
+                        reject("");
+                    }
+                });
             });
         }
     });

@@ -35,18 +35,17 @@
 			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Administration'}">active</core_rt:if>" href="#tab-Administration" data-toggle="list" role="tab"><liferay-ui:message key="administration" /></a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-licenseClearing'}">active</core_rt:if>" href="#tab-licenseClearing" data-toggle="list" role="tab"><liferay-ui:message key="license.clearing" /></a>		
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-licenseClearing'}">active</core_rt:if>" href="#tab-licenseClearing" data-toggle="list" role="tab" id="licenseClearing"><liferay-ui:message key="license.clearing" /></a>
 			<core_rt:if test="${isProjectObligationsEnabled}">
-			<a id="obligationCountBadge" class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Obligations'}">active</core_rt:if>" href="#tab-Obligations" data-toggle="list" role="tab"><liferay-ui:message key="obligations" />
-			</a>
+			<a id="obligationCountBadge" class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Obligations'}">active</core_rt:if>" href="#tab-Obligations" data-toggle="list" role="tab"><liferay-ui:message key="obligations" /></a>
 			</core_rt:if>
-<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECC'}">active</core_rt:if>" href="#tab-ECC" data-toggle="list" role="tab"><liferay-ui:message key="ecc" /></a>
-<core_rt:if test="${isSvmEnabled == true}">
-<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-VulnerabilityTrackingsStatus'}">active</core_rt:if>" href="#tab-VulnerabilityTrackingsStatus" data-toggle="list" role="tab"><liferay-ui:message key="vulnerability.tracking.status" /></a>
-</core_rt:if>
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECC'}">active</core_rt:if>" href="#tab-ECC" data-toggle="list" role="tab" id="ecc"><liferay-ui:message key="ecc" /></a>
+			<core_rt:if test="${isSvmEnabled == true}">
+			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-VulnerabilityTrackingsStatus'}">active</core_rt:if>" href="#tab-VulnerabilityTrackingsStatus" data-toggle="list" role="tab"><liferay-ui:message key="vulnerability.tracking.status" /></a>
+			</core_rt:if>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab"><liferay-ui:message key="attachments" /></a>
 			<core_rt:if test="${inProjectDetailsContext}">
-				<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active</core_rt:if>" href="#tab-attachmentUsages" data-toggle="list" role="tab"><liferay-ui:message key="attachment.usages" /></a>
+				<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active</core_rt:if>" href="#tab-attachmentUsages" data-toggle="list" role="tab" id="attachmentUsage"><liferay-ui:message key="attachment.usages" /></a>
 			</core_rt:if>
 			<core_rt:if test="${inProjectDetailsContext}">
 				<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active</core_rt:if>" href="#tab-Vulnerabilities" data-toggle="list" role="tab">
@@ -90,9 +89,9 @@
                                                         </div>
 							 <div class="list-group-companion" data-belong-to="tab-licenseClearing">
 								<div class="nav nav-pills justify-content-center bg-light font-weight-bold d-inline-flex" id="pills-tab" role="tablist">
-									<a class="nav-item nav-link active" id="pills-tree-tab" data-toggle="pill" href="#pills-treeView" role="tab" aria-controls="pills-treeView" aria-selected="true">
+									<a class="nav-item nav-link active" id="pills-tree-tab" data-toggle="pill" href="#pills-network-treeView" role="tab" aria-controls="pills-treeView" aria-selected="true">
 									<liferay-ui:message key="tree.view" /></a>
-									<a class="nav-item nav-link" id="pills-list-tab" data-toggle="pill" href="#pills-listView" role="tab" aria-controls="pills-listView" aria-selected="false">
+									<a class="nav-item nav-link" id="pills-list-tab" data-toggle="pill" href="#pills-network-listView" role="tab" aria-controls="pills-listView" aria-selected="false">
 									<liferay-ui:message key="list.view" /></a>
 								</div>
 								<div id="btnExportGroup" class="btn-group" role="group">
@@ -255,8 +254,8 @@
                                 <ul class="nav nav-tabs font-weight-bold border-bottom" role="tablist">
                                     <li class="nav-item border rounded border-bottom-0"><a class="nav-link active" id="parentProject-tab" data-toggle="tab" href="#parentProject" role="tab"
                                         aria-controls="parentProject" aria-selected="true"><sw360:ProjectName project="${project}" /></a></li>
-                                    <core_rt:forEach var="subprojectLink" items="${allSubProjectLink}">
-                                    <core_rt:if test="${subprojectLink.id != project.id}">
+                                    <core_rt:forEach var="subprojectLink" items="${subProjectsLinkTransitive}">
+                                        <core_rt:if test="${subprojectLink.id != project.id}">
                                         <li class="nav-item border rounded border-bottom-0"><a class="nav-link" id="subProject-${subprojectLink.id}-tab" data-toggle="tab"
                                             href="#subProject-${subprojectLink.id}" role="tab" aria-controls="subProject-${subprojectLink.id}" aria-selected="false"><sw360:out value="${subprojectLink.name}" />  (<sw360:out value="${subprojectLink.version}" />)</a>
                                         </li>
@@ -267,7 +266,7 @@
                                     <div class="tab-pane fade show active" id="parentProject" role="tabpanel" aria-labelledby="parentProject-tab">
                                         <%@include file="/html/projects/includes/projects/vulnerabilities.jsp"%>
                                     </div>
-                                    <core_rt:forEach var="subprojectLink" items="${allSubProjectLink}">
+                                    <core_rt:forEach var="subprojectLink" items="${subProjectsLinkTransitive}">
                                      <core_rt:if test="${subprojectLink.id != project.id}">
                                         <div class="tab-pane fade subproject" id="subProject-${subprojectLink.id}" role="tabpanel" aria-labelledby="subProject-${subprojectLink.id}-tab">
                                             <%@include file="/html/projects/includes/projects/vulnerabilitiesFetch.jspf"%>

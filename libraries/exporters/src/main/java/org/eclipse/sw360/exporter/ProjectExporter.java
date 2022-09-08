@@ -50,7 +50,6 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
         nameToDisplayName.put(VISBILITY.getFieldName(), "visibility");
         nameToDisplayName.put(PROJECT_TYPE.getFieldName(), "project type");
         nameToDisplayName.put(LINKED_PROJECTS.getFieldName(), "linked projects with relationship");
-        nameToDisplayName.put(RELEASE_ID_TO_USAGE.getFieldName(), "releases with usage");
         nameToDisplayName.put(CLEARING_TEAM.getFieldName(), "clearing team");
         nameToDisplayName.put(PREEVALUATION_DEADLINE.getFieldName(), "pre-evaluation deadline");
         nameToDisplayName.put(SYSTEM_TEST_START.getFieldName(), "system test start");
@@ -117,28 +116,15 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
         Map<String, Project> projectsById = ThriftUtils.getIdMap(helper.getProjects(linkedProjectIds, user));
         helper.setPreloadedLinkedProjects(projectsById);
 
-        Set<String> linkedReleaseIds = extractIds.apply(Project::getReleaseIdToUsage);
+        Set<String> linkedReleaseIds = new HashSet<>();
+        projects.stream().forEach(p -> {
+            linkedReleaseIds.addAll(SW360Utils.getReleaseIdsLinkedWithProject(p));
+        });
         preloadLinkedReleases(linkedReleaseIds, withLinkedOfLinked);
     }
 
     private void preloadLinkedReleases(Set<String> linkedReleaseIds, boolean withLinkedOfLinked) throws SW360Exception {
         Map<String, Release> releasesById = ThriftUtils.getIdMap(helper.getReleases(linkedReleaseIds));
-        if (withLinkedOfLinked) {
-            Set<String> linkedOfLinkedReleaseIds = releasesById
-                    .values()
-                    .stream()
-                    .map(Release::getReleaseIdToRelationship)
-                    .filter(Objects::nonNull)
-                    .map(Map::keySet)
-                    .flatMap(Set::stream)
-                    .collect(Collectors.toSet());
-
-            Map<String, Release> joinedMap = new HashMap<>();
-            Map<String, Release> linkedOfLinkedReleasesById = ThriftUtils.getIdMap(helper.getReleases(linkedOfLinkedReleaseIds));
-            joinedMap.putAll(releasesById);
-            joinedMap.putAll(linkedOfLinkedReleasesById);
-            releasesById = joinedMap;
-        }
         helper.setPreloadedLinkedReleases(releasesById, withLinkedOfLinked);
     }
 

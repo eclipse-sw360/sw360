@@ -13,6 +13,7 @@
 
 package org.eclipse.sw360.clients.rest;
 
+import org.eclipse.sw360.clients.rest.resource.projects.*;
 import org.eclipse.sw360.http.RequestBuilder;
 import org.eclipse.sw360.http.utils.HttpConstants;
 import org.eclipse.sw360.http.utils.HttpUtils;
@@ -22,6 +23,8 @@ import org.eclipse.sw360.clients.rest.resource.SW360Attributes;
 import org.eclipse.sw360.clients.rest.resource.projects.ProjectSearchParams;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectList;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTO;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTOList;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseList;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 import org.eclipse.sw360.clients.utils.SW360ResourceUtils;
@@ -67,8 +70,10 @@ public class SW360ProjectClient extends SW360Client {
      * Tag for the query that returns the releases linked to a project.
      */
     static final String TAG_GET_LINKED_RELEASES = "get_releases_linked_to_project";
+    static final String TAG_GET_DIRECT_DEPENDENCIES_OF_RELEASE = "get_direct_dependencies_of_release";
 
     private static final String PROJECTS_ENDPOINT = "projects";
+    private static final String PROJECT_NETWORK = "network";
 
     /**
      * Creates a new instance of {@code SW360ProjectClient} with the passed in
@@ -88,12 +93,12 @@ public class SW360ProjectClient extends SW360Client {
      * @param searchParams the object with search parameters
      * @return a future with the list of the projects that were matched
      */
-    public CompletableFuture<List<SW360Project>> search(ProjectSearchParams searchParams) {
+    public CompletableFuture<List<SW360ProjectDTO>> search(ProjectSearchParams searchParams) {
         String queryUrl = HttpUtils.addQueryParameters(resourceUrl(PROJECTS_ENDPOINT),
                 parametersMap(searchParams), true);
-        return executeJsonRequestWithDefault(HttpUtils.get(queryUrl), SW360ProjectList.class,
-                TAG_SEARCH_PROJECTS, SW360ProjectList::new)
-                .thenApply(SW360ResourceUtils::getSw360Projects);
+        return executeJsonRequestWithDefault(HttpUtils.get(queryUrl), SW360ProjectDTOList.class,
+                TAG_SEARCH_PROJECTS, SW360ProjectDTOList::new)
+                .thenApply(SW360ResourceUtils::getSw360ProjectDTOs);
     }
 
     /**
@@ -103,7 +108,7 @@ public class SW360ProjectClient extends SW360Client {
      * @param sw360Project a data object for the project to be added
      * @return a future with the resulting entity
      */
-    public CompletableFuture<SW360Project> createProject(SW360Project sw360Project) {
+    public CompletableFuture<SW360Project> createProject(SW360ProjectDTO sw360Project) {
         return executeJsonRequest(builder -> builder.method(RequestBuilder.Method.POST)
                         .uri(resourceUrl(PROJECTS_ENDPOINT))
                         .body(body -> body.json(sw360Project)),
@@ -117,7 +122,7 @@ public class SW360ProjectClient extends SW360Client {
      * @param project a data object for the project to be updated
      * @return a future with the updated project entity
      */
-    public CompletableFuture<SW360Project> updateProject(SW360Project project) {
+    public CompletableFuture<SW360Project> updateProject(SW360ProjectDTO project) {
         return executeJsonRequest(builder -> builder.method(RequestBuilder.Method.PATCH)
                         .uri(resourceUrl(PROJECTS_ENDPOINT, project.getId()))
                         .body(body -> body.json(project)),
@@ -187,5 +192,21 @@ public class SW360ProjectClient extends SW360Client {
             paramMap.put(SW360Attributes.PROJECT_SEARCH_BY_TYPE, params.getType().name());
         }
         return paramMap;
+    }
+
+    /**
+     * Returns a future with data about the dependencies of a release that are linked directly
+     * in dependency network of specific project.
+     *
+     * @param projectId  the ID of the project in question
+     * @param releaseId  the ID of the release in question
+     * @return a future with a list of the releases is the dependencies of a release that are linked directly
+     */
+    public CompletableFuture<List<SW360SparseRelease>> getDirectDependenciesOfRelease(String projectId, String releaseId) {
+        String uri = resourceUrl(PROJECTS_ENDPOINT, PROJECT_NETWORK, projectId,
+                        SW360Attributes.PROJECT_RELEASES, releaseId);
+        return executeJsonRequestWithDefault(HttpUtils.get(uri), SW360ReleaseList.class,
+                TAG_GET_DIRECT_DEPENDENCIES_OF_RELEASE, SW360ReleaseList::new)
+                .thenApply(SW360ResourceUtils::getSw360SparseReleases);
     }
 }

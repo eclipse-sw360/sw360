@@ -201,26 +201,6 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             "    }" +
             "}";
 
-
-    private static final String BY_RELEASE_ID_VIEW =
-            "function(doc) {" +
-                    "  if (doc.type == 'project') {" +
-                    "    for(var i in doc.releaseIdToUsage) {" +
-                    "      emit(i, doc._id);" +
-                    "    }" +
-                    "  }" +
-                    "}";
-
-
-    private static final String FULL_BY_RELEASE_ID_VIEW =
-            "function(doc) {" +
-                    "  if (doc.type == 'project') {" +
-                    "    for(var i in doc.releaseIdToUsage) {" +
-                    "      emit(i, doc._id);" +
-                    "    }" +
-                    "  }" +
-                    "}";
-
     private static final String BY_LINKING_PROJECT_ID_VIEW =
             "function(doc) {" +
                     "  if (doc.type == 'project') {" +
@@ -260,8 +240,6 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         views.put("bytag", createMapReduce(BY_TAG_VIEW, null));
         views.put("bytype", createMapReduce(BY_TYPE_VIEW, null));
         views.put("byState", createMapReduce(BY_STATE_VIEW, null));
-        views.put("byreleaseid", createMapReduce(BY_RELEASE_ID_VIEW, null));
-        views.put("fullbyreleaseid", createMapReduce(FULL_BY_RELEASE_ID_VIEW, null));
         views.put("bylinkingprojectid", createMapReduce(BY_LINKING_PROJECT_ID_VIEW, null));
         views.put("fullmyprojects", createMapReduce(FULL_MY_PROJECTS_VIEW, null));
         views.put("buprojects", createMapReduce(BU_PROJECTS_VIEW, null));
@@ -286,30 +264,6 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                 .filter(p -> isNullOrEmpty(version) ? isNullOrEmpty(p.getVersion()) : version.equals(p.getVersion()))
                 .collect(Collectors.toList());
         return makeSummaryFromFullDocs(SummaryType.SHORT, projectsMatchingNameAndVersion);
-    }
-
-    public Set<Project> searchByReleaseId(String id, User user) {
-        return searchByReleaseId(Collections.singleton(id), user);
-    }
-
-    public Set<Project> searchByReleaseId(Set<String> ids, User user) {
-        Set<String> searchIds = queryForIdsAsValue("byreleaseid", ids);
-        return getAccessibleProjectSummary(user, searchIds);
-    }
-
-    public int getCountByReleaseIds(Set<String> ids) {
-        Set<String> searchIds = queryForIdsAsValue("byreleaseid", ids);
-        return searchIds.size();
-    }
-
-    public Set<Project> searchByReleaseId(String id) {
-        Set<String> projectIds = queryForIdsAsValue("fullbyreleaseid", id);
-        return getFullDocsById(projectIds);
-    }
-
-    public Set<Project> searchByReleaseId(Set<String> ids) {
-        Set<String> projectIds = queryForIdsAsValue("fullbyreleaseid", ids);
-        return getFullDocsById(projectIds);
     }
 
     public Set<Project> searchByLinkingProjectId(String id, User user) {

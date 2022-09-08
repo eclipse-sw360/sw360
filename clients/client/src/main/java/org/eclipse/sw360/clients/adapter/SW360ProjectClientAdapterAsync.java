@@ -13,6 +13,7 @@ package org.eclipse.sw360.clients.adapter;
 import org.eclipse.sw360.clients.rest.SW360ProjectClient;
 import org.eclipse.sw360.clients.rest.resource.projects.ProjectSearchParams;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTO;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 
@@ -45,7 +46,7 @@ public interface SW360ProjectClientAdapterAsync {
      * @return a future with an {@code Optional} with the project that was
      * found
      */
-    CompletableFuture<Optional<SW360Project>> getProjectByNameAndVersion(String projectName,
+    CompletableFuture<Optional<SW360ProjectDTO>> getProjectByNameAndVersion(String projectName,
                                                                          String projectVersion);
 
     /**
@@ -55,7 +56,7 @@ public interface SW360ProjectClientAdapterAsync {
      * @param params the search parameters
      * @return a future with a list with the projects that were found
      */
-    CompletableFuture<List<SW360Project>> search(ProjectSearchParams params);
+    CompletableFuture<List<SW360ProjectDTO>> search(ProjectSearchParams params);
 
     /**
      * Creates a new {@code SW360Project} entity based on the given data
@@ -65,7 +66,7 @@ public interface SW360ProjectClientAdapterAsync {
      * @param project the data object defining the project properties
      * @return a future with the newly created {@code SW360Project} entity
      */
-    CompletableFuture<SW360Project> createProject(SW360Project project);
+    CompletableFuture<SW360Project> createProject(SW360ProjectDTO project);
 
     /**
      * Updates a project based on the passed in data object. The
@@ -74,7 +75,7 @@ public interface SW360ProjectClientAdapterAsync {
      * @param project the data object with the updated properties
      * @return a future with the updated {@code SW360Project} entity
      */
-    CompletableFuture<SW360Project> updateProject(SW360Project project);
+    CompletableFuture<SW360Project> updateProject(SW360ProjectDTO project);
 
     /**
      * Assigns a number of releases to a project.

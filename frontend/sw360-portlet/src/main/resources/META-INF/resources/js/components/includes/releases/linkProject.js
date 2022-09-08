@@ -46,12 +46,18 @@ define('components/includes/releases/linkProject', ['jquery', 'bridges/datatable
             columns: [
                 /* 0 */ { data: 'id',
                           render: function(data, type, row, meta) {
-                                        if(row.releaseIdToUsage && row.releaseIdToUsage[releaseId]) {
-                                            if(type === 'display') {
-                                                return $('<svg class="lexicon-icon text-success"><title>Already linked</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check"/></svg>')[0].outerHTML;
+                                        if(row.releaseRelationNetwork) {
+                                            let network = JSON.parse(row.releaseRelationNetwork);
+                                            let linkedReleases = network.map(release => release.releaseId);
+                                            if(linkedReleases.includes(releaseId)) {
+                                                if(type === 'display') {
+                                                    return $('<svg class="lexicon-icon text-success"><title>Already linked</title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check"/></svg>')[0].outerHTML;
+                                                } else {
+                                                    return '';
+                                                };
                                             } else {
-                                                return '';
-                                            };
+                                                return $.fn.dataTable.render.inputRadio('project', '')(data, type, row, meta);
+                                            }
                                         } else {
                                               return $.fn.dataTable.render.inputRadio('project', '')(data, type, row, meta);
                                         }
@@ -137,31 +143,54 @@ define('components/includes/releases/linkProject', ['jquery', 'bridges/datatable
             data: data,
             success: function (data) {
                 var $result = $('<div></div>'),
-                    projectName = $('#projectSearchResultstable input[name=project]:checked').parents('tr').find('td .name').data().name;
+                projectName = $('#projectSearchResultstable input[name=project]:checked').parents('tr').find('td .name').data().name;
+                if (data.success == false) {
+                    let $p1 = $('<p/>');
+                    $p1.append('The relation of release ');
+                    $('<b/>').text(releaseName).appendTo($p1);
+                    $p1.append(' and project ');
+                    $('<b/>').text(projectName).appendTo($p1);
+                    $p1.append(' had been existed!');
+                    $p1.appendTo($result);
 
+                    let $p2 = $('<p/>');
+                    $p2.append('Click ');
+                    $('<a/>', {
+                      href: link.to('project', 'edit', projectId) + '#/tab-linkedProjects',
+                      style: 'text-decoration: underline;'
+                    }).on('click', function(event) {
+                        $dialog.close();
+                        window.location.href = $(event.currentTarget).attr('href');
+                    }).text('here').appendTo($p2);
+                    $p2.append(' to edit the release relation as well as the project mainline state in the project.');
+                    $p2.appendTo($result);
+                    $p2.addClass('mb-0');
+
+                    $dialog.alert($result, true);
+                } else {
+                    let $p1 = $('<p/>');
+                    $p1.append('The release ');
+                    $('<b/>').text(releaseName).appendTo($p1);
+                    $p1.append(' has been successfully linked to project ');
+                    $('<b/>').text(projectName).appendTo($p1);
+                    $p1.appendTo($result);
+
+                    let $p2 = $('<p/>');
+                    $p2.append('Click ');
+                    $('<a/>', {
+                      href: link.to('project', 'edit', projectId) + '#/tab-linkedProjects',
+                      style: 'text-decoration: underline;'
+                    }).on('click', function(event) {
+                        $dialog.close();
+                        window.location.href = $(event.currentTarget).attr('href');
+                    }).text('here').appendTo($p2);
+                    $p2.append(' to edit the release relation as well as the project mainline state in the project.');
+                    $p2.appendTo($result);
+                    $p2.addClass('mb-0');
+
+                    $dialog.success($result, true);
+                }
                 callback();
-
-                var $p1 = $('<p/>');
-                $p1.append('The release ');
-                $('<b/>').text(releaseName).appendTo($p1);
-                $p1.append(' has been successfully linked to project ');
-                $('<b/>').text(projectName).appendTo($p1);
-                $p1.appendTo($result);
-
-                var $p2 = $('<p/>');
-                $p2.append('Click ');
-                $('<a/>', {
-                  href: link.to('project', 'edit', projectId) + '#/tab-linkedProjects',
-                  style: 'text-decoration: underline;'
-                }).on('click', function(event) {
-                    $dialog.close();
-                    window.location.href = $(event.currentTarget).attr('href');
-                }).text('here').appendTo($p2);
-                $p2.append(' to edit the release relation as well as the project mainline state in the project.');
-                $p2.appendTo($result);
-                $p2.addClass('mb-0');
-
-                $dialog.success($result, true);
             },
             beforeSend : function (test) {
                 var projectState = $('#projectSearchResultstable input[name=project]:checked').parents('tr').find('td .stateBox.capsuleRight').prop('title');

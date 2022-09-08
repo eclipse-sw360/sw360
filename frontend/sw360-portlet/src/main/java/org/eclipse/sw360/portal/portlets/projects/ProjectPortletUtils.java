@@ -78,12 +78,6 @@ public class ProjectPortletUtils {
                     }
                     updateLinkedProjectsFromRequest(request, project.linkedProjects);
                     break;
-                case RELEASE_ID_TO_USAGE:
-                    if (!project.isSetReleaseIdToUsage()) {
-                        project.setReleaseIdToUsage(new HashMap<>());
-                    }
-                    updateLinkedReleasesFromRequest(request, project.releaseIdToUsage);
-                    break;
 
                 case ATTACHMENTS:
                     project.setAttachments(PortletUtils.updateAttachmentsFromRequest(request, project.getAttachments()));
@@ -129,21 +123,6 @@ public class ProjectPortletUtils {
 
     public static String getCommentsByTodoId(PortletRequest request, String id) {
         return request.getParameter("projectobligation:" + id);
-    }
-
-    private static void updateLinkedReleasesFromRequest(PortletRequest request, Map<String, ProjectReleaseRelationship> releaseUsage) {
-        releaseUsage.clear();
-        String[] ids = request.getParameterValues(Project._Fields.RELEASE_ID_TO_USAGE.toString() + ReleaseLink._Fields.ID.toString());
-        String[] relations = request.getParameterValues(Project._Fields.RELEASE_ID_TO_USAGE.toString() + ProjectReleaseRelationship._Fields.RELEASE_RELATION.toString());
-        String[] mainlStates = request.getParameterValues(Project._Fields.RELEASE_ID_TO_USAGE.toString() + ProjectReleaseRelationship._Fields.MAINLINE_STATE.toString());
-        String[] comments = request.getParameterValues(Project._Fields.RELEASE_ID_TO_USAGE.toString() + ProjectReleaseRelationship._Fields.COMMENT.toString());
-        if (ids != null && relations != null && mainlStates != null && ids.length == relations.length && ids.length == mainlStates.length) {
-            for (int k = 0; k < ids.length; ++k) {
-                ReleaseRelationship relation = ReleaseRelationship.findByValue(Integer.parseInt(relations[k]));
-                MainlineState mainlState = MainlineState.findByValue(Integer.parseInt(mainlStates[k]));
-                releaseUsage.put(ids[k], new ProjectReleaseRelationship(relation, mainlState).setComment(comments[k]));
-            }
-        }
     }
 
     private static void updateLinkedProjectsFromRequest(PortletRequest request, Map<String, ProjectProjectRelationship> linkedProjects) {

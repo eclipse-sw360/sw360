@@ -39,6 +39,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.changelog.Sw360ChangeLogService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -119,6 +120,8 @@ public class ChangeLogSpecTest extends TestRestDocsSpecBase {
         changeLogs.add(changeLog2);
 
         given(this.changeLogServiceMock.getChangeLogsByDocumentId(any(), any())).willReturn(changeLogs);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789"));
     }
 
     @Test

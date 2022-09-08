@@ -1,6 +1,6 @@
 {
   "_embedded": {
-    "sw360:projects": [
+    "sw360:projectDTOs": [
       {
         "name": "Project_Foo",
         "version": "1.0.0",

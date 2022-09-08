@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.search.Sw360SearchService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -70,6 +71,8 @@ public class SearchSpecTest extends TestRestDocsSpecBase {
         srs.add(sr1);
 
         given(this.searchServiceMock.search(any(), any(), any())).willReturn(srs);
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789"));
     }
 
     @Test

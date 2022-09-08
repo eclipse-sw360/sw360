@@ -14,6 +14,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -91,6 +92,8 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
                 .setTitle("Test Obligation")
                 .setObligationLevel(ObligationLevel.LICENSE_OBLIGATION)
                 .setObligationType(ObligationType.PERMISSION));
+        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
+                new User("admin@sw360.org", "sw360").setId("123456789"));
     }
 
     @Test

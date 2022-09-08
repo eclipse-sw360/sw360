@@ -32,7 +32,7 @@
             <tr id="releaseLinkRow${uuid}" >
                 <td>
                     <div class="form-group">
-                        <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>">
+                        <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=PortalConstants.RELEASE_USAGE%><%=ReleaseLink._Fields.ID%>">
                         <input id="releaseName" type="text" placeholder="<liferay-ui:message key="enter.release" />" class="form-control"
                             value="<sw360:out value="${releaseLink.name}"/>" readonly/>
                     </div>
@@ -46,7 +46,7 @@
                 <td>
                     <div class="form-group">
                         <select id="releaseRelation"
-                                name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>"
+                                name="<portlet:namespace/><%=PortalConstants.RELEASE_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>"
                                 class="form-control">
                             <sw360:DisplayEnumOptions type="<%=ReleaseRelationship.class%>" selected="${releaseLink.releaseRelationship}"/>
                         </select>
@@ -55,7 +55,7 @@
                 <td>
                     <div class="form-group">
                         <select class="form-control" id="mainlineState"
-                                name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>"
+                                name="<portlet:namespace/><%=PortalConstants.RELEASE_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>"
                                 <core_rt:if test="${not isUserAtLeastClearingAdmin and not mainlineStateEnabledForUserRole}" >
                                     disabled="disabled"
                                 </core_rt:if>
@@ -66,7 +66,7 @@
                 </td>
                 <td>
                     <div class="form-group">
-                        <input id="releaseComment" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>"
+                        <input id="releaseComment" name="<portlet:namespace/><%=PortalConstants.RELEASE_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>"
                         type="text" placeholder="<liferay-ui:message key="enter.comment" />" class="form-control"
                             value="<sw360:out value="${releaseLink.comment}"/>"/>
                     </div>
@@ -86,7 +86,7 @@
                 <td>
                     <liferay-ui:message key="inaccessible.release" />                
                     <div class="form-group">
-                        <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ReleaseLink._Fields.ID%>">
+                        <input type="hidden" value="${releaseLink.id}" name="<portlet:namespace/><%=PortalConstants.RELEASE_USAGE%><%=ReleaseLink._Fields.ID%>">
                     </div>
                 </td>
                 <td>
@@ -94,7 +94,7 @@
                 <td>
                     <div class="form-group">
                         <input id="releaseRelation" type="hidden" 
-                                name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>"
+                                name="<portlet:namespace/><%=PortalConstants.RELEASE_USAGE%><%=ProjectReleaseRelationship._Fields.RELEASE_RELATION%>"
                                 value="${releaseLink.releaseRelationship.getValue()}"
                                 >
                     </div>
@@ -102,7 +102,7 @@
                 <td>
                     <div class="form-group">
                         <input id="mainlineState" type="hidden" 
-                                name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>"
+                                name="<portlet:namespace/><%=PortalConstants.RELEASE_USAGE%><%=ProjectReleaseRelationship._Fields.MAINLINE_STATE%>"
                                 value="${releaseLink.mainlineState.getValue()}"
                                 >
                     </div>
@@ -110,7 +110,7 @@
                 <td>
                     <div class="form-group">
                         <input id="releaseComment" type="hidden" 
-                                name="<portlet:namespace/><%=Project._Fields.RELEASE_ID_TO_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>"
+                                name="<portlet:namespace/><%=PortalConstants.RELEASE_USAGE%><%=ProjectReleaseRelationship._Fields.COMMENT%>"
                                 value="<sw360:out value="${releaseLink.comment}"/>"
                                 >
                     </div>

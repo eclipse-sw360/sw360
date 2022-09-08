@@ -17,6 +17,7 @@ import org.eclipse.sw360.cvesearch.datasource.CveSearchData;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchWrapper;
 import org.eclipse.sw360.cvesearch.entitytranslation.CveSearchDataTranslator;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -109,8 +110,8 @@ public class CveSearchHandler implements CveSearchService.Iface {
         Optional<Project> project = vulnerabilityConnector.getProject(projectId);
 
         return project.map(
-                r -> r.isSetReleaseIdToUsage()
-                        ? r.getReleaseIdToUsage().keySet().stream()
+                r -> r.isSetReleaseRelationNetwork()
+                        ? SW360Utils.getReleaseIdsLinkedWithProject(r).stream()
                                 .map(this::updateForRelease)
                                 .reduce(getEmptyVulnerabilityUpdateStatus(),
                                     (r1, r2) -> reduceVulnerabilityUpdateStatus(r1,r2))

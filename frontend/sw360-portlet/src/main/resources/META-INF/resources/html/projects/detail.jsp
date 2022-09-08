@@ -26,16 +26,13 @@
     <jsp:useBean id="numberOfVulnerabilities" type="java.lang.Integer" scope="request"/>
     <jsp:useBean id="defaultLicenseInfoHeaderText" class="java.lang.String" scope="request" />
     <jsp:useBean id="defaultObligationsText" class="java.lang.String" scope="request" />
-    <jsp:useBean id="licInfoAttUsages" type="java.util.Map<java.lang.String, org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage>" scope="request"/>
-    <jsp:useBean id="sourceAttUsages" type="java.util.Map<java.lang.String, org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage>" scope="request"/>
-    <jsp:useBean id="manualAttUsages" type="java.util.Map<java.lang.String, org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage>" scope="request"/>
     <core_rt:set var="isProjectObligationsEnabled" value='<%=PortalConstants.IS_PROJECT_OBLIGATIONS_ENABLED%>'/>
 </c:catch>
 
 <%@include file="/html/utils/includes/logError.jspf" %>
 
 <core_rt:if test="${empty attributeNotFoundException}">
-    <core_rt:set var="isObligationPresent" value="${not empty project.releaseIdToUsage}" />
+    <core_rt:set var="isObligationPresent" value="${isObligationPresent}" />
     <core_rt:set var="inProjectDetailsContext" value="true" scope="request"/>
     <%@include file="/html/projects/includes/detailOverview.jspf"%>
 </core_rt:if>

@@ -31,7 +31,8 @@ Import-Package: \
 	org.eclipse.sw360.commonIO.*, \
 	org.eclipse.sw360.datahandler.*, \
 	org.xml.sax.*, \
-	org.w3c.dom
+	org.w3c.dom, \
+    com.fasterxml.jackson.*
 
 # The following resources are not available as OSGI bundles and therefore will be directly included
 Include-Resource: \

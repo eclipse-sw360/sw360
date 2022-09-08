@@ -864,3 +864,7 @@
 .sw360-tt-ObligationLevel-LICENSE_OBLIGATION:hover:after {
     content: attr(data-content);
 }
+
+.sw360-tt-ReloadInfo:hover:after {
+    content: attr(data-content);
+}

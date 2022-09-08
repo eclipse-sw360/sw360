@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -23,14 +24,16 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLinkJSON;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -60,17 +63,17 @@ public class ProjectHandler implements ProjectService.Iface {
     private final ProjectSearchHandler searchHandler;
 
     ProjectHandler() throws IOException {
-        handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+        handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
         searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 
-    ProjectHandler(Supplier<CloudantClient> httpClient, String dbName, String attchmntDbName) throws IOException {
-        handler = new ProjectDatabaseHandler(httpClient, dbName, attchmntDbName);
+    ProjectHandler(Supplier<CloudantClient> cClient, Supplier<HttpClient> hClient, String dbName, String attchmntDbName) throws IOException {
+        handler = new ProjectDatabaseHandler(hClient, cClient, dbName, attchmntDbName);
         searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), dbName);
     }
 
-    ProjectHandler(Supplier<CloudantClient> cClient,Supplier<HttpClient> hClient, String dbName, String changeLogsDbName, String attchmntDbName) throws IOException {
-        handler = new ProjectDatabaseHandler(cClient, dbName, changeLogsDbName, attchmntDbName);
+    ProjectHandler(Supplier<CloudantClient> cClient, Supplier<HttpClient> hClient, String dbName, String changeLogsDbName, String attchmntDbName) throws IOException {
+        handler = new ProjectDatabaseHandler(hClient, cClient, dbName, changeLogsDbName, attchmntDbName);
         searchHandler = new ProjectSearchHandler(hClient, cClient, dbName);
     }
 
@@ -86,6 +89,11 @@ public class ProjectHandler implements ProjectService.Iface {
     @Override
     public List<Project> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions, User user) throws TException {
         return searchHandler.search(text, subQueryRestrictions, user);
+    }
+
+    @Override
+    public List<Project> refineSearchWithoutUser(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
+        return searchHandler.search(text, subQueryRestrictions);
     }
 
     @Override
@@ -150,13 +158,13 @@ public class ProjectHandler implements ProjectService.Iface {
 
     @Override
     public Set<Project> searchByReleaseId(String id, User user) throws TException {
-        return handler.searchByReleaseId(id, user);
+        return searchHandler.searchByReleaseId(id, user);
     }
 
     @Override
     public Set<Project> searchByReleaseIds(Set<String> ids, User user) throws TException {
         assertNotEmpty(ids);
-        return handler.searchByReleaseId(ids, user);
+        return searchHandler.searchByReleaseIds(ids, user);
     }
 
     @Override
@@ -213,7 +221,7 @@ public class ProjectHandler implements ProjectService.Iface {
     @Override
     public int getCountByReleaseIds(Set<String> ids) throws TException {
         assertNotEmpty(ids);
-        return handler.getCountByReleaseIds(ids);
+        return searchHandler.getCountProjectByReleaseIds(ids);
     }
 
     @Override
@@ -445,5 +453,32 @@ public class ProjectHandler implements ProjectService.Iface {
     @Override
     public void sendExportSpreadsheetSuccessMail(String url, String recepient) throws TException {
         handler.sendExportSpreadsheetSuccessMail(url, recepient);
+    }
+
+    @Override
+    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(String projectId, List<String> trace, User user) throws TException {
+        return handler.getReleaseLinksOfProjectNetWorkByTrace(trace, projectId, user);
+    }
+
+    @Override
+    public List<ProjectLink> getLinkedProjectsOfProjectWithAllReleases(Project project, boolean deep, User user) throws TException {
+        assertNotNull(project);
+        return handler.getLinkedProjectsWithAllReleases(project, deep, user);
+    }
+
+    @Override
+    public List<Project> getAll(){
+        return handler.getAll();
+    }
+
+    @Override
+    public List<ProjectLink> getDirectLinkedProjectsOfProject(Project project, User user) throws TException {
+        assertNotNull(project);
+        return handler.getDirectLinkedProjectsOfProject(project, user);
+    }
+
+    @Override
+    public List<ProjectLink> getLinkedProjectsTransitive(Project project, User user) {
+        return handler.getLinkedProjectsTransitive(project, user);
     }
 }

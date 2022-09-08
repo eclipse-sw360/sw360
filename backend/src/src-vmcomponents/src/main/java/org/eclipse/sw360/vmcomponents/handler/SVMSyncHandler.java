@@ -375,10 +375,10 @@ public class SVMSyncHandler<T extends TBase> {
         }
     }
 
-    private void initComponentDatabaseHandler() {
+    private void initComponentDatabaseHandler() throws IOException{
         if (compDB == null) {
             try {
-                compDB = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+                compDB = new ComponentDatabaseHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
             } catch (MalformedURLException e) {
                 String message = "Failed to initialize " + ComponentDatabaseHandler.class.getSimpleName();
                 log.error(message, e);
@@ -386,7 +386,7 @@ public class SVMSyncHandler<T extends TBase> {
         }
     }
 
-    public VMResult<VMComponent> findMatchByComponent(String componentId){
+    public VMResult<VMComponent> findMatchByComponent(String componentId) throws IOException{
         if (!VMComponent.class.isAssignableFrom(type)){
             return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.FAILURE, 0, 0, "no match possible for type " + this.type.getSimpleName()));
         }
@@ -455,7 +455,7 @@ public class SVMSyncHandler<T extends TBase> {
         return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.SUCCESS, 1, knownMatches.size(), null), component);
     }
 
-    public VMResult<String> findMatchByRelease(String releaseId){
+    public VMResult<String> findMatchByRelease(String releaseId) throws IOException{
         if (!Release.class.isAssignableFrom(type)){
             return new VMResult<>(SVMUtils.newRequestSummary(RequestStatus.FAILURE, 0, 0, "no match possible for type " + this.type.getSimpleName()));
         }

@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLinkJSON;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
@@ -31,7 +32,7 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<SearchResult._Fields, Comparator<SearchResult>> searchResultMap = generateSearchResultMap();
     private static final Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = generateChangeLogMap();
     private static final Map<VulnerabilityDTO._Fields, Comparator<VulnerabilityDTO>> vDtoMap = generateVulDtoMap();
-
+    private static final Map<ReleaseLinkJSON._Fields, Comparator<ReleaseLinkJSON>> releaseLinkJSONMap = generateReleaseLinkJSONMap();
     private static Map<Component._Fields, Comparator<Component>> generateComponentMap() {
         Map<Component._Fields, Comparator<Component>> componentMap = new HashMap<>();
         componentMap.put(Component._Fields.NAME, Comparator.comparing(Component::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
@@ -79,6 +80,18 @@ public class ResourceComparatorGenerator<T> {
         vulDTOMap.put(VulnerabilityDTO._Fields.PRIORITY, Comparator.comparing(VulnerabilityDTO::getPriority, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         vulDTOMap.put(VulnerabilityDTO._Fields.PROJECT_RELEVANCE, Comparator.comparing(VulnerabilityDTO::getProjectRelevance, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         return Collections.unmodifiableMap(vulDTOMap);
+    }
+
+    private static Map<ReleaseLinkJSON._Fields, Comparator<ReleaseLinkJSON>> generateReleaseLinkJSONMap() {
+        Map<ReleaseLinkJSON._Fields, Comparator<ReleaseLinkJSON>> releaseLinkJSONMap = new HashMap<>();
+        releaseLinkJSONMap.put(ReleaseLinkJSON._Fields.RELEASE_ID, Comparator.comparing(ReleaseLinkJSON::getReleaseId, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        releaseLinkJSONMap.put(ReleaseLinkJSON._Fields.RELEASE_LINK, null);
+        releaseLinkJSONMap.put(ReleaseLinkJSON._Fields.RELEASE_RELATIONSHIP, Comparator.comparing(ReleaseLinkJSON::getReleaseRelationship));
+        releaseLinkJSONMap.put(ReleaseLinkJSON._Fields.COMMENT, Comparator.comparing(ReleaseLinkJSON::getComment, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        releaseLinkJSONMap.put(ReleaseLinkJSON._Fields.MAINLINE_STATE, Comparator.comparing(ReleaseLinkJSON::getMainlineState, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        releaseLinkJSONMap.put(ReleaseLinkJSON._Fields.CREATE_BY, Comparator.comparing(ReleaseLinkJSON::getCreateBy, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        releaseLinkJSONMap.put(ReleaseLinkJSON._Fields.CREATE_ON, Comparator.comparing(ReleaseLinkJSON::getCreateOn, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(releaseLinkJSONMap);
     }
 
     public Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
@@ -160,6 +173,15 @@ public class ResourceComparatorGenerator<T> {
                     }
                 }
                 return generateVulDTOComparatorWithFields(type, vulDtos);
+            case SW360Constants.TYPE_RELEASE_LINK_JSON:
+                List<ReleaseLinkJSON._Fields> releaseLinked = new ArrayList<>();
+                for(String property : properties) {
+                    ReleaseLinkJSON._Fields field = ReleaseLinkJSON._Fields.findByName(property);
+                    if (field != null) {
+                        releaseLinked.add(field);
+                    }
+                }
+                return generateReleaseLinkJSONComparatorWithFields(type, releaseLinked);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -313,5 +335,30 @@ public class ResourceComparatorGenerator<T> {
 
     private Comparator<VulnerabilityDTO> defaultVulDtoComparator() {
         return vDtoMap.get(VulnerabilityDTO._Fields.EXTERNAL_ID);
+    }
+
+    public Comparator<T> generateReleaseLinkJSONComparatorWithFields(String type, List<ReleaseLinkJSON._Fields> fields) throws ResourceClassNotFoundException {
+        switch (type) {
+            case SW360Constants.TYPE_RELEASE_LINK_JSON:
+                return (Comparator<T>)releaseLinkJSONComparator(fields);
+            default:
+                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+        }
+    }
+
+    private Comparator<ReleaseLinkJSON> releaseLinkJSONComparator(List<ReleaseLinkJSON._Fields> fields) {
+        Comparator<ReleaseLinkJSON> comparator = Comparator.comparing(x -> true);
+        for (ReleaseLinkJSON._Fields field:fields) {
+            Comparator<ReleaseLinkJSON> fieldComparator = releaseLinkJSONMap.get(field);
+            if(fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultReleaseLinkJSONComparator());
+        return comparator;
+    }
+
+    private Comparator<ReleaseLinkJSON> defaultReleaseLinkJSONComparator() {
+        return releaseLinkJSONMap.get(ReleaseLinkJSON._Fields.RELEASE_ID);
     }
 }

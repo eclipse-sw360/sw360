@@ -21,6 +21,9 @@ import org.eclipse.sw360.clients.rest.resource.licenses.SW360SparseLicense;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectList;
 import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectListEmbedded;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTO;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTOList;
+import org.eclipse.sw360.clients.rest.resource.projects.SW360ProjectDTOListEmbedded;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseList;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseListEmbedded;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
@@ -146,4 +149,9 @@ public class SW360ResourceUtils {
                         .map(ArrayList::new))
                 .orElseGet(ArrayList::new);
     }
+
+    public static List<SW360ProjectDTO> getSw360ProjectDTOs(SW360ProjectDTOList response) {
+        return extractEmbeddedList(response, SW360ProjectDTOListEmbedded::getProjects);
+    }
+
 }

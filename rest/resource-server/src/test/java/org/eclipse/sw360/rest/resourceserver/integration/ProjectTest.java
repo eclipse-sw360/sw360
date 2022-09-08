@@ -72,8 +72,7 @@ public class ProjectTest extends TestIntegrationBase {
                         new HttpEntity<>(null, headers),
                         String.class);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-
-        TestHelper.checkResponse(response.getBody(), "projects", 1);
+        TestHelper.checkResponse(response.getBody(), "projectDTOs", 1);
     }
 
 }
