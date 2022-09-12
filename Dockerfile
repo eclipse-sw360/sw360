@@ -121,7 +121,7 @@ RUN --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
     && setup_maven_proxy \
     && mvn clean package \
     -P deploy -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
-    -DfailIfNoTests=false \
+    -Dsurefire.failIfNoSpecifiedTests=false \
     -Dbase.deploy.dir=. \
     -Dliferay.deploy.dir=/sw360_deploy \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
