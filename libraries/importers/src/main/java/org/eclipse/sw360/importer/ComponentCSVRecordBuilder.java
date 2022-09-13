@@ -340,8 +340,8 @@ public class ComponentCSVRecordBuilder extends  CustomizedCSVRecordBuilder<Compo
 
     public ComponentCSVRecordBuilder fill(EccInformation eccInfo) {
         setEccStatus(getEnumStringOrNull(eccInfo.getEccStatus()));
-        setEccAL(eccInfo.getAL());
-        setEccECCN(eccInfo.getECCN());
+        setEccAL(eccInfo.getAl());
+        setEccECCN(eccInfo.getEccn());
         setEccMaterialIndexNumber(eccInfo.getMaterialIndexNumber());
         setEccComment(eccInfo.getEccComment());
         setEccAssessorContactPerson(eccInfo.getAssessorContactPerson());

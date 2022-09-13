@@ -575,10 +575,10 @@ public class ComponentCSVRecord extends ComponentAwareCSVRecord {
             eccInformation.setEccStatus(eccs);
         }
         if (!isNullOrEmpty(eccAL)) {
-            eccInformation.setAL(eccAL);
+            eccInformation.setAl(eccAL);
         }
         if (!isNullOrEmpty(eccECCN)) {
-            eccInformation.setECCN(eccECCN);
+            eccInformation.setEccn(eccECCN);
         }
         if (!isNullOrEmpty(eccMaterialIndexNumber)) {
             eccInformation.setMaterialIndexNumber(eccMaterialIndexNumber);

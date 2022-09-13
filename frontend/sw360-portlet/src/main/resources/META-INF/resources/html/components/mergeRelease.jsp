@@ -269,8 +269,8 @@
             data.releaseSource.eccInformation = data.releaseSource.eccInformation || {};
             $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="ecc.status" />', data.releaseTarget.eccInformation.eccStatus, data.releaseSource.eccInformation.eccStatus, mapFormatter(data.displayInformation, 'eccStatus')));
             $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="ecc.comment" />', data.releaseTarget.eccInformation.eccComment, data.releaseSource.eccInformation.eccComment));
-            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="ausfuhrliste" />', data.releaseTarget.eccInformation.AL, data.releaseSource.eccInformation.AL));
-            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="eccn" />', data.releaseTarget.eccInformation.ECCN, data.releaseSource.eccInformation.ECCN));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="ausfuhrliste" />', data.releaseTarget.eccInformation.al, data.releaseSource.eccInformation.al));
+            $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="eccn" />', data.releaseTarget.eccInformation.eccn, data.releaseSource.eccInformation.eccn));
             $stepElement.append(wizard.createSingleMergeLine('<liferay-ui:message key="material.index.number" />', data.releaseTarget.eccInformation.materialIndexNumber, data.releaseSource.eccInformation.materialIndexNumber));
             $stepElement.append(
                 renderAssessorContactPerson(
@@ -414,8 +414,8 @@
             releaseSelection.eccInformation = {};
             releaseSelection.eccInformation.eccStatus = wizard.getFinalSingleValue('<liferay-ui:message key="ecc.status" />');
             releaseSelection.eccInformation.eccComment = wizard.getFinalSingleValue('<liferay-ui:message key="ecc.comment" />');
-            releaseSelection.eccInformation.AL = wizard.getFinalSingleValue('<liferay-ui:message key="ausfuhrliste" />');
-            releaseSelection.eccInformation.ECCN = wizard.getFinalSingleValue('<liferay-ui:message key="eccn" />');
+            releaseSelection.eccInformation.al = wizard.getFinalSingleValue('<liferay-ui:message key="ausfuhrliste" />');
+            releaseSelection.eccInformation.eccn = wizard.getFinalSingleValue('<liferay-ui:message key="eccn" />');
             releaseSelection.eccInformation.materialIndexNumber = wizard.getFinalSingleValue('<liferay-ui:message key="material.index.number" />');
             assessorResult = wizard.getEnhancedFinalSingleValue('<liferay-ui:message key="assessor.contact.person" />');
             if(assessorResult.target) {
@@ -544,8 +544,8 @@
             $stepElement.append(wizard.createCategoryLine('<liferay-ui:message key="ecc.information" />'));
             $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="ecc.status" />', data.releaseSelection.eccInformation.eccStatus, mapFormatter(displayInformation, 'eccStatus')));
             $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="ecc.comment" />', data.releaseSelection.eccInformation.eccComment));
-            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="ausfuhrliste" />', data.releaseSelection.eccInformation.AL));
-            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="eccn" />', data.releaseSelection.eccInformation.ECCN));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="ausfuhrliste" />', data.releaseSelection.eccInformation.al));
+            $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="eccn" />', data.releaseSelection.eccInformation.eccn));
             $stepElement.append(wizard.createSingleDisplayLine('<liferay-ui:message key="material.index.number" />', data.releaseSelection.eccInformation.materialIndexNumber));
             $stepElement.append(
                 renderAssessorContactPerson(

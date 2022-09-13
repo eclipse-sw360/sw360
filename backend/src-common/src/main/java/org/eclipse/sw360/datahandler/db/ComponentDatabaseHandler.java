@@ -1140,8 +1140,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public boolean hasEmptyEccFields(Release release) {
         EccInformation eccInformation = release.getEccInformation();
-        return isNullEmptyOrWhitespace(eccInformation.getAL()) &&
-                isNullEmptyOrWhitespace(eccInformation.getECCN()) &&
+        return isNullEmptyOrWhitespace(eccInformation.getAl()) &&
+                isNullEmptyOrWhitespace(eccInformation.getEccn()) &&
                 isNullEmptyOrWhitespace(eccInformation.getEccComment()) &&
                 (eccInformation.getEccStatus() == null || eccInformation.getEccStatus() == ECCStatus.OPEN);
     }
@@ -1164,8 +1164,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (CommonUtils.isValidUrl(url)) {
                 ensureEccInformationIsSet(release);
                 EccInformation eccInfo = release.getEccInformation();
-                eccInfo.setAL(ECC_AUTOSET_VALUE);
-                eccInfo.setECCN(ECC_AUTOSET_VALUE);
+                eccInfo.setAl(ECC_AUTOSET_VALUE);
+                eccInfo.setEccn(ECC_AUTOSET_VALUE);
                 eccInfo.setEccComment(ECC_AUTOSET_COMMENT);
                 if (DatabaseHandlerUtil.AUTO_SET_ECC_STATUS) {
                     eccInfo.setEccStatus(ECCStatus.APPROVED);

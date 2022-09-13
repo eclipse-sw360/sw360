@@ -118,7 +118,7 @@ public class ComponentDatabaseHandlerTest {
         Release release1a = new Release().setId("R1A").setComponentId("C1").setName("component1").setVersion("releaseA").setCreatedBy(email1).setVendorId("V1");
         releases.add(release1a);
         Release release1b = new Release().setId("R1B").setComponentId("C1").setName("component1").setVersion("releaseB").setCreatedBy(email2).setVendorId("V2");
-        release1b.setEccInformation(new EccInformation().setAL("AL"));
+        release1b.setEccInformation(new EccInformation().setAl("AL"));
         release1b.addToSubscribers(email1);
         releases.add(release1b);
         Release release2a = new Release().setId("R2A").setComponentId("C2").setName("component2").setVersion("releaseA").setCreatedBy(email1).setVendorId("V3");
@@ -885,15 +885,15 @@ public class ComponentDatabaseHandlerTest {
     @Test
     public void testEccUpdateSentToEccModeration() throws Exception {
         Release release = releases.get(1);
-        String expected = release.getEccInformation().getAL();
-        release.getEccInformation().setAL("UPDATED");
+        String expected = release.getEccInformation().getAl();
+        release.getEccInformation().setAl("UPDATED");
 
         when(releaseModerator.updateReleaseEccInfo(release, user1)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
         RequestStatus status = handler.updateRelease(release, user1, ThriftUtils.IMMUTABLE_OF_RELEASE);
         Release actual = handler.getRelease("R1B", user1);
 
         assertEquals(RequestStatus.SENT_TO_MODERATOR, status);
-        assertEquals(expected, actual.getEccInformation().getAL());
+        assertEquals(expected, actual.getEccInformation().getAl());
         verify(releaseModerator).updateReleaseEccInfo(release, user1);
     }
     @Test
