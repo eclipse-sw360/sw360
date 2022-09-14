@@ -32,13 +32,12 @@
         <jquery.treetable.version>3.2.0</jquery.treetable.version>
         <jquery.validation.version>1.19.0</jquery.validation.version>
 
-        <liferay.portal.kernel.version>8.1.0</liferay.portal.kernel.version>
-        <liferay.util.bridges.version>7.0.3</liferay.util.bridges.version>
-        <liferay.util.taglib.version> 8.4.8</liferay.util.taglib.version>
-        <liferay.util.java.version>5.0.5</liferay.util.java.version>
-
+        <liferay.portal.kernel.version>43.0.1</liferay.portal.kernel.version>
+        <liferay.util.bridges.version>9.0.6</liferay.util.bridges.version>
+        <liferay.util.taglib.version>8.4.8</liferay.util.taglib.version>
+        <liferay.util.java.version>17.1.2</liferay.util.java.version>
+        <liferay.petra.function.version>5.1.2</liferay.petra.function.version>
         <require.js.version>2.3.6</require.js.version>
-
         <resumable.js.version>1.1.0</resumable.js.version>
 
 	<artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
@@ -64,18 +63,18 @@
             <plugin>
                 <groupId>com.liferay</groupId>
                 <artifactId>com.liferay.css.builder</artifactId>
-                <version>2.0.2</version>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>default-build-css</id>
-                        <phase>generate-resources</phase>
+                        <phase>compile</phase>
                         <goals>
                             <goal>build</goal>
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
-                    <docrootDirName>src/main/resources/META-INF/resources</docrootDirName>
+                    <baseDir>src/main/resources/META-INF/resources</baseDir>
                 </configuration>
             </plugin>
             <plugin>
@@ -186,6 +185,12 @@
             <groupId>com.liferay.portal</groupId>
             <artifactId>com.liferay.util.java</artifactId>
             <version>${liferay.util.java.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.liferay</groupId>
+            <artifactId>com.liferay.petra.function</artifactId>
+            <version>${liferay.petra.function.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

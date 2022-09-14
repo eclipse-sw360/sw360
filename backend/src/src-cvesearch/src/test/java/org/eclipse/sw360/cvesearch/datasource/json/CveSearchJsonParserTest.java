@@ -143,7 +143,7 @@ public class CveSearchJsonParserTest {
 
     @Test
     public void testDateParser2_2(){
-        long dateAsLong = 1299534616563L;
+        long dateAsLong = 1299482430560L;
         String json = "{\"Modified\": { \"$date\": " + dateAsLong + "}}";
         CveSearchData result = cveSearchJsonParserSingle.apply(toBufferedReader(json));
         assert(result.getModified() != null);

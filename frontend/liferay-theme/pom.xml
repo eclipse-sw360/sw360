@@ -26,11 +26,9 @@
 		<com.liferay.css.builder.outputDir>${project.build.directory}/build-css</com.liferay.css.builder.outputDir>
 		<com.liferay.portal.tools.theme.builder.outputDir>target/build-theme</com.liferay.portal.tools.theme.builder.outputDir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<com.liferay.frontend.css.common.version>5.0.6</com.liferay.frontend.css.common.version>
-		<!-- The 4.x branch will fail -->
-		<com.liferay.frontend.theme.unstyled.version>5.0.14</com.liferay.frontend.theme.unstyled.version>
-		<!-- The 4.x branch will fail -->
-		<com.liferay.frontend.theme.styled.version>5.0.10</com.liferay.frontend.theme.styled.version>
+		<com.liferay.frontend.css.common.version>6.0.3</com.liferay.frontend.css.common.version>
+		<com.liferay.frontend.theme.unstyled.version>6.0.29</com.liferay.frontend.theme.unstyled.version>
+		<com.liferay.frontend.theme.styled.version>6.0.27</com.liferay.frontend.theme.styled.version>
 
 		<artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
 	</properties>
@@ -60,7 +58,7 @@
 			<plugin>
 				<groupId>com.liferay</groupId>
 				<artifactId>com.liferay.css.builder</artifactId>
-				<version>3.0.2</version>
+				<version>3.1.0</version>
 				<executions>
 					<execution>
 						<id>default-build-css</id>
