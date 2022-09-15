@@ -38,32 +38,17 @@ This is a multi module maven file. please consider that we have the following mo
 ### Required software
 
 * Java 11, tested with OpenJDK
-* CouchDB, at least 2.1 (tested, may work with other releases of CouchDB as well), runs best with 3.1.1
-* Liferay Portal CE 7.3.3 GA4 or 7.3.4 GA5
+* CouchDB, at least 3.0 (tested, may work with other releases of CouchDB as well), runs best with 3.1.1
+* Liferay Portal CE 7.4.3.18 GA18
 * Apache Tomcat 9.0.X (which is bundled with Liferay)
 * couchdb-lucene for search, please refer to installation details in the wiki, because a patch is required
-
-In addition, the Liferay instance must provide the following dependecies via OSGi:
-
-* Apache Commons Codec 1.12
-* Apache Commons Collections4 4.4
-* Apache Commons CSV 1.4
-* Apache Commons IO 2.7
-* Apache Commons Lang 2.4
-* Apache Commons Logging 1.2
-* Apache Commons Compress 1.20
-* Google Gson 2.8.9
-* Google Guava 31.0.1-jre
-* Jackson Annotations 2.13.2
-* Jackson Core 2.13.2
-* Jackson Databind 2.13.2.2
-* libthrift 0.14
+* Apache Thrift 0.16
 
 In order to build you will need:
 
 * A git client
 * Apache Maven 3.6.X
-* Apache Thrift 0.13
+* Apache Thrift 0.16
 
 http://maven.apache.org/download.html#Installation
 

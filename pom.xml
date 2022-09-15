@@ -50,11 +50,25 @@
         <patchlevel>0-SNAPSHOT</patchlevel>
 
         <!-- Build version properties -->
-        <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
-        <maven-source-plugin.version>2.4</maven-source-plugin.version>
-        <java.version>11</java.version>
+        <java_source.version>11</java_source.version>
+        <java_target.version>11</java_target.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- Plugin version properties -->
+        <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
+        <maven-bundle-plugin.version>5.1.8</maven-bundle-plugin.version>
+        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
+        <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
+        <maven-failsafe-plugin.version>3.0.0-M7</maven-failsafe-plugin.version>
+        <maven-failsafe-plugin.version>3.0.0-M7</maven-failsafe-plugin.version>
+        <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
+        <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
+        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+        <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
+        <maven-war-plugin.version>3.3.2</maven-war-plugin.version>
+        <versions-maven-plugin.version>2.12.0</versions-maven-plugin.version>
+
 
         <!-- Dependencies version properties -->
         <byte-buddy.version>1.12.13</byte-buddy.version>
@@ -84,7 +98,7 @@
         <okhttp.version>4.3.1</okhttp.version>
         <package-url.version>1.1.1</package-url.version>
         <poi.version>4.1.2</poi.version>
-        <project-lombok.version>1.18.2</project-lombok.version>
+        <project-lombok.version>1.18.24</project-lombok.version>
         <slf4j.version>1.7.30</slf4j.version>
         <spring.version>5.3.19</spring.version>
         <spring-boot.version>2.6.6</spring-boot.version>
@@ -471,7 +485,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.10</version>
+                    <version>${maven-dependency-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>add-build-configuration-resources</id>
@@ -515,10 +529,31 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.7</version>
+                    <version>${maven-resources-plugin.version}</version>
                     <configuration>
                         <overwrite>true</overwrite>
                     </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <version>${maven-war-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>default-war</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>war</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
 
                 <plugin>
@@ -557,10 +592,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>${java_source.version}</source>
+                    <target>${java_target.version}</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -587,7 +622,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
-                <version>2.2</version>
+                <version>${versions-maven-plugin.version}</version>
             </plugin>
             <plugin>
                 <artifactId>maven-scm-plugin</artifactId>

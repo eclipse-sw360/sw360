@@ -114,7 +114,7 @@ public class AbstractMockServerTest {
 
     public static boolean RUN_REST_INTEGRATION_TEST;
 
-    private static final String PROPERTIES_FILE_PATH = "/couchdb-test.properties";
+    private static final String PROPERTIES_FILE_PATH = "/rest-test.properties";
 
     static {
         Properties props = CommonUtils.loadProperties(AbstractMockServerTest.class, PROPERTIES_FILE_PATH);
