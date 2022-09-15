@@ -503,7 +503,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 }
             }
             if (clearingRequest.getTimestampOfDecision() > 1) {
-                Integer criticalCount = client.getCriticalClearingRequestCount();
+                Integer criticalCount = client.getOpenCriticalCrCountByGroup(user.getDepartment());
                 request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
             }
             String dateLimit = CommonUtils.nullToEmptyString(ModerationPortletUtils.loadPreferredClearingDateLimit(request, user));
@@ -947,7 +947,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_PROJECT);
             setAttachmentsInRequest(request, actual_project);
             ModerationService.Iface modClient = thriftClients.makeModerationClient();
-            Integer criticalCount = modClient.getCriticalClearingRequestCount();
+            Integer criticalCount = modClient.getOpenCriticalCrCountByGroup(user.getDepartment());
             request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
         } catch (TException e) {
             log.error("Error fetching project from backend!", e);

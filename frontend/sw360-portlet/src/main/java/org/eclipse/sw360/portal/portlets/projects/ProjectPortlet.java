@@ -467,7 +467,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             clearingRequest.setRequestingUser(user.getEmail());
             clearingRequest.setClearingState(ClearingRequestState.NEW);
             ModerationService.Iface modClient = thriftClients.makeModerationClient();
-            Integer criticalCount = modClient.getCriticalClearingRequestCount();
+            Integer criticalCount = modClient.getOpenCriticalCrCountByGroup(user.getDepartment());
             clearingRequest.setPriority(criticalCount > 1 ? null : clearingRequest.getPriority());
             LiferayPortletURL projectUrl = createDetailLinkTemplate(request);
             projectUrl.setParameter(PROJECT_ID, clearingRequest.getProjectId());
@@ -1482,7 +1482,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
             String dateLimit = CommonUtils.nullToEmptyString(ModerationPortletUtils.loadPreferredClearingDateLimit(request, UserCacheHolder.getUserFromRequest(request)));
             request.setAttribute(CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, dateLimit);
-            Integer criticalCount = modClient.getCriticalClearingRequestCount();
+            Integer criticalCount = modClient.getOpenCriticalCrCountByGroup(user.getDepartment());
             request.setAttribute(CRITICAL_CR_COUNT, criticalCount);
         } catch(TException e) {
             log.error("Error in getting the projectList from backend ", e);
@@ -1633,7 +1633,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 String dateLimit = CommonUtils.nullToEmptyString(ModerationPortletUtils.loadPreferredClearingDateLimit(request, UserCacheHolder.getUserFromRequest(request)));
                 request.setAttribute(CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT, dateLimit);
                 ModerationService.Iface modClient = thriftClients.makeModerationClient();
-                Integer criticalCount = modClient.getCriticalClearingRequestCount();
+                Integer criticalCount = modClient.getOpenCriticalCrCountByGroup(user.getDepartment());
                 request.setAttribute(IS_CLEARING_REQUEST_DISABLED_FOR_PROJECT_BU, false);
                 Set<String> groupsWithCrDisabled = Stream.of(PortalConstants.DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS.toLowerCase().split(",")).collect(Collectors.toSet());
                 if (CommonUtils.isNotEmpty(groupsWithCrDisabled) && groupsWithCrDisabled.contains(project.getBusinessUnit().toLowerCase())
