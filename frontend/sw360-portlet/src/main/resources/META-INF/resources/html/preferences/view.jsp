@@ -30,7 +30,7 @@
 <jsp:useBean id="accessTokenList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.users.RestApiToken>" scope="request"/>
 
 <core_rt:set var="enableTokenGenerator" value='<%=PortalConstants.API_TOKEN_ENABLE_GENERATOR%>'/>
-
+<core_rt:set var="disableWriteAccess" value='<%=PortalConstants.REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES%>'/>
 <div class="container">
 	<div class="row">
 		<div class="col">
@@ -157,9 +157,11 @@
                                                 id="authorities_read" class="form-check-input" />
                                             <label class="form-check-label" for="authorities_read"><liferay-ui:message key="read.access" /></label>
                                             <br>
+                                            <core_rt:if test="${disableWriteAccess}">
                                             <input type="checkbox" name="<portlet:namespace/><%=RestApiToken._Fields.AUTHORITIES%>WRITE"
                                                 id="authorities_write" class="form-check-input" />
                                             <label class="form-check-label" for="authorities_write"><liferay-ui:message key="write.access" /></label>
+                                            </core_rt:if>
                                         </div>
                                     </td>
                                 </tr>
