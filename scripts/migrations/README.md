@@ -94,6 +94,7 @@ To migrate it is recommended to do this in the following order:
 ### 16.0.0 -> 17.0.0
 
 - `050_cleanup_eccinformation_duplicate_attributes.py`
+- `051_change_eccStatus.py`
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
