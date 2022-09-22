@@ -9,7 +9,62 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-FROM eclipse-temurin:11-jdk-jammy AS builder
+#-----------------------------------------------------------------------------------
+# Base image
+# We need use JDK, JRE is not enough as Liferay do runtime changes and require javac
+FROM eclipse-temurin:11-jdk-jammy as baseimage
+
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
+RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
+    --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
+    apt-get update -qq \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    dos2unix \
+    gnupg2 \
+    iproute2 \
+    iputils-ping \
+    libarchive-tools \
+    locales \
+    lsof \
+    netbase \
+    openssl \
+    tzdata \
+    sudo \
+    unzip \
+    zip \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV LIFERAY_HOME=/app/sw360
+ENV LIFERAY_INSTALL=/app/sw360
+
+ARG USERNAME=sw360
+ARG USER_ID=1000
+ARG USER_GID=$USER_ID
+ARG HOMEDIR=/workspace
+ENV HOME=$HOMEDIR
+
+# Prepare system for non-priv user
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd \
+    --uid $USER_ID \
+    --gid $USER_GID \
+    --shell /bin/bash \
+    --home-dir $HOMEDIR \
+    --create-home $USERNAME
+
+# sudo support
+RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
+
+#-----------------------------------------------------------------------------------
+# Builder image
+FROM baseimage AS builder
 
 # Set versiona as arguments
 ARG CLUCENE_VERSION
@@ -113,14 +168,13 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/* \
     && pip install mkdocs-material
 
-# Copy the sw360 directory
-COPY . /build/sw360
-
-RUN --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
+RUN --mount=type=bind,target=/build/sw360,rw \
+    --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
     cd /build/sw360 \
     && setup_maven_proxy \
     && mvn clean package \
-    -P deploy -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
+    -P deploy \
+    -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
     -Dsurefire.failIfNoSpecifiedTests=false \
     -Dbase.deploy.dir=. \
     -Dliferay.deploy.dir=/sw360_deploy \
@@ -128,67 +182,25 @@ RUN --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
     -Drest.deploy.dir=/sw360_tomcat_webapps \
     -Dhelp-docs=true
 
+# Generate slim war files
+COPY scripts/create-slim-war-files.sh /bin/slim.sh
+COPY --from=clucenebuild /couchdb-lucene.war /sw360_tomcat_webapps
+RUN cd /sw360_tomcat_webapps \
+    && bash /bin/slim.sh \
+    && ls /sw360_tomcat_webapps
+
 #--------------------------------------------------------------------------------------------------
 # Runtime image
-# We need use JDK, JRE is not enough as Liferay do runtime changes and require javac
-FROM eclipse-temurin:11-jdk-jammy
+FROM baseimage as sw360
 
 WORKDIR /app/
 
 ARG LIFERAY_SOURCE
 
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.UTF-8
-
-RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
-    --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
-    apt-get update -qq \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    gnupg2 \
-    iproute2 \
-    iputils-ping \
-    libarchive-tools \
-    locales \
-    lsof \
-    netbase \
-    openssh-client \
-    openssl \
-    tzdata \
-    sudo \
-    vim \
-    unzip \
-    zip \
-    && rm -rf /var/lib/apt/lists/*
-
+# Copy thrift build
 COPY --from=thriftbuild /thrift-bin.tar.gz .
 RUN tar xzf thrift-bin.tar.gz -C / \
     && rm thrift-bin.tar.gz
-
-ENV LIFERAY_HOME=/app/sw360
-ENV LIFERAY_INSTALL=/app/sw360
-
-ARG USERNAME=sw360
-ARG USER_ID=1000
-ARG USER_GID=$USER_ID
-ARG HOMEDIR=/workspace
-ENV HOME=$HOMEDIR
-
-# Prepare system for non-priv user
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd \
-    --uid $USER_ID \
-    --gid $USER_GID \
-    --shell /bin/bash \
-    --home-dir $HOMEDIR \
-    --create-home $USERNAME
-
-# sudo support
-RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME
 
 # Unpack liferay as sw360 and link current tomcat version
 # to tomcat to make future proof updates
@@ -200,11 +212,12 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
     && ln -s /app/sw360/tomcat-* /app/sw360/tomcat
 
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_deploy/* /app/sw360/deploy
-COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/* /app/sw360/tomcat/webapps/
-COPY --chown=$USERNAME:$USERNAME --from=clucenebuild /couchdb-lucene.war /app/sw360/tomcat/webapps/
+COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/slim-wars/*.war /app/sw360/tomcat/webapps/
+COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
 
-# Copy tomcat base files
-COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/setenv.sh /app/sw360/tomcat/bin
+# Make catalina understand shared directory
+RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
+    && sed -i "s,shared.loader=,shared.loader=shared/*.jar,g" /app/sw360/tomcat/conf/catalina.properties
 
 # Copy liferay/sw360 config files
 COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/portal-ext.properties /app/sw360/portal-ext.properties
