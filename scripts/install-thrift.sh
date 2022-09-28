@@ -20,8 +20,6 @@
 set -e
 
 BASEDIR="${BASEDIR:-/tmp}"
-CLEANUP=true
-TARBALL=false
 THRIFT_VERSION=${THRIFT_VERSION:-0.16.0}
 UNINSTALL=false
 
@@ -30,54 +28,37 @@ has() { type "$1" &> /dev/null; }
 processThrift() {
   set -x
   VERSION=$3
-  BUILDDIR="${BASEDIR}/thrift-$VERSION"
 
-  if [[ ! -d "$BUILDDIR" ]]; then
-      echo "-[shell provisioning] Extracting thrift"
-      if [ -e "/vagrant_shared/packages/thrift-$VERSION.tar.gz" ]; then
-          tar -xzf "/vagrant_shared/packages/thrift-$VERSION.tar.gz" -C "$BASEDIR"
-      elif [ -e "/deps/thrift-$VERSION.tar.gz" ]; then
-          tar -xzf "/deps/thrift-$VERSION.tar.gz" -C "$BASEDIR"
-      else
-          TGZ="${BASEDIR}/thrift-$VERSION.tar.gz"
-
-          curl -z "$TGZ" -o "$TGZ" "http://archive.apache.org/dist/thrift/$VERSION/thrift-$VERSION.tar.gz"
-          tar -xzf "$TGZ" -C "$BASEDIR"
-
-          [[ $CLEANUP ]] && rm "${BASEDIR}/thrift-$VERSION.tar.gz"
-      fi
+  echo "-[shell provisioning] Extracting thrift"
+  mkdir -p "$BASEDIR/thrift"
+  if [ -f "/var/cache/deps/thrift-$VERSION.tar.gz" ]; then
+      tar -xzf "/var/cache/deps/thrift-$VERSION.tar.gz" -C "$BASEDIR/thrift" --strip-components=1
+  else
+      curl "http://archive.apache.org/dist/thrift/$VERSION/thrift-$VERSION.tar.gz" | tar -xz -C "$BASEDIR/thrift" --strip-components=1
   fi
 
-  cd "$BUILDDIR"
-  if [[ ! -f "./compiler/cpp/thrift" ]]; then
-      echo "-[shell provisioning] Installing dependencies of thrift"
+  mkdir -p "${BASEDIR}/build"
+  cd "${BASEDIR}/build" || exit 1
+  echo "-[shell provisioning] Building thrift"
+  cmake \
+    -DBUILD_JAVA=ON \
+    -DBUILD_CPP=OFF \
+    -DBUILD_C_GLIB=OFF \
+    -DBUILD_JAVASCRIPT=OFF \
+    -DBUILD_NODEJS=OFF \
+    -DBUILD_TESTS=OFF \
+    -DWITH_OPENSSL=OFF \
+    -DBUILD_PYTHON=OFF \
+    -DBUILD_TESTING=OFF \
+    "${BASEDIR}/thrift/"
 
-      echo "-[shell provisioning] Building thrift"
-      if [[ ! -f "./Makefile" ]]; then
-          ./configure --without-java --without-cpp --without-qt5 --without-c_glib --without-erlang \
-                      --without-perl --without-php --without-php_extension --without-python --without-py3 \
-                      --without-go --without-d --without-ruby --without-erlang --without-lua \
-                      --without-nodejs --without-nodets --without-cl --without-netstd \
-                      --without-swift --without-rs
-      fi
-      if [ "$1" == true ]; then
-        # shellcheck disable=SC2046
-        make -j$(nproc)
-      fi
+  if [ "$1" == true ]; then
+    # shellcheck disable=SC2046
+    make -j$(nproc)
   fi
 
   echo "-[shell provisioning] Executing make $2 on thrift"
   $SUDO_CMD make "$2"
-
-  if [ "$TARBALL" = true ]; then
-    make DESTDIR="$PWD"/thrift-binary install
-    cd thrift-binary || exit 1
-    tar cfz /thrift-bin.tar.gz .
-  fi
-
-  if [ "$CLEANUP" = true ]; then
-      $SUDO_CMD rm -rf "$BUILDDIR"
-  fi
 }
 
 installThrift() {
@@ -108,12 +89,8 @@ uninstallThrift() {
 
 for arg in "$@"
 do
-  if [ "$arg" == "--no-cleanup" ]; then
-    CLEANUP=false
-  elif [ "$arg" == "--uninstall" ]; then
+  if [ "$arg" == "--uninstall" ]; then
     UNINSTALL=true
-  elif [ "$arg" == "--tarball" ]; then
-    TARBALL=true
   else
     echo "Unsupported parameter: $arg"
     echo "Usage: $0 [--no-cleanup] [--uninstall]"

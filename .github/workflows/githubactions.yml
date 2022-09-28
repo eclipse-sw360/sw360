@@ -59,7 +59,7 @@ jobs:
     - name: Install Thrift
       run: |
         chmod +x scripts/install-thrift.sh
-        bash scripts/install-thrift.sh --no-cleanup
+        bash scripts/install-thrift.sh
 
     - name: Build SW360
       run: |
