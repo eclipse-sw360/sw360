@@ -16,9 +16,6 @@
 SW360_DEPS_DIR="${SW360_DEPS_DIR:-deps}"
 
 jar_dependencies=(
-  https://search.maven.org/remotecontent?filepath=org/apache/commons/commons-collections4/4.4/commons-collections4-4.4.jar
-  https://search.maven.org/remotecontent?filepath=org/apache/commons/commons-csv/1.4/commons-csv-1.4.jar
-  https://search.maven.org/remotecontent?filepath=commons-io/commons-io/2.7/commons-io-2.7.jar
   https://search.maven.org/remotecontent?filepath=com/google/code/gson/gson/2.8.9/gson-2.8.9.jar
   https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-annotations/2.13.3/jackson-annotations-2.13.3.jar
   https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-core/2.13.3/jackson-core-2.13.3.jar
