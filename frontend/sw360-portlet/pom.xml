@@ -57,8 +57,8 @@
 	 </properties>
    </profile>
    </profiles>
-    <build>
-	<finalName>org.eclipse.sw360.portlet-${project.version}</finalName>
+   <build>
+   <finalName>org.eclipse.sw360.portlet-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>com.liferay</groupId>
@@ -119,30 +119,29 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
                 <configuration>
                     <archive>
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
             </plugin>
-	<plugin>
-	    <groupId>com.github.fabienbarbero</groupId>
-	    <artifactId>mkdocs-maven-plugin</artifactId>
-	    <version>1.1.1</version>
-	    <executions>
-		<execution>
-		    <id>generate-mkdocs</id>
-		    <phase>${packagePhase}</phase>
-		    <goals>
-		        <goal>build</goal>
-		    </goals>
-		    <configuration>
-		        <configFile>${basedir}/src/documentation/mkdocs.yml</configFile>
-		    </configuration>
-		</execution>
-	    </executions>
-	</plugin>
+            <plugin>
+                <groupId>com.github.fabienbarbero</groupId>
+                <artifactId>mkdocs-maven-plugin</artifactId>
+                <version>1.1.1</version>
+                <executions>
+                <execution>
+                    <id>generate-mkdocs</id>
+                    <phase>${packagePhase}</phase>
+                    <goals>
+                        <goal>build</goal>
+                    </goals>
+                    <configuration>
+                        <configFile>${basedir}/src/documentation/mkdocs.yml</configFile>
+                    </configuration>
+                </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
