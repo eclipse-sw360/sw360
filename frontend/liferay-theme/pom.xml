@@ -73,7 +73,7 @@
 			<plugin>
 				<groupId>com.liferay</groupId>
 				<artifactId>com.liferay.portal.tools.theme.builder</artifactId>
-				<version>1.1.8</version>
+				<version>${liferay.portal.tools.theme.builder.version}</version>
 				<executions>
 					<execution>
 						<phase>generate-resources</phase>
