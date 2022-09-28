@@ -26,10 +26,6 @@
 		<com.liferay.css.builder.outputDir>${project.build.directory}/build-css</com.liferay.css.builder.outputDir>
 		<com.liferay.portal.tools.theme.builder.outputDir>target/build-theme</com.liferay.portal.tools.theme.builder.outputDir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<com.liferay.frontend.css.common.version>6.0.3</com.liferay.frontend.css.common.version>
-		<com.liferay.frontend.theme.unstyled.version>6.0.29</com.liferay.frontend.theme.unstyled.version>
-		<com.liferay.frontend.theme.styled.version>6.0.27</com.liferay.frontend.theme.styled.version>
-
 		<artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
 	</properties>
 
@@ -58,7 +54,7 @@
 			<plugin>
 				<groupId>com.liferay</groupId>
 				<artifactId>com.liferay.css.builder</artifactId>
-				<version>3.1.0</version>
+				<version>${liferay.css.builder.version}</version>
 				<executions>
 					<execution>
 						<id>default-build-css</id>
@@ -100,19 +96,19 @@
 		<dependency>
 			<groupId>com.liferay</groupId>
 			<artifactId>com.liferay.frontend.css.common</artifactId>
-			<version>${com.liferay.frontend.css.common.version}</version>
+			<version>${liferay.frontend.css.common.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.liferay</groupId>
 			<artifactId>com.liferay.frontend.theme.styled</artifactId>
-			<version>${com.liferay.frontend.theme.styled.version}</version>
+			<version>${liferay.frontend.theme.styled.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.liferay</groupId>
 			<artifactId>com.liferay.frontend.theme.unstyled</artifactId>
-			<version>${com.liferay.frontend.theme.unstyled.version}</version>
+			<version>${liferay.frontend.theme.unstyled.version}</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
