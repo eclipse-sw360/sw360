@@ -18,6 +18,30 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
+# Set versions as arguments
+ARG CLUCENE_VERSION
+ARG THRIFT_VERSION
+ARG MAVEN_VERSION
+ARG LIFERAY_VERSION
+ARG LIFERAY_SOURCE
+
+ENV LIFERAY_HOME=/app/sw360
+ENV LIFERAY_INSTALL=/app/sw360
+
+ARG USERNAME=sw360
+ARG USER_ID=1000
+ARG USER_GID=$USER_ID
+ARG HOMEDIR=/workspace
+ENV HOME=$HOMEDIR
+
+# Cache dependencies
+ENV SW360_DEPS_DIR=/var/cache/deps
+COPY ./scripts/download_dependencies.sh /var/tmp/deps.sh
+
+RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
+    chmod +x /var/tmp/deps.sh \
+    && /var/tmp/deps.sh
+
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
@@ -34,20 +58,12 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     lsof \
     netbase \
     openssl \
+    procps \
     tzdata \
     sudo \
     unzip \
     zip \
     && rm -rf /var/lib/apt/lists/*
-
-ENV LIFERAY_HOME=/app/sw360
-ENV LIFERAY_INSTALL=/app/sw360
-
-ARG USERNAME=sw360
-ARG USER_ID=1000
-ARG USER_GID=$USER_ID
-ARG HOMEDIR=/workspace
-ENV HOME=$HOMEDIR
 
 # Prepare system for non-priv user
 RUN groupadd --gid $USER_GID $USERNAME \
@@ -66,7 +82,7 @@ RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
 # Builder image
 FROM baseimage AS builder
 
-# Set versiona as arguments
+# Set versions as arguments
 ARG CLUCENE_VERSION
 ARG THRIFT_VERSION
 ARG MAVEN_VERSION
@@ -75,35 +91,20 @@ ARG LIFERAY_SOURCE
 
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
-    apt-get update \
+    apt-get -qq update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    automake \
     bison \
     build-essential \
+    cmake \
     curl \
     flex \
     gettext-base \
     git \
-    libboost-dev \
-    libboost-test-dev \
-    libboost-program-options-dev \
     libevent-dev \
     libtool \
-    libssl-dev \
     pkg-config \
-    procps \
     wget \
-    unzip \
-    zip \
     && rm -rf /var/lib/apt/lists/*
-
-# Lets get dependencies as buildkit cached
-ENV SW360_DEPS_DIR=/var/cache/deps
-COPY ./scripts/download_dependencies.sh /var/tmp/deps.sh
-
-RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
-    chmod +x /var/tmp/deps.sh \
-    && /var/tmp/deps.sh
 
 # Prepare maven from binary to avoid wrong java dependencies and proxy
 RUN --mount=type=cache,mode=0755,target=/var/cache/deps \
@@ -123,8 +124,7 @@ COPY ./scripts/install-thrift.sh build_thrift.sh
 
 RUN --mount=type=tmpfs,target=/build \
     --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
-    tar -xzf "/var/cache/deps/thrift-$THRIFT_VERSION.tar.gz" --strip-components=1 -C /build \
-    && ./build_thrift.sh --tarball
+    ./build_thrift.sh
 
 #--------------------------------------------------------------------------------------------------
 # Couchdb-Lucene
@@ -197,11 +197,6 @@ WORKDIR /app/
 
 ARG LIFERAY_SOURCE
 
-# Copy thrift build
-COPY --from=thriftbuild /thrift-bin.tar.gz .
-RUN tar xzf thrift-bin.tar.gz -C / \
-    && rm thrift-bin.tar.gz
-
 # Unpack liferay as sw360 and link current tomcat version
 # to tomcat to make future proof updates
 RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
@@ -214,8 +209,12 @@ COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_deploy/* /app/sw360/de
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/slim-wars/*.war /app/sw360/tomcat/webapps/
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
 
+# Copy dependencies
 RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
     cp /var/cache/deps/jars/* /app/sw360/tomcat/shared/
+
+# Copy thrift jar from thriftbuild
+COPY --from=thriftbuild /usr/local/lib/java/libthrift-*.jar /app/sw360/tomcat/shared/
 
 # Make catalina understand shared directory
 RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
