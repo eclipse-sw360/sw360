@@ -207,7 +207,6 @@ RUN tar xzf thrift-bin.tar.gz -C / \
 RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
     mkdir sw360 \
     && tar xzf /var/cache/deps/$LIFERAY_SOURCE -C $USERNAME --strip-components=1 \
-    && cp /var/cache/deps/jars/* sw360/deploy \
     && chown -R $USERNAME:$USERNAME sw360 \
     && ln -s /app/sw360/tomcat-* /app/sw360/tomcat
 
@@ -215,9 +214,12 @@ COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_deploy/* /app/sw360/de
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/slim-wars/*.war /app/sw360/tomcat/webapps/
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
 
+RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
+    cp /var/cache/deps/jars/* /app/sw360/tomcat/shared/
+
 # Make catalina understand shared directory
 RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
-    && sed -i "s,shared.loader=,shared.loader=shared/*.jar,g" /app/sw360/tomcat/conf/catalina.properties
+    && sed -i "s,shared.loader=,shared.loader=/app/sw360/tomcat/shared/*.jar,g" /app/sw360/tomcat/conf/catalina.properties
 
 # Copy liferay/sw360 config files
 COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/portal-ext.properties /app/sw360/portal-ext.properties
