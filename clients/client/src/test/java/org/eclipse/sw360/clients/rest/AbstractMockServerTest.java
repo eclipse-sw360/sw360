@@ -339,6 +339,28 @@ public class AbstractMockServerTest {
         HttpClientFactory clientFactory = new HttpClientFactoryImpl();
         HttpClientConfig httpClientConfig = HttpClientConfig.basicConfig();
         HttpClient httpClient = clientFactory.newHttpClient(httpClientConfig);
+        objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
+
+        if (RUN_REST_INTEGRATION_TEST) {
+            return SW360ClientConfig.createConfig(REST_BASE_URL, OAUTH_BASE_URL, USERNAME, USER_PASSWORD,
+                    OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET, OAUTH_TOKEN, httpClient, objectMapper);
+        }
+
+        return SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT), USER, PASSWORD,
+                CLIENT_ID, CLIENT_PASSWORD, USER_TOKEN, httpClient, objectMapper);
+    }
+
+    /**
+     * Creates a configuration for the new(native java) client library with test properties.
+     * This configuration also contains a fully configured HTTP client and an
+     * object mapper.
+     *
+     * @return the SW360 client configuration
+     */
+    protected SW360ClientConfig createClientConfigAlt() {
+        HttpClientFactory clientFactory = new HttpClientFactoryImpl();
+        HttpClientConfig httpClientConfig = HttpClientConfig.basicConfig();
+        HttpClient httpClient = clientFactory.newHttpClientAlt(httpClientConfig);
 
         if (RUN_REST_INTEGRATION_TEST) {
             return SW360ClientConfig.createConfig(REST_BASE_URL, OAUTH_BASE_URL, USERNAME, USER_PASSWORD,

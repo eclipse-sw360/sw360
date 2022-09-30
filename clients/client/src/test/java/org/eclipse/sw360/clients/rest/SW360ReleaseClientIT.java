@@ -23,6 +23,7 @@ import org.eclipse.sw360.clients.rest.resource.components.SW360SparseComponent;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
 import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -66,6 +67,7 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
     };
 
     private SW360ReleaseClient releaseClient;
+    private SW360ReleaseClient releaseClientAlt;
     private SW360ComponentClient componentClient;
     private static final String FILE_COMPONENT = "component.json";
 
@@ -77,11 +79,16 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
                     .getReleaseAdapterAsync();
             SW360ComponentClientAdapterAsync componentClientAsync = scf.newConnection(createClientConfig())
                     .getComponentAdapterAsync();
+            SW360ReleaseClientAdapterAsync releaseClientAsyncAlt = scf.newConnection(createClientConfigAlt())
+                    .getReleaseAdapterAsync();
             componentClient = componentClientAsync.getComponentClient();
             releaseClient = releaseClientAsync.getReleaseClient();
+            releaseClientAlt = releaseClientAsyncAlt.getReleaseClient();
         } else {
             releaseClient = new SW360ReleaseClient(createClientConfig(), createMockTokenProvider());
+            releaseClientAlt = new SW360ReleaseClient(createClientConfigAlt(), createMockTokenProvider());
             prepareAccessTokens(releaseClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
+            prepareAccessTokens(releaseClientAlt.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
         }
     }
 
@@ -152,19 +159,21 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
     public void testGetReleasesByExternalIds() throws IOException {
         if(!RUN_REST_INTEGRATION_TEST) {
             Map<String, Object> idMap = new LinkedHashMap<>();
-            idMap.put("id 1", "testRelease");
+            idMap.put("id+1", "testRelease");
             idMap.put("id2", "otherFilter");
             wireMockRule.stubFor(get(urlPathEqualTo("/releases/searchByExternalIds"))
-                    .withQueryParam("id+1", equalTo("testRelease"))
-                    .withQueryParam("id2", equalTo("otherFilter"))
+                    .withRequestBody(equalToJson("{\"id+1\": \"testRelease\", \"id2\": \"otherFilter\"}"))
                     .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
                             .withBodyFile("all_releases.json")));
 
-            List<SW360SparseRelease> releases = waitFor(releaseClient.getReleasesByExternalIds(idMap));
+            List<SW360SparseRelease> releases = waitFor(releaseClientAlt.getReleasesByExternalIds(idMap));
             checkReleaseData(releases);
         } else {
+            Map<String, List<String>> externalIds = new LinkedHashMap<>();
+            externalIds.put("id1", List.of("testRelease"));
+            externalIds.put("id2", List.of("otherFilter"));
             Map<String, String> idMap = new LinkedHashMap<>();
-            idMap.put("id 1", "testRelease");
+            idMap.put("id1", "testRelease");
             idMap.put("id2", "otherFilter");
             cleanupComponent(componentClient);
             SW360Component component = componentFromJsonForIntegrationTest();
@@ -174,7 +183,7 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
             sw360Release.setComponentId(createdComponent.getId());
             sw360Release.setVersion("1.1");
             SW360Release release = waitFor(releaseClient.createRelease(sw360Release));
-            List<SW360SparseRelease> releases = waitFor(releaseClient.getReleasesByExternalIds(idMap));
+            List<SW360SparseRelease> releases = waitFor(releaseClientAlt.getReleasesByExternalIds(externalIds));
             assertEquals(releases.size(), 1);
             cleanupRelease(release, releaseClient);
             cleanupComponent(componentClient);
@@ -186,7 +195,7 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
         wireMockRule.stubFor(get(urlPathEqualTo("/releases/searchByExternalIds"))
                 .willReturn(aResponse().withStatus(HttpConstants.STATUS_NO_CONTENT)));
 
-        List<SW360SparseRelease> releases = waitFor(releaseClient.getReleasesByExternalIds(new HashMap<>()));
+        List<SW360SparseRelease> releases = waitFor(releaseClientAlt.getReleasesByExternalIds(new HashMap<String, List<String>>()));
         assertThat(releases).isEmpty();
     }
 
@@ -197,11 +206,11 @@ public class SW360ReleaseClientIT extends AbstractMockServerTest {
                     .willReturn(aJsonResponse(HttpConstants.STATUS_ERR_BAD_REQUEST)));
 
             FailedRequestException exception = expectFailedRequest(
-                    releaseClient.getReleasesByExternalIds(new HashMap<>()), HttpConstants.STATUS_ERR_BAD_REQUEST);
+                    releaseClientAlt.getReleasesByExternalIds(new HashMap<String, List<String>>()), HttpConstants.STATUS_ERR_BAD_REQUEST);
             assertThat(exception.getTag()).isEqualTo(SW360ReleaseClient.TAG_GET_RELEASES_BY_EXTERNAL_IDS);
         } else {
             cleanupComponent(componentClient);
-            List<SW360SparseRelease> releases = waitFor(releaseClient.getReleasesByExternalIds(new HashMap<>()));
+            List<SW360SparseRelease> releases = waitFor(releaseClientAlt.getReleasesByExternalIds(new HashMap<String, List<String>>()));
             assertEquals(releases.size(), 0);
         }
     }
