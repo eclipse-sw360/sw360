@@ -40,7 +40,7 @@
                             "4": '<sw360:DisplayUserEmail email="${linkedItem.release.eccInformation.assessorContactPerson}" bare="true"/>',
                             "5": "<sw360:out value="${linkedItem.release.eccInformation.assessorDepartment}"/>",
                             "6": "<sw360:out value="${linkedItem.release.eccInformation.assessmentDate}"/>",
-                            "7": "<sw360:out value="${linkedItem.release.eccInformation.ECCN}"/>"
+                            "7": "<sw360:out value="${linkedItem.release.eccInformation.eccn}"/>"
                         });
                     </core_rt:when>
                     <core_rt:otherwise>

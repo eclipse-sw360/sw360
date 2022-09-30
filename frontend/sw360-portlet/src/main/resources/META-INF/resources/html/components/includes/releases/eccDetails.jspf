@@ -23,11 +23,11 @@
     </tr>
     <tr>
         <td><liferay-ui:message key="al" />:</td>
-        <td><sw360:out value="${eccInfo.AL}"/></td>
+        <td><sw360:out value="${eccInfo.al}"/></td>
     </tr>
     <tr>
         <td><liferay-ui:message key="eccn" />:</td>
-        <td><sw360:out value="${eccInfo.ECCN}"/></td>
+        <td><sw360:out value="${eccInfo.eccn}"/></td>
     </tr>
     <tr>
         <td><liferay-ui:message key="material.index.number" />:</td>

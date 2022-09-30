@@ -159,8 +159,8 @@ struct COTSDetails{
 }
 struct EccInformation{
     1: optional ECCStatus eccStatus, // Status of ECC assessment
-    2: optional string AL, // German Ausfuhrliste
-    3: optional string ECCN, // European control classification number
+    2: optional string al, // German Ausfuhrliste
+    3: optional string eccn, // European control classification number
     4: optional string assessorContactPerson, // email of ECC person
     5: optional string assessorDepartment, // department of ECC person
     6: optional string eccComment, // comments for ecc information

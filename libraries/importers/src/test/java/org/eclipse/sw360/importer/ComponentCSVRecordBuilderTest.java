@@ -102,8 +102,8 @@ public class ComponentCSVRecordBuilderTest {
 
         eccInformation
                 .setEccStatus(ECCStatus.APPROVED)
-                .setAL("AL")
-                .setECCN("ECCN")
+                .setAl("AL")
+                .setEccn("ECCN")
                 .setMaterialIndexNumber("MIN")
                 .setEccComment("Comment")
                 .setAssessorContactPerson("JN")
