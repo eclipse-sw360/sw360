@@ -189,6 +189,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setClearingState(ClearingState.APPROVED);
         release.setMainlineState(MainlineState.SPECIFIC);
         release.setExternalIds(releaseExternalIds);
+        release.setComponentType(ComponentType.OSS);
         release.setAdditionalData(Collections.singletonMap("Key", "Value"));
         release.setAttachments(attachments);
         release.setLanguages(new HashSet<>(Arrays.asList("C++", "Java")));
@@ -212,6 +213,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release2.setBinaryDownloadurl("http://www.google.com/binaries");
         release2.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
         release2.setComponentId(component.getId());
+        release2.setComponentType(ComponentType.OSS);
         release2.setClearingState(ClearingState.APPROVED);
         release2.setMainlineState(MainlineState.MAINLINE);
         release2.setExternalIds(release2ExternalIds);
@@ -277,9 +279,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         .setId(UUID.randomUUID().toString()));
         given(this.licenseServiceMock.getLicenseById("GPL-2.0-or-later")).willReturn(
                 new License("GNU General Public License 2.0").setText("GNU General Public License 2.0 Text")
-                        .setShortname("GPL-2.0-or-later")
-                        .setId(UUID.randomUUID().toString()));
-
+                        .setShortname("GPL-2.0-or-later").setId(UUID.randomUUID().toString()));
         ExternalToolProcess fossologyProcess = new ExternalToolProcess();
         fossologyProcess.setAttachmentId("5345ab789");
         fossologyProcess.setAttachmentHash("535434657567");
@@ -367,6 +367,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("curies").description("The curies for documentation")
                         ),
                         responseFields(
+                                subsectionWithPath("_embedded.sw360:releases.[]componentType").description("The componentType of the release, possible values are " + Arrays.asList(ComponentType.values())),
                                 subsectionWithPath("_embedded.sw360:releases.[]name").description("The name of the release, optional"),
                                 subsectionWithPath("_embedded.sw360:releases.[]version").description("The version of the release"),
                                 subsectionWithPath("_embedded.sw360:releases.[]createdBy").description("Email of the release creator"),
@@ -454,6 +455,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("cpeId").description("The CPE id"),
                                 fieldWithPath("releaseDate").description("The date of this release"),
                                 fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
+                                fieldWithPath("componentType").description("The componentType of the release, possible values are " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
                                 fieldWithPath("sourceCodeDownloadurl").description("the source code download url of the release"),
                                 fieldWithPath("binaryDownloadurl").description("the binary download url of the release"),
@@ -510,7 +512,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     public void should_document_update_release() throws Exception {
         Release updateRelease = new Release();
         release.setName("Updated release");
-
+        release.setComponentType(ComponentType.OSS);
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(patch("/api/releases/" + releaseId)
                 .contentType(MediaTypes.HAL_JSON)
@@ -655,7 +657,6 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         Map<String, String> release = new HashMap<>();
         release.put("version", "1.0");
         release.put("componentId", component.getId());
-
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(post("/api/releases")
                 .contentType(MediaTypes.HAL_JSON)
@@ -732,6 +733,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
                         fieldWithPath("cpeId").description("The CPE id"),
                         fieldWithPath("releaseDate").description("The date of this release"),
+                        fieldWithPath("componentType").description("The componentType of the release, possible values are " + Arrays.asList(ComponentType.values())),
                         fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
                         fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
                         fieldWithPath("sourceCodeDownloadurl").description("the source code download url of the release"),

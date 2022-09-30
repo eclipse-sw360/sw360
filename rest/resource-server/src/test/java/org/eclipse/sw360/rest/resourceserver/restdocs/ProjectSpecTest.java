@@ -25,6 +25,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -316,6 +318,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release.setReleaseDate("2016-12-07");
         release.setVersion("2.3.0");
         release.setCreatedOn("2016-12-18");
+        Component compo = new Component();
+        compo.setComponentType(ComponentType.OSS);
+        release.setComponentType(compo.getComponentType());
         EccInformation eccInformation = new EccInformation();
         eccInformation.setEccStatus(ECCStatus.APPROVED);
         release.setEccInformation(eccInformation);
@@ -339,6 +344,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release2.setComponentId("12356115");
         release2.setClearingState(ClearingState.APPROVED);
         release2.setExternalIds(Collections.singletonMap("mainline-id-component", "1771"));
+        release2.setComponentType(ComponentType.COTS);
 
         Release rel = new Release();
         Map<String, String> releaseExternalIds = new HashMap<>();
@@ -355,6 +361,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         rel.setSourceCodeDownloadurl("http://www.google.com");
         rel.setBinaryDownloadurl("http://www.google.com/binaries");
         rel.setComponentId("17653524");
+        rel.setComponentType(ComponentType.OSS);
         rel.setClearingState(ClearingState.APPROVED);
         rel.setExternalIds(releaseExternalIds);
         rel.setAdditionalData(Collections.singletonMap("Key", "Value"));
@@ -1446,6 +1453,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                      parameterWithName("sort").description("Defines order of the releases")
                                      ),
                              responseFields(
+                                     subsectionWithPath("_embedded.sw360:releases.[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                      subsectionWithPath("_embedded.sw360:releases.[]name").description("The name of the release, optional"),
                                      subsectionWithPath("_embedded.sw360:releases.[]version").description("The version of the release"),
                                      subsectionWithPath("_embedded.sw360:releases.[]createdBy").description("Email of the release creator"),
