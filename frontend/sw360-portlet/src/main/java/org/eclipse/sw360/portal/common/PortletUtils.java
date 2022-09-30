@@ -54,6 +54,8 @@ import javax.portlet.RenderRequest;
 import javax.portlet.ResourceResponse;
 
 import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -76,6 +78,16 @@ public class PortletUtils {
     private static final String TEMPLATE_FILE = "/welcomePageGuideline.html";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static ChangeLogsPortletUtils changeLogsPortletUtils = null;
+    private static String EXTERNALID_BLOCKLIST_CLONING_RELEASE;
+    private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+    
+    static {
+        CommonUtils.loadProperties(PortletUtils.class, PROPERTIES_FILE_PATH);
+        Properties props = CommonUtils.loadProperties(PortletUtils.class, PROPERTIES_FILE_PATH);
+
+        EXTERNALID_BLOCKLIST_CLONING_RELEASE = props.getProperty("release.externalId.to.be.removed.while.cloning", "");
+    }
+
 
     private PortletUtils() {
         // Utility class with only static functions
@@ -289,6 +301,14 @@ public class PortletUtils {
     public static Release cloneRelease(String emailFromRequest, Release release) {
 
         Release newRelease = release.deepCopy();
+        Map<String, String> extIdHmap = new ConcurrentHashMap<String, String>();
+        extIdHmap = release.getExternalIds();
+        for (Entry<String, String> names : extIdHmap.entrySet()) {
+            if (names.getKey() != null && names.getKey().equals(EXTERNALID_BLOCKLIST_CLONING_RELEASE)) {
+                extIdHmap.remove(names.getKey());
+            }
+        }
+        newRelease.setExternalIds(extIdHmap);
 
         //new DB object
         newRelease.unsetId();

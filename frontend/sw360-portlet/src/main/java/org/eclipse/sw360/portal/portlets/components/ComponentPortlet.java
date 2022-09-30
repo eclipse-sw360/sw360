@@ -1077,6 +1077,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             request.setAttribute(RELEASE_LIST, Collections.emptyList());
             request.setAttribute(TOTAL_INACCESSIBLE_ROWS, 0);
             setUsingDocs(request, null, user, client);
+            release.unsetExternalIds();
             request.setAttribute(RELEASE, release);
             request.setAttribute(PortalConstants.ATTACHMENTS, Collections.emptySet());
 
