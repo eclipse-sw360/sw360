@@ -29,6 +29,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Verify license headers
+      run: |
+        chmod +x .github/testForLicenseHeaders.sh
+        bash .github/testForLicenseHeaders.sh
+
     - name: Setup CouchDB
       run: scripts/startCouchdbForTests.sh
 
@@ -50,11 +55,6 @@ jobs:
         sudo apt-get update -qq
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git temurin-11-jdk maven
         pip install mkdocs mkdocs-material
-
-    - name: Verify license headers
-      run: |
-        chmod +x .github/testForLicenseHeaders.sh
-        bash .github/testForLicenseHeaders.sh
 
     - name: Install Thrift
       run: |
