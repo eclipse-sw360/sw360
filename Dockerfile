@@ -182,11 +182,12 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     -Drest.deploy.dir=/sw360_tomcat_webapps \
     -Dhelp-docs=true
 
-# Generate slim war files
+# # Generate slim war files
+WORKDIR /sw360_tomcat_webapps/
+
 COPY scripts/create-slim-war-files.sh /bin/slim.sh
 COPY --from=clucenebuild /couchdb-lucene.war /sw360_tomcat_webapps
-RUN cd /sw360_tomcat_webapps \
-    && bash /bin/slim.sh \
+RUN bash /bin/slim.sh \
     && ls /sw360_tomcat_webapps
 
 #--------------------------------------------------------------------------------------------------
@@ -205,16 +206,18 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
     && chown -R $USERNAME:$USERNAME sw360 \
     && ln -s /app/sw360/tomcat-* /app/sw360/tomcat
 
+USER $USERNAME
+
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_deploy/* /app/sw360/deploy
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/slim-wars/*.war /app/sw360/tomcat/webapps/
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
 
-# Copy dependencies
+# Copy dependencies to deploy
 RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
-    cp /var/cache/deps/jars/* /app/sw360/tomcat/shared/
+    cp /var/cache/deps/jars/* /app/sw360/deploy
 
 # Copy thrift jar from thriftbuild
-COPY --from=thriftbuild /usr/local/lib/java/libthrift-*.jar /app/sw360/tomcat/shared/
+COPY --chown=$USERNAME:$USERNAME --from=thriftbuild /usr/local/lib/java/libthrift-*.jar /app/sw360/tomcat/shared/
 
 # Make catalina understand shared directory
 RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
@@ -224,8 +227,6 @@ RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
 COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/portal-ext.properties /app/sw360/portal-ext.properties
 COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/etc_sw360 /etc/sw360
 COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/entry_point.sh /app/entry_point.sh
-
-USER $USERNAME
 
 STOPSIGNAL SIGINT
 
