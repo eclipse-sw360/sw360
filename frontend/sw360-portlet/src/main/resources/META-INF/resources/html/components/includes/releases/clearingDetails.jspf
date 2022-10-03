@@ -503,6 +503,7 @@
                 dataObj = {};
 
             url.setParameter(tableData.releaseIdParameterName, releaseId);
+            url.setParameter(tableData.attachmentIdParameterName, attachmentId);
             dataObj[ '<portlet:namespace/>' + tableData.spdxLicenseInfoParameterName ] = JSON.stringify(data);
 
             button.wait($btnCell.find('button'));
