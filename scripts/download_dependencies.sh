@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2020. Part of the SW360 Portal Project.

@@ -37,6 +37,7 @@ ENV HOME=$HOMEDIR
 # Cache dependencies
 ENV SW360_DEPS_DIR=/var/cache/deps
 COPY ./scripts/download_dependencies.sh /var/tmp/deps.sh
+COPY ./scripts/versions.sh /var/tmp/versions.sh
 
 RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
     chmod +x /var/tmp/deps.sh \
