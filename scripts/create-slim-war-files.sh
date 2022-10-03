@@ -30,3 +30,7 @@ for i in *.war; do
   rm -rf "$i" "$i.war"
 done
 
+echo "Creating Catalina list"
+
+cd libs || exit 1
+find -- * | sed -e "s,-[0-9].*,-\*.jar \\\,g" | uniq | tee extracted_libs.txt
