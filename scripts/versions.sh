@@ -1,7 +1,7 @@
-#/bin/sh
+#!/bin/sh
 
 # -----------------------------------------------------------------------------
-# Copyright Helio Chissini de Castro 2022
+# Copyright Helio Chissini de Castro, 2022
 #
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
