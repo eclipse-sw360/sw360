@@ -9,34 +9,6 @@
 version: '3.8'
 
 services:
-  sw360:
-    image: 'sw360:latest'
-    restart: unless-stopped
-    build:
-      context: .
-      args:
-        - COUCHDB_USER
-        - COUCHDB_PASSWORD
-        - HTTP_PROXY
-        - HTTPS_PROXY
-        - LIFERAY_SOURCE
-        - LIFERAY_VERSION
-        - MAVEN_VERSION
-    container_name: sw360
-    depends_on:
-      - postgresdb
-      - couchdb
-    ports:
-      - "8080:8080"
-      - "11311:11311"
-    stdin_open: true
-    tty: true
-    volumes:
-      - etc:/etc/sw360
-      - webapps:/app/sw360/tomcat/webapps
-      - document_library:/app/sw360/data/document_library
-      - ./config:/app/sw360/config
-
   postgresdb:
     image: 'postgres:14'
     restart: unless-stopped
@@ -64,6 +36,42 @@ services:
       - 5984:5984
     volumes:
       - couchdb:/opt/couchdb/data
+
+  thrift:
+    image: 'sw360/thrift:latest'
+    build:
+      args:
+        - THRIFT_VERSION
+      context: .
+      dockerfile: scripts/docker/thrift.Dockerfile
+
+  sw360:
+    image: 'sw360:latest'
+    restart: unless-stopped
+    build:
+      context: .
+      args:
+        - COUCHDB_USER
+        - COUCHDB_PASSWORD
+        - HTTP_PROXY
+        - HTTPS_PROXY
+        - LIFERAY_SOURCE
+        - LIFERAY_VERSION
+        - MAVEN_VERSION
+    container_name: sw360
+    depends_on:
+      - couchdb
+      - 'sw360/thrift:latest'
+    ports:
+      - "8080:8080"
+      - "11311:11311"
+    stdin_open: true
+    tty: true
+    volumes:
+      - etc:/etc/sw360
+      - webapps:/app/sw360/tomcat/webapps
+      - document_library:/app/sw360/data/document_library
+      - ./config:/app/sw360/config
 
 volumes:
   postgres: null

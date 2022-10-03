@@ -20,7 +20,6 @@ ENV LC_ALL=en_US.UTF-8
 
 # Set versions as arguments
 ARG CLUCENE_VERSION
-ARG THRIFT_VERSION
 ARG MAVEN_VERSION
 ARG LIFERAY_VERSION
 ARG LIFERAY_SOURCE
@@ -85,7 +84,6 @@ FROM baseimage AS builder
 
 # Set versions as arguments
 ARG CLUCENE_VERSION
-ARG THRIFT_VERSION
 ARG MAVEN_VERSION
 ARG LIFERAY_VERSION
 ARG LIFERAY_SOURCE
@@ -113,19 +111,6 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/deps \
 COPY scripts/docker-config/mvn-proxy-settings.xml /etc
 COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
 RUN chmod a+x /usr/local/bin/setup_maven_proxy
-
-#--------------------------------------------------------------------------------------------------
-# Thrift
-FROM builder AS thriftbuild
-
-ARG BASEDIR="/build"
-ARG THRIFT_VERSION=0.16.0
-
-COPY ./scripts/install-thrift.sh build_thrift.sh
-
-RUN --mount=type=tmpfs,target=/build \
-    --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
-    ./build_thrift.sh
 
 #--------------------------------------------------------------------------------------------------
 # Couchdb-Lucene
@@ -157,7 +142,7 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-FROM thriftbuild AS sw360build
+FROM builder AS sw360build
 
 # Install mkdocs to generate documentation
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
@@ -217,8 +202,8 @@ COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/libs/*.
 RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
     cp /var/cache/deps/jars/* /app/sw360/deploy
 
-# Copy thrift jar from thriftbuild
-COPY --chown=$USERNAME:$USERNAME --from=thriftbuild /usr/local/lib/java/libthrift-*.jar /app/sw360/tomcat/shared/
+# Copy thrift jar from sw360/thrift
+COPY --chown=$USERNAME:$USERNAME --from=sw360/thrift /usr/local/lib/java/libthrift-*.jar /app/sw360/tomcat/shared/
 
 # Make catalina understand shared directory
 RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \

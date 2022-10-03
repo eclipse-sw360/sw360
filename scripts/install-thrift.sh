@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 # -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2013-2016.
 # Copyright (c) Bosch Software Innovations GmbH 2019.
