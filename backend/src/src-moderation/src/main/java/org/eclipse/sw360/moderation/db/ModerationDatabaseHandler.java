@@ -275,6 +275,16 @@ public class ModerationDatabaseHandler {
         clearingRequestRepository.update(clearingRequest);
     }
 
+    public void updateClearingRequestForChangeInProjectBU(String crId, String businessUnit, User user) {
+        try {
+            ClearingRequest clearingRequest = clearingRequestRepository.get(crId);
+            clearingRequest.setProjectBU(businessUnit);
+            clearingRequestRepository.update(clearingRequest);
+        } catch (Exception e) {
+            log.error("Failed to update CR-ID: %s with error: %s", crId, e.getMessage());
+        }
+    }
+
     public RequestStatus addCommentToClearingRequest(String id, Comment comment, User user) {
         try {
             comment.setCommentedOn(System.currentTimeMillis());
