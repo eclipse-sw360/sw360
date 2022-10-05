@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.spdx.library.model.enumerations.RelationshipType;
@@ -178,6 +179,7 @@ public class SpdxBOMImporter {
 
     private SpdxBOMImporterSink.Response importAsComponent(SpdxPackage spdxPackage) throws SW360Exception, InvalidSPDXAnalysisException {
         final Component component = createComponentFromSpdxPackage(spdxPackage);
+        component.setComponentType(ComponentType.OSS);
         return sink.addComponent(component);
     }
 
