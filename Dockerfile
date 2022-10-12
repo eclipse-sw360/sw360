@@ -20,6 +20,7 @@ ENV LC_ALL=en_US.UTF-8
 
 # Set versions as arguments
 ARG CLUCENE_VERSION
+ARG THRIFT_VERSION
 ARG MAVEN_VERSION
 ARG LIFERAY_VERSION
 ARG LIFERAY_SOURCE
@@ -33,18 +34,9 @@ ARG USER_GID=$USER_ID
 ARG HOMEDIR=/workspace
 ENV HOME=$HOMEDIR
 
-# Cache dependencies
-ENV SW360_DEPS_DIR=/var/cache/deps
-COPY ./scripts/download_dependencies.sh /var/tmp/deps.sh
-COPY ./scripts/versions.sh /var/tmp/versions.sh
-
-RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
-    chmod +x /var/tmp/deps.sh \
-    && /var/tmp/deps.sh
-
+# Base system
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
-    --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
     apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -84,6 +76,7 @@ FROM baseimage AS builder
 
 # Set versions as arguments
 ARG CLUCENE_VERSION
+ARG THRIFT_VERSION
 ARG MAVEN_VERSION
 ARG LIFERAY_VERSION
 ARG LIFERAY_SOURCE
@@ -106,11 +99,24 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     && rm -rf /var/lib/apt/lists/*
 
 # Prepare maven from binary to avoid wrong java dependencies and proxy
-RUN --mount=type=cache,mode=0755,target=/var/cache/deps \
-    tar -xzf "/var/cache/deps/apache-maven-$MAVEN_VERSION-bin.tar.gz" --strip-components=1 -C /usr/local
 COPY scripts/docker-config/mvn-proxy-settings.xml /etc
 COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
+RUN --mount=type=bind,source=deps,target=/var/cache/deps,readonly \
+    tar -xzf "/var/cache/deps/apache-maven-$MAVEN_VERSION-bin.tar.gz" --strip-components=1 -C /usr/local
 RUN chmod a+x /usr/local/bin/setup_maven_proxy
+
+#--------------------------------------------------------------------------------------------------
+# Thrift
+FROM builder AS thriftbuild
+
+ARG BASEDIR="/build"
+ARG THRIFT_VERSION=0.16.0
+
+COPY ./scripts/install-thrift.sh build_thrift.sh
+
+RUN --mount=type=bind,source=deps,target=/var/cache/deps,readonly \
+    --mount=type=tmpfs,target=/build \
+    ./build_thrift.sh
 
 #--------------------------------------------------------------------------------------------------
 # Couchdb-Lucene
@@ -125,7 +131,7 @@ COPY ./scripts/docker-config/couchdb-lucene.ini /var/tmp/couchdb-lucene.ini
 COPY ./scripts/patches/couchdb-lucene.patch /var/tmp/couchdb-lucene.patch
 
 # Build CLucene
-RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
+RUN --mount=type=bind,source=deps,target=/var/cache/deps,readonly \
     --mount=type=tmpfs,target=/build \
     --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
     tar -C /build -xf /var/cache/deps/couchdb-lucene-$CLUCENE_VERSION.tar.gz --strip-components=1 \
@@ -142,7 +148,7 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-FROM builder AS sw360build
+FROM thriftbuild AS sw360build
 
 # Install mkdocs to generate documentation
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
@@ -186,7 +192,7 @@ ARG LIFERAY_SOURCE
 
 # Unpack liferay as sw360 and link current tomcat version
 # to tomcat to make future proof updates
-RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
+RUN --mount=type=bind,source=deps,target=/var/cache/deps,readonly \
     mkdir sw360 \
     && tar xzf /var/cache/deps/$LIFERAY_SOURCE -C $USERNAME --strip-components=1 \
     && chown -R $USERNAME:$USERNAME sw360 \
@@ -199,11 +205,8 @@ COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/slim-wa
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
 
 # Copy dependencies to deploy
-RUN --mount=type=cache,mode=0755,target=/var/cache/deps,sharing=locked \
+RUN --mount=type=bind,source=deps,target=/var/cache/deps,readonly \
     cp /var/cache/deps/jars/* /app/sw360/deploy
-
-# Copy thrift jar from sw360/thrift
-COPY --chown=$USERNAME:$USERNAME --from=sw360/thrift /usr/local/lib/java/libthrift-*.jar /app/sw360/tomcat/shared/
 
 # Make catalina understand shared directory
 RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \

@@ -14,9 +14,10 @@
 # (execution of docker run cmd) starts couchdb and tomcat.
 # -----------------------------------------------------------------------------
 
-set -e
+set -e -o  pipefail
 
-# Source the versions
+# Source the version
+# shellcheck disable=SC1091
 . scripts/versions.sh
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
@@ -47,6 +48,10 @@ for arg in "$@"; do
     shift
 done
 
+# Download dependencies
+"$GIT_ROOT"/scripts/download_dependencies.sh
+
+# Compose build
 #shellcheck disable=SC2086
 docker compose \
     --file "$GIT_ROOT"/docker-compose.yml \
@@ -57,5 +62,6 @@ docker compose \
     --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
     --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" \
     --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE" \
+    --build-arg SW360_DEPS_DIR="$SW360_DEPS_DIR" \
     $docker_verbose \
     $docker_no_cache
