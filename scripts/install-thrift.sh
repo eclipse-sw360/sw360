@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 # -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2013-2016.
 # Copyright (c) Bosch Software Innovations GmbH 2019.
@@ -20,7 +20,7 @@
 set -e
 
 BASEDIR="${BASEDIR:-/tmp}"
-THRIFT_VERSION=${THRIFT_VERSION:-0.16.0}
+THRIFT_VERSION=${THRIFT_VERSION:-0.17.0}
 UNINSTALL=false
 
 has() { type "$1" &> /dev/null; }
