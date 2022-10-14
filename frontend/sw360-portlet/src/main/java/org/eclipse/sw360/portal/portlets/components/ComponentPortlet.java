@@ -1901,7 +1901,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         List<Organization> organizations = UserUtils.getOrganizations(request);
         request.setAttribute(ORGANIZATIONS, organizations);
-        request.setAttribute(VENDOR_LIST, new ThriftJsonSerializer().toJson(vendorNames));
+        request.setAttribute(VENDOR_LIST, new HashSet<String>(vendorNames));
         request.setAttribute(COMPONENT_TYPE_LIST, new ThriftJsonSerializer().toJson(componentTypeNames));
         request.setAttribute(COMPONENT_VISIBILITY_RESTRICTION, IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED);
         setComponentViewFilterAttributes(request);
