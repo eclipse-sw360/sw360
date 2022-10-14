@@ -91,13 +91,13 @@
 <table class="table label-value-table" id="assessmentSummary"
         data-load-assessment-summary-info-url="<%=loadAssessmentSummaryInfoUrl%>"
         data-attachment-content-id="${cliDbid}" data-approved-attachment-content-id="${approvedCliDbid}">
-    <thead>
+    <thead data-toggle="collapse" data-target="#assessmentSummaryBody" aria-expanded="true" aria-controls="assessmentSummaryBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
         <tr>
             <th colspan="2"><liferay-ui:message key="assessment.summary" /> <liferay-ui:message key="info" />:</th>
         </tr>
     </thead>
 
-    <tbody class="btnBody">
+    <tbody id="assessmentSummaryBody" class="collapse show btnBody">
         <tr>
             <td colspan="2">
             <core_rt:choose>
@@ -117,7 +117,7 @@
             </td>
         </tr>
     </tbody>
-    <tbody class="dataBody d-none">
+    <tbody id="assessmentSummaryBody" class="collapse show dataBody d-none">
         <tr data-key="GeneralAssessment">
             <td>General Assessment</td>
             <td class="comment-text"></td>
@@ -146,10 +146,12 @@
 </table>
 
 <table class="table label-value-table" id="ReleaseClearingOverview">
+    <thead data-toggle="collapse" data-target="#ReleaseClearingOverviewBody" aria-expanded="true" aria-controls="ReleaseClearingOverviewBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
     <tr>
         <th colspan="2"><liferay-ui:message key="clearing.details" />: <sw360:ReleaseName release="${release}" /></th>
     </tr>
     </thead>
+    <tbody id="ReleaseClearingOverviewBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="clearing.state" />:</td>
         <td class="actions">
@@ -257,15 +259,16 @@
         <td><liferay-ui:message key="comments" />:</td>
         <td><sw360:out value="${clearingInfo.comment}"/></td>
     </tr>
+    </tbody>
 </table>
 
 <table class="table label-value-table" id="RequestInfo">
-    <thead>
+    <thead data-toggle="collapse" data-target="#RequestInfoBody" aria-expanded="true" aria-controls="RequestInfoBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
     <tr>
         <th colspan="2"><liferay-ui:message key="request.information" /></th>
     </tr>
     </thead>
-
+    <tbody id="RequestInfoBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="request.id" />:</td>
         <td><sw360:out value="${clearingInfo.requestID}"/></td>
@@ -282,14 +285,16 @@
         <td><liferay-ui:message key="evaluation.end" /></td>
         <td><sw360:out value="${clearingInfo.evaluated}"/></td>
     </tr>
+    </tbody>
 </table>
 
 <table class="table label-value-table" id="ReleaseSupplementalInfo">
-    <thead>
+    <thead data-toggle="collapse" data-target="#ReleaseSupplementalInfoBody" aria-expanded="true" aria-controls="ReleaseSupplementalInfoBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
     <tr>
         <th colspan="2"><liferay-ui:message key="supplemental.information" /></th>
     </tr>
     </thead>
+    <tbody id="ReleaseSupplementalInfoBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="external.supplier.id" />:</td>
         <td><sw360:out value="${clearingInfo.externalSupplierID}"/></td>
@@ -298,12 +303,12 @@
         <td><liferay-ui:message key="number.of.security.vulnerabilities" />:</td>
         <td><sw360:out value="${clearingInfo.countOfSecurityVn}"/></td>
     </tr>
+    </tbody>
 </table>
 
 
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
-<%@ include file="/html/utils/includes/pageSpinner.jspf" %>
 <script type="text/javascript">
     require(['jquery', 'modules/button', 'utils/includes/fossologyClearing', 'modules/dialog'], function ($, button, fossology, dialog) {
         var releaseToLicenseDetailsMap = new Map();
@@ -498,6 +503,7 @@
                 dataObj = {};
 
             url.setParameter(tableData.releaseIdParameterName, releaseId);
+            url.setParameter(tableData.attachmentIdParameterName, attachmentId);
             dataObj[ '<portlet:namespace/>' + tableData.spdxLicenseInfoParameterName ] = JSON.stringify(data);
 
             button.wait($btnCell.find('button'));

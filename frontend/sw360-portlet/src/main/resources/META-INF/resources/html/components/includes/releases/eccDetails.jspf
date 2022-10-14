@@ -11,22 +11,23 @@
 <core_rt:set var="eccInfo" value="${release.eccInformation}"/>
 
 <table class="table label-value-table" id="ECCInfo">
-    <thead>
+    <thead data-toggle="collapse" data-target="#ECCInfoBody" aria-expanded="true" aria-controls="ECCInfoBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
     <tr>
         <th colspan="2"><liferay-ui:message key="ecc.information" /></th>
     </tr>
     </thead>
+    <tbody id="ECCInfoBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="ecc.status" />:</td>
         <td><sw360:DisplayEnum value="${eccInfo.eccStatus}"/></td>
     </tr>
     <tr>
         <td><liferay-ui:message key="al" />:</td>
-        <td><sw360:out value="${eccInfo.AL}"/></td>
+        <td><sw360:out value="${eccInfo.al}"/></td>
     </tr>
     <tr>
         <td><liferay-ui:message key="eccn" />:</td>
-        <td><sw360:out value="${eccInfo.ECCN}"/></td>
+        <td><sw360:out value="${eccInfo.eccn}"/></td>
     </tr>
     <tr>
         <td><liferay-ui:message key="material.index.number" />:</td>
@@ -48,4 +49,5 @@
         <td><liferay-ui:message key="assessment.date" />:</td>
         <td><sw360:out value="${eccInfo.assessmentDate}"/></td>
     </tr>
+    </tbody>
 </table>

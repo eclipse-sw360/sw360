@@ -16,11 +16,12 @@
 
 <core_rt:if test="${release != null}">
     <table class="table label-value-table" id="ReleaseDetailOverview">
-        <thead>
+        <thead data-toggle="collapse" data-target="#ReleaseDetailOverviewBody" aria-expanded="true" aria-controls="ReleaseDetailOverviewBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
         <tr>
             <th colspan="2"><liferay-ui:message key="general" /></th>
         </tr>
         </thead>
+        <tbody id="ReleaseDetailOverviewBody" class="collapse show">
         <tr>
             <td><liferay-ui:message key="id" />:</td>
             <td id="documentId"><sw360:out value="${release.id}"/>
@@ -114,20 +115,22 @@
             <td><liferay-ui:message key="additional.data" />:</td>
             <td><ul id="list-data-additional-release" class="mapDisplayRootItem"></ul> </td>
         </tr>
+        </tbody>
     </table>
 
     <core_rt:if test="${release.setRepository}">
         <table class="table label-value-table" id="ReleaseRepository">
-            <thead>
+            <thead data-toggle="collapse" data-target="#ReleaseRepositoryBody" aria-expanded="true" aria-controls="ReleaseRepositoryBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
             <tr>
                 <th colspan="2"><liferay-ui:message key="release.repository" /></th>
             </tr>
             </thead>
-
+            <tbody id="ReleaseRepositoryBody" class="collapse show">
             <tr>
                 <td><liferay-ui:message key="repository" />:</td>
                 <td><sw360:DisplayLink target="${release.repository.url}"/> <sw360:out value="(${release.repository.repositorytype})"/></td>
             </tr>
+            </tbody>
         </table>
     </core_rt:if>
 

@@ -42,9 +42,9 @@ stop_sw360() {
   echo "###############################################################################################################"
   echo "# Stopping SW360 server"
   echo "###############################################################################################################"
-  
+
   /app/sw360/tomcat/bin/shutdown.sh
-  rm /app/sw360/tomcat/webapps/*.war
+  find /app/sw360/tomcat/webapps/ -name \*.war -exec rm -f {} \;
 }
 
 tail_logs()
@@ -53,7 +53,7 @@ tail_logs()
 }
 
 # We catch the container end and call the termination
-trap 'stop_sw360' SIGTERM TERM SIGINT INT EXIT WINCH SIGWINCH
+trap 'stop_sw360' SIGTERM TERM EXIT WINCH SIGWINCH
 
 wait_couchdb
 start_sw360

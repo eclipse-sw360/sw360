@@ -465,7 +465,8 @@ public class JacksonCustomizations {
                 "setModifiedOn",
                 "modifiedOn",
                 "setModifiedBy",
-                "modifiedBy"
+                "modifiedBy",
+                "setComponentType"
         })
         static abstract class ReleaseMixin extends Release {
             @Override
@@ -778,9 +779,9 @@ public class JacksonCustomizations {
                 "materialIndexNumber",
                 "assessmentDate",
                 "setEccComment",
-                "setECCN",
+                "setEccn",
                 "setEccStatus",
-                "setAL",
+                "setAl",
                 "setAssessorContactPerson",
                 "setAssessmentDate",
                 "setAssessorDepartment",

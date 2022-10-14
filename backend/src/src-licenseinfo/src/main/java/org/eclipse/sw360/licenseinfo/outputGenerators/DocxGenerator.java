@@ -418,7 +418,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             LicenseInfo licenseInfo = result.getLicenseInfo();
             addFormattedTextInTableCell(row.addNewTableCell(), result.getName());
             XWPFParagraph versionParagraph = row.addNewTableCell().getParagraphs().get(0);
-            addHyperlink(versionParagraph, result.getVersion(), result.getRelease().getId());
+            if (null != result.getRelease()) {
+                addHyperlink(versionParagraph, result.getVersion(), result.getRelease().getId());
+            }
 
             addFormattedTextInTableCell(row.addNewTableCell(), licenseInfo.getSha1Hash());
             addFormattedTextInTableCell(row.addNewTableCell(), licenseInfo.getComponentName());

@@ -29,17 +29,21 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Verify license headers
+      run: |
+        chmod +x .github/testForLicenseHeaders.sh
+        bash .github/testForLicenseHeaders.sh
+
     - name: Setup CouchDB
-      uses: iamssen/couchdb-github-action@master
-      with:
-          couchdb-version: '3.1'
+      run: scripts/startCouchdbForTests.sh
 
     - name: Update properties with DB credentials
       run: |
-        sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' build-configuration/test-resources/couchdb-test.properties
-        sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' build-configuration/test-resources/couchdb-test.properties
         sudo mkdir -p /etc/sw360
-        sudo cp ./scripts/sw360BackendRestDockerConfig/etc_sw360/couchdb-test.properties /etc/sw360/
+        sudo cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/
+        sudo cp ./scripts/sw360BackendRestDockerConfig/etc_sw360/rest-test.properties /etc/sw360/
+        sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
+        sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
 
     - name: Set up JDK 11
       run: |
@@ -52,18 +56,14 @@ jobs:
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git temurin-11-jdk maven
         pip install mkdocs mkdocs-material
 
-    - name: Verify license headers
-      run: |
-        chmod +x .github/testForLicenseHeaders.sh
-        bash .github/testForLicenseHeaders.sh
-
     - name: Install Thrift
       run: |
         chmod +x scripts/install-thrift.sh
-        bash scripts/install-thrift.sh --no-cleanup
+        bash scripts/install-thrift.sh
 
     - name: Build SW360
-      run: mvn clean package --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false
+      run: |
+        mvn clean package --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false
 
     - name: Run PrivateProjectAccessTest
       run: |

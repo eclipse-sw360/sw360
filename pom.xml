@@ -50,21 +50,40 @@
         <patchlevel>0-SNAPSHOT</patchlevel>
 
         <!-- Build version properties -->
-        <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
-        <maven-source-plugin.version>2.4</maven-source-plugin.version>
-        <java.version>11</java.version>
+        <java_source.version>11</java_source.version>
+        <java_target.version>11</java_target.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- Plugin version properties -->
+        <asciidoctor-maven-plugin.version>2.2.2</asciidoctor-maven-plugin.version>
+        <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
+        <buildnumber-maven-plugin.version>3.0.0</buildnumber-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
+        <maven-assembly-plugin.version>3.4.2</maven-assembly-plugin.version>
+        <maven-bundle-plugin.version>5.1.8</maven-bundle-plugin.version>
+        <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
+        <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
+        <maven-enforcer-plugin.version>3.1.0</maven-enforcer-plugin.version>
+        <maven-failsafe-plugin.version>3.0.0-M7</maven-failsafe-plugin.version>
+        <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
+        <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
+        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+        <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
+        <maven-war-plugin.version>3.3.2</maven-war-plugin.version>
+        <versions-maven-plugin.version>2.12.0</versions-maven-plugin.version>
+
 
         <!-- Dependencies version properties -->
         <byte-buddy.version>1.12.13</byte-buddy.version>
         <cloudant.version>2.19.1</cloudant.version>
-        <commons-codec.version>1.12</commons-codec.version>
+        <commons-codec.version>1.15</commons-codec.version>
         <commons-collection4.version>4.4</commons-collection4.version>
         <commons-compress.version>1.21</commons-compress.version>
-        <commons-csv.version>1.4</commons-csv.version>
-        <commons-io.version>2.7</commons-io.version>
-        <commons-lang3.version>3.8.1</commons-lang3.version>
+        <commons-csv.version>1.9.0</commons-csv.version>
+        <commons-io.version>2.11.0</commons-io.version>
+        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <dom4j.version>2.1.3</dom4j.version>
         <ektorp.version>1.5.0</ektorp.version>
         <ektorplucene.version>0.2.0</ektorplucene.version>
         <findbugs-annotations.version>1.3.9-1</findbugs-annotations.version>
@@ -77,14 +96,33 @@
         <javax-annotation.version>1.3.2</javax-annotation.version>
         <jcraft.version>0.1.54</jcraft.version>
         <jgiven.version>0.17.0</jgiven.version>
+        <jquery.confirm.version>3.3.2</jquery.confirm.version>
+        <jquery.datatables.buttons.version>1.5.3</jquery.datatables.buttons.version>
+        <jquery.datatables.select.version>1.2.7</jquery.datatables.select.version>
+        <jquery.datatables.version>1.10.19</jquery.datatables.version>
+        <jquery.treetable.version>3.2.0</jquery.treetable.version>
+        <jquery.ui.version>1.12.1</jquery.ui.version>
+        <jquery.validation.version>1.19.0</jquery.validation.version>
         <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
         <junit.version>4.13.2</junit.version>
+        <liferay.portal.tools.theme.builder.version>1.1.9</liferay.portal.tools.theme.builder.version>
+        <liferay.css.builder.version>3.1.0</liferay.css.builder.version>
+        <liferay.frontend.css.common.version>6.0.3</liferay.frontend.css.common.version>
+        <liferay.frontend.theme.styled.version>6.0.27</liferay.frontend.theme.styled.version>
+        <liferay.frontend.theme.unstyled.version>6.0.29</liferay.frontend.theme.unstyled.version>
+        <liferay.petra.function.version>5.1.2</liferay.petra.function.version>
+        <liferay.portal.kernel.version>43.0.1</liferay.portal.kernel.version>
+        <liferay.util.bridges.version>9.0.6</liferay.util.bridges.version>
+        <liferay.util.java.version>17.1.2</liferay.util.java.version>
+        <liferay.util.taglib.version>8.4.8</liferay.util.taglib.version>
         <log4j2.version>2.17.1</log4j2.version>
         <mockito.version>4.7.0</mockito.version>
         <okhttp.version>4.3.1</okhttp.version>
         <package-url.version>1.1.1</package-url.version>
         <poi.version>4.1.2</poi.version>
-        <project-lombok.version>1.18.2</project-lombok.version>
+        <project-lombok.version>1.18.24</project-lombok.version>
+        <require.js.version>2.3.6</require.js.version>
+        <resumable.js.version>1.1.0</resumable.js.version>
         <slf4j.version>1.7.30</slf4j.version>
         <spring.version>5.3.19</spring.version>
         <spring-boot.version>2.6.6</spring-boot.version>
@@ -313,6 +351,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.spdx</groupId>
+                <artifactId>tools-java</artifactId>
+                <version>1.0.4</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.velocity</groupId>
                 <artifactId>velocity-engine-core</artifactId>
                 <version>2.3</version>
@@ -374,7 +417,7 @@
             <dependency>
                 <groupId>org.dom4j</groupId>
                 <artifactId>dom4j</artifactId>
-                <version>2.1.3</version>
+                <version>${dom4j.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -445,7 +488,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.4</version>
+                    <version>${jacoco-maven-plugin.version}</version>
                     <executions>
                         <execution>
                             <goals>
@@ -467,11 +510,15 @@
                         </excludes>
                     </configuration>
                 </plugin>
-
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven-jar-plugin.version}</version>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.10</version>
+                    <version>${maven-dependency-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>add-build-configuration-resources</id>
@@ -515,16 +562,37 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.7</version>
+                    <version>${maven-resources-plugin.version}</version>
                     <configuration>
                         <overwrite>true</overwrite>
                     </configuration>
                 </plugin>
 
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <version>${maven-war-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>default-war</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>war</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>buildnumber-maven-plugin</artifactId>
-                    <version>1.4</version>
+                    <version>${buildnumber-maven-plugin.version}</version>
                 </plugin>
 
                 <plugin>
@@ -557,17 +625,16 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>${java_source.version}</source>
+                    <target>${java_target.version}</target>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
             </plugin>
-
             <plugin>
                 <groupId>com.tngtech.jgiven</groupId>
                 <artifactId>jgiven-maven-plugin</artifactId>
@@ -587,7 +654,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
-                <version>2.2</version>
+                <version>${versions-maven-plugin.version}</version>
             </plugin>
             <plugin>
                 <artifactId>maven-scm-plugin</artifactId>
@@ -682,7 +749,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
-                        <version>3.0.0-M2</version>
+                        <version>${maven-enforcer-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>enforce</id>
@@ -744,7 +811,7 @@
                         <plugin>
                             <groupId>org.eclipse.cbi.maven.plugins</groupId>
                             <artifactId>eclipse-jarsigner-plugin</artifactId>
-                            <version>1.1.5</version>
+                            <version>1.3.2</version>
                         </plugin>
                     </plugins>
                 </pluginManagement>

@@ -26,12 +26,6 @@
 		<com.liferay.css.builder.outputDir>${project.build.directory}/build-css</com.liferay.css.builder.outputDir>
 		<com.liferay.portal.tools.theme.builder.outputDir>target/build-theme</com.liferay.portal.tools.theme.builder.outputDir>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<com.liferay.frontend.css.common.version>5.0.6</com.liferay.frontend.css.common.version>
-		<!-- The 4.x branch will fail -->
-		<com.liferay.frontend.theme.unstyled.version>5.0.14</com.liferay.frontend.theme.unstyled.version>
-		<!-- The 4.x branch will fail -->
-		<com.liferay.frontend.theme.styled.version>5.0.10</com.liferay.frontend.theme.styled.version>
-
 		<artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
 	</properties>
 
@@ -39,16 +33,8 @@
         <finalName>org.eclipse.sw360.liferay-theme-${project.version}</finalName>
 		<plugins>
 			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
-			<plugin>
 				<artifactId>maven-war-plugin</artifactId>
-				<version>3.0.0</version>
+				<version>${maven-war-plugin.version}</version>
 				<configuration>
 					<packagingExcludes>**/*.scss</packagingExcludes>
 					<webResources>
@@ -68,7 +54,7 @@
 			<plugin>
 				<groupId>com.liferay</groupId>
 				<artifactId>com.liferay.css.builder</artifactId>
-				<version>3.0.2</version>
+				<version>${liferay.css.builder.version}</version>
 				<executions>
 					<execution>
 						<id>default-build-css</id>
@@ -87,7 +73,7 @@
 			<plugin>
 				<groupId>com.liferay</groupId>
 				<artifactId>com.liferay.portal.tools.theme.builder</artifactId>
-				<version>1.1.8</version>
+				<version>${liferay.portal.tools.theme.builder.version}</version>
 				<executions>
 					<execution>
 						<phase>generate-resources</phase>
@@ -110,19 +96,19 @@
 		<dependency>
 			<groupId>com.liferay</groupId>
 			<artifactId>com.liferay.frontend.css.common</artifactId>
-			<version>${com.liferay.frontend.css.common.version}</version>
+			<version>${liferay.frontend.css.common.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.liferay</groupId>
 			<artifactId>com.liferay.frontend.theme.styled</artifactId>
-			<version>${com.liferay.frontend.theme.styled.version}</version>
+			<version>${liferay.frontend.theme.styled.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.liferay</groupId>
 			<artifactId>com.liferay.frontend.theme.unstyled</artifactId>
-			<version>${com.liferay.frontend.theme.unstyled.version}</version>
+			<version>${liferay.frontend.theme.unstyled.version}</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>

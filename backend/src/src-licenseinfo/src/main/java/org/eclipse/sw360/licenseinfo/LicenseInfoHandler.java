@@ -539,7 +539,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
 
     private void fillDefaults(Project project) {
         if(!project.isSetLicenseInfoHeaderText()) {
-            project.setLicenseInfoHeaderText(getDefaultLicenseInfoHeaderText());
+            project.setLicenseInfoHeaderText(getDefaultLicenseInfoHeaderText(null));
         }
         if(!project.isSetObligationsText()) {
             project.setObligationsText(getDefaultObligationsText());
@@ -825,7 +825,10 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     }
 
     @Override
-    public String getDefaultLicenseInfoHeaderText() {
+    public String getDefaultLicenseInfoHeaderText(String fileName) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(fileName)) {
+            return SW360Utils.dropCommentedLine(LicenseInfoHandler.class, fileName);
+        }
         return DEFAULT_LICENSE_INFO_TEXT;
     }
 

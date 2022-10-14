@@ -9,11 +9,12 @@
 --%>
 <core_rt:set var="cotsDetails" value="${release.cotsDetails}"/>
 <table class="table label-value-table" id="cotsDetailOverview">
-    <thead>
+    <thead data-toggle="collapse" data-target="#cotsDetailOverviewBody" aria-expanded="true" aria-controls="cotsDetailOverviewBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
     <tr>
         <th colspan="2"><liferay-ui:message key="commercial.details.administration" /></th>
     </tr>
     </thead>
+    <tbody  id="cotsDetailOverviewBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="usage.right.available" />:</td>
         <td><sw360:DisplayBoolean defined="${cotsDetails.setUsageRightAvailable}"
@@ -31,14 +32,16 @@
         <td><liferay-ui:message key="cots.clearing.report.url" />:</td>
         <td><sw360:out value="${cotsDetails.licenseClearingReportURL}"/></td>
     </tr>
+    </tbody>
 </table>
 
 <table class="table label-value-table" id="cotsOssInformation">
-    <thead>
+    <thead data-toggle="collapse" data-target="#cotsOssInformationBody" aria-expanded="true" aria-controls="cotsOssInformationBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
     <tr>
         <th colspan="2"><liferay-ui:message key="cots.oss.information" /></th>
     </tr>
     </thead>
+    <tbody  id="cotsOssInformationBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="used.license" />:</td>
         <td><sw360:out value="${cotsDetails.usedLicense}"/></td>
@@ -62,4 +65,5 @@
         <td><sw360:DisplayBoolean defined="${cotsDetails.setSourceCodeAvailable}"
                                   value="${cotsDetails.sourceCodeAvailable}"/></td>
     </tr>
+    </tbody>
 </table>

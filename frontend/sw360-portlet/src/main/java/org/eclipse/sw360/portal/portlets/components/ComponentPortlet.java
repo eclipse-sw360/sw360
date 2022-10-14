@@ -240,6 +240,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             importBom(request, response);
         } else if (PortalConstants.LICENSE_TO_SOURCE_FILE.equals(action)) {
             serveLicenseToSourceFileMapping(request, response);
+        }  else if (PortalConstants.PREPARE_IMPORT_BOM.equals(action)) {
+            prepareImportBom(request, response);
         } else if (isGenericAction(action)) {
             dealWithGenericAction(request, response, action);
         } else if (PortalConstants.LOAD_CHANGE_LOGS.equals(action) || PortalConstants.VIEW_CHANGE_LOGS.equals(action)) {
@@ -420,6 +422,19 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     private void serveViewDepartment(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         PortletUtils.setDepartmentSearchAttribute(request, response);
         include("/html/components/ajax/departmentSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+    }
+
+    private void prepareImportBom(ResourceRequest request, ResourceResponse response) {
+        final ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        User user = UserCacheHolder.getUserFromRequest(request);
+        String attachmentContentId = request.getParameter(ATTACHMENT_CONTENT_ID);
+        try {
+            final ImportBomRequestPreparation importBomRequestPreparation = componentClient.prepareImportBom(user, attachmentContentId);
+            renderRequestPreparation(request, response, importBomRequestPreparation);
+        } catch (TException e) {
+            log.error("Failed to import BOM.", e);
+            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, Integer.toString(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
     }
 
     private void serveCheckComponentName(ResourceRequest request, ResourceResponse response) throws IOException {
@@ -1077,6 +1092,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             request.setAttribute(RELEASE_LIST, Collections.emptyList());
             request.setAttribute(TOTAL_INACCESSIBLE_ROWS, 0);
             setUsingDocs(request, null, user, client);
+            release.unsetExternalIds();
             request.setAttribute(RELEASE, release);
             request.setAttribute(PortalConstants.ATTACHMENTS, Collections.emptySet());
 

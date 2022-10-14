@@ -9,11 +9,12 @@
 --%>
 
 <table class="table label-value-table" id="clearing">
-    <thead>
+    <thead data-toggle="collapse" data-target="#clearingBody" aria-expanded="true" aria-controls="clearingBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
     <tr>
         <th colspan="2"><liferay-ui:message key="clearing" /></th>
     </tr>
     </thead>
+    <tbody id="clearingBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="project.clearing.state" />:</td>
         <td><sw360:DisplayEnum value="${project.clearingState}"/></td>
@@ -87,14 +88,16 @@
             <textarea class="form-control" rows="5" id="remarksAdditionalRequirementsText" name="<portlet:namespace/><%=Project._Fields.REMARKS_ADDITIONAL_REQUIREMENTS%>" readonly><sw360:out value="${project.remarksAdditionalRequirements}" /></textarea>
         </td>
     </tr>
+    </tbody>
 </table>
 
 <table class="table label-value-table" id="lifecycle">
-    <thead>
+    <thead data-toggle="collapse" data-target="#lifecycleBody" aria-expanded="true" aria-controls="lifecycleBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
     <tr>
         <th colspan="2"><liferay-ui:message key="lifecycle" /></th>
     </tr>
     </thead>
+    <tbody id="lifecycleBody" class="collapse show">
     <tr>
         <td><liferay-ui:message key="project.state" />:</td>
         <td><sw360:DisplayEnum value="${project.state}"/></td>
@@ -115,19 +118,22 @@
         <td><liferay-ui:message key="phase.out.since" />:</td>
         <td><sw360:out value="${project.phaseOutSince}"/></td>
     </tr>
+    </tbody>
 </table>
 
 <table class="table label-value-table" id="LicenseInfoHeader" title="<liferay-ui:message key="license.info.header" />">
-    <thead>
+    <thead data-toggle="collapse" data-target="#LicenseInfoHeaderBody" aria-expanded="true" aria-controls="LicenseInfoHeaderBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
     <tr>
         <th><liferay-ui:message key="license.info.header" /></th>
     </tr>
     </thead>
+    <tbody id="LicenseInfoHeaderBody" class="collapse show">
     <tr>
         <td>
             <textarea class="form-control" rows="5" id="licenseInfoHeaderText" readonly><sw360:DisplayLicenseInfoHeader project="${project}" defaultText="${defaultLicenseInfoHeaderText}"/></textarea>
         </td>
     </tr>
+    </tbody>
 </table>
 
 <%--for javascript library loading --%>

@@ -30,6 +30,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalTool;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
@@ -101,6 +102,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Release releaseById = null;
         try {
             releaseById = sw360ComponentClient.getReleaseById(releaseId, sw360User);
+            setComponentDependentFieldsInRelease(releaseById, sw360User);
             Map<String, String> sortedAdditionalData = CommonUtils.getSortedMap(releaseById.getAdditionalData(), true);
             releaseById.setAdditionalData(sortedAdditionalData);
         } catch (SW360Exception sw360Exp) {
@@ -112,6 +114,23 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
 
         return releaseById;
+    }
+
+    public void setComponentDependentFieldsInRelease(Release releaseById, User sw360User) {
+
+        String componentId = releaseById.getComponentId();
+        if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
+            throw new HttpMessageNotReadableException("ComponentId must be present");
+        }
+        Component componentById = null;
+        try {
+            ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+            componentById = sw360ComponentClient.getComponentById(componentId, sw360User);
+        } catch (TException e) {
+            throw new HttpMessageNotReadableException("No Component found with Id - " + componentId);
+        }
+        releaseById.setComponentType(componentById.getComponentType());
+
     }
 
     @Override

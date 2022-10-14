@@ -39,8 +39,7 @@
     <dependencies>
         <dependency>
             <groupId>org.spdx</groupId>
-            <artifactId>spdx-tools</artifactId>
-            <scope>compile</scope>
+            <artifactId>tools-java</artifactId>
         </dependency>
         <!-- Needed by spdx-tools -->
         <dependency>

@@ -40,7 +40,8 @@ enum AttachmentType {
     OTHER = 16,
     README_OSS = 17,
     SECURITY_ASSESSMENT = 18,
-    INITIAL_SCAN_REPORT = 19
+    INITIAL_SCAN_REPORT = 19,
+    SBOM = 20
 }
 
 enum CheckStatus {

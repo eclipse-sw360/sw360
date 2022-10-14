@@ -113,6 +113,7 @@ public class ThriftEnumUtils {
             .put(AttachmentType.README_OSS, "ReadMe OSS")
             .put(AttachmentType.OTHER, "Other")
             .put(AttachmentType.SECURITY_ASSESSMENT, "Security Assessment")
+            .put(AttachmentType.SBOM, "SBOM")
             .put(AttachmentType.INITIAL_SCAN_REPORT, "Initial Scan Report")
             .build();
 
@@ -138,6 +139,7 @@ public class ThriftEnumUtils {
             .put(AttachmentType.README_OSS, "RDM")
             .put(AttachmentType.OTHER, "OTH")
             .put(AttachmentType.SECURITY_ASSESSMENT, "SECA")
+            .put(AttachmentType.SBOM, "SBOM")
             .put(AttachmentType.INITIAL_SCAN_REPORT, "ISR")
             .build();
 

@@ -163,6 +163,14 @@ define('components/includes/releases/linkProject', ['jquery', 'bridges/datatable
 
                 $dialog.success($result, true);
             },
+            beforeSend : function (test) {
+                var projectState = $('#projectSearchResultstable input[name=project]:checked').parents('tr').find('td .stateBox.capsuleRight').prop('title');
+                if(projectState == "Closed") {
+                    callback();
+                    $dialog.alert('The release could not be linked to the closed project.');
+                    return false;
+                }
+            },
             error: function() {
                 callback();
                 $dialog.alert('The release could not be linked to the project.');

@@ -2,6 +2,7 @@
 
 # -----------------------------------------------------------------------------
 # Copyright BMW CarIT GmbH 2021
+# Copyright Helio Chissini de Castro 2022
 #
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
@@ -13,14 +14,11 @@
 # (execution of docker run cmd) starts couchdb and tomcat.
 # -----------------------------------------------------------------------------
 
-set -e
+set -e -o  pipefail
 
-# Set default versions
-CLUCENE_VERSION=${CLUCENE_VERSION:-2.1.0}
-THRIFT_VERSION=${THRIFT_VERSION:-0.16.0}
-MAVEN_VERSION=${MAVEN_VERSION:-3.8.6}
-LIFERAY_VERSION=${LIFERAY_VERSION:-7.4.3.18-ga18}
-LIFERAY_SOURCE=${LIFERAY_SOURCE:-liferay-ce-portal-tomcat-7.4.3.18-ga18-20220329092001364.tar.gz}
+# Source the version
+# shellcheck disable=SC1091
+. scripts/versions.sh
 
 GIT_ROOT=$(git rev-parse --show-toplevel)
 
@@ -50,6 +48,10 @@ for arg in "$@"; do
     shift
 done
 
+# Download dependencies
+"$GIT_ROOT"/scripts/download_dependencies.sh
+
+# Compose build
 #shellcheck disable=SC2086
 docker compose \
     --file "$GIT_ROOT"/docker-compose.yml \
@@ -60,5 +62,6 @@ docker compose \
     --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
     --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" \
     --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE" \
+    --build-arg SW360_DEPS_DIR="$SW360_DEPS_DIR" \
     $docker_verbose \
     $docker_no_cache

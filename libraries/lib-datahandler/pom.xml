@@ -37,7 +37,7 @@
                 <configuration>
                     <thriftExecutable>thrift</thriftExecutable>
                     <generator>java:generated_annotations=suppress</generator>
-                    <checkStaleness>true</checkStaleness>scripts/startCouchdbForTests.sh
+                    <checkStaleness>true</checkStaleness>
                 </configuration>
                 <executions>
                     <execution>
@@ -59,7 +59,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>${build-helper-maven-plugin.version}</version>
                 <executions>
                     <execution>
                             <id>thrift-sources</id>
@@ -108,7 +108,7 @@
                     </execution>
                 </executions>
                 <configuration>
-			<archive>
+			        <archive>
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
@@ -148,6 +148,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
+            <version>${commons-io.version}</version>
         </dependency>
         <dependency>
             <groupId>org.ektorp</groupId>

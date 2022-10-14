@@ -27,6 +27,7 @@ typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.PaginationData PaginationData
+typedef sw360.ImportBomRequestPreparation ImportBomRequestPreparation
 typedef attachments.Attachment Attachment
 typedef attachments.FilledAttachment FilledAttachment
 typedef users.User User
@@ -159,8 +160,8 @@ struct COTSDetails{
 }
 struct EccInformation{
     1: optional ECCStatus eccStatus, // Status of ECC assessment
-    2: optional string AL, // German Ausfuhrliste
-    3: optional string ECCN, // European control classification number
+    2: optional string al, // German Ausfuhrliste
+    3: optional string eccn, // European control classification number
     4: optional string assessorContactPerson, // email of ECC person
     5: optional string assessorDepartment, // department of ECC person
     6: optional string eccComment, // comments for ecc information
@@ -223,6 +224,7 @@ struct Release {
     6: required string version, // version or release name (e.g. 0.9.1)
     7: required string componentId, // Id of the parent component
     8: optional string releaseDate,
+    99: optional ComponentType componentType,
 
     // information from external data sources
     9: optional  map<string, string> externalIds,
@@ -827,6 +829,8 @@ service ComponentService {
      * get the cyclic hierarchy of linkedReleases
      */
     string getCyclicLinkedReleasePath(1: Release release, 2: User user);
+
+    ImportBomRequestPreparation prepareImportBom(1: User user, 2:string attachmentContentId);
 
     /**
      * parse a bom file and write the information to SW360

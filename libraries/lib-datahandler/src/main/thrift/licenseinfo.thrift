@@ -155,9 +155,9 @@ service LicenseInfoService {
     OutputFormatInfo getOutputFormatInfoForGeneratorClass(1: string generatorClassName);
 
     /**
-     * returns the default license info header text
+     * returns the default license info header text based on project group
      */
-    string getDefaultLicenseInfoHeaderText();
+    string getDefaultLicenseInfoHeaderText(1: string fileName);
 
     /**
      * returns the default obligations text

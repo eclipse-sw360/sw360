@@ -269,7 +269,7 @@ service ModerationService {
     set<string> getRequestingUserDepts();
 
     /**
-     * get the count of CR with priority 'critical'
+     * get the count of open CR with priority 'critical' and user group
      **/
-    i32 getCriticalClearingRequestCount();
+    i32 getOpenCriticalCrCountByGroup(1: string group);
 }

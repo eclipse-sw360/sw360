@@ -191,14 +191,14 @@
 	}
 
 	table {
-            thead.cursor {
-                cursor: pointer;
-            }
-            td {
-                svg.cursor {
-                    cursor: pointer;
-                }
-            }
+		thead.cursor {
+			cursor: pointer;
+		}
+		td {
+			svg.cursor {
+			cursor: pointer;
+			}
+		}
 		div.actions {
 			display: flex;
 			justify-content: space-evenly;
@@ -226,6 +226,9 @@
 			a:last-child, img:last-child, svg:last-child {
 				margin-right: 0;
 			}
+		}
+		thead[data-toggle="collapse"] {
+			cursor: pointer;
 		}
 	}
 

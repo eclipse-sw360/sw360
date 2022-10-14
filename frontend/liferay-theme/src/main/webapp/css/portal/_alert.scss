@@ -10,14 +10,12 @@
 
 .alert-notifications-fixed {
 	top: 0;
-	left: 0 !important;
-	right: 0;
-	bottom: auto !important;
 
 	.alert {
 		width: auto;
 		border-radius: 0;
 
 		padding: 1rem calc(3vw + 1rem); // 3vw corresponds to container width of 94vw
+		max-width: none !important;
 	}
 }

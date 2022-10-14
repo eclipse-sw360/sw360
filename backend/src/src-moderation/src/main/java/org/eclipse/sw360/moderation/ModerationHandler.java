@@ -234,8 +234,10 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
-    public int getCriticalClearingRequestCount() throws TException {
-        return handler.getCriticalClearingRequestCount();
+    public int getOpenCriticalCrCountByGroup(String group) throws TException {
+        // user department is being passed here
+        assertNotEmpty(group);
+        return handler.getOpenCriticalCrCountByGroup(group);
     }
 
     @Override

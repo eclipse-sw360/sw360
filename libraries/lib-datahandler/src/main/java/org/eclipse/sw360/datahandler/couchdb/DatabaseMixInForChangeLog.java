@@ -184,14 +184,14 @@ public class DatabaseMixInForChangeLog {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonIgnoreProperties({
-        "setAL",
+        "setAl",
         "setEccStatus",
         "setAssessorContactPerson",
         "setAssessorDepartment",
         "setEccComment",
         "setMaterialIndexNumber",
         "setAssessmentDate",
-        "setECCN"
+        "setEccn"
     })
     public static abstract class EccInformationMixin extends EccInformation {
     }

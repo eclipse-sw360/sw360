@@ -39,7 +39,7 @@
 </portlet:resourceURL>
 
 <div class="dialogs">
-    <div id="spdxBomUpload" data-title="Upload SPDX BOM" class="modal fade" tabindex="-1" role="dialog"
+    <div id="spdxBomUpload" data-title="Upload SBOM" class="modal fade" tabindex="-1" role="dialog"
          data-portlet-namespace="<portlet:namespace/>"
          data-new-attachment-url="<%=newAttachmentAjaxURL%>"
          data-upload-attachment-part-url="<%=uploadPartAjaxURL%>"

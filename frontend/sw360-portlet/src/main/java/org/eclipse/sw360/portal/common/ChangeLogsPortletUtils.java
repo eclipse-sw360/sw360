@@ -41,8 +41,6 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService.Iface;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.portal.common.PortalConstants;
-import org.eclipse.sw360.portal.common.PortletUtils;
 import org.eclipse.sw360.portal.common.datatables.PaginationParser;
 import org.eclipse.sw360.portal.common.datatables.data.PaginationParameters;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
@@ -51,16 +49,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.model.Layout;
-import com.liferay.portal.kernel.model.Portlet;
 import com.liferay.portal.kernel.portlet.LiferayPortletURL;
 import com.liferay.portal.kernel.portlet.PortletURLFactoryUtil;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
-import com.liferay.portal.kernel.service.PortletLocalServiceUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 
 public class ChangeLogsPortletUtils {
@@ -140,8 +137,7 @@ public class ChangeLogsPortletUtils {
     }
 
     private LiferayPortletURL getModerationPortletUrl(PortletRequest request) {
-        Portlet portlet = PortletLocalServiceUtil.getPortletById(PortalConstants.MODERATION_PORTLET_NAME);
-        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portlet.getCompanyId()).stream()
+        Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(QueryUtil.ALL_POS, QueryUtil.ALL_POS).stream()
                 .filter(l -> ("/moderation").equals(l.getFriendlyURL())).findFirst();
         if (layout.isPresent()) {
             long plId = layout.get().getPlid();

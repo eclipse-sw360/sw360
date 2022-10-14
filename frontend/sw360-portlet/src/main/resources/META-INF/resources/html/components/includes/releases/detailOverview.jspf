@@ -141,6 +141,7 @@
                             <%@include file="/html/components/includes/vendors/vendorDetail.jspf" %>
 
                             <core_rt:set var="documentName"><sw360:ReleaseName release="${release}"/></core_rt:set>
+                            <core_rt:set var="tableId" value="usingProjectsTableSummary"/>
                             <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
                             <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
 		                </div>

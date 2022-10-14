@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
@@ -13,26 +13,33 @@
 # This script downloads liferay and OSGi modules.
 # -----------------------------------------------------------------------------
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 SW360_DEPS_DIR="${SW360_DEPS_DIR:-deps}"
+export SW360_DEPS_DIR
+
+# source the versions
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/versions.sh"
 
 jar_dependencies=(
-  https://search.maven.org/remotecontent?filepath=commons-codec/commons-codec/1.12/commons-codec-1.12.jar
-  https://search.maven.org/remotecontent?filepath=org/apache/commons/commons-collections4/4.4/commons-collections4-4.4.jar
-  https://search.maven.org/remotecontent?filepath=org/apache/commons/commons-csv/1.4/commons-csv-1.4.jar
-  https://search.maven.org/remotecontent?filepath=commons-io/commons-io/2.7/commons-io-2.7.jar
-  https://search.maven.org/remotecontent?filepath=com/google/code/gson/gson/2.8.9/gson-2.8.9.jar
-  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-annotations/2.13.3/jackson-annotations-2.13.3.jar
-  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-core/2.13.3/jackson-core-2.13.3.jar
-  https://search.maven.org/remotecontent?filepath=com/fasterxml/jackson/core/jackson-databind/2.13.3/jackson-databind-2.13.3.jar
-  https://search.maven.org/remotecontent?filepath=com/google/guava/guava/31.0.1-jre/guava-31.1-jre.jar
-  https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.20/commons-compress-1.20.jar
-  https://repo1.maven.org/maven2/org/apache/thrift/libthrift/"$THRIFT_VERSION"/libthrift-"$THRIFT_VERSION".jar
+  com/fasterxml/jackson/core/jackson-annotations/2.13.3/jackson-annotations-2.13.3.jar
+  com/fasterxml/jackson/core/jackson-core/2.13.3/jackson-core-2.13.3.jar
+  com/fasterxml/jackson/core/jackson-databind/2.13.3/jackson-databind-2.13.3.jar
+  com/google/code/gson/gson/2.8.9/gson-2.8.9.jar
+  com/google/guava/guava/31.1-jre/guava-31.1-jre.jar
+  commons-codec/commons-codec/1.15/commons-codec-1.15.jar
+  commons-io/commons-io/2.11.0/commons-io-2.11.0.jar
+  commons-logging/commons-logging/1.2/commons-logging-1.2.jar
+  org/apache/commons/commons-collections4/4.4/commons-collections4-4.4.jar
+  org/apache/commons/commons-csv/1.9.0/commons-csv-1.9.0.jar
+  org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar
 )
 
 dependencies=(
   https://github.com/liferay/liferay-portal/releases/download/"$LIFERAY_VERSION"/"$LIFERAY_SOURCE"
   https://github.com/rnewson/couchdb-lucene/archive/v"$CLUCENE_VERSION".tar.gz
-  http://archive.apache.org/dist/thrift/0.16.0/thrift-"$THRIFT_VERSION".tar.gz
+  http://archive.apache.org/dist/thrift/"$THRIFT_VERSION"/thrift-"$THRIFT_VERSION".tar.gz
   https://dlcdn.apache.org/maven/maven-3/"$MAVEN_VERSION"/binaries/apache-maven-"$MAVEN_VERSION"-bin.tar.gz
 )
 
@@ -42,13 +49,17 @@ download_dependency() {
   fi
 }
 
-# Main deps
+# Create directory if not available
+mkdir -p "$SW360_DEPS_DIR" || exit 1
+
+# Direct tarball deps
 mkdir -p "$SW360_DEPS_DIR" && cd "$SW360_DEPS_DIR" || exit 1
 for dep in "${dependencies[@]}"; do
   download_dependency "$dep"
 done
 
+# JAR dependencies from maven repository
 mkdir -p jars && cd jars || exit 1
 for dep in "${jar_dependencies[@]}"; do
-  download_dependency "$dep"
+  download_dependency "https://search.maven.org/remotecontent?filepath=$dep"
 done
