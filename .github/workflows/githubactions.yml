@@ -40,7 +40,7 @@ jobs:
     - name: Update properties with DB credentials
       run: |
         sudo mkdir -p /etc/sw360
-        sudo cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/
+        sudo cp ./scripts/test-resources/couchdb-test.properties /etc/sw360/
         sudo cp ./scripts/sw360BackendRestDockerConfig/etc_sw360/rest-test.properties /etc/sw360/
         sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
         sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
@@ -53,7 +53,7 @@ jobs:
     - name: Prepare build environment
       run: |
         sudo apt-get update -qq
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git temurin-11-jdk maven
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake cmake libtool flex bison pkg-config libssl-dev git temurin-11-jdk maven
         pip install mkdocs mkdocs-material
 
     - name: Install Thrift
@@ -67,10 +67,7 @@ jobs:
 
     - name: Run PrivateProjectAccessTest
       run: |
-        cd build-configuration
-        mvn install
-        cd ..
-        cd libraries/datahandler
+        cd libraries/lib-datahandler
         mvn test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true
 
     - name: Deploy Backend and Rest Server
