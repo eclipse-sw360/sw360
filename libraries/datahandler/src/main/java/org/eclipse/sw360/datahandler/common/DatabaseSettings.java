@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.common;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
@@ -35,37 +36,38 @@ public class DatabaseSettings {
     private static final Logger log = LogManager.getLogger(DatabaseSettings.class);
     public static final String PROPERTIES_FILE_PATH = "/couchdb.properties";
 
-    public static final String COUCH_DB_URL;
-    public static final String COUCH_DB_LUCENE_URL;
-    public static final String COUCH_DB_DATABASE;
-    public static final String COUCH_DB_ATTACHMENTS;
-    public static final String COUCH_DB_CHANGE_LOGS;
-    public static final String COUCH_DB_CONFIG;
-    public static final String COUCH_DB_USERS;
-    public static final String COUCH_DB_VM;
+    public static String COUCH_DB_URL = "http://localhost:5984";
+    public static String COUCH_DB_LUCENE_URL = "http://localhost:8080/couchdb-lucene";
+    public static String COUCH_DB_DATABASE = "sw360db";
+    public static String COUCH_DB_ATTACHMENTS = "sw360attachments";
+    public static String COUCH_DB_CHANGE_LOGS = "sw360changelogs";
+    public static String COUCH_DB_CONFIG = "sw360config";
+    public static String COUCH_DB_USERS = "sw360users";
+    public static String COUCH_DB_VM = "sw360vm";
+    private static String COUCH_DB_USERNAME = "admin";
+    private static String COUCH_DB_PASSWORD = "password";
 
-    public static final int LUCENE_SEARCH_LIMIT;
-    public static final boolean LUCENE_LEADING_WILDCARD;
-
-    private static final String COUCH_DB_USERNAME;
-    private static final String COUCH_DB_PASSWORD;
+    public static int LUCENE_SEARCH_LIMIT = 25;
+    public static boolean LUCENE_LEADING_WILDCARD = false;
 
     static {
-        Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
+        File propertyFile = new File(PROPERTIES_FILE_PATH);
+        if (propertyFile.exists()) {
+            Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
 
-        COUCH_DB_URL = props.getProperty("couchdb.url", "http://localhost:5984");
-        COUCH_DB_LUCENE_URL = props.getProperty("couchdb.lucene.url", "http://localhost:8080/couchdb-lucene");
-        COUCH_DB_DATABASE = props.getProperty("couchdb.database", "sw360db");
-        COUCH_DB_USERNAME = props.getProperty("couchdb.user", "");
-        COUCH_DB_PASSWORD = props.getProperty("couchdb.password", "");
-        COUCH_DB_ATTACHMENTS = props.getProperty("couchdb.attachments", "sw360attachments");
-        COUCH_DB_CHANGE_LOGS = props.getProperty("couchdb.change_logs", "sw360changelogs");
-        COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360config");
-        COUCH_DB_USERS = props.getProperty("couchdb.usersdb", "sw360users");
-        COUCH_DB_VM = props.getProperty("couchdb.vulnerability_management", "sw360vm");
-
-        LUCENE_SEARCH_LIMIT = Integer.parseInt(props.getProperty("lucenesearch.limit", "25"));
-        LUCENE_LEADING_WILDCARD = Boolean.parseBoolean(props.getProperty("lucenesearch.leading.wildcard", "false"));
+            COUCH_DB_URL = props.getProperty("couchdb.url", "http://localhost:5984");
+            COUCH_DB_LUCENE_URL = props.getProperty("couchdb.lucene.url", "http://localhost:8080/couchdb-lucene");
+            COUCH_DB_DATABASE = props.getProperty("couchdb.database", "sw360db");
+            COUCH_DB_USERNAME = props.getProperty("couchdb.user");
+            COUCH_DB_PASSWORD = props.getProperty("couchdb.password");
+            COUCH_DB_ATTACHMENTS = props.getProperty("couchdb.attachments", "sw360attachments");
+            COUCH_DB_CHANGE_LOGS = props.getProperty("couchdb.change_logs", "sw360changelogs");
+            COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360config");
+            COUCH_DB_USERS = props.getProperty("couchdb.usersdb", "sw360users");
+            COUCH_DB_VM = props.getProperty("couchdb.vulnerability_management", "sw360vm");
+            LUCENE_SEARCH_LIMIT = Integer.parseInt(props.getProperty("lucenesearch.limit", "25"));
+            LUCENE_LEADING_WILDCARD = false;
+        }
     }
 
     public static Supplier<HttpClient> getConfiguredHttpClient() throws MalformedURLException {
