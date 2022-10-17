@@ -24,7 +24,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>lib-datahandler</module>
+        <module>datahandler</module>
         <module>commonIO</module>
         <module>importers</module>
         <module>exporters</module>
