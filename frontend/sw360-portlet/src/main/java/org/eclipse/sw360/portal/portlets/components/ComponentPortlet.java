@@ -917,6 +917,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         String id = request.getParameter(COMPONENT_ID);
         final User user = UserCacheHolder.getUserFromRequest(request);
+        Component component = (Component) request.getAttribute(COMPONENT);
         request.setAttribute(DOCUMENT_TYPE, SW360Constants.TYPE_COMPONENT);
         List<Organization> organizations = UserUtils.getOrganizations(request);
         request.setAttribute(ORGANIZATIONS, organizations);
@@ -925,7 +926,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         if (id != null) {
             try {
                 ComponentService.Iface client = thriftClients.makeComponentClient();
-                Component component = client.getAccessibleComponentByIdForEdit(id, user);
+                component = component == null ? client.getAccessibleComponentByIdForEdit(id, user) : component;
                 Map<String, String> sortedAdditionalData = getSortedMap(component.getAdditionalData(), true);
                 component.setAdditionalData(sortedAdditionalData);
 
@@ -959,16 +960,16 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             }
         } else {
             if (request.getAttribute(COMPONENT) == null) {
-                Component component = new Component();
+                component = new Component();
                 component.setBusinessUnit(user.getDepartment());
-                request.setAttribute(COMPONENT, component);
+            }
+                request.setAttribute(COMPONENT,component);
                 PortletUtils.setCustomFieldsEdit(request, user, component);
                 setUsingDocs(request, user, null, component.getReleaseIds());
                 setAttachmentsInRequest(request, component);
                 SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.component"));
             }
         }
-    }
 
     private void prepareReleaseEdit(RenderRequest request, RenderResponse response) throws PortletException {
         ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
@@ -986,10 +987,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         try {
             ComponentService.Iface client = thriftClients.makeComponentClient();
             Component component;
-            Release release;
+            Release release = (Release) request.getAttribute(RELEASE);
 
             if (!isNullOrEmpty(releaseId)) {
-                release = client.getAccessibleReleaseByIdForEdit(releaseId, user);
+                release = release == null ? client.getAccessibleReleaseByIdForEdit(releaseId, user) : release;
                 Map<String, String> sortedAdditionalData = getSortedMap(release.getAdditionalData(), true);
                 release.setAdditionalData(sortedAdditionalData);
                 request.setAttribute(RELEASE, release);
@@ -1009,7 +1010,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
             } else {
                 component = client.getAccessibleComponentById(id, user);
-                release = (Release) request.getAttribute(RELEASE);
                 if(release == null) {
                     release = new Release();
                     release.setComponentId(id);
@@ -2073,6 +2073,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         request.setAttribute(USING_PROJECTS, Collections.emptySet());
         request.setAttribute(USING_COMPONENTS, Collections.emptySet());
         request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
+        request.setAttribute(IS_ERROR_IN_UPDATE_OR_CREATE, true);
     }
 
     @UsedAsLiferayAction
@@ -2194,6 +2195,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         request.setAttribute(USING_PROJECTS, Collections.emptySet());
         request.setAttribute(USING_COMPONENTS, Collections.emptySet());
         request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
+        request.setAttribute(IS_ERROR_IN_UPDATE_OR_CREATE, true);
     }
 
     private void fillVendor(Release release) throws TException {

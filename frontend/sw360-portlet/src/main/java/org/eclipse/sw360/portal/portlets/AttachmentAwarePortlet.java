@@ -241,11 +241,31 @@ public abstract class AttachmentAwarePortlet extends Sw360Portlet {
         final String documentType = getDocumentType(request);
         final String documentId = request.getParameter(PortalConstants.DOCUMENT_ID);
         final User user = UserCacheHolder.getUserFromRequest(request);
+        final Boolean isError = Boolean.valueOf(request.getParameter(PortalConstants.IS_ERROR_IN_UPDATE_OR_CREATE));
+        List<Attachment> attachments;
 
-        // this is the raw attachment data
-        List<Attachment> attachments = getAttachments(documentId, documentType, user).stream()
-                .sorted(Comparator.comparing(Attachment::getFilename)).collect(Collectors.toList());
+        if (isError) {
+            String attachmentList = CommonUtils.nullToEmptyString(request.getParameter(PortalConstants.ATTACHMENTS));
+            /**
+             * TODO: This is a work around to convert List<Attachment> from request parameter (in String) to JSON.
+             * Can be improved with proper regular expression.
+             */
+            attachmentList = attachmentList.replaceAll("\"", "\\\\\"") // escape double quotes
+                    .replaceAll("Attachment(\\()", "{ ")
+                    .replaceAll("(\\))(, \\{|]$)", "}$2")
+                    .replaceAll("([, |{ ])(\\w*\\s*)(:)", "$1\"$2\"$3") // double quote JSON keys
+                    .replaceAll("(\":)(\\w*(?:[\\-@.\\s,\\(\\)_:()'/+\\\\\"]['/(.\\-)\\\\\"A-Za-z0-9]+)*)(, \"|}]|}, \\{)", "$1\"$2\"$3"); // double quote JSON values
+
+            Attachment[] attachs = OBJECT_MAPPER.readValue(attachmentList, Attachment[].class);
+            attachments = Arrays.asList(attachs);
+        } else {
+            // this is the raw attachment data
+            attachments = new ArrayList<>(getAttachments(documentId, documentType, user));
+        }
         Map<String, Integer> attachmentUsageCounts = Collections.emptyMap();
+        attachments = attachments.stream()
+                .sorted(Comparator.comparing(Attachment::getFilename)).collect(Collectors.toList());
+
         try {
             Set<String> contentIds = attachments.stream().map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
             Map<Map<Source, String>, Integer> usageCountsBySourceAndContentId = thriftClients.makeAttachmentClient().getAttachmentUsageCount(

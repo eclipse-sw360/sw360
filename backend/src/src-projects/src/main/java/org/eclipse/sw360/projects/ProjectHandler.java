@@ -299,11 +299,11 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
-    public List<ProjectLink> getLinkedProjects(Map<String, ProjectProjectRelationship> relations, User user) throws TException {
+    public List<ProjectLink> getLinkedProjects(Map<String, ProjectProjectRelationship> relations, boolean depth, User user) throws TException {
         assertNotNull(relations);
         assertUser(user);
 
-        return handler.getLinkedProjects(relations, user);
+        return handler.getLinkedProjects(relations, depth, user);
     }
 
     @Override
