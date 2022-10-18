@@ -169,7 +169,8 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
     -Dsurefire.failIfNoSpecifiedTests=false \
     -Dbase.deploy.dir=. \
-    -Dliferay.deploy.dir=/sw360_deploy \
+    -Djars.deploy.dir=/sw360_deploy \
+    -Dliferay.deploy.dir=/sw360_tomcat_webapps \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
     -Drest.deploy.dir=/sw360_tomcat_webapps \
     -Dhelp-docs=true
@@ -179,8 +180,7 @@ WORKDIR /sw360_tomcat_webapps/
 
 COPY scripts/create-slim-war-files.sh /bin/slim.sh
 COPY --from=clucenebuild /couchdb-lucene.war /sw360_tomcat_webapps
-RUN bash /bin/slim.sh \
-    && ls /sw360_tomcat_webapps
+RUN bash /bin/slim.sh
 
 #--------------------------------------------------------------------------------------------------
 # Runtime image
