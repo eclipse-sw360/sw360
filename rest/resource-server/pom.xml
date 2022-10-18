@@ -262,7 +262,7 @@
                     <dependency>
                         <groupId>org.springframework.restdocs</groupId>
                         <artifactId>spring-restdocs-asciidoctor</artifactId>
-                        <version>2.0.0.RELEASE</version>
+                        <version>${spring-restdocs-asciidoctor.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
