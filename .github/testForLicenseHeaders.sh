@@ -13,18 +13,20 @@
 # initial author: maximilian.huber@tngtech.com
 # -----------------------------------------------------------------------------
 
-cd "$(dirname $0)/.."
+set -e
+
+cd "$(dirname "$0")/.." || exit 1
 
 failure=false
 
-while read file ; do
-    if ! head -15 $file | grep -q 'SPDX-License-Identifier:' $file; then
+while read -r file ; do
+    if ! head -15 "$file" | grep -q 'SPDX-License-Identifier:' $file; then
         echo "WARN: no 'SPDX-License-Identifier' in  $file"
     fi
-    if head -15 $file | grep -q 'https://www.eclipse.org/legal/epl-2.0/'; then
+    if head -15 "$file" | grep -q 'https://www.eclipse.org/legal/epl-2.0/'; then
         continue # epl found
     fi
-    if head -15 $file | grep -q 'SPDX-License-Identifier: EPL-2.0'; then
+    if head -15 "$file" | grep -q 'SPDX-License-Identifier: EPL-2.0'; then
         continue # edl found
     fi
 

@@ -10,8 +10,7 @@
   ~ SPDX-License-Identifier: EPL-2.0
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -21,33 +20,33 @@
     </parent>
 
     <artifactId>sw360-portlet</artifactId>
-    <packaging>jar</packaging>
+    <packaging>war</packaging>
 
     <properties>
-	    <artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
+        <artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
     </properties>
 
     <profiles>
-    <profile>
-         <id>help-docs</id>
-         <activation>
-             <property>
-                  <name>help-docs</name>
-                  <value>true</value>
-             </property>
-         </activation>
-	 <properties>
-		<packagePhase>prepare-package</packagePhase>
-	 </properties>
-   </profile>
-   </profiles>
-   <build>
-   <finalName>org.eclipse.sw360.portlet-${project.version}</finalName>
+        <profile>
+            <id>help-docs</id>
+            <activation>
+                <property>
+                    <name>help-docs</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <packagePhase>prepare-package</packagePhase>
+            </properties>
+        </profile>
+    </profiles>
+    <build>
+        <finalName>org.eclipse.sw360.portlet-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>com.liferay</groupId>
                 <artifactId>com.liferay.css.builder</artifactId>
-                <version>3.1.0</version>
+                <version>${liferay.css.builder.version}</version>
                 <executions>
                     <execution>
                         <id>default-build-css</id>
@@ -101,29 +100,20 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                    </archive>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>com.github.fabienbarbero</groupId>
                 <artifactId>mkdocs-maven-plugin</artifactId>
                 <version>1.1.1</version>
                 <executions>
-                <execution>
-                    <id>generate-mkdocs</id>
-                    <phase>${packagePhase}</phase>
-                    <goals>
-                        <goal>build</goal>
-                    </goals>
-                    <configuration>
-                        <configFile>${basedir}/src/documentation/mkdocs.yml</configFile>
-                    </configuration>
-                </execution>
+                    <execution>
+                        <id>generate-mkdocs</id>
+                        <phase>${packagePhase}</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                        <configuration>
+                            <configFile>${basedir}/src/documentation/mkdocs.yml</configFile>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
