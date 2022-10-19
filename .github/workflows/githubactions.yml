@@ -67,7 +67,7 @@ jobs:
 
     - name: Run PrivateProjectAccessTest
       run: |
-        cd libraries/lib-datahandler
+        cd libraries/datahandler
         mvn test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true
 
     - name: Deploy Backend and Rest Server
