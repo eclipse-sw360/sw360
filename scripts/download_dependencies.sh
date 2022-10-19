@@ -23,9 +23,9 @@ export SW360_DEPS_DIR
 source "${SCRIPT_DIR}/versions.sh"
 
 jar_dependencies=(
-  com/fasterxml/jackson/core/jackson-annotations/2.13.3/jackson-annotations-2.13.3.jar
-  com/fasterxml/jackson/core/jackson-core/2.13.3/jackson-core-2.13.3.jar
-  com/fasterxml/jackson/core/jackson-databind/2.13.3/jackson-databind-2.13.3.jar
+  com/fasterxml/jackson/core/jackson-annotations/2.13.4/jackson-annotations-2.13.4.jar
+  com/fasterxml/jackson/core/jackson-core/2.13.4/jackson-core-2.13.4.jar
+  com/fasterxml/jackson/core/jackson-databind/2.13.4.2/jackson-databind-2.13.4.2.jar
   com/google/code/gson/gson/2.8.9/gson-2.8.9.jar
   com/google/guava/guava/31.1-jre/guava-31.1-jre.jar
   commons-codec/commons-codec/1.15/commons-codec-1.15.jar
