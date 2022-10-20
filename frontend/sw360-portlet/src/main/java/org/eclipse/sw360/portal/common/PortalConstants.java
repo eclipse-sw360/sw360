@@ -383,6 +383,13 @@ public class PortalConstants {
     public static final String FIND_BY_EXTERNAL_ID = "findByExternalId";
     public static final String PUBLISH_DATE = "publishDate";
     public static final String PUBLISH_TIME = "publishTime";
+    public static final String VM_MESSAGE = "vmMessage";
+    public static final String VM_PROCESS = "vmProcess";
+    public static final String VM_PROCESS_ID = "vmProcessId";
+    public static final String VM_PROCESS_LIST = "vmProcessList";
+    public static final String VM_MATCH_ID = "vmMatchId";
+    public static final String VM_MATCH_STATE = "vmMatchState";
+    public static final String VM_MATCH_LIST = "vmMatchList";
 
     //! Specialized keys for account sign-up
     public static final String PASSWORD = "password";
@@ -405,6 +412,23 @@ public class PortalConstants {
     public static final String CVESEARCH_INTERVAL = "cvesearchInterval";
     public static final String CVESEARCH_NEXT_SYNC = "cvesearchNextSync";
 
+    public static final String SVMSYNC_IS_SCHEDULED = "svmSyncIsScheduled";
+    public static final String SVMSYNC_OFFSET = "svmSyncOffset";
+    public static final String SVMSYNC_INTERVAL = "svmSyncInterval";
+    public static final String SVMSYNC_NEXT_SYNC = "svmSyncNextSync";
+    public static final String SVMMATCH_IS_SCHEDULED = "svmMatchIsScheduled";
+    public static final String SVMMATCH_OFFSET = "svmMatchOffset";
+    public static final String SVMMATCH_INTERVAL = "svmMatchInterval";
+    public static final String SVMMATCH_NEXT_SYNC = "svmMatchNextSync";
+    public static final String SVM_LIST_UPDATE_IS_SCHEDULED = "svmListUpdateIsScheduled";
+    public static final String SVM_LIST_UPDATE_OFFSET = "svmListUpdateOffset";
+    public static final String SVM_LIST_UPDATE_INTERVAL = "svmListUpdateInterval";
+    public static final String SVM_LIST_UPDATE_NEXT_SYNC = "svmListUpdateNextSync";
+    public static final String SVM_TRACKING_FEEDBACK_IS_SCHEDULED = "trackingFeedbackIsScheduled";
+    public static final String SVM_TRACKING_FEEDBACK_OFFSET = "trackingFeedbackOffset";
+    public static final String SVM_TRACKING_FEEDBACK_INTERVAL = "trackingFeedbackInterval";
+    public static final String SVM_TRACKING_FEEDBACK_NEXT_SYNC = "trackingFeedbackNextSync";
+    public static final String SVM_MONITORINGLIST_ID = "svmMonitoringListID";
     public static final String DELETE_ATTACHMENT_IS_SCHEDULED = "deleteAttachmentIsScheduled";
     public static final String DELETE_ATTACHMENT_OFFSET = "deleteAttachmentOffset";
     public static final String DELETE_ATTACHMENT_INTERVAL = "deleteAttachmentInterval";
@@ -620,6 +644,13 @@ public class PortalConstants {
     public static final String UPDATE_VULNERABILITIES__NEW_IDS = "updateVulnerabilities_newIds";
     public static final String UPDATE_VULNERABILITIES__UPDATED_IDS = "updateVulnerabilities_updatedIds";
 
+    // vulnerability management actions
+    public static final String VM_SYNC_COMPONENTS = "synchronizeComponents";
+    public static final String VM_REVERSE_MATCH = "reverseMatch";
+    public static final String VM_MATCH_ACCEPT = "acceptMatch";
+    public static final String VM_MATCH_DECLINE = "declineMatch";
+    public static final String VM_MATCH_GET_LIST = "getMatches";
+
     // Excel export
     public static final String EXPORT_TO_EXCEL = "export_to_excel";
     public static final String EMAIL_EXPORTED_EXCEL = "email_exported_excel";
@@ -689,6 +720,8 @@ public class PortalConstants {
     public static final String PREDEFINED_TAGS;
     public static final boolean SSO_LOGIN_ENABLED;
     public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
+    
+    public static final boolean IS_SVM_ENABLED;
 
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
@@ -736,6 +769,7 @@ public class PortalConstants {
         DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS = props.getProperty("org.eclipse.sw360.disable.clearing.request.for.project.group", "");
         SEND_PROJECT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED = Boolean.parseBoolean(props.getProperty("send.project.spreadsheet.export.to.mail.enabled", "false"));
         SEND_COMPONENT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED = Boolean.parseBoolean(props.getProperty("send.component.spreadsheet.export.to.mail.enabled", "false"));
+        IS_SVM_ENABLED = Boolean.parseBoolean(props.getProperty("enable.security.vulnerability.monitoring", "false"));
     }
 
     private PortalConstants() {

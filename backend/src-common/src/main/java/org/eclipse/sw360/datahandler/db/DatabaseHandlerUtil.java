@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -120,9 +121,13 @@ public class DatabaseHandlerUtil {
     public static final String SEPARATOR = " -> ";
     private static ChangeLogsRepository changeLogRepository;
     private static ObjectMapper mapper = initAndGetObjectMapper();
+    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+    private static final String SVM_JSON_LOG_OUTPUT_LOCATION;
+    private static final String SVM_JSON_FILE_PREFIX = "svm_json_output_";
+    private static final String SVM_JSON_FILE_SUFFIX = ".json";
+    private static final String SVM_JSON_LOG_OUTPUT_FILE_PERMISSION = "rw-------";
     private static final String ATTACHMENT_ID = "attachmentId_";
     private static final String DOCUMENT_ID = "documentId_";
-    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
     private static final boolean IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED;
     private static final String ATTACHMENT_STORE_FILE_SYSTEM_LOCATION;
     private static final String ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION;
@@ -137,6 +142,7 @@ public class DatabaseHandlerUtil {
 
     static {
         Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
+        SVM_JSON_LOG_OUTPUT_LOCATION = props.getProperty("svm.json.log.output.location", "/tmp");
         ATTACHMENT_STORE_FILE_SYSTEM_LOCATION = props.getProperty("attachment.store.file.system.location",
                 "/opt/sw360tempattachments");
         ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION = props.getProperty("attachment.store.file.system.permission",
@@ -525,6 +531,15 @@ public class DatabaseHandlerUtil {
     }
 
     /**
+     * Write content to a file
+     */
+    public static void writeToFile(String content) {
+        Runnable fileHandlerRunnable = prepareFileHandlerRunnable(content);
+        Thread fileWriterThread = new Thread(fileHandlerRunnable);
+        fileWriterThread.start();
+    }
+
+    /**
      * Prepare ChangeLog Runnable along with all the Change data.
      */
     private static <T extends TBase> Runnable prepareChangeLogRunnable(T newDocVersion, T oldDocVersion,
@@ -828,6 +843,31 @@ public class DatabaseHandlerUtil {
             mapper.addMixInAnnotations(Obligation.class, ObligationMixin.class);
         }
         return mapper;
+    }
+
+    /**
+     * Prepare Runnable to create file , set permissions and write to file
+     */
+    private static Runnable prepareFileHandlerRunnable(String content) {
+        return () -> {
+            try {
+                log.info("Preparing to write content to file");
+                StringBuilder fileNameSb = new StringBuilder(SVM_JSON_FILE_PREFIX)
+                        .append(getTimeStamp().replaceAll(" ", "_").replaceAll(":", "-")).append(SVM_JSON_FILE_SUFFIX);
+                Path outputFile = Paths.get(SVM_JSON_LOG_OUTPUT_LOCATION, fileNameSb.toString());
+                if (!Files.exists(outputFile)) {
+                    Set<PosixFilePermission> perms = PosixFilePermissions.fromString(SVM_JSON_LOG_OUTPUT_FILE_PERMISSION);
+                    FileAttribute<Set<PosixFilePermission>> fileAttribute = PosixFilePermissions.asFileAttribute(perms);
+                    Files.createFile(outputFile, fileAttribute);
+                    try (BufferedWriter bw = Files.newBufferedWriter(outputFile, StandardOpenOption.WRITE)) {
+                        bw.write(content);
+                        bw.flush();
+                    }
+                }
+            } catch (Exception exp) {
+                log.warn("Error occured while writing to a file", exp);
+            }
+        };
     }
 
     public static String trimProjectTag(String projectTag) {

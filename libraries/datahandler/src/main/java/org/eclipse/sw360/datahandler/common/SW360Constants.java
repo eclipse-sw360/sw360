@@ -39,6 +39,7 @@ public class SW360Constants {
 
     public static final String KEY_ID = "_id";
     public static final String KEY_REV = "_rev";
+    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
 
     public static final String PROJECT_VULNERABILITY_RATING_ID_PREFIX = "pvrating_";
     public static final String LICENSE_TYPE_GLOBAL = "Global";
@@ -72,6 +73,14 @@ public class SW360Constants {
     public static final String TYPE_VULNERABILITYDTO = "vulDTO";
     public static final String TYPE_OBLIGATIONELEMENT = "obligationElement";
     public static final String TYPE_OBLIGATIONNODE = "obligationNode";
+
+    public static final String SVM_COMPONENT_ID;
+    public static final String SVM_MONITORINGLIST_ID;
+    public static final String MAINLINE_COMPONENT_ID;
+    public static final String SVM_COMPONENT_ID_KEY;
+    public static final String SVM_SHORT_STATUS;
+    public static final String SVM_SHORT_STATUS_KEY;
+    public static final String SVM_SCHEDULER_EMAIL;
 
     /**
      * Hashmap containing the name field for each type.
@@ -152,6 +161,17 @@ public class SW360Constants {
 
     private SW360Constants() {
         // Utility class with only static functions
+    }
+
+    static {
+        Properties props = CommonUtils.loadProperties(SW360Constants.class, PROPERTIES_FILE_PATH);
+        SVM_COMPONENT_ID = props.getProperty("svm.component.id", "");
+        MAINLINE_COMPONENT_ID = props.getProperty("mainline.component.id", "");
+        SVM_COMPONENT_ID_KEY = props.getProperty("svm.component.id.key", "");
+        SVM_SHORT_STATUS = props.getProperty("svm.short.status", "");
+        SVM_SHORT_STATUS_KEY = props.getProperty("svm.short.status.key", "");
+        SVM_SCHEDULER_EMAIL = props.getProperty("svm.scheduler.email", "");
+        SVM_MONITORINGLIST_ID = props.getProperty("svm.monitoringlist.id", "");
     }
 
     private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName){

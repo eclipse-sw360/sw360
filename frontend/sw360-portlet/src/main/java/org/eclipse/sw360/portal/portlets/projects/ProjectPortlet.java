@@ -1623,6 +1623,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 ModerationService.Iface modClient = thriftClients.makeModerationClient();
                 Integer criticalCount = modClient.getOpenCriticalCrCountByGroup(user.getDepartment());
                 request.setAttribute(IS_CLEARING_REQUEST_DISABLED_FOR_PROJECT_BU, false);
+                request.setAttribute(SVM_MONITORINGLIST_ID, SW360Constants.SVM_MONITORINGLIST_ID);
                 Set<String> groupsWithCrDisabled = Stream.of(PortalConstants.DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS.toLowerCase().split(",")).collect(Collectors.toSet());
                 if (CommonUtils.isNotEmpty(groupsWithCrDisabled) && groupsWithCrDisabled.contains(project.getBusinessUnit().toLowerCase())
                         && Objects.isNull(project.getClearingRequestId())) {
@@ -2240,6 +2241,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? YES : NO);
         List<Organization> organizations = UserUtils.getOrganizations(request);
         request.setAttribute(ORGANIZATIONS, organizations);
+        request.setAttribute(SVM_MONITORINGLIST_ID, SW360Constants.SVM_MONITORINGLIST_ID);
 
         if (id != null) {
 
@@ -2307,6 +2309,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
         List<Organization> organizations = UserUtils.getOrganizations(request);
         request.setAttribute(ORGANIZATIONS, organizations);
+        request.setAttribute(SVM_MONITORINGLIST_ID, SW360Constants.SVM_MONITORINGLIST_ID);
 
         try {
             if (id != null) {

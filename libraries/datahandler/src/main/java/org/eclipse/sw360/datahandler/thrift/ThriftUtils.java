@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-
 import org.eclipse.sw360.datahandler.couchdb.AttachmentContentWrapper;
 import org.eclipse.sw360.datahandler.couchdb.DocumentWrapper;
 import org.eclipse.sw360.datahandler.couchdb.deserializer.UsageDataDeserializer;
@@ -29,6 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 
 import org.apache.logging.log4j.LogManager;
@@ -65,7 +65,8 @@ public class ThriftUtils {
             .add(Vendor.class) // Vendor service
             .add(ModerationRequest.class) // Moderation service‚
             .add(ExternalToolProcess.class, ExternalToolProcessStep.class) // external tools like Fossology service
-            .add(Vulnerability.class, ReleaseVulnerabilityRelation.class, ProjectVulnerabilityRating.class)
+            .add(Vulnerability.class, ReleaseVulnerabilityRelation.class, ProjectVulnerabilityRating.class) // Vulnerability Service
+            .add(VMPriority.class, VMAction.class, VMComponent.class, VMProcessReporting.class, VMMatch.class) // Vulnerability Monitoring service
             .add(ChangeLogs.class) // Changelog Service
             .build();
 
@@ -80,6 +81,7 @@ public class ThriftUtils {
             .add(ClearingInformation.class) // Component service
             .add(CVEReference.class, VendorAdvisory.class, VulnerabilityCheckStatus.class) // Vulnerability Service
             .add(VerificationStateInfo.class)
+            .add(VMMinPatchLevel.class)  // Vulnerability Monitoring service
             .build();
 
     public static final Map<Class<?>, JsonDeserializer<?>> CUSTOM_DESERIALIZER = ImmutableMap.of(

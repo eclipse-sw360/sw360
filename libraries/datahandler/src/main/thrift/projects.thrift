@@ -103,7 +103,7 @@ struct Project {
     11: optional string createdOn, // Creation date YYYY-MM-dd
     12: optional string businessUnit,
     13: optional ProjectState state = ProjectState.ACTIVE,
-    15: optional ProjectType projectType = ProjectType.CUSTOMER,
+    15: optional ProjectType projectType = ProjectType.PRODUCT,
     16: optional string tag,// user defined tags
     17: optional ProjectClearingState clearingState,
 
@@ -114,7 +114,7 @@ struct Project {
     25: optional set<string> moderators = [],
 //    26: optional set<string> comoderators, //deleted
     27: optional set<string> contributors = [],
-    28: optional Visibility visbility = sw360.Visibility.BUISNESSUNIT_AND_MODERATORS,
+    28: optional Visibility visbility = sw360.Visibility.EVERYONE,
     29: optional map<string,set<string>> roles, //customized roles with set of mail addresses
     129: optional set<string> securityResponsibles = [],
     130: optional string projectOwner,
@@ -134,6 +134,7 @@ struct Project {
     44: optional string deliveryStart,
     45: optional string phaseOutSince,
     46: optional bool enableSvm, // flag for enabling Security Vulnerability Monitoring
+    49: optional bool considerReleasesFromExternalList, // Consider list of releases from existing external list
     47: optional string licenseInfoHeaderText;
     48: optional bool enableVulnerabilitiesDisplay, // flag for enabling displaying vulnerabilities in project view
     134: optional string obligationsText,
@@ -407,6 +408,11 @@ service ProjectService {
      * Visibility of any of the projects in the tree for the given user is currently not considered.
      */
     list<Project> fillClearingStateSummaryIncludingSubprojects(1: list<Project> projects, 2: User user);
+
+    /**
+    * export all projects to SVM to create/update monitoring lists
+    **/
+    RequestStatus exportForMonitoringList();
 
     /**
      * get clearing status data for all releases linked by the given project and its subprojects

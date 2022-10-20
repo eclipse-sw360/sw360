@@ -26,6 +26,7 @@
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <%-- the following is needed by liferay to display error messages--%>
 <%@ include file="/html/utils/includes/errorKeyToMessage.jspf"%>
+<core_rt:set var="isSvmEnabled" value='<%=PortalConstants.IS_SVM_ENABLED%>' />
 <portlet:resourceURL var="obligationediturl">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LOAD_OBLIGATIONS_EDIT%>"/>
     <portlet:param name="<%=PortalConstants.DOCUMENT_ID%>" value="${project.id}"/>
@@ -277,6 +278,27 @@ require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup'
     function submitForm() {
         disableLicenseInfoHeaderTextIfNecessary();
         disableObligationsTextIfNecessary();
+        <core_rt:if test="${isSvmEnabled == true}">
+        var $dialog;
+        var svmExternalIdPresent = false;
+        var checkboxEnableExternalId = $('#considerReleasesFromExternalList').get(0);
+        var externalIdTableRecords = $("#externalIdsTable :input").serializeArray();
+        var arrayLength = externalIdTableRecords.length;
+        for (var i = 0; i < arrayLength; i++) {
+        if (externalIdTableRecords[i].name.includes('_sw360_portlet_projects_externalIdKeyexternalIdsTable') && externalIdTableRecords[i].value == "<%=SW360Constants.SVM_MONITORINGLIST_ID%>") {
+              svmExternalIdPresent = true;
+           }
+        }
+
+        if (checkboxEnableExternalId.checked && !svmExternalIdPresent) {
+             dialog.warn('<liferay-ui:message key="there.is.no.externalId.present.for.the.key.svm.monitoringlist.id" />');
+             return;
+             setTimeout(function() {
+             dialog.close();
+             }, 10000);
+        }
+        </core_rt:if>
+
         $('#LinkedReleasesInfo tbody tr #mainlineState').prop('disabled', false);
         <core_rt:if test = "${(project.clearingState eq 'CLOSED') && (isUserAdmin != 'Yes') && isProjectMember && not addMode}">
             $("form#projectEditForm select").prop("disabled", false);

@@ -15,6 +15,7 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState" %>
 <%@ page import="static org.eclipse.sw360.datahandler.thrift.projects.projectsConstants.CLEARING_TEAM_UNKNOWN" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<core_rt:set var="isSvmEnabled" value='<%=PortalConstants.IS_SVM_ENABLED%>' />
 
 <style><%@include file="/css/utils/_tagautocomplete.scss"%></style>
 
@@ -168,6 +169,20 @@
                 </small>
             </div>
         </td>
+        <core_rt:if test="${isSvmEnabled == true}">
+        <td>
+            <div class="form-group">
+                <input id="considerReleasesFromExternalList" type="checkbox" class="form-check-input"
+                    name="<portlet:namespace/><%=Project._Fields.CONSIDER_RELEASES_FROM_EXTERNAL_LIST%>"
+                    value="<sw360:out value="${project.considerReleasesFromExternalList}"/>"
+                        <core_rt:if test="${project.considerReleasesFromExternalList}"> checked="checked" </core_rt:if>
+                />
+                <label class="form-check-label" for="considerReleasesFromExternalList">
+                    <liferay-ui:message key="do.not.create.monitoring.list.but.use.list.from.external.id" />
+                </label>
+            </div>
+        </td>
+        </core_rt:if>
         <td>
             <div class="form-group">
                 <input id="enable_vulnerabilities_display" type="checkbox" class="form-check-input"
@@ -180,7 +195,6 @@
                 </label>
             </div>
         </td>
-        <td></td>
     </tr>
 </table>
 
