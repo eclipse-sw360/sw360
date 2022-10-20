@@ -36,6 +36,23 @@ public class ScheduleConstants {
     public static final String AUTOSTART_PROPERTY_NAME = "autostart";
     public static final String CVESEARCH_OFFSET_DEFAULT  = 0 + "" ; // default 00:00 am, in seconds
     public static final String CVESEARCH_INTERVAL_DEFAULT  = (24*60*60)+"" ; // default 24h, in seconds
+    public static final String SVMSYNC_OFFSET_PROPERTY_NAME = "schedule.svmsync.firstOffset.seconds";
+    public static final String SVMSYNC_INTERVAL_PROPERTY_NAME = "schedule.svmsync.interval.seconds";
+    public static final String SVMSYNC_OFFSET_DEFAULT  = (1*60*60) + "" ; // default 01:00 am, in seconds
+    public static final String SVMSYNC_INTERVAL_DEFAULT  = (24*60*60)+"" ; // default 24h, in seconds
+    public static final String SVMMATCH_OFFSET_PROPERTY_NAME = "schedule.svmmatch.firstOffset.seconds";
+    public static final String SVMMATCH_INTERVAL_PROPERTY_NAME = "schedule.svmmatch.interval.seconds";
+    public static final String SVMMATCH_OFFSET_DEFAULT  = (2*60*60) + "" ; // default 01:00 am, in seconds
+    public static final String SVMMATCH_INTERVAL_DEFAULT  = (24*60*60)+"" ; // default 24h, in seconds
+    public static final String SVM_LIST_UPDATE_OFFSET_PROPERTY_NAME = "schedule.svmlistupdate.firstOffset.seconds";
+    public static final String SVM_LIST_UPDATE_INTERVAL_PROPERTY_NAME = "schedule.svmlistupdate.interval.seconds";
+    public static final String SVM_LIST_UPDATE_OFFSET_DEFAULT  = (3*60*60) + "" ; // default 03:00 am, in seconds
+    public static final String SVM_LIST_UPDATE_INTERVAL_DEFAULT  = (24*60*60)+"" ; // default 24h, in seconds
+    public static final String SVM_TRACKING_FEEDBACK_OFFSET_PROPERTY_NAME = "schedule.trackingfeedback.firstOffset.seconds";
+    public static final String SVM_TRACKING_FEEDBACK_INTERVAL_PROPERTY_NAME = "schedule.trackingfeedback.interval.seconds";
+    public static final String SVM_TRACKING_FEEDBACK_OFFSET_DEFAULT  = (4*60*60) + "" ; // default 04:00 am, in seconds
+    public static final String SVM_TRACKING_FEEDBACK_INTERVAL_DEFAULT  = (24*60*60)+"" ; // default 24h, in seconds
+
     public static final String DELETE_ATTACHMENT_OFFSET_DEFAULT  = "0"; // default 00:00 am, in seconds
     public static final String DELETE_ATTACHMENT_INTERVAL_DEFAULT  = (24*60*60) + "" ; // default 24h, in seconds
     public static final String DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME = "schedule.delete.attachment.firstOffset.seconds";
@@ -50,26 +67,37 @@ public class ScheduleConstants {
     static {
         Properties props = CommonUtils.loadProperties(ScheduleConstants.class, PROPERTIES_FILE_PATH);
 
-        if(! props.containsKey(CVESEARCH_OFFSET_PROPERTY_NAME)){
-            log.info("Property "+ CVESEARCH_OFFSET_PROPERTY_NAME + " not set. Using default value.");
+        loadScheduledServiceProperties(props, ThriftClients.CVESEARCH_SERVICE, CVESEARCH_OFFSET_PROPERTY_NAME, CVESEARCH_OFFSET_DEFAULT, CVESEARCH_INTERVAL_PROPERTY_NAME, CVESEARCH_INTERVAL_DEFAULT);
+        loadScheduledServiceProperties(props, ThriftClients.SVMSYNC_SERVICE, SVMSYNC_OFFSET_PROPERTY_NAME, SVMSYNC_OFFSET_DEFAULT, SVMSYNC_INTERVAL_PROPERTY_NAME, SVMSYNC_INTERVAL_DEFAULT);
+        loadScheduledServiceProperties(props, ThriftClients.SVMMATCH_SERVICE, SVMMATCH_OFFSET_PROPERTY_NAME, SVMMATCH_OFFSET_DEFAULT, SVMMATCH_INTERVAL_PROPERTY_NAME, SVMMATCH_INTERVAL_DEFAULT);
+        loadScheduledServiceProperties(props, ThriftClients.SVM_LIST_UPDATE_SERVICE, SVM_LIST_UPDATE_OFFSET_PROPERTY_NAME, SVM_LIST_UPDATE_OFFSET_DEFAULT, SVM_LIST_UPDATE_INTERVAL_PROPERTY_NAME, SVM_LIST_UPDATE_INTERVAL_DEFAULT);
+        loadScheduledServiceProperties(props, ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE, SVM_TRACKING_FEEDBACK_OFFSET_PROPERTY_NAME, SVM_TRACKING_FEEDBACK_OFFSET_DEFAULT, SVM_TRACKING_FEEDBACK_INTERVAL_PROPERTY_NAME, SVM_TRACKING_FEEDBACK_INTERVAL_DEFAULT);
+
+        String autostartServicesString = props.getProperty(AUTOSTART_PROPERTY_NAME, "");
+        autostartServices = autostartServicesString.split(",");
+    }
+
+    private static void loadScheduledServiceProperties(Properties props, String serviceName, String offsetPropertyName, String offsetDefault, String intervalPropertyName, String intervalDefault) {
+        if (!props.containsKey(offsetPropertyName)) {
+            log.info("Property " + offsetPropertyName + " not set. Using default value.");
         }
-        String cveSearchOffset  = props.getProperty(CVESEARCH_OFFSET_PROPERTY_NAME, CVESEARCH_OFFSET_DEFAULT);
+        String cveSearchOffset = props.getProperty(offsetPropertyName, offsetDefault);
         try {
-            SYNC_FIRST_RUN_OFFSET_SEC.put(ThriftClients.CVESEARCH_SERVICE, Integer.parseInt(cveSearchOffset));
-        } catch (NumberFormatException nfe){
-            log.error("Property " + CVESEARCH_OFFSET_PROPERTY_NAME + " is not an integer.");
-            invalidConfiguredServices.add(ThriftClients.CVESEARCH_SERVICE);
+            SYNC_FIRST_RUN_OFFSET_SEC.put(serviceName, Integer.parseInt(cveSearchOffset));
+        } catch (NumberFormatException nfe) {
+            log.error("Property " + offsetPropertyName + " is not an integer.");
+            invalidConfiguredServices.add(serviceName);
         }
 
-        if(! props.containsKey(CVESEARCH_INTERVAL_PROPERTY_NAME)){
-            log.info("Property "+ CVESEARCH_INTERVAL_PROPERTY_NAME + " not set. Using default value.");
+        if (!props.containsKey(intervalPropertyName)) {
+            log.info("Property " + intervalPropertyName + " not set. Using default value.");
         }
-        String cveSearchInterval  = props.getProperty(CVESEARCH_INTERVAL_PROPERTY_NAME, CVESEARCH_INTERVAL_DEFAULT);
+        String cveSearchInterval = props.getProperty(intervalPropertyName, intervalDefault);
         try {
-            SYNC_INTERVAL_SEC.put(ThriftClients.CVESEARCH_SERVICE, Integer.parseInt(cveSearchInterval));
-        } catch (NumberFormatException nfe){
-            log.error("Property " + CVESEARCH_INTERVAL_PROPERTY_NAME + " is not an integer.");
-            invalidConfiguredServices.add(ThriftClients.CVESEARCH_SERVICE);
+            SYNC_INTERVAL_SEC.put(serviceName, Integer.parseInt(cveSearchInterval));
+        } catch (NumberFormatException nfe) {
+            log.error("Property " + intervalPropertyName + " is not an integer.");
+            invalidConfiguredServices.add(serviceName);
         }
 
         if(! props.containsKey(DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME)){
@@ -93,8 +121,5 @@ public class ScheduleConstants {
             log.error("Property " + DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME + " is not an integer.");
             invalidConfiguredServices.add(ThriftClients.DELETE_ATTACHMENT_SERVICE);
         }
-
-        String autostartServicesString = props.getProperty(AUTOSTART_PROPERTY_NAME, "");
-        autostartServices = autostartServicesString.split(",");
     }
 }

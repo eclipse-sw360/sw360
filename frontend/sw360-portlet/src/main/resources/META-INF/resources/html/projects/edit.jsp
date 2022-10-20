@@ -277,6 +277,25 @@ require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup'
     function submitForm() {
         disableLicenseInfoHeaderTextIfNecessary();
         disableObligationsTextIfNecessary();
+        var $dialog;
+        var svmExternalIdPresent = false;
+        var checkboxEnableExternalId = $('#considerReleasesFromExternalList').get(0);
+        var externalIdTableRecords = $("#externalIdsTable :input").serializeArray();
+        var arrayLength = externalIdTableRecords.length;
+        for (var i = 0; i < arrayLength; i++) {
+        if (externalIdTableRecords[i].name.includes('_sw360_portlet_projects_externalIdKeyexternalIdsTable') && externalIdTableRecords[i].value == "com.siemens.svm.monitoringlist.id") {
+              svmExternalIdPresent = true;
+           }
+        }
+
+        if (checkboxEnableExternalId.checked && !svmExternalIdPresent) {
+             dialog.warn('<liferay-ui:message key="there.is.no.externalId.present.for.the.key.com.siemens.svm.monitoringlist.id" />');
+             return;
+             setTimeout(function() {
+             dialog.close();
+             }, 10000);
+        }
+
         $('#LinkedReleasesInfo tbody tr #mainlineState').prop('disabled', false);
         <core_rt:if test = "${(project.clearingState eq 'CLOSED') && (isUserAdmin != 'Yes') && isProjectMember && not addMode}">
             $("form#projectEditForm select").prop("disabled", false);

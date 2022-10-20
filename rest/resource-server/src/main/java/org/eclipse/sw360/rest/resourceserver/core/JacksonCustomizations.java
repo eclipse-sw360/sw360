@@ -182,6 +182,7 @@ public class JacksonCustomizations {
                 "setLinkedObligationId",
                 "linkedObligationId",
                 "setClearingRequestId",
+                "setConsiderReleasesFromExternalList",
                 "externalUrlsSize",
                 "setExternalUrls",
                 "externalUrls",

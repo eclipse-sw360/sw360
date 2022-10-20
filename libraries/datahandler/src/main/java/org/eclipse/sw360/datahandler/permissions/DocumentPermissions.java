@@ -73,7 +73,7 @@ public abstract class DocumentPermissions<T> {
     }
 
     protected boolean isModerator() {
-        return CommonUtils.contains(user.email, getModerators());
+        return user != null && CommonUtils.contains(user.email, getModerators());
     }
 
     public void fillPermissions() {

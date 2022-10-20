@@ -34,6 +34,7 @@ define('utils/includes/attachmentsUpload', ['jquery', 'resumable', 'modules/dial
             simultaneousUploads: 1,
             generateUniqueIdentifier: getAttachmentIdPromise,
             chunkRetryInterval: 2000,
+            chunkSize: 2097152,
             maxChunkRetries: 3
         });
 

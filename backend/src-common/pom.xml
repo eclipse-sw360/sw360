@@ -20,6 +20,10 @@
 
     <artifactId>src-common</artifactId>
 
+    <properties>
+	<liferay.version>6.2.2</liferay.version>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
@@ -37,6 +41,17 @@
         </plugins>
     </build>
     <dependencies>
+        <dependency>
+            <groupId>com.liferay.portal</groupId>
+            <artifactId>portal-service</artifactId>
+            <version>${liferay.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
+            <version>4.3.3</version>
+        </dependency>
         <dependency>
             <groupId>org.spdx</groupId>
             <artifactId>tools-java</artifactId>

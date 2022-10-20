@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2013-2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2013-2018. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -11,22 +11,18 @@ package org.eclipse.sw360.datahandler.db;
 
 import org.eclipse.sw360.components.summary.ReleaseSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
+import java.util.*;
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
 import com.cloudant.client.api.views.Key;
 import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
 import com.cloudant.client.api.views.ViewRequestBuilder;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -36,6 +32,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  *
  * @author cedric.bodet@tngtech.com
  * @author Johannes.Najjar@tngtech.com
+ * @author stefan.jaeger@evosoft.com
  */
 public class ReleaseRepository extends SummaryAwareRepository<Release> {
 
@@ -66,6 +63,13 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
             "      emit(doc.componentId, doc._id);" +
             "  }" +
             "}";
+    
+    private static final String RELEASEIDSBYVENDORID = "function(doc) {" +
+            " if (doc.type == 'release'){" +
+            "      emit(doc.vendorId, doc._id);" +
+            "  }" +
+            "}";
+
     private static final String RELEASEIDSBYLICENSEID = "function(doc) {" +
             "  if (doc.type == 'release'){" +
             "    for(var i in doc.mainLicenseIds) {" +
@@ -91,6 +95,37 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
             "    }" +
             "  }" +
             "}";
+    
+    private static final String BY_LOWERCASE_RELEASE_CPE_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'release' && doc.cpeid != null) {" +
+                    "    emit(doc.cpeid.toLowerCase(), doc._id);" +
+                    "  } " +
+                    "}";
+
+    private static final String RELEASES_BY_SVM_ID_RELEASE_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'release' && doc.externalIds) {" +
+                    "    var svmId = doc.externalIds['" + SW360Constants.SVM_COMPONENT_ID + "'];" +
+                    "    if (svmId != null) {" +
+                    "      emit(svmId, doc._id);" +
+                    "    }" +
+                    "  } " +
+                    "}";
+
+    private static final String BY_LOWERCASE_RELEASE_NAME_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'release' && doc.name != null) {" +
+                    "    emit(doc.name.toLowerCase(), doc._id);" +
+                    "  } " +
+                    "}";
+
+    private static final String BY_LOWERCASE_RELEASE_VERSION_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'release' && doc.version != null) {" +
+                    "    emit(doc.version.toLowerCase(), doc._id);" +
+                    "  } " +
+                    "}";
 
     public ReleaseRepository(DatabaseConnectorCloudant db, VendorRepository vendorRepository) {
         super(Release.class, db, new ReleaseSummary(vendorRepository));
@@ -104,6 +139,11 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         views.put("releasesByComponentId", createMapReduce(RELEASESBYCOMPONENTID, null));
         views.put("releaseIdsByLicenseId", createMapReduce(RELEASEIDSBYLICENSEID, null));
         views.put("byExternalIds", createMapReduce(BYEXTERNALIDS, null));
+        views.put("releaseByCpeId", createMapReduce(BY_LOWERCASE_RELEASE_CPE_VIEW, null));
+        views.put("releaseBySvmId", createMapReduce(RELEASES_BY_SVM_ID_RELEASE_VIEW, null));
+        views.put("releaseByName", createMapReduce(BY_LOWERCASE_RELEASE_NAME_VIEW, null));
+        views.put("releaseByVersion", createMapReduce(BY_LOWERCASE_RELEASE_VERSION_VIEW, null));
+        views.put("releaseIdsByVendorId", createMapReduce(RELEASEIDSBYVENDORID, null));
         initStandardDesignDocument(views, db);
     }
 
@@ -152,9 +192,23 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
                 new ArrayList<Release>(getFullDocsById(releaseIds)), user);
     }
 
+    public List<Release> getReleasesIgnoringNotFound(Collection<String> ids) {
+        return getConnector().get(Release.class, ids, true);
+    }
+
     public List<Release> getReleasesFromVendorIds(Set<String> ids) {
         Set<String> releaseIds = queryForIdsAsValue("releaseByVendorId", ids);
         return makeSummaryFromFullDocs(SummaryType.SHORT, new ArrayList<Release>(getFullDocsById(releaseIds)));
+    }
+
+    public Set<String> getReleaseIdsFromVendorIds(Set<String> ids) {
+    	ViewRequestBuilder query = getConnector().createQuery(Release.class, "releaseIdsByVendorId");
+    	String[] arrayOfString = new String[ids.size()];
+        int index = 0;
+        for (String str : ids)
+            arrayOfString[index++] = str;
+        UnpaginatedRequestBuilder reqBuild = query.newRequest(Key.Type.STRING, Object.class).keys(arrayOfString);
+        return queryForIds(reqBuild);
     }
 
     public Set<Release> getReleasesByVendorId(String vendorId) {
@@ -165,6 +219,22 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
     public List<Release> searchReleasesByUsingLicenseId(String licenseId) {
         Set<String> releaseIds = queryForIdsAsValue("releaseIdsByLicenseId", licenseId);
         return new ArrayList<Release>(getFullDocsById(releaseIds));
+    }
+
+    public Set<String> getReleaseIdsBySvmId(String svmId) {
+        return queryForIdsAsValue("releaseBySvmId", svmId != null ? svmId.toLowerCase() : svmId);
+    }
+
+    public Set<String> getReleaseByLowercaseCpe(String cpeid) {
+        return queryForIdsAsValue("releaseByCpeId", cpeid != null ? cpeid.toLowerCase() : cpeid);
+    }
+
+    public Set<String> getReleaseByLowercaseNamePrefix(String namePrefix) {
+        return queryForIdsByPrefix("releaseByName", namePrefix != null ? namePrefix.toLowerCase() : namePrefix);
+    }
+
+    public Set<String> getReleaseByLowercaseVersionPrefix(String versionPrefix) {
+        return queryForIdsByPrefix("releaseByVersion", versionPrefix != null ? versionPrefix.toLowerCase() : versionPrefix);
     }
 
     public Set<Release> searchByExternalIds(Map<String, Set<String>> externalIds) {

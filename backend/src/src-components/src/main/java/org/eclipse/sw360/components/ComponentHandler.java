@@ -584,6 +584,11 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public RequestStatus updateReleasesWithSvmTrackingFeedback() throws TException {
+        return handler.updateReleasesWithSvmTrackingFeedback();
+    }
+
+    @Override
     public Map<String, List<String>> getDuplicateComponents() throws TException {
         return handler.getDuplicateComponents();
     }

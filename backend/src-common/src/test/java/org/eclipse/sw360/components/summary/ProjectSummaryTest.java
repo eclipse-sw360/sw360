@@ -84,6 +84,9 @@ public class ProjectSummaryTest {
                 case ENABLE_VULNERABILITIES_DISPLAY:
                     project.enableVulnerabilitiesDisplay = true;
                     break;
+                case CONSIDER_RELEASES_FROM_EXTERNAL_LIST:
+                    project.considerReleasesFromExternalList = false;
+                    break;
                 case EXTERNAL_URLS:
                     project.externalUrls = Collections.emptyMap();
                     break;

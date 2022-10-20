@@ -56,6 +56,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
+import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
@@ -113,6 +114,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private DatabaseHandlerUtil dbHandlerUtil;
 
     private final AttachmentConnector attachmentConnector;
+    private SvmConnector svmConnector;
     /**
      * Access to moderation
      */
@@ -346,13 +348,16 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public Release getRelease(String id, User user) throws SW360Exception {
+        return getRelease(id, user, null);
+    }
+    public Release getRelease(String id, User user, Map<String, Vendor> vendorCache) throws SW360Exception {
         Release release = releaseRepository.get(id);
 
         if (release == null) {
             throw fail(404, "Could not fetch release from database! id=" + id);
         }
 
-        vendorRepository.fillVendor(release);
+        vendorRepository.fillVendor(release, vendorCache);
         // Set permissions
         if (user != null) {
             makePermission(release, user).fillPermissions();
@@ -1793,9 +1798,22 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.getAll();
     }
 
+    public List<Vendor> getAllVendors() {
+        return vendorRepository.getAll();
+    }
+
     public Map<String, Release> getAllReleasesIdMap() {
         final List<Release> releases = getAllReleases();
         return ThriftUtils.getIdMap(releases);
+    }
+
+    void fillVendors(Collection<Release> releases){
+        releases.forEach(vendorRepository::fillVendor);
+    }
+
+    public Map<String, Component> getAllComponentsIdMap() {
+        final List<Component> components = componentRepository.getAll();
+        return ThriftUtils.getIdMap(components);
     }
 
     @NotNull
@@ -1932,6 +1950,41 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public List<Release> getFullReleases(Set<String> ids) {
         return releaseRepository.makeSummary(SummaryType.SUMMARY, ids);
+    }
+
+    public Set<String> getReleaseIdsByVendorIds(Set<String> vendorIds){
+        return releaseRepository.getReleaseIdsFromVendorIds(vendorIds);
+    }
+
+    public Set<String> getReleaseIdsBySvmId(String svmId){
+        return releaseRepository.getReleaseIdsBySvmId(svmId);
+    }
+
+    public Set<String> getReleaseIdsByCpeCaseInsensitive(String cpeId){
+        return releaseRepository.getReleaseByLowercaseCpe(cpeId);
+    }
+
+    public Set<String> getReleaseIdsByNamePrefixCaseInsensitive(String namePrefix){
+        return releaseRepository.getReleaseByLowercaseNamePrefix(namePrefix);
+    }
+
+    public Set<String> getReleaseIdsByVersionPrefixCaseInsensitive(String versionPrefix){
+        return releaseRepository.getReleaseByLowercaseVersionPrefix(versionPrefix);
+    }
+
+    public Set<String> getAllReleaseIds(){
+        return releaseRepository.getAllIds();
+    }
+
+    public Set<String> getVendorIdsByNamePrefixCaseInsensitive(String namePrefix){
+        Set<String> fullnameList = vendorRepository.getVendorByLowercaseFullnamePrefix(namePrefix);
+        Set<String> shortnameList = vendorRepository.getVendorByLowercaseShortnamePrefix(namePrefix);
+
+        if (fullnameList == null) return shortnameList;
+        if (shortnameList == null) return fullnameList;
+        // both lists available
+        fullnameList.addAll(shortnameList);
+        return fullnameList;
     }
 
     public List<Release> getReleasesWithPermissions(Set<String> ids, User user) {
@@ -2393,6 +2446,74 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 MailConstants.TEXT_FOR_UPDATE_RELEASE,
                 SW360Constants.NOTIFICATION_CLASS_RELEASE, Release._Fields.SUBSCRIBERS.toString(),
                 release.getName(), release.getVersion());
+    }
+
+    public RequestStatus updateReleasesWithSvmTrackingFeedback() {
+        try {
+            Map<String, Map<String, Object>> componentMappings = getSvmConnector().fetchComponentMappings();
+            List<Release> releases = releaseRepository.getReleasesIgnoringNotFound(componentMappings.keySet());
+            releases.forEach(r -> {
+                Map<String, String> externalIds = r.isSetExternalIds() ? r.getExternalIds() : new HashMap<>();
+                Map<String, String> additionalData = r.isSetAdditionalData() ? r.getAdditionalData() : new HashMap<>();
+
+                Map<String, Object> releaseSVMData = componentMappings.get(r.getId());
+                if (!CommonUtils.isNullOrEmptyMap(releaseSVMData)) {
+                    Release originalReleaseData = r.deepCopy();
+                    Object svmComponentId = releaseSVMData.get(SW360Constants.SVM_COMPONENT_ID_KEY);
+                    Object shortStatus = releaseSVMData.get(SW360Constants.SVM_SHORT_STATUS_KEY);
+                    boolean isChanged = false;
+                    if (svmComponentId != null) {
+                        String previousValue = externalIds.get(SW360Constants.SVM_COMPONENT_ID);
+                        if (previousValue == null || !previousValue.equals(svmComponentId.toString())) {
+                            externalIds.put(SW360Constants.SVM_COMPONENT_ID, svmComponentId.toString());
+                            r.setExternalIds(externalIds);
+                            isChanged = true;
+                        }
+                    }
+
+                    if (shortStatus != null && CommonUtils.isNotNullEmptyOrWhitespace(shortStatus.toString())) {
+                        String previousValue = additionalData.get(SW360Constants.SVM_SHORT_STATUS);
+                        if (previousValue == null || !previousValue.equals(shortStatus.toString())) {
+                            additionalData.put(SW360Constants.SVM_SHORT_STATUS, shortStatus.toString());
+                            r.setAdditionalData(additionalData);
+                            isChanged = true;
+                        }
+                    }
+
+                    if (isChanged) {
+                        dbHandlerUtil.addChangeLogs(r, originalReleaseData, SW360Constants.SVM_SCHEDULER_EMAIL,
+                                Operation.UPDATE, attachmentConnector, Lists.newArrayList(), null, null);
+                    }
+                }
+            });
+            List<Response> documentOperationResults = releaseRepository.executeBulk(releases);
+            documentOperationResults = documentOperationResults.stream().filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED)
+                    .collect(Collectors.toList());
+            if (documentOperationResults.isEmpty()) {
+                log.info(String.format("SVMTF: updated %d releases", releases.size()));
+            } else {
+                log.error("SVMTF: Failed saving releases: " + documentOperationResults);
+                return RequestStatus.FAILURE;
+            }
+        } catch (IOException | SW360Exception e) {
+            log.error(e);
+            return RequestStatus.FAILURE;
+        }
+
+        return RequestStatus.SUCCESS;
+    }
+
+    @NotNull
+    private SvmConnector getSvmConnector() {
+        if (svmConnector == null) {
+            svmConnector = new SvmConnector();
+        }
+        return svmConnector;
+    }
+
+    public ComponentDatabaseHandler setSvmConnector(SvmConnector svmConnector) {
+        this.svmConnector = svmConnector;
+        return this;
     }
 
     public ImportBomRequestPreparation prepareImportBom(User user, String attachmentContentId) throws SW360Exception {
