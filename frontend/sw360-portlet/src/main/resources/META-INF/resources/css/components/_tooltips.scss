@@ -389,7 +389,7 @@
 .sw360-tt-ClearingRequestState-CLOSED:hover:after {
     content: attr(data-content);
 }
-.sw360-tt-ClearingRequestState-ON_HOLD:hover:after {
+.sw360-tt-ClearingRequestState-AWAITING_RESPONSE:hover:after {
     content: attr(data-content);
 }
 
