@@ -100,6 +100,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private static final String ECC_AUTOSET_COMMENT = "automatically set";
     private static final String ECC_AUTOSET_VALUE = "N";
     private static final String DEFAULT_CATEGORY = "Default_Category";
+    private static final String ECC_FIELDS_VALUE_RESET = "";
 
     /**
      * Connection to the couchDB database
@@ -634,6 +635,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (isComponentNameChanged) {
                 updateComponentDependentFieldsForRelease(component,referenceDocLogList,user.getEmail());
             }
+
+            if (component.getComponentType() != null && !component.getComponentType().equals(actual.getComponentType()) && !ComponentType.OSS.equals(component.getComponentType())) {
+                updateEccStatusForRelease(component);
+            }
+
             dbHandlerUtil.addChangeLogs(component, actual, user.getEmail(), Operation.UPDATE, attachmentConnector,
                     referenceDocLogList, null, null);
         } else {
@@ -693,6 +699,17 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             releaseRepository.update(release);
             referenceDocLogList.add(changeLog);
         }
+    }
+    
+    private void updateEccStatusForRelease(Component component) {
+    	for (Release release : releaseRepository.getReleasesFromComponentId(component.getId())) {
+            EccInformation eccInfo = release.getEccInformation();
+            eccInfo.setEccStatus(ECCStatus.OPEN);
+            eccInfo.setAl(ECC_FIELDS_VALUE_RESET);
+            eccInfo.setEccn(ECC_FIELDS_VALUE_RESET);
+            eccInfo.setEccComment(ECC_FIELDS_VALUE_RESET);
+            releaseRepository.update(release);
+    	}
     }
 
     private boolean changeWouldResultInDuplicate(Component before, Component after) {
