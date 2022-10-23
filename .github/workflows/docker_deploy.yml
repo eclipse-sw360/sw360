@@ -1,0 +1,102 @@
+# -----------------------------------------------------------------------------
+# Copyright Helio Chissini de Castro 2022.
+# Part of the SW360 Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+# -----------------------------------------------------------------------------
+
+name: Docker Build
+
+on:
+  push:
+    branches: [ release ]
+
+env:
+  DOCKER_IMAGE_ROOT: eclipse
+  CLUCENE_VERSION: 2.1.0
+  MAVEN_VERSION: 3.8.6
+  THRIFT_VERSION: 0.17.0
+  LIFERAY_VERSION: 7.4.3.18-ga18
+  LIFERAY_SOURCE: liferay-ce-portal-tomcat-7.4.3.18-ga18-20220329092001364.tar.gz
+  REGISTRY: ghcr.io
+
+jobs:
+  docker_push:
+    name: Build Docker Image
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push thrift
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          target: sw360thrift
+          build-args: |
+            THRIFT_VERSION=0.17.0
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE_ROOT }}/sw360thrift:latest
+            ${{ env.DOCKER_IMAGE_ROOT }}/sw360thrift:${{ env.THRIFT_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push clucene
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          target: sw360clucene
+          build-args: |
+            CLUCENE_VERSION=${{ env.CLUCENE_VERSION }}
+            MAVEN_VERSION=${{ env.MAVEN_VERSION }}
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE_ROOT }}/sw360clucene:latest
+            ${{ env.DOCKER_IMAGE_ROOT }}/sw360thrift:${{ env.CLUCENE_VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push sw360base
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          target: sw360base
+          build-args: |
+            LIFERAY_VERSION=${{ env.LIFERAY_VERSION }}
+            LIFERAY_SOURCE=${{ env.LIFERAY_SOURCE }}
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE_ROOT }}/sw360base:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push sw360
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          target: sw360
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE_ROOT }}/sw360:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

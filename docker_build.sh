@@ -24,6 +24,7 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 
 COMPOSE_DOCKER_CLI_BUILD=1
 DOCKER_BUILDKIT=1
+DOCKER_PLATFORM=${DOCKER_PLATFORM:-linux/amd64}
 export DOCKER_BUILDKIT COMPOSE_DOCKER_CLI_BUILD
 
 usage() {
@@ -48,20 +49,43 @@ for arg in "$@"; do
     shift
 done
 
-# Download dependencies
-"$GIT_ROOT"/scripts/download_dependencies.sh
+DOCKER_IMAGE_ROOT="${DOCKER_IMAGE_ROOT:-eclipse}"
 
-# Compose build
-#shellcheck disable=SC2086
-docker compose \
-    --file "$GIT_ROOT"/docker-compose.yml \
-    build \
-    --build-arg BUILDKIT_INLINE_CACHE=1 \
-    --build-arg CLUCENE_VERSION="$CLUCENE_VERSION" \
+docker buildx build \
+    --target sw360base \
+    --platform "$DOCKER_PLATFORM" \
+    --tag "${DOCKER_IMAGE_ROOT}"/sw360base:latest \
+    --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" \
+    --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE" \
+    $docker_verbose \
+    $docker_no_cache .
+
+docker buildx build \
+    --target sw360thrift \
+    --platform "$DOCKER_PLATFORM" \
+    --tag "${DOCKER_IMAGE_ROOT}"/sw360thrift:latest \
+    --tag "${DOCKER_IMAGE_ROOT}"/sw360thrift:"$THRIFT_VERSION" \
     --build-arg THRIFT_VERSION="$THRIFT_VERSION" \
+    $docker_verbose \
+    $docker_no_cache .
+
+docker buildx build \
+    --target sw360clucene \
+    --platform "$DOCKER_PLATFORM" \
+    --tag "${DOCKER_IMAGE_ROOT}"/sw360clucene:latest \
+    --tag "${DOCKER_IMAGE_ROOT}"/sw360clucene:"$CLUCENE_VERSION" \
+    --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
+    --build-arg CLUCENE_VERSION="$CLUCENE_VERSION" \
+    $docker_verbose \
+    $docker_no_cache .
+
+docker buildx build \
+    --target sw360 \
+    --platform "$DOCKER_PLATFORM" \
+    --tag "${DOCKER_IMAGE_ROOT}"/sw360:latest \
     --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
     --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" \
     --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE" \
     --build-arg SW360_DEPS_DIR="$SW360_DEPS_DIR" \
     $docker_verbose \
-    $docker_no_cache
+    $docker_no_cache .

@@ -10,18 +10,8 @@ version: '3.8'
 
 services:
   sw360:
-    image: 'sw360:latest'
+    image: 'eclipse/sw360:latest'
     restart: unless-stopped
-    build:
-      context: .
-      args:
-        - COUCHDB_USER
-        - COUCHDB_PASSWORD
-        - HTTP_PROXY
-        - HTTPS_PROXY
-        - LIFERAY_SOURCE
-        - LIFERAY_VERSION
-        - MAVEN_VERSION
     container_name: sw360
     depends_on:
       - postgresdb
