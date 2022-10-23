@@ -37,6 +37,7 @@
     </distributionManagement>
 
     <modules>
+        <module>build-configuration</module>
         <module>libraries</module>
         <module>backend</module>
         <module>frontend</module>
@@ -522,6 +523,50 @@
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${maven-jar-plugin.version}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>${maven-dependency-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>add-build-configuration-resources</id>
+                            <phase>generate-resources</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <artifactItems combine.children="append">
+                                    <artifactItem>
+                                        <groupId>org.eclipse.sw360</groupId>
+                                        <artifactId>build-configuration</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>jar</type>
+                                        <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                    </artifactItem>
+                                </artifactItems>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>add-build-configuration-test-resources</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <artifactItems combine.children="append">
+                                    <artifactItem>
+                                        <groupId>org.eclipse.sw360</groupId>
+                                        <artifactId>build-configuration</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>test-jar</type>
+                                        <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+                                    </artifactItem>
+                                </artifactItems>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
