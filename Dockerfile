@@ -12,16 +12,13 @@
 #-----------------------------------------------------------------------------------
 # Base image
 # We need use JDK, JRE is not enough as Liferay do runtime changes and require javac
-FROM eclipse-temurin:11-jdk-jammy as baseimage
+FROM eclipse-temurin:11-jdk-jammy as sw360base
 
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
 # Set versions as arguments
-ARG CLUCENE_VERSION
-ARG THRIFT_VERSION
-ARG MAVEN_VERSION
 ARG LIFERAY_VERSION
 ARG LIFERAY_SOURCE
 
@@ -70,16 +67,39 @@ RUN groupadd --gid $USER_GID $USERNAME \
 RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
+# Unpack liferay as sw360 and link current tomcat version
+# to tomcat to make future proof updates
+RUN mkdir -p /app/sw360 \
+    && curl -JL https://github.com/liferay/liferay-portal/releases/download/"$LIFERAY_VERSION"/"$LIFERAY_SOURCE" | tar -xz -C /app/sw360 --strip-components=1 \
+    && chown -R $USERNAME:$USERNAME /app \
+    && ln -s /app/sw360/tomcat-* /app/sw360/tomcat
+
 #-----------------------------------------------------------------------------------
 # Builder image
-FROM baseimage AS builder
+FROM eclipse-temurin:11-jdk-jammy AS sw360builder
 
 # Set versions as arguments
-ARG CLUCENE_VERSION
-ARG THRIFT_VERSION
 ARG MAVEN_VERSION
-ARG LIFERAY_VERSION
-ARG LIFERAY_SOURCE
+
+# Prepare maven from binary to avoid wrong java dependencies and proxy
+COPY scripts/docker-config/mvn-proxy-settings.xml /etc
+COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
+RUN curl -JL https://dlcdn.apache.org/maven/maven-3/"$MAVEN_VERSION"/binaries/apache-maven-"$MAVEN_VERSION"-bin.tar.gz | tar -xz --strip-components=1 -C /usr/local
+RUN chmod a+x /usr/local/bin/setup_maven_proxy \
+    && setup_maven_proxy
+
+RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
+    apt-get -qq update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    gettext-base
+
+#--------------------------------------------------------------------------------------------------
+# Thrift
+FROM ubuntu:jammy AS sw360thrift
+
+ARG BASEDIR="/build"
+ARG THRIFT_VERSION=0.17.0
 
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
@@ -90,56 +110,41 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     cmake \
     curl \
     flex \
-    gettext-base \
-    git \
     libevent-dev \
     libtool \
     pkg-config \
-    wget \
     && rm -rf /var/lib/apt/lists/*
-
-# Prepare maven from binary to avoid wrong java dependencies and proxy
-COPY scripts/docker-config/mvn-proxy-settings.xml /etc
-COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
-RUN --mount=type=bind,source=deps,target=/var/cache/deps,readonly \
-    tar -xzf "/var/cache/deps/apache-maven-$MAVEN_VERSION-bin.tar.gz" --strip-components=1 -C /usr/local
-RUN chmod a+x /usr/local/bin/setup_maven_proxy
-
-#--------------------------------------------------------------------------------------------------
-# Thrift
-FROM builder AS thriftbuild
-
-ARG BASEDIR="/build"
-ARG THRIFT_VERSION=0.16.0
 
 COPY ./scripts/install-thrift.sh build_thrift.sh
 
-RUN --mount=type=bind,source=deps,target=/var/cache/deps,readonly \
-    --mount=type=tmpfs,target=/build \
+RUN --mount=type=tmpfs,target=/build \
     ./build_thrift.sh
 
 #--------------------------------------------------------------------------------------------------
 # Couchdb-Lucene
-FROM builder as clucenebuild
+FROM sw360builder as sw360clucene
 
 ARG CLUCENE_VERSION=2.1.0
 
 WORKDIR /build
+
+RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
+    apt-get -qq update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    patch
 
 # Prepare source code
 COPY ./scripts/docker-config/couchdb-lucene.ini /var/tmp/couchdb-lucene.ini
 COPY ./scripts/patches/couchdb-lucene.patch /var/tmp/couchdb-lucene.patch
 
 # Build CLucene
-RUN --mount=type=bind,source=deps,target=/var/cache/deps,readonly \
-    --mount=type=tmpfs,target=/build \
+RUN --mount=type=tmpfs,target=/build \
     --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
-    tar -C /build -xf /var/cache/deps/couchdb-lucene-$CLUCENE_VERSION.tar.gz --strip-components=1 \
+    curl -JL https://github.com/rnewson/couchdb-lucene/archive/v"$CLUCENE_VERSION".tar.gz | tar -C /build -xz --strip-components=1 \
     && patch -p1 < /var/tmp/couchdb-lucene.patch \
     && cp /var/tmp/couchdb-lucene.ini src/main/resources/couchdb-lucene.ini \
-    && setup_maven_proxy \
-    && mvn dependency:go-offline -B \
-    && mvn install war:war \
+    && mvn -X install war:war \
     && cp ./target/*.war /couchdb-lucene.war
 
 #--------------------------------------------------------------------------------------------------
@@ -148,22 +153,26 @@ RUN --mount=type=bind,source=deps,target=/var/cache/deps,readonly \
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-FROM thriftbuild AS sw360build
+FROM sw360builder AS sw360build
 
 # Install mkdocs to generate documentation
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
     apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
+    git \
     python3-pip \
     python3-wheel \
+    zip \
+    unzip \
     && rm -rf /var/lib/apt/lists/* \
     && pip install mkdocs-material
+
+COPY --from=sw360thrift /usr/local/bin/thrift /usr/bin
 
 RUN --mount=type=bind,target=/build/sw360,rw \
     --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
     cd /build/sw360 \
-    && setup_maven_proxy \
     && mvn clean package \
     -P deploy \
     -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
@@ -179,34 +188,20 @@ RUN --mount=type=bind,target=/build/sw360,rw \
 WORKDIR /sw360_tomcat_webapps/
 
 COPY scripts/create-slim-war-files.sh /bin/slim.sh
-COPY --from=clucenebuild /couchdb-lucene.war /sw360_tomcat_webapps
+COPY --from=sw360clucene /couchdb-lucene.war /sw360_tomcat_webapps
 RUN bash /bin/slim.sh
 
 #--------------------------------------------------------------------------------------------------
 # Runtime image
-FROM baseimage as sw360
+FROM eclipse/sw360base:latest as sw360
 
 WORKDIR /app/
-
-ARG LIFERAY_SOURCE
-
-# Unpack liferay as sw360 and link current tomcat version
-# to tomcat to make future proof updates
-RUN --mount=type=bind,source=deps,target=/var/cache/deps,readonly \
-    mkdir sw360 \
-    && tar xzf /var/cache/deps/$LIFERAY_SOURCE -C $USERNAME --strip-components=1 \
-    && chown -R $USERNAME:$USERNAME sw360 \
-    && ln -s /app/sw360/tomcat-* /app/sw360/tomcat
 
 USER $USERNAME
 
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_deploy/* /app/sw360/deploy
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/slim-wars/*.war /app/sw360/tomcat/webapps/
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
-
-# Copy dependencies to deploy
-RUN --mount=type=bind,source=deps,target=/var/cache/deps,readonly \
-    cp /var/cache/deps/jars/* /app/sw360/deploy
 
 # Make catalina understand shared directory
 RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
