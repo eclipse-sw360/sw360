@@ -40,7 +40,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Arrays.asList;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -102,7 +101,7 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
         switch (owner.getSetField()) {
             case PROJECT_ID:
                 Project sw360Project = projectService.getProjectForUserById(owner.getProjectId(), sw360User);
-                restControllerHelper.addEmbeddedProject(halAttachment, sw360Project);
+                restControllerHelper.addEmbeddedProject(halAttachment, sw360Project, false);
                 downloadLink = linkTo(ProjectController.class).slash("/api/projects/" + sw360Project.getId() + "/attachments/" + attachmendId).withRel("downloadLink");
                 break;
             case COMPONENT_ID:

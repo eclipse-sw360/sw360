@@ -12,11 +12,11 @@ package org.eclipse.sw360.rest.resourceserver.core;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.resourcelists.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -31,7 +31,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -364,17 +363,17 @@ public class RestControllerHelper<T> {
     public void addEmbeddedProject(HalResource<Project> halProject, Set<String> projectIds, Sw360ProjectService sw360ProjectService, User user) throws TException {
         for (String projectId : projectIds) {
             final Project project = sw360ProjectService.getProjectForUserById(projectId, user);
-            addEmbeddedProject(halProject, project);
+            addEmbeddedProject(halProject, project, false);
         }
     }
 
-    public void addEmbeddedProject(HalResource halResource, Project project) {
+    public void addEmbeddedProject(HalResource halResource, Project project, boolean isSingleProject) {
         Project embeddedProject = convertToEmbeddedProject(project);
         HalResource<Project> halProject = new HalResource<>(embeddedProject);
         Link projectLink = linkTo(ProjectController.class)
                 .slash("api" + ProjectController.PROJECTS_URL + "/" + project.getId()).withSelfRel();
         halProject.add(projectLink);
-        halResource.addEmbeddedResource("sw360:projects", halProject);
+        halResource.addEmbeddedResource(isSingleProject ? "sw360:project" : "sw360:projects", halProject);
     }
 
     public Project updateProject(Project projectToUpdate, Project requestBodyProject, Map<String, Object> reqBodyMap,
@@ -674,4 +673,20 @@ public class RestControllerHelper<T> {
             halResource.addEmbeddedResource(relation, value);
         }
     }
+
+    public ClearingRequest convertToEmbeddedClearingRequest(ClearingRequest clearingRequest) {
+        ClearingRequest embeddedClearingRequest = new ClearingRequest();
+        embeddedClearingRequest.setId(clearingRequest.getId());
+        embeddedClearingRequest.setAgreedClearingDate(clearingRequest.getAgreedClearingDate());
+        embeddedClearingRequest.setRequestedClearingDate(clearingRequest.getRequestedClearingDate());
+        embeddedClearingRequest.setRequestingUser(clearingRequest.getRequestingUser());
+        embeddedClearingRequest.setClearingState(clearingRequest.getClearingState());
+        embeddedClearingRequest.setClearingTeam(clearingRequest.getClearingTeam());
+        embeddedClearingRequest.setPriority(clearingRequest.getPriority());
+        embeddedClearingRequest.setProjectBU(clearingRequest.getProjectBU());
+        embeddedClearingRequest.setProjectId(clearingRequest.getProjectId());
+        embeddedClearingRequest.setType(null);
+        return embeddedClearingRequest;
+    }
+
 }
