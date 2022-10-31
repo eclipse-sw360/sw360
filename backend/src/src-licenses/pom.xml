@@ -31,7 +31,11 @@
     <dependencies>
         <dependency>
             <groupId>org.spdx</groupId>
-            <artifactId>spdx-tools</artifactId>
+            <artifactId>tools-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
         </dependency>
         <!-- Needed by spdx-tools -->
         <dependency>
