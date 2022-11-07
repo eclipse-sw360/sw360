@@ -17,12 +17,13 @@ import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.*;
 import com.liferay.portal.kernel.security.membershippolicy.OrganizationMembershipPolicyUtil;
+import com.liferay.portal.kernel.service.CountryServiceUtil;
 import com.liferay.portal.kernel.service.OrganizationLocalService;
 import com.liferay.portal.kernel.service.OrganizationLocalServiceUtil;
 import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-
+import org.eclipse.sw360.portal.common.PortalConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -80,12 +81,13 @@ public class OrganizationHelper {
             log.info(String.format("Organization %s already exists", organizationName));
         } catch (NoSuchOrganizationException e) {
             User defaultUser = UserLocalServiceUtil.loadGetDefaultUser(companyId);
-            organization = addOrganization(organizationName, defaultUser);
+            Country country = CountryServiceUtil.getCountryByName(companyId, PortalConstants.DEFAULT_COUNTRY_NAME);
+            organization = addOrganization(organizationName, country.getCountryId(), defaultUser);
         }
         return organization;
     }
 
-    private Organization addOrganization(String organizationName, User user) throws SystemException {
+    private Organization addOrganization(String organizationName, long countryId, User user) throws SystemException {
         log.info("OrganizationHelper adds the organization " + organizationName);
         Organization organization = null;
         try {
@@ -97,7 +99,7 @@ public class OrganizationHelper {
                             organizationName,
                             TYPE_REGULAR_ORGANIZATION,
                             RegionConstants.DEFAULT_REGION_ID,
-                            CountryConstants.DEFAULT_COUNTRY_ID,
+                            countryId,
                             ListTypeConstants.ORGANIZATION_STATUS_DEFAULT,
                             "Automatically created during LDAP import",
                             false,

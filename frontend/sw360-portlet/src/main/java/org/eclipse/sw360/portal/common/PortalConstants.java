@@ -50,6 +50,7 @@ public class PortalConstants {
     public static final String LOAD_OPEN_MODERATION_REQUEST = "loadOpenModerationRequest";
     public static final String LOAD_CLOSED_MODERATION_REQUEST = "loadClosedModerationRequest";
     public static final String LICENSE_INFO_HEADER_TEXT_FILE_NAME_BY_PROJECT_GROUP;
+    public static final String DEFAULT_COUNTRY_NAME;
 
     // DO NOT CHANGE THIS UNLESS YOU KNOW WHAT YOU ARE DOING !!!
     // - friendly url mapping files must be changed
@@ -696,6 +697,7 @@ public class PortalConstants {
         PROJECT_OBLIGATIONS_ACTION_SET = CommonUtils.splitToSet(props.getProperty("project.obligation.actions", "Action 1,Action 2,Action 3"));
         IS_PROJECT_OBLIGATIONS_ENABLED = Boolean.parseBoolean(props.getProperty("project.obligations.enabled", "true"));
         CUSTOM_WELCOME_PAGE_GUIDELINE = Boolean.parseBoolean(props.getProperty("custom.welcome.page.guideline", "false"));
+        DEFAULT_COUNTRY_NAME = props.getProperty("liferay.default.country.name", "united-states");
         // SW360 REST API Constants
         API_TOKEN_ENABLE_GENERATOR = Boolean.parseBoolean(props.getProperty("rest.apitoken.generator.enable", "false"));
         REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES = Boolean.parseBoolean(props.getProperty("rest.api.write.access.token.in.preferences", "false"));
