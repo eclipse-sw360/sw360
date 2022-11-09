@@ -140,8 +140,8 @@
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'modules/dialog', 'modules/validation' ], function($, dialog, validation) {
-
+    require(['jquery', 'modules/dialog', 'modules/validation', 'modules/bannerMessage' ], function($, dialog, validation, bannerMessage) {
+        bannerMessage.portletLoad();
         validation.enableForm('#vendorEditForm');
 
         $('.portlet-toolbar button[data-action="cancel"]').on('click', function() {

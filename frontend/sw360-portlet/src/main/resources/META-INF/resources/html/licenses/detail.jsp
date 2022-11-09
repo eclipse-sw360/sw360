@@ -34,3 +34,10 @@
     <core_rt:set var="editMode" value="true" scope="request"/>
     <%@include file="includes/detailOverview.jspf" %>
 </core_rt:if>
+
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+    require(['jquery', 'modules/bannerMessage'], function($, bannerMessage) {
+        bannerMessage.portletLoad();
+    });
+</script>

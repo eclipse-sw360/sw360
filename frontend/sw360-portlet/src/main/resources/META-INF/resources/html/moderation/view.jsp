@@ -254,7 +254,8 @@
 <script>
 AUI().use('liferay-portlet-url', function () {
     const buColIndex = 1, projectColIndex = 2, componentColIndex = 3, progressColIndex = 7, maxTextLength = 22;
-    require(['jquery', 'bridges/datatables', 'modules/dialog', 'modules/validation', 'modules/listgroup', 'utils/includes/quickfilter', 'utils/render', 'bridges/jquery-ui', 'utils/link'], function($, datatables, dialog, validation, listgroup, quickfilter, render, jqui, linkToutil) {
+    require(['jquery', 'bridges/datatables', 'modules/dialog', 'modules/validation', 'modules/listgroup', 'utils/includes/quickfilter', 'utils/render', 'bridges/jquery-ui', 'utils/link', 'modules/bannerMessage'], function($, datatables, dialog, validation, listgroup, quickfilter, render, jqui, linkToutil, bannerMessage) {
+        bannerMessage.portletLoad();
         var moderationsDataTable,
             closedModerationsDataTable,
             clearingRequestsDataTable,

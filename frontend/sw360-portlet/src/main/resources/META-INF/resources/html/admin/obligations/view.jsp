@@ -75,7 +75,8 @@
 <script>
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
-        require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter', 'utils/render'], function($, datatables, dialog, quickfilter, render) {
+        require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter', 'utils/render', 'modules/bannerMessage'], function($, datatables, dialog, quickfilter, render, bannerMessage) {
+            bannerMessage.portletLoad();
             var todoTable = createTodoTable();
             quickfilter.addTable(todoTable);
 

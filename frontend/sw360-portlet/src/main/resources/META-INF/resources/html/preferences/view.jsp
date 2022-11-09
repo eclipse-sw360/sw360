@@ -231,8 +231,8 @@
             .replace('<%=PortalConstants.FRIENDLY_URL_PLACEHOLDER_ID%>', name);
     }
 
-    require(['jquery', 'modules/validation', 'bridges/jquery-ui'], function ($, validation) {
-
+    require(['jquery', 'modules/validation', 'modules/bannerMessage', 'bridges/jquery-ui' ], function ($, validation, bannerMessage) {
+        bannerMessage.portletLoad();
         var $wantsMailNotification = $('#wants_mail_notification');
         setDisabledStateOfPreferenceCheckboxes(!$wantsMailNotification.is(":checked"));
 

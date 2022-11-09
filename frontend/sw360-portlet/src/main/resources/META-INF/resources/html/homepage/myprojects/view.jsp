@@ -119,7 +119,8 @@
         });
     }
 
-    require(['jquery', 'bridges/datatables', 'utils/link' ], function($, datatables, link, event) {
+    require(['jquery', 'bridges/datatables', 'utils/link', 'modules/bannerMessage' ], function($, datatables, link, bannerMessage, event ) {
+        bannerMessage.portletLoad();
         var table;
 
         $('#my-projects h4 svg').not($("#configId svg"))

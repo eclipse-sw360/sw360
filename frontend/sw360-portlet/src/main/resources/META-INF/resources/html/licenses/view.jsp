@@ -71,7 +71,8 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter' ], function($, datatables, quickfilter) {
+    require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/bannerMessage' ], function($, datatables, quickfilter, bannerMessage) {
+        bannerMessage.portletLoad();
         var licenseTable;
 
         licenseTable = createLicenseTable();

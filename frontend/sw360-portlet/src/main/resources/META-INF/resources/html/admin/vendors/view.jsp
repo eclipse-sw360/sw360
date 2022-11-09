@@ -74,7 +74,8 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter', 'utils/link' ], function($, datatables, dialog, quickfilter, linkutil) {
+        require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/quickfilter', 'utils/link', 'modules/bannerMessage' ], function($, datatables, dialog, quickfilter, linkutil, bannerMessage) {
+            bannerMessage.portletLoad();
             var vendorsTable,
                 vendorIdInURL = '<%=PortalConstants.VENDOR_ID%>',
                 pageName = '<%=PortalConstants.PAGENAME%>';
