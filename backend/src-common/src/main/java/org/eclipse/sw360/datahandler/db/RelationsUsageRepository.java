@@ -34,7 +34,7 @@ public class RelationsUsageRepository extends DatabaseRepositoryCloudantClient<U
     private static final String BY_PROJECT_ID =
             "function(doc) {" +
                     "  if (doc.type == 'usedReleaseRelation') {" +
-                    "    emit(doc.projectId, doc);" +
+                    "    emit(doc.projectId, null);" +
                     "  }" +
                     "}";
 

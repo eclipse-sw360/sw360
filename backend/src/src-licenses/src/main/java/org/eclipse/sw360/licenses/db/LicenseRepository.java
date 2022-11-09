@@ -30,9 +30,9 @@ import java.util.Map;
 public class LicenseRepository extends SummaryAwareRepository<License> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'license') emit(null, doc._id) }";
-    private static final String BYNAME = "function(doc) { if(doc.type == 'license') { emit(doc.fullname, doc) } }";
-    private static final String BYSHORTNAME = "function(doc) { if(doc.type == 'license') { emit(doc._id, doc) } }";
-    private static final String BYLICENSETYPEID = "function(doc) { if(doc.type == 'license') { emit(doc.licenseTypeDatabaseId, doc) } }";
+    private static final String BYNAME = "function(doc) { if(doc.type == 'license') { emit(doc.fullname, null) } }";
+    private static final String BYSHORTNAME = "function(doc) { if(doc.type == 'license') { emit(doc._id, null) } }";
+    private static final String BYLICENSETYPEID = "function(doc) { if(doc.type == 'license') { emit(doc.licenseTypeDatabaseId, null) } }";
 
     public LicenseRepository(DatabaseConnectorCloudant db) {
         super(License.class, db, new LicenseSummary());

@@ -30,7 +30,7 @@ public class ObligationListRepository extends DatabaseRepositoryCloudantClient<O
     private static final String BY_PROJECT_ID =
             "function(doc) {" +
                     "  if (doc.type == 'obligationList') {" +
-                    "    emit(doc.projectId, doc);" +
+                    "    emit(doc.projectId, null);" +
                     "  }" +
                     "}";
 
