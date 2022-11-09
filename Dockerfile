@@ -199,8 +199,13 @@ WORKDIR /app/
 
 USER $USERNAME
 
+# Downloaded jar dependencies
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_deploy/* /app/sw360/deploy
+# Streamlined wars
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/slim-wars/*.war /app/sw360/tomcat/webapps/
+# org.eclipse.sw360 jar artifacts
+COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/*.jar /app/sw360/tomcat/webapps/
+# Shared streamlined jar libs
 COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
 
 # Make catalina understand shared directory

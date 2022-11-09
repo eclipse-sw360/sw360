@@ -20,7 +20,7 @@
     </parent>
 
     <artifactId>sw360-portlet</artifactId>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
 
     <properties>
         <artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
@@ -98,6 +98,15 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.github.fabienbarbero</groupId>
