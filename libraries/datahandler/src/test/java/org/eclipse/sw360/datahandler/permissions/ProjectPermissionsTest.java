@@ -67,7 +67,7 @@ public class ProjectPermissionsTest extends ScenarioTest<GivenProject, WhenCompu
 
                 //strangers: rights increase with user group
                 {GivenProject.ProjectRole.CREATED_BY, theUser, theOtherUser, USER, theDept, READ_ACTION},
-                {GivenProject.ProjectRole.CREATED_BY, theUser, theOtherUser, CLEARING_ADMIN, theDept, PRIVILEGED_ACTIONS_EXCEPT_ECC },
+                {GivenProject.ProjectRole.CREATED_BY, theUser, theOtherUser, CLEARING_ADMIN, theDept, ALL_ACTIONS_EXCEPT_ECC },
                 {GivenProject.ProjectRole.CREATED_BY, theUser, theOtherUser, CLEARING_ADMIN, theOtherDept, READ_ACTION},
                 {GivenProject.ProjectRole.CREATED_BY, theUser, theOtherUser, ECC_ADMIN, theDept, READ_ACTION},
                 {GivenProject.ProjectRole.CREATED_BY, theUser, theOtherUser, ADMIN, theDept, ALL_ACTIONS},

@@ -105,7 +105,7 @@ public abstract class DocumentPermissions<T> {
             case DELETE:
             case USERS:
             case CLEARING:
-                return PermissionUtils.isAdmin(user) || isModerator() || isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN);
+                return PermissionUtils.isAdmin(user) || isModerator() || isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN) || isUserOfOwnGroupHasRole(clearingAdminRoles, UserGroup.CLEARING_ADMIN);
             case WRITE_ECC:
                 return PermissionUtils.isAdmin(user) || isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN);
             default:

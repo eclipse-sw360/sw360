@@ -24,6 +24,7 @@ env:
 
 jobs:
   build:
+    name: Build and Test
     runs-on: ubuntu-22.04
 
     steps:
@@ -53,7 +54,7 @@ jobs:
     - name: Prepare build environment
       run: |
         sudo apt-get update -qq
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git temurin-11-jdk maven
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git temurin-11-jdk maven cmake
         pip install mkdocs mkdocs-material
 
     - name: Install Thrift

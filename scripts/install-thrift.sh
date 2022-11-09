@@ -20,7 +20,7 @@
 set -e
 
 BASEDIR="${BASEDIR:-/tmp}"
-THRIFT_VERSION=${THRIFT_VERSION:-0.17.0}
+THRIFT_VERSION=${THRIFT_VERSION:-0.16.0}
 UNINSTALL=false
 
 has() { type "$1" &> /dev/null; }
@@ -30,6 +30,7 @@ processThrift() {
   VERSION=$3
 
   echo "-[shell provisioning] Extracting thrift"
+  [ -d "$BASEDIR/thrift" ] && rm -rf "$BASEDIR/thrift"
   mkdir -p "$BASEDIR/thrift"
   if [ -f "/var/cache/deps/thrift-$VERSION.tar.gz" ]; then
       tar -xzf "/var/cache/deps/thrift-$VERSION.tar.gz" -C "$BASEDIR/thrift" --strip-components=1

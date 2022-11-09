@@ -25,8 +25,8 @@ import java.util.Map;
 
 public class ConfigContainerRepository extends DatabaseRepositoryCloudantClient<ConfigContainer> {
     private static final String ALL = "function(doc) { emit(null, doc._id); }";
-    private static final String BYID = "function(doc) { emit(doc._id, doc); }";
-    private static final String BYCONFIGFOR = "function(doc) { emit(doc.configFor, doc); }";
+    private static final String BYID = "function(doc) { emit(doc._id, null); }";
+    private static final String BYCONFIGFOR = "function(doc) { emit(doc.configFor, null); }";
 
     public ConfigContainerRepository(DatabaseConnectorCloudant databaseConnector) {
         super(databaseConnector, ConfigContainer.class);

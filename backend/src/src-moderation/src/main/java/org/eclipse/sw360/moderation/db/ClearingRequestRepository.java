@@ -36,7 +36,7 @@ public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<
 
     private static final String BY_PROJECT_ID = "function(doc) { " +
             "  if (doc.type == 'clearingRequest') {" +
-            "    emit(doc.projectId, doc);" +
+            "    emit(doc.projectId, null);" +
             "    }" +
             "}";
 
@@ -50,20 +50,20 @@ public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<
             "            acc[doc.clearingTeam] = 1 ;" +
             "        }" +
             "        for (var i in acc) {" +
-            "            emit(i, doc);" +
+            "            emit(i, null);" +
             "        }" +
             "    }" +
             "}";
 
     private static final String BY_BUSINESS_UNIT = "function(doc) { " +
             "  if (doc.type == 'clearingRequest') {" +
-            "    emit(doc.projectBU, doc);" +
+            "    emit(doc.projectBU, null);" +
             "    }" +
             "}";
 
     private static final String BY_PRIORITY = "function(doc) { " +
             "  if (doc.type == 'clearingRequest') {" +
-            "    emit(doc.priority, doc);" +
+            "    emit(doc.priority, null);" +
             "    }" +
             "}";
 

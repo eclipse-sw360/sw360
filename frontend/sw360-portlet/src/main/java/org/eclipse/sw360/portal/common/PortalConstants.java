@@ -50,6 +50,7 @@ public class PortalConstants {
     public static final String LOAD_OPEN_MODERATION_REQUEST = "loadOpenModerationRequest";
     public static final String LOAD_CLOSED_MODERATION_REQUEST = "loadClosedModerationRequest";
     public static final String LICENSE_INFO_HEADER_TEXT_FILE_NAME_BY_PROJECT_GROUP;
+    public static final String DEFAULT_COUNTRY_NAME;
 
     // DO NOT CHANGE THIS UNLESS YOU KNOW WHAT YOU ARE DOING !!!
     // - friendly url mapping files must be changed
@@ -655,7 +656,7 @@ public class PortalConstants {
     // Rest API constants
     public static final UserGroup API_WRITE_ACCESS_USERGROUP;
     public static final Boolean API_TOKEN_ENABLE_GENERATOR;
-    public static final Boolean REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES;
+    public static final Boolean REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED;
     public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
     public static final String API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
     public static final String API_TOKEN_HASH_SALT;
@@ -696,9 +697,10 @@ public class PortalConstants {
         PROJECT_OBLIGATIONS_ACTION_SET = CommonUtils.splitToSet(props.getProperty("project.obligation.actions", "Action 1,Action 2,Action 3"));
         IS_PROJECT_OBLIGATIONS_ENABLED = Boolean.parseBoolean(props.getProperty("project.obligations.enabled", "true"));
         CUSTOM_WELCOME_PAGE_GUIDELINE = Boolean.parseBoolean(props.getProperty("custom.welcome.page.guideline", "false"));
+        DEFAULT_COUNTRY_NAME = props.getProperty("liferay.default.country.name", "united-states");
         // SW360 REST API Constants
         API_TOKEN_ENABLE_GENERATOR = Boolean.parseBoolean(props.getProperty("rest.apitoken.generator.enable", "false"));
-        REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES = Boolean.parseBoolean(props.getProperty("rest.api.write.access.token.in.preferences", "false"));
+        REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED = Boolean.parseBoolean(props.getProperty("rest.api.write.access.token.in.preferences.enabled", "true"));
         API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");
         API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");

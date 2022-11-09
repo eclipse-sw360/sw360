@@ -11,10 +11,8 @@
 
 ## Building
 
-* Install Docker and docker-compose.
-* Build docker compose
-
-    You will need to have a recent docker and docker-compose installed.
+* Install Docker recent version
+* Build images
 
     Build is done by the script:
 
@@ -22,9 +20,10 @@
     docker_build.sh
     ```
 
-    The script will download all dependencies in the deps folder.
+    The script will build multiple intermediary images.
+    Subsequent builds will only build the differences
 
-    Docker compose for sw360 are configured with default entries on docker-compose.yml.
+    For runtime, docker compose for sw360 are configured with default entries on docker-compose.yml.
 
     The config entries that can be modifiled:
 
@@ -41,24 +40,10 @@
 
 * Proxy during build stage
 
-    By default, the docker compose build not detect any proxy on your system. You can choose if you want to enable the proxy only during compose build, or configure docker system wide.
+    Docker will detect if you configured proxy environment variables.
 
-    1 - On docker compose
-    Add the following lines on sw360 build tag in docker-compose.yml file ( assuming to have the exported proxy environment )
-    ```docker
-    services:
-        sw360:
-            image: 'sw360:latest'
-            build:
-                context: .
-                args:
-                    - HTTP_PROXY=$HTTP_PROXY
-                    - http_proxy=$http_proxy
-                    - HTTPS_PROXY=$HTTPS_PROXY
-                    - https_proxy=$https_proxy
-     ```
+    It's suggested though to configure docker system wide ( require super user privileges )
 
-    2 - Configure docker system wide ( require super user privileges )
     * systemd based
       If you are using a regular systemd based docker:
       * Create the following file **http_proxy.conf** on the directory **/etc/systemd/system/docker.service.d/**

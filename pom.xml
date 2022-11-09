@@ -43,6 +43,7 @@
         <module>frontend</module>
         <module>rest</module>
         <module>clients</module>
+        <module>utils</module>
     </modules>
 
     <properties>
@@ -136,14 +137,16 @@
         <wiremock.version>2.26.0</wiremock.version>
 
         <!--  User must provide below property configuration based on his/her liferay deployment environment -->
-        <base.deploy.dir />
+        <base.deploy.dir>
+            ${session.executionRootDirectory}/deploy
+        </base.deploy.dir>
 
         <!--
             This is were the liferay OSGi modules go to on upload:
                 - frontend/*
                 - libraries/*
         -->
-        <liferay.deploy.dir>${base.deploy.dir}/liferay</liferay.deploy.dir>
+        <liferay.deploy.dir>${base.deploy.dir}/tomcat</liferay.deploy.dir>
         <!--
             This is were the backend services go to on upload:
                 - backend/svc/*
@@ -154,6 +157,8 @@
                 - rest/*
         -->
         <rest.deploy.dir>${base.deploy.dir}/tomcat</rest.deploy.dir>
+        <!-- JAR dependencies from maven-->
+        <jars.deploy.dir>${base.deploy.dir}/jars</jars.deploy.dir>
 
         <!-- some mem optimization here -->
         <argLine>-Dcatalina.home=${project.build.directory}/home -Xms128m -Xmx256m -XX:MaxPermSize=512m</argLine>
@@ -274,7 +279,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
-                <artifactId>commons-collection4</artifactId>
+                <artifactId>commons-collections4</artifactId>
                 <version>${commons-collection4.version}</version>
             </dependency>
             <dependency>
@@ -653,7 +658,6 @@
                     <format>html</format>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>

@@ -34,7 +34,7 @@ public class CustomPropertiesRepository extends DatabaseRepositoryCloudantClient
     private static final String CUSTOM_PROPERTIES_BY_DOCTYPE =
             "function(doc) {" +
                     "  if (doc.type == 'customproperties') {" +
-                    "    emit(doc.documentType, doc);" +
+                    "    emit(doc.documentType, null);" +
                     "  }" +
                     "}";
     private static final String ALL = "function(doc) { if (doc.type == 'customproperties') emit(null, doc._id) }";

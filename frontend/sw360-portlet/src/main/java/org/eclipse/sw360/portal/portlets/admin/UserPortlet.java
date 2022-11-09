@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.portlet.PortletResponseUtil;
 import com.liferay.portal.kernel.security.auto.login.AutoLoginException;
 import com.liferay.portal.kernel.security.pwd.PasswordEncryptorUtil;
 import com.liferay.portal.kernel.service.*;
+import com.liferay.portal.kernel.service.persistence.CountryUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
 import com.liferay.portal.kernel.util.PortalUtil;
@@ -38,7 +39,6 @@ import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.ClientMetadata;
-import org.eclipse.sw360.datahandler.thrift.users.UserAccess;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.portal.common.ErrorMessages;
@@ -933,6 +933,7 @@ public class UserPortlet extends Sw360Portlet {
         Map<String, Long> organizationIds = new HashMap<>();
         ServiceContext serviceContext = ServiceContextFactory.getInstance(request);
         long companyId = UserUtils.getCompanyId(request);
+        Country country = CountryServiceUtil.getCountryByName(companyId, PortalConstants.DEFAULT_COUNTRY_NAME);
         for (String headDepartment : headDepartments) {
 
             long organizationId;
@@ -943,7 +944,7 @@ public class UserPortlet extends Sw360Portlet {
             }
 
             if (organizationId == 0) { // The organization does not yet exist
-                Organization organization = createOrganization(serviceContext, headDepartment, OrganizationConstants.DEFAULT_PARENT_ORGANIZATION_ID);
+                Organization organization = createOrganization(serviceContext, headDepartment, country.getCountryId(), OrganizationConstants.DEFAULT_PARENT_ORGANIZATION_ID);
 
                 organizationId = organization.getOrganizationId();
             }
@@ -958,18 +959,18 @@ public class UserPortlet extends Sw360Portlet {
                 organizationId = 0;
             }
             if (organizationId == 0) { // The organization does not yet exist
-                createOrganization(serviceContext, department, organizationIds.get(extractHeadDept(department)).intValue());
+                createOrganization(serviceContext, department, country.getCountryId(), organizationIds.get(extractHeadDept(department)).intValue());
             }
         }
     }
 
-    private Organization createOrganization(ServiceContext serviceContext, String headDepartment, int parentId) throws PortalException, SystemException {
+    private Organization createOrganization(ServiceContext serviceContext, String headDepartment, long countryId, int parentId) throws PortalException, SystemException {
         return OrganizationServiceUtil.addOrganization(
                 parentId,
                 headDepartment,
                 OrganizationConstants.TYPE_ORGANIZATION,
                 RegionConstants.DEFAULT_REGION_ID,
-                CountryConstants.DEFAULT_COUNTRY_ID,
+                countryId,
                 ListTypeConstants.ORGANIZATION_STATUS_DEFAULT,
                 "",
                 false,

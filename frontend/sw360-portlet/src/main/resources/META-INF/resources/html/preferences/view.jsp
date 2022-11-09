@@ -30,7 +30,7 @@
 <jsp:useBean id="accessTokenList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.users.RestApiToken>" scope="request"/>
 
 <core_rt:set var="enableTokenGenerator" value='<%=PortalConstants.API_TOKEN_ENABLE_GENERATOR%>'/>
-<core_rt:set var="disableWriteAccess" value='<%=PortalConstants.REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES%>'/>
+<core_rt:set var="disableWriteAccess" value='<%=PortalConstants.REST_API_WRITE_ACCESS_TOKEN_IN_PREFERENCES_ENABLED%>'/>
 <div class="container">
 	<div class="row">
 		<div class="col">

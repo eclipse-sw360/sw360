@@ -110,6 +110,11 @@ public class ModerationPortletUtils {
                     return requestSummary.setMessage("Invalid clearingTeam email");
                 }
                 clearingRequest.setClearingTeam(clearingTeam);
+                String preferredClearingDate = request.getParameter(ClearingRequest._Fields.REQUESTED_CLEARING_DATE.toString());
+                if (CommonUtils.isNotNullEmptyOrWhitespace(preferredClearingDate) && !preferredClearingDate.equals(clearingRequest.getRequestedClearingDate())
+                        && SW360Utils.isValidDate(preferredClearingDate, DateTimeFormatter.ISO_LOCAL_DATE, null)) {
+                    clearingRequest.setRequestedClearingDate(preferredClearingDate);
+                }
                 if (CommonUtils.isNotNullEmptyOrWhitespace(isClearingExpertEdit) && Boolean.parseBoolean(isClearingExpertEdit)) {
                     String agreedDate = request.getParameter(ClearingRequest._Fields.AGREED_CLEARING_DATE.toString());
                     String status = request.getParameter(ClearingRequest._Fields.CLEARING_STATE.toString());
