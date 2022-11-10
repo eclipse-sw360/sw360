@@ -39,6 +39,7 @@ public class LicenseSummary extends DocumentSummary<License> {
                 copyField(document, copy, _Fields.FULLNAME);
                 copyField(document, copy, _Fields.LICENSE_TYPE_DATABASE_ID);
                 copyField(document, copy, _Fields.CHECKED);
+                copyField(document, copy, _Fields.TEXT);
         }
 
         return copy;
