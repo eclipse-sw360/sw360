@@ -142,8 +142,8 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'modules/validation', 'modules/bannerMessage' ], function($, validation, bannerMessage) {
-        bannerMessage.portletLoad();
+    require(['jquery', 'modules/validation' ], function($, validation) {
+
         validation.enableForm('#fossologyConfigurationForm');
 
         $('.portlet-toolbar button[data-action="check"]').on('click', function() {

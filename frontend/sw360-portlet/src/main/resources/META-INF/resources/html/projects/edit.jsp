@@ -239,8 +239,7 @@
 
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'bridges/jquery-ui', 'components/includes/vendors/searchVendor','components/includes/departments/searchDepartment', 'modules/bannerMessage' ], function($, autocomplete, dialog, listgroup, validation, jqui, vendorsearch, departmentsearch, bannerMessage) {
-    bannerMessage.portletLoad();
+require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup', 'modules/validation', 'bridges/jquery-ui', 'components/includes/vendors/searchVendor','components/includes/departments/searchDepartment' ], function($, autocomplete, dialog, listgroup, validation, jqui, vendorsearch,departmentsearch) {
     document.title = $("<span></span>").html("<sw360:ProjectName project="${project}"/> - " + document.title).text();
 
     listgroup.initialize('detailTab', $('#detailTab').data('initial-tab') || 'tab-Summary');

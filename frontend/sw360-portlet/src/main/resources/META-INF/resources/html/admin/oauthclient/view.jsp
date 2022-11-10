@@ -136,9 +136,8 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/render', 'utils/includes/clipboard', 'modules/bannerMessage'], function($, datatables, dialog, render, clipboard, bannerMessage) {
-        bannerMessage.portletLoad();
-        function loadListOfClient() {
+    require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/render', 'utils/includes/clipboard'], function($, datatables, dialog, render, clipboard) {
+         function loadListOfClient() {
             $.ajax({
                 url: '/authorization/client-management',
                 type: "GET",

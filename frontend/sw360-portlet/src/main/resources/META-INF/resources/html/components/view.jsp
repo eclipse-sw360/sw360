@@ -220,8 +220,7 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'modules/autocomplete', 'modules/dialog', 'bridges/datatables', 'utils/render', 'modules/bannerMessage' ], function($, autocomplete, dialog, datatables, render, bannerMessage) {
-            bannerMessage.portletLoad();
+        require(['jquery', 'modules/autocomplete', 'modules/dialog', 'bridges/datatables', 'utils/render' ], function($, autocomplete, dialog, datatables, render) {
             var componentsTable,
                 vendorNames = new Array();
             <core_rt:forEach items="${vendorList}" var="vendorName">
