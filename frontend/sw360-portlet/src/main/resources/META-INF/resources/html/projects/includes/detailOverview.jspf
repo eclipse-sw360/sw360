@@ -214,6 +214,7 @@
 		                    <%@include file="/html/projects/includes/projects/summary.jspf" %>
                             <%@include file="/html/projects/includes/vendors/vendorDetail.jspf" %>
 		                    <core_rt:set var="documentName"><sw360:ProjectName project="${project}"/></core_rt:set>
+		                    <core_rt:set var="tableId" value="usingProjectsTableSummary"/>
 		                    <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
 		                    <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
 		                </div>
