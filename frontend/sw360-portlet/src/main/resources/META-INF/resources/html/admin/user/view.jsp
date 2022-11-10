@@ -179,8 +179,7 @@
 <script>
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
-        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog', 'utils/render', 'modules/bannerMessage'], function($, datatables, quickfilter, dialog, render, bannerMessage) {
-            bannerMessage.portletLoad();
+        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/dialog', 'utils/render'], function($, datatables, quickfilter, dialog, render) {
             var usersTable,
                 usersMissingTable,
                 rowIDCounter = 0,

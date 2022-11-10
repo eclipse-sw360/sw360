@@ -72,9 +72,3 @@
         </div>
     </div>
 </div>
-<%@ include file="/html/utils/includes/requirejs.jspf" %>
-<script>
-    require(['jquery', 'modules/bannerMessage'], function($, bannerMessage) {
-        bannerMessage.portletLoad();
-    });
-</script>

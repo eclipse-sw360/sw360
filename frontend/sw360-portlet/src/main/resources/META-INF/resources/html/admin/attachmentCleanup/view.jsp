@@ -44,8 +44,7 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script>
-    require(['jquery', 'modules/dialog', 'modules/bannerMessage' ], function($, dialog, bannerMessage) {
-        bannerMessage.portletLoad();
+    require(['jquery', 'modules/dialog' ], function($, dialog) {
         $('.portlet-toolbar button[data-action="cleanup"]').on("click", function() {
             var $dialog;
 

@@ -101,8 +101,7 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'modules/bannerMessage', 'bridges/jquery-ui' ], function($, datatables, quickfilter, bannerMessage) {
-            bannerMessage.portletLoad();
+        require(['jquery', 'bridges/datatables', 'utils/includes/quickfilter', 'bridges/jquery-ui'], function($, datatables, quickfilter) {
             var vulnerabilityTable;
 
             // initializing

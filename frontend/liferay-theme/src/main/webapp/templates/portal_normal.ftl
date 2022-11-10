@@ -40,13 +40,7 @@
 <#assign login_css = is_signed_in?then("signed-in", "not-signed-in") />
 <html class="${root_css_class}" dir="<@liferay.language key="lang.dir" />" lang="${w3c_language_id}">
 
-<#assign liferay_user = themeDisplay.getUser() />
-<#assign js_folder = theme_display.getPathThemeJavaScript() />
-<#assign js_banner_file = htmlUtil.escape(portalUtil.getStaticResourceURL(request, "${js_folder}/banner.js")) />
-
 <head>
-	<script type="text/javascript" src ="${js_banner_file}" > </script>
-
 	<title>${the_title} - ${company_name}</title>
 
 	<meta content="initial-scale=1.0, width=device-width" name="viewport" />
@@ -65,15 +59,6 @@
 <div id="wrapper" class="${hide_portlet_edit_decorators_css} ${login_css}">
 	<header id="banner" role="banner">
 		<div id="heading" class="container">
-			<#if is_signed_in>
-                <#assign expandoAttribute = liferay_user.getExpandoBridge().getAttribute("BannerMessage") />
-                <#if expandoAttribute?has_content>
-                    <div id="updateMessage">
-                        <span class="closebtn" onclick="closeBanner()">&times;</span>
-                        <strong>${expandoAttribute}</strong>
-                    </div>
-                </#if>
-            </#if>
 			<div class="row">
 				<div class="col-3">
 					<a class="${logo_css_class}" href="${site_default_url}" title="<@liferay.language_format arguments="${site_name}" key="go-to-x" />">

@@ -116,8 +116,8 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'bridges/datatables', 'components/includes/vendors/searchVendor', 'utils/includes/quickfilter', 'modules/bannerMessage' ], function($, datatables, vendorsearch, quickfilter, bannerMessage) {
-            bannerMessage.portletLoad();
+        require(['jquery', 'bridges/datatables', 'components/includes/vendors/searchVendor', 'utils/includes/quickfilter'], function($, datatables, vendorsearch, quickfilter) {
+
             $(".clearSelection").click(function(event) {
                 var vendorTextBoxData = $(event.currentTarget.previousSibling).data();
                 $('#vendorId'+ vendorTextBoxData.releaseId).val("");
