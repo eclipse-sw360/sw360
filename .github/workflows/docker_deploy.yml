@@ -17,10 +17,10 @@ on:
     branches: [ release ]
 
 env:
-  DOCKER_IMAGE_ROOT: eclipse
+  DOCKER_IMAGE_ROOT: ghcr.io/eclipse
   CLUCENE_VERSION: 2.1.0
   MAVEN_VERSION: 3.8.6
-  THRIFT_VERSION: 0.17.0
+  THRIFT_VERSION: 0.16.0
   LIFERAY_VERSION: 7.4.3.18-ga18
   LIFERAY_SOURCE: liferay-ce-portal-tomcat-7.4.3.18-ga18-20220329092001364.tar.gz
   REGISTRY: ghcr.io
@@ -53,7 +53,7 @@ jobs:
           context: .
           target: sw360thrift
           build-args: |
-            THRIFT_VERSION=0.17.0
+            THRIFT_VERSION=${{ env.THRIFT_VERSION }}
           push: true
           tags: |
             ${{ env.DOCKER_IMAGE_ROOT }}/sw360thrift:latest
@@ -95,6 +95,8 @@ jobs:
         with:
           context: .
           target: sw360
+          build-args: |
+            MAVEN_VERSION=${{ env.MAVEN_VERSION }}
           push: true
           tags: |
             ${{ env.DOCKER_IMAGE_ROOT }}/sw360:latest

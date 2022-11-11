@@ -36,9 +36,9 @@
                         <configuration>
                             <!-- <outputDirectory>${session.executionRootDirectory}/deps/jars</outputDirectory> -->
                             <outputDirectory>${jars.deploy.dir}</outputDirectory>
-                            <overwriteReleases>false</overwriteReleases>
-                            <overwriteSnapshots>false</overwriteSnapshots>
-                            <overwriteIfNewer>true</overwriteIfNewer>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
                             <excludeTransitive>true</excludeTransitive>
                         </configuration>
                     </execution>
@@ -84,6 +84,11 @@
             <version>${commons-collection4.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>${commons-compress.version}</version>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons-io.version}</version>
@@ -102,6 +107,16 @@
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
             <version>1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>failureaccess</artifactId>
+            <version>${failureaccess.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+            <version>${thrift.version}</version>
         </dependency>
     </dependencies>
 </project>

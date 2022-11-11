@@ -99,7 +99,7 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
 FROM ubuntu:jammy AS sw360thrift
 
 ARG BASEDIR="/build"
-ARG THRIFT_VERSION=0.17.0
+ARG THRIFT_VERSION=0.16.0
 
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
@@ -179,12 +179,12 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     -Dsurefire.failIfNoSpecifiedTests=false \
     -Dbase.deploy.dir=. \
     -Djars.deploy.dir=/sw360_deploy \
-    -Dliferay.deploy.dir=/sw360_tomcat_webapps \
+    -Dliferay.deploy.dir=/sw360_deploy \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
     -Drest.deploy.dir=/sw360_tomcat_webapps \
     -Dhelp-docs=true
 
-# # Generate slim war files
+# Generate slim war files
 WORKDIR /sw360_tomcat_webapps/
 
 COPY scripts/create-slim-war-files.sh /bin/slim.sh
@@ -193,7 +193,7 @@ RUN bash /bin/slim.sh
 
 #--------------------------------------------------------------------------------------------------
 # Runtime image
-FROM eclipse/sw360base:latest as sw360
+FROM ghcr.io/eclipse/sw360base:latest as sw360
 
 WORKDIR /app/
 
@@ -222,4 +222,3 @@ STOPSIGNAL SIGINT
 WORKDIR /app/sw360
 
 ENTRYPOINT [ "/app/entry_point.sh" ]
-
