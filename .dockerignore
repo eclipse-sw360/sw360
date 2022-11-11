@@ -5,4 +5,8 @@ deploy?
 build
 target
 
+# Ignore files to not rebuild after binded dirs
 Dockerfile
+docker-compose.yml
+docker_build.sh
+.github

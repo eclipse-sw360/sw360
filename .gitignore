@@ -23,25 +23,26 @@ jgiven-reports/
 *id_rsa*
 *key_vagrant
 
-#ignore Idea/intelliJ files
+# ignore Idea/intelliJ files
 *.idea
 *.iml
 
-#ignore Eclipse files
+# Ignore Eclipse files
 .classpath
 .project
 .settings
 .factorypath
 
-#Ignore VSCode files
+# Ignore VSCode files
 .vscode/
+*.code-workspace
 
-#ignore backup files
+# Ignore backup files
 *.bak
 *.orig
 
 
-#ignore any log files
+# Ignore any log files
 *.log
 
 # Ignore docker local files
