@@ -18,18 +18,17 @@ set -e -o  pipefail
 
 # Source the version
 # shellcheck disable=SC1091
-. scripts/versions.sh
+. .versions
 
-COMPOSE_DOCKER_CLI_BUILD=1
-DOCKER_BUILDKIT=1
 DOCKER_PLATFORM=${DOCKER_PLATFORM:-linux/$(arch)}
-export DOCKER_BUILDKIT COMPOSE_DOCKER_CLI_BUILD
+DOCKER_IMAGE_ROOT="${DOCKER_IMAGE_ROOT:-eclipse/sw360}"
+GIT_REVISION=$(git describe --abbrev=6 --always --tags --match=[0-9]*)
+export DOCKER_PLATFORM DOCKER_IMAGE_ROOT GIT_REVISION
 
 usage() {
     echo "Usage:"
     echo "--help This messaqge"
     echo "--verbose Verbose build"
-    echo "--no-cache Invalidate buildkit cache"
     exit 0;
 }
 
@@ -38,8 +37,6 @@ for arg in "$@"; do
         usage
     elif [ "$arg" == "--verbose" ]; then
         docker_verbose="--progress=plain"
-    elif [ "$arg" == "--no-cache" ]; then
-        docker_no_cache="--no-cache"
     else
         echo "Unsupported parameter: $arg"
         usage
@@ -47,62 +44,40 @@ for arg in "$@"; do
     shift
 done
 
-DOCKER_IMAGE_ROOT="${DOCKER_IMAGE_ROOT:-eclipse/sw360}"
+# ---------------------------
+# image_build function
+# Usage ( position paramenters):
+# image_build <target_name> <tag_name> <version> <extra_args...>
 
-docker buildx build \
-    --target sw360base \
-    --platform "$DOCKER_PLATFORM" \
-    --tag "${DOCKER_IMAGE_ROOT}/base:latest" \
-    --tag "${DOCKER_IMAGE_ROOT}/base:22.04" \
-    --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/base:22.04" \
-    --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/base:latest" \
-    --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" \
-    --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE" \
-    $docker_verbose \
-    $docker_no_cache .
+image_build() {
+    local target
+    local name
+    local version
+    target="$1"; shift
+    name="$1"; shift
+    version="$1"; shift
 
-docker buildx build \
-    --target sw360builder \
-    --platform "$DOCKER_PLATFORM" \
-    --tag "${DOCKER_IMAGE_ROOT}/builder:latest" \
-    --tag "${DOCKER_IMAGE_ROOT}/builder:22.04" \
-    --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/builder:22.04" \
-    --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/builder:latest" \
-    --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
-    $docker_verbose \
-    $docker_no_cache .
+    docker buildx build \
+        --target "$target" \
+        --platform "$DOCKER_PLATFORM" \
+        --tag "${DOCKER_IMAGE_ROOT}/$name:$version" \
+        --tag "${DOCKER_IMAGE_ROOT}/$name:latest" \
+        --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/$name:$version" \
+        --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/$name:latest" \
+        $docker_verbose \
+        $@ .
+}
 
-docker buildx build \
-    --target sw360thrift \
-    --platform "$DOCKER_PLATFORM" \
-    --tag "${DOCKER_IMAGE_ROOT}/thrift:latest" \
-    --tag "${DOCKER_IMAGE_ROOT}/thrift:$THRIFT_VERSION" \
-    --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/thrift:$THRIFT_VERSION" \
-    --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/thrift:latest" \
-    --build-arg THRIFT_VERSION="$THRIFT_VERSION" \
-    $docker_verbose \
-    $docker_no_cache .
+image_build base base "$GIT_REVISION" --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE"
 
-docker buildx build \
-    --target sw360clucene \
-    --platform "$DOCKER_PLATFORM" \
-    --tag "${DOCKER_IMAGE_ROOT}/clucene:latest" \
-    --tag "${DOCKER_IMAGE_ROOT}/clucene:$CLUCENE_VERSION" \
-    --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/clucene:$CLUCENE_VERSION" \
-    --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/clucene:latest" \
-    --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
-    --build-arg CLUCENE_VERSION="$CLUCENE_VERSION" \
-    $docker_verbose \
-    $docker_no_cache .
+image_build sw360thrift thrift "$THRIFT_VERSION" --build-arg THRIFT_VERSION="$THRIFT_VERSION"
 
-docker buildx build \
-    --target sw360 \
-    --platform "$DOCKER_PLATFORM" \
-    --tag "${DOCKER_IMAGE_ROOT}"/sw360:latest \
-    --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/sw360:latest" \
-    --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
-    --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" \
-    --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE" \
-    --build-arg SW360_DEPS_DIR="$SW360_DEPS_DIR" \
-    $docker_verbose \
-    $docker_no_cache .
+image_build sw360clucene clucene "$CLUCENE_VERSION" --build-arg CLUCENE_VERSION="$CLUCENE_VERSION" --build-arg MAVEN_VERSION="$MAVEN_VERSION"
+
+image_build sw360 binaries "$GIT_REVISION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
+    --build-context "sw360thrift=docker-image://${DOCKER_IMAGE_ROOT}/thrift:latest" \
+    --build-context "sw360clucene=docker-image://${DOCKER_IMAGE_ROOT}/clucene:latest"
+
+image_build runtime sw360 "$GIT_REVISION" \
+    --build-context "base=docker-image://${DOCKER_IMAGE_ROOT}/base:latest" \
+    --build-context "sw360=docker-image://${DOCKER_IMAGE_ROOT}/binaries:latest"

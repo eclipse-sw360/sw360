@@ -42,7 +42,7 @@ processThrift() {
   cd "${BASEDIR}/build" || exit 1
   echo "-[shell provisioning] Building thrift"
   cmake \
-    -DBUILD_JAVA=ON \
+    -DBUILD_JAVA=OFF \
     -DBUILD_CPP=OFF \
     -DBUILD_C_GLIB=OFF \
     -DBUILD_JAVASCRIPT=OFF \

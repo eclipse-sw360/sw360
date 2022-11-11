@@ -17,12 +17,6 @@ on:
     branches: [ release ]
 
 env:
-  DOCKER_IMAGE_ROOT: ghcr.io/eclipse
-  CLUCENE_VERSION: 2.1.0
-  MAVEN_VERSION: 3.8.6
-  THRIFT_VERSION: 0.16.0
-  LIFERAY_VERSION: 7.4.3.18-ga18
-  LIFERAY_SOURCE: liferay-ce-portal-tomcat-7.4.3.18-ga18-20220329092001364.tar.gz
   REGISTRY: ghcr.io
 
 jobs:
@@ -37,6 +31,12 @@ jobs:
       - name: Checkout main repository
         uses: actions/checkout@v3
 
+      - name: Set environment variables
+        run: |
+          cat .versions >> $GITHUB_ENV
+          echo "ORG_BASE_NAME=${GITHUB_REPOSITORY}" >> $GITHUB_ENV
+          echo "GIT_REVISION=$(git describe --abbrev=6 --always --tags --match=[0-9]*)" >> $GITHUB_ENV
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -47,58 +47,154 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push thrift
+      #------------------------------------------------
+      # Base
+      - name: Extract components metadata (tags, labels) for base image
+        id: meta_base
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/base
+
+      - name: Identify base image
+        run: echo "Will be tagged as ${{ steps.meta_base.outputs.tags }} and labeled as ${{ steps.meta_base.outputs.labels }}"
+
+      - name: Build sw360 base container
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          target: base
+          push: true
+          load: false
+          build-args: |
+            LIFERAY_VERSION=${{ env.LIFERAY_VERSION }}
+            LIFERAY_SOURCE=${{ env.LIFERAY_SOURCE }}
+          tags: |
+            ${{ steps.meta_base.outputs.tags }}
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/base:${{ env.GIT_REVISION }}
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/base:latest
+          labels: ${{ steps.meta_base.outputs.labels }}
+          cache-from: type=gha,scope=base
+          cache-to: type=gha,scope=base,mode=max
+
+      #------------------------------------------------
+      # Thrift
+      - name: Extract components metadata (tags, labels) for thrift image
+        id: meta_thrift
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/thrift
+
+      - name: Identify thrift image
+        run: echo "Will be tagged as ${{ steps.meta_thrift.outputs.tags }} and labeled as ${{ steps.meta_thrift.outputs.labels }}"
+
+      - name: Build sw360 Thrift container
         uses: docker/build-push-action@v3
         with:
           context: .
           target: sw360thrift
+          push: true
+          load: false
           build-args: |
             THRIFT_VERSION=${{ env.THRIFT_VERSION }}
-          push: true
           tags: |
-            ${{ env.DOCKER_IMAGE_ROOT }}/sw360thrift:latest
-            ${{ env.DOCKER_IMAGE_ROOT }}/sw360thrift:${{ env.THRIFT_VERSION }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ${{ steps.meta_base.outputs.tags }}
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/thrift:${{ env.THRIFT_VERSION }}
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/thrift:latest
+          labels: ${{ steps.meta_thrift.outputs.labels }}
+          cache-from: type=gha,scope=thrift
+          cache-to: type=gha,scope=thrift,mode=max
 
-      - name: Build and push clucene
+      #------------------------------------------------
+      # CLucene
+      - name: Extract components metadata (tags, labels) for clucene image
+        id: meta_clucene
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/clucene
+
+      - name: Identify clucene image
+        run: echo "Will be tagged as ${{ steps.meta_clucene.outputs.tags }} and labeled as ${{ steps.meta_clucene.outputs.labels }}"
+
+      - name: Build sw360 clucene container
         uses: docker/build-push-action@v3
         with:
           context: .
           target: sw360clucene
+          push: true
+          load: false
           build-args: |
             CLUCENE_VERSION=${{ env.CLUCENE_VERSION }}
             MAVEN_VERSION=${{ env.MAVEN_VERSION }}
-          push: true
           tags: |
-            ${{ env.DOCKER_IMAGE_ROOT }}/sw360clucene:latest
-            ${{ env.DOCKER_IMAGE_ROOT }}/sw360thrift:${{ env.CLUCENE_VERSION }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ${{ steps.meta_clucene.outputs.tags }}
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/clucene:${{ env.CLUCENE_VERSION }}
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/clucene:latest
+          labels: ${{ steps.meta_clucene.outputs.labels }}
+          cache-from: type=gha,scope=clucene
+          cache-to: type=gha,scope=clucene,mode=max
 
-      - name: Build and push sw360base
-        uses: docker/build-push-action@v3
+      #------------------------------------------------
+      # sw360 compilation
+      - name: Extract components metadata (tags, labels) for clucene image
+        id: meta_sw360
+        uses: docker/metadata-action@v4
         with:
-          context: .
-          target: sw360base
-          build-args: |
-            LIFERAY_VERSION=${{ env.LIFERAY_VERSION }}
-            LIFERAY_SOURCE=${{ env.LIFERAY_SOURCE }}
-          push: true
-          tags: |
-            ${{ env.DOCKER_IMAGE_ROOT }}/sw360base:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          images: |
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/binaries
 
-      - name: Build and push sw360
+      - name: Identify sw360 build image
+        run: echo "Will be tagged as ${{ steps.meta_sw360.outputs.tags }} and labeled as ${{ steps.meta_sw360.outputs.labels }}"
+
+      - name: Build sw360 build container
         uses: docker/build-push-action@v3
         with:
           context: .
           target: sw360
+          push: true
+          load: false
           build-args: |
             MAVEN_VERSION=${{ env.MAVEN_VERSION }}
-          push: true
           tags: |
-            ${{ env.DOCKER_IMAGE_ROOT }}/sw360:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ${{ steps.meta_sw360.outputs.tags }}
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/binaries:${{ env.GIT_REVISION }}
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/binaries:latest
+          labels: ${{ steps.meta_sw360.outputs.labels }}
+          build-contexts: |
+            sw360thrift=docker-image://${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/thrift:latest
+            sw360clucene=docker-image://${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/clucene:latest
+          cache-from: type=gha,scope=sw360
+          cache-to: type=gha,scope=sw360,mode=max
+
+      #------------------------------------------------
+      # sw360 runtime container
+      - name: Extract components metadata (tags, labels) for clucene image
+        id: meta_runtime
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}
+
+      - name: Identify sw360 runtime image
+        run: echo "Will be tagged as ${{ steps.meta_runtime.outputs.tags }} and labeled as ${{ steps.meta_runtime.outputs.labels }}"
+
+      - name: Build sw360 build container
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          target: runtime
+          push: true
+          load: false
+          tags: |
+            ${{ steps.meta_runtime.outputs.tags }}
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/sw360:${{ env.GIT_REVISION }}
+            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/sw360:latest
+          labels: ${{ steps.meta_runtime.outputs.labels }}
+          build-contexts: |
+            base=docker-image://${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/base:latest
+            sw360=docker-image://${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/binaries:latest
+          cache-from: type=gha,scope=runtime
+          cache-to: type=gha,scope=runtime,mode=max
+

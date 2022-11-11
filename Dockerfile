@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 #
 # Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
 # Copyright BMW CarIT GmbH, 2021.
@@ -12,7 +13,7 @@
 #-----------------------------------------------------------------------------------
 # Base image
 # We need use JDK, JRE is not enough as Liferay do runtime changes and require javac
-FROM eclipse-temurin:11-jdk-jammy as sw360base
+FROM eclipse-temurin:11-jdk-jammy AS base
 
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
@@ -77,32 +78,12 @@ RUN mkdir -p /app/sw360 \
 WORKDIR /app/sw360
 ENTRYPOINT [ "/bin/bash" ]
 
-#-----------------------------------------------------------------------------------
-# Builder image
-FROM eclipse-temurin:11-jdk-jammy AS sw360builder
-
-# Set versions as arguments
-ARG MAVEN_VERSION
-
-RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
-    apt-get -qq update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    gettext-base
-
-# Prepare maven from binary to avoid wrong java dependencies and proxy
-COPY scripts/docker-config/mvn-proxy-settings.xml /etc
-COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
-RUN curl -JL https://dlcdn.apache.org/maven/maven-3/"$MAVEN_VERSION"/binaries/apache-maven-"$MAVEN_VERSION"-bin.tar.gz | tar -xz --strip-components=1 -C /usr/local
-RUN chmod a+x /usr/local/bin/setup_maven_proxy \
-    && setup_maven_proxy
-
 #--------------------------------------------------------------------------------------------------
 # Thrift
-FROM ubuntu:jammy AS sw360thrift
+FROM ubuntu:jammy AS sw360thriftbuild
 
 ARG BASEDIR="/build"
-ARG THRIFT_VERSION=0.17.0
+ARG THRIFT_VERSION
 
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
@@ -123,11 +104,15 @@ COPY ./scripts/install-thrift.sh build_thrift.sh
 RUN --mount=type=tmpfs,target=/build \
     ./build_thrift.sh
 
+FROM scratch AS sw360thrift
+COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
+
 #--------------------------------------------------------------------------------------------------
 # Couchdb-Lucene
-FROM sw360builder as sw360clucene
+FROM eclipse-temurin:11-jdk-jammy as sw360clucenebuild
 
-ARG CLUCENE_VERSION=2.1.0
+ARG CLUCENE_VERSION
+ARG MAVEN_VERSION
 
 WORKDIR /build
 
@@ -135,7 +120,15 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
     apt-get -qq update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    gettext-base \
     patch
+
+# Prepare maven from binary to avoid wrong java dependencies and proxy
+COPY scripts/docker-config/mvn-proxy-settings.xml /etc
+COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
+RUN curl -JL https://dlcdn.apache.org/maven/maven-3/"$MAVEN_VERSION"/binaries/apache-maven-"$MAVEN_VERSION"-bin.tar.gz | tar -xz --strip-components=1 -C /usr/local
+RUN chmod a+x /usr/local/bin/setup_maven_proxy \
+    && setup_maven_proxy
 
 # Prepare source code
 COPY ./scripts/docker-config/couchdb-lucene.ini /var/tmp/couchdb-lucene.ini
@@ -150,30 +143,8 @@ RUN --mount=type=tmpfs,target=/build \
     && mvn -X install war:war \
     && cp ./target/*.war /couchdb-lucene.war
 
-#------------------------------------------------------------------------
-#  Dart
-FROM ubuntu:jammy AS sw360dart
-
-ARG DART_VERSION=2.18.4
-
-WORKDIR /opt/
-
-ENV DART_SDK=/opt/dart-sdk
-ENV PATH=$PATH:${DART_SDK}/bin
-
-RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
-    apt-get -qq update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    unzip \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN --mount=type=tmpfs,target=/dart \
-    arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/x64/) \
-    && curl -o /dart/dart.zip -L https://storage.googleapis.com/dart-archive/channels/stable/release/${DART_VERSION}/sdk/dartsdk-linux-${arch}-release.zip \
-    && unzip /dart/dart.zip
+FROM scratch AS sw360clucene
+COPY --from=sw360clucenebuild /couchdb-lucene.war /couchdb-lucene.war
 
 #--------------------------------------------------------------------------------------------------
 # SW360
@@ -181,17 +152,18 @@ RUN --mount=type=tmpfs,target=/dart \
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-FROM sw360builder AS sw360build
+FROM eclipse-temurin:11-jdk-jammy as sw360build
 
-ENV DART_SDK=/opt/dart-sdk
-ENV PATH=$PATH:${DART_SDK}/bin
-COPY --from=sw360dart ${DART_SDK} ${DART_SDK}
+ARG MAVEN_VERSION
+
+WORKDIR /build
 
 # Install mkdocs to generate documentation
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
     apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
+    gettext-base \
     git \
     python3-pip \
     python3-wheel \
@@ -199,6 +171,13 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     unzip \
     && rm -rf /var/lib/apt/lists/* \
     && pip install mkdocs-material
+
+# Prepare maven from binary to avoid wrong java dependencies and proxy
+COPY scripts/docker-config/mvn-proxy-settings.xml /etc
+COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
+RUN curl -JL https://dlcdn.apache.org/maven/maven-3/"$MAVEN_VERSION"/binaries/apache-maven-"$MAVEN_VERSION"-bin.tar.gz | tar -xz --strip-components=1 -C /usr/local
+RUN chmod a+x /usr/local/bin/setup_maven_proxy \
+    && setup_maven_proxy
 
 COPY --from=sw360thrift /usr/local/bin/thrift /usr/bin
 
@@ -223,22 +202,26 @@ COPY scripts/create-slim-war-files.sh /bin/slim.sh
 COPY --from=sw360clucene /couchdb-lucene.war /sw360_tomcat_webapps
 RUN bash /bin/slim.sh
 
+FROM scratch AS sw360
+COPY --from=sw360build /sw360_deploy /sw360_deploy
+COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
+
 #--------------------------------------------------------------------------------------------------
 # Runtime image
-FROM sw360base as sw360
+FROM base AS runtime
 
 WORKDIR /app/
 
 USER $USERNAME
 
 # Downloaded jar dependencies
-COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_deploy/* /app/sw360/deploy
+COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_deploy/* /app/sw360/deploy
 # Streamlined wars
-COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/slim-wars/*.war /app/sw360/tomcat/webapps/
+COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/slim-wars/*.war /app/sw360/tomcat/webapps/
 # org.eclipse.sw360 jar artifacts
-COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/*.jar /app/sw360/tomcat/webapps/
+COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/*.jar /app/sw360/tomcat/webapps/
 # Shared streamlined jar libs
-COPY --chown=$USERNAME:$USERNAME --from=sw360build /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
+COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
 
 # Make catalina understand shared directory
 RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
