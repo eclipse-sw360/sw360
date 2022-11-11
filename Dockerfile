@@ -74,12 +74,21 @@ RUN mkdir -p /app/sw360 \
     && chown -R $USERNAME:$USERNAME /app \
     && ln -s /app/sw360/tomcat-* /app/sw360/tomcat
 
+WORKDIR /app/sw360
+ENTRYPOINT [ "/bin/bash" ]
+
 #-----------------------------------------------------------------------------------
 # Builder image
 FROM eclipse-temurin:11-jdk-jammy AS sw360builder
 
 # Set versions as arguments
 ARG MAVEN_VERSION
+
+RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
+    apt-get -qq update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    gettext-base
 
 # Prepare maven from binary to avoid wrong java dependencies and proxy
 COPY scripts/docker-config/mvn-proxy-settings.xml /etc
@@ -88,18 +97,12 @@ RUN curl -JL https://dlcdn.apache.org/maven/maven-3/"$MAVEN_VERSION"/binaries/ap
 RUN chmod a+x /usr/local/bin/setup_maven_proxy \
     && setup_maven_proxy
 
-RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
-    apt-get -qq update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    gettext-base
-
 #--------------------------------------------------------------------------------------------------
 # Thrift
 FROM ubuntu:jammy AS sw360thrift
 
 ARG BASEDIR="/build"
-ARG THRIFT_VERSION=0.16.0
+ARG THRIFT_VERSION=0.17.0
 
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
@@ -147,6 +150,31 @@ RUN --mount=type=tmpfs,target=/build \
     && mvn -X install war:war \
     && cp ./target/*.war /couchdb-lucene.war
 
+#------------------------------------------------------------------------
+#  Dart
+FROM ubuntu:jammy AS sw360dart
+
+ARG DART_VERSION=2.18.4
+
+WORKDIR /opt/
+
+ENV DART_SDK=/opt/dart-sdk
+ENV PATH=$PATH:${DART_SDK}/bin
+
+RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
+    apt-get -qq update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN --mount=type=tmpfs,target=/dart \
+    arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/x64/) \
+    && curl -o /dart/dart.zip -L https://storage.googleapis.com/dart-archive/channels/stable/release/${DART_VERSION}/sdk/dartsdk-linux-${arch}-release.zip \
+    && unzip /dart/dart.zip
+
 #--------------------------------------------------------------------------------------------------
 # SW360
 # We build sw360 and create real image after everything is ready
@@ -154,6 +182,10 @@ RUN --mount=type=tmpfs,target=/build \
 # is triggered by buildkit images
 
 FROM sw360builder AS sw360build
+
+ENV DART_SDK=/opt/dart-sdk
+ENV PATH=$PATH:${DART_SDK}/bin
+COPY --from=sw360dart ${DART_SDK} ${DART_SDK}
 
 # Install mkdocs to generate documentation
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
@@ -179,12 +211,12 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     -Dsurefire.failIfNoSpecifiedTests=false \
     -Dbase.deploy.dir=. \
     -Djars.deploy.dir=/sw360_deploy \
-    -Dliferay.deploy.dir=/sw360_deploy \
+    -Dliferay.deploy.dir=/sw360_tomcat_webapps \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
     -Drest.deploy.dir=/sw360_tomcat_webapps \
     -Dhelp-docs=true
 
-# Generate slim war files
+# # Generate slim war files
 WORKDIR /sw360_tomcat_webapps/
 
 COPY scripts/create-slim-war-files.sh /bin/slim.sh
@@ -193,7 +225,7 @@ RUN bash /bin/slim.sh
 
 #--------------------------------------------------------------------------------------------------
 # Runtime image
-FROM ghcr.io/eclipse/sw360base:latest as sw360
+FROM sw360base as sw360
 
 WORKDIR /app/
 
@@ -222,3 +254,4 @@ STOPSIGNAL SIGINT
 WORKDIR /app/sw360
 
 ENTRYPOINT [ "/app/entry_point.sh" ]
+

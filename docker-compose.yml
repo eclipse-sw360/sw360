@@ -10,7 +10,7 @@ version: '3.8'
 
 services:
   sw360:
-    image: 'ghcr.io/eclipse/sw360:latest'
+    image: 'ghcr.io/eclipse/sw360/sw360:latest'
     restart: unless-stopped
     container_name: sw360
     depends_on:
@@ -23,7 +23,6 @@ services:
     tty: true
     volumes:
       - etc:/etc/sw360
-      - webapps:/app/sw360/tomcat/webapps
       - document_library:/app/sw360/data/document_library
       - ./config:/app/sw360/config
 
@@ -69,7 +68,6 @@ volumes:
   postgres: null
   couchdb: null
   etc: null
-  webapps: null
   document_library: null
 
 networks:
