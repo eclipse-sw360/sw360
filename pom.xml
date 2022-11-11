@@ -87,6 +87,7 @@
         <dom4j.version>2.1.3</dom4j.version>
         <ektorp.version>1.5.0</ektorp.version>
         <ektorplucene.version>0.2.0</ektorplucene.version>
+        <failureaccess.version>1.0.1</failureaccess.version>
         <findbugs-annotations.version>1.3.9-1</findbugs-annotations.version>
         <glassfish-jaxb.version>2.3.2</glassfish-jaxb.version>
         <gson.version>2.8.9</gson.version>
@@ -242,7 +243,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>failureaccess</artifactId>
-                <version>1.0.1</version>
+                <version>${failureaccess.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-cli</groupId>
