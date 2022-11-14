@@ -221,20 +221,12 @@ For nginx, assuming you are using default config for your sw360, this is a simpl
 
 ### Liferay Redirects
 
-Liferay by default for security reasons do not allow redirect for unknown ips/domains, mostly on admin modules, so is necessary to add your domain or ip to the redirect allowed lists in custom __portal-sw360.properties__.
+Liferay by default for security reasons do not allow redirect for unknown ips/domains, so is necessary to add your domain or ip to the redirect allowed lists in the Liferay Control Panel
 
-A not proper redirect can see in logs
+As admin, go to Control Panel -> Instance Settings -> Content Data -> Pages
 
-**IP based** - The list of ips is separated by comma
+Decide to use:
 
-```ini
-redirect.url.security.mode=ip
-redirect.url.ips.allowed=127.0.0.1,172.17.0.1,...
-```
+**IP based** - List of ips you want to allow tro redirect
 
-**Domain based** - The list domains is separated by comma
-
-```ini
-redirect.url.security.mode=domain
-redirect.url.domain.allowed=example.com,*.wildcard.com
-```
+**Domain based** - List of domains you want to allow redirect
