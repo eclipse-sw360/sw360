@@ -190,7 +190,7 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     -Dsurefire.failIfNoSpecifiedTests=false \
     -Dbase.deploy.dir=. \
     -Djars.deploy.dir=/sw360_deploy \
-    -Dliferay.deploy.dir=/sw360_tomcat_webapps \
+    -Dliferay.deploy.dir=/sw360_deploy \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
     -Drest.deploy.dir=/sw360_tomcat_webapps \
     -Dhelp-docs=true
