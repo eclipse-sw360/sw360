@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.licenses.tools;
 
-import com.liferay.portal.kernel.json.JSONObject;
+import org.json.JSONObject;
 
 public abstract class ObligationConnector {
     protected abstract String generateURL(String licenseId);

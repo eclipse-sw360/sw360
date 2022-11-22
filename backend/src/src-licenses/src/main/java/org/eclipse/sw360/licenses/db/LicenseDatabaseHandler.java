@@ -34,7 +34,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.ektorp.DocumentOperationResult;
 import org.jetbrains.annotations.NotNull;
-import org.json.simple.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.cloudant.client.api.CloudantClient;
 import com.cloudant.client.api.model.Response;
@@ -53,8 +54,6 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.*;
 
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONArray;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import com.google.common.collect.Lists;
@@ -966,7 +965,7 @@ public class LicenseDatabaseHandler {
             }
             requestSummary.setMessage("{\"licensesSuccess\":" + licensesSuccess.toString()
                                         + ",\"licensesMissing\":" + licensesMissing.toString()+"}");
-            requestSummary.setTotalAffectedElements(licensesSuccess.size());
+            requestSummary.setTotalAffectedElements(licensesSuccess.length());
             requestSummary.setTotalElements(sw360Licenses.size());
             requestSummary.setRequestStatus(RequestStatus.SUCCESS);
             IMPORT_STATUS = false;
@@ -1026,7 +1025,7 @@ public class LicenseDatabaseHandler {
     // Read nodes from input and save
     public String addNodes(String jsonString, User user) throws SW360Exception {
         try {
-            com.liferay.portal.kernel.json.JSONObject jsonObject = JSONFactoryUtil.createJSONObject(jsonString);
+            JSONObject jsonObject = new JSONObject(jsonString);
             return addNodes(jsonObject, user);
         }
         catch (Exception e) {
@@ -1035,16 +1034,16 @@ public class LicenseDatabaseHandler {
         }
     }
 
-    private String addNodes(com.liferay.portal.kernel.json.JSONObject jsonObject, User user) throws SW360Exception {
+    private String addNodes(JSONObject jsonObject, User user) throws SW360Exception {
         try {
             JSONArray jsonArray = jsonObject.getJSONArray("val");
             jsonObject.put("id", addNodeElement(jsonArray, user));
             jsonObject.remove("val");
             for (int i = 0; i < jsonObject.getJSONArray("children").length(); i++) {
-                com.liferay.portal.kernel.json.JSONObject contactObject = jsonObject.getJSONArray("children").getJSONObject(i);
+                JSONObject contactObject = jsonObject.getJSONArray("children").getJSONObject(i);
                 addNodes(contactObject, user);
             }
-            return jsonObject.toJSONString();
+            return jsonObject.toString();
         }
         catch (Exception e) {
             log.error("Can not add nodes from json object: " + jsonObject);
@@ -1086,7 +1085,7 @@ public class LicenseDatabaseHandler {
     // Build obligation text from nodes
     public String buildObligationText(String jsonString, int level) throws SW360Exception {
         try {
-            com.liferay.portal.kernel.json.JSONObject jsonObject = JSONFactoryUtil.createJSONObject(jsonString);
+            JSONObject jsonObject = new JSONObject(jsonString);
             obligationText = "";
             return buildObligationText(jsonObject, level);
         }
@@ -1096,7 +1095,7 @@ public class LicenseDatabaseHandler {
         }
     }
 
-    private String buildObligationText(com.liferay.portal.kernel.json.JSONObject jsonObject, int level) {
+    private String buildObligationText(JSONObject jsonObject, int level) {
         StringBuilder prefix = new StringBuilder("");
         for (int j = 1; j < level; j++) {
             prefix = prefix.append("\t");
@@ -1119,7 +1118,7 @@ public class LicenseDatabaseHandler {
         }
         if (jsonObject.getJSONArray("children").length() != 0 ) {
             for (int i = 0; i < jsonObject.getJSONArray("children").length(); i++) {
-                com.liferay.portal.kernel.json.JSONObject contactObject = jsonObject.getJSONArray("children").getJSONObject(i);
+                JSONObject contactObject = jsonObject.getJSONArray("children").getJSONObject(i);
                 buildObligationText(contactObject, level+1);
             }
         }

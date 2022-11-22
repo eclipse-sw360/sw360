@@ -24,8 +24,7 @@ import java.net.*;
 import java.io.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
-import com.liferay.portal.kernel.json.JSONObject;
+import org.json.JSONObject;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
@@ -121,16 +120,16 @@ public class OSADLObligationConnector extends ObligationConnector {
 		for (String line : lines) {
 			String parentLinePath = "-1";
 			try {
-				JSONObject currentLine = JSONFactoryUtil.createJSONObject(line);
+				JSONObject currentLine = new JSONObject(line);
 				int parentLineId = getParentLineId(currentLine, lines);
 				if (parentLineId >= 0) {
-					JSONObject parentLine = JSONFactoryUtil.createJSONObject(lines.get(parentLineId));
+					JSONObject parentLine = new JSONObject(lines.get(parentLineId));
 					parentLinePath = parentLine.get("path").toString();
 				}
 				currentLine.remove("path");
 				String path = parentLinePath.replace("@", "") + "@" + currentLine.get("id").toString();
 				currentLine.put("path", path.trim());
-				lines.set(i, currentLine.toJSONString());
+				lines.set(i, currentLine.toString());
 				i++;
 				String jsonLine = "{ 'id': '" + currentLine.get("id") + "', 'text': '" + currentLine.get("text") + "', 'level': '" + currentLine.get("level") + "', 'path': '" +currentLine.get("path")+ "'}";
 				refinedLines.add(jsonLine);
@@ -146,7 +145,7 @@ public class OSADLObligationConnector extends ObligationConnector {
 		int currentLevel = Integer.parseInt(currentLine.get("level").toString());
 		for (int i = Integer.parseInt(currentLine.get("id").toString()); i >= 0; i--) {
 			try {
-				JSONObject lineCheck =JSONFactoryUtil.createJSONObject(lines.get(i));
+				JSONObject lineCheck = new JSONObject(lines.get(i));
 				if (Integer.parseInt(lineCheck.get("level").toString()) == currentLevel - 1) {
 					return i;
 				}
@@ -161,7 +160,7 @@ public class OSADLObligationConnector extends ObligationConnector {
 	private JSONObject buildTreeObject(List<String> lines) {
 		try {
 			String rootNodeText = "{'val': ['ROOT'], 'children': [], 'path': '-1'}";
-			JSONObject rootNode = JSONFactoryUtil.createJSONObject(rootNodeText);
+			JSONObject rootNode = new JSONObject(rootNodeText);
 			return removeField(addNode(rootNode, lines), "path");
 		} catch (Exception e) {
 			log.error("Can not build tree object from: " + lines);
@@ -181,7 +180,7 @@ public class OSADLObligationConnector extends ObligationConnector {
 	private JSONObject addNode(JSONObject rootNode, List<String> lines) {
 		for (int i = 0; i < lines.size(); i++) {
 			try {
-				JSONObject line = JSONFactoryUtil.createJSONObject(lines.get(i));
+				JSONObject line = new JSONObject(lines.get(i));
 				if (line.get("path").toString().split("@")[0].equals(rootNode.get("path").toString().replace("@", ""))) {
 					String childNode;
 					List<String> text = parseSentenceElement(line.get("text").toString());
@@ -190,7 +189,7 @@ public class OSADLObligationConnector extends ObligationConnector {
 					} else {
 						childNode = "{'val': ['" +text.get(0)+ "', '" +text.get(1)+ "'], 'children': [], 'path': '" +line.get("path")+ "'}";
 					}
-					rootNode.getJSONArray("children").put(JSONFactoryUtil.createJSONObject(childNode));
+					rootNode.getJSONArray("children").put(new JSONObject(childNode));
 				}
 			} catch (Exception e) {
 				log.error("Can not add node from: " + lines);
