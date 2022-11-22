@@ -1566,7 +1566,6 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
 
                 setUsingDocs(request, user, client, releaseIds);
-
                 if (IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
                     request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user));
                 } else {
@@ -1690,6 +1689,10 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
             component = client.getAccessibleComponentById(id, user);
             request.setAttribute(COMPONENT, component);
+            for (int i=0; i<component.releases.size(); i++) {
+                Collections.sort(component.releases, (release1, release2) -> release1.getVersion() .compareTo(release2.getVersion()) );
+            }
+            Collections.reverse(component.releases);
 
             addComponentBreadcrumb(request, response, component);
             if (release != null) {
