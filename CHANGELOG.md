@@ -5,6 +5,126 @@ This is the changelog file of the sw360 project. It starts with the first releas
 https://github.com/sw360/sw360portal/releases
 
 
+## sw360-17.0.0-M1
+This tag covers many corrections/bug fixes after the 16.0 release.
+
+This release provides features, muliple bug fixes for release 16.0, for example, new REST endpoints, improved docker script and fixes related to liferay-7.4.
+
+### Migrations
+
+For existing installations, a data migration is required. Please go to the readme file in scripts/migrations to see more information:
+
+https://github.com/eclipse/sw360/blob/master/scripts/migrations/README.md
+
+For running the migrations scripts, you will need python and the couchdb package. Please note that you will need to change manually in the python file: the DRYRUN variable and the couchdb URL (if that is not on localhost or requires password or both).
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in alphabetical order):
+
+```
+Abdul Kapti <abdul.kapti@siemens-healthineers.com>
+afsahsyeda <afsah.syeda@siemens-healhtineers.com>
+akapti <abdul.kapti@siemens-healthineers.com>
+Anupam Ghosh <anupam.ghosh@siemens.com>
+dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Eldrin <eldrin.sanctis@siemens.com>
+Gaurav Mishra <gmishx@gmail.com>
+Helio Chissini de Castro <heliocastro@gmail.com>
+Jaideep Palit <jaideep.palit@siemens.com>
+Kouki Hama <kouki1.hama@toshiba.co.jp>
+Nikesh kumar <kumar.nikesh@simens.com>
+rudra-superrr <rudra.chopra@siemens.com>
+Smruti Prakash Sahoo <smruti.sahoo@siemens.com>
+tuan99123 <tuan2.nguyennhu@toshiba.co.jp>
+tuannn2 <tuan2.nguyennhu@toshiba.co.jp>
+```
+
+Please note that also many other persons usually contribute to the project with reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `e97d3c21` Revert "feat(ui): Banner to Broadcast Messages"
+* `e9b035f2` feat(buildsystem): Rearrange dependencies and deployments
+* `67a89382` feat(ui): Banner to Broadcast Messages
+* `b4c14975` feat(CRUI):Change CR state 'On Hold' to 'Awaiting Response' & edit PreferredClearingDate
+* `35d9e021` feat(docker): Move deps script outside docker build
+* `db5176ab` feat(deps): Update shared slim script to have a txt file with libraries
+* `4596f06d` feat(SPDX): Use new SPDX library (#1496)
+* `d6ba4c07` feat(docker): Improve docker size and build time
+* `bdc6d6f3` Revert "feat(ui): Add banner to broadcast messages"
+* `467edfba` feat(UI):Made the table header collapsable in wherever possible
+* `2ce668e8` feat(ui): Add banner to broadcast messages
+* `1550e909` feature(ui) : select your group in Project page by grid
+* `3b4e36c7` feat(search): allow searching for external ids
+* `27869c8a` feat(ProjectUI): Load License info header text based on project group
+
+### Corrections
+* `4f7fd085` fix(ProjectUI): Multiple alerts when there are same linked projects
+* `d0432233` fix(script): Script to remove trailing and leading whitespaces from component names
+* `f6c22e52` fix(PreferencesUI):Read Access has to be checked before Generating token
+* `920d1281` fix(docker): Deploy libraries in correct place
+* `1564ab79` upd(doc): Update docker documentation related to redirects
+* `5c9e7845` upd(docker): Improve docker build and github actions
+* `7bcb75db` upd(docker): Improve github actions pipeline
+* `03e665ec` fix(docker): add missing dependencies
+* `68f171f5` fix(UI): Added code to show the project list in component tab
+* `8312a8e6` fix(UI): Text field is blank while ExportSpread in licenses
+* `05b9c5f0` fix(User): CountryId does not exists while creating user with new Organization
+* `e0059eec` upd(docker): Push sw360 docker image to registry
+* `429b6b73` fix(UI): Default behaviour of write access checkbox restore
+* `18c54106` Revert "upd(buildsystem): Move away build-configuration"
+* `5ffcda69` fix(Project and Component UI): Formatting issues and the type of files that can be uploaded in Import SBOM MOdal are limited to rdf now-783
+* `32ea05fe` upd(buildsystem): Move away build-configuration
+* `8c09cfa1` upd(deps): Update jackson versions
+* `46e2b73d` fix(CouchDbView): Improve couchdb view performance
+* `282298e0` fix(Docs): Fixed REST and MkDocs generated issue
+* `9a1dcb48` fix(ecc): Reset Ecc Fields when Component type is changed.
+* `a5ece957` upd(sanitize): Remove lib prefix from datahandler
+* `ca8b2efc` "fix(rest): Added code for to Update the REST-API documentation for Definition of Manufacturer on project level
+* `14103917` fix(ComponentUI):HTML encoded character in Vendor field
+* `01448d74` fix(scripts): Sanitize scripts
+* `13753dbf` upd(ghactions): Fail fast with the license checker without setting a full blown system
+* `b365744e` fix(bnd): Restore original bundle
+* `8682aa42` fix(docker): Dependencies need to be deployed
+* `aa4b625e` upd(docker): Move versions to separate file and update dep script
+* `9d3e9b3f` fix(versions): Update commons lang to correct last version
+* `7ee69887` fix(SBOM): Fixed Component type is not being set when components are created by importing SBOM
+* `db359094` fix(ecc): Script to change ECC status in Release
+* `daa15a90` upd(thrift): Use only provided tarball to generate resources
+* `932987bc` fix(maven): Update commons-logging to equal versions
+* `d9f594ec` fix(maven): Update commons-codec to equal versions
+* `41450708` fix(liferay): Use unique versions for same dependencies
+* `5acd4ecb` fix(maven): Use unique versions for same dependencies
+* `de429b3f` bug(docker): Fix share location of jar files
+* `5e0a30cd` fix(ui): Fixed lar file to add missing widgets(Oauth Client & License Types)
+* `adb4f930` fix(ecc): Script to cleanup ECC information in release
+* `d0ead7d1` fix(rest): Added component type tag in release api
+* `f0f308e4` upd(maven): Update maven build infra
+* `2db4244f` fix(UI): Do not copy specific external id while cloning release
+* `b8190e25` fix(UI): Disable write access from UI
+* `9f5e1ddd` fix(CrUi): fix the critical CR creation issue
+* `a6f8fa65` fix(ProjectUI): fixed Release filter bug in AttachmentUsage tab
+* `77e0ec1d` fix(ui): Generate portlet X url inside portlet Y
+* `33908857` fix(report): Nullpointer downloading report
+* `e1dd21fc` fix(jenkins): Update old eclipse jarsigner
+* `f35c6244` fix(deps): Fixed wrong dependency download
+* `7ba948c4` fix(docker): Fix double called shutdown script
+* `d2d8011f` bug(docker): Fix invalid commited docker props
+* `9cddc708` upd(Docker): Upgrade docker and versions for new Liferay
+* `3a0d8c38` fix(AdminUI): Prevent license type duplication with case insensitive check
+* `17a82169` fix(ui): cannot link Component with closed project
+* `6d0a20ef` fix(REST): fixed release update issue for releases with invalid licenses
+
+### Infrastructure
+* `e130c068` chore(deps): bump spring-security-core in /frontend/sw360-portlet
+* `e7e9858f` chores(liferay): updated liferay kernel and theme
+* `9e64374c` chores(upgrade): Updated default country Id of liferay
+* `f19f0203` chores(upgrade): Fixed the ui issues
+* `71145b2a` chores(upgrade): Updated default country Id of liferay
+* `a7fd29d7` chores(upgrade): Fixed the ui issues
+* `9efff9ff` chores(upgrade): Upgrade Liferay to 7.4.3.18 GA18
+* `32bc4839` chore(rel): Changing back to 16.1.0-SNAPSHOT
+
 ## sw360-16.0.0-M1
 This tag covers many corrections/bug fixes after the 15.0 release.
 
