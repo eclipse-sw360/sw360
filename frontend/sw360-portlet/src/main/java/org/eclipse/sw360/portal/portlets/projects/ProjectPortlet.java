@@ -99,7 +99,6 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapExceptio
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 import static org.eclipse.sw360.portal.portlets.projects.ProjectPortletUtils.isUsageEquivalent;
-import static org.eclipse.sw360.portal.common.PortletUtils.setDepartmentSearchAttribute;
 
 @org.osgi.service.component.annotations.Component(
     immediate = true,
@@ -1614,7 +1613,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 List<ProjectLink> mappedProjectLinks = createLinkedProjects(project, user);
                 request.setAttribute(PROJECT_LIST, mappedProjectLinks);
                 List<ProjectLink> allSubProjectLinks = createLinkedProjects(project, Function.identity(), true, user);
-                request.setAttribute(ALL_SUB_PROJECT_LINK, allSubProjectLinks);
+                Collection<ProjectLink> links = allSubProjectLinks.stream().collect(
+                        Collectors.toMap(ProjectLink::getId, Function.identity(), (oldValue, newValue) -> oldValue)).values();
+                request.setAttribute(ALL_SUB_PROJECT_LINK, links);
                 putDirectlyLinkedReleasesInRequest(request, project);
                 Set<Project> usingProjects = client.searchLinkingProjects(id, user);
                 request.setAttribute(USING_PROJECTS, usingProjects);
