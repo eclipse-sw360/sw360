@@ -153,7 +153,7 @@
                                     <td><liferay-ui:message key="authorities" />:</td>
                                     <td>
                                         <div class="form-check">
-                                            <input type="checkbox" name="<portlet:namespace/><%=RestApiToken._Fields.AUTHORITIES%>READ"
+                                            <input type="checkbox" required checked name="<portlet:namespace/><%=RestApiToken._Fields.AUTHORITIES%>READ"
                                                 id="authorities_read" class="form-check-input" />
                                             <label class="form-check-label" for="authorities_read"><liferay-ui:message key="read.access" /></label>
                                             <br>
@@ -162,6 +162,9 @@
                                                 id="authorities_write" class="form-check-input" />
                                             <label class="form-check-label" for="authorities_write"><liferay-ui:message key="write.access" /></label>
                                             </core_rt:if>
+                                             <div class="invalid-feedback">
+                                                <liferay-ui:message key="read.access.is.required" />
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
