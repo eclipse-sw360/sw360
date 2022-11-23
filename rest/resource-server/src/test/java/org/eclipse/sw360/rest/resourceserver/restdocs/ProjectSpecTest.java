@@ -203,6 +203,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setGeneralRisks3rdParty("Lorem Ipsum");
         project.setSpecialRisks3rdParty("Lorem Ipsum");
         project.setDeliveryChannels("Lorem Ipsum");
+        project.setVendor(new Vendor());
         project.setRemarksAdditionalRequirements("Lorem Ipsum");
         linkedReleases.put("3765276512", projectReleaseRelationship);
         project.setReleaseIdToUsage(linkedReleases);
@@ -249,6 +250,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project2.setSpecialRisks3rdParty("Lorem Ipsum");
         project2.setDeliveryChannels("Lorem Ipsum");
         project2.setRemarksAdditionalRequirements("Lorem Ipsum");
+        project2.setVendor(new Vendor());
         project2.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
         project2.setProjectResponsible("projectresponsible@sw360.org");
         Map<String, String> projExtKeys = new HashMap<String, String>();
@@ -299,7 +301,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         .setId("376570")
                         .setDescription("Orange Web provides a suite of components for documentation.")
                         .setExternalIds(projExtKeys)
-                        .setProjectType(ProjectType.PRODUCT));
+                        .setProjectType(ProjectType.PRODUCT)
+                        .setVendor((new  Vendor("Test", "Test short", "http://testvendoraddress.com").setId("987567468"))));
         when(this.projectServiceMock.createProject(any(), any())).then(invocation ->
                 new Project("Test Project")
                         .setId("1234567890")
@@ -309,7 +312,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         .setCreatedBy("admin@sw360.org")
                         .setPhaseOutSince("2020-06-25")
                         .setState(ProjectState.ACTIVE)
-                        .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
+                        .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date()))
+                        .setVendor((new  Vendor("Test", "Test short", "http://testvendoraddress.com").setId("987567468"))));
 
         Release release = new Release();
         release.setId("3765276512");
@@ -629,6 +633,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:moderators").description("An array of all project moderators with email").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:contributors").description("An array of all project contributors with email").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:attachments").description("An array of all project attachments").optional(),
+                                subsectionWithPath("_embedded.sw360:projects.[]vendor").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),  
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of projects per page"),
@@ -688,6 +693,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project"),
                                 subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                                 subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
+                                subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of all project moderators with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>")
                         )));
@@ -1205,6 +1211,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                                 fieldWithPath("phaseOutSince").description("The project phase-out date"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project")
                         )));
     }
@@ -1263,6 +1270,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                                 fieldWithPath("phaseOutSince").description("The project phase-out date"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project")
                         )));
     }
@@ -1350,6 +1358,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
                         subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                         subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
+                        subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                         subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"))));
     }
 
