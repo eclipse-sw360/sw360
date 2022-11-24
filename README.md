@@ -6,7 +6,7 @@
 
 ### SW360 Portal
 
-A software component catalogue application - designed to work with FOSSology.
+A software component catalogue application.
 
 SW360 is a server with a REST interface and a Liferay CE portal application
 to maintain your projects / products and the software components within.
@@ -23,135 +23,33 @@ It is comprised of one frontend (portal) part, backend (services) part and addit
 * Database: we store software components and metadata about them in CouchDB.
 * Rest: this REST API provides access to project resources for external integration.
 
-The reference platform is the Ubuntu server 20.04 (which is an LTS version) as it is supported in sw360vagrant. However, it runs well on other OSes (see below).
+The reference platform is the Ubuntu server 22.04 (which is an LTS version).
 
 ### Project structure
 
 This is a multi module maven file. please consider that we have the following modules:
 
-* frontend: for portlets, themes and layouts, the liferay part.
-* backend: for the thrift based services.
-* libraries: for general stuff that is reused among the above, for example, couchdb access.
-* scripts: for deploying either inside the vagrant or on your development machine.
-* rest: for the REST API which contains an authorization and resource server.
+* frontend: For portlets, themes and layouts, the liferay part.
+* backend: For the thrift based services.
+* libraries: For general stuff that is reused among the above, for example, couchdb access.
+* scripts: Auxiliary scripts to help build, deploy and config system
+* rest: For the REST API which contains an authorization and resource server.
 
-### Required software
+### Issues
 
-* Java 11, tested with OpenJDK
-* CouchDB, at least 3.0 (tested, may work with other releases of CouchDB as well), runs best with 3.1.1
-* Liferay Portal CE 7.4.3.18 GA18
-* Apache Tomcat 9.0.X (which is bundled with Liferay)
-* couchdb-lucene for search, please refer to installation details in the wiki, because a patch is required
-* Apache Thrift 0.16
-
-In order to build you will need:
-
-* A git client
-* Apache Maven 3.6.X
-* Apache Thrift 0.16
-
-http://maven.apache.org/download.html#Installation
-
-Then, you must install Apache Tomcat, CouchDB. And, Java of course.
-
-The software is tested with with debian 8, debian 9, ubuntu 16.04, ubuntu 18.04, ubuntu 20.04 macosx 10.8 - 10.15. We run Liferay with PostgreSQL 9.X or 10 as the Liferay CE requires, but HSQL (provided with the liferay bundle) runs also OK.
-
-### PROBLEMS
-
-Running with the tested software shows no problems if you encounter some please report them at:
-
-https://github.com/eclipse/sw360/issues
+If you run in any issues with documentation or software, please be kind and report to our [Github issues area](https://github.com/eclipse/sw360/issues).
 
 ### Deployment
 
-There is a vagrant project for one-step-deployment. See the project wiki for details:
+Is recommended using the docker based setup, [described here](https://github.com/eclipse/sw360/blob/main/README_DOCKER.md).
 
-https://github.com/eclipse/sw360/wiki
+If you intend to install in a bare metal machine or use in your own virtualizaed system, [bare metal instructions are provided here](https://www.eclipse.org/sw360/docs/deployment/baremetal/deploy-natively/).
 
-Or using sw360vagrant:
 
-https://github.com/sw360/sw360vagrant
+#### Compiling, testing
 
-### Commands
+Please refer to [SW360 main documentation website](https://www.eclipse.org/sw360/docs/).
 
-Most commands are using maven which is a dependency to build SW360.
-
-#### Compiling, testing and deploying
-
-Actually, there is a hierarchy of maven files, in general
-
-1. to clean everything up
-  - `mvn clean`
-
-2. to run all targets including build the .war file at the end
-  - `mvn install`
-
-  this needs a couchdb running on the host on port 5984. To start such a couchdb via docker one can use the script `scripts/startCouchdbForTests.sh`
-
-3. to install without running the tests
-  - `mvn install -DskipTests`
-
-For deployment run the command
-```
-mvn package -P deploy -Dbase.deploy.dir=. -Dliferay.deploy.dir=${LIFERAY_INSTALL}/deploy -Dbackend.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps -Drest.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps -DskipTests
-```
-which copies the artifacts depending on their type to the following folders:
-  - backend: `<SOME_ABSOLUTE_PATH>/tomcat`
-  - rest: `<SOME_ABSOLUTE_PATH>/tomcat`
-  - frontend: `<SOME_ABSOLUTE_PATH>/liferay`
-  - libraries: `<SOME_ABSOLUTE_PATH>/liferay`
-
-You may also specify the paths using these properties:
-  - backend artifacts: `backend.deploy.dir`
-  - rest artifacts: `rest.deploy.dir`
-  - liferay artifacts (frontend, libraries): `liferay.deploy.dir`
-Be aware that you have to deploy the Liferay artifacts in the Liferay auto-deploy folder.
-On the other hand you must not deploy rest and backend artifacts to the auto-deploy folder.
-
-**Note:** the test framework for the REST API needs the tests running in order to generate the API documentation. So, for building the REST API artefacts, please switch in the rest sub projects and execute:
-
-```
-mvn package -P deploy -Dbase.deploy.dir=. -Dliferay.deploy.dir=${LIFERAY_INSTALL}/deploy -Dbackend.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps -Drest.deploy.dir=${LIFERAY_INSTALL}/tomcat-9.0.17/webapps
-```
-
-### Liferay Configuration
-
-You should provide below property configuration based on his/her Liferay deployment
-environment as found in the master pom.xml file.
-
-Please note that you should run the Liferay installation procedures as found on the
-Liferay documentation.
-
-### War file packaging
-
-As backend services are supposedly being deployed in an application server.
-So to avoid conflicts for servlets api (in case of tomcat, tomcat-servlet-api-x.x.x-jar)
-are excluded from the WAR file while packaging. Using below configuration,
-
-```
-    <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-        <version>2.1.1</version>
-        <configuration>
-            <webResources>
-                <resource>
-                    <directory>${basedir}/src/main/java</directory>
-                    <targetPath>WEB-INF/classes</targetPath>
-                    <includes>
-                        <include>**/*.properties</include>
-                        <include>**/*.xml</include>
-                        <include>**/*.css</include>
-                        <include>**/*.html</include>
-                    </includes>
-                </resource>
-            </webResources>
-            <packagingExcludes>
-                        WEB-INF/lib/tomcat-servlet-api-7.0.47.jar
-            </packagingExcludes>
-        </configuration>
-    </plugin>
-```
 
 ### License
 
