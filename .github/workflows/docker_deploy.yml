@@ -14,8 +14,12 @@ name: Docker Build
 
 on:
   push:
-    branches: [ release ]
-
+    branches:
+      - 'master'
+    tags:
+      - 'sw360-*'
+    paths-ignore:
+      - "**.md"
 env:
   REGISTRY: ghcr.io
 
@@ -189,8 +193,6 @@ jobs:
           load: false
           tags: |
             ${{ steps.meta_runtime.outputs.tags }}
-            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/sw360:${{ env.GIT_REVISION }}
-            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/sw360:latest
           labels: ${{ steps.meta_runtime.outputs.labels }}
           build-contexts: |
             base=docker-image://${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/base:latest
