@@ -73,6 +73,7 @@ public class MailUtil extends BackendUtils {
     private String enableDebug;
     private String supportMailAddress;
     private String smtpSSLProtocol;
+    private String smtpSSLTrust;
 
     public MailUtil() {
         mailExecutor = fixedThreadPoolWithQueueSize(MAIL_ASYNC_SEND_THREAD_LIMIT, MAIL_ASYNC_SEND_QUEUE_LIMIT);
@@ -98,6 +99,7 @@ public class MailUtil extends BackendUtils {
         enableDebug = loadedProperties.getProperty("MailUtil_enableDebug", "false");
         supportMailAddress = loadedProperties.getProperty("MailUtil_supportMailAddress","");
         smtpSSLProtocol = loadedProperties.getProperty("MailUtil_smtpSSLProtocol", "");
+        smtpSSLTrust = loadedProperties.getProperty("MailUtil_smtpSSLTrust", "*");
     }
 
     private void setSession() {
@@ -111,7 +113,7 @@ public class MailUtil extends BackendUtils {
         properties.setProperty("mail.smtp.auth", isAuthenticationNecessary);
         properties.setProperty("mail.smtp.starttls.enable", enableStarttls);
         properties.setProperty("mail.smtp.ssl.enable", enableSsl);
-
+        properties.setProperty("mail.smtp.ssl.trust", smtpSSLTrust);
         properties.setProperty("mail.debug", enableDebug);
         properties.setProperty("mail.smtp.ssl.protocols", smtpSSLProtocol);
 
