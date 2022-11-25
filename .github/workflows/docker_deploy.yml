@@ -15,7 +15,7 @@ name: Docker Build
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
     tags:
       - 'sw360-*'
     paths-ignore:
