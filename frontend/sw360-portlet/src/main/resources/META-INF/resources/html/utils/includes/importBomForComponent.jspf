@@ -153,7 +153,7 @@
             generateUniqueIdentifier: getAttachmentIdPromise,
             chunkRetryInterval: 2000,
             maxChunkRetries: 3,
-            fileType: ['rdf']
+            fileType: ['rdf','spdx']
         });
 
         r.assignBrowse($('#spdx-fileupload-browse')[0]);
