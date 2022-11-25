@@ -8,14 +8,15 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-.alert-notifications-fixed {
-	top: 0;
+#sw360-body .alert-container.cadmin .alert-notifications-fixed#ToastAlertContainer {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+}
 
-	.alert {
-		width: auto;
-		border-radius: 0;
-
-		padding: 1rem calc(3vw + 1rem); // 3vw corresponds to container width of 94vw
-		max-width: none !important;
-	}
+#sw360-body .alert-container.cadmin .alert-notifications-fixed#ToastAlertContainer .alert-dismissible {
+    min-width: 100%;
+    font-size: inherit;
+    padding-left: 4rem;
 }
