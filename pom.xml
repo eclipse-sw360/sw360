@@ -47,8 +47,8 @@
     </modules>
 
     <properties>
-        <revision>17.0.${patchlevel}</revision>
-        <patchlevel>0</patchlevel>
+        <revision>16.0.${patchlevel}</revision>
+        <patchlevel>0-SNAPSHOT</patchlevel>
 
         <!-- Build version properties -->
         <java_source.version>11</java_source.version>
