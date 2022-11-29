@@ -11,7 +11,7 @@
 [[resources-clearingRequest]]
 === ClearingRequest
 
-The ClearingRequest resource is used get the clearing request of a project
+The ClearingRequest resource is used to get and list the clearing requests
 
 
 [[resources-clearingRequest-by-id]]
@@ -42,3 +42,37 @@ include::{snippets}/should_document_get_clearingrequest_by_projectid/curl-reques
 
 ===== Example response
 include::{snippets}/should_document_get_clearingrequest_by_projectid/http-response.adoc[]
+
+
+[[resources-clearingRequests]]
+==== List all clearingRequest
+
+A `GET` request will list all the Clearing Requests visible to the user
+
+===== Response structure
+include::{snippets}/should_document_get_clearingrequests/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_clearingrequests/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_clearingrequests/http-response.adoc[]
+
+
+[[resources-clearingRequest-by-state]]
+==== List all clearingRequest by clearing state
+
+A `GET` request will list all the Clearing Requests visible to the user based on the clearing state
+
+===== Request parameter
+include::{snippets}/should_document_get_clearingrequests_by_state/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_clearingrequests_by_state/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_clearingrequests_by_state/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_clearingrequests_by_state/http-response.adoc[]
+
