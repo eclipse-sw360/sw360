@@ -102,9 +102,9 @@
                         <input id="access_token_validity" name="access_token_validity" type="text"
                             placeholder="<liferay-ui:message key="enter.access.token.validity" />"
                             class="form-control w-50 d-inline" required pattern="\d+" />
-                        <select id="access_token_validity_metric" name="access_token_validity_metric" class="form-control w-25 d-inline">
-                            <option value="seconds" selected><liferay-ui:message key="seconds" /></option>
+                        <select id="access_token_validity_metric" name="access_token_validity_metric" class="form-control w-auto d-inline token">
                             <option value="days"><liferay-ui:message key="days" /></option>
+                            <option value="seconds" selected><liferay-ui:message key="seconds" /></option>
                         </select>
                     </div>
                 </td>
@@ -116,9 +116,9 @@
                         <input id="refresh_token_validity" name="refresh_token_validity" type="text"
                             placeholder="<liferay-ui:message key="enter.refresh.token.validity" />"
                             class="form-control w-50 d-inline" required pattern="\d+" />
-                        <select id="refresh_token_validity_metric" name="refresh_token_validity_metric" class="form-control w-25 d-inline">
-                            <option value="seconds" selected><liferay-ui:message key="seconds" /></option>
+                        <select id="refresh_token_validity_metric" name="refresh_token_validity_metric" class="form-control w-auto d-inline token">
                             <option value="days"><liferay-ui:message key="days" /></option>
+                            <option value="seconds" selected><liferay-ui:message key="seconds" /></option>
                         </select>
                     </div>
                 </td>
@@ -213,11 +213,11 @@
              formData["access_token_validity"] = Number(formData["access_token_validity"]);
              formData["refresh_token_validity"] = Number(formData["refresh_token_validity"]);
              if(access_token_validity_metric_is_days) {
-                 formData["access_token_validity"] *= 24*60*60;
+                 formData["access_token_validity"] *= 86400;
              }
              
              if(refresh_token_validity_metric_is_days) {
-                 formData["refresh_token_validity"] *= 24*60*60;
+                 formData["refresh_token_validity"] *= 86400;
              }
              createOrUpdateClientAjax(formData);
              return false;
@@ -231,8 +231,6 @@
             }, function(submit, callback) {
                 $("#submitBtn").trigger("click");
                 callback(false);
-                $("#confirmDialog div.modal-footer button.btn-info").remove();
-                $("#confirmDialog div.modal-footer button.btn-light").html('<liferay-ui:message key="ok" />').removeClass("btn-light").addClass("btn-info");
             });
 
             $("#authorities").val("BASIC");
@@ -249,6 +247,17 @@
         $('#clientTable').on('click', 'svg.edit', function (event) {
             var data = $(event.currentTarget).data();
             editClient(data.id, data.description, $(event.currentTarget).parents("tr"));
+        });
+
+        $('.portlet-body').on('change', '#confirmDialog #clientFormDiv select.token', function(e){
+            let id = e.currentTarget.id;
+            let name = e.currentTarget.previousElementSibling.id;
+            if ($('#'+id).val() == 'seconds') {
+                $('#'+name).val($('#'+name).val() * 86400);
+            }
+            else {
+                $('#'+name).val($('#'+name).val() / 86400);
+            }
         });
 
         var clientsTbl = null;
@@ -372,6 +381,8 @@
                     });
                     clientsTbl.destroy();
                     loadListOfClient();
+                    $("#confirmDialog div.modal-footer button.btn-info").remove();
+                    $("#confirmDialog div.modal-footer button.btn-light").html('<liferay-ui:message key="ok" />').removeClass("btn-light").addClass("btn-info");
                 },
                 error: function (data) {
                     $("#clientFormDiv").html("<pre style='white-space: pre-wrap;word-break: break-all;'>" + JSON.stringify(data, null, 4) + "</pre>");
@@ -421,12 +432,10 @@
 
         function editClient(id, description, row) {
             let editData = clientsTbl.row(row).data();
-            dialog.confirm('info', 'check-square', '<liferay-ui:message key="edit.client" />', clientFormDiv.clone(true, true), '<liferay-ui:message key="edit" />', {
+            dialog.confirm('info', 'check-square', '<liferay-ui:message key="edit.client" />', clientFormDiv.clone(true, true), '<liferay-ui:message key="update" />', {
             }, function(submit, callback) {
                 $("#submitBtn").trigger("click");
                 callback(false);
-                $("#confirmDialog div.modal-footer button.btn-info").remove();
-                $("#confirmDialog div.modal-footer button.btn-light").html('<liferay-ui:message key="ok" />').removeClass("btn-light").addClass("btn-info");
             });
  
             $("#authorities").val(editData["authorities"].join(","));
@@ -444,8 +453,8 @@
             }
             let clientIdField = $('<input type="hidden" name="client_id"/>').val(editData["client_id"]);
             $("#clientForm").append(clientIdField);
-            $("#access_token_validity_metric").prop("selectedIndex", 0);
-            $("#refresh_token_validity_metric").prop("selectedIndex", 0);
+            $("#access_token_validity_metric").prop("selectedIndex", 1);
+            $("#refresh_token_validity_metric").prop("selectedIndex", 1);
         }
     });
 </script>
