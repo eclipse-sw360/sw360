@@ -36,7 +36,7 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
         nameToDisplayName.put(Release._Fields.CPEID.getFieldName(), "CPE ID");
         nameToDisplayName.put(Release._Fields.COMPONENT_ID.getFieldName(), "component ID");
         nameToDisplayName.put(Release._Fields.RELEASE_DATE.getFieldName(), "release date");
-        nameToDisplayName.put(Release._Fields.EXTERNAL_IDS.getFieldName(), "external IDs");
+        nameToDisplayName.put(Release._Fields.EXTERNAL_IDS.getFieldName(), "release: external IDs (SVM-ID)");
         nameToDisplayName.put(Release._Fields.CREATED_ON.getFieldName(), "created on");
         nameToDisplayName.put(Release._Fields.CREATED_BY.getFieldName(), "created by");
         nameToDisplayName.put(Release._Fields.MAINLINE_STATE.getFieldName(), "mainline state");
@@ -66,6 +66,7 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
             .add(CLEARING_STATE)
             .add(ECC_INFORMATION)
             .add(VENDOR)
+            .add(EXTERNAL_IDS)
             .build();
 
    public static final List<EccInformation._Fields> ECC_IGNORE_FIELDS = ImmutableList.<EccInformation._Fields>builder()
