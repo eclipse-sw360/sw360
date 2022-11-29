@@ -252,6 +252,9 @@ struct Release {
     36: optional set<string> subscribers, // List of subscribers
     37: optional map<string,set<string>> roles, //customized roles with set of mail addresses
 
+    65: optional set<string> mainLicenseIds,
+    66: optional set<string> otherLicenseIds,
+
     40: optional Vendor vendor,
     41: optional string vendorId,
 
@@ -262,8 +265,6 @@ struct Release {
     55: optional EccInformation eccInformation,
     56: optional set<string> softwarePlatforms,
 
-    65: optional set<string> mainLicenseIds,
-    66: optional set<string> otherLicenseIds,
     // Urls for the project
     70: optional string sourceCodeDownloadurl, // URL for download page for this release source code
     71: optional string binaryDownloadurl, // URL for download page for this release binaries

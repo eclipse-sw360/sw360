@@ -46,6 +46,7 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
         nameToDisplayName.put(Release._Fields.ECC_INFORMATION.getFieldName(), "ECC information");
         nameToDisplayName.put(Release._Fields.COTS_DETAILS.getFieldName(), "COTS details");
         nameToDisplayName.put(Release._Fields.MAIN_LICENSE_IDS.getFieldName(), "main license IDs");
+        nameToDisplayName.put(Release._Fields.OTHER_LICENSE_IDS.getFieldName(), "other license IDs");
         nameToDisplayName.put(Release._Fields.SOURCE_CODE_DOWNLOADURL.getFieldName(), "Source Code Downloadurl");
         nameToDisplayName.put(Release._Fields.BINARY_DOWNLOADURL.getFieldName(), "Binary Downloadurl");
         nameToDisplayName.put(Release._Fields.RELEASE_ID_TO_RELATIONSHIP.getFieldName(), "releases with relationship");
@@ -63,6 +64,8 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
             .add(COMPONENT_ID)
             .add(NAME)
             .add(VERSION)
+            .add(MAIN_LICENSE_IDS)
+            .add(OTHER_LICENSE_IDS)
             .add(CLEARING_STATE)
             .add(ECC_INFORMATION)
             .add(VENDOR)
