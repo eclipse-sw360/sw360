@@ -29,6 +29,7 @@ public class ModerationSearchHandler {
                     "    var ret = new Document();" +
                     "    if(!doc.type) return ret;" +
                     "    if(doc.type != 'moderation') return ret;" +
+                    "	 if(!doc.documentId) return ret;" +
                     "    function idx(obj) {" +
                     "        for (var key in obj) {" +
                     "            switch (typeof obj[key]) {" +
