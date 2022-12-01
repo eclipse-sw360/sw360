@@ -58,6 +58,7 @@ import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import com.google.common.collect.Lists;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.spdx.library.InvalidSPDXAnalysisException;
 
 /**
  * Class for accessing the CouchDB database
@@ -878,7 +879,12 @@ public class LicenseDatabaseHandler {
                     log.error("Failed to find SpdxListedLicense with id=" + spdxId);
                 }
             }else{
-                boolean matches = SpdxConnector.matchesSpdxLicenseText(sw360license,spdxId);
+                boolean matches = false;
+                try {
+                    matches = SpdxConnector.matchesSpdxLicenseText(sw360license,spdxId);
+                } catch (InvalidSPDXAnalysisException e) {
+                    throw new RuntimeException("the license which does not match the SPDX licensee"+ e.getMessage());
+                }
                 if (matches) {
                     log.info("The SPDX license with id=" + spdxId + " is already in the DB");
                 }else {
