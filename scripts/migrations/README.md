@@ -87,8 +87,9 @@ To migrate it is recommended to do this in the following order:
 - `046_migrate_project_moderation_request_linked_project_relation.py`
 - `047_migrate_obligation_status.py`
 
-### 15.1.0 -> 16.0.0
+### 15.0.0 -> 16.0.0
 
+- `048_add_component_businessunit.py`
 - `049_migrate_admin_obligation.py`
 
 ### 16.0.0 -> 17.0.0
