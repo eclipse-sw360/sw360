@@ -1750,10 +1750,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         Set<Attachment> attachments = CommonUtils.nullToEmptySet(release.getAttachments());
         Set<AttachmentType> attTypes = attachments.stream().map(Attachment::getAttachmentType).collect(Collectors.toUnmodifiableSet());
         Set<Attachment> spdxAttachments = Sets.newHashSet();
-        if (attTypes.contains(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED) || attTypes.contains(AttachmentType.COMPONENT_LICENSE_INFO_XML)) {
+        if (attTypes.contains(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED) || attTypes.contains(AttachmentType.COMPONENT_LICENSE_INFO_XML)
+        || attTypes.contains(AttachmentType.SBOM)) {
             spdxAttachments = attachments.stream()
                     .filter(a -> AttachmentType.COMPONENT_LICENSE_INFO_COMBINED.equals(a.getAttachmentType())
-                            || AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(a.getAttachmentType()))
+                            || AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(a.getAttachmentType())
+                            || AttachmentType.SBOM.equals(a.getAttachmentType()))
                     .collect(Collectors.toSet());
         } else if (attTypes.contains(AttachmentType.INITIAL_SCAN_REPORT)) {
             spdxAttachments = attachments.stream()
