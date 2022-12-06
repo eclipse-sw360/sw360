@@ -2328,8 +2328,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 String department = user.getDepartment();
                 Project newProject = PortletUtils.cloneProject(emailFromRequest, department, client.getProjectById(id, user));
                 setDefaultRequestAttributes(request, newProject.getBusinessUnit());
-                Map<String, String> sortedAdditionalData = getSortedMap(newProject.getAdditionalData(), true);
-                newProject.setAdditionalData(sortedAdditionalData);
                 setAttachmentsInRequest(request, newProject);
                 PortletUtils.setCustomFieldsEdit(request, user, newProject);
                 request.setAttribute(PROJECT, newProject);
