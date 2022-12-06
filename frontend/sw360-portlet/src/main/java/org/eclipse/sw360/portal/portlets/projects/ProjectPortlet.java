@@ -1511,11 +1511,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private void loadAndStoreStickyProjectGroup(PortletRequest request, User user, Map<String, Set<String>> filterMap) {
         String groupFilterValue = request.getParameter(Project._Fields.BUSINESS_UNIT.toString());
-        if (null == groupFilterValue) {
-            addStickyProjectGroupToFilters(request, user, filterMap);
-        } else {
-            ProjectPortletUtils.saveStickyProjectGroup(request, user, groupFilterValue);
-        }
+        ProjectPortletUtils.saveStickyProjectGroup(request, user, groupFilterValue);
     }
 
     private Map<PaginationData, List<Project>> findProjectsByFiltersOrId(Map<String, Set<String>> filterMap, String id, User user, PaginationData pageData) {
@@ -1583,15 +1579,6 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));
         }
         return filterMap;
-    }
-
-    private void addStickyProjectGroupToFilters(PortletRequest request, User user, Map<String, Set<String>> filterMap){
-        String stickyGroupFilter = ProjectPortletUtils.loadStickyProjectGroup(request, user);
-        if (!isNullOrEmpty(stickyGroupFilter)) {
-            String groupFieldName = Project._Fields.BUSINESS_UNIT.getFieldName();
-            filterMap.put(groupFieldName, Sets.newHashSet(stickyGroupFilter));
-            request.setAttribute(groupFieldName, stickyGroupFilter);
-        }
     }
 
     private void prepareDetailView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
