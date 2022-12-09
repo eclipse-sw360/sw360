@@ -242,9 +242,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         Release updateRelease = setBackwardCompatibleFieldsInRelease(reqBodyMap);
         updateRelease.setClearingState(sw360Release.getClearingState());
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
-        boolean isMainLicenseModified = CommonUtils.nullToEmptyCollection(sw360Release.getMainLicenseIds()).equals(CommonUtils.nullToEmptyCollection(updateRelease.getMainLicenseIds()));
         releaseService.setComponentNameAsReleaseName(sw360Release, user);
-        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user, isMainLicenseModified);
+        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user);
         HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
@@ -312,7 +311,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
         Set<Attachment> attachments = sw360Release.getAttachments();
         Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId, sw360User);
-        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User, true);
+        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User);
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
@@ -335,7 +334,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         }
 
         release.addToAttachments(attachment);
-        RequestStatus updateReleaseStatus = releaseService.updateRelease(release, sw360User, true);
+        RequestStatus updateReleaseStatus = releaseService.updateRelease(release, sw360User);
         HalResource halRelease = createHalReleaseResource(release, true);
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
@@ -368,7 +367,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         }
         log.debug("Deleting the following attachments from release " + releaseId + ": " + attachmentsToDelete);
         release.getAttachments().removeAll(attachmentsToDelete);
-        RequestStatus updateReleaseStatus = releaseService.updateRelease(release, user, true);
+        RequestStatus updateReleaseStatus = releaseService.updateRelease(release, user);
         HalResource<Release> halRelease = createHalReleaseResource(release, true);
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
@@ -445,7 +444,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         }
         sw360Release.setReleaseIdToRelationship(releaseIdToRelationship);
 
-        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User, true);
+        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User);
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }

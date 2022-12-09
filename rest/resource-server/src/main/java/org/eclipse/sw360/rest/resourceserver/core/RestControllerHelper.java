@@ -408,10 +408,35 @@ public class RestControllerHelper<T> {
         for (Release._Fields field : Release._Fields.values()) {
             Object fieldValue = requestBodyRelease.getFieldValue(field);
             if (fieldValue != null) {
+                switch (field) {
+                    case MAIN_LICENSE_IDS:
+                        isLicenseValid(requestBodyRelease.getMainLicenseIds());
+                        break;
+                    case OTHER_LICENSE_IDS:
+                        isLicenseValid(requestBodyRelease.getOtherLicenseIds());
+                        break;
+                    default:
+                }
                 releaseToUpdate.setFieldValue(field, fieldValue);
             }
         }
         return releaseToUpdate;
+    }
+
+    private void isLicenseValid(Set<String> licenses) {
+        List <String> licenseIncorrect = new ArrayList<>();
+        if (CommonUtils.isNotEmpty(licenses)) {
+            for (String licenseId : licenses) {
+                try {
+                    licenseService.getLicenseById(licenseId);
+                } catch (Exception e) {
+                    licenseIncorrect.add(licenseId);
+                }
+            }
+        }
+        if (!licenseIncorrect.isEmpty()) {
+            throw new HttpMessageNotReadableException("License with ids " + licenseIncorrect + " does not exist in SW360 database.");
+        }
     }
 
     public ProjectReleaseRelationship updateProjectReleaseRelationship(

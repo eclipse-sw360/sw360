@@ -194,6 +194,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setAttachments(attachments);
         release.setLanguages(new HashSet<>(Arrays.asList("C++", "Java")));
         release.setMainLicenseIds(new HashSet<>(Arrays.asList("GPL-2.0-or-later", "Apache-2.0")));
+        release.setOtherLicenseIds(new HashSet<>(Arrays.asList("MIT", "BSD-3-Clause")));
         release.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
         release.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Java SE", ".NET")));
         releaseList.add(release);
@@ -383,6 +384,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:releases.[]languages").description("The language of the component"),
                                 subsectionWithPath("_embedded.sw360:releases.[]contributors").description("An array of all project contributors with email").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]mainLicenseIds").description("An array of all main licenses").optional(),
+                                subsectionWithPath("_embedded.sw360:releases.[]otherLicenseIds").description("An array of all other licenses associated with the release").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]operatingSystems").description("The OS on which the release operates"),
                                 subsectionWithPath("_embedded.sw360:releases.[]softwarePlatforms").description("The software platforms of the component"),
                                 subsectionWithPath("_embedded.sw360:releases.[]vendor").description("The Id of the vendor").optional(),
@@ -459,6 +461,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
                                 fieldWithPath("sourceCodeDownloadurl").description("the source code download url of the release"),
                                 fieldWithPath("binaryDownloadurl").description("the binary download url of the release"),
+                                fieldWithPath("otherLicenseIds").description("An array of all other licenses associated with the release"),
                                 subsectionWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("languages").description("The language of the component"),
@@ -738,6 +741,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
                         fieldWithPath("sourceCodeDownloadurl").description("the source code download url of the release"),
                         fieldWithPath("binaryDownloadurl").description("the binary download url of the release"),
+                        fieldWithPath("otherLicenseIds").description("An array of all other licenses associated with the release"),
                         subsectionWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                         subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
                         fieldWithPath("languages").description("The language of the component"),

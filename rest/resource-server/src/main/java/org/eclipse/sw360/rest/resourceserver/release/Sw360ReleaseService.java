@@ -181,25 +181,10 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         release.setName(componentById.getName());
     }
 
-    public RequestStatus updateRelease(Release release, User sw360User, boolean isMainLicenseModified) throws TException {
+    public RequestStatus updateRelease(Release release, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         rch.checkForCyclicOrInvalidDependencies(sw360ComponentClient, release, sw360User);
 
-        if (isMainLicenseModified) {
-            List <String> licenseIncorrect = new ArrayList<>();
-            if (release.isSetMainLicenseIds() && !release.getMainLicenseIds().isEmpty()) {
-                for (String licenseId : release.getMainLicenseIds()) {
-                    try {
-                        licenseService.getLicenseById(licenseId);
-                    } catch (Exception e) {
-                        licenseIncorrect.add(licenseId);
-                    }
-                }
-            }
-            if (!licenseIncorrect.isEmpty()) {
-                throw new HttpMessageNotReadableException("License with ids " + licenseIncorrect + " not existed.");
-            }
-        }
         RequestStatus requestStatus = sw360ComponentClient.updateRelease(release, sw360User);
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
