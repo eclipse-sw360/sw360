@@ -71,13 +71,10 @@ public class SearchPortlet extends Sw360Portlet {
             log.info("typeMask set to emptyList");
         }
 
-        if (isNullOrEmpty(searchtext) && !isNullOrEmpty(submitSearch)) {
-            if (isNullOrEmpty(searchQuery)) {
-                searchtext = " ";
-            } else {
-                searchtext = searchQuery;
-            }
+        if (isNullOrEmpty(submitSearch) && !isNullOrEmpty(searchQuery)) {
+        	searchtext = searchQuery;
         }
+        
         searchtext = Strings.nullToEmpty(searchtext);
 
         List<SearchResult> searchResults;
