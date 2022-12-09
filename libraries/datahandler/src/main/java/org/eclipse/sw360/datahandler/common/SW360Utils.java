@@ -669,7 +669,7 @@ public class SW360Utils {
                 .filter(Objects::nonNull).filter(e -> Objects.nonNull(e.getValue()))
                 .filter(e -> Objects.nonNull(e.getValue().getObligationLevel()))
                 .filter(e -> e.getValue().getObligationLevel().equals(oblLevel)).collect(Collectors.toMap(
-                        e -> e.getKey(), e -> e.getValue().setText(e.getKey()), (oldValue, newValue) -> oldValue));
+                        e -> e.getKey(), e -> e.getValue(), (oldValue, newValue) -> oldValue));
         obligationAlreadyPresent.entrySet().stream().forEach(e -> obligationStatusMap.remove(e.getKey()));
 
         Map<String, ObligationStatusInfo> mapOfObligations = obligations.stream().filter(Objects::nonNull)

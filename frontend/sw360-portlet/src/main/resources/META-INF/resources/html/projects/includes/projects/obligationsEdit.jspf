@@ -512,7 +512,8 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
                 if (rowData.type.trim().length > 0)
                     mapValue.obligationType = rowData.type;
                 mapValue.id = rowData.id;
-                mapKey = rowData.text;
+                mapKey = rowData.obligation;
+                mapValue.text = $.parseHTML(rowData.text)[0].textContent;
             }
             obligationMap.set(mapKey, mapValue);
         });
