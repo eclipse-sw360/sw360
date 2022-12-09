@@ -102,6 +102,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                                                                         @RequestParam(value = "name", required = false) String name,
                                                                         @RequestParam(value = "type", required = false) String componentType,
                                                                         @RequestParam(value = "fields", required = false) List<String> fields,
+                                                                        @RequestParam(value = "allDetails", required = false) boolean allDetails,
                                                                         HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -119,8 +120,21 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         paginationResult.getResources().stream()
                 .filter(component -> componentType == null || (component.isSetComponentType() && componentType.equals(component.componentType.name())))
                 .forEach(c -> {
-                    Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
-                    componentResources.add(EntityModel.of(embeddedComponent));
+                    EntityModel<Component> embeddedComponentResource = null;
+                    if (!allDetails) {
+                        Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
+                        embeddedComponentResource = EntityModel.of(embeddedComponent);
+                    } else {
+                        try {
+                            embeddedComponentResource = createHalComponent(c, sw360User);
+                        } catch (TException e) {
+                            throw new RuntimeException(e);
+                        }
+                        if (embeddedComponentResource == null) {
+                            return;
+                        }
+                    }
+                    componentResources.add(embeddedComponentResource);
                 });
 
         CollectionModel resources;
