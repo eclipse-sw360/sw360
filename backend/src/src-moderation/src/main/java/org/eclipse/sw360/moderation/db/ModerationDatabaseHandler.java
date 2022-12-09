@@ -747,6 +747,11 @@ public class ModerationDatabaseHandler {
         request.setModerators(Sets.filter(moderators, notEmptyOrNull()));
         request.setRequestingUserDepartment(user.getDepartment());
 
+        List<String> inactive = new ArrayList<>();
+        List<User> users = getAllSW360Users();
+        inactive = users.stream().filter(sw360user -> sw360user.isDeactivated()).map(sw360user -> sw360user.getEmail()).collect(Collectors.toList());
+        moderators.removeAll(inactive);
+
         fillRequestWithCommentOfUser(request, user);;
 
         return request;
