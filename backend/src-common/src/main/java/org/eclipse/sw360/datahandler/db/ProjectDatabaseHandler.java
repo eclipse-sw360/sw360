@@ -425,8 +425,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             //clean up attachments in database
             attachmentConnector.deleteAttachmentDifference(actual.getAttachments(), project.getAttachments());
 
-            if (CommonUtils.isNotNullEmptyOrWhitespace(actual.getClearingRequestId()) && isLinkedReleaseUpdated(project, actual)) {
-                addCommentToClearingRequest(project, actual, user);
+            if (CommonUtils.isNotNullEmptyOrWhitespace(actual.getClearingRequestId())) {
+                updateProjectDependentFieldsInClearingRequest(project, actual, user);
             }
             sendMailNotificationsForProjectUpdate(project, user.getEmail());
             dbHandlerUtil.addChangeLogs(project, actual, user.getEmail(), Operation.UPDATE, attachmentConnector,
@@ -523,6 +523,19 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     }
 
+    private void updateProjectDependentFieldsInClearingRequest(Project updated, Project current, User user) {
+        if (isLinkedReleaseUpdated(updated, current)) {
+            addCommentToClearingRequest(updated, current, user);
+        }
+        if (isProjectBusinessUnitUpdated(updated, current, user)) {
+            updateBusinessUnitInClearingRequest(updated.getClearingRequestId(), updated.getBusinessUnit(), user);
+        }
+    }
+
+    private void updateBusinessUnitInClearingRequest(String crId, String businessUnit, User user) {
+       moderator.updateClearingRequestForChangeInProjectBU(crId, businessUnit, user);
+    }
+
     private void addCommentToClearingRequest(Project updated, Project current, User user) {
         Set<String> currentReleaseIds = CommonUtils.getNullToEmptyKeyset(current.getReleaseIdToUsage());
         Set<String> updatedReleaseIds = CommonUtils.getNullToEmptyKeyset(updated.getReleaseIdToUsage());
@@ -593,6 +606,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.SUCCESS;
         }
         return RequestStatus.FAILURE;
+    }
+
+    private boolean isProjectBusinessUnitUpdated(Project updated, Project current, User user) {
+        ClearingRequest cr = moderator.getClearingRequestByProjectId(current.getId(), user);
+        return !CommonUtils.nullToEmptyString(updated.getBusinessUnit()).equalsIgnoreCase(current.getBusinessUnit())
+                && !cr.getProjectBU().equalsIgnoreCase(updated.getBusinessUnit());
     }
 
     private boolean isLinkedReleaseUpdated(Project updated, Project current) {

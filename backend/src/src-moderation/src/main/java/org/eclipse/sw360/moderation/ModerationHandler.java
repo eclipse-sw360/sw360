@@ -285,6 +285,15 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
+    public void updateClearingRequestForChangeInProjectBU(String crId, String businessUnit, User user) throws TException {
+        assertId(crId);
+        assertNotNull(businessUnit);
+        assertUser(user);
+
+        handler.updateClearingRequestForChangeInProjectBU(crId, businessUnit, user);
+    }
+
+    @Override
     public RequestStatus addCommentToClearingRequest(String id, Comment comment, User user) throws TException {
         assertId(id);
         assertNotNull(comment);

@@ -239,6 +239,11 @@ service ModerationService {
     oneway void updateClearingRequestForProjectDeletion(1: Project project, 2: User user);
 
     /**
+     * update clearing request if project's BU is changed
+     **/
+    oneway void updateClearingRequestForChangeInProjectBU(1: string crId, 2: string businessUnit, 3: User user);
+
+    /**
      * get clearing request by Id for view/read
      **/
     ClearingRequest getClearingRequestById(1: string id, 2: User user);

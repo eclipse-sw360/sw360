@@ -95,6 +95,14 @@ public class ProjectModerator extends Moderator<Project._Fields, Project> {
         }
     }
 
+    public void updateClearingRequestForChangeInProjectBU(String crId, String businessUnit, User user) {
+        try {
+            ModerationService.Iface client = thriftClients.makeModerationClient();
+            client.updateClearingRequestForChangeInProjectBU(crId, businessUnit, user);
+        } catch (TException e) {
+            log.error("Failed to update project BU in CR : " + crId + ", by User " + user.getEmail(), e);
+        }
+    }
 
     public void unlinkClearingRequestForProjectDeletion(Project project, User user) {
         try {
