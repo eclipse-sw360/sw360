@@ -9,6 +9,7 @@
  */
 include "sw360.thrift"
 include "users.thrift"
+include "components.thrift"
 
 namespace java org.eclipse.sw360.datahandler.thrift.vulnerabilities
 namespace php sw360.thrift.vulnerabilities
@@ -18,6 +19,7 @@ typedef users.User User
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.VerificationStateInfo VerificationStateInfo
+typedef components.Release Release
 
 struct ReleaseVulnerabilityRelation{
     // Basic information
@@ -67,6 +69,44 @@ struct Vulnerability{
     34: optional map<string,string> access,
     35: optional string cwe,
     36: optional map<string, map<string, string>> cveFurtherMetaDataPerSource;
+}
+
+struct VulnerabilityApiDTO{
+    // WILL NOT BE SAVED IN DB, only for api
+    // General information
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "vulnerabilityapidto",
+    4: optional string lastUpdateDate,
+
+    // Additional information
+    10: required string externalId,
+    11: optional string title,
+    12: optional string description,
+    13: optional string publishDate,
+    14: optional string lastExternalUpdate,
+    15: optional string priority,
+    16: optional string priorityText,
+    17: optional string action,
+    19: optional map<string, string> impact,
+    20: optional string legalNotice,
+    21: optional set<string> assignedExtComponentIds,
+    22: optional set<string> cveReferences,
+    23: optional set<VendorAdvisory> vendorAdvisories,
+    24: optional string extendedDescription,
+    25: optional set<string> references,
+
+    //additional from CVE earch data
+    30: optional string cvss,
+    31: optional string isSetCvss,
+    32: optional string cvssTime,
+    33: optional map<string,string> vulnerableConfiguration,
+    34: optional map<string,string> access,
+    35: optional string cwe,
+    36: optional map<string, map<string, string>> cveFurtherMetaDataPerSource,
+
+    //additional info for Releases
+    37: optional set<Release> releases;
 }
 
 struct VulnerabilityDTO{
@@ -135,6 +175,30 @@ enum VulnerabilityRatingForProject {
     RESOLVED = 2,
     APPLICABLE = 3,
     IN_ANALYSIS = 4,
+}
+
+enum VulnerabilityImpact {
+    NONE = 0,
+    PARTIAL = 1,
+    COMPLETE = 2,
+}
+
+enum VulnerabilityAccessAuthentication {
+    MULTIPLE = 0,
+    SINGLE = 1,
+    NONE = 2,
+}
+
+enum VulnerabilityAccessComplexity {
+    LOW = 0,
+    MEDIUM = 1,
+    HIGH = 2,
+}
+
+enum VulnerabilityAccessVector {
+    LOCAL = 0,
+    ADJACENT_NETWORK = 1,
+    NETWORK = 2,
 }
 
 struct VulnerabilityCheckStatus{
@@ -292,4 +356,16 @@ service VulnerabilityService {
      * throws SW360Exception with error code otherwise
      */
     RequestStatus deleteReleaseVulnerabilityRelation(1: ReleaseVulnerabilityRelation releaseVulnerabilityRelation, 2: User user) throws (1: SW360Exception exp);
+
+    /**
+    * Find vulnerability by id
+    *
+    */
+    Vulnerability getById(1: string id)
+
+    /**
+    * Find vulnerability by external id
+    *
+    */
+    Vulnerability getByExternalId(1: string externalId)
 }

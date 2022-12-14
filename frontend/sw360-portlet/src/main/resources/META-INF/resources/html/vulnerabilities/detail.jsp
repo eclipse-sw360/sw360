@@ -14,6 +14,11 @@
 
 <jsp:useBean id="vulnerability" class="org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability" scope="request" />
 
+<style>
+    #tab-references li {
+      word-wrap: break-word;
+    }
+</style>
 
 <div class="container" style="display: none;">
 	<div class="row">

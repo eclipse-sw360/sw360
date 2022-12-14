@@ -42,6 +42,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerability
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VendorAdvisory;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityApiDTO;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonProjectRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonReleaseRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
@@ -73,6 +74,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(Obligation.class, Sw360Module.ObligationMixin.class);
             setMixInAnnotation(Vulnerability.class, Sw360Module.VulnerabilityMixin.class);
             setMixInAnnotation(VulnerabilityDTO.class, Sw360Module.VulnerabilityDTOMixin.class);
+            setMixInAnnotation(VulnerabilityApiDTO.class, Sw360Module.VulnerabilityApiDTOMixin.class);
             setMixInAnnotation(EccInformation.class, Sw360Module.EccInformationMixin.class);
             setMixInAnnotation(EmbeddedProject.class, Sw360Module.EmbeddedProjectMixin.class);
             setMixInAnnotation(ExternalToolProcess.class, Sw360Module.ExternalToolProcessMixin.class);
@@ -766,6 +768,72 @@ public class JacksonCustomizations {
                 "accessSize",
         })
         static abstract class VulnerabilityMixin extends Vulnerability {
+            @Override
+            @JsonProperty("id")
+            abstract public String getId();
+        }
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        @JsonIgnoreProperties({
+                "id",
+                "revision",
+                "type",
+                "priorityToolTip",
+                "intComponentId",
+                "intComponentName",
+                "releaseVulnerabilityRelation",
+                "matchedBy",
+                "usedNeedle",
+                "setType",
+                "setId",
+                "setRevision",
+                "setIntReleaseName",
+                "setLastExternalUpdate",
+                "setIntComponentId",
+                "setIntComponentName",
+                "referencesSize",
+                "setPriorityToolTip",
+                "setCveReferences",
+                "setIntReleaseId",
+                "cveReferencesSize",
+                "setDescription",
+                "setReleaseVulnerabilityRelation",
+                "setImpact",
+                "setMatchedBy",
+                "setLegalNotice",
+                "setUsedNeedle",
+                "setReferences",
+                "setPriority",
+                "setAction",
+                "impactSize",
+                "setExternalId",
+                "setPublishDate",
+                "setTitle",
+                "setLastUpdateDate",
+                "setPriorityText",
+                "cveReferencesIterator",
+                "setCveFurtherMetaDataPerSource",
+                "setAssignedExtComponentIds",
+                "referencesIterator",
+                "setVulnerableConfiguration",
+                "setExtendedDescription",
+                "vulnerableConfigurationSize",
+                "assignedExtComponentIdsSize",
+                "assignedExtComponentIdsIterator",
+                "vendorAdvisoriesIterator",
+                "vendorAdvisoriesSize",
+                "setVendorAdvisories",
+                "cveFurtherMetaDataPerSourceSize",
+                "setCvss",
+                "setCwe",
+                "releasesIterator",
+                "setIsSetCvss",
+                "setCvssTime",
+                "setAccess",
+                "accessSize",
+                "releasesSize",
+                "setReleases"
+        })
+        public static abstract class VulnerabilityApiDTOMixin extends VulnerabilityApiDTO {
             @Override
             @JsonProperty("id")
             abstract public String getId();

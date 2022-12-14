@@ -25,6 +25,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.UserAccess;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
+
 
 import org.apache.thrift.TEnum;
 
@@ -259,6 +261,30 @@ public class ThriftEnumUtils {
             .put(UserGroup.SW360_ADMIN, "SW360 Admin")
             .build();
 
+    private static final ImmutableMap<VulnerabilityImpact, String> MAP_VULNERABILITY_IMPACT = ImmutableMap.of(
+            VulnerabilityImpact.NONE, "IMPACT NONE",
+            VulnerabilityImpact.PARTIAL, "IMPACT PARTIAL",
+            VulnerabilityImpact.COMPLETE, "IMPACT COMPLETE"
+    );
+
+    private static final ImmutableMap<VulnerabilityAccessAuthentication, String> MAP_VULNERABILITY_ACCESS_AUTHENTICATION = ImmutableMap.of(
+            VulnerabilityAccessAuthentication.NONE, "AUTHEN NONE",
+            VulnerabilityAccessAuthentication.SINGLE, "AUTHEN SINGLE",
+            VulnerabilityAccessAuthentication.MULTIPLE, "AUTHEN MULTIPLE"
+    );
+
+    private static final ImmutableMap<VulnerabilityAccessComplexity, String> MAP_VULNERABILITY_ACCESS_COMPLEXITY = ImmutableMap.of(
+            VulnerabilityAccessComplexity.LOW, "COMPLEXITY LOW",
+            VulnerabilityAccessComplexity.MEDIUM, "COMPLEXITY MEDIUM",
+            VulnerabilityAccessComplexity.HIGH, "COMPLEXITY HIGH"
+    );
+
+    private static final ImmutableMap<VulnerabilityAccessVector, String> MAP_VULNERABILITY_ACCESS_VECTOR = ImmutableMap.of(
+           VulnerabilityAccessVector.LOCAL, "VECTOR LOCAL",
+           VulnerabilityAccessVector.NETWORK, "VECTOR NETWORK",
+           VulnerabilityAccessVector.ADJACENT_NETWORK, "VECTOR ADJACENT NETWORK"
+    );
+
     private static final ImmutableMap<VulnerabilityRatingForProject, String> MAP_VULNERABILITY_RATING_FOR_PROJECT_STRING = ImmutableMap.of(
             VulnerabilityRatingForProject.NOT_CHECKED, "Not Checked" ,
             VulnerabilityRatingForProject.IRRELEVANT, "Irrelevant" ,
@@ -343,6 +369,10 @@ public class ThriftEnumUtils {
             .put(CheckStatus.class,MAP_CHECK_STATUS_STRING)
             .put(VerificationState.class, MAP_VERIFICATION_STATUS_STRING)
             .put(VulnerabilityRatingForProject.class, MAP_VULNERABILITY_RATING_FOR_PROJECT_STRING)
+            .put(VulnerabilityImpact.class, MAP_VULNERABILITY_IMPACT)
+            .put(VulnerabilityAccessAuthentication.class, MAP_VULNERABILITY_ACCESS_AUTHENTICATION)
+            .put(VulnerabilityAccessComplexity.class, MAP_VULNERABILITY_ACCESS_COMPLEXITY)
+            .put(VulnerabilityAccessVector.class, MAP_VULNERABILITY_ACCESS_VECTOR)
             .put(ECCStatus.class, MAP_ECC_STATUS_STRING)
             .put(DocumentType.class, MAP_DOCUMENT_TYPE_STRING)
             .put(ObligationStatus.class, MAP_OBLIGATION_STATUS_STRING)
