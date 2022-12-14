@@ -901,33 +901,23 @@ AUI().use('liferay-portlet-url', function () {
                         if (response && response.status) {
                             oneList = $('<ul/>');
                             multipleList = $('<ul/>');
-                            nilList = $('<ul/>');
                             if (response.one.length) {
                                 response.one.forEach(function(rel, index) {
                                     let url = makeReleaseViewUrl(rel.id),
-                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
+                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + " (" + rel.version + ")");
                                     oneList.append('<li>' + viewUrl[0].outerHTML + '</li>');
                                 });
                             }
                             if (response.mul.length) {
                                 response.mul.forEach(function(rel, index) {
                                     let url = makeReleaseViewUrl(rel.id),
-                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
+                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + " (" + rel.version + ")");
                                     multipleList.append('<li>' + viewUrl[0].outerHTML + '</li>');
                                 });
                             }
-                            if (response.nil.length) {
-                                response.nil.forEach(function(rel, index) {
-                                    let url = makeReleaseViewUrl(rel.id),
-                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
-                                    nilList.append('<li>' + viewUrl[0].outerHTML + '</li>');
-                                });
-                            }
+
                             if ($(multipleList).find('li').length) {
-                                $dialog.warning('<liferay-ui:message key="multiple.approved.cli.are.found.in.the.release" />: <b>' + $(multipleList).find('li').length + '</b>' + multipleList[0].outerHTML);
-                            }
-                            if ($(nilList).find('li').length) {
-                                $dialog.warning('<liferay-ui:message key="approved.cli.not.found.in.the.release" />: <b>' + $(nilList).find('li').length + '</b>' + nilList[0].outerHTML);
+                                $dialog.warning('<liferay-ui:message key="multiple.cli.are.found.in.the.release" />: <b>' + $(multipleList).find('li').length + '</b>' + multipleList[0].outerHTML);
                             }
                             if ($(oneList).find('li').length) {
                                 $dialog.success('<liferay-ui:message key="success.please.reload.page.to.see.the.changes" />: <b>' + $(oneList).find('li').length + '</b>');

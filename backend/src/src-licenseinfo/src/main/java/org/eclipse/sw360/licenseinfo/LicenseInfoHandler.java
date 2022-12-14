@@ -742,10 +742,12 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         }
 
         for (Entry<Release, Map<String, Boolean>> entry : filteredRelToSelAttIds.entrySet()) {
-            List<Attachment> filteredAttachments = SW360Utils.getApprovedClxAttachmentForRelease(entry.getKey());
-
-            if (filteredAttachments.size() == 1) {
-                final String acceptedAttachmentContentId = filteredAttachments.get(0).getAttachmentContentId();
+            List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(entry.getKey());
+            if (approvedCliAttachments.isEmpty()) {
+                approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(entry.getKey());
+            }
+            if (approvedCliAttachments.size() == 1) {
+                final String acceptedAttachmentContentId = approvedCliAttachments.get(0).getAttachmentContentId();
                 final String releaseId = entry.getKey().getId();
 
                 if (releaseIdToAcceptedCLI.containsKey(releaseId) && releaseIdToAcceptedCLI.get(releaseId).equals(acceptedAttachmentContentId)) {
