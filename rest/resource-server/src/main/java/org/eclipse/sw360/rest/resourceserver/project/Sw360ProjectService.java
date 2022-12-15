@@ -199,6 +199,10 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             }
         }
 
+        if (project.getVendor() != null && project.getVendorId() == null) {
+            project.setVendorId(project.getVendor().getId());
+        }
+
         RequestStatus requestStatus = sw360ProjectClient.updateProject(project, sw360User);
         if (requestStatus == RequestStatus.NAMINGERROR) {
             throw new HttpMessageNotReadableException("Project name field cannot be empty or contain only whitespace character");
