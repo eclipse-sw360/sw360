@@ -120,8 +120,7 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'bridges/datatables', 'modules/dialog', 'modules/alert', 'utils/link', 'utils/includes/quickfilter', 'modules/bannerMessage', 'bridges/jquery-ui'], function($, datatables, dialog, alert, linkutil, quickfilter, bannerMessage) {
-            bannerMessage.portletLoad();
+        require(['jquery', 'bridges/datatables', 'modules/dialog', 'modules/alert', 'utils/link', 'utils/includes/quickfilter', 'bridges/jquery-ui'], function($, datatables, dialog, alert, linkutil, quickfilter) {
             var vulnerabilityTable;
             var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>';
             var pageName = '<%=PortalConstants.PAGENAME%>';
