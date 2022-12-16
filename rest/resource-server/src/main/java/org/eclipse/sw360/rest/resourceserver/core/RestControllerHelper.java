@@ -483,6 +483,7 @@ public class RestControllerHelper<T> {
         embeddedComponent.setId(component.getId());
         embeddedComponent.setName(component.getName());
         embeddedComponent.setComponentType(component.getComponentType());
+        embeddedComponent.setVisbility(component.getVisbility());
         embeddedComponent.setType(null);
         return embeddedComponent;
     }
