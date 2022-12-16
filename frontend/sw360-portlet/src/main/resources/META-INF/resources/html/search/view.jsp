@@ -58,7 +58,7 @@
                                 <label for="keyword-search-releases" class="form-check-label"><sw360:icon title="releases" icon="release" className="type-icon type-icon-release"/> <liferay-ui:message key="releases" /></label>
                             </div>
                             <div class="form-check">
-                                <input id="keyword-search-obligations" type="checkbox" class="form-check-input" value="<%=SW360Constants.TYPE_OBLIGATIONS%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_OBLIGATIONS)%>">   checked="" </core_rt:if> >
+                                <input id="keyword-search-obligations" type="checkbox" class="form-check-input" value="<%=SW360Constants.TYPE_OBLIGATION%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_OBLIGATIONS)%>">   checked="" </core_rt:if> >
                                 <label for="keyword-search-obligations" class="form-check-label"><sw360:icon title="obligations" icon="oblig" className="type-icon type-icon-oblig"/> <liferay-ui:message key="obligations" /></label>
                             </div>
                             <div class="form-check">
@@ -132,7 +132,7 @@
                     return '<svg class="lexicon-icon type-icon type-icon-license"><title><liferay-ui:message key="license" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#license"/></svg>';
                 } else if (data === '<%=SW360Constants.TYPE_RELEASE%>') {
                     return '<svg class="lexicon-icon type-icon type-icon-release"><title><liferay-ui:message key="release" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#release"/></svg>';
-                } else if (data === '<%=SW360Constants.TYPE_OBLIGATIONS%>') {
+                } else if (data === '<%=SW360Constants.TYPE_OBLIGATION%>') {
                     return '<svg class="lexicon-icon type-icon type-icon-oblig"><title>ToDo</title><use href="<%=request.getContextPath()%>/images/icons.svg#oblig"/></svg>';
                 } else if (data === '<%=SW360Constants.TYPE_USER%>') {
                     return '<svg class="lexicon-icon type-icon type-icon-user"><title><liferay-ui:message key="user" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#user"/></svg>'
@@ -153,7 +153,7 @@
 
             <core_rt:forEach items="${documents}" var="doc">
             result.push({
-                "DT_RowId": '${doc.id}',
+                "DT_RowId": "<sw360:out value='${doc.id}' jsQuoting='true'/>",
                 "0": '${doc.type}',
                 <core_rt:choose>
                     <core_rt:when test="${doc.type.equals('project')
@@ -163,7 +163,7 @@
                         "1":  "<sw360:DisplaySearchResultLink searchResult="${doc}" />"
                     </core_rt:when>
                     <core_rt:otherwise>
-                        "1":  "<sw360:out value="${doc.name}" />"
+                        "1":  "<sw360:out value='${doc.name}'  jsQuoting='true'/>"
                     </core_rt:otherwise>
                 </core_rt:choose>
             });

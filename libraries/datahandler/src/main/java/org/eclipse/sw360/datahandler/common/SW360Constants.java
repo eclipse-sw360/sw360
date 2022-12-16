@@ -81,7 +81,7 @@ public class SW360Constants {
             ImmutableMap.<String, String>builder()
                     .put(TYPE_LICENSE, "fullname")
                     .put(TYPE_OBLIGATIONS, "text")
-                    .put(TYPE_OBLIGATION, "name")
+                    .put(TYPE_OBLIGATION, "title")
                     .put(TYPE_USER, "email")
                     .put(TYPE_VENDOR, "fullname")
                     .put(TYPE_COMPONENT, "name")
