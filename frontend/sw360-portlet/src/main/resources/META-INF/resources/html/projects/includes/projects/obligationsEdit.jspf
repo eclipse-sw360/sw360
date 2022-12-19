@@ -835,6 +835,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
                   mapValue.obligationType = type.length == 0 ? "<%=ObligationType.OBLIGATION%>" : type.toUpperCase();
                   mapValue.modifiedOn = date;
                   mapValue.obligationLevel = level;
+                  mapValue.text = $.parseHTML(rowData.text)[0].textContent;
                   obligationMap.set(mapKey, mapValue);
               }
           });
