@@ -80,6 +80,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Map.Entry;
@@ -1624,7 +1625,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 Integer criticalCount = modClient.getOpenCriticalCrCountByGroup(user.getDepartment());
                 request.setAttribute(IS_CLEARING_REQUEST_DISABLED_FOR_PROJECT_BU, false);
                 Set<String> groupsWithCrDisabled = Stream.of(PortalConstants.DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS.toLowerCase().split(",")).collect(Collectors.toSet());
-                if (CommonUtils.isNotEmpty(groupsWithCrDisabled) && groupsWithCrDisabled.contains(project.getBusinessUnit().toLowerCase())
+                if (CommonUtils.isNotEmpty(groupsWithCrDisabled) && groupsWithCrDisabled.contains(
+                        new String(project.getBusinessUnit().toLowerCase().getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1))
                         && Objects.isNull(project.getClearingRequestId())) {
                     request.setAttribute(IS_CLEARING_REQUEST_DISABLED_FOR_PROJECT_BU, true);
                 }
