@@ -69,6 +69,8 @@
 <jsp:useBean id="modifiedOn" class="java.util.Date"/>
 <jsp:useBean id="closedOn" class="java.util.Date"/>
 <jsp:useBean id="babl" class="org.eclipse.sw360.portal.common.customfields.CustomField" scope="request"/>
+<jsp:useBean id="exactMatchCheckBox" class="java.lang.String" scope="request"/>
+
 <core_rt:set var="user" value="<%=themeDisplay.getUser()%>"/>
 
 <div class="container" style="display: none;">
@@ -140,6 +142,14 @@
                                     <option value="<%=PortalConstants.NO_FILTER%>" class="textlabel stackedLabel"></option>
                                     <sw360:DisplayEnumOptions type="<%=ModerationState.class%>" selectedName="${moderationState}" useStringValues="true"/>
                                 </select>
+                            </div>
+                            <div class="form-group">
+                                <input class="form-check-input" type="checkbox"  value="On" <core_rt:if test="${exactMatchCheckBox != ''}"> checked="checked"</core_rt:if>
+                                       name="<portlet:namespace/><%=PortalConstants.EXACT_MATCH_CHECKBOX%>" />
+                                <label class="form-check-label" for="exactMatch"><liferay-ui:message key="exact.match" /></label>
+                                <sup title="<liferay-ui:message key="the.search.result.will.display.elements.exactly.matching.the.input.equivalent.to.using.x.around.the.search.keyword" /> <liferay-ui:message key="applied.on.document.name.requesting.user.and.department" />" >
+                                    <liferay-ui:icon icon="info-sign"/>
+                                </sup>
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm btn-block"><liferay-ui:message key="search" /></button>
                         </form>
@@ -503,7 +513,7 @@ AUI().use('liferay-portlet-url', function () {
             $('#requesting_user_department').empty();
             $('#requesting_user_department').append("<option value=''/>");
             $.each(requestingUserDepts, function(i,dept) {
-                var option="<option value="+dept+">"+dept+"</option>";
+                var option = "<option value = '" + dept + "'>" + dept + "</option>";
                 $(option).appendTo('#requesting_user_department');
             });
         }

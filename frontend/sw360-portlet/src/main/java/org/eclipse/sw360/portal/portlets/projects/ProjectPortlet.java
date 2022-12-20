@@ -367,7 +367,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         request.setAttribute("vendorsSearch", nullToEmptyList(vendors));
         include("/html/components/ajax/vendorSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
     }
-    
+
     private void serveViewDepartment(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         PortletUtils.setDepartmentSearchAttribute(request, response);
         include("/html/components/ajax/departmentSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
@@ -1491,6 +1491,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             String parameter = request.getParameter(filteredField.toString());
             request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));
         }
+        request.setAttribute(PortalConstants.EXACT_MATCH_CHECKBOX, nullToEmpty(request.getParameter(PortalConstants.EXACT_MATCH_CHECKBOX)));
     }
 
     private Map<PaginationData, List<Project>> getFilteredProjectList(PortletRequest request, PaginationData pageData) throws IOException {
@@ -1564,6 +1565,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
     @NotNull
     private Map<String, Set<String>> loadFilterMapFromRequest(PortletRequest request) {
         Map<String, Set<String>> filterMap = new HashMap<>();
+        String exactMatch = request.getParameter(PortalConstants.EXACT_MATCH_CHECKBOX);
         for (Project._Fields filteredField : projectFilteredFields) {
             String parameter = request.getParameter(filteredField.toString());
             if (!isNullOrEmpty(parameter) && !((filteredField.equals(Project._Fields.PROJECT_TYPE)
@@ -1572,12 +1574,18 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     && parameter.equals(PortalConstants.NO_FILTER))) {
                 Set<String> values = CommonUtils.splitToSet(parameter);
                 if (filteredField.equals(Project._Fields.NAME) || filteredField.equals(Project._Fields.VERSION)) {
-                    values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+                    if (!exactMatch.isEmpty() && !(parameter.startsWith("\"") && parameter.endsWith("\""))) {
+                        values = values.stream().map(s -> "\"" + s + "\"").map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+                    }
+                    else {
+                        values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+                    }
                 }
                 filterMap.put(filteredField.getFieldName(), values);
             }
             request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));
         }
+        request.setAttribute(PortalConstants.EXACT_MATCH_CHECKBOX, nullToEmpty(exactMatch));
         return filterMap;
     }
 
@@ -2540,6 +2548,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         for (Project._Fields projectFilteredField : projectFilteredFields) {
             response.setRenderParameter(projectFilteredField.toString(), nullToEmpty(request.getParameter(projectFilteredField.toString())));
         }
+        response.setRenderParameter(PortalConstants.EXACT_MATCH_CHECKBOX, nullToEmpty(request.getParameter(PortalConstants.EXACT_MATCH_CHECKBOX)));
     }
 
     private void updateVulnerabilitiesProject(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
@@ -2690,7 +2699,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
             request.setAttribute(APPROVED_OBLIGATIONS_COUNT, getFulfilledObligationsCount(obligationStatusMap));
             request.setAttribute(OBLIGATION_FROM_README_OSS, getObligationsFromReadmeOSSCount(obligationStatusMap));
-            
+
             request.setAttribute(EXCLUDED_RELEASES, excludedReleases);
             request.setAttribute(PROJECT_OBLIGATIONS_INFO_BY_RELEASE, filterAndSortLicenseInfo(licenseObligation.getLicenseInfoResults()));
         } catch (TException e) {

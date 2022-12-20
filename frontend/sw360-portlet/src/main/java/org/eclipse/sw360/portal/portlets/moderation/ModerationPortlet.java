@@ -707,6 +707,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             request.setAttribute(moderationFilteredField.getFieldName(),
                     nullToEmpty(request.getParameter(moderationFilteredField.toString())));
         }
+        request.setAttribute(PortalConstants.EXACT_MATCH_CHECKBOX, nullToEmpty(request.getParameter(PortalConstants.EXACT_MATCH_CHECKBOX)));
         request.setAttribute(PortalConstants.DATE_RANGE, nullToEmpty(request.getParameter(PortalConstants.DATE_RANGE)));
         request.setAttribute(PortalConstants.END_DATE, nullToEmpty(request.getParameter(PortalConstants.END_DATE)));
         super.doView(request, response);
@@ -1010,10 +1011,12 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         }
         response.setRenderParameter(PortalConstants.DATE_RANGE, nullToEmpty(request.getParameter(PortalConstants.DATE_RANGE)));
         response.setRenderParameter(PortalConstants.END_DATE, nullToEmpty(request.getParameter(PortalConstants.END_DATE)));
-    }
+        response.setRenderParameter(PortalConstants.EXACT_MATCH_CHECKBOX, nullToEmpty(request.getParameter(PortalConstants.EXACT_MATCH_CHECKBOX)));
+        }
 
     private Map<String, Set<String>> getModerationFilterMap(PortletRequest request) {
         Map<String, Set<String>> filterMap = new HashMap<>();
+        String exactMatch = request.getParameter(PortalConstants.EXACT_MATCH_CHECKBOX);
         for (ModerationRequest._Fields filteredField : MODERATION_FILTERED_FIELDS) {
             String parameter = request.getParameter(filteredField.toString());
             if (!isNullOrEmpty(parameter) && !((filteredField.equals(ModerationRequest._Fields.COMPONENT_TYPE)
@@ -1047,8 +1050,12 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                 if (filteredField.equals(ModerationRequest._Fields.DOCUMENT_NAME)
                         || filteredField.equals(ModerationRequest._Fields.REQUESTING_USER)
                         || filteredField.equals(ModerationRequest._Fields.REQUESTING_USER_DEPARTMENT)) {
-                    values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
-                            .collect(Collectors.toSet());
+                    if (!exactMatch.isEmpty() && !(parameter.startsWith("\"") && parameter.endsWith("\""))) {
+                        values = values.stream().map(s -> "\"" + s + "\"").map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+                    }
+                    else {
+                        values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+                    }
                 }
                 filterMap.put(filteredField.getFieldName(), values);
             }

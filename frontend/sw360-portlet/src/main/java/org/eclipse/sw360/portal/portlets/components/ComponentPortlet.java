@@ -418,7 +418,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             log.error("Error adding vendor", e);
         }
     }
-    
+
     private void serveViewDepartment(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
         PortletUtils.setDepartmentSearchAttribute(request, response);
         include("/html/components/ajax/departmentSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
@@ -941,7 +941,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 addEditDocumentMessage(request, permissions, documentState);
                 Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
                 setUsingDocs(request, user, client, releaseIds);
-            
+
             } catch (TException e) {
                 if (e instanceof SW360Exception) {
                     SW360Exception sw360Exp = (SW360Exception)e;
@@ -1044,7 +1044,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             request.setAttribute(COMPONENT, component);
             request.setAttribute(IS_USER_AT_LEAST_ECC_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.ECC_ADMIN, user)
                     || PermissionUtils.isUserAtLeastDesiredRoleInSecondaryGroup(UserGroup.ECC_ADMIN, allSecRoles) ? "Yes" : "No");
-        
+
         } catch (TException e) {
             if (e instanceof SW360Exception) {
                 SW360Exception sw360Exp = (SW360Exception)e;
@@ -1372,7 +1372,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
         ComponentService.Iface cClient = thriftClients.makeComponentClient();
         List<Release> releases = cClient.getReleasesByComponentId(componentId, sessionUser);
-        
+
         jsonGenerator.writeStartObject();
 
         jsonGenerator.writeArrayFieldStart("releases");
@@ -1430,7 +1430,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
 
         Map<String, Map<String, String>> displayInformation = new HashMap<>();
-        
+
         addToMap(displayInformation, "mainlineState", releaseTarget.getMainlineState());
         addToMap(displayInformation, "mainlineState", releaseSource.getMainlineState());
         addToMap(displayInformation, "repositorytype", releaseTarget.getRepository() != null ? releaseTarget.getRepository().getRepositorytype() : null);
@@ -1453,7 +1453,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             releaseToNameMap.put(release.getId(), release.getName() + " (" + release.getVersion() + ")");
         }
         displayInformation.put("release", releaseToNameMap);
-        
+
         jsonGenerator.writeStartObject();
 
         // adding common title
@@ -1493,7 +1493,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         usageInformation.put("releaseVulnerabilities", releaseVulnerabilities.size());
         List<ProjectVulnerabilityRating> projectRatings = vulnerabilityClient.getProjectVulnerabilityRatingsByReleaseId(releaseSourceId, sessionUser);
         usageInformation.put("projectRatings", projectRatings.size());
-        
+
         return usageInformation;
     }
 
@@ -1570,7 +1570,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT, user));
                 }
                 request.setAttribute(COMPONENT_VISIBILITY_RESTRICTION, IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED);
-                
+
                 // get vulnerabilities
                 Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())
                         ? user.getSecondaryDepartmentsAndRoles().entrySet().stream().flatMap(entry -> entry.getValue().stream()).collect(Collectors.toSet())
@@ -1581,7 +1581,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 request.setAttribute(VULNERABILITY_VERIFICATION_EDITABLE, isVulEditable);
 
                 addComponentBreadcrumb(request, response, component);
-                
+
             } catch (TException e) {
                 if (e instanceof SW360Exception) {
                     SW360Exception sw360Exp = (SW360Exception)e;
@@ -1663,7 +1663,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
                 setUsingDocs(request, releaseId, user, client);
                 putDirectlyLinkedReleaseRelationsWithAccessibilityInRequest(request, release, user);
-                
+
                 if (IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
                     request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user));
                 } else {
@@ -1671,7 +1671,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 }
 
                 Map<RequestedAction, Boolean> permissions = release.getPermissions();
-                
+
                 request.setAttribute(PortalConstants.WRITE_ACCESS_USER, permissions.get(RequestedAction.WRITE));
                 if (isNullOrEmpty(id)) {
                     id = release.getComponentId();
@@ -1913,6 +1913,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             String parameter = request.getParameter(filteredField.toString());
             request.setAttribute(filteredField.getFieldName(), nullToEmpty(parameter));
         }
+        request.setAttribute(PortalConstants.EXACT_MATCH_CHECKBOX, nullToEmpty(request.getParameter(PortalConstants.EXACT_MATCH_CHECKBOX)));
         request.setAttribute(PortalConstants.DATE_RANGE, nullToEmpty(request.getParameter(PortalConstants.DATE_RANGE)));
         request.setAttribute(PortalConstants.END_DATE, nullToEmpty(request.getParameter(PortalConstants.END_DATE)));
         try {
@@ -1926,6 +1927,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     private Map<String, Set<String>> getComponentFilterMap(PortletRequest request) {
         Map<String, Set<String>> filterMap = new HashMap<>();
+        String exactMatch = request.getParameter(PortalConstants.EXACT_MATCH_CHECKBOX);
         for (Component._Fields filteredField : componentFilteredFields) {
             String parameter = request.getParameter(filteredField.toString());
             if (!isNullOrEmpty(parameter) && !(filteredField.equals(Component._Fields.COMPONENT_TYPE)
@@ -1957,7 +1959,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 }
                 Set<String> values = CommonUtils.splitToSet(parameter);
                 if (filteredField.equals(Component._Fields.NAME)) {
-                    values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+                    if (!exactMatch.isEmpty() && !(parameter.startsWith("\"") && parameter.endsWith("\""))) {
+                        values = values.stream().map(s -> "\"" + s + "\"").map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+                    }
+                    else {
+                        values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+                    }
                 }
 
                 filterMap.put(filteredField.getFieldName(), values);
@@ -2227,6 +2234,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         }
         response.setRenderParameter(PortalConstants.DATE_RANGE, nullToEmpty(request.getParameter(PortalConstants.DATE_RANGE)));
         response.setRenderParameter(PortalConstants.END_DATE, nullToEmpty(request.getParameter(PortalConstants.END_DATE)));
+        response.setRenderParameter(PortalConstants.EXACT_MATCH_CHECKBOX, nullToEmpty(request.getParameter(PortalConstants.EXACT_MATCH_CHECKBOX)));
     }
 
     private void updateVulnerabilitiesRelease(ResourceRequest request, ResourceResponse response) throws PortletException, IOException {
@@ -2406,14 +2414,14 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         for (int i = start; i < count; i++) {
             JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
             Component comp = sortedComponents.get(i);
-            
+
             boolean isAccessibleComponent = false;
             if (!CommonUtils.isNullOrEmptyMap(comp.permissions)) {
                 isAccessibleComponent = comp.permissions.get(RequestedAction.READ);
             } else {
                 log.error("Could not get component [" + comp.getId() + "] permissions.");
             }
-            
+
             if (isAccessibleComponent) {
                 jsonObject.put("id", comp.getId());
                 jsonObject.put("DT_RowId", comp.getId());
@@ -2421,7 +2429,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 jsonObject.put("cType", nullToEmptyString(comp.getComponentType()));
                 jsonObject.put("lRelsSize", String.valueOf(comp.getReleaseIdsSize()));
                 jsonObject.put("attsSize", String.valueOf(comp.getAttachmentsSize()));
-    
+
                 JSONArray vendorArray = createJSONArray();
                 Set<String> vendorNames = new HashSet<>();
                 if (comp.isSetDefaultVendorId()) {
@@ -2443,15 +2451,15 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 }
                 vendorNames.stream().sorted().forEach(vendorArray::put);
                 jsonObject.put("vndrs", vendorArray);
-    
+
                 JSONArray licenseArray = createJSONArray();
                 if (comp.isSetMainLicenseIds()) {
                     comp.getMainLicenseIds().stream().sorted().forEach(licenseArray::put);
                 }
                 jsonObject.put("lics", licenseArray);
-                
+
                 jsonObject.put("isAccessible", isAccessibleComponent);
-                
+
             } else {
                 jsonObject.put("id", "");
                 jsonObject.put("DT_RowId", "");
@@ -2459,13 +2467,13 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 jsonObject.put("cType", nullToEmptyString(null));
                 jsonObject.put("lRelsSize", String.valueOf(0));
                 jsonObject.put("attsSize", String.valueOf(0));
-    
+
                 JSONArray vendorArray = createJSONArray();
                 jsonObject.put("vndrs", vendorArray);
-    
+
                 JSONArray licenseArray = createJSONArray();
                 jsonObject.put("lics", licenseArray);
-                
+
                 jsonObject.put("isAccessible", isAccessibleComponent);
             }
 
