@@ -64,6 +64,7 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
         nameToDisplayName.put(VENDOR_ID.getFieldName(), "vendor id");
         nameToDisplayName.put(SECURITY_RESPONSIBLES.getFieldName(), "security responsibles");
         nameToDisplayName.put(ENABLE_VULNERABILITIES_DISPLAY.getFieldName(), "enable vulnerabilities display");
+        nameToDisplayName.put(CREATED_ON.getFieldName(), "created on");
     }
 
     private static final List<Project._Fields> PROJECT_REQUIRED_FIELDS = ImmutableList.<Project._Fields>builder()
@@ -77,6 +78,7 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
             .add(PROJECT_OWNER)
             .add(SECURITY_RESPONSIBLES)
             .add(ENABLE_VULNERABILITIES_DISPLAY)
+            .add(CREATED_ON)
             .build();
 
     public static final List<Project._Fields> PROJECT_RENDERED_FIELDS = Project.metaDataMap.keySet()
