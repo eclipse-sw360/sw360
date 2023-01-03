@@ -37,18 +37,79 @@ This is a multi module maven file. please consider that we have the following mo
 
 ### Issues
 
-If you run in any issues with documentation or software, please be kind and report to our [Github issues area](https://github.com/eclipse/sw360/issues).
+If you run in any issues with documentation or software, please be kind and report to our 
+[Github issues area](https://github.com/eclipse/sw360/issues).
 
 ### Deployment
 
-Is recommended using the docker based setup, [described here](https://github.com/eclipse/sw360/blob/main/README_DOCKER.md).
+Is recommended using the docker based setup, 
+[described here](https://github.com/eclipse/sw360/blob/main/README_DOCKER.md).
 
 If you intend to install in a bare metal machine or use in your own virtualizaed system, [bare metal instructions are provided here](https://www.eclipse.org/sw360/docs/deployment/baremetal/deploy-natively/).
 
 
-#### Compiling, testing
+### Development 
 
-Please refer to [SW360 main documentation website](https://www.eclipse.org/sw360/docs/).
+If you intend to develop over SW360, few steps are needed as equal you need have base
+requirements
+
+* Base build requirements
+  * Java 11
+  * Maven 3.8.7
+  * pre-commit
+  * thrift 0.16.0 runtime
+  * Python environment ( to [pre-commit](https://pre-commit.com/) ) - SW360 use Eclipse formatting rules 
+  through [Spotless maven plugin](https://github.com/diffplug/spotless/tree/main/plugin-maven)
+
+If you can't install thrift 0.16 runtime, you will need the following requirements:
+* C++ dev environment
+* cmake
+Then run the current build script:
+```bash 
+./scripts/install-thrift.sh
+```
+
+#### Local Building
+
+**Step 1**: Prepare source code
+```bash
+git clone https://github.com/eclipse/sw360.git
+cd sw360
+pip install pre-commit
+pre-commit install
+```
+
+**Step 2**: Build the code (without tests and docs)
+```bash
+mvn package -P deploy \
+    -Dhelp-docs=false \
+    -DskipTests \
+    -Djars.deploy.dir=deploy \
+    -Drest.deploy.dir=webapps \
+    -Dliferay.deploy.dir=webapps \
+    -Dbackend.deploy.dir=webapps
+```
+
+If you want run the the tests, we need start a local couchdb server and Docker is required:
+
+**Step 3**: 
+```bash
+pip install mkdocs-material
+./scripts/startCouchdbForTests.sh
+
+mvn package -P deploy \
+    -Djars.deploy.dir=deploy \
+    -Drest.deploy.dir=webapps \
+    -Dliferay.deploy.dir=webapps \
+    -Dbackend.deploy.dir=webapps
+```
+
+To check your code linting without commit:
+```bash
+mvn spotless:check
+```
+
+Please refer to [SW360 main documentation website](https://www.eclipse.org/sw360/docs/) for more details.
 
 
 ### License
