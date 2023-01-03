@@ -35,6 +35,7 @@ while read -r file ; do
 done <<< "$(git ls-files \
     | grep -Ev '\.(csv|rdf|ent|dtd|lar|png|gif|psd|ico|jpg|docx|gitignore|dockerignore|cert|jks|spdx|rdf|MockMaker|json)' \
     | grep -Ev '(LICENSE|NOTICE|README|CHANGELOG|CODE_OF_CONDUCT|CONTRIBUTING|Language|Language_vi)' \
+    | grep -v .pre-commit-config.yaml \
     | grep -v 'id_rsa' \
     | grep -v '.versions' \
     | grep -Ev '*/asciidoc/*')"

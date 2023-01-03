@@ -1,0 +1,7 @@
+repos:
+-   repo: https://github.com/ejba/pre-commit-maven
+    rev: v0.3.3
+    hooks:
+    -   id: maven
+        args: ['clean compile']
+    -   id: maven-spotless-apply
