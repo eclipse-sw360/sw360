@@ -463,7 +463,7 @@ public class FossologyHandler implements FossologyService.Iface {
         // that is added to the release
         Attachment attachment = CommonUtils.getNewAttachment(user, attachmentContent.getId(),
                 attachmentContent.getFilename());
-        attachment.setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_XML);
+        attachment.setAttachmentType(AttachmentType.INITIAL_SCAN_REPORT);
         attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
 
         // get release again because it has been updated in the meantime so version
