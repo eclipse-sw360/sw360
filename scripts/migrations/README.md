@@ -98,6 +98,7 @@ To migrate it is recommended to do this in the following order:
 - `051_change_eccStatus.py`
 - `052_migrate_clearing_request_status.py`
 - `053_remove_whitespace_component_name.py`
+- `054_remove_inactiveUsers_from_moderators.py`
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
