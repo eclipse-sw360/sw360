@@ -322,6 +322,9 @@ public class PortletUtils {
         newRelease.unsetCpeid();
         newRelease.unsetAttachments();
         newRelease.unsetClearingInformation();
+        newRelease.unsetModifiedBy();
+        newRelease.unsetModifiedOn();
+        newRelease.unsetAdditionalData();
 
         return newRelease;
     }
@@ -341,6 +344,9 @@ public class PortletUtils {
         //project specifics
         newProject.unsetAttachments();
         newProject.setClearingState(ProjectClearingState.OPEN);
+        newProject.unsetModifiedBy();
+        newProject.unsetModifiedOn();
+        newProject.unsetAdditionalData();
 
         return newProject;
     }

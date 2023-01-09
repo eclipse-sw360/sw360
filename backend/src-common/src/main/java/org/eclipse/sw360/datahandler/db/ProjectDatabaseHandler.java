@@ -585,7 +585,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         obligationRepository.add(obligation);
         Project project = getProjectById(obligation.getProjectId(), user);
         project.setLinkedObligationId(obligation.getId());
-        updateModifiedFields(project, user.getEmail());
         repository.update(project);
         project.unsetLinkedObligationId();
         dbHandlerUtil.addChangeLogs(obligation, null, user.getEmail(), Operation.CREATE, attachmentConnector,
