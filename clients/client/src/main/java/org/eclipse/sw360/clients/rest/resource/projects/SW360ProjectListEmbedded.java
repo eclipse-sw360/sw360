@@ -22,29 +22,31 @@ import java.util.Objects;
 
 @JsonDeserialize(as = SW360ProjectListEmbedded.class)
 public final class SW360ProjectListEmbedded implements Embedded {
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @JsonProperty("sw360:projects")
-    private List<SW360Project> projects = new ArrayList<>();
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)
+	@JsonProperty("sw360:projects")
+	private List<SW360Project> projects = new ArrayList<>();
 
-    public List<SW360Project> getProjects() {
-        return this.projects;
-    }
+	public List<SW360Project> getProjects() {
+		return this.projects;
+	}
 
-    public SW360ProjectListEmbedded setProjects(List<SW360Project> projects) {
-        this.projects = projects;
-        return this;
-    }
+	public SW360ProjectListEmbedded setProjects(List<SW360Project> projects) {
+		this.projects = projects;
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SW360ProjectListEmbedded that = (SW360ProjectListEmbedded) o;
-        return Objects.equals(projects, that.projects);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		SW360ProjectListEmbedded that = (SW360ProjectListEmbedded) o;
+		return Objects.equals(projects, that.projects);
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(projects);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(projects);
+	}
 }

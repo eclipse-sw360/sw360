@@ -16,50 +16,49 @@ import java.util.Objects;
  * A test bean class used to check the JSON serialization capabilities.
  */
 public class JsonBean {
-    private String title;
-    private String comment;
-    private int rating;
+	private String title;
+	private String comment;
+	private int rating;
 
-    public String getTitle() {
-        return title;
-    }
+	public String getTitle() {
+		return title;
+	}
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+	public void setTitle(String title) {
+		this.title = title;
+	}
 
-    public String getComment() {
-        return comment;
-    }
+	public String getComment() {
+		return comment;
+	}
 
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
+	public void setComment(String comment) {
+		this.comment = comment;
+	}
 
-    public int getRating() {
-        return rating;
-    }
+	public int getRating() {
+		return rating;
+	}
 
-    public void setRating(int rating) {
-        this.rating = rating;
-    }
+	public void setRating(int rating) {
+		this.rating = rating;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        JsonBean jsonBean = (JsonBean) o;
-        return getRating() == jsonBean.getRating() &&
-                Objects.equals(getTitle(), jsonBean.getTitle()) &&
-                Objects.equals(getComment(), jsonBean.getComment());
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		JsonBean jsonBean = (JsonBean) o;
+		return getRating() == jsonBean.getRating() && Objects.equals(getTitle(), jsonBean.getTitle())
+				&& Objects.equals(getComment(), jsonBean.getComment());
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(getTitle(), getComment(), getRating());
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(getTitle(), getComment(), getRating());
+	}
 }

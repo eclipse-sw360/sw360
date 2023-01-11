@@ -13,44 +13,43 @@ package org.eclipse.sw360.portal.common.datatables.data;
  * @author daniele.fognini@tngtech.com
  */
 public class DataTablesSearch {
-    private final String value;
-    private final boolean regex;
+	private final String value;
+	private final boolean regex;
 
-    public DataTablesSearch(String value, boolean regex) {
-        this.value = value;
-        this.regex = regex;
-    }
+	public DataTablesSearch(String value, boolean regex) {
+		this.value = value;
+		this.regex = regex;
+	}
 
-    public String getValue() {
-        return value;
-    }
+	public String getValue() {
+		return value;
+	}
 
-    public boolean isRegex() {
-        return regex;
-    }
+	public boolean isRegex() {
+		return regex;
+	}
 
-    @Override
-    public String toString() {
-        return "DataTablesSearch{" +
-                (regex ? "[regex]" : "") +
-                "value='" + value + '\'' +
-                '}';
-    }
+	@Override
+	public String toString() {
+		return "DataTablesSearch{" + (regex ? "[regex]" : "") + "value='" + value + '\'' + '}';
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 
-        DataTablesSearch that = (DataTablesSearch) o;
+		DataTablesSearch that = (DataTablesSearch) o;
 
-        return regex == that.regex && !(value != null ? !value.equals(that.value) : that.value != null);
-    }
+		return regex == that.regex && !(value != null ? !value.equals(that.value) : that.value != null);
+	}
 
-    @Override
-    public int hashCode() {
-        int result = value != null ? value.hashCode() : 0;
-        result = 31 * result + (regex ? 1 : 0);
-        return result;
-    }
+	@Override
+	public int hashCode() {
+		int result = value != null ? value.hashCode() : 0;
+		result = 31 * result + (regex ? 1 : 0);
+		return result;
+	}
 }

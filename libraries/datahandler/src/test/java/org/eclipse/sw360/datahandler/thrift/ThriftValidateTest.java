@@ -19,25 +19,25 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 public class ThriftValidateTest {
-    final String DUMMY_EMAIL_ADDRESS = "dummy.name@dummy.domain.tld";
-    final String DUMMY_MODERATION_COMMENT = "Lorem ipsum";
+	final String DUMMY_EMAIL_ADDRESS = "dummy.name@dummy.domain.tld";
+	final String DUMMY_MODERATION_COMMENT = "Lorem ipsum";
 
-    @Test(expected = SW360Exception.class)
-    public void testPrepareUserExceptionThrownIfNoEmailAddress() throws Exception {
-        // User without email address
-        User blankUser = new User();
-        prepareUser(blankUser);
-    }
+	@Test(expected = SW360Exception.class)
+	public void testPrepareUserExceptionThrownIfNoEmailAddress() throws Exception {
+		// User without email address
+		User blankUser = new User();
+		prepareUser(blankUser);
+	}
 
-    @Test
-    public void testPrepareUser() throws Exception {
-        User user = new User();
-        user.setEmail(DUMMY_EMAIL_ADDRESS);
-        user.setCommentMadeDuringModerationRequest(DUMMY_MODERATION_COMMENT);
-        prepareUser(user);
+	@Test
+	public void testPrepareUser() throws Exception {
+		User user = new User();
+		user.setEmail(DUMMY_EMAIL_ADDRESS);
+		user.setCommentMadeDuringModerationRequest(DUMMY_MODERATION_COMMENT);
+		prepareUser(user);
 
-        assertNull(user.getId());
-        assertEquals(TYPE_USER, user.getType());
-        assertFalse(user.isSetCommentMadeDuringModerationRequest());
-    }
+		assertNull(user.getId());
+		assertEquals(TYPE_USER, user.getType());
+		assertFalse(user.isSetCommentMadeDuringModerationRequest());
+	}
 }

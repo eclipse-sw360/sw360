@@ -29,26 +29,20 @@ import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseCo
  */
 public class ReleaseSearchHandler {
 
-    private static final LuceneSearchView luceneSearchView
-            = new LuceneSearchView("lucene", "releases",
-            "function(doc) {" +
-                    "  if(doc.type == 'release') { " +
-                    "      var ret = new Document();" +
-                    "      ret.add(doc.name);  " +
-                    "      ret.add(doc.version);  " +
-                    "      ret.add(doc._id);  " +
-                    "      return ret;" +
-                    "  }" +
-                    "}");
+	private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "releases",
+			"function(doc) {" + "  if(doc.type == 'release') { " + "      var ret = new Document();"
+					+ "      ret.add(doc.name);  " + "      ret.add(doc.version);  " + "      ret.add(doc._id);  "
+					+ "      return ret;" + "  }" + "}");
 
-    private final LuceneAwareDatabaseConnector connector;
+	private final LuceneAwareDatabaseConnector connector;
 
-    public ReleaseSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
-        connector = new LuceneAwareDatabaseConnector(httpClient, cClient, dbName);
-        connector.addView(luceneSearchView);
-    }
+	public ReleaseSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName)
+			throws IOException {
+		connector = new LuceneAwareDatabaseConnector(httpClient, cClient, dbName);
+		connector.addView(luceneSearchView);
+	}
 
-    public List<Release> search(String searchText) {
-        return connector.searchView(Release.class, luceneSearchView, prepareWildcardQuery(searchText));
-    }
+	public List<Release> search(String searchText) {
+		return connector.searchView(Release.class, luceneSearchView, prepareWildcardQuery(searchText));
+	}
 }

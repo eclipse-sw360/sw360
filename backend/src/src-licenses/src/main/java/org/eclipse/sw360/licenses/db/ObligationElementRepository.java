@@ -25,32 +25,30 @@ import com.cloudant.client.api.model.DesignDocument.MapReduce;
  */
 public class ObligationElementRepository extends DatabaseRepositoryCloudantClient<ObligationElement> {
 
-    private static final String ALL = "function(doc) { if (doc.type == 'obligationElement') emit(null, doc._id) }";
-    private static final String BYLANGELEMENT = "function(doc) { if(doc.type == 'obligationElement') { emit(doc.langElement, null) } }";
-    private static final String BYACTION = "function(doc) { if(doc.type == 'obligationElement') { emit(doc.action, null) } }";
-    private static final String BYOBJECT = "function(doc) { if(doc.type == 'obligationElement') { emit(doc.object, null) } }";
+	private static final String ALL = "function(doc) { if (doc.type == 'obligationElement') emit(null, doc._id) }";
+	private static final String BYLANGELEMENT = "function(doc) { if(doc.type == 'obligationElement') { emit(doc.langElement, null) } }";
+	private static final String BYACTION = "function(doc) { if(doc.type == 'obligationElement') { emit(doc.action, null) } }";
+	private static final String BYOBJECT = "function(doc) { if(doc.type == 'obligationElement') { emit(doc.object, null) } }";
 
+	public ObligationElementRepository(DatabaseConnectorCloudant db) {
+		super(db, ObligationElement.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("all", createMapReduce(ALL, null));
+		views.put("byobligationlang", createMapReduce(BYLANGELEMENT, null));
+		views.put("byobligationaction", createMapReduce(BYACTION, null));
+		views.put("byobligationobject", createMapReduce(BYOBJECT, null));
+		initStandardDesignDocument(views, db);
+	}
 
-    public ObligationElementRepository(DatabaseConnectorCloudant db) {
-        super(db, ObligationElement.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("all", createMapReduce(ALL, null));
-        views.put("byobligationlang", createMapReduce(BYLANGELEMENT, null));
-        views.put("byobligationaction", createMapReduce(BYACTION, null));
-        views.put("byobligationobject", createMapReduce(BYOBJECT, null));
-        initStandardDesignDocument(views, db);
-    }
+	public List<ObligationElement> searchByObligationLang(String lang) {
+		return queryByPrefix("byobligationlang", lang);
+	}
 
+	public List<ObligationElement> searchByObligationAction(String action) {
+		return queryByPrefix("byobligationaction", action);
+	}
 
-    public List<ObligationElement> searchByObligationLang(String lang) {
-        return queryByPrefix("byobligationlang", lang);
-    }
-
-    public List<ObligationElement> searchByObligationAction(String action) {
-        return queryByPrefix("byobligationaction", action);
-    }
-
-    public List<ObligationElement> searchByObligationObject(String object) {
-        return queryByPrefix("byobligationobject", object);
-    }
+	public List<ObligationElement> searchByObligationObject(String object) {
+		return queryByPrefix("byobligationobject", object);
+	}
 }

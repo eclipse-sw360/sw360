@@ -16,50 +16,41 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ComponentSearchParamsTest {
-    @Test
-    public void testEquals() {
-        EqualsVerifier.forClass(ComponentSearchParams.class)
-                .withNonnullFields("orderClauses", "fields")
-                .verify();
-    }
+	@Test
+	public void testEquals() {
+		EqualsVerifier.forClass(ComponentSearchParams.class).withNonnullFields("orderClauses", "fields").verify();
+	}
 
-    @Test
-    public void testDefensiveCopyOfOrderClauses() {
-        ComponentSearchParams.Builder builder = ComponentSearchParams.builder();
-        ComponentSearchParams params = builder
-                .orderAscending("foo")
-                .build();
+	@Test
+	public void testDefensiveCopyOfOrderClauses() {
+		ComponentSearchParams.Builder builder = ComponentSearchParams.builder();
+		ComponentSearchParams params = builder.orderAscending("foo").build();
 
-        builder.orderDescending("bar");
-        assertThat(params.getOrderClauses()).containsOnly("foo,ASC");
-    }
+		builder.orderDescending("bar");
+		assertThat(params.getOrderClauses()).containsOnly("foo,ASC");
+	}
 
-    @Test
-    public void testDefensiveCopyOfFields() {
-        ComponentSearchParams.Builder builder = ComponentSearchParams.builder();
-        ComponentSearchParams params = builder.retrieveFields("foo")
-                .build();
+	@Test
+	public void testDefensiveCopyOfFields() {
+		ComponentSearchParams.Builder builder = ComponentSearchParams.builder();
+		ComponentSearchParams params = builder.retrieveFields("foo").build();
 
-        builder.retrieveFields("bar", "baz");
-        assertThat(params.getFields()).containsOnly("foo");
-    }
+		builder.retrieveFields("bar", "baz");
+		assertThat(params.getFields()).containsOnly("foo");
+	}
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testOrderClausesUnmodifiable() {
-        ComponentSearchParams params = ComponentSearchParams.builder()
-                .orderDescending("foo")
-                .orderAscending("bar")
-                .build();
+	@Test(expected = UnsupportedOperationException.class)
+	public void testOrderClausesUnmodifiable() {
+		ComponentSearchParams params = ComponentSearchParams.builder().orderDescending("foo").orderAscending("bar")
+				.build();
 
-        params.getOrderClauses().add("another order");
-    }
+		params.getOrderClauses().add("another order");
+	}
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testFieldsUnmodifiable() {
-        ComponentSearchParams params = ComponentSearchParams.builder()
-                .retrieveFields("a", "b", "c")
-                .build();
+	@Test(expected = UnsupportedOperationException.class)
+	public void testFieldsUnmodifiable() {
+		ComponentSearchParams params = ComponentSearchParams.builder().retrieveFields("a", "b", "c").build();
 
-        params.getFields().add("z");
-    }
+		params.getFields().add("z");
+	}
 }

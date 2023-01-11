@@ -29,33 +29,33 @@ import java.io.IOException;
  * @author alex.borodin@evosoft.com
  */
 public class DisplayUserEmail extends SimpleTagSupport {
-    private String email;
-    private Boolean bare = false;
-    Logger log = LogManager.getLogger(DisplayUserEmail.class);
+	private String email;
+	private Boolean bare = false;
+	Logger log = LogManager.getLogger(DisplayUserEmail.class);
 
-    private static final UserService.Iface client = new ThriftClients().makeUserClient();
+	private static final UserService.Iface client = new ThriftClients().makeUserClient();
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+	public void setEmail(String email) {
+		this.email = email;
+	}
 
-    public void setBare(Boolean bare) {
-        this.bare = bare;
-    }
+	public void setBare(Boolean bare) {
+		this.bare = bare;
+	}
 
-    public void doTag() throws JspException, IOException {
-        User user = null;
+	public void doTag() throws JspException, IOException {
+		User user = null;
 
-        if (!Strings.isNullOrEmpty(email)) {
-            if(client != null && !bare) {
-                try {
-                    user = client.getByEmail(email);
-                } catch(TException e) {
-                    log.info("User with email=" + email + " not found in DB");
-                }
-            }
-        }
+		if (!Strings.isNullOrEmpty(email)) {
+			if (client != null && !bare) {
+				try {
+					user = client.getByEmail(email);
+				} catch (TException e) {
+					log.info("User with email=" + email + " not found in DB");
+				}
+			}
+		}
 
-        getJspContext().getOut().print(UserUtils.displayUser(email, user));
-    }
+		getJspContext().getOut().print(UserUtils.displayUser(email, user));
+	}
 }

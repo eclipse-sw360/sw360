@@ -33,84 +33,93 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 
 public class DisplayLicenseCollection extends TagSupport {
-    private Long scopeGroupId;
-    private Collection<String> licenseIds;
-    private String icon;
-    private String releaseId;
-    private boolean main = true;
-    private String title;
-    private boolean commaJoiner;
+	private Long scopeGroupId;
+	private Collection<String> licenseIds;
+	private String icon;
+	private String releaseId;
+	private boolean main = true;
+	private String title;
+	private boolean commaJoiner;
 
-    public void setLicenseIds(Collection<String> licenseIds) {
-        this.licenseIds = licenseIds;
-    }
-    public void setScopeGroupId(Long scopeGroupId) {
-        if(scopeGroupId != null && scopeGroupId.longValue() != 0) {
-            this.scopeGroupId = scopeGroupId;
-        }
-    }
-    public void setCommaJoiner(Boolean commaJoiner) {
-        this.commaJoiner = commaJoiner;
-    }
-    public void setIcon(String icon) {
-        this.icon = icon;
-    }
-    public void setMain(Boolean main) {
-        this.main = main;
-    }
-    public void setReleaseId(String releaseId) {
-        this.releaseId = releaseId;
-    }
-    public String getTitle() {
-        return title;
-    }
+	public void setLicenseIds(Collection<String> licenseIds) {
+		this.licenseIds = licenseIds;
+	}
+	public void setScopeGroupId(Long scopeGroupId) {
+		if (scopeGroupId != null && scopeGroupId.longValue() != 0) {
+			this.scopeGroupId = scopeGroupId;
+		}
+	}
+	public void setCommaJoiner(Boolean commaJoiner) {
+		this.commaJoiner = commaJoiner;
+	}
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
+	public void setMain(Boolean main) {
+		this.main = main;
+	}
+	public void setReleaseId(String releaseId) {
+		this.releaseId = releaseId;
+	}
+	public String getTitle() {
+		return title;
+	}
 
-    @Override
-    public int doStartTag() throws JspException {
-        Long scopeGroupIdAttribute = (Long) pageContext.getAttribute("scopeGroupId");
-        if (scopeGroupIdAttribute != null && scopeGroupIdAttribute != 0 && (scopeGroupId == null || scopeGroupId == 0)) {
-            this.scopeGroupId = scopeGroupIdAttribute;
-        }
-        try {
-            JspWriter jspWriter = pageContext.getOut();
-            if (CommonUtils.isNotEmpty(licenseIds)) {
-                if (CommonUtils.isNullEmptyOrWhitespace(icon)) {
-                    for (Iterator<String> iterator = licenseIds.iterator(); iterator.hasNext(); ) {
-                        String licenseId = iterator.next();
-                        DisplayLinkToLicense linkToLicense = new DisplayLinkToLicense();
-                        linkToLicense.setPageContext(pageContext);
-                        linkToLicense.setScopeGroupId(scopeGroupId);
-                        linkToLicense.setLicenseId(licenseId);
+	@Override
+	public int doStartTag() throws JspException {
+		Long scopeGroupIdAttribute = (Long) pageContext.getAttribute("scopeGroupId");
+		if (scopeGroupIdAttribute != null && scopeGroupIdAttribute != 0
+				&& (scopeGroupId == null || scopeGroupId == 0)) {
+			this.scopeGroupId = scopeGroupIdAttribute;
+		}
+		try {
+			JspWriter jspWriter = pageContext.getOut();
+			if (CommonUtils.isNotEmpty(licenseIds)) {
+				if (CommonUtils.isNullEmptyOrWhitespace(icon)) {
+					for (Iterator<String> iterator = licenseIds.iterator(); iterator.hasNext();) {
+						String licenseId = iterator.next();
+						DisplayLinkToLicense linkToLicense = new DisplayLinkToLicense();
+						linkToLicense.setPageContext(pageContext);
+						linkToLicense.setScopeGroupId(scopeGroupId);
+						linkToLicense.setLicenseId(licenseId);
 
-                        linkToLicense.doStartTag();
-                        linkToLicense.doEndTag();
-                        if (iterator.hasNext()) {
-                            jspWriter.write(", ");
-                        }
-                    }
-                } else {
-                    List<String> licenseList = new ArrayList<>(licenseIds);
-                    Collections.sort(licenseList, String.CASE_INSENSITIVE_ORDER);
-                    final List<String> finalValueList = licenseList.stream().map(StringEscapeUtils::escapeXml).collect(Collectors.toList());
-                    if (CommonUtils.isNullEmptyOrWhitespace(title)) {
-                        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
-                        final ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-                        title = LanguageUtil.get(resourceBundle, "view.file.list");
-                    }
-                    if (CommonUtils.isNotNullEmptyOrWhitespace(icon) && CommonUtils.isNotNullEmptyOrWhitespace(releaseId)) {
-                        final String tag = main ? "-ml-" : "-ol-";
-                        licenseList = IntStream.range(0, licenseList.size())
-                            .mapToObj(i -> new StringBuilder(finalValueList.get(i)).append("&nbsp;<svg class='cursor lexicon-icon' data-tag='").append(releaseId).append(tag).append(i)
-                            .append("'><title>").append(title).append("</title><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#").append(icon).append("'/></svg> ").toString())
-                        .collect(Collectors.toList());
-                    }
-                    jspWriter.write(commaJoiner ? CommonUtils.COMMA_JOINER.join(licenseList) : CommonUtils.NEW_LINE_JOINER.join(licenseList));
-                }
-            }
-        } catch (IOException e) {
-            throw new JspException("cannot write", e);
-        }
+						linkToLicense.doStartTag();
+						linkToLicense.doEndTag();
+						if (iterator.hasNext()) {
+							jspWriter.write(", ");
+						}
+					}
+				} else {
+					List<String> licenseList = new ArrayList<>(licenseIds);
+					Collections.sort(licenseList, String.CASE_INSENSITIVE_ORDER);
+					final List<String> finalValueList = licenseList.stream().map(StringEscapeUtils::escapeXml)
+							.collect(Collectors.toList());
+					if (CommonUtils.isNullEmptyOrWhitespace(title)) {
+						HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+						final ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language",
+								request.getLocale(), getClass());
+						title = LanguageUtil.get(resourceBundle, "view.file.list");
+					}
+					if (CommonUtils.isNotNullEmptyOrWhitespace(icon)
+							&& CommonUtils.isNotNullEmptyOrWhitespace(releaseId)) {
+						final String tag = main ? "-ml-" : "-ol-";
+						licenseList = IntStream.range(0, licenseList.size())
+								.mapToObj(i -> new StringBuilder(finalValueList.get(i))
+										.append("&nbsp;<svg class='cursor lexicon-icon' data-tag='").append(releaseId)
+										.append(tag).append(i).append("'><title>").append(title)
+										.append("</title><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#")
+										.append(icon).append("'/></svg> ").toString())
+								.collect(Collectors.toList());
+					}
+					jspWriter.write(commaJoiner
+							? CommonUtils.COMMA_JOINER.join(licenseList)
+							: CommonUtils.NEW_LINE_JOINER.join(licenseList));
+				}
+			}
+		} catch (IOException e) {
+			throw new JspException("cannot write", e);
+		}
 
-        return SKIP_BODY;
-    }
+		return SKIP_BODY;
+	}
 }

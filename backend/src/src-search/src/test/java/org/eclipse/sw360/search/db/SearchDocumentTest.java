@@ -20,61 +20,60 @@ import static org.junit.Assert.assertNotNull;
 
 public class SearchDocumentTest {
 
-    private Map<String, Object> document;
-    private SearchDocument parser;
+	private Map<String, Object> document;
+	private SearchDocument parser;
 
+	@Before
+	public void setUp() throws Exception {
+		document = new HashMap<>();
 
-    @Before
-    public void setUp() throws Exception {
-        document = new HashMap<>();
+		document.put("type", "license");
+		document.put("fullname", "testfullname");
+		document.put("testkey", "testvalue");
 
-        document.put("type", "license");
-        document.put("fullname", "testfullname");
-        document.put("testkey", "testvalue");
+		parser = new SearchDocument(document);
 
-        parser = new SearchDocument(document);
+	}
 
-    }
+	@Test
+	public void testGetType() throws Exception {
+		assertEquals("license", parser.getType());
+	}
 
-    @Test
-    public void testGetType() throws Exception {
-        assertEquals("license", parser.getType());
-    }
+	@Test
+	public void testGetName() throws Exception {
+		assertEquals("testfullname", parser.getName());
+	}
 
-    @Test
-    public void testGetName() throws Exception {
-        assertEquals("testfullname", parser.getName());
-    }
+	@Test
+	public void testGetProperty() throws Exception {
+		assertEquals("testvalue", parser.getProperty("testkey"));
+	}
 
-    @Test
-    public void testGetProperty() throws Exception {
-        assertEquals("testvalue", parser.getProperty("testkey"));
-    }
+	@Test
+	public void testGetTypeInvalid() throws Exception {
+		document.remove("type");
+		parser = new SearchDocument(document);
 
-    @Test
-    public void testGetTypeInvalid() throws Exception {
-        document.remove("type");
-        parser = new SearchDocument(document);
+		assertNotNull(parser.getType());
+		assertEquals("", parser.getType());
+	}
 
-        assertNotNull(parser.getType());
-        assertEquals("", parser.getType());
-    }
+	@Test
+	public void testGetNameInvalid1() throws Exception {
+		document.remove("fullname");
+		parser = new SearchDocument(document);
 
-    @Test
-    public void testGetNameInvalid1() throws Exception {
-        document.remove("fullname");
-        parser = new SearchDocument(document);
+		assertNotNull(parser.getName());
+		assertEquals("", parser.getName());
+	}
 
-        assertNotNull(parser.getName());
-        assertEquals("", parser.getName());
-    }
+	@Test
+	public void testGetNameInvalid2() throws Exception {
+		document.put("type", "feuwife");
+		parser = new SearchDocument(document);
 
-    @Test
-    public void testGetNameInvalid2() throws Exception {
-        document.put("type", "feuwife");
-        parser = new SearchDocument(document);
-
-        assertNotNull(parser.getName());
-        assertEquals("", parser.getName());
-    }
+		assertNotNull(parser.getName());
+		assertEquals("", parser.getName());
+	}
 }

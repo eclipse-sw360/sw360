@@ -30,41 +30,43 @@ import static org.junit.Assert.assertThat;
 
 public class LicenseInfoParserTest {
 
-    private User dummyUser = new User().setEmail("dummy@some.domain");
+	private User dummyUser = new User().setEmail("dummy@some.domain");
 
-    @Test
-    public void testIsApplicableTo() throws Exception {
-        LicenseInfoParser parser = new LicenseInfoParser(null, null) {
-            @Override
-            public List<String> getApplicableFileExtensions() {
-                return Arrays.asList(".ext1", ".ext2");
-            }
+	@Test
+	public void testIsApplicableTo() throws Exception {
+		LicenseInfoParser parser = new LicenseInfoParser(null, null) {
+			@Override
+			public List<String> getApplicableFileExtensions() {
+				return Arrays.asList(".ext1", ".ext2");
+			}
 
-            @Override
-            public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context) throws TException {
-                return null;
-            }
+			@Override
+			public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context)
+					throws TException {
+				return null;
+			}
 
-            @Override
-            public <T> List<LicenseInfoParsingResult> getLicenseInfosIncludeConcludedLicense(Attachment attachment,
-                    boolean includeConcludedLicense, User user, T context) throws TException {
-                return null;
-            }
-        };
-        Arrays.stream(AttachmentType.values()).filter(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES::contains)
-                .forEach(attachmentType -> parser.getApplicableFileExtensions().stream().forEach(extension -> {
-                    String filename = "filename" + extension;
-                    Attachment attachment = makeAttachment(filename, attachmentType);
-                    try {
-                        assertThat(
-                                parser.isApplicableTo(attachment, dummyUser,
-                                        new Project().setVisbility(Visibility.ME_AND_MODERATORS).setCreatedBy(dummyUser.getEmail())
-                                                .setAttachments(Collections.singleton(
-                                                        new Attachment().setAttachmentContentId(attachment.getAttachmentContentId())))),
-                                is(true));
-                    } catch (TException e) {
-                        e.printStackTrace();
-                    }
-                }));
-    }
+			@Override
+			public <T> List<LicenseInfoParsingResult> getLicenseInfosIncludeConcludedLicense(Attachment attachment,
+					boolean includeConcludedLicense, User user, T context) throws TException {
+				return null;
+			}
+		};
+		Arrays.stream(AttachmentType.values()).filter(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES::contains)
+				.forEach(attachmentType -> parser.getApplicableFileExtensions().stream().forEach(extension -> {
+					String filename = "filename" + extension;
+					Attachment attachment = makeAttachment(filename, attachmentType);
+					try {
+						assertThat(
+								parser.isApplicableTo(attachment, dummyUser,
+										new Project().setVisbility(Visibility.ME_AND_MODERATORS)
+												.setCreatedBy(dummyUser.getEmail())
+												.setAttachments(Collections.singleton(new Attachment()
+														.setAttachmentContentId(attachment.getAttachmentContentId())))),
+								is(true));
+					} catch (TException e) {
+						e.printStackTrace();
+					}
+				}));
+	}
 }

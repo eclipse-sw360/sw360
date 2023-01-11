@@ -15,27 +15,27 @@ import java.util.concurrent.TimeUnit;
  * @author daniele.fognini@tngtech.com
  */
 public final class Duration {
-    private final long duration;
-    private final TimeUnit timeUnit;
+	private final long duration;
+	private final TimeUnit timeUnit;
 
-    private Duration(long duration, TimeUnit timeUnit) {
-        this.duration = duration;
-        this.timeUnit = timeUnit;
-    }
+	private Duration(long duration, TimeUnit timeUnit) {
+		this.duration = duration;
+		this.timeUnit = timeUnit;
+	}
 
-    public static Duration durationOf(long duration, TimeUnit timeUnit) {
-        return new Duration(duration, timeUnit);
-    }
+	public static Duration durationOf(long duration, TimeUnit timeUnit) {
+		return new Duration(duration, timeUnit);
+	}
 
-    public long getDuration() {
-        return duration;
-    }
+	public long getDuration() {
+		return duration;
+	}
 
-    public TimeUnit getTimeUnit() {
-        return timeUnit;
-    }
+	public TimeUnit getTimeUnit() {
+		return timeUnit;
+	}
 
-    public long toMillis() {
-        return timeUnit.toMillis(duration);
-    }
+	public long toMillis() {
+		return timeUnit.toMillis(duration);
+	}
 }

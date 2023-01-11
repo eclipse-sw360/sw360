@@ -25,51 +25,51 @@ import java.util.stream.Collectors;
 import static org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority.READ;
 
 /**
- * This class offer helper methods to calculate the {@GrantedAuthority} for a user and/or client. 
- * In addition it can calculate the correct intersection between them! Therefore it has to
- * know how to map the sw360 user groups on rest authorities. This logic is also
- * centralized here implicitly.
+ * This class offer helper methods to calculate the {@GrantedAuthority} for a
+ * user and/or client. In addition it can calculate the correct intersection
+ * between them! Therefore it has to know how to map the sw360 user groups on
+ * rest authorities. This logic is also centralized here implicitly.
  */
 public class Sw360GrantedAuthoritiesCalculator {
 
-    private final Logger log = LogManager.getLogger(this.getClass());
+	private final Logger log = LogManager.getLogger(this.getClass());
 
-    public List<GrantedAuthority> generateFromUser(User user) {
-        List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
-        
-        grantedAuthorities.add(new SimpleGrantedAuthority(READ.getAuthority()));
-        if(user != null) {
-            if (PermissionUtils.isUserAtLeast(Sw360AuthorizationServer.CONFIG_WRITE_ACCESS_USERGROUP, user)) {
-                grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()));
-            }
-            if (PermissionUtils.isUserAtLeast(Sw360AuthorizationServer.CONFIG_ADMIN_ACCESS_USERGROUP, user)) {
-                grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()));
-            }
-        }
+	public List<GrantedAuthority> generateFromUser(User user) {
+		List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
 
-        return grantedAuthorities;
-    }
+		grantedAuthorities.add(new SimpleGrantedAuthority(READ.getAuthority()));
+		if (user != null) {
+			if (PermissionUtils.isUserAtLeast(Sw360AuthorizationServer.CONFIG_WRITE_ACCESS_USERGROUP, user)) {
+				grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()));
+			}
+			if (PermissionUtils.isUserAtLeast(Sw360AuthorizationServer.CONFIG_ADMIN_ACCESS_USERGROUP, user)) {
+				grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()));
+			}
+		}
 
-    public List<GrantedAuthority> intersectWithClient(List<GrantedAuthority> grantedAuthorities, ClientDetails clientDetails) {
-        Set<String> clientScopes = clientDetails.getScope();
+		return grantedAuthorities;
+	}
 
-        grantedAuthorities = grantedAuthorities.stream()
-                .filter(ga -> clientScopes.contains(ga.toString()))
-                .collect(Collectors.toList());
-        
-        return grantedAuthorities;
-    }
+	public List<GrantedAuthority> intersectWithClient(List<GrantedAuthority> grantedAuthorities,
+			ClientDetails clientDetails) {
+		Set<String> clientScopes = clientDetails.getScope();
 
-    public List<GrantedAuthority> mergedAuthoritiesOf(User user, ClientDetails clientDetails) {
-        List<GrantedAuthority> grantedAuthorities = generateFromUser(user);
+		grantedAuthorities = grantedAuthorities.stream().filter(ga -> clientScopes.contains(ga.toString()))
+				.collect(Collectors.toList());
 
-        if(clientDetails != null) {
-            log.debug("User " + user.email + " has authorities " + grantedAuthorities + " while used client "
-                        + clientDetails.getClientId() + " has scopes " + clientDetails.getScope()
-                        + ". Setting intersection as granted authorities for access token!");
-            grantedAuthorities = intersectWithClient(grantedAuthorities, clientDetails);
-        }
+		return grantedAuthorities;
+	}
 
-        return grantedAuthorities;
-    }
+	public List<GrantedAuthority> mergedAuthoritiesOf(User user, ClientDetails clientDetails) {
+		List<GrantedAuthority> grantedAuthorities = generateFromUser(user);
+
+		if (clientDetails != null) {
+			log.debug("User " + user.email + " has authorities " + grantedAuthorities + " while used client "
+					+ clientDetails.getClientId() + " has scopes " + clientDetails.getScope()
+					+ ". Setting intersection as granted authorities for access token!");
+			grantedAuthorities = intersectWithClient(grantedAuthorities, clientDetails);
+		}
+
+		return grantedAuthorities;
+	}
 }

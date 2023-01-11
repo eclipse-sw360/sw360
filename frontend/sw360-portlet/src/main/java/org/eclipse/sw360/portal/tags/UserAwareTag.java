@@ -24,11 +24,10 @@ import java.util.Optional;
  * @author: alex.borodin@evosoft.com
  */
 public abstract class UserAwareTag extends NameSpaceAwareTag {
-    protected User getUserFromContext(String errorMessage) throws JspException, TException {
-        Optional<String> userEmailOpt = UserCacheHolder.getUserEmailFromRequest(pageContext.getRequest());
-        String userEmail = userEmailOpt.orElseThrow(() -> new JspException(errorMessage));
-        UserService.Iface userClient = new ThriftClients().makeUserClient();
-        return userClient.getByEmail(userEmail);
-    }
+	protected User getUserFromContext(String errorMessage) throws JspException, TException {
+		Optional<String> userEmailOpt = UserCacheHolder.getUserEmailFromRequest(pageContext.getRequest());
+		String userEmail = userEmailOpt.orElseThrow(() -> new JspException(errorMessage));
+		UserService.Iface userClient = new ThriftClients().makeUserClient();
+		return userClient.getByEmail(userEmail);
+	}
 }
-

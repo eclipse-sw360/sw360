@@ -33,17 +33,20 @@ import java.util.ResourceBundle;
  */
 public class DisplayEnumShort extends SimpleTagSupport {
 
-    private TEnum value;
+	private TEnum value;
 
-    public void setValue(TEnum value) {
-        this.value = value;
-    }
+	public void setValue(TEnum value) {
+		this.value = value;
+	}
 
-    public void doTag() throws JspException, IOException {
-        PageContext pageContext = (PageContext) getJspContext();
-        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-        getJspContext().getOut().print("<span title='" + LanguageUtil.get(resourceBundle,ThriftEnumUtils.enumToShortString(value)) + "'>"
-                + LanguageUtil.get(resourceBundle,ThriftEnumUtils.enumToShortString(value)) + "</span>");
-    }
+	public void doTag() throws JspException, IOException {
+		PageContext pageContext = (PageContext) getJspContext();
+		HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+				getClass());
+		getJspContext().getOut()
+				.print("<span title='" + LanguageUtil.get(resourceBundle, ThriftEnumUtils.enumToShortString(value))
+						+ "'>" + LanguageUtil.get(resourceBundle, ThriftEnumUtils.enumToShortString(value))
+						+ "</span>");
+	}
 }

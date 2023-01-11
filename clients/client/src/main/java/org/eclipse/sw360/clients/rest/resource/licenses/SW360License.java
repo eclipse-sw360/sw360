@@ -17,57 +17,58 @@ import org.eclipse.sw360.clients.rest.resource.SW360SimpleHalResource;
 import java.util.Objects;
 
 public final class SW360License extends SW360SimpleHalResource {
-    private String text;
-    private String shortName;
-    private String fullName;
+	private String text;
+	private String shortName;
+	private String fullName;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String getText() {
-        return this.text;
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	public String getText() {
+		return this.text;
+	}
 
-    public SW360License setText(String text) {
-        this.text = text;
-        return this;
-    }
+	public SW360License setText(String text) {
+		this.text = text;
+		return this;
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String getShortName() {
-        return this.shortName;
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	public String getShortName() {
+		return this.shortName;
+	}
 
-    public SW360License setShortName(String shortName) {
-        this.shortName = shortName;
-        return this;
-    }
+	public SW360License setShortName(String shortName) {
+		this.shortName = shortName;
+		return this;
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String getFullName() {
-        return this.fullName;
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	public String getFullName() {
+		return this.fullName;
+	}
 
-    public SW360License setFullName(String fullName) {
-        this.fullName = fullName;
-        return this;
-    }
+	public SW360License setFullName(String fullName) {
+		this.fullName = fullName;
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SW360License) || !super.equals(o)) return false;
-        SW360License that = (SW360License) o;
-        return Objects.equals(text, that.text) &&
-                Objects.equals(shortName, that.shortName) &&
-                Objects.equals(fullName, that.fullName);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (!(o instanceof SW360License) || !super.equals(o))
+			return false;
+		SW360License that = (SW360License) o;
+		return Objects.equals(text, that.text) && Objects.equals(shortName, that.shortName)
+				&& Objects.equals(fullName, that.fullName);
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), text, shortName, fullName);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(super.hashCode(), text, shortName, fullName);
+	}
 
-    @Override
-    public boolean canEqual(Object o) {
-        return o instanceof SW360License;
-    }
+	@Override
+	public boolean canEqual(Object o) {
+		return o instanceof SW360License;
+	}
 }

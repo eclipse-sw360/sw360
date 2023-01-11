@@ -46,90 +46,98 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class AttachmentController implements RepresentationModelProcessor<RepositoryLinksResource> {
-    public static final String ATTACHMENTS_URL = "/attachments";
+	public static final String ATTACHMENTS_URL = "/attachments";
 
-    @NonNull
-    private final Sw360AttachmentService attachmentService;
+	@NonNull
+	private final Sw360AttachmentService attachmentService;
 
-    @NonNull
-    private final Sw360ProjectService projectService;
+	@NonNull
+	private final Sw360ProjectService projectService;
 
-    @NonNull
-    private final Sw360ReleaseService releaseService;
+	@NonNull
+	private final Sw360ReleaseService releaseService;
 
-    @NonNull
-    private final Sw360ComponentService componentService;
+	@NonNull
+	private final Sw360ComponentService componentService;
 
-    @NonNull
-    private final RestControllerHelper restControllerHelper;
+	@NonNull
+	private final RestControllerHelper restControllerHelper;
 
-    @GetMapping(value = ATTACHMENTS_URL + "/{id}")
-    public ResponseEntity<EntityModel<Attachment>> getAttachmentForId(
-            @PathVariable("id") String id) throws TException {
+	@GetMapping(value = ATTACHMENTS_URL + "/{id}")
+	public ResponseEntity<EntityModel<Attachment>> getAttachmentForId(@PathVariable("id") String id) throws TException {
 
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        AttachmentInfo attachmentInfo = attachmentService.getAttachmentById(id);
-        HalResource<Attachment> attachmentResource = createHalAttachment(attachmentInfo, sw360User);
-        return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
-    }
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		AttachmentInfo attachmentInfo = attachmentService.getAttachmentById(id);
+		HalResource<Attachment> attachmentResource = createHalAttachment(attachmentInfo, sw360User);
+		return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
+	}
 
-    @GetMapping(value = ATTACHMENTS_URL)
-    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getAttachments(@RequestParam String sha1) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        List<AttachmentInfo> attachmentInfos = attachmentService.getAttachmentsBySha1(sha1);
+	@GetMapping(value = ATTACHMENTS_URL)
+	public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getAttachments(@RequestParam String sha1)
+			throws TException {
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		List<AttachmentInfo> attachmentInfos = attachmentService.getAttachmentsBySha1(sha1);
 
-        List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
-        for (AttachmentInfo sw360Attachment : attachmentInfos) {
-            HalResource<Attachment> attachmentResource = createHalAttachment(sw360Attachment, sw360User);
-            attachmentResources.add(attachmentResource);
-        }
-        CollectionModel<EntityModel<Attachment>> resources;
-        if (!attachmentResources.isEmpty()) {
-            resources = CollectionModel.of(attachmentResources);
-            return new ResponseEntity<>(resources, HttpStatus.OK);
-        } else {
-            return new ResponseEntity(attachmentResources, HttpStatus.NO_CONTENT);
-        }
-    }
+		List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
+		for (AttachmentInfo sw360Attachment : attachmentInfos) {
+			HalResource<Attachment> attachmentResource = createHalAttachment(sw360Attachment, sw360User);
+			attachmentResources.add(attachmentResource);
+		}
+		CollectionModel<EntityModel<Attachment>> resources;
+		if (!attachmentResources.isEmpty()) {
+			resources = CollectionModel.of(attachmentResources);
+			return new ResponseEntity<>(resources, HttpStatus.OK);
+		} else {
+			return new ResponseEntity(attachmentResources, HttpStatus.NO_CONTENT);
+		}
+	}
 
-    private HalResource<Attachment> createHalAttachment(AttachmentInfo attachmentInfo, User sw360User) throws TException {
-        HalResource<Attachment> halAttachment = new HalResource<>(attachmentInfo.getAttachment());
-        Source owner = attachmentInfo.getOwner();
-        String attachmendId = attachmentInfo.getAttachment().getAttachmentContentId();
-        Link downloadLink = null;
+	private HalResource<Attachment> createHalAttachment(AttachmentInfo attachmentInfo, User sw360User)
+			throws TException {
+		HalResource<Attachment> halAttachment = new HalResource<>(attachmentInfo.getAttachment());
+		Source owner = attachmentInfo.getOwner();
+		String attachmendId = attachmentInfo.getAttachment().getAttachmentContentId();
+		Link downloadLink = null;
 
-        switch (owner.getSetField()) {
-            case PROJECT_ID:
-                Project sw360Project = projectService.getProjectForUserById(owner.getProjectId(), sw360User);
-                restControllerHelper.addEmbeddedProject(halAttachment, sw360Project, false);
-                downloadLink = linkTo(ProjectController.class).slash("/api/projects/" + sw360Project.getId() + "/attachments/" + attachmendId).withRel("downloadLink");
-                break;
-            case COMPONENT_ID:
-                Component sw360Component = componentService.getComponentForUserById(owner.getComponentId(), sw360User);
-                restControllerHelper.addEmbeddedComponent(halAttachment, sw360Component);
-                downloadLink = linkTo(ComponentController.class).slash("/api/components/" + sw360Component.getId() + "/attachments/" + attachmendId).withRel("downloadLink");
-                break;
-            case RELEASE_ID:
-                Release sw360Release = releaseService.getReleaseForUserById(owner.getReleaseId(), sw360User);
-                restControllerHelper.addEmbeddedRelease(halAttachment, sw360Release);
-                downloadLink = linkTo(ComponentController.class).slash("/api/releases/" + sw360Release.getId() + "/attachments/" + attachmendId).withRel("downloadLink");
-                break;
-        }
+		switch (owner.getSetField()) {
+			case PROJECT_ID :
+				Project sw360Project = projectService.getProjectForUserById(owner.getProjectId(), sw360User);
+				restControllerHelper.addEmbeddedProject(halAttachment, sw360Project, false);
+				downloadLink = linkTo(ProjectController.class)
+						.slash("/api/projects/" + sw360Project.getId() + "/attachments/" + attachmendId)
+						.withRel("downloadLink");
+				break;
+			case COMPONENT_ID :
+				Component sw360Component = componentService.getComponentForUserById(owner.getComponentId(), sw360User);
+				restControllerHelper.addEmbeddedComponent(halAttachment, sw360Component);
+				downloadLink = linkTo(ComponentController.class)
+						.slash("/api/components/" + sw360Component.getId() + "/attachments/" + attachmendId)
+						.withRel("downloadLink");
+				break;
+			case RELEASE_ID :
+				Release sw360Release = releaseService.getReleaseForUserById(owner.getReleaseId(), sw360User);
+				restControllerHelper.addEmbeddedRelease(halAttachment, sw360Release);
+				downloadLink = linkTo(ComponentController.class)
+						.slash("/api/releases/" + sw360Release.getId() + "/attachments/" + attachmendId)
+						.withRel("downloadLink");
+				break;
+		}
 
-        halAttachment.add(downloadLink);
+		halAttachment.add(downloadLink);
 
-        if (sw360User != null) {
-            restControllerHelper.addEmbeddedUser(halAttachment, sw360User, "createdBy");
-        }
+		if (sw360User != null) {
+			restControllerHelper.addEmbeddedUser(halAttachment, sw360User, "createdBy");
+		}
 
-        return halAttachment;
-    }
+		return halAttachment;
+	}
 
-    @Override
-    public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        final WebMvcLinkBuilder controllerLinkBuilder = linkTo(AttachmentController.class);
-        final Link attachments = Link.of(UriTemplate.of(controllerLinkBuilder.toUri().toString() + "/api/attachments{?sha1}"), "attachments");
-        resource.add(attachments);
-        return resource;
-    }
+	@Override
+	public RepositoryLinksResource process(RepositoryLinksResource resource) {
+		final WebMvcLinkBuilder controllerLinkBuilder = linkTo(AttachmentController.class);
+		final Link attachments = Link.of(
+				UriTemplate.of(controllerLinkBuilder.toUri().toString() + "/api/attachments{?sha1}"), "attachments");
+		resource.add(attachments);
+		return resource;
+	}
 }

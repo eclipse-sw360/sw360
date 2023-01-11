@@ -30,55 +30,55 @@ import org.springframework.security.oauth2.provider.ClientRegistrationException;
  */
 public class Sw360UserDetailsService implements UserDetailsService {
 
-    private final Logger log = LogManager.getLogger(this.getClass());
+	private final Logger log = LogManager.getLogger(this.getClass());
 
-    private Sw360UserDetailsProvider userProvider;
+	private Sw360UserDetailsProvider userProvider;
 
-    private Sw360ClientDetailsService clientProvider;
+	private Sw360ClientDetailsService clientProvider;
 
-    private Sw360GrantedAuthoritiesCalculator authoritiesCalculator;
+	private Sw360GrantedAuthoritiesCalculator authoritiesCalculator;
 
-    public Sw360UserDetailsService(Sw360UserDetailsProvider userProvider, Sw360ClientDetailsService clientProvider,
-            Sw360GrantedAuthoritiesCalculator authoritiesMerger) {
-        this.userProvider = userProvider;
-        this.clientProvider = clientProvider;
-        this.authoritiesCalculator = authoritiesMerger;
-    }
+	public Sw360UserDetailsService(Sw360UserDetailsProvider userProvider, Sw360ClientDetailsService clientProvider,
+			Sw360GrantedAuthoritiesCalculator authoritiesMerger) {
+		this.userProvider = userProvider;
+		this.clientProvider = clientProvider;
+		this.authoritiesCalculator = authoritiesMerger;
+	}
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserDetails result = null;
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		UserDetails result = null;
 
-        Authentication clientAuthentication = SecurityContextHolder.getContext().getAuthentication();
-        if (clientAuthentication != null && clientAuthentication instanceof UsernamePasswordAuthenticationToken) {
-            String clientId = ((org.springframework.security.core.userdetails.User) clientAuthentication.getPrincipal())
-                    .getUsername();
-            try {
-                ClientDetails clientDetails = clientProvider.loadClientByClientId(clientId);
-                log.debug("Sw360ClientDetailsService returned client " + clientDetails + " for id " + clientId
-                        + " from authentication details.");
+		Authentication clientAuthentication = SecurityContextHolder.getContext().getAuthentication();
+		if (clientAuthentication != null && clientAuthentication instanceof UsernamePasswordAuthenticationToken) {
+			String clientId = ((org.springframework.security.core.userdetails.User) clientAuthentication.getPrincipal())
+					.getUsername();
+			try {
+				ClientDetails clientDetails = clientProvider.loadClientByClientId(clientId);
+				log.debug("Sw360ClientDetailsService returned client " + clientDetails + " for id " + clientId
+						+ " from authentication details.");
 
-                User user = userProvider.provideUserDetails(username, null);
-                log.debug("Sw360UserDetailsProvider returned user " + user);
+				User user = userProvider.provideUserDetails(username, null);
+				log.debug("Sw360UserDetailsProvider returned user " + user);
 
-                if (clientDetails != null && user != null) {
-                    result = new org.springframework.security.core.userdetails.User(user.getEmail(),
-                            "PreAuthenticatedPassword", authoritiesCalculator.mergedAuthoritiesOf(user, clientDetails));
-                }
-            } catch (ClientRegistrationException e) {
-                log.warn("No valid client for id " + clientId + " could be found. It is possible that it is "
-                        + "locked, expired, disabled, or invalid for any other reason.");
-                throw new UsernameNotFoundException("We cannot provide UserDetails for an invalid client: ", e);
-            }
-        } else {
-            log.warn("Called in unwanted case: " + clientAuthentication);
-        }
+				if (clientDetails != null && user != null) {
+					result = new org.springframework.security.core.userdetails.User(user.getEmail(),
+							"PreAuthenticatedPassword", authoritiesCalculator.mergedAuthoritiesOf(user, clientDetails));
+				}
+			} catch (ClientRegistrationException e) {
+				log.warn("No valid client for id " + clientId + " could be found. It is possible that it is "
+						+ "locked, expired, disabled, or invalid for any other reason.");
+				throw new UsernameNotFoundException("We cannot provide UserDetails for an invalid client: ", e);
+			}
+		} else {
+			log.warn("Called in unwanted case: " + clientAuthentication);
+		}
 
-        if (result != null) {
-            return result;
-        } else {
-            throw new UsernameNotFoundException("No user with username " + username + " found in sw360 users.");
-        }
-    }
+		if (result != null) {
+			return result;
+		} else {
+			throw new UsernameNotFoundException("No user with username " + username + " found in sw360 users.");
+		}
+	}
 
 }

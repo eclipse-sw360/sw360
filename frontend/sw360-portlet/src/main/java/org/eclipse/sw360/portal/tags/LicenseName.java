@@ -18,7 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
  * @author birgit.heydenreich@tngtech.com
  */
 public class LicenseName extends OutTag {
-    public void setLicense(License license) {
-        this.value = SW360Utils.printName(license);
-    }
+	public void setLicense(License license) {
+		this.value = SW360Utils.printName(license);
+	}
 }

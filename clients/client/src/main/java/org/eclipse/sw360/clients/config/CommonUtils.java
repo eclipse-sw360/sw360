@@ -22,66 +22,66 @@ import org.apache.commons.io.IOUtils;
 
 public class CommonUtils {
 
-    public static final String SYSTEM_CONFIGURATION_PATH = "/etc/sw360";
+	public static final String SYSTEM_CONFIGURATION_PATH = "/etc/sw360";
 
-    public static Properties loadProperties(Class<?> clazz, String propertiesFilePath) {
-        return loadProperties(clazz, propertiesFilePath, true);
-    }
+	public static Properties loadProperties(Class<?> clazz, String propertiesFilePath) {
+		return loadProperties(clazz, propertiesFilePath, true);
+	}
 
-    public static Properties loadProperties(Class<?> clazz, String propertiesFilePath, boolean useSystemConfig) {
-        Properties props = new Properties();
+	public static Properties loadProperties(Class<?> clazz, String propertiesFilePath, boolean useSystemConfig) {
+		Properties props = new Properties();
 
-        try (InputStream resourceAsStream = clazz.getResourceAsStream(propertiesFilePath)) {
-            if (resourceAsStream == null)
-                throw new IOException("cannot open " + propertiesFilePath);
+		try (InputStream resourceAsStream = clazz.getResourceAsStream(propertiesFilePath)) {
+			if (resourceAsStream == null)
+				throw new IOException("cannot open " + propertiesFilePath);
 
-            props.load(resourceAsStream);
-        } catch (IOException e) {
-        }
+			props.load(resourceAsStream);
+		} catch (IOException e) {
+		}
 
-        if (useSystemConfig) {
-            File systemPropertiesFile = new File(SYSTEM_CONFIGURATION_PATH, propertiesFilePath);
-            if (systemPropertiesFile.exists()) {
-                try (InputStream resourceAsStream = new FileInputStream(systemPropertiesFile.getPath())) {
-                    if (resourceAsStream == null)
-                        throw new IOException("cannot open " + systemPropertiesFile.getPath());
+		if (useSystemConfig) {
+			File systemPropertiesFile = new File(SYSTEM_CONFIGURATION_PATH, propertiesFilePath);
+			if (systemPropertiesFile.exists()) {
+				try (InputStream resourceAsStream = new FileInputStream(systemPropertiesFile.getPath())) {
+					if (resourceAsStream == null)
+						throw new IOException("cannot open " + systemPropertiesFile.getPath());
 
-                    props.load(resourceAsStream);
-                } catch (IOException e) {
-                }
-            }
-        }
-        return props;
-    }
+					props.load(resourceAsStream);
+				} catch (IOException e) {
+				}
+			}
+		}
+		return props;
+	}
 
-    public static Optional<byte[]> loadResource(Class<?> clazz, String resourceFilePath) {
-        return loadResource(clazz, resourceFilePath, true);
-    }
+	public static Optional<byte[]> loadResource(Class<?> clazz, String resourceFilePath) {
+		return loadResource(clazz, resourceFilePath, true);
+	}
 
-    public static Optional<byte[]> loadResource(Class<?> clazz, String resourceFilePath, boolean useSystemResourses) {
-        if (resourceFilePath == null || resourceFilePath.isBlank()) {
-            return Optional.empty();
-        }
-        if (useSystemResourses) {
-            File systemResourceFile = new File(SYSTEM_CONFIGURATION_PATH, resourceFilePath);
-            if (systemResourceFile.exists()) {
-                try (InputStream resourceAsStream = new FileInputStream(systemResourceFile.getPath())) {
-                    if (resourceAsStream == null) {
-                        throw new IOException("cannot open " + systemResourceFile.getPath());
-                    }
-                    return Optional.of(IOUtils.toByteArray(resourceAsStream));
-                } catch (IOException e) {
-                }
-            }
-        }
+	public static Optional<byte[]> loadResource(Class<?> clazz, String resourceFilePath, boolean useSystemResourses) {
+		if (resourceFilePath == null || resourceFilePath.isBlank()) {
+			return Optional.empty();
+		}
+		if (useSystemResourses) {
+			File systemResourceFile = new File(SYSTEM_CONFIGURATION_PATH, resourceFilePath);
+			if (systemResourceFile.exists()) {
+				try (InputStream resourceAsStream = new FileInputStream(systemResourceFile.getPath())) {
+					if (resourceAsStream == null) {
+						throw new IOException("cannot open " + systemResourceFile.getPath());
+					}
+					return Optional.of(IOUtils.toByteArray(resourceAsStream));
+				} catch (IOException e) {
+				}
+			}
+		}
 
-        try (InputStream resourceAsStream = clazz.getResourceAsStream(resourceFilePath)) {
-            if (resourceAsStream == null)
-                throw new IOException("cannot open " + resourceFilePath);
-            return Optional.of(IOUtils.toByteArray(resourceAsStream));
-        } catch (IOException e) {
-        }
-        return Optional.empty();
-    }
+		try (InputStream resourceAsStream = clazz.getResourceAsStream(resourceFilePath)) {
+			if (resourceAsStream == null)
+				throw new IOException("cannot open " + resourceFilePath);
+			return Optional.of(IOUtils.toByteArray(resourceAsStream));
+		} catch (IOException e) {
+		}
+		return Optional.empty();
+	}
 
 }

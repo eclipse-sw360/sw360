@@ -17,16 +17,14 @@ import java.util.stream.Collectors;
 import static org.eclipse.sw360.cvesearch.datasource.matcher.ModifiedLevenshteinDistance.levenshteinMatch;
 
 public class ListMatcher {
-    private Collection<String> needleList;
+	private Collection<String> needleList;
 
-    public ListMatcher(Collection<String> needleList){
-        this.needleList = needleList;
-    }
+	public ListMatcher(Collection<String> needleList) {
+		this.needleList = needleList;
+	}
 
-    public List<Match> getMatches(String haystack){
-        return needleList.stream()
-                .map(needle -> levenshteinMatch(needle, haystack))
-                .sorted((sm1,sm2) -> sm1.compareTo(sm2))
-                .collect(Collectors.toList());
-    }
+	public List<Match> getMatches(String haystack) {
+		return needleList.stream().map(needle -> levenshteinMatch(needle, haystack))
+				.sorted((sm1, sm2) -> sm1.compareTo(sm2)).collect(Collectors.toList());
+	}
 }

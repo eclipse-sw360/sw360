@@ -28,45 +28,46 @@ import java.util.stream.Collectors;
  */
 public class DisplayOutputFormats extends SimpleTagSupport {
 
-    private Collection<OutputFormatInfo> options;
-    private String selected;
-    private OutputFormatVariant variantToSkip;
-    private Collection<String> formatsToShow;
+	private Collection<OutputFormatInfo> options;
+	private String selected;
+	private OutputFormatVariant variantToSkip;
+	private Collection<String> formatsToShow;
 
-    public void setOptions(Collection<OutputFormatInfo> options) throws JspException {
-        this.options = options;
-    }
+	public void setOptions(Collection<OutputFormatInfo> options) throws JspException {
+		this.options = options;
+	}
 
-    public void setSelected(String selected) {
-        this.selected = selected;
-    }
+	public void setSelected(String selected) {
+		this.selected = selected;
+	}
 
-    public void setVariantToSkip(OutputFormatVariant variantToSkip) {
-        this.variantToSkip = variantToSkip;
-    }
+	public void setVariantToSkip(OutputFormatVariant variantToSkip) {
+		this.variantToSkip = variantToSkip;
+	}
 
-    public void setFormatsToShow(Collection<String> formatsToShow) {
-        this.formatsToShow = formatsToShow;
-    }
+	public void setFormatsToShow(Collection<String> formatsToShow) {
+		this.formatsToShow = formatsToShow;
+	}
 
-    public void doTag() throws JspException, IOException {
-        writeOptions(options);
-    }
+	public void doTag() throws JspException, IOException {
+		writeOptions(options);
+	}
 
-    private void writeOptions(Collection<OutputFormatInfo> options) throws IOException {
-        JspWriter jspWriter = getJspContext().getOut();
-        boolean isChecked=true;
-        options = options.stream().filter(ofInfo -> !ofInfo.getVariant().equals(variantToSkip))
-                .filter(ofInfo -> (Objects.isNull(formatsToShow)) || formatsToShow.contains(ofInfo.getFileExtension()))
-                .collect(Collectors.toCollection(ArrayList::new));
-        for (OutputFormatInfo option : options) {
-            String optionDescription = option.getDescription();
-            String optionValue = option.getGeneratorClassName() + "::" + option.getVariant();
-            String checked=isChecked?"checked":"";
-            jspWriter.write(String.format(
-                    ("<div class=\"radio form-check\"><label><input type=\"radio\" name=\"outputFormat\" value=\"%s\" "+checked+">%s</label></div>"),
-                    optionValue, optionDescription));
-            isChecked=false;
-        }
-    }
+	private void writeOptions(Collection<OutputFormatInfo> options) throws IOException {
+		JspWriter jspWriter = getJspContext().getOut();
+		boolean isChecked = true;
+		options = options.stream().filter(ofInfo -> !ofInfo.getVariant().equals(variantToSkip))
+				.filter(ofInfo -> (Objects.isNull(formatsToShow)) || formatsToShow.contains(ofInfo.getFileExtension()))
+				.collect(Collectors.toCollection(ArrayList::new));
+		for (OutputFormatInfo option : options) {
+			String optionDescription = option.getDescription();
+			String optionValue = option.getGeneratorClassName() + "::" + option.getVariant();
+			String checked = isChecked ? "checked" : "";
+			jspWriter.write(String.format(
+					("<div class=\"radio form-check\"><label><input type=\"radio\" name=\"outputFormat\" value=\"%s\" "
+							+ checked + ">%s</label></div>"),
+					optionValue, optionDescription));
+			isChecked = false;
+		}
+	}
 }

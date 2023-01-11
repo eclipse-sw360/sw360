@@ -27,18 +27,19 @@ import java.util.List;
  */
 public class TestLicenseClient {
 
-    public static void main(String[] args) throws TException, IOException {
-        THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/licenses/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        LicenseService.Iface client = new LicenseService.Client(protocol);
+	public static void main(String[] args) throws TException, IOException {
+		THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/licenses/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		LicenseService.Iface client = new LicenseService.Client(protocol);
 
-        List<License> licenses = client.getLicenseSummary();
+		List<License> licenses = client.getLicenseSummary();
 
-        System.out.println("Fetched " + licenses.size() + " licenses from license service");
+		System.out.println("Fetched " + licenses.size() + " licenses from license service");
 
-        final List<License> licenseList = client.getDetailedLicenseSummary("", ImmutableList.of("AFL-2.1","Artistic-1.0"));
-        System.out.println(licenseList.toString());
+		final List<License> licenseList = client.getDetailedLicenseSummary("",
+				ImmutableList.of("AFL-2.1", "Artistic-1.0"));
+		System.out.println(licenseList.toString());
 
-    }
+	}
 
 }

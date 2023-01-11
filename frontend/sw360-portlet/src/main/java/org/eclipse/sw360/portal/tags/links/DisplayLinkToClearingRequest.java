@@ -22,23 +22,21 @@ import org.eclipse.sw360.portal.portlets.LinkToPortletConfiguration;
  * @author abdul.mannankapti@siemens.com
  */
 public class DisplayLinkToClearingRequest extends DisplayLinkAbstract {
-    private String clearingRequestId;
+	private String clearingRequestId;
 
-    public void setClearingRequestId(String clearingRequestId) {
-        this.clearingRequestId = clearingRequestId;
-    }
+	public void setClearingRequestId(String clearingRequestId) {
+		this.clearingRequestId = clearingRequestId;
+	}
 
-    @Override
-    protected String getTextDisplay() {
-        return clearingRequestId;
-    }
+	@Override
+	protected String getTextDisplay() {
+		return clearingRequestId;
+	}
 
-    @Override
-    protected void writeUrl() throws JspException {
-        renderUrl(pageContext)
-                .toPortlet(LinkToPortletConfiguration.MODERATION, scopeGroupId)
-                .toPage(PortletDefaultPage.CLEARING_REQUEST_DETAIL)
-                .withParam(PortalConstants.CLEARING_REQUEST_ID, clearingRequestId)
-                .writeUrlToJspWriter();
-    }
+	@Override
+	protected void writeUrl() throws JspException {
+		renderUrl(pageContext).toPortlet(LinkToPortletConfiguration.MODERATION, scopeGroupId)
+				.toPage(PortletDefaultPage.CLEARING_REQUEST_DETAIL)
+				.withParam(PortalConstants.CLEARING_REQUEST_ID, clearingRequestId).writeUrlToJspWriter();
+	}
 }

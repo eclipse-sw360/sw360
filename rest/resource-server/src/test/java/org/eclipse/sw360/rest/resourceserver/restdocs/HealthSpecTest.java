@@ -26,64 +26,59 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-public class HealthSpecTest extends TestRestDocsSpecBase{
+public class HealthSpecTest extends TestRestDocsSpecBase {
 
-    @MockBean
-    private SW360RestHealthIndicator restHealthIndicatorMock;
+	@MockBean
+	private SW360RestHealthIndicator restHealthIndicatorMock;
 
-    @Test
-    public void should_document_get_health() throws Exception {
-        SW360RestHealthIndicator.RestState restState = new SW360RestHealthIndicator.RestState();
-        restState.isThriftReachable = true;
-        restState.isDbReachable = true;
+	@Test
+	public void should_document_get_health() throws Exception {
+		SW360RestHealthIndicator.RestState restState = new SW360RestHealthIndicator.RestState();
+		restState.isThriftReachable = true;
+		restState.isDbReachable = true;
 
-        Health spring_health = Health.up()
-                .withDetail("Rest State", restState)
-                .build();
-        given(this.restHealthIndicatorMock.health()).willReturn(spring_health);
+		Health spring_health = Health.up().withDetail("Rest State", restState).build();
+		given(this.restHealthIndicatorMock.health()).willReturn(spring_health);
 
+		mockMvc.perform(get("/health").accept(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
+				.andDo(this.documentationHandler.document(responseFields(
+						fieldWithPath("status").description("The overall status of the health."),
+						fieldWithPath("components.diskSpace.status")
+								.description("The status of the health of the diskspace."),
+						fieldWithPath("components.diskSpace.details.total")
+								.description("The total volume of the diskspace."),
+						fieldWithPath("components.diskSpace.details.free")
+								.description("The free space of the diskspace."),
+						fieldWithPath("components.diskSpace.details.threshold")
+								.description("The threshold of the diskspace."),
+						fieldWithPath("components.diskSpace.details.exists").description("The existance of diskspace."),
+						fieldWithPath("components.ping.status").description(
+								"The status of the health of the specific health indicator 'SW360 Rest'."))));
+	}
 
-        mockMvc.perform(get("/health")
-                    .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andDo(this.documentationHandler.document(
-                        responseFields(
-                                fieldWithPath("status").description("The overall status of the health."),
-                                fieldWithPath("components.diskSpace.status").description("The status of the health of the diskspace."),
-                                fieldWithPath("components.diskSpace.details.total").description("The total volume of the diskspace."),
-                                fieldWithPath("components.diskSpace.details.free").description("The free space of the diskspace."),
-                                fieldWithPath("components.diskSpace.details.threshold").description("The threshold of the diskspace."),
-                                fieldWithPath("components.diskSpace.details.exists").description("The existance of diskspace."),
-                                fieldWithPath("components.ping.status").description("The status of the health of the specific health indicator 'SW360 Rest'.")
-                        )
-                ));
-    }
+	@Test
+	public void should_document_get_health_unhealthy() throws Exception {
+		SW360RestHealthIndicator.RestState restState = new SW360RestHealthIndicator.RestState();
+		restState.isThriftReachable = false;
+		restState.isDbReachable = true;
 
-    @Test
-    public void should_document_get_health_unhealthy() throws Exception {
-        SW360RestHealthIndicator.RestState restState = new SW360RestHealthIndicator.RestState();
-        restState.isThriftReachable = false;
-        restState.isDbReachable = true;
+		Health spring_health_down = Health.down().withDetail("Rest State", restState)
+				.withException(new Exception("Fake")).build();
+		given(this.restHealthIndicatorMock.health()).willReturn(spring_health_down);
 
-        Health spring_health_down = Health.down()
-                .withDetail("Rest State", restState)
-                .withException(new Exception("Fake"))
-                .build();
-        given(this.restHealthIndicatorMock.health()).willReturn(spring_health_down);
-
-        mockMvc.perform(get("/health")
-                    .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().is2xxSuccessful())
-                .andDo(this.documentationHandler.document(
-                        responseFields(
-                                fieldWithPath("status").description("The overall status of the health."),
-                                fieldWithPath("components.diskSpace.status").description("The status of the health of the diskspace."),
-                                fieldWithPath("components.diskSpace.details.total").description("The total volume of the diskspace."),
-                                fieldWithPath("components.diskSpace.details.free").description("The free space of the diskspace."),
-                                fieldWithPath("components.diskSpace.details.threshold").description("The threshold of the diskspace."),
-                                fieldWithPath("components.diskSpace.details.exists").description("The existance of diskspace."),
-                                fieldWithPath("components.ping.status").description("The status of the health of the specific health indicator 'SW360 Rest'.")
-                        )
-                ));
-    }
+		mockMvc.perform(get("/health").accept(MediaType.APPLICATION_JSON)).andExpect(status().is2xxSuccessful())
+				.andDo(this.documentationHandler.document(responseFields(
+						fieldWithPath("status").description("The overall status of the health."),
+						fieldWithPath("components.diskSpace.status")
+								.description("The status of the health of the diskspace."),
+						fieldWithPath("components.diskSpace.details.total")
+								.description("The total volume of the diskspace."),
+						fieldWithPath("components.diskSpace.details.free")
+								.description("The free space of the diskspace."),
+						fieldWithPath("components.diskSpace.details.threshold")
+								.description("The threshold of the diskspace."),
+						fieldWithPath("components.diskSpace.details.exists").description("The existance of diskspace."),
+						fieldWithPath("components.ping.status").description(
+								"The status of the health of the specific health indicator 'SW360 Rest'."))));
+	}
 }

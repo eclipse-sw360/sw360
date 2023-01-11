@@ -15,18 +15,17 @@ import org.eclipse.sw360.portal.common.PortalConstants;
  * @author daniele.fognini@tngtech.com
  */
 public enum PortletReleasePage implements PortletPage {
-    DETAIL(PortalConstants.PAGENAME_RELEASE_DETAIL),
-    EDIT(PortalConstants.PAGENAME_EDIT_RELEASE),
-    DUPLICATE(PortalConstants.PAGENAME_DUPLICATE_RELEASE);
+	DETAIL(PortalConstants.PAGENAME_RELEASE_DETAIL), EDIT(PortalConstants.PAGENAME_EDIT_RELEASE), DUPLICATE(
+			PortalConstants.PAGENAME_DUPLICATE_RELEASE);
 
-    private String pagename;
+	private String pagename;
 
-    PortletReleasePage(String pagename) {
-        this.pagename = pagename;
-    }
+	PortletReleasePage(String pagename) {
+		this.pagename = pagename;
+	}
 
-    @Override
-    public String pagename() {
-        return pagename;
-    }
+	@Override
+	public String pagename() {
+		return pagename;
+	}
 }

@@ -17,71 +17,71 @@ import java.util.Set;
 
 public class OAuthClientResource {
 
-    @JsonProperty("description")
-    private String description;
+	@JsonProperty("description")
+	private String description;
 
-    @JsonProperty("client_id")
-    private String clientId;
+	@JsonProperty("client_id")
+	private String clientId;
 
-    @JsonProperty("client_secret")
-    private String clientSecret;
+	@JsonProperty("client_secret")
+	private String clientSecret;
 
-    @JsonProperty("authorities")
-    private Set<String> authorities;
+	@JsonProperty("authorities")
+	private Set<String> authorities;
 
-    @JsonProperty("scope")
-    private Set<String> scope;
+	@JsonProperty("scope")
+	private Set<String> scope;
 
-    @JsonProperty("access_token_validity")
-    private Integer accessTokenValidity;
+	@JsonProperty("access_token_validity")
+	private Integer accessTokenValidity;
 
-    @JsonProperty("refresh_token_validity")
-    private Integer refreshTokenValidity;
+	@JsonProperty("refresh_token_validity")
+	private Integer refreshTokenValidity;
 
-    public OAuthClientResource() {
-        // if needed by frameworks
-    }
+	public OAuthClientResource() {
+		// if needed by frameworks
+	}
 
-    public OAuthClientResource(OAuthClientEntity clientEntity) {
-        this.description = clientEntity.getDescription();
-        this.clientId = clientEntity.getClientId();
-        this.clientSecret = clientEntity.getClientSecret();
-        this.authorities = clientEntity.getAuthoritiesAsStrings();
-        this.scope = clientEntity.getScope();
-        this.accessTokenValidity = clientEntity.getAccessTokenValiditySeconds();
-        this.refreshTokenValidity = clientEntity.getRefreshTokenValiditySeconds();
-    }
+	public OAuthClientResource(OAuthClientEntity clientEntity) {
+		this.description = clientEntity.getDescription();
+		this.clientId = clientEntity.getClientId();
+		this.clientSecret = clientEntity.getClientSecret();
+		this.authorities = clientEntity.getAuthoritiesAsStrings();
+		this.scope = clientEntity.getScope();
+		this.accessTokenValidity = clientEntity.getAccessTokenValiditySeconds();
+		this.refreshTokenValidity = clientEntity.getRefreshTokenValiditySeconds();
+	}
 
-    public String getDescription() {
-        return description;
-    }
+	public String getDescription() {
+		return description;
+	}
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+	public void setDescription(String description) {
+		this.description = description;
+	}
 
-    public String getClientId() {
-        return clientId;
-    }
+	public String getClientId() {
+		return clientId;
+	}
 
-    public String getClientSecret() {
-        return clientSecret;
-    }
+	public String getClientSecret() {
+		return clientSecret;
+	}
 
-    public Set<String> getAuthorities() {
-        return authorities;
-    }
+	public Set<String> getAuthorities() {
+		return authorities;
+	}
 
-    public Set<String> getScope() {
-        return scope;
-    }
+	public Set<String> getScope() {
+		return scope;
+	}
 
-    public Integer getAccessTokenValidity() {
-        return accessTokenValidity;
-    }
+	public Integer getAccessTokenValidity() {
+		return accessTokenValidity;
+	}
 
-    public Integer getRefreshTokenValidity() {
-        return refreshTokenValidity;
-    }
+	public Integer getRefreshTokenValidity() {
+		return refreshTokenValidity;
+	}
 
 }

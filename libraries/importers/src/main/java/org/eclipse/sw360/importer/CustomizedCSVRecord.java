@@ -16,24 +16,24 @@ package org.eclipse.sw360.importer;
  */
 public interface CustomizedCSVRecord {
 
-    //Methods
-  Iterable<String> getCSVIterable();
+	// Methods
+	Iterable<String> getCSVIterable();
 
-    // Static abstract methods don't exist, nevertheless you should implement those:
-//    public static Iterable<String> getCSVHeaderIterable() {
-//        return null;
-//    }
-//
-//    public static Iterable<String> getSampleInputIterable() {
-//        return null;
-//    }
+	// Static abstract methods don't exist, nevertheless you should implement those:
+	// public static Iterable<String> getCSVHeaderIterable() {
+	// return null;
+	// }
+	//
+	// public static Iterable<String> getSampleInputIterable() {
+	// return null;
+	// }
 
-//    public static T builder(){
-//        return new T();
-//    }
-//
-//    public static T builder( CSVRecord in){
-//        return new T( in );
-//    }
+	// public static T builder(){
+	// return new T();
+	// }
+	//
+	// public static T builder( CSVRecord in){
+	// return new T( in );
+	// }
 
 }

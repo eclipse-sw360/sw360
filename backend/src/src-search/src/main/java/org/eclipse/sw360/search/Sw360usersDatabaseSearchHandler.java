@@ -22,17 +22,18 @@ import java.util.function.Supplier;
 
 public class Sw360usersDatabaseSearchHandler extends AbstractDatabaseSearchHandler {
 
-    public Sw360usersDatabaseSearchHandler() throws IOException {
-        super(DatabaseSettings.COUCH_DB_USERS);
-    }
+	public Sw360usersDatabaseSearchHandler() throws IOException {
+		super(DatabaseSettings.COUCH_DB_USERS);
+	}
 
-    public Sw360usersDatabaseSearchHandler(Supplier<HttpClient> hclient, Supplier<CloudantClient> client, String dbName) throws IOException {
-        super(hclient, client, dbName);
-    }
+	public Sw360usersDatabaseSearchHandler(Supplier<HttpClient> hclient, Supplier<CloudantClient> client, String dbName)
+			throws IOException {
+		super(hclient, client, dbName);
+	}
 
-    @Override
-    protected boolean isVisibleToUser(SearchResult result, User user) {
-        return true;
-    }
+	@Override
+	protected boolean isVisibleToUser(SearchResult result, User user) {
+		return true;
+	}
 
 }

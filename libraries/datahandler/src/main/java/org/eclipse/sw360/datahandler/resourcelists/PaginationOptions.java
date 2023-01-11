@@ -15,40 +15,40 @@ import java.util.Comparator;
 
 public class PaginationOptions<T> {
 
-    private final int pageNumber;
-    private final int pageSize;
-    private final Comparator<T> sortComparator;
+	private final int pageNumber;
+	private final int pageSize;
+	private final Comparator<T> sortComparator;
 
-    public PaginationOptions(int pageNumber, int pageSize, Comparator<T> sortComparator) {
-        if(pageSize <= 0) {
-            pageSize = 10;
-        }
-        this.pageNumber = pageNumber;
-        this.pageSize = pageSize;
-        this.sortComparator = sortComparator;
-    }
+	public PaginationOptions(int pageNumber, int pageSize, Comparator<T> sortComparator) {
+		if (pageSize <= 0) {
+			pageSize = 10;
+		}
+		this.pageNumber = pageNumber;
+		this.pageSize = pageSize;
+		this.sortComparator = sortComparator;
+	}
 
-    public int getPageNumber() {
-        return pageNumber;
-    }
+	public int getPageNumber() {
+		return pageNumber;
+	}
 
-    public int getPageSize() {
-        return pageSize;
-    }
+	public int getPageSize() {
+		return pageSize;
+	}
 
-    Comparator<T> getSortComparator() {
-        return sortComparator;
-    }
+	Comparator<T> getSortComparator() {
+		return sortComparator;
+	}
 
-    public int getOffset() {
-        if(pageNumber < 1) {
-            return 0;
-        }
-        return pageNumber * pageSize;
-    }
+	public int getOffset() {
+		if (pageNumber < 1) {
+			return 0;
+		}
+		return pageNumber * pageSize;
+	}
 
-    int getPageEndIndex() {
-        return getOffset() + getPageSize();
-    }
+	int getPageEndIndex() {
+		return getOffset() + getPageSize();
+	}
 
 }

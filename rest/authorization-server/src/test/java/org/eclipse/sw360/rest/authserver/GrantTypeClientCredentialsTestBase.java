@@ -21,20 +21,20 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public abstract class GrantTypeClientCredentialsTestBase extends IntegrationTestBase {
 
-    protected final String PARAMETER_GRANT_TYPE = "client_credentials";
+	protected final String PARAMETER_GRANT_TYPE = "client_credentials";
 
-    @Test
-    public void should_connect_to_authorization_server_with_client_credentials() {
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
-    }
+	@Test
+	public void should_connect_to_authorization_server_with_client_credentials() {
+		assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+	}
 
-    @Test
-    public void should_get_expected_response_headers() throws IOException {
-        checkResponseBody();
-    }
+	@Test
+	public void should_get_expected_response_headers() throws IOException {
+		checkResponseBody();
+	}
 
-    @Test
-    public void should_get_expected_jwt_attributes() throws IOException {
-        checkJwtClaims(BASIC.getAuthority());
-    }
+	@Test
+	public void should_get_expected_jwt_attributes() throws IOException {
+		checkJwtClaims(BASIC.getAuthority());
+	}
 }

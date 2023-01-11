@@ -25,51 +25,45 @@ import javax.servlet.http.HttpServletResponse;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 
-
-@Component(
-    immediate = true,
-    property = "key=login.events.post",
-    service = LifecycleAction.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+@Component(immediate = true, property = "key=login.events.post", service = LifecycleAction.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class LandingPageAction extends Action {
-    protected final Logger log = LoggerFactory.getLogger(getClass());
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    private static final String DEFAULT_LANDING_PAGE_PATH_PROPERTY = "default.landing.page.path";
-    private static final String DEFAULT_LANDING_PAGE_PATH = "/group/guest/home";
+	private static final String DEFAULT_LANDING_PAGE_PATH_PROPERTY = "default.landing.page.path";
+	private static final String DEFAULT_LANDING_PAGE_PATH = "/group/guest/home";
 
-    private String landingPage;
+	private String landingPage;
 
-    @Activate
-    protected void activate() {
-        log.info("Component [" + getClass().getCanonicalName() + "] has been ENABLED.");
+	@Activate
+	protected void activate() {
+		log.info("Component [" + getClass().getCanonicalName() + "] has been ENABLED.");
 
-        landingPage = PropsUtil.get(DEFAULT_LANDING_PAGE_PATH_PROPERTY);
-        if (landingPage == null){
-            landingPage = DEFAULT_LANDING_PAGE_PATH;
-        }
-        log.info("loaded landing page path from properties: " + landingPage);
-    }
+		landingPage = PropsUtil.get(DEFAULT_LANDING_PAGE_PATH_PROPERTY);
+		if (landingPage == null) {
+			landingPage = DEFAULT_LANDING_PAGE_PATH;
+		}
+		log.info("loaded landing page path from properties: " + landingPage);
+	}
 
-    @Modified
-    protected void modified() {
-        log.info("Component [" + getClass().getCanonicalName() + "] has been MODIFIED.");
-    }
+	@Modified
+	protected void modified() {
+		log.info("Component [" + getClass().getCanonicalName() + "] has been MODIFIED.");
+	}
 
-    @Deactivate
-    protected void deactivate() {
-        log.info("Component [" + getClass().getCanonicalName() + "] has been DISABLED.");
-    }
+	@Deactivate
+	protected void deactivate() {
+		log.info("Component [" + getClass().getCanonicalName() + "] has been DISABLED.");
+	}
 
-    @Override
-    public void run(HttpServletRequest request, HttpServletResponse response) throws ActionException {
-        if (isNullOrEmpty(request.getContextPath())) {
-            try {
-                log.info("Redirect to [" + landingPage + "].");
-                response.sendRedirect(landingPage);
-            } catch (IOException e) {
-                throw new ActionException(e);
-            }
-        }
-    }
+	@Override
+	public void run(HttpServletRequest request, HttpServletResponse response) throws ActionException {
+		if (isNullOrEmpty(request.getContextPath())) {
+			try {
+				log.info("Redirect to [" + landingPage + "].");
+				response.sendRedirect(landingPage);
+			} catch (IOException e) {
+				throw new ActionException(e);
+			}
+		}
+	}
 }

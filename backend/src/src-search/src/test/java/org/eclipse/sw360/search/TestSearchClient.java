@@ -26,23 +26,23 @@ import java.util.List;
  */
 public class TestSearchClient {
 
-    private static final String searchtext = "s*";
+	private static final String searchtext = "s*";
 
-    public static void main(String[] args) throws TException, IOException {
-        THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/search/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        SearchService.Iface client = new SearchService.Client(protocol);
+	public static void main(String[] args) throws TException, IOException {
+		THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/search/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		SearchService.Iface client = new SearchService.Client(protocol);
 
-        List<SearchResult> results = client.search(searchtext, null);
-        //List<SearchResult> results = new SearchHandler().search(searchtext);
+		List<SearchResult> results = client.search(searchtext, null);
+		// List<SearchResult> results = new SearchHandler().search(searchtext);
 
+		// http://localhost:5984/_fti/local/sw360db/_design/lucene/all?q=type:project%20AND%20P1*
 
-        //  http://localhost:5984/_fti/local/sw360db/_design/lucene/all?q=type:project%20AND%20P1*
-
-        System.out.println("Fetched " + results.size() + " from search service");
-        for (SearchResult result : results) {
-            System.out.println(result.getId() + "(" + result.getType() + "): " + result.getName() + " (" + result.getScore() + ")");
-        }
-    }
+		System.out.println("Fetched " + results.size() + " from search service");
+		for (SearchResult result : results) {
+			System.out.println(result.getId() + "(" + result.getType() + "): " + result.getName() + " ("
+					+ result.getScore() + ")");
+		}
+	}
 
 }

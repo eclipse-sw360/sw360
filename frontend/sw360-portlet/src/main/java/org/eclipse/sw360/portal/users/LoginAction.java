@@ -24,55 +24,49 @@ import org.slf4j.LoggerFactory;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@Component(
-    immediate = true,
-    property = "key=login.events.post",
-    service = LifecycleAction.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE,
-    enabled = false
-)
+@Component(immediate = true, property = "key=login.events.post", service = LifecycleAction.class, configurationPolicy = ConfigurationPolicy.REQUIRE, enabled = false)
 public class LoginAction extends Action {
-    protected final Logger log = LoggerFactory.getLogger(getClass());
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Activate
-    protected void activate() {
-        log.info("Component [" + getClass().getCanonicalName() + "] has been ENABLED.");
-    }
+	@Activate
+	protected void activate() {
+		log.info("Component [" + getClass().getCanonicalName() + "] has been ENABLED.");
+	}
 
-    @Modified
-    protected void modified() {
-        log.info("Component [" + getClass().getCanonicalName() + "] has been MODIFIED.");
-    }
+	@Modified
+	protected void modified() {
+		log.info("Component [" + getClass().getCanonicalName() + "] has been MODIFIED.");
+	}
 
-    @Deactivate
-    protected void deactivate() {
-        log.info("Component [" + getClass().getCanonicalName() + "] has been DISABLED.");
-    }
+	@Deactivate
+	protected void deactivate() {
+		log.info("Component [" + getClass().getCanonicalName() + "] has been DISABLED.");
+	}
 
-    @Override
-    public void run(HttpServletRequest request, HttpServletResponse response) {
-        try {
-            long userId = getLiferayUserId(request);
-            User user = UserLocalServiceUtil.getUserById(userId);
-            UserUtils userUtils = new UserUtils();
-            userUtils.synchronizeUserWithDatabase(user);
-        } catch (Exception e) {
-            log.error("Problem with user ", e);
-        }
-    }
+	@Override
+	public void run(HttpServletRequest request, HttpServletResponse response) {
+		try {
+			long userId = getLiferayUserId(request);
+			User user = UserLocalServiceUtil.getUserById(userId);
+			UserUtils userUtils = new UserUtils();
+			userUtils.synchronizeUserWithDatabase(user);
+		} catch (Exception e) {
+			log.error("Problem with user ", e);
+		}
+	}
 
-    private static long getLiferayUserId(HttpServletRequest request) {
-        long userId = -1;
+	private static long getLiferayUserId(HttpServletRequest request) {
+		long userId = -1;
 
-        Object fromWebKey = request.getAttribute(WebKeys.USER_ID);
-        if (fromWebKey != null && fromWebKey instanceof Long) {
-            userId = (Long) fromWebKey;
-        }
+		Object fromWebKey = request.getAttribute(WebKeys.USER_ID);
+		if (fromWebKey != null && fromWebKey instanceof Long) {
+			userId = (Long) fromWebKey;
+		}
 
-        if (userId <= 0) {
-            userId = CommonUtils.toUnsignedInt(request.getRemoteUser());
-        }
+		if (userId <= 0) {
+			userId = CommonUtils.toUnsignedInt(request.getRemoteUser());
+		}
 
-        return userId;
-    }
+		return userId;
+	}
 }

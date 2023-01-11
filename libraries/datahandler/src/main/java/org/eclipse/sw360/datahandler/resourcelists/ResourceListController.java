@@ -18,33 +18,35 @@ import java.util.List;
 
 public class ResourceListController<T> {
 
-    private static final String PAGINATION_PARAMETER_EXCEPTION_MESSAGE = "The given page index is bigger than the actual number of pages";
+	private static final String PAGINATION_PARAMETER_EXCEPTION_MESSAGE = "The given page index is bigger than the actual number of pages";
 
-    public PaginationResult<T> applyPagingToList(List<T> resources, PaginationOptions<T> paginationOptions) throws PaginationParameterException {
-        if(resources.size() == 0) {
-            if(paginationOptions.getPageNumber() == 0) {
-                return new PaginationResult<>(resources, 0, paginationOptions);
-            } else {
-                throw new PaginationParameterException(PAGINATION_PARAMETER_EXCEPTION_MESSAGE);
-            }
-        }
-        List<T> sortedResources = this.sortList(resources, paginationOptions.getSortComparator());
+	public PaginationResult<T> applyPagingToList(List<T> resources, PaginationOptions<T> paginationOptions)
+			throws PaginationParameterException {
+		if (resources.size() == 0) {
+			if (paginationOptions.getPageNumber() == 0) {
+				return new PaginationResult<>(resources, 0, paginationOptions);
+			} else {
+				throw new PaginationParameterException(PAGINATION_PARAMETER_EXCEPTION_MESSAGE);
+			}
+		}
+		List<T> sortedResources = this.sortList(resources, paginationOptions.getSortComparator());
 
-        int fromIndex = paginationOptions.getOffset();
-        int toIndex = paginationOptions.getPageEndIndex();
-        if(fromIndex >= sortedResources.size()) {
-            throw new PaginationParameterException(PAGINATION_PARAMETER_EXCEPTION_MESSAGE);
-        } else if (toIndex > sortedResources.size()) {
-            toIndex = sortedResources.size();
-        }
-        return new PaginationResult<>(sortedResources.subList(fromIndex, toIndex), sortedResources.size(), paginationOptions);
-    }
+		int fromIndex = paginationOptions.getOffset();
+		int toIndex = paginationOptions.getPageEndIndex();
+		if (fromIndex >= sortedResources.size()) {
+			throw new PaginationParameterException(PAGINATION_PARAMETER_EXCEPTION_MESSAGE);
+		} else if (toIndex > sortedResources.size()) {
+			toIndex = sortedResources.size();
+		}
+		return new PaginationResult<>(sortedResources.subList(fromIndex, toIndex), sortedResources.size(),
+				paginationOptions);
+	}
 
-    private List<T> sortList(List<T> resources, Comparator<T> comparator) {
-        if(comparator == null) {
-            return resources;
-        }
-        Collections.sort(resources, comparator);
-        return resources;
-    }
+	private List<T> sortList(List<T> resources, Comparator<T> comparator) {
+		if (comparator == null) {
+			return resources;
+		}
+		Collections.sort(resources, comparator);
+		return resources;
+	}
 }

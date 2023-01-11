@@ -24,31 +24,31 @@ import java.util.List;
 import java.util.Map;
 
 public class ConfigContainerRepository extends DatabaseRepositoryCloudantClient<ConfigContainer> {
-    private static final String ALL = "function(doc) { emit(null, doc._id); }";
-    private static final String BYID = "function(doc) { emit(doc._id, null); }";
-    private static final String BYCONFIGFOR = "function(doc) { emit(doc.configFor, null); }";
+	private static final String ALL = "function(doc) { emit(null, doc._id); }";
+	private static final String BYID = "function(doc) { emit(doc._id, null); }";
+	private static final String BYCONFIGFOR = "function(doc) { emit(doc.configFor, null); }";
 
-    public ConfigContainerRepository(DatabaseConnectorCloudant databaseConnector) {
-        super(databaseConnector, ConfigContainer.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("all", createMapReduce(ALL, null));
-        views.put("byId", createMapReduce(BYID, null));
-        views.put("byConfigFor", createMapReduce(BYCONFIGFOR, null));
-        initStandardDesignDocument(views, databaseConnector);
-    }
+	public ConfigContainerRepository(DatabaseConnectorCloudant databaseConnector) {
+		super(databaseConnector, ConfigContainer.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("all", createMapReduce(ALL, null));
+		views.put("byId", createMapReduce(BYID, null));
+		views.put("byConfigFor", createMapReduce(BYCONFIGFOR, null));
+		initStandardDesignDocument(views, databaseConnector);
+	}
 
-    public ConfigContainer getByConfigFor(ConfigFor configFor) {
-        ViewRequestBuilder query = getConnector().createQuery(ConfigContainer.class, "byConfigFor");
-        UnpaginatedRequestBuilder reqBuilder = query.newRequest(Key.Type.STRING, Object.class)
-                .keys(configFor.toString()).includeDocs(true);
+	public ConfigContainer getByConfigFor(ConfigFor configFor) {
+		ViewRequestBuilder query = getConnector().createQuery(ConfigContainer.class, "byConfigFor");
+		UnpaginatedRequestBuilder reqBuilder = query.newRequest(Key.Type.STRING, Object.class)
+				.keys(configFor.toString()).includeDocs(true);
 
-        List<ConfigContainer> configs = queryView(reqBuilder);
-        if (configs.size() != 1) {
-            throw new IllegalStateException(
-                    "There are " + configs.size() + " configuration objects in the couch db for type " + configFor
-                            + " while there should be exactly one!");
-        } else {
-            return configs.get(0);
-        }
-    }
+		List<ConfigContainer> configs = queryView(reqBuilder);
+		if (configs.size() != 1) {
+			throw new IllegalStateException(
+					"There are " + configs.size() + " configuration objects in the couch db for type " + configFor
+							+ " while there should be exactly one!");
+		} else {
+			return configs.get(0);
+		}
+	}
 }

@@ -32,36 +32,36 @@ import java.util.List;
 @Component
 public class Sw360AuthenticationProvider implements AuthenticationProvider {
 
-    @Value("${sw360.test-user-id}")
-    private String testUserId;
+	@Value("${sw360.test-user-id}")
+	private String testUserId;
 
-    @Value("${sw360.test-user-password}")
-    private String testUserPassword;
+	@Value("${sw360.test-user-password}")
+	private String testUserPassword;
 
-    // TODO Thomas Maier 15-12-2017
-    // Use Sw360GrantedAuthority from authorization server
-    private final String GRANTED_AUTHORITY_READ = "READ";
-    private final String GRANTED_AUTHORITY_WRITE = "WRITE";
+	// TODO Thomas Maier 15-12-2017
+	// Use Sw360GrantedAuthority from authorization server
+	private final String GRANTED_AUTHORITY_READ = "READ";
+	private final String GRANTED_AUTHORITY_WRITE = "WRITE";
 
-    @Override
-    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        String name = authentication.getName();
-        String password = (String) authentication.getCredentials();
-        // For the tests we mock an existing sw360 user with read and write authorities
-        if (name.equals(testUserId) && password.equals(testUserPassword)) {
-            List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
-            grantedAuthorities.add(new SimpleGrantedAuthority(GRANTED_AUTHORITY_READ));
-            grantedAuthorities.add(new SimpleGrantedAuthority(GRANTED_AUTHORITY_WRITE));
-            Authentication auth = new UsernamePasswordAuthenticationToken(name, password, grantedAuthorities);
-            SecurityContextHolder.getContext().setAuthentication(auth);
-            return auth;
-        } else {
-            return null;
-        }
-    }
+	@Override
+	public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+		String name = authentication.getName();
+		String password = (String) authentication.getCredentials();
+		// For the tests we mock an existing sw360 user with read and write authorities
+		if (name.equals(testUserId) && password.equals(testUserPassword)) {
+			List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
+			grantedAuthorities.add(new SimpleGrantedAuthority(GRANTED_AUTHORITY_READ));
+			grantedAuthorities.add(new SimpleGrantedAuthority(GRANTED_AUTHORITY_WRITE));
+			Authentication auth = new UsernamePasswordAuthenticationToken(name, password, grantedAuthorities);
+			SecurityContextHolder.getContext().setAuthentication(auth);
+			return auth;
+		} else {
+			return null;
+		}
+	}
 
-    @Override
-    public boolean supports(Class<?> authentication) {
-        return authentication.equals(UsernamePasswordAuthenticationToken.class);
-    }
+	@Override
+	public boolean supports(Class<?> authentication) {
+		return authentication.equals(UsernamePasswordAuthenticationToken.class);
+	}
 }

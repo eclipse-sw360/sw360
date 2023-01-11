@@ -13,18 +13,16 @@ package org.eclipse.sw360.wsimport.utility;
  * @author: ksoranko@verifa.io
  */
 public enum WsTokenType {
-    ORGANIZATION("orgToken"),
-    PRODUCT("productToken"),
-    PROJECT("projectToken");
+	ORGANIZATION("orgToken"), PRODUCT("productToken"), PROJECT("projectToken");
 
-    WsTokenType(final String text) {
-        this.text = text;
-    }
+	WsTokenType(final String text) {
+		this.text = text;
+	}
 
-    private final String text;
+	private final String text;
 
-    @Override
-    public String toString() {
-        return text;
-    }
+	@Override
+	public String toString() {
+		return text;
+	}
 }

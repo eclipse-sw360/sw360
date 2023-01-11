@@ -19,60 +19,55 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public abstract class SW360ResourcesTestUtils<T extends SW360HalResource<?,?>> {
+public abstract class SW360ResourcesTestUtils<T extends SW360HalResource<?, ?>> {
 
-    public abstract T prepareItem();
-    public abstract T prepareItemWithoutOptionalInput();
+	public abstract T prepareItem();
+	public abstract T prepareItemWithoutOptionalInput();
 
-    public abstract Class<T> getHandledClassType();
+	public abstract Class<T> getHandledClassType();
 
-    @Test
-    public void serializationTest() throws Exception {
-        final T item = prepareItem();
-        serialize(item);
-    }
+	@Test
+	public void serializationTest() throws Exception {
+		final T item = prepareItem();
+		serialize(item);
+	}
 
-    @Test
-    public void serializationTestWithoutOptionalInput() throws JsonProcessingException {
-        final T item = prepareItemWithoutOptionalInput();
-        serialize(item);
-    }
+	@Test
+	public void serializationTestWithoutOptionalInput() throws JsonProcessingException {
+		final T item = prepareItemWithoutOptionalInput();
+		serialize(item);
+	}
 
-    private void serialize(T item) throws JsonProcessingException {
+	private void serialize(T item) throws JsonProcessingException {
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
 
-        final String jsonBody = objectMapper.writeValueAsString(item);
-        final T deserialized = objectMapper.readValue(jsonBody, getHandledClassType());
+		final String jsonBody = objectMapper.writeValueAsString(item);
+		final T deserialized = objectMapper.readValue(jsonBody, getHandledClassType());
 
-        assertThat(deserialized.getEmbedded())
-                .isEqualTo(item.getEmbedded());
-        assertThat(deserialized)
-                .isEqualTo(item);
-    }
+		assertThat(deserialized.getEmbedded()).isEqualTo(item.getEmbedded());
+		assertThat(deserialized).isEqualTo(item);
+	}
 
-    @Test
-    public void equalsTest() {
-        EqualsVerifier.forClass(getHandledClassType())
-                .withRedefinedSuperclass()
-                .suppress(Warning.NONFINAL_FIELDS)
-                .verify();
-    }
+	@Test
+	public void equalsTest() {
+		EqualsVerifier.forClass(getHandledClassType()).withRedefinedSuperclass().suppress(Warning.NONFINAL_FIELDS)
+				.verify();
+	}
 
-    @Test
-    public void equalsTestWithoutOptionalInput() {
-        assertThat(prepareItemWithoutOptionalInput())
-                .isEqualTo(prepareItemWithoutOptionalInput());
-    }
+	@Test
+	public void equalsTestWithoutOptionalInput() {
+		assertThat(prepareItemWithoutOptionalInput()).isEqualTo(prepareItemWithoutOptionalInput());
+	}
 
-    @Test
-    public void testSelfLinkUninitialized() {
-        assertThat(prepareItem().getSelfLink()).isNull();
-    }
+	@Test
+	public void testSelfLinkUninitialized() {
+		assertThat(prepareItem().getSelfLink()).isNull();
+	}
 
-    @Test
-    public void testIdUninitialized() {
-        assertThat(prepareItem().getId()).isNull();
-    }
+	@Test
+	public void testIdUninitialized() {
+		assertThat(prepareItem().getId()).isNull();
+	}
 }

@@ -17,24 +17,24 @@ import java.util.Optional;
  * @author: ksoranko@verifa.io
  */
 public class ProjectImportResult {
-    private final Optional<String> projectId;
-    private final Optional<ProjectImportError> error;
+	private final Optional<String> projectId;
+	private final Optional<ProjectImportError> error;
 
-    public ProjectImportResult(String projectId) {
-        this.projectId = Optional.of(projectId);
-        this.error = Optional.empty();
-    }
+	public ProjectImportResult(String projectId) {
+		this.projectId = Optional.of(projectId);
+		this.error = Optional.empty();
+	}
 
-    public ProjectImportResult(ProjectImportError error) {
-        this.projectId = Optional.empty();
-        this.error = Optional.of(error);
-    }
+	public ProjectImportResult(ProjectImportError error) {
+		this.projectId = Optional.empty();
+		this.error = Optional.of(error);
+	}
 
-    public boolean isSuccess() {
-        return projectId.isPresent();
-    }
+	public boolean isSuccess() {
+		return projectId.isPresent();
+	}
 
-    public ProjectImportError getError() {
-        return error.isPresent() ? error.get() : null;
-    }
+	public ProjectImportError getError() {
+		return error.isPresent() ? error.get() : null;
+	}
 }

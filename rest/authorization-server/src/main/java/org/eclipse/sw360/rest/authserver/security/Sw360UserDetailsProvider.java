@@ -25,38 +25,38 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class Sw360UserDetailsProvider {
 
-    private final Logger log = LogManager.getLogger(this.getClass());
+	private final Logger log = LogManager.getLogger(this.getClass());
 
-    @Autowired
-    private ThriftClients thriftClients;
+	@Autowired
+	private ThriftClients thriftClients;
 
-    public User provideUserDetails(String email, String extId) {
-        User result = null;
+	public User provideUserDetails(String email, String extId) {
+		User result = null;
 
-        log.debug("Looking up user with email <" + email + "> and external id <" + extId + ">.");
+		log.debug("Looking up user with email <" + email + "> and external id <" + extId + ">.");
 
-        User user = getUserByEmailOrExternalId(email, extId);
-        if (user != null) {
-            log.debug("Found user with email <" + email + "> and external id <" + extId + "> in UserService.");
-            result = user;
-        } else {
-            log.warn("No user found with email <" + email + "> and external id <" + extId + "> in UserService.");
-        }
+		User user = getUserByEmailOrExternalId(email, extId);
+		if (user != null) {
+			log.debug("Found user with email <" + email + "> and external id <" + extId + "> in UserService.");
+			result = user;
+		} else {
+			log.warn("No user found with email <" + email + "> and external id <" + extId + "> in UserService.");
+		}
 
-        return result;
-    }
+		return result;
+	}
 
-    private User getUserByEmailOrExternalId(String email, String externalId) {
-        // client should be put into threadlocal some day after this pattern proofed
-        // itself
-        UserService.Iface client = thriftClients.makeUserClient();
-        try {
-            if (StringUtils.isNotEmpty(email) || StringUtils.isNotEmpty(externalId)) {
-                return client.getByEmailOrExternalId(email, externalId);
-            }
-        } catch (TException e) {
-            // do nothing
-        }
-        return null;
-    }
+	private User getUserByEmailOrExternalId(String email, String externalId) {
+		// client should be put into threadlocal some day after this pattern proofed
+		// itself
+		UserService.Iface client = thriftClients.makeUserClient();
+		try {
+			if (StringUtils.isNotEmpty(email) || StringUtils.isNotEmpty(externalId)) {
+				return client.getByEmailOrExternalId(email, externalId);
+			}
+		} catch (TException e) {
+			// do nothing
+		}
+		return null;
+	}
 }

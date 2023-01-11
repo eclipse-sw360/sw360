@@ -20,27 +20,28 @@ import java.io.IOException;
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 
 /**
- * This displays a user's group. It makes a DB roundtrip for each invocation. Use with caution!
+ * This displays a user's group. It makes a DB roundtrip for each invocation.
+ * Use with caution!
  *
  * @author alex.borodin@evosoft.com
  */
 public class DisplayUserGroup extends SimpleTagSupport {
-    private String email;
+	private String email;
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+	public void setEmail(String email) {
+		this.email = email;
+	}
 
-    public void doTag() throws JspException, IOException {
-        User user;
+	public void doTag() throws JspException, IOException {
+		User user;
 
-        if (!Strings.isNullOrEmpty(email)) {
-            user = UserCacheHolder.getUserFromEmail(email);
-        } else {
-            user = UserCacheHolder.EMPTY_USER;
-        }
+		if (!Strings.isNullOrEmpty(email)) {
+			user = UserCacheHolder.getUserFromEmail(email);
+		} else {
+			user = UserCacheHolder.EMPTY_USER;
+		}
 
-        getJspContext().getOut().print(escapeHtml(user.getDepartment()));
-    }
+		getJspContext().getOut().print(escapeHtml(user.getDepartment()));
+	}
 
 }

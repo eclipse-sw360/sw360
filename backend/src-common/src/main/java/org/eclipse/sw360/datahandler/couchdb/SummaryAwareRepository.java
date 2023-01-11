@@ -29,61 +29,61 @@ import java.util.Set;
  */
 public class SummaryAwareRepository<T> extends DatabaseRepositoryCloudantClient<T> {
 
-    protected final DocumentSummary<T> summary;
+	protected final DocumentSummary<T> summary;
 
-    public SummaryAwareRepository(Class<T> type, DatabaseConnectorCloudant databaseConnector, DocumentSummary<T> summary) {
-        super(databaseConnector, type);
+	public SummaryAwareRepository(Class<T> type, DatabaseConnectorCloudant databaseConnector,
+			DocumentSummary<T> summary) {
+		super(databaseConnector, type);
 
-        this.summary = summary;
-    }
+		this.summary = summary;
+	}
 
-    public List<T> makeSummary(SummaryType type, Collection<String> ids) {
-        if (ids == null) {
-            return Collections.emptyList();
-        }
+	public List<T> makeSummary(SummaryType type, Collection<String> ids) {
+		if (ids == null) {
+			return Collections.emptyList();
+		}
 
-        List<T> documents = get(ids);
+		List<T> documents = get(ids);
 
-        return makeSummaryFromFullDocs(type, documents);
-    }
+		return makeSummaryFromFullDocs(type, documents);
+	}
 
-    public List<T> makeSummary(SummaryType type, Collection<String> ids, boolean ignoreNotFound) {
-        if (ids == null) {
-            return Collections.emptyList();
-        }
+	public List<T> makeSummary(SummaryType type, Collection<String> ids, boolean ignoreNotFound) {
+		if (ids == null) {
+			return Collections.emptyList();
+		}
 
-        List<T> documents = get(ids, ignoreNotFound);
+		List<T> documents = get(ids, ignoreNotFound);
 
-        return makeSummaryFromFullDocs(type, documents);
-    }
+		return makeSummaryFromFullDocs(type, documents);
+	}
 
-    public List<T> makeSummaryFromFullDocs(SummaryType type, Collection<T> docs) {
-        return summary.makeSummary(type, docs);
-    }
+	public List<T> makeSummaryFromFullDocs(SummaryType type, Collection<T> docs) {
+		return summary.makeSummary(type, docs);
+	}
 
+	public List<T> makeSummaryWithPermissions(SummaryType type, Collection<String> ids, User user) {
+		if (ids == null) {
+			return Collections.emptyList();
+		}
 
-    public List<T> makeSummaryWithPermissions(SummaryType type, Collection<String> ids, User user) {
-        if (ids == null) {
-            return Collections.emptyList();
-        }
+		List<T> documents = get(ids);
+		return makeSummaryWithPermissionsFromFullDocs(type, documents, user);
+	}
 
-        List<T> documents = get(ids);
-        return makeSummaryWithPermissionsFromFullDocs(type, documents, user);
-    }
+	public List<T> makeSummaryWithPermissionsFromFullDocs(SummaryType type, Collection<T> docs, User user) {
+		return summary.makeSummaryWithPermissionsFromFullDocs(type, docs, user);
+	}
 
-    public List<T> makeSummaryWithPermissionsFromFullDocs(SummaryType type, Collection<T> docs, User user) {
-        return summary.makeSummaryWithPermissionsFromFullDocs(type,docs,user);
-    }
-
-    public Set<T> getFullDocsById(Set<String> docIds) {
-        Set<T> docs = new HashSet<>();
-        if (CommonUtils.isNullOrEmptyCollection(docIds)) {
-            return docs;
-        }
-        List<T> listOfDocs = get(docIds);
-        if (CommonUtils.isNotEmpty(listOfDocs)) {
-            docs.addAll(listOfDocs);
-        }
-        return docs;
-    }
+	public Set<T> getFullDocsById(Set<String> docIds) {
+		Set<T> docs = new HashSet<>();
+		if (CommonUtils.isNullOrEmptyCollection(docIds)) {
+			return docs;
+		}
+		List<T> listOfDocs = get(docIds);
+		if (CommonUtils.isNotEmpty(listOfDocs)) {
+			docs.addAll(listOfDocs);
+		}
+		return docs;
+	}
 }

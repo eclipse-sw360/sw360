@@ -35,58 +35,57 @@ import static org.mockito.ArgumentMatchers.eq;
 @RunWith(SpringJUnit4ClassRunner.class)
 public class AttachmentTest extends TestIntegrationBase {
 
-    @Value("${local.server.port}")
-    private int port;
+	@Value("${local.server.port}")
+	private int port;
 
-    @MockBean
-    private Sw360UserService userServiceMock;
+	@MockBean
+	private Sw360UserService userServiceMock;
 
-    @MockBean
-    private Sw360AttachmentService attachmentServiceMock;
+	@MockBean
+	private Sw360AttachmentService attachmentServiceMock;
 
-    @MockBean
-    private Sw360ReleaseService releaseServiceMock;
+	@MockBean
+	private Sw360ReleaseService releaseServiceMock;
 
-    private final String shaInvalid = "56789";
+	private final String shaInvalid = "56789";
 
-    @Before
-    public void before() throws TException {
+	@Before
+	public void before() throws TException {
 
-        given(this.attachmentServiceMock.getAttachmentsBySha1(eq(TestHelper.attachmentShaUsedMultipleTimes))).willReturn(TestHelper.getDummyAttachmentInfoListForTest());
-        given(this.attachmentServiceMock.getAttachmentsBySha1(eq(shaInvalid))).willReturn(new ArrayList<>());
+		given(this.attachmentServiceMock.getAttachmentsBySha1(eq(TestHelper.attachmentShaUsedMultipleTimes)))
+				.willReturn(TestHelper.getDummyAttachmentInfoListForTest());
+		given(this.attachmentServiceMock.getAttachmentsBySha1(eq(shaInvalid))).willReturn(new ArrayList<>());
 
-        User user = new User();
-        user.setId("123456789");
-        user.setEmail("admin@sw360.org");
-        user.setFullname("John Doe");
+		User user = new User();
+		user.setId("123456789");
+		user.setEmail("admin@sw360.org");
+		user.setFullname("John Doe");
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+		given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
 
-        given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.release1Id), eq(user))).willReturn(TestHelper.getDummyReleaseListForTest().get(0));
-        given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.releaseId2), eq(user))).willReturn(TestHelper.getDummyReleaseListForTest().get(1));
-    }
+		given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.release1Id), eq(user)))
+				.willReturn(TestHelper.getDummyReleaseListForTest().get(0));
+		given(this.releaseServiceMock.getReleaseForUserById(eq(TestHelper.releaseId2), eq(user)))
+				.willReturn(TestHelper.getDummyReleaseListForTest().get(1));
+	}
 
-    @Test
-    public void should_get_multiple_attachments_by_sha1() throws IOException {
-        HttpHeaders headers = getHeaders(port);
-        ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/attachments?sha1=" + TestHelper.attachmentShaUsedMultipleTimes,
-                        HttpMethod.GET,
-                        new HttpEntity<>(null, headers),
-                        String.class);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+	@Test
+	public void should_get_multiple_attachments_by_sha1() throws IOException {
+		HttpHeaders headers = getHeaders(port);
+		ResponseEntity<String> response = new TestRestTemplate().exchange(
+				"http://localhost:" + port + "/api/attachments?sha1=" + TestHelper.attachmentShaUsedMultipleTimes,
+				HttpMethod.GET, new HttpEntity<>(null, headers), String.class);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
 
-        TestHelper.checkResponse(response.getBody(), "attachments", 2);
-    }
+		TestHelper.checkResponse(response.getBody(), "attachments", 2);
+	}
 
-    @Test
-    public void should_get_empty_attachment_collection_by_sha1() throws IOException {
-        HttpHeaders headers = getHeaders(port);
-        ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/attachments?sha1=" + shaInvalid,
-                        HttpMethod.GET,
-                        new HttpEntity<>(null, headers),
-                        String.class);
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-    }
+	@Test
+	public void should_get_empty_attachment_collection_by_sha1() throws IOException {
+		HttpHeaders headers = getHeaders(port);
+		ResponseEntity<String> response = new TestRestTemplate().exchange(
+				"http://localhost:" + port + "/api/attachments?sha1=" + shaInvalid, HttpMethod.GET,
+				new HttpEntity<>(null, headers), String.class);
+		assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+	}
 }

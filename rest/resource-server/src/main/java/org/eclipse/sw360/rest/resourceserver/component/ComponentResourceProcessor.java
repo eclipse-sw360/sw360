@@ -22,12 +22,12 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RequiredArgsConstructor
 class ComponentResourceProcessor implements RepresentationModelProcessor<EntityModel<Component>> {
 
-    @Override
-    public EntityModel<Component> process(EntityModel<Component> resource) {
-        Component component = resource.getContent();
-        Link selfLink = linkTo(ComponentController.class)
-                .slash("api" + ComponentController.COMPONENTS_URL + "/" + component.getId()).withSelfRel();
-        resource.add(selfLink);
-        return resource;
-    }
+	@Override
+	public EntityModel<Component> process(EntityModel<Component> resource) {
+		Component component = resource.getContent();
+		Link selfLink = linkTo(ComponentController.class)
+				.slash("api" + ComponentController.COMPONENTS_URL + "/" + component.getId()).withSelfRel();
+		resource.add(selfLink);
+		return resource;
+	}
 }

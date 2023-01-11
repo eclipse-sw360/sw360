@@ -30,22 +30,23 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @Component
 public class JsonProjectRelationSerializer extends JsonSerializer<Map<String, ProjectProjectRelationship>> {
 
-    @Override
-    public void serialize(Map<String, ProjectProjectRelationship> projectRelationMap, JsonGenerator gen, SerializerProvider provider)
-            throws IOException {
+	@Override
+	public void serialize(Map<String, ProjectProjectRelationship> projectRelationMap, JsonGenerator gen,
+			SerializerProvider provider) throws IOException {
 
-        List<Map<String, String>> linkedProjects = new ArrayList<>();
-        for (Map.Entry<String, ProjectProjectRelationship> projectRelation : projectRelationMap.entrySet()) {
-            String projectLink = linkTo(ProjectController.class).slash("api" +
-                    ProjectController.PROJECTS_URL + "/" + projectRelation.getKey()).withSelfRel().getHref();
+		List<Map<String, String>> linkedProjects = new ArrayList<>();
+		for (Map.Entry<String, ProjectProjectRelationship> projectRelation : projectRelationMap.entrySet()) {
+			String projectLink = linkTo(ProjectController.class)
+					.slash("api" + ProjectController.PROJECTS_URL + "/" + projectRelation.getKey()).withSelfRel()
+					.getHref();
 
-            Map<String, String> linkedProject = new HashMap<>();
-            linkedProject.put("relation", projectRelation.getValue().getProjectRelationship().name());
-            linkedProject.put("enableSvm", String.valueOf(projectRelation.getValue().isEnableSvm()));
-            linkedProject.put("project", projectLink);
-            linkedProjects.add(linkedProject);
+			Map<String, String> linkedProject = new HashMap<>();
+			linkedProject.put("relation", projectRelation.getValue().getProjectRelationship().name());
+			linkedProject.put("enableSvm", String.valueOf(projectRelation.getValue().isEnableSvm()));
+			linkedProject.put("project", projectLink);
+			linkedProjects.add(linkedProject);
 
-        }
-        gen.writeObject(linkedProjects);
-    }
+		}
+		gen.writeObject(linkedProjects);
+	}
 }

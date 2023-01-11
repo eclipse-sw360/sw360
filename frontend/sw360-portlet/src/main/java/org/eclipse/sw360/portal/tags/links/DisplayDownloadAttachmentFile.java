@@ -23,31 +23,31 @@ import static org.eclipse.sw360.portal.tags.TagUtils.escapeAttributeValue;
  * Displays a download link for a given attachment.
  */
 public class DisplayDownloadAttachmentFile extends DisplayDownloadAbstract {
-    private static final Logger LOGGER = LogManager.getLogger(DisplayDownloadAttachmentFile.class);
+	private static final Logger LOGGER = LogManager.getLogger(DisplayDownloadAttachmentFile.class);
 
-    private Attachment attachment;
+	private Attachment attachment;
 
-    @Override
-    protected String getTitleText() {
-        return escapeAttributeValue("Download " + attachment.getFilename());
-    }
+	@Override
+	protected String getTitleText() {
+		return escapeAttributeValue("Download " + attachment.getFilename());
+	}
 
-    @Override
-    protected void configureUrlWriter(UrlWriter urlWriter) throws JspException {
-        urlWriter.withParam(PortalConstants.ATTACHMENT_ID, attachment.attachmentContentId);
-    }
+	@Override
+	protected void configureUrlWriter(UrlWriter urlWriter) throws JspException {
+		urlWriter.withParam(PortalConstants.ATTACHMENT_ID, attachment.attachmentContentId);
+	}
 
-    @Override
-    public int doStartTag() throws JspException {
-        if(attachment == null) {
-            LOGGER.error("No attachment given!");
-            return SKIP_BODY;
-        }
+	@Override
+	public int doStartTag() throws JspException {
+		if (attachment == null) {
+			LOGGER.error("No attachment given!");
+			return SKIP_BODY;
+		}
 
-        return super.doStartTag();
-    }
+		return super.doStartTag();
+	}
 
-    public void setAttachment(Attachment attachment) {
-        this.attachment = attachment;
-    }
+	public void setAttachment(Attachment attachment) {
+		this.attachment = attachment;
+	}
 }

@@ -30,55 +30,53 @@ import java.util.concurrent.TimeUnit;
  */
 public class UserCache {
 
-    LoadingCache<String, User> cache;
+	LoadingCache<String, User> cache;
 
-    public UserCache() {
-        // Initialize user loader
-        UserLoader loader = new UserLoader();
+	public UserCache() {
+		// Initialize user loader
+		UserLoader loader = new UserLoader();
 
-        List<User> allUsers;
-        try {
-            allUsers = loader.getAllUsers();
-        } catch (TException ignored) {
-            allUsers= Collections.emptyList();
-        }
+		List<User> allUsers;
+		try {
+			allUsers = loader.getAllUsers();
+		} catch (TException ignored) {
+			allUsers = Collections.emptyList();
+		}
 
-        // Initialize user cache
-        cache = CacheBuilder.newBuilder()
-                .maximumSize(allUsers.size() + 100)
-                .expireAfterWrite(1, TimeUnit.DAYS)
-                .build(loader);
+		// Initialize user cache
+		cache = CacheBuilder.newBuilder().maximumSize(allUsers.size() + 100).expireAfterWrite(1, TimeUnit.DAYS)
+				.build(loader);
 
-        if(!allUsers.isEmpty()) {
-            cache.putAll(Maps.uniqueIndex(allUsers, User::getEmail));
-        }
-    }
+		if (!allUsers.isEmpty()) {
+			cache.putAll(Maps.uniqueIndex(allUsers, User::getEmail));
+		}
+	}
 
-    public User get(String email) throws ExecutionException {
-        return cache.get(email);
-    }
+	public User get(String email) throws ExecutionException {
+		return cache.get(email);
+	}
 
-    public User getRefreshed (String email)  throws ExecutionException {
-        cache.refresh(email);
-        return cache.get(email);
-    }
+	public User getRefreshed(String email) throws ExecutionException {
+		cache.refresh(email);
+		return cache.get(email);
+	}
 
-    private static class UserLoader extends CacheLoader<String, User> {
+	private static class UserLoader extends CacheLoader<String, User> {
 
-        private UserService.Iface createUserClient() {
-            ThriftClients thriftClients =  new ThriftClients();
-            return thriftClients.makeUserClient();
-        }
+		private UserService.Iface createUserClient() {
+			ThriftClients thriftClients = new ThriftClients();
+			return thriftClients.makeUserClient();
+		}
 
-        @Override
-        public User load(String email) throws TException {
-            UserService.Iface client = createUserClient();
-            return client.getByEmail(email);
-        }
+		@Override
+		public User load(String email) throws TException {
+			UserService.Iface client = createUserClient();
+			return client.getByEmail(email);
+		}
 
-        private List<User> getAllUsers() throws TException {
-            UserService.Iface client = createUserClient();
-            return client.getAllUsers();
-        }
-    }
+		private List<User> getAllUsers() throws TException {
+			UserService.Iface client = createUserClient();
+			return client.getAllUsers();
+		}
+	}
 }

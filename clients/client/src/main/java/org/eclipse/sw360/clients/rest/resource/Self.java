@@ -15,35 +15,37 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class Self implements Serializable {
-    private String href;
+	private String href;
 
-    public Self() {
-        // no-òp
-    }
+	public Self() {
+		// no-òp
+	}
 
-    public Self(String href) {
-        this.href = href;
-    }
+	public Self(String href) {
+		this.href = href;
+	}
 
-    public String getHref() {
-        return href;
-    }
+	public String getHref() {
+		return href;
+	}
 
-    public Self setHref(String href) {
-        this.href = href;
-        return this;
-    }
+	public Self setHref(String href) {
+		this.href = href;
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Self self = (Self) o;
-        return Objects.equals(href, self.href);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		Self self = (Self) o;
+		return Objects.equals(href, self.href);
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(href);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(href);
+	}
 }

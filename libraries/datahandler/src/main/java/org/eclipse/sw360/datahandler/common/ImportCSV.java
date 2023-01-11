@@ -30,34 +30,34 @@ import java.util.List;
  */
 public class ImportCSV {
 
-    private static final Logger log = LogManager.getLogger(ImportCSV.class.getName());
+	private static final Logger log = LogManager.getLogger(ImportCSV.class.getName());
 
-    private ImportCSV() {
-        // Utility class with only static functions
-    }
+	private ImportCSV() {
+		// Utility class with only static functions
+	}
 
-    /**
-     * reads a CSV file and returns its content as a list of CSVRecord
-     *
-     * @param in
-     * @return list of records
-     */
-    public static List<CSVRecord> readAsCSVRecords(InputStream in) {
-        List<CSVRecord> records = null;
+	/**
+	 * reads a CSV file and returns its content as a list of CSVRecord
+	 *
+	 * @param in
+	 * @return list of records
+	 */
+	public static List<CSVRecord> readAsCSVRecords(InputStream in) {
+		List<CSVRecord> records = null;
 
-        try (Reader reader = new InputStreamReader(in)) {
-            CSVParser parser = new CSVParser(reader, CommonUtils.sw360CsvFormat);
-            records = parser.getRecords();
-            records.remove(0); // Remove header
-        } catch (IOException e) {
-            log.error("Error parsing CSV File!", e);
-        }
+		try (Reader reader = new InputStreamReader(in)) {
+			CSVParser parser = new CSVParser(reader, CommonUtils.sw360CsvFormat);
+			records = parser.getRecords();
+			records.remove(0); // Remove header
+		} catch (IOException e) {
+			log.error("Error parsing CSV File!", e);
+		}
 
-        // To avoid returning null above
-        if (records == null)
-            records = Collections.emptyList();
+		// To avoid returning null above
+		if (records == null)
+			records = Collections.emptyList();
 
-        return records;
-    }
+		return records;
+	}
 
 }

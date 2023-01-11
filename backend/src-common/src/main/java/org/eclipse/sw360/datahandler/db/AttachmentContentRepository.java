@@ -39,42 +39,41 @@ import java.util.stream.Collectors;
  */
 public class AttachmentContentRepository extends DatabaseRepositoryCloudantClient<AttachmentContent> {
 
-    private static final String ALL = "function(doc) { if (doc.type == 'attachment') emit(null, doc._id) }";
-    private static final String ONLYREMOTES = "function(doc) { if(doc.type == 'attachment' && doc.onlyRemote) { emit(null, doc) } }";
+	private static final String ALL = "function(doc) { if (doc.type == 'attachment') emit(null, doc._id) }";
+	private static final String ONLYREMOTES = "function(doc) { if(doc.type == 'attachment' && doc.onlyRemote) { emit(null, doc) } }";
 
-    public AttachmentContentRepository(DatabaseConnectorCloudant db) {
-        super(db, AttachmentContent.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("onlyRemotes", createMapReduce(ONLYREMOTES, null));
-        views.put("all", createMapReduce(ALL, null));
-        initStandardDesignDocument(views, db);
-    }
+	public AttachmentContentRepository(DatabaseConnectorCloudant db) {
+		super(db, AttachmentContent.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("onlyRemotes", createMapReduce(ONLYREMOTES, null));
+		views.put("all", createMapReduce(ALL, null));
+		initStandardDesignDocument(views, db);
+	}
 
-    public List<AttachmentContent> getOnlyRemoteAttachments() {
-        ViewRequestBuilder query = getConnector().createQuery(AttachmentContent.class, "onlyRemotes");
-        UnpaginatedRequestBuilder req = query.newRequest(Key.Type.STRING, Object.class).includeDocs(true);
-        return queryView(req);
-    }
+	public List<AttachmentContent> getOnlyRemoteAttachments() {
+		ViewRequestBuilder query = getConnector().createQuery(AttachmentContent.class, "onlyRemotes");
+		UnpaginatedRequestBuilder req = query.newRequest(Key.Type.STRING, Object.class).includeDocs(true);
+		return queryView(req);
+	}
 
-    public RequestSummary vacuumAttachmentDB(User user, final Set<String> usedIds) {
-        final RequestSummary requestSummary = new RequestSummary();
-        if (!PermissionUtils.isAdmin(user))
-            return requestSummary.setRequestStatus(RequestStatus.FAILURE);
+	public RequestSummary vacuumAttachmentDB(User user, final Set<String> usedIds) {
+		final RequestSummary requestSummary = new RequestSummary();
+		if (!PermissionUtils.isAdmin(user))
+			return requestSummary.setRequestStatus(RequestStatus.FAILURE);
 
-        final List<AttachmentContent> allAttachmentContents = getAll();
-        final Set<AttachmentContent> unusedAttachmentContents = allAttachmentContents.stream()
-                .filter(input -> !usedIds.contains(input.getId()))
-                .collect(Collectors.toSet());
+		final List<AttachmentContent> allAttachmentContents = getAll();
+		final Set<AttachmentContent> unusedAttachmentContents = allAttachmentContents.stream()
+				.filter(input -> !usedIds.contains(input.getId())).collect(Collectors.toSet());
 
-        requestSummary.setTotalElements(allAttachmentContents.size());
-        requestSummary.setTotalAffectedElements(unusedAttachmentContents.size());
+		requestSummary.setTotalElements(allAttachmentContents.size());
+		requestSummary.setTotalAffectedElements(unusedAttachmentContents.size());
 
-        final List<Response> documentOperationResults = getConnector().deleteBulk(unusedAttachmentContents);
-        if (unusedAttachmentContents.isEmpty() || !documentOperationResults.isEmpty()) {
-            requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        }else{
-            requestSummary.setRequestStatus(RequestStatus.FAILURE);
-        }
-        return requestSummary;
-    }
+		final List<Response> documentOperationResults = getConnector().deleteBulk(unusedAttachmentContents);
+		if (unusedAttachmentContents.isEmpty() || !documentOperationResults.isEmpty()) {
+			requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+		} else {
+			requestSummary.setRequestStatus(RequestStatus.FAILURE);
+		}
+		return requestSummary;
+	}
 }

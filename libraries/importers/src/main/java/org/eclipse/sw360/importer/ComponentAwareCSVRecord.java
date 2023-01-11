@@ -9,28 +9,27 @@
  */
 package org.eclipse.sw360.importer;
 
-
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 
 /**
  * @author johannes.najjar@tngtech.com
  */
 public abstract class ComponentAwareCSVRecord implements CustomizedCSVRecord {
-    protected final String componentName;
-    protected final String releaseName;
-    protected final String releaseVersion;
+	protected final String componentName;
+	protected final String releaseName;
+	protected final String releaseVersion;
 
-    protected ComponentAwareCSVRecord(String componentName, String releaseName, String releaseVersion) {
-        this.componentName = componentName;
-        this.releaseName = releaseName;
-        this.releaseVersion = releaseVersion;
-    }
+	protected ComponentAwareCSVRecord(String componentName, String releaseName, String releaseVersion) {
+		this.componentName = componentName;
+		this.releaseName = releaseName;
+		this.releaseVersion = releaseVersion;
+	}
 
-    public String getReleaseIdentifier() {
-        return SW360Utils.getVersionedName(releaseName, releaseVersion);
-    }
+	public String getReleaseIdentifier() {
+		return SW360Utils.getVersionedName(releaseName, releaseVersion);
+	}
 
-    public String getComponentName() {
-        return componentName;
-    }
+	public String getComponentName() {
+		return componentName;
+	}
 }

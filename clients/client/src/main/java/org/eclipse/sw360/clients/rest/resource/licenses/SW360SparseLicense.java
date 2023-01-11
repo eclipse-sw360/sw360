@@ -19,43 +19,45 @@ import org.eclipse.sw360.clients.rest.resource.Self;
 import java.util.Objects;
 
 public final class SW360SparseLicense extends SW360SimpleHalResource {
-    private String fullName;
+	private String fullName;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String getFullName() {
-        return this.fullName;
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	public String getFullName() {
+		return this.fullName;
+	}
 
-    public SW360SparseLicense setFullName(String fullName) {
-        this.fullName = fullName;
-        return this;
-    }
+	public SW360SparseLicense setFullName(String fullName) {
+		this.fullName = fullName;
+		return this;
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String getShortName() {
-        return SW360HalResourceUtility.getLastIndexOfSelfLink(getLinks()).orElse("");
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	public String getShortName() {
+		return SW360HalResourceUtility.getLastIndexOfSelfLink(getLinks()).orElse("");
+	}
 
-    public SW360SparseLicense setShortName(String shortName) {
-        getLinks().setSelf(new Self(shortName));
-        return this;
-    }
+	public SW360SparseLicense setShortName(String shortName) {
+		getLinks().setSelf(new Self(shortName));
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SW360SparseLicense) || !super.equals(o)) return false;
-        SW360SparseLicense that = (SW360SparseLicense) o;
-        return Objects.equals(fullName, that.fullName);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (!(o instanceof SW360SparseLicense) || !super.equals(o))
+			return false;
+		SW360SparseLicense that = (SW360SparseLicense) o;
+		return Objects.equals(fullName, that.fullName);
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), fullName);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(super.hashCode(), fullName);
+	}
 
-    @Override
-    public boolean canEqual(Object o) {
-        return o instanceof SW360SparseLicense;
-    }
+	@Override
+	public boolean canEqual(Object o) {
+		return o instanceof SW360SparseLicense;
+	}
 }

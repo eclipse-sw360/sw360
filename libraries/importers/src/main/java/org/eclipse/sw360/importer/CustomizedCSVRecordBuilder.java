@@ -17,20 +17,20 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 /**
  * @author johannes.najjar@tngtech.com
  */
-public abstract  class  CustomizedCSVRecordBuilder  <T> {
-    public static String alternative(String left, String right) {
-        return isNullOrEmpty(left)?right:left;
-    }
+public abstract class CustomizedCSVRecordBuilder<T> {
+	public static String alternative(String left, String right) {
+		return isNullOrEmpty(left) ? right : left;
+	}
 
-    CustomizedCSVRecordBuilder(CSVRecord record){
-        //parse CSV Record
-        //        int i = 0;
-        //        member = record.get(i++);
-    }
+	CustomizedCSVRecordBuilder(CSVRecord record) {
+		// parse CSV Record
+		// int i = 0;
+		// member = record.get(i++);
+	}
 
-    CustomizedCSVRecordBuilder(){
-        //set all members null
-    }
+	CustomizedCSVRecordBuilder() {
+		// set all members null
+	}
 
-    public abstract T build();
+	public abstract T build();
 }

@@ -32,43 +32,43 @@ import java.util.List;
  */
 public class DisplayUserEmailCollection extends SimpleTagSupport {
 
-    private Collection<String> value;
-    private Boolean bare = false;
+	private Collection<String> value;
+	private Boolean bare = false;
 
-    private static final UserService.Iface client = new ThriftClients().makeUserClient();
+	private static final UserService.Iface client = new ThriftClients().makeUserClient();
 
-    public void setValue(Collection<String> value) {
-        this.value = value;
-    }
+	public void setValue(Collection<String> value) {
+		this.value = value;
+	}
 
-    public void setBare(Boolean bare) {
-        this.bare = bare;
-    }
+	public void setBare(Boolean bare) {
+		this.bare = bare;
+	}
 
-    public void doTag() throws JspException, IOException {
-        if (null != value && !value.isEmpty()) {
-            List<String> valueList = new ArrayList<>(value);
-            Collections.sort(valueList, String.CASE_INSENSITIVE_ORDER);
+	public void doTag() throws JspException, IOException {
+		if (null != value && !value.isEmpty()) {
+			List<String> valueList = new ArrayList<>(value);
+			Collections.sort(valueList, String.CASE_INSENSITIVE_ORDER);
 
-            List<String> resultList = new ArrayList<>();
+			List<String> resultList = new ArrayList<>();
 
-            for (String email : valueList) {
-                User user = null;
-                if (!bare) {
-                    try {
-                        if (!Strings.isNullOrEmpty(email) && client != null) {
-                            user = client.getByEmail(email);
-                        }
-                    } catch (TException e) {
-                        user = null;
-                    }
-                }
-                if (user != null || !Strings.isNullOrEmpty(email)) {
-                    resultList.add(UserUtils.displayUser(email, user));
-                }
-            }
-            getJspContext().getOut().print(CommonUtils.COMMA_JOINER.join(resultList));
-        }
-    }
+			for (String email : valueList) {
+				User user = null;
+				if (!bare) {
+					try {
+						if (!Strings.isNullOrEmpty(email) && client != null) {
+							user = client.getByEmail(email);
+						}
+					} catch (TException e) {
+						user = null;
+					}
+				}
+				if (user != null || !Strings.isNullOrEmpty(email)) {
+					resultList.add(UserUtils.displayUser(email, user));
+				}
+			}
+			getJspContext().getOut().print(CommonUtils.COMMA_JOINER.join(resultList));
+		}
+	}
 
 }

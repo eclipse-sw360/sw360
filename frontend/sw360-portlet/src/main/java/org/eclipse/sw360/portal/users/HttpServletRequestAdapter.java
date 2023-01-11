@@ -20,31 +20,32 @@ import java.util.function.Consumer;
 import javax.servlet.http.HttpServletRequest;
 
 public class HttpServletRequestAdapter implements RequestAdapter {
-    // this constant is supposed to be defined in WebKeys according to docs found online, but it's not
-    private static final String COMPANY_ID = "COMPANY_ID";
+	// this constant is supposed to be defined in WebKeys according to docs found
+	// online, but it's not
+	private static final String COMPANY_ID = "COMPANY_ID";
 
-    private HttpServletRequest request;
+	private HttpServletRequest request;
 
-    public HttpServletRequestAdapter(HttpServletRequest request) {
-        this.request = request;
-    }
+	public HttpServletRequestAdapter(HttpServletRequest request) {
+		this.request = request;
+	}
 
-    @Override
-    public long getCompanyId() {
-        return (long) request.getAttribute(COMPANY_ID);
-    }
+	@Override
+	public long getCompanyId() {
+		return (long) request.getAttribute(COMPANY_ID);
+	}
 
-    @Override
-    public Consumer<String> getErrorMessagesConsumer() {
-        return msg -> SessionErrors.add(request, msg);
-    }
+	@Override
+	public Consumer<String> getErrorMessagesConsumer() {
+		return msg -> SessionErrors.add(request, msg);
+	}
 
-    @Override
-    public Optional<ServiceContext> getServiceContext() {
-        try {
-            return Optional.of(ServiceContextFactory.getInstance(request));
-        } catch (PortalException e ) {
-            return Optional.empty();
-        }
-    }
+	@Override
+	public Optional<ServiceContext> getServiceContext() {
+		try {
+			return Optional.of(ServiceContextFactory.getInstance(request));
+		} catch (PortalException e) {
+			return Optional.empty();
+		}
+	}
 }

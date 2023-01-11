@@ -36,118 +36,106 @@ import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseCo
  */
 public abstract class AbstractDatabaseSearchHandler {
 
-    private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "all",
-            "function(doc) {" +
-                    "    var ret = new Document();" +
-                    "    if(!doc.type) return ret;" +
-                    "    function idx(obj) {" +
-                    "        for (var key in obj) {" +
-                    "            switch (typeof obj[key]) {" +
-                    "                case 'object':" +
-                    "                    idx(obj[key]);" +
-                    "                    break;" +
-                    "                case 'function':" +
-                    "                    break;" +
-                    "                default:" +
-                    "                    ret.add(obj[key]);" +
-                    "                    break;" +
-                    "            }" +
-                    "        }" +
-                    "    };" +
-                    "    idx(doc);" +
-                    "    ret.add(doc.type, {\"field\": \"type\"} );" +
-                    "    return ret;" +
-                    "}");
+	private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "all", "function(doc) {"
+			+ "    var ret = new Document();" + "    if(!doc.type) return ret;" + "    function idx(obj) {"
+			+ "        for (var key in obj) {" + "            switch (typeof obj[key]) {"
+			+ "                case 'object':" + "                    idx(obj[key]);" + "                    break;"
+			+ "                case 'function':" + "                    break;" + "                default:"
+			+ "                    ret.add(obj[key]);" + "                    break;" + "            }" + "        }"
+			+ "    };" + "    idx(doc);" + "    ret.add(doc.type, {\"field\": \"type\"} );" + "    return ret;" + "}");
 
-    private final LuceneAwareDatabaseConnector connector;
+	private final LuceneAwareDatabaseConnector connector;
 
-    public AbstractDatabaseSearchHandler(String dbName) throws IOException {
-        // Create the database connector and add the search view to couchDB
-        connector = new LuceneAwareDatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), dbName);
-        connector.addView(luceneSearchView);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
-    }
+	public AbstractDatabaseSearchHandler(String dbName) throws IOException {
+		// Create the database connector and add the search view to couchDB
+		connector = new LuceneAwareDatabaseConnector(DatabaseSettings.getConfiguredHttpClient(),
+				DatabaseSettings.getConfiguredClient(), dbName);
+		connector.addView(luceneSearchView);
+		connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+	}
 
-    public AbstractDatabaseSearchHandler(Supplier<HttpClient> client, Supplier<CloudantClient> cclient, String dbName) throws IOException {
-        // Create the database connector and add the search view to couchDB
-        connector = new LuceneAwareDatabaseConnector(client, cclient, dbName);
-        connector.addView(luceneSearchView);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
-    }
+	public AbstractDatabaseSearchHandler(Supplier<HttpClient> client, Supplier<CloudantClient> cclient, String dbName)
+			throws IOException {
+		// Create the database connector and add the search view to couchDB
+		connector = new LuceneAwareDatabaseConnector(client, cclient, dbName);
+		connector.addView(luceneSearchView);
+		connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+	}
 
-    /**
-     * Search the database for a given string
-     */
-    public List<SearchResult> search(String text, User user) {
-        String queryString = prepareWildcardQuery(text);
-        return getSearchResults(queryString, user);
-    }
+	/**
+	 * Search the database for a given string
+	 */
+	public List<SearchResult> search(String text, User user) {
+		String queryString = prepareWildcardQuery(text);
+		return getSearchResults(queryString, user);
+	}
 
-    /**
-     * Search the database for a given string without wildcard
-     */
-    public List<SearchResult> searchWithoutWildcard(String text, User user, final List<String> typeMask) {
-        String query = text;
-        if (typeMask == null || typeMask.isEmpty()) {
-            return getSearchResults(query, user);
-        }
-        final Function<String, String> addType = input -> "type:" + input;
-        query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND " + text;
-        return getSearchResults(query, user);
-    }
+	/**
+	 * Search the database for a given string without wildcard
+	 */
+	public List<SearchResult> searchWithoutWildcard(String text, User user, final List<String> typeMask) {
+		String query = text;
+		if (typeMask == null || typeMask.isEmpty()) {
+			return getSearchResults(query, user);
+		}
+		final Function<String, String> addType = input -> "type:" + input;
+		query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND " + text;
+		return getSearchResults(query, user);
+	}
 
-    /**
-     * Search the database for a given string and types
-     */
-    public List<SearchResult> search(String text, final List<String> typeMask, User user) {
+	/**
+	 * Search the database for a given string and types
+	 */
+	public List<SearchResult> search(String text, final List<String> typeMask, User user) {
 
-        if (typeMask == null || typeMask.isEmpty()) {
-            return search(text, user);
-        }
+		if (typeMask == null || typeMask.isEmpty()) {
+			return search(text, user);
+		}
 
-        final Function<String, String> addType = input -> "type:" + input;
-        String query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND " + prepareWildcardQuery(text);
-        return getSearchResults(query, user);
-    }
+		final Function<String, String> addType = input -> "type:" + input;
+		String query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND "
+				+ prepareWildcardQuery(text);
+		return getSearchResults(query, user);
+	}
 
-    private List<SearchResult> getSearchResults(String queryString, User user) {
-        LuceneResult queryLucene = connector.searchView(luceneSearchView, queryString);
-        return convertLuceneResultAndFilterForVisibility(queryLucene, user);
-    }
+	private List<SearchResult> getSearchResults(String queryString, User user) {
+		LuceneResult queryLucene = connector.searchView(luceneSearchView, queryString);
+		return convertLuceneResultAndFilterForVisibility(queryLucene, user);
+	}
 
-    private List<SearchResult> convertLuceneResultAndFilterForVisibility(LuceneResult queryLucene, User user) {
-        List<SearchResult> results = new ArrayList<>();
-        if (queryLucene != null) {
-            for (LuceneResult.Row row : queryLucene.getRows()) {
-                SearchResult result = makeSearchResult(row);
-                if (result != null && !result.getName().isEmpty() && isVisibleToUser(result, user)) {
-                    results.add(result);
-                }
-            }
-        }
-        return results;
-    }
+	private List<SearchResult> convertLuceneResultAndFilterForVisibility(LuceneResult queryLucene, User user) {
+		List<SearchResult> results = new ArrayList<>();
+		if (queryLucene != null) {
+			for (LuceneResult.Row row : queryLucene.getRows()) {
+				SearchResult result = makeSearchResult(row);
+				if (result != null && !result.getName().isEmpty() && isVisibleToUser(result, user)) {
+					results.add(result);
+				}
+			}
+		}
+		return results;
+	}
 
-    abstract protected boolean isVisibleToUser(SearchResult result, User user);
+	abstract protected boolean isVisibleToUser(SearchResult result, User user);
 
-    /**
-     * Transforms a LuceneResult row into a Thrift SearchResult object
-     */
-    private static SearchResult makeSearchResult(LuceneResult.Row row) {
-        SearchResult result = new SearchResult();
+	/**
+	 * Transforms a LuceneResult row into a Thrift SearchResult object
+	 */
+	private static SearchResult makeSearchResult(LuceneResult.Row row) {
+		SearchResult result = new SearchResult();
 
-        // Set row properties
-        result.id = row.getId();
-        result.score = row.getScore();
+		// Set row properties
+		result.id = row.getId();
+		result.score = row.getScore();
 
-        // Get document and
-        SearchDocument parser = new SearchDocument(row.getDoc());
+		// Get document and
+		SearchDocument parser = new SearchDocument(row.getDoc());
 
-        // Get basic search results information
-        result.type = parser.getType();
-        result.name = parser.getName();
+		// Get basic search results information
+		result.type = parser.getType();
+		result.name = parser.getName();
 
-        return result;
-    }
+		return result;
+	}
 
 }

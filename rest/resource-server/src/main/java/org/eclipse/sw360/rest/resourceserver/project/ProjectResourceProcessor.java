@@ -19,17 +19,16 @@ import org.springframework.stereotype.Component;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
-
 @Component
 @RequiredArgsConstructor
 class ProjectResourceProcessor implements RepresentationModelProcessor<EntityModel<Project>> {
 
-    @Override
-    public EntityModel<Project> process(EntityModel<Project> resource) {
-        Project project = resource.getContent();
-        Link selfLink = linkTo(ProjectController.class)
-                .slash("api" + ProjectController.PROJECTS_URL + "/" + project.getId()).withSelfRel();
-        resource.add(selfLink);
-        return resource;
-    }
+	@Override
+	public EntityModel<Project> process(EntityModel<Project> resource) {
+		Project project = resource.getContent();
+		Link selfLink = linkTo(ProjectController.class)
+				.slash("api" + ProjectController.PROJECTS_URL + "/" + project.getId()).withSelfRel();
+		resource.add(selfLink);
+		return resource;
+	}
 }

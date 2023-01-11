@@ -24,34 +24,35 @@ import java.util.List;
  * @author: alex.borodin@evosoft.com
  */
 public abstract class LicenseInfoParser {
-    protected final AttachmentConnector attachmentConnector;
-    protected AttachmentContentProvider attachmentContentProvider;
+	protected final AttachmentConnector attachmentConnector;
+	protected AttachmentContentProvider attachmentContentProvider;
 
-    protected LicenseInfoParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider){
-        this.attachmentConnector = attachmentConnector;
-        this.attachmentContentProvider = attachmentContentProvider;
-    }
+	protected LicenseInfoParser(AttachmentConnector attachmentConnector,
+			AttachmentContentProvider attachmentContentProvider) {
+		this.attachmentConnector = attachmentConnector;
+		this.attachmentContentProvider = attachmentContentProvider;
+	}
 
-    public abstract List<String> getApplicableFileExtensions();
+	public abstract List<String> getApplicableFileExtensions();
 
-    public <T> boolean isApplicableTo(Attachment attachmentContent, User user, T context) throws TException {
-        List<String> applicableFileExtensions = getApplicableFileExtensions();
-        if(applicableFileExtensions.size() == 0){
-            return true;
-        }
-        String lowerFileName = attachmentContent.getFilename().toLowerCase();
-        return applicableFileExtensions.stream()
-                .anyMatch(extension -> lowerFileName.endsWith(extension.toLowerCase()));
-    }
+	public <T> boolean isApplicableTo(Attachment attachmentContent, User user, T context) throws TException {
+		List<String> applicableFileExtensions = getApplicableFileExtensions();
+		if (applicableFileExtensions.size() == 0) {
+			return true;
+		}
+		String lowerFileName = attachmentContent.getFilename().toLowerCase();
+		return applicableFileExtensions.stream().anyMatch(extension -> lowerFileName.endsWith(extension.toLowerCase()));
+	}
 
-    public abstract <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context) throws TException;
+	public abstract <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context)
+			throws TException;
 
-    public <T> List<LicenseInfoParsingResult> getLicenseInfosIncludeConcludedLicense(Attachment attachment,
-            boolean includeConcludedLicense, User user, T context) throws TException {
-        return new ArrayList<LicenseInfoParsingResult>();
-    }
+	public <T> List<LicenseInfoParsingResult> getLicenseInfosIncludeConcludedLicense(Attachment attachment,
+			boolean includeConcludedLicense, User user, T context) throws TException {
+		return new ArrayList<LicenseInfoParsingResult>();
+	}
 
-    public <T> ObligationParsingResult getObligations(Attachment attachment, User user, T context) throws TException {
-        return new ObligationParsingResult().setStatus(ObligationInfoRequestStatus.NO_APPLICABLE_SOURCE);
-    }
+	public <T> ObligationParsingResult getObligations(Attachment attachment, User user, T context) throws TException {
+		return new ObligationParsingResult().setStatus(ObligationInfoRequestStatus.NO_APPLICABLE_SOURCE);
+	}
 }

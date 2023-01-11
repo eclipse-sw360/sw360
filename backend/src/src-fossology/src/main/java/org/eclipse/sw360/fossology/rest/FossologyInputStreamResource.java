@@ -27,22 +27,22 @@ import java.io.InputStream;
  */
 public class FossologyInputStreamResource extends InputStreamResource {
 
-    private String filename;
+	private String filename;
 
-    public FossologyInputStreamResource(String filename, InputStream inputStream) {
-        super(inputStream);
+	public FossologyInputStreamResource(String filename, InputStream inputStream) {
+		super(inputStream);
 
-        this.filename = filename;
-    }
+		this.filename = filename;
+	}
 
-    @Override
-    public String getFilename() {
-        return filename;
-    }
+	@Override
+	public String getFilename() {
+		return filename;
+	}
 
-    @Override
-    public long contentLength() {
-        return -1;
-    }
+	@Override
+	public long contentLength() {
+		return -1;
+	}
 
 }

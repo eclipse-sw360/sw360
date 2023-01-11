@@ -24,20 +24,19 @@ import java.util.stream.Collectors;
  */
 public interface ExporterHelper<T> {
 
-    static List<String> addSubheadersWithPrefixesAsNeeded(List<String> headers, List<String> subheaders, String prefix) {
-        List<String> prefixedSubheaders = subheaders
-                .stream()
-                .map(h -> headers.contains(h) ? prefix + h : h)
-                .collect(Collectors.toList());
-        List<String> copy = Lists.newArrayList(headers);
-        copy.addAll(prefixedSubheaders);
-        return copy;
-    }
+	static List<String> addSubheadersWithPrefixesAsNeeded(List<String> headers, List<String> subheaders,
+			String prefix) {
+		List<String> prefixedSubheaders = subheaders.stream().map(h -> headers.contains(h) ? prefix + h : h)
+				.collect(Collectors.toList());
+		List<String> copy = Lists.newArrayList(headers);
+		copy.addAll(prefixedSubheaders);
+		return copy;
+	}
 
-    int getColumns();
+	int getColumns();
 
-    List<String> getHeaders();
+	List<String> getHeaders();
 
-    SubTable makeRows(T document) throws SW360Exception;
+	SubTable makeRows(T document) throws SW360Exception;
 
 }

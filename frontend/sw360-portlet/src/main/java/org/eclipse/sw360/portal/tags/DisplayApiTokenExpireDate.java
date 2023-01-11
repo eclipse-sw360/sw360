@@ -21,15 +21,15 @@ import java.util.Date;
 
 public class DisplayApiTokenExpireDate extends SimpleTagSupport {
 
-    RestApiToken token;
+	RestApiToken token;
 
-    public void setToken(RestApiToken token) {
-        this.token = token;
-    }
+	public void setToken(RestApiToken token) {
+		this.token = token;
+	}
 
-    public void doTag() throws JspException, IOException {
-        Date createdOn = SW360Utils.getDateFromTimeString(token.getCreatedOn());
-        String output = SW360Utils.getDateTimeString(DateUtils.addDays(createdOn, token.getNumberOfDaysValid()));
-        getJspContext().getOut().print(output);
-    }
+	public void doTag() throws JspException, IOException {
+		Date createdOn = SW360Utils.getDateFromTimeString(token.getCreatedOn());
+		String output = SW360Utils.getDateTimeString(DateUtils.addDays(createdOn, token.getNumberOfDaysValid()));
+		getJspContext().getOut().print(output);
+	}
 }

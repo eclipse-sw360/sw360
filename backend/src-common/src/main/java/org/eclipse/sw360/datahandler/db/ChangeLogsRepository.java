@@ -27,56 +27,40 @@ import com.cloudant.client.api.model.DesignDocument.MapReduce;
  */
 public class ChangeLogsRepository extends DatabaseRepositoryCloudantClient<ChangeLogs> {
 
-    private static final String ALL = "function(doc) { if (doc.type == 'changeLogs') emit(doc._id, null) }";
-    private static final String BY_DOCUMENT_ID =
-            "function(doc) {" +
-                    "  if (doc.type == 'changeLogs') {" +
-                    "    emit(doc.documentId, null);" +
-                    "  }" +
-                    "}";
-    private static final String BY_PARENT_DOCUMENT_ID =
-            "function(doc) {" +
-                    "  if (doc.type == 'changeLogs') {" +
-                    "    emit(doc.parentDocId, null);" +
-                    "  }" +
-                    "}";
-    private static final String BY_USER_EDITED =
-            "function(doc) {" +
-                    "  if (doc.type == 'changeLogs') {" +
-                    "    emit(doc.userEdited, null);" +
-                    "  }" +
-                    "}";
-    private static final String BY_TIMESTAMP =
-            "function(doc) {" +
-                    "  if (doc.type == 'changeLogs') {" +
-                    "    emit(doc.changeTimestamp, null);" +
-                    "  }" +
-                    "}";
+	private static final String ALL = "function(doc) { if (doc.type == 'changeLogs') emit(doc._id, null) }";
+	private static final String BY_DOCUMENT_ID = "function(doc) {" + "  if (doc.type == 'changeLogs') {"
+			+ "    emit(doc.documentId, null);" + "  }" + "}";
+	private static final String BY_PARENT_DOCUMENT_ID = "function(doc) {" + "  if (doc.type == 'changeLogs') {"
+			+ "    emit(doc.parentDocId, null);" + "  }" + "}";
+	private static final String BY_USER_EDITED = "function(doc) {" + "  if (doc.type == 'changeLogs') {"
+			+ "    emit(doc.userEdited, null);" + "  }" + "}";
+	private static final String BY_TIMESTAMP = "function(doc) {" + "  if (doc.type == 'changeLogs') {"
+			+ "    emit(doc.changeTimestamp, null);" + "  }" + "}";
 
-    public ChangeLogsRepository(DatabaseConnectorCloudant db) {
-        super(db, ChangeLogs.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("byDocumentId", createMapReduce(BY_DOCUMENT_ID, null));
-        views.put("byParentDocumentId", createMapReduce(BY_PARENT_DOCUMENT_ID, null));
-        views.put("byUserEdited", createMapReduce(BY_USER_EDITED, null));
-        views.put("byTimestamp", createMapReduce(BY_TIMESTAMP, null));
-        views.put("all", createMapReduce(ALL, null));
-        initStandardDesignDocument(views, db);
-    }
+	public ChangeLogsRepository(DatabaseConnectorCloudant db) {
+		super(db, ChangeLogs.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("byDocumentId", createMapReduce(BY_DOCUMENT_ID, null));
+		views.put("byParentDocumentId", createMapReduce(BY_PARENT_DOCUMENT_ID, null));
+		views.put("byUserEdited", createMapReduce(BY_USER_EDITED, null));
+		views.put("byTimestamp", createMapReduce(BY_TIMESTAMP, null));
+		views.put("all", createMapReduce(ALL, null));
+		initStandardDesignDocument(views, db);
+	}
 
-    public List<ChangeLogs> getChangeLogsByDocId(String docId) {
-        return queryView("byDocumentId", docId).stream().collect(Collectors.toList());
-    }
+	public List<ChangeLogs> getChangeLogsByDocId(String docId) {
+		return queryView("byDocumentId", docId).stream().collect(Collectors.toList());
+	}
 
-    public List<ChangeLogs> getChangeLogsByParentDocId(String docId) {
-        return queryView("byParentDocumentId", docId).stream().collect(Collectors.toList());
-    }
+	public List<ChangeLogs> getChangeLogsByParentDocId(String docId) {
+		return queryView("byParentDocumentId", docId).stream().collect(Collectors.toList());
+	}
 
-    public List<ChangeLogs> getChangeLogsByUserEdited(String userEdited) {
-        return queryView("byUserEdited", userEdited).stream().collect(Collectors.toList());
-    }
+	public List<ChangeLogs> getChangeLogsByUserEdited(String userEdited) {
+		return queryView("byUserEdited", userEdited).stream().collect(Collectors.toList());
+	}
 
-    public List<ChangeLogs> getChangeLogsByTimestamp(String timestamp) {
-        return queryView("byTimestamp", timestamp).stream().collect(Collectors.toList());
-    }
+	public List<ChangeLogs> getChangeLogsByTimestamp(String timestamp) {
+		return queryView("byTimestamp", timestamp).stream().collect(Collectors.toList());
+	}
 }

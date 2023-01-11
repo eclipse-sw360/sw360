@@ -42,94 +42,101 @@ import static org.eclipse.sw360.portal.tags.TagUtils.*;
  * @author birgit.heydenreich@tngtech.com
  */
 public class DisplayComponentChanges extends NameSpaceAwareTag {
-    private Component actual;
-    private Component additions;
-    private Component deletions;
-    private String tableClasses = "";
-    private String idPrefix = "";
-    private boolean isClosedModeration = false;
+	private Component actual;
+	private Component additions;
+	private Component deletions;
+	private String tableClasses = "";
+	private String idPrefix = "";
+	private boolean isClosedModeration = false;
 
-    public void setActual(Component actual) {
-        this.actual = actual;
-    }
+	public void setActual(Component actual) {
+		this.actual = actual;
+	}
 
-    public void setAdditions(Component additions) {
-        this.additions = additions;
-    }
+	public void setAdditions(Component additions) {
+		this.additions = additions;
+	}
 
-    public void setDeletions(Component deletions) {
-        this.deletions = deletions;
-    }
+	public void setDeletions(Component deletions) {
+		this.deletions = deletions;
+	}
 
-    public void setTableClasses(String tableClasses) {
-        this.tableClasses = tableClasses;
-    }
+	public void setTableClasses(String tableClasses) {
+		this.tableClasses = tableClasses;
+	}
 
-    public void setIdPrefix(String idPrefix) {
-        this.idPrefix = idPrefix;
-    }
+	public void setIdPrefix(String idPrefix) {
+		this.idPrefix = idPrefix;
+	}
 
-    public void setIsClosedModeration(boolean isClosedModeration) {
-        this.isClosedModeration = isClosedModeration;
-    }
+	public void setIsClosedModeration(boolean isClosedModeration) {
+		this.isClosedModeration = isClosedModeration;
+	}
 
-    public int doStartTag() throws JspException {
+	public int doStartTag() throws JspException {
 
-        JspWriter jspWriter = pageContext.getOut();
+		JspWriter jspWriter = pageContext.getOut();
 
-        StringBuilder display = new StringBuilder();
-        String namespace = getNamespace();
+		StringBuilder display = new StringBuilder();
+		String namespace = getNamespace();
 
-        if (additions == null || deletions == null) {
-            return SKIP_BODY;
-        }
+		if (additions == null || deletions == null) {
+			return SKIP_BODY;
+		}
 
-        try {
-            for (Component._Fields field : Component._Fields.values()) {
-                switch (field) {
-                    //ignored Fields
-                    case ID:
-                    case REVISION:
-                    case TYPE:
-                    case CREATED_BY:
-                    case CREATED_ON:
-                    case PERMISSIONS:
-                    case DOCUMENT_STATE:
-                        //Releases and aggregates:
-                    case RELEASES:
-                    case RELEASE_IDS:
-                    case MAIN_LICENSE_IDS:
-                    case LANGUAGES:
-                    case OPERATING_SYSTEMS:
-                    case VENDOR_NAMES:
-                        //Taken care of externally
-                    case ATTACHMENTS:
-                        break;
+		try {
+			for (Component._Fields field : Component._Fields.values()) {
+				switch (field) {
+					// ignored Fields
+					case ID :
+					case REVISION :
+					case TYPE :
+					case CREATED_BY :
+					case CREATED_ON :
+					case PERMISSIONS :
+					case DOCUMENT_STATE :
+						// Releases and aggregates:
+					case RELEASES :
+					case RELEASE_IDS :
+					case MAIN_LICENSE_IDS :
+					case LANGUAGES :
+					case OPERATING_SYSTEMS :
+					case VENDOR_NAMES :
+						// Taken care of externally
+					case ATTACHMENTS :
+						break;
 
-                    default:
-                        FieldMetaData fieldMetaData = Component.metaDataMap.get(field);
-                        displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "", isClosedModeration);
-                }
-            }
+					default :
+						FieldMetaData fieldMetaData = Component.metaDataMap.get(field);
+						displaySimpleFieldOrSet(display, actual, additions, deletions, field, fieldMetaData, "",
+								isClosedModeration);
+				}
+			}
 
-            String renderString = display.toString();
-            HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
-            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+			String renderString = display.toString();
+			HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+					getClass());
 
-            if (Strings.isNullOrEmpty(renderString)) {
-                renderString = "<div class=\"alert alert-info\">"+LanguageUtil.get(resourceBundle,"no.changes.in.basic.fields")+"</div>";
-            } else {
-                renderString = String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
-                        + "<thead><tr><th colspan=\"4\">"+ LanguageUtil.get(resourceBundle, "changes.for.basic.fields")+"</th></tr>"
-                        + String.format("<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
-                        LanguageUtil.get(resourceBundle,"field.name"), LanguageUtil.get(resourceBundle,"current.value"), LanguageUtil.get(resourceBundle,"former.value"), LanguageUtil.get(resourceBundle,"suggested.value"))
-                        + renderString + "</tbody></table>";
-            }
+			if (Strings.isNullOrEmpty(renderString)) {
+				renderString = "<div class=\"alert alert-info\">"
+						+ LanguageUtil.get(resourceBundle, "no.changes.in.basic.fields") + "</div>";
+			} else {
+				renderString = String.format("<table class=\"%s\" id=\"%schanges\" >", tableClasses, idPrefix)
+						+ "<thead><tr><th colspan=\"4\">" + LanguageUtil.get(resourceBundle, "changes.for.basic.fields")
+						+ "</th></tr>"
+						+ String.format("<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>",
+								LanguageUtil.get(resourceBundle, "field.name"),
+								LanguageUtil.get(resourceBundle, "current.value"),
+								LanguageUtil.get(resourceBundle, "former.value"),
+								LanguageUtil.get(resourceBundle, "suggested.value"))
+						+ renderString + "</tbody></table>";
+			}
 
-            jspWriter.print(renderString);
-        } catch (Exception e) {
-            throw new JspException(e);
-        }
-        return SKIP_BODY;
-    }
+			jspWriter.print(renderString);
+		} catch (Exception e) {
+			throw new JspException(e);
+		}
+		return SKIP_BODY;
+	}
 }

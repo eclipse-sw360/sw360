@@ -12,16 +12,16 @@ package org.eclipse.sw360.datahandler.cloudantclient;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class DatabaseInstanceTrackerCloudant {
-    private static ConcurrentLinkedQueue<DatabaseInstanceCloudant> trackedInstances = new ConcurrentLinkedQueue<>();
+	private static ConcurrentLinkedQueue<DatabaseInstanceCloudant> trackedInstances = new ConcurrentLinkedQueue<>();
 
-    public static void track(DatabaseInstanceCloudant databaseInstance) {
-        trackedInstances.add(databaseInstance);
-    }
+	public static void track(DatabaseInstanceCloudant databaseInstance) {
+		trackedInstances.add(databaseInstance);
+	}
 
-    public static void destroy() {
-        DatabaseInstanceCloudant trackedInstance;
-        while ((trackedInstance = trackedInstances.poll()) != null) {
-            trackedInstance.destroy();
-        }
-    }
+	public static void destroy() {
+		DatabaseInstanceCloudant trackedInstance;
+		while ((trackedInstance = trackedInstances.poll()) != null) {
+			trackedInstance.destroy();
+		}
+	}
 }

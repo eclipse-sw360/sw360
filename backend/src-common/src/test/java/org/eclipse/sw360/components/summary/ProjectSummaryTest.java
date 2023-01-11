@@ -26,80 +26,81 @@ import static org.junit.Assert.assertNotNull;
 
 public class ProjectSummaryTest {
 
-    @Test
-    public void testAllRequiredFieldsAreSet() throws Exception {
-        Project project = new Project();
-        Project copy = new Project();
+	@Test
+	public void testAllRequiredFieldsAreSet() throws Exception {
+		Project project = new Project();
+		Project copy = new Project();
 
-        for (Project._Fields renderedField : PROJECT_RENDERED_FIELDS) {
-            switch (renderedField) {
-                case STATE:
-                    project.state = ProjectState.ACTIVE;
-                    break;
-                case PERMISSIONS:
-                    project.permissions = Collections.emptyMap();
-                    break;
-                case EXTERNAL_IDS:
-                    project.externalIds = Collections.emptyMap();
-                    break;
-                case ADDITIONAL_DATA:
-                    project.additionalData = Collections.emptyMap();
-                    break;
-                case ATTACHMENTS:
-                    project.attachments = Collections.emptySet();
-                    break;
-                case PROJECT_TYPE:
-                    project.projectType = ProjectType.INTERNAL;
-                    break;
-                case MODERATORS:
-                    project.moderators = ImmutableSet.of("moderator@sw360.org");
-                    break;
-                case CONTRIBUTORS:
-                    project.contributors= ImmutableSet.of("contributor1@sw360.org","contributor2@sw360.org");
-                    break;
-                case SECURITY_RESPONSIBLES:
-                    project.securityResponsibles = ImmutableSet.of("securityresponsible1@sw360.org","securityresponsible2@sw360.org");
-                    break;
-                case VISBILITY:
-                    project.visbility = Visibility.EVERYONE;
-                    break;
-                case LINKED_PROJECTS:
-                    project.linkedProjects = Collections.emptyMap();
-                    break;
-                case RELEASE_ID_TO_USAGE:
-                    project.releaseIdToUsage = Collections.emptyMap();
-                    break;
-                case RELEASE_CLEARING_STATE_SUMMARY:
-                    project.releaseClearingStateSummary = new ReleaseClearingStateSummary();
-                    break;
-                case CLEARING_STATE:
-                    project.clearingState = ProjectClearingState.OPEN;
-                    break;
-                case ROLES:
-                    project.roles = Collections.emptyMap();
-                    break;
-                case ENABLE_SVM:
-                    project.enableSvm = true;
-                    break;
-                case ENABLE_VULNERABILITIES_DISPLAY:
-                    project.enableVulnerabilitiesDisplay = true;
-                    break;
-                case EXTERNAL_URLS:
-                    project.externalUrls = Collections.emptyMap();
-                    break;
-                case VENDOR:
-                    project.vendor = new Vendor("short", "full", "http://vendor.com");
-                    break;
-                default: //most fields are string
-                    project.setFieldValue(renderedField, "asd");
-                    break;
-            }
-        }
+		for (Project._Fields renderedField : PROJECT_RENDERED_FIELDS) {
+			switch (renderedField) {
+				case STATE :
+					project.state = ProjectState.ACTIVE;
+					break;
+				case PERMISSIONS :
+					project.permissions = Collections.emptyMap();
+					break;
+				case EXTERNAL_IDS :
+					project.externalIds = Collections.emptyMap();
+					break;
+				case ADDITIONAL_DATA :
+					project.additionalData = Collections.emptyMap();
+					break;
+				case ATTACHMENTS :
+					project.attachments = Collections.emptySet();
+					break;
+				case PROJECT_TYPE :
+					project.projectType = ProjectType.INTERNAL;
+					break;
+				case MODERATORS :
+					project.moderators = ImmutableSet.of("moderator@sw360.org");
+					break;
+				case CONTRIBUTORS :
+					project.contributors = ImmutableSet.of("contributor1@sw360.org", "contributor2@sw360.org");
+					break;
+				case SECURITY_RESPONSIBLES :
+					project.securityResponsibles = ImmutableSet.of("securityresponsible1@sw360.org",
+							"securityresponsible2@sw360.org");
+					break;
+				case VISBILITY :
+					project.visbility = Visibility.EVERYONE;
+					break;
+				case LINKED_PROJECTS :
+					project.linkedProjects = Collections.emptyMap();
+					break;
+				case RELEASE_ID_TO_USAGE :
+					project.releaseIdToUsage = Collections.emptyMap();
+					break;
+				case RELEASE_CLEARING_STATE_SUMMARY :
+					project.releaseClearingStateSummary = new ReleaseClearingStateSummary();
+					break;
+				case CLEARING_STATE :
+					project.clearingState = ProjectClearingState.OPEN;
+					break;
+				case ROLES :
+					project.roles = Collections.emptyMap();
+					break;
+				case ENABLE_SVM :
+					project.enableSvm = true;
+					break;
+				case ENABLE_VULNERABILITIES_DISPLAY :
+					project.enableVulnerabilitiesDisplay = true;
+					break;
+				case EXTERNAL_URLS :
+					project.externalUrls = Collections.emptyMap();
+					break;
+				case VENDOR :
+					project.vendor = new Vendor("short", "full", "http://vendor.com");
+					break;
+				default : // most fields are string
+					project.setFieldValue(renderedField, "asd");
+					break;
+			}
+		}
 
-        ProjectSummary.setSummaryFields(project, copy);
+		ProjectSummary.setSummaryFields(project, copy);
 
-        for (Project._Fields renderedField : PROJECT_RENDERED_FIELDS) {
-            assertNotNull(copy.getFieldValue(renderedField));
-        }
-    }
+		for (Project._Fields renderedField : PROJECT_RENDERED_FIELDS) {
+			assertNotNull(copy.getFieldValue(renderedField));
+		}
+	}
 }

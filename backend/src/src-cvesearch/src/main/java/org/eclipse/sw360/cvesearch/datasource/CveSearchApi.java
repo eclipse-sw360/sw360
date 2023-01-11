@@ -15,11 +15,11 @@ import java.util.List;
 
 public interface CveSearchApi {
 
-    List<CveSearchData> search(String vendor, String product) throws IOException;
-    List<CveSearchData> cvefor(String cpe) throws IOException;
-    CveSearchData cve(String cve) throws IOException;
+	List<CveSearchData> search(String vendor, String product) throws IOException;
+	List<CveSearchData> cvefor(String cpe) throws IOException;
+	CveSearchData cve(String cve) throws IOException;
 
-    List<String> allVendorNames() throws IOException;
-    List<String> allProductsOfVendor(String vendorName) throws IOException;
+	List<String> allVendorNames() throws IOException;
+	List<String> allProductsOfVendor(String vendorName) throws IOException;
 
 }

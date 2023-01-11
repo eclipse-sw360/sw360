@@ -32,7 +32,6 @@ import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.*;
 import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.ADMIN;
 import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMIN;
 
-
 /**
  * Created by bodet on 16/02/15.
  *
@@ -41,131 +40,135 @@ import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMI
  */
 public class ComponentPermissions extends DocumentPermissions<Component> {
 
-    private final Set<String> createdBy;
-    private final Set<String> moderators;
-    private final Set<String> attachmentContentIds;
+	private final Set<String> createdBy;
+	private final Set<String> moderators;
+	private final Set<String> attachmentContentIds;
 
-    protected ComponentPermissions(Component document, User user) {
-        super(document, user);
-        //Should depend on permissions of contained releases
-        this.createdBy = toSingletonSet(document.createdBy);
-        moderators = Sets.union(toSingletonSet(document.createdBy), nullToEmptySet(document.moderators));
-        attachmentContentIds = nullToEmptySet(document.getAttachments()).stream()
-                .map(a -> a.getAttachmentContentId())
-                .collect(Collectors.toSet());
-    }
+	protected ComponentPermissions(Component document, User user) {
+		super(document, user);
+		// Should depend on permissions of contained releases
+		this.createdBy = toSingletonSet(document.createdBy);
+		moderators = Sets.union(toSingletonSet(document.createdBy), nullToEmptySet(document.moderators));
+		attachmentContentIds = nullToEmptySet(document.getAttachments()).stream().map(a -> a.getAttachmentContentId())
+				.collect(Collectors.toSet());
+	}
 
-    public static boolean isUserInBU(Component document, String bu) {
-        return !isNullOrEmpty(bu) && !isNullOrEmpty(document.getBusinessUnit())
-                && document.getBusinessUnit().equals(bu);
-    }
+	public static boolean isUserInBU(Component document, String bu) {
+		return !isNullOrEmpty(bu) && !isNullOrEmpty(document.getBusinessUnit())
+				&& document.getBusinessUnit().equals(bu);
+	}
 
-    public static boolean userIsEquivalentToModeratorInComponent(Component input, String user) {
-        final HashSet<String> allowedUsers = new HashSet<>();
-        if (input.isSetCreatedBy()) allowedUsers.add(input.getCreatedBy());
-        if (input.isSetModerators()) allowedUsers.addAll(input.getModerators());
+	public static boolean userIsEquivalentToModeratorInComponent(Component input, String user) {
+		final HashSet<String> allowedUsers = new HashSet<>();
+		if (input.isSetCreatedBy())
+			allowedUsers.add(input.getCreatedBy());
+		if (input.isSetModerators())
+			allowedUsers.addAll(input.getModerators());
 
-        return allowedUsers.contains(user);
-    }
+		return allowedUsers.contains(user);
+	}
 
-    @NotNull
-    public static Predicate<Component> isVisible(final User user) {
-        return input -> {
+	@NotNull
+	public static Predicate<Component> isVisible(final User user) {
+		return input -> {
 
-            if(!PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
-                return true;
-            }
-            
-            Visibility visibility = input.getVisbility();
-            if (visibility == null) {
-                visibility = Visibility.BUISNESSUNIT_AND_MODERATORS; // the current default
-            }
+			if (!PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+				return true;
+			}
 
-            switch (visibility) {
-                case PRIVATE:
-                    return PermissionUtils.isAdmin(user) || user.getEmail().equals(input.getCreatedBy());
-                case ME_AND_MODERATORS: {
-                    return PermissionUtils.isAdmin(user) || userIsEquivalentToModeratorInComponent(input, user.getEmail());
-                }
-            case BUISNESSUNIT_AND_MODERATORS: {
-                boolean isVisibleBasedOnPrimaryCondition = isUserInBU(input, user.getDepartment())
-                        || userIsEquivalentToModeratorInComponent(input, user.getEmail())
-                        || isUserAtLeast(CLEARING_ADMIN, user);
-                boolean isVisibleBasedOnSecondaryCondition = false;
-                if (!isVisibleBasedOnPrimaryCondition) {
-                    Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = user.getSecondaryDepartmentsAndRoles();
-                    if (!CommonUtils.isNullOrEmptyMap(secondaryDepartmentsAndRoles)) {
-                        if (getDepartmentIfUserInBU(input, secondaryDepartmentsAndRoles.keySet()) != null) {
-                            isVisibleBasedOnSecondaryCondition = true;
-                        }
-                    }
-                }
+			Visibility visibility = input.getVisbility();
+			if (visibility == null) {
+				visibility = Visibility.BUISNESSUNIT_AND_MODERATORS; // the current default
+			}
 
-                return isVisibleBasedOnPrimaryCondition || isVisibleBasedOnSecondaryCondition;
-            }
-                case EVERYONE:
-                    return true;
-            }
+			switch (visibility) {
+				case PRIVATE :
+					return PermissionUtils.isAdmin(user) || user.getEmail().equals(input.getCreatedBy());
+				case ME_AND_MODERATORS : {
+					return PermissionUtils.isAdmin(user)
+							|| userIsEquivalentToModeratorInComponent(input, user.getEmail());
+				}
+				case BUISNESSUNIT_AND_MODERATORS : {
+					boolean isVisibleBasedOnPrimaryCondition = isUserInBU(input, user.getDepartment())
+							|| userIsEquivalentToModeratorInComponent(input, user.getEmail())
+							|| isUserAtLeast(CLEARING_ADMIN, user);
+					boolean isVisibleBasedOnSecondaryCondition = false;
+					if (!isVisibleBasedOnPrimaryCondition) {
+						Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = user
+								.getSecondaryDepartmentsAndRoles();
+						if (!CommonUtils.isNullOrEmptyMap(secondaryDepartmentsAndRoles)) {
+							if (getDepartmentIfUserInBU(input, secondaryDepartmentsAndRoles.keySet()) != null) {
+								isVisibleBasedOnSecondaryCondition = true;
+							}
+						}
+					}
 
-            return false;
-        };
-    }
+					return isVisibleBasedOnPrimaryCondition || isVisibleBasedOnSecondaryCondition;
+				}
+				case EVERYONE :
+					return true;
+			}
 
-    @Override
-    public void fillPermissions(Component other, Map<RequestedAction, Boolean> permissions) {
-        other.permissions = permissions;
-    }
+			return false;
+		};
+	}
 
-    @Override
-    public boolean isActionAllowed(RequestedAction action) {
-        if (action == RequestedAction.READ) {
-            return isVisible(user).test(document);
-        } else {
-            return getStandardPermissions(action);
-        }
-    }
+	@Override
+	public void fillPermissions(Component other, Map<RequestedAction, Boolean> permissions) {
+		other.permissions = permissions;
+	}
 
-    @Override
-    protected Set<String> getContributors() {
-        return moderators;
-    }
+	@Override
+	public boolean isActionAllowed(RequestedAction action) {
+		if (action == RequestedAction.READ) {
+			return isVisible(user).test(document);
+		} else {
+			return getStandardPermissions(action);
+		}
+	}
 
-    @Override
-    protected Set<String> getModerators() {
-        return moderators;
-    }
+	@Override
+	protected Set<String> getContributors() {
+		return moderators;
+	}
 
-    @Override
-    protected Set<String> getAttachmentContentIds() {
-        return attachmentContentIds;
-    }
+	@Override
+	protected Set<String> getModerators() {
+		return moderators;
+	}
 
-    @Override
-    protected Set<String> getUserEquivalentOwnerGroup(){
-        Set<String> departments = new HashSet<String>();
-        if (!CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
-            departments.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
-        }
-        departments.add(user.getDepartment());
-        if(!PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
-            return departments;
-        }
-        Set<String> finalDepartments = new HashSet<String>();
-        String departmentIfUserInBU = getDepartmentIfUserInBU(document, departments);
-        finalDepartments.add(departmentIfUserInBU);
-        return departmentIfUserInBU == null ? null : finalDepartments;
-    }
-    
-    private static String getDepartmentIfUserInBU(Component document, Set<String> BUs) {
-        for (String bu:BUs) {
-            String buFromOrganisation = getBUFromOrganisation(bu);
-            boolean isUserInBU = !isNullOrEmpty(bu) && !isNullOrEmpty(buFromOrganisation)
-            && !isNullOrEmpty(document.getBusinessUnit()) && document.getBusinessUnit().equals(buFromOrganisation);
-            if (isUserInBU) {
-                return bu;
-            }
-        }
+	@Override
+	protected Set<String> getAttachmentContentIds() {
+		return attachmentContentIds;
+	}
 
-        return null;
-    }
+	@Override
+	protected Set<String> getUserEquivalentOwnerGroup() {
+		Set<String> departments = new HashSet<String>();
+		if (!CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
+			departments.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
+		}
+		departments.add(user.getDepartment());
+		if (!PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+			return departments;
+		}
+		Set<String> finalDepartments = new HashSet<String>();
+		String departmentIfUserInBU = getDepartmentIfUserInBU(document, departments);
+		finalDepartments.add(departmentIfUserInBU);
+		return departmentIfUserInBU == null ? null : finalDepartments;
+	}
+
+	private static String getDepartmentIfUserInBU(Component document, Set<String> BUs) {
+		for (String bu : BUs) {
+			String buFromOrganisation = getBUFromOrganisation(bu);
+			boolean isUserInBU = !isNullOrEmpty(bu) && !isNullOrEmpty(buFromOrganisation)
+					&& !isNullOrEmpty(document.getBusinessUnit())
+					&& document.getBusinessUnit().equals(buFromOrganisation);
+			if (isUserInBU) {
+				return bu;
+			}
+		}
+
+		return null;
+	}
 }

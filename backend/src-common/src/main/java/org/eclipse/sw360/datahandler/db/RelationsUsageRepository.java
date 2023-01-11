@@ -31,26 +31,23 @@ import com.cloudant.client.api.views.ViewRequestBuilder;
 
 public class RelationsUsageRepository extends DatabaseRepositoryCloudantClient<UsedReleaseRelations> {
 
-    private static final String BY_PROJECT_ID =
-            "function(doc) {" +
-                    "  if (doc.type == 'usedReleaseRelation') {" +
-                    "    emit(doc.projectId, null);" +
-                    "  }" +
-                    "}";
+	private static final String BY_PROJECT_ID = "function(doc) {" + "  if (doc.type == 'usedReleaseRelation') {"
+			+ "    emit(doc.projectId, null);" + "  }" + "}";
 
-    private static final String ALL = "function(doc) { if (doc.type == 'usedReleaseRelation') emit(null, doc._id); }";
+	private static final String ALL = "function(doc) { if (doc.type == 'usedReleaseRelation') emit(null, doc._id); }";
 
-    public RelationsUsageRepository(DatabaseConnectorCloudant db) {
-        super(db, UsedReleaseRelations.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));
-        views.put("all", createMapReduce(ALL, null));
-        initStandardDesignDocument(views, db);
-    }
+	public RelationsUsageRepository(DatabaseConnectorCloudant db) {
+		super(db, UsedReleaseRelations.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));
+		views.put("all", createMapReduce(ALL, null));
+		initStandardDesignDocument(views, db);
+	}
 
-    public List<UsedReleaseRelations> getUsedRelationsByProjectId(String projectId) {
-        ViewRequestBuilder viewQuery = getConnector().createQuery(UsedReleaseRelations.class, "byProjectId");
-        UnpaginatedRequestBuilder req = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(true).reduce(false).keys(projectId);
-        return queryView(req);
-    }
+	public List<UsedReleaseRelations> getUsedRelationsByProjectId(String projectId) {
+		ViewRequestBuilder viewQuery = getConnector().createQuery(UsedReleaseRelations.class, "byProjectId");
+		UnpaginatedRequestBuilder req = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(true)
+				.reduce(false).keys(projectId);
+		return queryView(req);
+	}
 }

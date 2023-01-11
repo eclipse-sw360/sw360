@@ -23,12 +23,13 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RequiredArgsConstructor
 class AttachmentResourceProcessor implements RepresentationModelProcessor<EntityModel<Attachment>> {
 
-    @Override
-    public EntityModel<Attachment> process(EntityModel<Attachment> resource) {
-        Attachment attachment = resource.getContent();
-        Link selfLink = linkTo(AttachmentController.class)
-                .slash("api" + AttachmentController.ATTACHMENTS_URL + "/" + attachment.getAttachmentContentId()).withSelfRel();
-        resource.add(selfLink);
-        return resource;
-    }
+	@Override
+	public EntityModel<Attachment> process(EntityModel<Attachment> resource) {
+		Attachment attachment = resource.getContent();
+		Link selfLink = linkTo(AttachmentController.class)
+				.slash("api" + AttachmentController.ATTACHMENTS_URL + "/" + attachment.getAttachmentContentId())
+				.withSelfRel();
+		resource.add(selfLink);
+		return resource;
+	}
 }

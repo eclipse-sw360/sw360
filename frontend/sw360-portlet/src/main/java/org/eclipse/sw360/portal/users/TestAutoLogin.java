@@ -28,55 +28,50 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * Stub for testing single sign on / auto login with prefixed user:
- * user@sw360.org (see the example users file in the vagrant project)
- * Note that this user should be created using the Users portlet.
+ * user@sw360.org (see the example users file in the vagrant project) Note that
+ * this user should be created using the Users portlet.
  *
  * @author cedric.bodet@tngtech.com
  */
-@Component(
-    immediate = true,
-    service = AutoLogin.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+@Component(immediate = true, service = AutoLogin.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class TestAutoLogin extends LoggingComponent implements AutoLogin {
-    public String[] handleException(HttpServletRequest request, HttpServletResponse response, Exception e) throws AutoLoginException {
-        log.error("System exception.", e);
-        return new String[]{};
-    }
+	public String[] handleException(HttpServletRequest request, HttpServletResponse response, Exception e)
+			throws AutoLoginException {
+		log.error("System exception.", e);
+		return new String[]{};
+	}
 
-    @Override
-    public String[] login(HttpServletRequest request, HttpServletResponse response) throws AutoLoginException {
-        // first let's check how the incoming request header looks like
-        StringBuilder headerRep = new StringBuilder();
-        headerRep.append("(login) header from request with URL from client: '" + request.getRequestURL() + "'.\n");
-        Enumeration<?> keys = request.getHeaderNames();
-        while(keys.hasMoreElements()){
-            String key = (String) keys.nextElement();
-            headerRep.append( " '" + key + "'/'" + request.getHeader(key) + "'\n");
-        }
-        log.debug("Received header:\n" + headerRep.toString());
+	@Override
+	public String[] login(HttpServletRequest request, HttpServletResponse response) throws AutoLoginException {
+		// first let's check how the incoming request header looks like
+		StringBuilder headerRep = new StringBuilder();
+		headerRep.append("(login) header from request with URL from client: '" + request.getRequestURL() + "'.\n");
+		Enumeration<?> keys = request.getHeaderNames();
+		while (keys.hasMoreElements()) {
+			String key = (String) keys.nextElement();
+			headerRep.append(" '" + key + "'/'" + request.getHeader(key) + "'\n");
+		}
+		log.debug("Received header:\n" + headerRep.toString());
 
-        // then, let's login with a hard coded user in any case ...
-        long companyId = PortalUtil.getCompanyId(request);
-        final String emailId = "user@sw360.org";
-        User user = null;
-        try {
-            user = UserLocalServiceUtil.getUserByEmailAddress(companyId, emailId);
-        } catch (PortalException e) {
-            log.error("Portal exception at getUserByEmailAddress(): " + e.getMessage(), e);
-        }
+		// then, let's login with a hard coded user in any case ...
+		long companyId = PortalUtil.getCompanyId(request);
+		final String emailId = "user@sw360.org";
+		User user = null;
+		try {
+			user = UserLocalServiceUtil.getUserByEmailAddress(companyId, emailId);
+		} catch (PortalException e) {
+			log.error("Portal exception at getUserByEmailAddress(): " + e.getMessage(), e);
+		}
 
-        // If user was found by liferay
-        if (user != null) {
-            // Create a return credentials object
-            return new String[]{
-                    String.valueOf(user.getUserId()),
-                    user.getPassword(), // Encrypted Liferay password
-                    Boolean.TRUE.toString()  // True: password is encrypted
-            };
-        } else {
-            log.error("Could not fetch user from backend: '" + emailId + "'.");
-            return new String[]{};
-        }
-    }
+		// If user was found by liferay
+		if (user != null) {
+			// Create a return credentials object
+			return new String[]{String.valueOf(user.getUserId()), user.getPassword(), // Encrypted Liferay password
+					Boolean.TRUE.toString() // True: password is encrypted
+			};
+		} else {
+			log.error("Could not fetch user from backend: '" + emailId + "'.");
+			return new String[]{};
+		}
+	}
 }

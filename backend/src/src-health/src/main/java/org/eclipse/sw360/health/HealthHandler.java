@@ -24,23 +24,23 @@ import java.util.function.Supplier;
  */
 public class HealthHandler implements HealthService.Iface {
 
-    private final HealthDatabaseHandler handler;
+	private final HealthDatabaseHandler handler;
 
-    HealthHandler() throws MalformedURLException {
-        handler = new HealthDatabaseHandler(DatabaseSettings.getConfiguredHttpClient());
-    }
+	HealthHandler() throws MalformedURLException {
+		handler = new HealthDatabaseHandler(DatabaseSettings.getConfiguredHttpClient());
+	}
 
-    HealthHandler(Supplier<HttpClient> httpClient) throws MalformedURLException {
-        handler = new HealthDatabaseHandler(httpClient);
-    }
+	HealthHandler(Supplier<HttpClient> httpClient) throws MalformedURLException {
+		handler = new HealthDatabaseHandler(httpClient);
+	}
 
-    @Override
-    public Health getHealth() {
-        return handler.getHealth();
-    }
+	@Override
+	public Health getHealth() {
+		return handler.getHealth();
+	}
 
-    @Override
-    public Health getHealthOfSpecificDbs(Set<String> dbsToCheck){
-        return handler.getHealthOfSpecificDbs(dbsToCheck);
-    }
+	@Override
+	public Health getHealthOfSpecificDbs(Set<String> dbsToCheck) {
+		return handler.getHealthOfSpecificDbs(dbsToCheck);
+	}
 }

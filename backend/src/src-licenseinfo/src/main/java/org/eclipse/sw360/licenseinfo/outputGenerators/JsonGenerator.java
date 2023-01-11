@@ -26,19 +26,21 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
  */
 public class JsonGenerator extends OutputGenerator<String> {
 
-    private static final String JSON_MIME_TYPE = "application/json";
-    private static final String JSON_OUTPUT_TYPE = "json";
+	private static final String JSON_MIME_TYPE = "application/json";
+	private static final String JSON_OUTPUT_TYPE = "json";
 
-    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+	public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
 
-    public JsonGenerator(OutputFormatVariant outputFormatVariant, String description) {
-        super(JSON_OUTPUT_TYPE, description, true, JSON_MIME_TYPE, outputFormatVariant);
-        Properties props = CommonUtils.loadProperties(JsonGenerator.class, PROPERTIES_FILE_PATH);
-    }
+	public JsonGenerator(OutputFormatVariant outputFormatVariant, String description) {
+		super(JSON_OUTPUT_TYPE, description, true, JSON_MIME_TYPE, outputFormatVariant);
+		Properties props = CommonUtils.loadProperties(JsonGenerator.class, PROPERTIES_FILE_PATH);
+	}
 
-    @Override
-    public String generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception {
-        return "";
-        
-    }
+	@Override
+	public String generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project,
+			Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds,
+			Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception {
+		return "";
+
+	}
 }

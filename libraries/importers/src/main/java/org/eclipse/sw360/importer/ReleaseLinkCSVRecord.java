@@ -19,86 +19,85 @@ import java.util.ArrayList;
 /**
  * @author johannes.najjar@tngtech.com
  */
-public class ReleaseLinkCSVRecord extends  ComponentAwareCSVRecord{
-    //linking Release done by inheritance
+public class ReleaseLinkCSVRecord extends ComponentAwareCSVRecord {
+	// linking Release done by inheritance
 
-    // linked Release
-    private final String linkedComponentName;
-    private final String linkedReleaseName;
-    private final String linkedReleaseVersion;
-    private final ReleaseRelationship relationship;
+	// linked Release
+	private final String linkedComponentName;
+	private final String linkedReleaseName;
+	private final String linkedReleaseVersion;
+	private final ReleaseRelationship relationship;
 
-    ReleaseLinkCSVRecord(String componentName, String releaseName, String releaseVersion,
-                                String linkedComponentName, String linkedReleaseName,
-                                String linkedReleaseVersion, ReleaseRelationship relationship) {
-        super(componentName, releaseName, releaseVersion);
-        this.linkedComponentName = linkedComponentName;
-        this.linkedReleaseName = linkedReleaseName;
-        this.linkedReleaseVersion = linkedReleaseVersion;
-        this.relationship = relationship;
-    }
+	ReleaseLinkCSVRecord(String componentName, String releaseName, String releaseVersion, String linkedComponentName,
+			String linkedReleaseName, String linkedReleaseVersion, ReleaseRelationship relationship) {
+		super(componentName, releaseName, releaseVersion);
+		this.linkedComponentName = linkedComponentName;
+		this.linkedReleaseName = linkedReleaseName;
+		this.linkedReleaseVersion = linkedReleaseVersion;
+		this.relationship = relationship;
+	}
 
-    @Override
-    public Iterable<String> getCSVIterable() {
-        final ArrayList<String> elements = new ArrayList<>();
+	@Override
+	public Iterable<String> getCSVIterable() {
+		final ArrayList<String> elements = new ArrayList<>();
 
-        elements.add(componentName);
-        elements.add(releaseName);
-        elements.add(releaseVersion);
-        elements.add(linkedComponentName);
-        elements.add(linkedReleaseName);
-        elements.add(linkedReleaseVersion);
-        elements.add(relationship.name());
+		elements.add(componentName);
+		elements.add(releaseName);
+		elements.add(releaseVersion);
+		elements.add(linkedComponentName);
+		elements.add(linkedReleaseName);
+		elements.add(linkedReleaseVersion);
+		elements.add(relationship.name());
 
-        return elements;
-    }
+		return elements;
+	}
 
-    public static Iterable<String> getCSVHeaderIterable() {
-        final ArrayList<String> elements = new ArrayList<>();
+	public static Iterable<String> getCSVHeaderIterable() {
+		final ArrayList<String> elements = new ArrayList<>();
 
-        elements.add("componentName");
-        elements.add("releaseName");
-        elements.add("releaseVersion");
-        elements.add("linkedComponentName");
-        elements.add("linkedReleaseName");
-        elements.add("linkedReleaseVersion");
-        elements.add("ReleaseRelationship");
+		elements.add("componentName");
+		elements.add("releaseName");
+		elements.add("releaseVersion");
+		elements.add("linkedComponentName");
+		elements.add("linkedReleaseName");
+		elements.add("linkedReleaseVersion");
+		elements.add("ReleaseRelationship");
 
-        return elements;
-    }
+		return elements;
+	}
 
-    public static Iterable<String> getSampleInputIterable() {
-        final ArrayList<String> elements = new ArrayList<>();
+	public static Iterable<String> getSampleInputIterable() {
+		final ArrayList<String> elements = new ArrayList<>();
 
-        elements.add("componentName");
-        elements.add("releaseName");
-        elements.add(SampleOptions.VERSION_OPTION);
-        elements.add("linkedComponentName");
-        elements.add("linkedReleaseName");
-        elements.add(SampleOptions.VERSION_OPTION);
-        elements.add(SampleOptions.RELEASE_RELEATIONSHIP_OPTIONS);
+		elements.add("componentName");
+		elements.add("releaseName");
+		elements.add(SampleOptions.VERSION_OPTION);
+		elements.add("linkedComponentName");
+		elements.add("linkedReleaseName");
+		elements.add(SampleOptions.VERSION_OPTION);
+		elements.add(SampleOptions.RELEASE_RELEATIONSHIP_OPTIONS);
 
-        return elements;
-    }
+		return elements;
+	}
 
-    public String getLinkedReleaseIdentifier() {
-        return SW360Utils.getVersionedName(linkedReleaseName, linkedReleaseVersion);
-    }
+	public String getLinkedReleaseIdentifier() {
+		return SW360Utils.getVersionedName(linkedReleaseName, linkedReleaseVersion);
+	}
 
-    public String getLinkedComponentName() {
-        return linkedComponentName;
-    }
+	public String getLinkedComponentName() {
+		return linkedComponentName;
+	}
 
-    public ReleaseRelationship getRelationship() {
-        return relationship;
-    }
+	public ReleaseRelationship getRelationship() {
+		return relationship;
+	}
 
-    public static ReleaseLinkCSVRecordBuilder builder(){
-        return new ReleaseLinkCSVRecordBuilder();
-    }
+	public static ReleaseLinkCSVRecordBuilder builder() {
+		return new ReleaseLinkCSVRecordBuilder();
+	}
 
-    public static ReleaseLinkCSVRecordBuilder builder( CSVRecord in){
-        return new ReleaseLinkCSVRecordBuilder( in );
-    }
+	public static ReleaseLinkCSVRecordBuilder builder(CSVRecord in) {
+		return new ReleaseLinkCSVRecordBuilder(in);
+	}
 
 }

@@ -21,8 +21,8 @@ import java.net.MalformedURLException;
  * @author ksoranko@verifa.io
  */
 public class WsImportServlet extends Sw360ThriftServlet {
-    public WsImportServlet() throws MalformedURLException, FileNotFoundException {
-        // Create a service processor using the provided handler
-        super(new ProjectImportService.Processor<>(new WsImportHandler()), new TCompactProtocol.Factory());
-    }
+	public WsImportServlet() throws MalformedURLException, FileNotFoundException {
+		// Create a service processor using the provided handler
+		super(new ProjectImportService.Processor<>(new WsImportHandler()), new TCompactProtocol.Factory());
+	}
 }

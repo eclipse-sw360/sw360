@@ -28,46 +28,47 @@ import java.util.List;
  */
 public class ReleaseClearingStateSummaryComputer {
 
-    public static ReleaseClearingStateSummary computeReleaseClearingStateSummary(List<Release> releases, String clearingTeam) {
-        ReleaseClearingStateSummary summary = new ReleaseClearingStateSummary(0, 0, 0, 0, 0, 0);
+	public static ReleaseClearingStateSummary computeReleaseClearingStateSummary(List<Release> releases,
+			String clearingTeam) {
+		ReleaseClearingStateSummary summary = new ReleaseClearingStateSummary(0, 0, 0, 0, 0, 0);
 
-        if (releases == null) {
-            return summary;
-        }
+		if (releases == null) {
+			return summary;
+		}
 
-        for (Release release : releases) {
-            if (release == null) {
-                continue;
-            }
-            if (release.getClearingState() == null) {
-                summary.newRelease++;
-            } else {
-                switch (release.getClearingState()) {
-                case NEW_CLEARING:
-                    summary.newRelease++;
-                    break;
-                case SENT_TO_CLEARING_TOOL:
-                    summary.sentToClearingTool++;
-                    break;
-                case UNDER_CLEARING:
-                    summary.underClearing++;
-                    break;
-                case REPORT_AVAILABLE:
-                    summary.reportAvailable++;
-                    break;
-                case APPROVED:
-                    summary.approved++;
-                    break;
-                case SCAN_AVAILABLE:
-                    summary.scanAvailable++;
-                    break;
-                default:
-                    summary.newRelease++;
-                    break;
-                }
-            }
+		for (Release release : releases) {
+			if (release == null) {
+				continue;
+			}
+			if (release.getClearingState() == null) {
+				summary.newRelease++;
+			} else {
+				switch (release.getClearingState()) {
+					case NEW_CLEARING :
+						summary.newRelease++;
+						break;
+					case SENT_TO_CLEARING_TOOL :
+						summary.sentToClearingTool++;
+						break;
+					case UNDER_CLEARING :
+						summary.underClearing++;
+						break;
+					case REPORT_AVAILABLE :
+						summary.reportAvailable++;
+						break;
+					case APPROVED :
+						summary.approved++;
+						break;
+					case SCAN_AVAILABLE :
+						summary.scanAvailable++;
+						break;
+					default :
+						summary.newRelease++;
+						break;
+				}
+			}
 
-        }
-        return summary;
-    }
+		}
+		return summary;
+	}
 }

@@ -13,8 +13,8 @@ package org.eclipse.sw360.datahandler.resourcelists;
 
 public class PaginationParameterException extends Exception {
 
-    public PaginationParameterException(String message) {
-        super(message);
-    }
+	public PaginationParameterException(String message) {
+		super(message);
+	}
 
 }

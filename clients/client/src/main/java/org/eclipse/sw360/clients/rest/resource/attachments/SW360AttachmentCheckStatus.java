@@ -11,28 +11,26 @@
 package org.eclipse.sw360.clients.rest.resource.attachments;
 
 public enum SW360AttachmentCheckStatus {
-    NOTCHECKED(0),
-    ACCEPTED(1),
-    REJECTED(2);
+	NOTCHECKED(0), ACCEPTED(1), REJECTED(2);
 
-    private final int value;
+	private final int value;
 
-    SW360AttachmentCheckStatus(int value) {
-        this.value = value;
-    }
+	SW360AttachmentCheckStatus(int value) {
+		this.value = value;
+	}
 
-    public int getValue() {
-        return this.value;
-    }
+	public int getValue() {
+		return this.value;
+	}
 
-    public static SW360AttachmentCheckStatus findByValue(int value) {
-        switch (value) {
-            case 2:
-                return REJECTED;
-            case 1:
-                return ACCEPTED;
-            default:
-                return NOTCHECKED;
-        }
-    }
+	public static SW360AttachmentCheckStatus findByValue(int value) {
+		switch (value) {
+			case 2 :
+				return REJECTED;
+			case 1 :
+				return ACCEPTED;
+			default :
+				return NOTCHECKED;
+		}
+	}
 }

@@ -14,69 +14,68 @@ package org.eclipse.sw360.wsimport.domain;
  */
 public class WsLibrary {
 
-    private int keyId;
-    private String filename;
-    private String name;
-    private String version;
-    private String type;
-    private WsReference references;
-    private WsLicense[] licenses;
+	private int keyId;
+	private String filename;
+	private String name;
+	private String version;
+	private String type;
+	private WsReference references;
+	private WsLicense[] licenses;
 
-    public int getKeyId() {
-        return keyId;
-    }
+	public int getKeyId() {
+		return keyId;
+	}
 
-    public void setKeyId(int keyId) {
-        this.keyId = keyId;
-    }
+	public void setKeyId(int keyId) {
+		this.keyId = keyId;
+	}
 
-    public String getFilename() {
-        return filename;
-    }
+	public String getFilename() {
+		return filename;
+	}
 
-    public void setFilename(String filename) {
-        this.filename = filename;
-    }
+	public void setFilename(String filename) {
+		this.filename = filename;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public String getVersion() {
-        return version;
-    }
+	public String getVersion() {
+		return version;
+	}
 
-    public void setVersion(String version) {
-        this.version = version;
-    }
+	public void setVersion(String version) {
+		this.version = version;
+	}
 
-    public String getType() {
-        return type;
-    }
+	public String getType() {
+		return type;
+	}
 
-    public void setType(String type) {
-        this.type = type;
-    }
+	public void setType(String type) {
+		this.type = type;
+	}
 
-    public WsReference getReferences() {
-        return references;
-    }
+	public WsReference getReferences() {
+		return references;
+	}
 
-    public void setReferences(WsReference references) {
-        this.references = references;
-    }
+	public void setReferences(WsReference references) {
+		this.references = references;
+	}
 
-    public WsLicense[] getLicenses() {
-        return licenses;
-    }
+	public WsLicense[] getLicenses() {
+		return licenses;
+	}
 
-    public void setLicenses(WsLicense[] licenses) {
-        this.licenses = licenses;
-    }
+	public void setLicenses(WsLicense[] licenses) {
+		this.licenses = licenses;
+	}
 
 }
-

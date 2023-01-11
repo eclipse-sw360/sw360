@@ -41,125 +41,117 @@ import javax.portlet.*;
 
 import static org.eclipse.sw360.portal.common.PortalConstants.LICENSE_ADMIN_PORTLET_NAME;
 
-@Component(
-    immediate = true,
-    properties = {
-            "/org/eclipse/sw360/portal/portlets/base.properties",
-            "/org/eclipse/sw360/portal/portlets/admin.properties"
-    },
-    property = {
-        "javax.portlet.name=" + LICENSE_ADMIN_PORTLET_NAME,
+@Component(immediate = true, properties = {"/org/eclipse/sw360/portal/portlets/base.properties",
+		"/org/eclipse/sw360/portal/portlets/admin.properties"}, property = {
+				"javax.portlet.name=" + LICENSE_ADMIN_PORTLET_NAME,
 
-        "javax.portlet.display-name=License Administration",
-        "javax.portlet.info.short-title=License",
-        "javax.portlet.info.title=License Administration",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/admin/licenseAdmin/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+				"javax.portlet.display-name=License Administration", "javax.portlet.info.short-title=License",
+				"javax.portlet.info.title=License Administration", "javax.portlet.resource-bundle=content.Language",
+				"javax.portlet.init-param.view-template=/html/admin/licenseAdmin/view.jsp",}, service = Portlet.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class LicenseAdminPortlet extends Sw360Portlet {
-    private static final Logger log = LogManager.getLogger(LicenseAdminPortlet.class);
+	private static final Logger log = LogManager.getLogger(LicenseAdminPortlet.class);
 
-    @Override
-    public void serveResource(ResourceRequest request, ResourceResponse response) throws PortletException {
-        String action = request.getParameter(PortalConstants.ACTION);
+	@Override
+	public void serveResource(ResourceRequest request, ResourceResponse response) throws PortletException {
+		String action = request.getParameter(PortalConstants.ACTION);
 
-        if (action == null) {
-            log.error("Invalid action 'null'");
-            return;
-        }
+		if (action == null) {
+			log.error("Invalid action 'null'");
+			return;
+		}
 
-        switch (action) {
-            case PortalConstants.DOWNLOAD_LICENSE_BACKUP:
-                try {
-                    backUpLicenses(request, response);
-                } catch (IOException | TException e) {
-                    log.error("Something went wrong with the license zip creation", e);
-                }
-                break;
-            case PortalConstants.ACTION_DELETE_ALL_LICENSE_INFORMATION:
-                deleteAllLicenseInformation(request, response);
-                break;
-            case PortalConstants.ACTION_IMPORT_SPDX_LICENSE_INFORMATION:
-                try {
-                    importLicensesFromSPDX(request, response);
-                } catch (TException e) {
-                    throw new PortletException(e);
-                }
-                break;
-            case PortalConstants.ACTION_IMPORT_OSADL_LICENSE_INFORMATION:
-                try {
-                    importLicensesFromOSADL(request, response);
-                } catch (TException e) {
-                    throw new PortletException(e);
-                }
-                break;
-            default:
-                log.warn("The LicenseAdminPortlet was called with unsupported action=[" + action + "]");
-        }
-    }
+		switch (action) {
+			case PortalConstants.DOWNLOAD_LICENSE_BACKUP :
+				try {
+					backUpLicenses(request, response);
+				} catch (IOException | TException e) {
+					log.error("Something went wrong with the license zip creation", e);
+				}
+				break;
+			case PortalConstants.ACTION_DELETE_ALL_LICENSE_INFORMATION :
+				deleteAllLicenseInformation(request, response);
+				break;
+			case PortalConstants.ACTION_IMPORT_SPDX_LICENSE_INFORMATION :
+				try {
+					importLicensesFromSPDX(request, response);
+				} catch (TException e) {
+					throw new PortletException(e);
+				}
+				break;
+			case PortalConstants.ACTION_IMPORT_OSADL_LICENSE_INFORMATION :
+				try {
+					importLicensesFromOSADL(request, response);
+				} catch (TException e) {
+					throw new PortletException(e);
+				}
+				break;
+			default :
+				log.warn("The LicenseAdminPortlet was called with unsupported action=[" + action + "]");
+		}
+	}
 
-    @UsedAsLiferayAction
-    public void updateLicenses(ActionRequest request, ActionResponse response) throws IOException, TException {
-        final HashMap<String, InputStream> inputMap = new HashMap<>();
-        User user = UserCacheHolder.getUserFromRequest(request);
-        try {
-            fillFilenameInputStreamMap(request, inputMap);
+	@UsedAsLiferayAction
+	public void updateLicenses(ActionRequest request, ActionResponse response) throws IOException, TException {
+		final HashMap<String, InputStream> inputMap = new HashMap<>();
+		User user = UserCacheHolder.getUserFromRequest(request);
+		try {
+			fillFilenameInputStreamMap(request, inputMap);
 
-            final LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+			final LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
 
+			boolean overwriteIfExternalIdMatches = "true".equals(request.getParameter("overwriteIfExternalIdMatches"));
+			boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch = "true"
+					.equals(request.getParameter("overwriteIfIdMatchesEvenWithoutExternalIdMatch"));
 
-            boolean overwriteIfExternalIdMatches = "true".equals(request.getParameter("overwriteIfExternalIdMatches"));
-            boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch = "true".equals(request.getParameter("overwriteIfIdMatchesEvenWithoutExternalIdMatch"));
+			final LicsImporter licsImporter = new LicsImporter(licenseClient, overwriteIfExternalIdMatches,
+					overwriteIfIdMatchesEvenWithoutExternalIdMatch);
+			licsImporter.importLics(user, inputMap);
+		} finally {
+			for (InputStream inputStream : inputMap.values()) {
+				inputStream.close();
+			}
+		}
+	}
 
-            final LicsImporter licsImporter = new LicsImporter(licenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
-            licsImporter.importLics(user, inputMap);
-        } finally {
-            for (InputStream inputStream : inputMap.values()) {
-                inputStream.close();
-            }
-        }
-    }
+	private void importLicensesFromOSADL(ResourceRequest request, ResourceResponse response) throws TException {
+		User user = UserCacheHolder.getUserFromRequest(request);
+		LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+		RequestSummary requestSummary = licenseClient.importAllOSADLLicenses(user);
+		renderRequestSummary(request, response, requestSummary);
+	}
 
-    private void importLicensesFromOSADL(ResourceRequest request, ResourceResponse response) throws TException {
-        User user = UserCacheHolder.getUserFromRequest(request);
-        LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-        RequestSummary requestSummary = licenseClient.importAllOSADLLicenses(user);
-        renderRequestSummary(request, response, requestSummary);
-    }
+	private void deleteAllLicenseInformation(ResourceRequest request, ResourceResponse response) {
+		User user = UserCacheHolder.getUserFromRequest(request);
+		LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+		try {
+			RequestSummary requestSummary = licenseClient.deleteAllLicenseInformation(user);
+			renderRequestSummary(request, response, requestSummary);
+		} catch (TException te) {
+			log.error("Got TException when trying to delete all license information.", te);
+		}
+	}
 
-    private void deleteAllLicenseInformation(ResourceRequest request, ResourceResponse response){
-        User user = UserCacheHolder.getUserFromRequest(request);
-        LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-        try {
-            RequestSummary requestSummary = licenseClient.deleteAllLicenseInformation(user);
-            renderRequestSummary(request, response, requestSummary);
-        } catch (TException te){
-            log.error("Got TException when trying to delete all license information." ,te);
-        }
-    }
+	private void importLicensesFromSPDX(ResourceRequest request, ResourceResponse response) throws TException {
+		User user = UserCacheHolder.getUserFromRequest(request);
+		LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+		RequestSummary requestSummary = licenseClient.importAllSpdxLicenses(user);
+		renderRequestSummary(request, response, requestSummary);
+	}
 
-    private void importLicensesFromSPDX(ResourceRequest request, ResourceResponse response) throws TException {
-        User user = UserCacheHolder.getUserFromRequest(request);
-        LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-        RequestSummary requestSummary = licenseClient.importAllSpdxLicenses(user);
-        renderRequestSummary(request, response, requestSummary);
-    }
+	private void fillFilenameInputStreamMap(ActionRequest request, HashMap<String, InputStream> fileNameToStream)
+			throws IOException {
+		InputStream in = null;
+		try {
+			in = getInputStreamFromRequest(request, "file");
+			ZipTools.extractZipToInputStreamMap(in, fileNameToStream);
+		} finally {
+			if (in != null)
+				in.close();
+		}
+	}
 
-    private void fillFilenameInputStreamMap(ActionRequest request, HashMap<String, InputStream> fileNameToStream) throws IOException {
-        InputStream in = null;
-        try {
-            in = getInputStreamFromRequest(request, "file");
-            ZipTools.extractZipToInputStreamMap(in, fileNameToStream);
-        } finally {
-            if (in != null) in.close();
-        }
-    }
-
-    private InputStream getInputStreamFromRequest(PortletRequest request, String fileUploadFormId) throws IOException {
-        final UploadPortletRequest uploadPortletRequest = PortalUtil.getUploadPortletRequest(request);
-        return uploadPortletRequest.getFileAsStream(fileUploadFormId);
-    }
+	private InputStream getInputStreamFromRequest(PortletRequest request, String fileUploadFormId) throws IOException {
+		final UploadPortletRequest uploadPortletRequest = PortalUtil.getUploadPortletRequest(request);
+		return uploadPortletRequest.getFileAsStream(fileUploadFormId);
+	}
 }

@@ -31,95 +31,92 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
  */
 public class ReleaseSummary extends DocumentSummary<Release> {
 
-    private final VendorRepository vendorRepository;
+	private final VendorRepository vendorRepository;
 
-    public ReleaseSummary() {
-        // Create summary without database connection
-        this(null);
-    }
+	public ReleaseSummary() {
+		// Create summary without database connection
+		this(null);
+	}
 
-    public ReleaseSummary(VendorRepository vendorRepository) {
-        this.vendorRepository = vendorRepository;
-    }
+	public ReleaseSummary(VendorRepository vendorRepository) {
+		this.vendorRepository = vendorRepository;
+	}
 
-    @Override
-    public List<Release> makeSummary(SummaryType type, Collection<Release> fullDocuments) {
-        if (fullDocuments == null) return Collections.emptyList();
+	@Override
+	public List<Release> makeSummary(SummaryType type, Collection<Release> fullDocuments) {
+		if (fullDocuments == null)
+			return Collections.emptyList();
 
-        Set<String> vendorIds = fullDocuments
-                .stream()
-                .filter(Objects::nonNull)
-                .map(Release::getVendorId)
-                .filter(Objects::nonNull)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toSet());
-        Map<String, Vendor> vendorById = ThriftUtils.getIdMap(vendorRepository.get(vendorIds));
+		Set<String> vendorIds = fullDocuments.stream().filter(Objects::nonNull).map(Release::getVendorId)
+				.filter(Objects::nonNull).filter(s -> !s.isEmpty()).collect(Collectors.toSet());
+		Map<String, Vendor> vendorById = ThriftUtils.getIdMap(vendorRepository.get(vendorIds));
 
-        List<Release> documents = new ArrayList<>(fullDocuments.size());
-        for (Release fullDocument : fullDocuments) {
-            if (fullDocument == null) continue;
-            Release document = summary(type, fullDocument, vendorById::get);
-            if (document != null) documents.add(document);
-        }
-        return documents;
-    }
+		List<Release> documents = new ArrayList<>(fullDocuments.size());
+		for (Release fullDocument : fullDocuments) {
+			if (fullDocument == null)
+				continue;
+			Release document = summary(type, fullDocument, vendorById::get);
+			if (document != null)
+				documents.add(document);
+		}
+		return documents;
+	}
 
+	@Override
+	protected Release summary(SummaryType type, Release document) {
+		return summary(type, document, vendorRepository::get);
+	}
 
-    @Override
-    protected Release summary(SummaryType type, Release document) {
-        return summary(type, document, vendorRepository::get);
-    }
+	protected Release summary(SummaryType type, Release document, Function<String, Vendor> vendorProvider) {
+		Release copy = new Release();
+		if (type == SummaryType.DETAILED_EXPORT_SUMMARY) {
+			setDetailedExportSummaryFields(document, copy);
+		} else {
+			setShortSummaryFields(document, copy);
+			if (type != SummaryType.SHORT) {
+				setAdditionalFieldsForSummariesOtherThanShortAndDetailedExport(document, copy);
+			}
+		}
+		if (document.isSetVendorId()) {
+			final String vendorId = document.getVendorId();
+			if (!Strings.isNullOrEmpty(vendorId)) {
+				Vendor vendor = vendorProvider.apply(vendorId);
+				copy.setVendor(vendor);
+			}
+		}
+		return copy;
+	}
 
-    protected Release summary(SummaryType type, Release document, Function<String, Vendor> vendorProvider) {
-        Release copy = new Release();
-        if(type == SummaryType.DETAILED_EXPORT_SUMMARY){
-           setDetailedExportSummaryFields(document, copy);
-        } else {
-            setShortSummaryFields(document,copy);
-            if (type != SummaryType.SHORT) {
-               setAdditionalFieldsForSummariesOtherThanShortAndDetailedExport(document, copy);
-            }
-        }
-        if (document.isSetVendorId()) {
-            final String vendorId = document.getVendorId();
-            if (!Strings.isNullOrEmpty(vendorId)) {
-                Vendor vendor = vendorProvider.apply(vendorId);
-                copy.setVendor(vendor);
-            }
-        }
-        return copy;
-    }
+	private void setDetailedExportSummaryFields(Release document, Release copy) {
+		for (_Fields renderedField : ReleaseExporter.RELEASE_RENDERED_FIELDS) {
+			copyField(document, copy, renderedField);
+		}
+	}
 
-    private void setDetailedExportSummaryFields(Release document, Release copy) {
-        for (_Fields renderedField : ReleaseExporter.RELEASE_RENDERED_FIELDS) {
-            copyField(document, copy, renderedField);
-        }
-    }
+	private void setShortSummaryFields(Release document, Release copy) {
+		copyField(document, copy, _Fields.ID);
+		copyField(document, copy, _Fields.REVISION);
+		copyField(document, copy, _Fields.NAME);
+		copyField(document, copy, _Fields.VERSION);
+		copyField(document, copy, _Fields.COMPONENT_ID);
+		copyField(document, copy, _Fields.EXTERNAL_TOOL_PROCESSES);
+		copyField(document, copy, _Fields.CLEARING_STATE);
+		copyField(document, copy, _Fields.MAINLINE_STATE);
+		copyField(document, copy, _Fields.CPEID);
+		copyField(document, copy, _Fields.RELEASE_DATE);
+		copyField(document, copy, _Fields.SOURCE_CODE_DOWNLOADURL);
+		copyField(document, copy, _Fields.BINARY_DOWNLOADURL);
+	}
 
-    private void setShortSummaryFields(Release document, Release copy) {
-        copyField(document, copy, _Fields.ID);
-        copyField(document, copy, _Fields.REVISION);
-        copyField(document, copy, _Fields.NAME);
-        copyField(document, copy, _Fields.VERSION);
-        copyField(document, copy, _Fields.COMPONENT_ID);
-        copyField(document, copy, _Fields.EXTERNAL_TOOL_PROCESSES);
-        copyField(document, copy, _Fields.CLEARING_STATE);
-        copyField(document, copy, _Fields.MAINLINE_STATE);
-        copyField(document, copy, _Fields.CPEID);
-        copyField(document, copy, _Fields.RELEASE_DATE);
-        copyField(document, copy, _Fields.SOURCE_CODE_DOWNLOADURL);
-        copyField(document, copy, _Fields.BINARY_DOWNLOADURL);
-    }
-
-    private void setAdditionalFieldsForSummariesOtherThanShortAndDetailedExport(Release document, Release copy){
-        copyField(document, copy, _Fields.CREATED_BY);
-        copyField(document, copy, _Fields.MAINLINE_STATE);
-        copyField(document, copy, _Fields.CLEARING_STATE);
-        copyField(document, copy, _Fields.LANGUAGES);
-        copyField(document, copy, _Fields.OPERATING_SYSTEMS);
-        copyField(document, copy, _Fields.ATTACHMENTS);
-        copyField(document, copy, _Fields.MAIN_LICENSE_IDS);
-        copyField(document, copy, _Fields.ECC_INFORMATION);
-    }
+	private void setAdditionalFieldsForSummariesOtherThanShortAndDetailedExport(Release document, Release copy) {
+		copyField(document, copy, _Fields.CREATED_BY);
+		copyField(document, copy, _Fields.MAINLINE_STATE);
+		copyField(document, copy, _Fields.CLEARING_STATE);
+		copyField(document, copy, _Fields.LANGUAGES);
+		copyField(document, copy, _Fields.OPERATING_SYSTEMS);
+		copyField(document, copy, _Fields.ATTACHMENTS);
+		copyField(document, copy, _Fields.MAIN_LICENSE_IDS);
+		copyField(document, copy, _Fields.ECC_INFORMATION);
+	}
 
 }

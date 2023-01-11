@@ -34,17 +34,17 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.TMP_OBLIGATION_ID
 public class OSADLObligationConnector extends ObligationConnector {
 	public static final String EXTERNAL_ID_OSADL = "OSADL-Obligation-License";
 	private static final Logger log = LogManager.getLogger(OSADLObligationConnector.class);
-    private static final String SOURCE = "OSADL";
+	private static final String SOURCE = "OSADL";
 	private static final String BASE_URL = "https://www.osadl.org/fileadmin/checklists/unreflicenses/";
 
 	@Override
-    protected String generateURL(String licenseId) {
-        return BASE_URL + licenseId + ".txt";
-    }
+	protected String generateURL(String licenseId) {
+		return BASE_URL + licenseId + ".txt";
+	}
 
-    @Override
-    protected String getText(String licenseId) {
-        String obligationURL = generateURL(licenseId);
+	@Override
+	protected String getText(String licenseId) {
+		String obligationURL = generateURL(licenseId);
 		try {
 			URL url = new URL(obligationURL);
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -67,12 +67,12 @@ public class OSADLObligationConnector extends ObligationConnector {
 			log.error("Could not get OSADL License for: " + licenseId);
 			return null;
 		}
-    }
+	}
 
 	@Override
 	public JSONObject parseText(String obligationText) {
-        String lines = obligationText;
-        String[] arraylines = lines.split("\n");
+		String lines = obligationText;
+		String[] arraylines = lines.split("\n");
 		List<String> jsonText = setLinePath(setLineLevel(arraylines));
 		return buildTreeObject(jsonText);
 	}
@@ -104,14 +104,15 @@ public class OSADLObligationConnector extends ObligationConnector {
 				continue;
 			}
 			int currentLevel = getLevel(arraylines[i]);
-			String lineWithLevel = "{ 'id': '" + i + "', 'text': '" + arraylines[i].replace("\t","") + "', 'level': '" + currentLevel + "', 'path': '-1'}";
+			String lineWithLevel = "{ 'id': '" + i + "', 'text': '" + arraylines[i].replace("\t", "") + "', 'level': '"
+					+ currentLevel + "', 'path': '-1'}";
 			refinedLines.add(lineWithLevel);
 		}
 		return refinedLines;
 	}
 
 	private int getLevel(String line) {
-		return line.length() - line.replace("\t","").length();
+		return line.length() - line.replace("\t", "").length();
 	}
 
 	private List<String> setLinePath(List<String> lines) {
@@ -131,7 +132,8 @@ public class OSADLObligationConnector extends ObligationConnector {
 				currentLine.put("path", path.trim());
 				lines.set(i, currentLine.toString());
 				i++;
-				String jsonLine = "{ 'id': '" + currentLine.get("id") + "', 'text': '" + currentLine.get("text") + "', 'level': '" + currentLine.get("level") + "', 'path': '" +currentLine.get("path")+ "'}";
+				String jsonLine = "{ 'id': '" + currentLine.get("id") + "', 'text': '" + currentLine.get("text")
+						+ "', 'level': '" + currentLine.get("level") + "', 'path': '" + currentLine.get("path") + "'}";
 				refinedLines.add(jsonLine);
 			} catch (Exception e) {
 				log.error("Can not set line path: " + line);
@@ -181,13 +183,16 @@ public class OSADLObligationConnector extends ObligationConnector {
 		for (int i = 0; i < lines.size(); i++) {
 			try {
 				JSONObject line = new JSONObject(lines.get(i));
-				if (line.get("path").toString().split("@")[0].equals(rootNode.get("path").toString().replace("@", ""))) {
+				if (line.get("path").toString().split("@")[0]
+						.equals(rootNode.get("path").toString().replace("@", ""))) {
 					String childNode;
 					List<String> text = parseSentenceElement(line.get("text").toString());
 					if (text.get(0).equals("Obligation")) {
-						childNode = "{'val': ['" +text.get(0)+ "', '" +text.get(1)+ "', '" +text.get(2)+ "', '" +text.get(3)+"'], 'children': [], 'path': '" +line.get("path")+ "'}";
+						childNode = "{'val': ['" + text.get(0) + "', '" + text.get(1) + "', '" + text.get(2) + "', '"
+								+ text.get(3) + "'], 'children': [], 'path': '" + line.get("path") + "'}";
 					} else {
-						childNode = "{'val': ['" +text.get(0)+ "', '" +text.get(1)+ "'], 'children': [], 'path': '" +line.get("path")+ "'}";
+						childNode = "{'val': ['" + text.get(0) + "', '" + text.get(1) + "'], 'children': [], 'path': '"
+								+ line.get("path") + "'}";
 					}
 					rootNode.getJSONArray("children").put(new JSONObject(childNode));
 				}
@@ -206,22 +211,9 @@ public class OSADLObligationConnector extends ObligationConnector {
 	private List<List<String>> getProperty() {
 		List<List<String>> keywords = new ArrayList<List<String>>();
 		List<String> obligation = new ArrayList<>(Arrays.asList("YOU MUST", "YOU MUST NOT"));
-		List<String> other = new ArrayList<>(Arrays.asList(
-		"USE CASE",
-		"IF",
-		"EITHER",
-		"EITHER IF",
-		"OR",
-		"OR IF",
-		"EXCEPT IF",
-		"EXCEPT IF NOT",
-		"ATTRIBUTE",
-		"ATTRIBUTE NOT",
-		"COMPATIBILITY",
-		"DEPENDING COMPATIBILITY",
-		"INCOMPATIBILITY",
-		"PATENT HINTS",
-		"COPYLEFT CLAUSE"));
+		List<String> other = new ArrayList<>(Arrays.asList("USE CASE", "IF", "EITHER", "EITHER IF", "OR", "OR IF",
+				"EXCEPT IF", "EXCEPT IF NOT", "ATTRIBUTE", "ATTRIBUTE NOT", "COMPATIBILITY", "DEPENDING COMPATIBILITY",
+				"INCOMPATIBILITY", "PATENT HINTS", "COPYLEFT CLAUSE"));
 		keywords.add(obligation);
 		keywords.add(other);
 		return keywords;
@@ -229,13 +221,13 @@ public class OSADLObligationConnector extends ObligationConnector {
 
 	private List<String> sortArray(List<List<String>> arrList, String type) {
 		List<String> both = new ArrayList<>();
-		for (List<String> arr: arrList) {
+		for (List<String> arr : arrList) {
 			for (String i : arr) {
 				both.add(i);
 			}
 		}
 
-		if ( type.equals("ASC")) {
+		if (type.equals("ASC")) {
 			both.sort((String s1, String s2) -> s1.length() - s2.length());
 		} else {
 			both.sort((String s1, String s2) -> s2.length() - s1.length());
@@ -248,7 +240,7 @@ public class OSADLObligationConnector extends ObligationConnector {
 		List<List<String>> data = getProperty();
 		List<String> allKeywords = sortArray(data, "1");
 		List<String> obligationProperty = data.get(0);
-		for (int i = 0; i < allKeywords.size(); i++ ) {
+		for (int i = 0; i < allKeywords.size(); i++) {
 			if (text.startsWith(allKeywords.get(i))) {
 				if (obligationProperty.contains(allKeywords.get(i))) {
 					String languageElement = allKeywords.get(i);

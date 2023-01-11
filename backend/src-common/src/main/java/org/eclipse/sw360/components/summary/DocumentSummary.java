@@ -23,48 +23,53 @@ import java.util.List;
  *
  * @author cedric.bodet@tngtech.com
  *
- * This does some processing of the documents to trim unneeded fields away and fill computed fields.
+ *         This does some processing of the documents to trim unneeded fields
+ *         away and fill computed fields.
  */
 public abstract class DocumentSummary<T> {
 
-    protected abstract T summary(SummaryType type, T document);
+	protected abstract T summary(SummaryType type, T document);
 
-    public T makeSummary(SummaryType type, T document) {
-        if (document == null) return null;
-        return summary(type, document);
-    }
+	public T makeSummary(SummaryType type, T document) {
+		if (document == null)
+			return null;
+		return summary(type, document);
+	}
 
-    public List<T> makeSummary(SummaryType type, Collection<T> fullDocuments) {
-        if (fullDocuments == null) return Collections.emptyList();
+	public List<T> makeSummary(SummaryType type, Collection<T> fullDocuments) {
+		if (fullDocuments == null)
+			return Collections.emptyList();
 
-        List<T> documents = new ArrayList<>(fullDocuments.size());
-        for (T fullDocument : fullDocuments) {
-            T document = makeSummary(type, fullDocument);
-            if (document != null) documents.add(document);
-        }
-        return documents;
-    }
+		List<T> documents = new ArrayList<>(fullDocuments.size());
+		for (T fullDocument : fullDocuments) {
+			T document = makeSummary(type, fullDocument);
+			if (document != null)
+				documents.add(document);
+		}
+		return documents;
+	}
 
-    public T makeSummaryWithPermissions(SummaryType type, T document, User user) {
-        if (document == null) return null;
-        DocumentPermissions<T> permissions = PermissionUtils.makePermission(document, user);
-        T summary = makeSummary(type, document);
-        permissions.fillPermissionsInOther(summary);
-        return summary;
-    }
+	public T makeSummaryWithPermissions(SummaryType type, T document, User user) {
+		if (document == null)
+			return null;
+		DocumentPermissions<T> permissions = PermissionUtils.makePermission(document, user);
+		T summary = makeSummary(type, document);
+		permissions.fillPermissionsInOther(summary);
+		return summary;
+	}
 
-    public List<T> makeSummaryWithPermissionsFromFullDocs(SummaryType type, Collection<T> docs, User user) {
-        if (docs == null) {
-            return Collections.emptyList();
-        }
+	public List<T> makeSummaryWithPermissionsFromFullDocs(SummaryType type, Collection<T> docs, User user) {
+		if (docs == null) {
+			return Collections.emptyList();
+		}
 
-        List<T> documents = new ArrayList<>();
-        for (T doc : docs) {
-            T document = makeSummaryWithPermissions(type, doc, user);
-            if (document != null) {
-                documents.add(document);
-            }
-        }
-        return documents;
-    }
+		List<T> documents = new ArrayList<>();
+		for (T doc : docs) {
+			T document = makeSummaryWithPermissions(type, doc, user);
+			if (document != null) {
+				documents.add(document);
+			}
+		}
+		return documents;
+	}
 }

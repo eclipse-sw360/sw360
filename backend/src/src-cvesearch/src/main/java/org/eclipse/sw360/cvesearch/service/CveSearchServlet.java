@@ -18,8 +18,8 @@ import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 
 public class CveSearchServlet extends Sw360ThriftServlet {
-    public CveSearchServlet() throws MalformedURLException, FileNotFoundException {
-        // Create a service processor using the provided handler
-        super(new CveSearchService.Processor<>(new CveSearchHandler()), new TCompactProtocol.Factory());
-    }
+	public CveSearchServlet() throws MalformedURLException, FileNotFoundException {
+		// Create a service processor using the provided handler
+		super(new CveSearchService.Processor<>(new CveSearchHandler()), new TCompactProtocol.Factory());
+	}
 }

@@ -11,13 +11,13 @@
 package org.eclipse.sw360.clients.rest.resource;
 
 public class SW360SimpleHalResource extends SW360HalResource<LinkObjects, Embedded> {
-    @Override
-    public LinkObjects createEmptyLinks() {
-        return new LinkObjects();
-    }
+	@Override
+	public LinkObjects createEmptyLinks() {
+		return new LinkObjects();
+	}
 
-    @Override
-    public Embedded createEmptyEmbedded() {
-        return EmptyEmbedded.INSTANCE;
-    }
+	@Override
+	public Embedded createEmptyEmbedded() {
+		return EmptyEmbedded.INSTANCE;
+	}
 }

@@ -37,44 +37,42 @@ import java.util.*;
  */
 public class Sw360CustomHeaderServletRequestWrapper extends HttpServletRequestWrapper {
 
-    private final Logger log = LogManager.getLogger(this.getClass());
+	private final Logger log = LogManager.getLogger(this.getClass());
 
-    private final Map<String, String[]> addableParameterMap;
+	private final Map<String, String[]> addableParameterMap;
 
-    public Sw360CustomHeaderServletRequestWrapper(HttpServletRequest request) {
-        super(request);
+	public Sw360CustomHeaderServletRequestWrapper(HttpServletRequest request) {
+		super(request);
 
-        addableParameterMap = new HashMap<String, String[]>(request.getParameterMap());
-    }
+		addableParameterMap = new HashMap<String, String[]>(request.getParameterMap());
+	}
 
-    public void addParameter(String name, String[] values) {
-        log.debug("Added parameter with key " + name + " to parameter map of request " + getRequest());
+	public void addParameter(String name, String[] values) {
+		log.debug("Added parameter with key " + name + " to parameter map of request " + getRequest());
 
-        addableParameterMap.put(name, values);
-    }
+		addableParameterMap.put(name, values);
+	}
 
-    @Override
-    public Map<String, String[]> getParameterMap() {
-        return addableParameterMap;
-    }
+	@Override
+	public Map<String, String[]> getParameterMap() {
+		return addableParameterMap;
+	}
 
-    @Override
-    public Enumeration<String> getParameterNames() {
-        return new Enumerator<>(addableParameterMap.keySet());
-    }
+	@Override
+	public Enumeration<String> getParameterNames() {
+		return new Enumerator<>(addableParameterMap.keySet());
+	}
 
-    @Override
-    public String[] getParameterValues(String name) {
-        return addableParameterMap.get(name);
-    }
+	@Override
+	public String[] getParameterValues(String name) {
+		return addableParameterMap.get(name);
+	}
 
-    @Override
-    public String getParameter(String name) {
-        String[] allValues = addableParameterMap.get(name);
+	@Override
+	public String getParameter(String name) {
+		String[] allValues = addableParameterMap.get(name);
 
-        return Arrays.stream(allValues)
-                .findFirst()
-                .orElse(null);
-    }
+		return Arrays.stream(allValues).findFirst().orElse(null);
+	}
 
 }

@@ -23,73 +23,73 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * @author johannes.najjar@tngtech.com
  */
 public class ReleaseLinkCSVRecordBuilderTest {
-    @Test
-    public void testFillComponent() throws Exception {
-        final String componentName = "myCompo";
+	@Test
+	public void testFillComponent() throws Exception {
+		final String componentName = "myCompo";
 
-        final Component component = new Component();
-        component.setName(componentName);
+		final Component component = new Component();
+		component.setName(componentName);
 
-        final ReleaseLinkCSVRecordBuilder releaseLinkCSVRecordBuilder = new ReleaseLinkCSVRecordBuilder();
-        releaseLinkCSVRecordBuilder.fill(component);
+		final ReleaseLinkCSVRecordBuilder releaseLinkCSVRecordBuilder = new ReleaseLinkCSVRecordBuilder();
+		releaseLinkCSVRecordBuilder.fill(component);
 
-        final ReleaseLinkCSVRecord filledRecord = releaseLinkCSVRecordBuilder.build();
+		final ReleaseLinkCSVRecord filledRecord = releaseLinkCSVRecordBuilder.build();
 
-        assertThat(filledRecord.getComponentName(), is(componentName));
-    }
+		assertThat(filledRecord.getComponentName(), is(componentName));
+	}
 
-    @Test
-    public void testFillRelease() throws Exception {
-        final String releaseName =  "myRelease";
-        final String releaseVersion =  "1.862b";
+	@Test
+	public void testFillRelease() throws Exception {
+		final String releaseName = "myRelease";
+		final String releaseVersion = "1.862b";
 
-        final Release release = new Release();
-        release.setName(releaseName).setVersion(releaseVersion);
-        final ReleaseLinkCSVRecordBuilder releaseLinkCSVRecordBuilder = new ReleaseLinkCSVRecordBuilder();
-        releaseLinkCSVRecordBuilder.fill(release);
-        final ReleaseLinkCSVRecord filledRecord = releaseLinkCSVRecordBuilder.build();
+		final Release release = new Release();
+		release.setName(releaseName).setVersion(releaseVersion);
+		final ReleaseLinkCSVRecordBuilder releaseLinkCSVRecordBuilder = new ReleaseLinkCSVRecordBuilder();
+		releaseLinkCSVRecordBuilder.fill(release);
+		final ReleaseLinkCSVRecord filledRecord = releaseLinkCSVRecordBuilder.build();
 
-        assertThat(filledRecord.getReleaseIdentifier(), is(SW360Utils.getVersionedName(releaseName, releaseVersion)));
-    }
+		assertThat(filledRecord.getReleaseIdentifier(), is(SW360Utils.getVersionedName(releaseName, releaseVersion)));
+	}
 
-    @Test
-    public void testFillLinkedComponent() throws Exception {
-        final String componentName = "myCompo";
+	@Test
+	public void testFillLinkedComponent() throws Exception {
+		final String componentName = "myCompo";
 
-        final Component component = new Component();
-        component.setName(componentName);
+		final Component component = new Component();
+		component.setName(componentName);
 
-        final ReleaseLinkCSVRecordBuilder releaseLinkCSVRecordBuilder = new ReleaseLinkCSVRecordBuilder();
-        releaseLinkCSVRecordBuilder.fillLinking(component);
+		final ReleaseLinkCSVRecordBuilder releaseLinkCSVRecordBuilder = new ReleaseLinkCSVRecordBuilder();
+		releaseLinkCSVRecordBuilder.fillLinking(component);
 
-        final ReleaseLinkCSVRecord filledRecord = releaseLinkCSVRecordBuilder.build();
+		final ReleaseLinkCSVRecord filledRecord = releaseLinkCSVRecordBuilder.build();
 
-        assertThat(filledRecord.getLinkedComponentName(), is(componentName));
-    }
+		assertThat(filledRecord.getLinkedComponentName(), is(componentName));
+	}
 
-    @Test
-    public void testFillLinkedRelease() throws Exception {
-        final String releaseName =  "myRelease";
-        final String releaseVersion =  "1.862b";
+	@Test
+	public void testFillLinkedRelease() throws Exception {
+		final String releaseName = "myRelease";
+		final String releaseVersion = "1.862b";
 
-        final Release release = new Release();
-        release.setName(releaseName).setVersion(releaseVersion);
-        final ReleaseLinkCSVRecordBuilder releaseLinkCSVRecordBuilder = new ReleaseLinkCSVRecordBuilder();
-        releaseLinkCSVRecordBuilder.fillLinking(release);
-        final ReleaseLinkCSVRecord filledRecord = releaseLinkCSVRecordBuilder.build();
+		final Release release = new Release();
+		release.setName(releaseName).setVersion(releaseVersion);
+		final ReleaseLinkCSVRecordBuilder releaseLinkCSVRecordBuilder = new ReleaseLinkCSVRecordBuilder();
+		releaseLinkCSVRecordBuilder.fillLinking(release);
+		final ReleaseLinkCSVRecord filledRecord = releaseLinkCSVRecordBuilder.build();
 
-        assertThat(filledRecord.getLinkedReleaseIdentifier(), is(SW360Utils.getVersionedName(releaseName, releaseVersion)));
-    }
+		assertThat(filledRecord.getLinkedReleaseIdentifier(),
+				is(SW360Utils.getVersionedName(releaseName, releaseVersion)));
+	}
 
+	@Test
+	public void testReleaseReleationship() throws Exception {
+		final ReleaseRelationship releaseRelationship = ReleaseRelationship.CONTAINED;
 
-    @Test
-    public void testReleaseReleationship() throws Exception {
-        final ReleaseRelationship releaseRelationship = ReleaseRelationship.CONTAINED;
+		final ReleaseLinkCSVRecordBuilder releaseLinkCSVRecordBuilder = new ReleaseLinkCSVRecordBuilder();
+		releaseLinkCSVRecordBuilder.setRelationship(releaseRelationship);
+		final ReleaseLinkCSVRecord filledRecord = releaseLinkCSVRecordBuilder.build();
 
-        final ReleaseLinkCSVRecordBuilder releaseLinkCSVRecordBuilder = new ReleaseLinkCSVRecordBuilder();
-        releaseLinkCSVRecordBuilder.setRelationship(releaseRelationship);
-        final ReleaseLinkCSVRecord filledRecord = releaseLinkCSVRecordBuilder.build();
-
-        assertThat(filledRecord.getRelationship(), is (releaseRelationship));
-    }
+		assertThat(filledRecord.getRelationship(), is(releaseRelationship));
+	}
 }

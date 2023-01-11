@@ -20,32 +20,30 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class PagingResultTest {
-    @Test
-    public void testEquals() {
-        EqualsVerifier.forClass(PagingResult.class)
-                .withNonnullFields("result")
-                .verify();
-    }
+	@Test
+	public void testEquals() {
+		EqualsVerifier.forClass(PagingResult.class).withNonnullFields("result").verify();
+	}
 
-    @Test
-    public void testDefensiveCopyOfResultList() {
-        List<Object> data = new ArrayList<>();
-        data.add("entry1");
+	@Test
+	public void testDefensiveCopyOfResultList() {
+		List<Object> data = new ArrayList<>();
+		data.add("entry1");
 
-        PagingResult<Object> result = new PagingResult<>(data, null, null);
-        data.add("entry2");
-        assertThat(result.getResult()).containsOnly("entry1");
-    }
+		PagingResult<Object> result = new PagingResult<>(data, null, null);
+		data.add("entry2");
+		assertThat(result.getResult()).containsOnly("entry1");
+	}
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetResultUnmodifiable() {
-        PagingResult<Object> result = new PagingResult<>(Arrays.asList("a", "b", "c"), null, null);
+	@Test(expected = UnsupportedOperationException.class)
+	public void testGetResultUnmodifiable() {
+		PagingResult<Object> result = new PagingResult<>(Arrays.asList("a", "b", "c"), null, null);
 
-        result.getResult().add("d");
-    }
+		result.getResult().add("d");
+	}
 
-    @Test(expected = NullPointerException.class)
-    public void testCreationFailsForNullResultList() {
-        new PagingResult<Object>(null, null, null);
-    }
+	@Test(expected = NullPointerException.class)
+	public void testCreationFailsForNullResultList() {
+		new PagingResult<Object>(null, null, null);
+	}
 }

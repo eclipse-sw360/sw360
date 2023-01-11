@@ -18,7 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
  * @author Johannes.Najjar@tngtech.com
  */
 public class ProjectName extends OutTag {
-    public void setProject(Project project) {
-        this.value = SW360Utils.printName(project);
-    }
+	public void setProject(Project project) {
+		this.value = SW360Utils.printName(project);
+	}
 }

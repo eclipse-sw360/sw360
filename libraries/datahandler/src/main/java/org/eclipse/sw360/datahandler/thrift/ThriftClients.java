@@ -54,157 +54,161 @@ import java.util.Properties;
  */
 public class ThriftClients {
 
-    private final static Logger log = LogManager.getLogger(ThriftClients.class);
+	private final static Logger log = LogManager.getLogger(ThriftClients.class);
 
-    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+	public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
 
-    public static final String BACKEND_URL;
-    public static final String BACKEND_PROXY_URL;
-    public static final int THRIFT_CONNECTION_TIMEOUT;
-    public static final int THRIFT_READ_TIMEOUT;
-    public static final int THRIFT_MAX_MESSAGE_SIZE;
-    public static final int THRIFT_MAX_FRAME_SIZE;
+	public static final String BACKEND_URL;
+	public static final String BACKEND_PROXY_URL;
+	public static final int THRIFT_CONNECTION_TIMEOUT;
+	public static final int THRIFT_READ_TIMEOUT;
+	public static final int THRIFT_MAX_MESSAGE_SIZE;
+	public static final int THRIFT_MAX_FRAME_SIZE;
 
-    //! Service addresses
-    private static final String ATTACHMENT_SERVICE_URL = "/attachments/thrift";
-    private static final String COMPONENT_SERVICE_URL = "/components/thrift";
-    private static final String CVESEARCH_SERVICE_URL = "/cvesearch/thrift";
-    private static final String FOSSOLOGY_SERVICE_URL = "/fossology/thrift";
-    private static final String LICENSE_SERVICE_URL = "/licenses/thrift";
-    private static final String MODERATION_SERVICE_URL = "/moderation/thrift";
-    private static final String PROJECT_SERVICE_URL = "/projects/thrift";
-    private static final String LICENSEINFO_SERVICE_URL = "/licenseinfo/thrift";
-    private static final String SEARCH_SERVICE_URL = "/search/thrift";
-    private static final String USER_SERVICE_URL = "/users/thrift";
-    private static final String VENDOR_SERVICE_URL = "/vendors/thrift";
-    private static final String PROJECTIMPORT_SERVICE_URL = "/bdpimport/thrift";
-    private static final String VULNERABILITY_SERVICE_URL = "/vulnerabilities/thrift";
-    private static final String SCHEDULE_SERVICE_URL = "/schedule/thrift";
-    private static final String WSIMPORT_SERVICE_URL = "/wsimport/thrift";
-    private static final String CHANGELOGS_SERVICE_URL = "/changelogs/thrift";
-    private static final String HEALTH_SERVICE_URL = "/health/thrift";
+	// ! Service addresses
+	private static final String ATTACHMENT_SERVICE_URL = "/attachments/thrift";
+	private static final String COMPONENT_SERVICE_URL = "/components/thrift";
+	private static final String CVESEARCH_SERVICE_URL = "/cvesearch/thrift";
+	private static final String FOSSOLOGY_SERVICE_URL = "/fossology/thrift";
+	private static final String LICENSE_SERVICE_URL = "/licenses/thrift";
+	private static final String MODERATION_SERVICE_URL = "/moderation/thrift";
+	private static final String PROJECT_SERVICE_URL = "/projects/thrift";
+	private static final String LICENSEINFO_SERVICE_URL = "/licenseinfo/thrift";
+	private static final String SEARCH_SERVICE_URL = "/search/thrift";
+	private static final String USER_SERVICE_URL = "/users/thrift";
+	private static final String VENDOR_SERVICE_URL = "/vendors/thrift";
+	private static final String PROJECTIMPORT_SERVICE_URL = "/bdpimport/thrift";
+	private static final String VULNERABILITY_SERVICE_URL = "/vulnerabilities/thrift";
+	private static final String SCHEDULE_SERVICE_URL = "/schedule/thrift";
+	private static final String WSIMPORT_SERVICE_URL = "/wsimport/thrift";
+	private static final String CHANGELOGS_SERVICE_URL = "/changelogs/thrift";
+	private static final String HEALTH_SERVICE_URL = "/health/thrift";
 
-    // A service which has to be scheduled by the scheduler should be registered here!
-    // names of services that can be scheduled by the schedule service, i.e. that have an "update" method
-    public static final String CVESEARCH_SERVICE = "cvesearchService";
-    public static final String DELETE_ATTACHMENT_SERVICE = "deleteattachmentService";
+	// A service which has to be scheduled by the scheduler should be registered
+	// here!
+	// names of services that can be scheduled by the schedule service, i.e. that
+	// have an "update" method
+	public static final String CVESEARCH_SERVICE = "cvesearchService";
+	public static final String DELETE_ATTACHMENT_SERVICE = "deleteattachmentService";
 
-    static {
-        Properties props = CommonUtils.loadProperties(ThriftClients.class, PROPERTIES_FILE_PATH);
+	static {
+		Properties props = CommonUtils.loadProperties(ThriftClients.class, PROPERTIES_FILE_PATH);
 
-        BACKEND_URL = props.getProperty("backend.url", "http://127.0.0.1:8080");
-        //Proxy can be set e.g. with "http://localhost:3128". if set all request to the thrift backend are routed through the proxy
-        BACKEND_PROXY_URL = props.getProperty("backend.proxy.url", null);
-        // maximum timeout for connecting and reading
-        THRIFT_CONNECTION_TIMEOUT = Integer.valueOf(props.getProperty("backend.timeout.connection", "5000"));
-        THRIFT_READ_TIMEOUT = Integer.valueOf(props.getProperty("backend.timeout.read", "600000"));
+		BACKEND_URL = props.getProperty("backend.url", "http://127.0.0.1:8080");
+		// Proxy can be set e.g. with "http://localhost:3128". if set all request to the
+		// thrift backend are routed through the proxy
+		BACKEND_PROXY_URL = props.getProperty("backend.proxy.url", null);
+		// maximum timeout for connecting and reading
+		THRIFT_CONNECTION_TIMEOUT = Integer.valueOf(props.getProperty("backend.timeout.connection", "5000"));
+		THRIFT_READ_TIMEOUT = Integer.valueOf(props.getProperty("backend.timeout.read", "600000"));
 
-        THRIFT_MAX_MESSAGE_SIZE = Integer.valueOf(props.getProperty("backend.thrift.max.message.size", String.valueOf(TConfiguration.DEFAULT_MAX_MESSAGE_SIZE)));
-        THRIFT_MAX_FRAME_SIZE = Integer.valueOf(props.getProperty("backend.thrift.max.frame.size", String.valueOf(TConfiguration.DEFAULT_MAX_FRAME_SIZE)));
+		THRIFT_MAX_MESSAGE_SIZE = Integer.valueOf(props.getProperty("backend.thrift.max.message.size",
+				String.valueOf(TConfiguration.DEFAULT_MAX_MESSAGE_SIZE)));
+		THRIFT_MAX_FRAME_SIZE = Integer.valueOf(props.getProperty("backend.thrift.max.frame.size",
+				String.valueOf(TConfiguration.DEFAULT_MAX_FRAME_SIZE)));
 
-        log.info("The following configuration will be used for connections to the backend:\n" +
-            "\tURL                      : " + BACKEND_URL + "\n" +
-            "\tProxy                    : " + BACKEND_PROXY_URL + "\n" +
-            "\tTimeout Connecting (ms)  : " + THRIFT_CONNECTION_TIMEOUT + "\n" +
-            "\tTimeout Read (ms)        : " + THRIFT_READ_TIMEOUT + "\n");
-    }
-    public ThriftClients() {
-    }
+		log.info("The following configuration will be used for connections to the backend:\n"
+				+ "\tURL                      : " + BACKEND_URL + "\n" + "\tProxy                    : "
+				+ BACKEND_PROXY_URL + "\n" + "\tTimeout Connecting (ms)  : " + THRIFT_CONNECTION_TIMEOUT + "\n"
+				+ "\tTimeout Read (ms)        : " + THRIFT_READ_TIMEOUT + "\n");
+	}
+	public ThriftClients() {
+	}
 
-    /**
-     * Creates a Thrift Compact Protocol object linked to the given address
-     */
-    private static TProtocol makeProtocol(String url, String service) {
-        THttpClient thriftClient = null;
-        final String destinationAddress = url + service;
-        final TConfiguration thriftConfigure = TConfiguration.custom().setMaxMessageSize(THRIFT_MAX_MESSAGE_SIZE)
-                .setMaxFrameSize(THRIFT_MAX_FRAME_SIZE).build();
+	/**
+	 * Creates a Thrift Compact Protocol object linked to the given address
+	 */
+	private static TProtocol makeProtocol(String url, String service) {
+		THttpClient thriftClient = null;
+		final String destinationAddress = url + service;
+		final TConfiguration thriftConfigure = TConfiguration.custom().setMaxMessageSize(THRIFT_MAX_MESSAGE_SIZE)
+				.setMaxFrameSize(THRIFT_MAX_FRAME_SIZE).build();
 
-        try {
-            if (BACKEND_PROXY_URL != null) {
-                URL proxyUrl = new URL(BACKEND_PROXY_URL);
-                HttpHost proxy = new HttpHost(proxyUrl.getHost(), proxyUrl.getPort(), proxyUrl.getProtocol());
-                DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
-                CloseableHttpClient httpClient = HttpClients.custom().setRoutePlanner(routePlanner).build();
-                thriftClient = new THttpClient(thriftConfigure, destinationAddress, httpClient);
-            } else {
-                thriftClient = new THttpClient(thriftConfigure, destinationAddress);
-            }
-            thriftClient.setConnectTimeout(THRIFT_CONNECTION_TIMEOUT);
-            thriftClient.setReadTimeout(THRIFT_READ_TIMEOUT);
-        } catch (TTransportException e) {
-            log.error("cannot connect to backend on " + destinationAddress, e);
-        } catch (MalformedURLException e) {
-            log.error("cannot connect via http proxy (REASON:MalformedURLException) to thrift backend", e);
-        }
-        return new TCompactProtocol(thriftClient);
-    }
+		try {
+			if (BACKEND_PROXY_URL != null) {
+				URL proxyUrl = new URL(BACKEND_PROXY_URL);
+				HttpHost proxy = new HttpHost(proxyUrl.getHost(), proxyUrl.getPort(), proxyUrl.getProtocol());
+				DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
+				CloseableHttpClient httpClient = HttpClients.custom().setRoutePlanner(routePlanner).build();
+				thriftClient = new THttpClient(thriftConfigure, destinationAddress, httpClient);
+			} else {
+				thriftClient = new THttpClient(thriftConfigure, destinationAddress);
+			}
+			thriftClient.setConnectTimeout(THRIFT_CONNECTION_TIMEOUT);
+			thriftClient.setReadTimeout(THRIFT_READ_TIMEOUT);
+		} catch (TTransportException e) {
+			log.error("cannot connect to backend on " + destinationAddress, e);
+		} catch (MalformedURLException e) {
+			log.error("cannot connect via http proxy (REASON:MalformedURLException) to thrift backend", e);
+		}
+		return new TCompactProtocol(thriftClient);
+	}
 
-    public AttachmentService.Iface makeAttachmentClient() {
-        return new AttachmentService.Client(makeProtocol(BACKEND_URL, ATTACHMENT_SERVICE_URL));
-    }
+	public AttachmentService.Iface makeAttachmentClient() {
+		return new AttachmentService.Client(makeProtocol(BACKEND_URL, ATTACHMENT_SERVICE_URL));
+	}
 
-    public ComponentService.Iface makeComponentClient() {
-        return new ComponentService.Client(makeProtocol(BACKEND_URL, COMPONENT_SERVICE_URL));
-    }
+	public ComponentService.Iface makeComponentClient() {
+		return new ComponentService.Client(makeProtocol(BACKEND_URL, COMPONENT_SERVICE_URL));
+	}
 
-    public CveSearchService.Iface makeCvesearchClient() {
-        return new CveSearchService.Client(makeProtocol(BACKEND_URL, CVESEARCH_SERVICE_URL));
-    }
+	public CveSearchService.Iface makeCvesearchClient() {
+		return new CveSearchService.Client(makeProtocol(BACKEND_URL, CVESEARCH_SERVICE_URL));
+	}
 
-    public FossologyService.Iface makeFossologyClient() {
-        return new FossologyService.Client(makeProtocol(BACKEND_URL, FOSSOLOGY_SERVICE_URL));
-    }
+	public FossologyService.Iface makeFossologyClient() {
+		return new FossologyService.Client(makeProtocol(BACKEND_URL, FOSSOLOGY_SERVICE_URL));
+	}
 
-    public LicenseService.Iface makeLicenseClient() {
-        return new LicenseService.Client(makeProtocol(BACKEND_URL, LICENSE_SERVICE_URL));
-    }
+	public LicenseService.Iface makeLicenseClient() {
+		return new LicenseService.Client(makeProtocol(BACKEND_URL, LICENSE_SERVICE_URL));
+	}
 
-    public ModerationService.Iface makeModerationClient() {
-        return new ModerationService.Client(makeProtocol(BACKEND_URL, MODERATION_SERVICE_URL));
-    }
+	public ModerationService.Iface makeModerationClient() {
+		return new ModerationService.Client(makeProtocol(BACKEND_URL, MODERATION_SERVICE_URL));
+	}
 
-    public ProjectService.Iface makeProjectClient() {
-        return new ProjectService.Client(makeProtocol(BACKEND_URL, PROJECT_SERVICE_URL));
-    }
+	public ProjectService.Iface makeProjectClient() {
+		return new ProjectService.Client(makeProtocol(BACKEND_URL, PROJECT_SERVICE_URL));
+	}
 
-    public SearchService.Iface makeSearchClient() {
-        return new SearchService.Client(makeProtocol(BACKEND_URL, SEARCH_SERVICE_URL));
-    }
+	public SearchService.Iface makeSearchClient() {
+		return new SearchService.Client(makeProtocol(BACKEND_URL, SEARCH_SERVICE_URL));
+	}
 
-    public UserService.Iface makeUserClient() {
-        return new UserService.Client(makeProtocol(BACKEND_URL, USER_SERVICE_URL));
-    }
+	public UserService.Iface makeUserClient() {
+		return new UserService.Client(makeProtocol(BACKEND_URL, USER_SERVICE_URL));
+	}
 
-    public VendorService.Iface makeVendorClient() {
-        return new VendorService.Client(makeProtocol(BACKEND_URL, VENDOR_SERVICE_URL));
-    }
+	public VendorService.Iface makeVendorClient() {
+		return new VendorService.Client(makeProtocol(BACKEND_URL, VENDOR_SERVICE_URL));
+	}
 
-    public ProjectImportService.Iface makeProjectImportClient() {
-        return new ProjectImportService.Client(makeProtocol(BACKEND_URL, PROJECTIMPORT_SERVICE_URL));
-    }
+	public ProjectImportService.Iface makeProjectImportClient() {
+		return new ProjectImportService.Client(makeProtocol(BACKEND_URL, PROJECTIMPORT_SERVICE_URL));
+	}
 
-    public VulnerabilityService.Iface makeVulnerabilityClient() {
-        return new VulnerabilityService.Client(makeProtocol(BACKEND_URL, VULNERABILITY_SERVICE_URL));
-    }
+	public VulnerabilityService.Iface makeVulnerabilityClient() {
+		return new VulnerabilityService.Client(makeProtocol(BACKEND_URL, VULNERABILITY_SERVICE_URL));
+	}
 
-    public LicenseInfoService.Client makeLicenseInfoClient() {
-        return new LicenseInfoService.Client(makeProtocol(BACKEND_URL, LICENSEINFO_SERVICE_URL));
-    }
+	public LicenseInfoService.Client makeLicenseInfoClient() {
+		return new LicenseInfoService.Client(makeProtocol(BACKEND_URL, LICENSEINFO_SERVICE_URL));
+	}
 
-    public ScheduleService.Iface makeScheduleClient() {
-        return new ScheduleService.Client(makeProtocol(BACKEND_URL, SCHEDULE_SERVICE_URL));
-    }
+	public ScheduleService.Iface makeScheduleClient() {
+		return new ScheduleService.Client(makeProtocol(BACKEND_URL, SCHEDULE_SERVICE_URL));
+	}
 
-    public ProjectImportService.Iface makeWsImportClient() {
-        return new ProjectImportService.Client(makeProtocol(BACKEND_URL, WSIMPORT_SERVICE_URL));
-    }
+	public ProjectImportService.Iface makeWsImportClient() {
+		return new ProjectImportService.Client(makeProtocol(BACKEND_URL, WSIMPORT_SERVICE_URL));
+	}
 
-    public ChangeLogsService.Iface makeChangeLogsClient() {
-        return new ChangeLogsService.Client(makeProtocol(BACKEND_URL, CHANGELOGS_SERVICE_URL));
-    }
+	public ChangeLogsService.Iface makeChangeLogsClient() {
+		return new ChangeLogsService.Client(makeProtocol(BACKEND_URL, CHANGELOGS_SERVICE_URL));
+	}
 
-    public HealthService.Iface makeHealthClient() {
-        return new HealthService.Client(makeProtocol(BACKEND_URL, HEALTH_SERVICE_URL));
-    }
+	public HealthService.Iface makeHealthClient() {
+		return new HealthService.Client(makeProtocol(BACKEND_URL, HEALTH_SERVICE_URL));
+	}
 }

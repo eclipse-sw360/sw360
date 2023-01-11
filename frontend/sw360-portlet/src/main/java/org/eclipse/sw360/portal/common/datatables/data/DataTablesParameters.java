@@ -15,45 +15,46 @@ import java.util.List;
  * @author daniele.fognini@tngtech.com
  */
 public class DataTablesParameters {
-    private final int draw;
-    private final int length;
-    private final int start;
+	private final int draw;
+	private final int length;
+	private final int start;
 
-    private final List<DataTablesOrder> orders;
+	private final List<DataTablesOrder> orders;
 
-    private final List<DataTablesColumn> columns;
-    private final DataTablesSearch search;
+	private final List<DataTablesColumn> columns;
+	private final DataTablesSearch search;
 
-    public DataTablesParameters(int draw, int length, int start, List<DataTablesOrder> orders, List<DataTablesColumn> columns, DataTablesSearch search) {
-        this.draw = draw;
-        this.length = length;
-        this.start = start;
-        this.orders = orders;
-        this.columns = columns;
-        this.search = search;
-    }
+	public DataTablesParameters(int draw, int length, int start, List<DataTablesOrder> orders,
+			List<DataTablesColumn> columns, DataTablesSearch search) {
+		this.draw = draw;
+		this.length = length;
+		this.start = start;
+		this.orders = orders;
+		this.columns = columns;
+		this.search = search;
+	}
 
-    public int getDraw() {
-        return draw;
-    }
+	public int getDraw() {
+		return draw;
+	}
 
-    public int getLength() {
-        return length;
-    }
+	public int getLength() {
+		return length;
+	}
 
-    public int getStart() {
-        return start;
-    }
+	public int getStart() {
+		return start;
+	}
 
-    public List<DataTablesOrder> getOrders() {
-        return orders;
-    }
+	public List<DataTablesOrder> getOrders() {
+		return orders;
+	}
 
-    public List<DataTablesColumn> getColumns() {
-        return columns;
-    }
+	public List<DataTablesColumn> getColumns() {
+		return columns;
+	}
 
-    public DataTablesSearch getSearch() {
-        return search;
-    }
+	public DataTablesSearch getSearch() {
+		return search;
+	}
 }

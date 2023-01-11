@@ -20,41 +20,44 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class LinkObjects {
-    private Self self;
+	private Self self;
 
-    public Self getSelf() {
-        return this.self;
-    }
+	public Self getSelf() {
+		return this.self;
+	}
 
-    public LinkObjects setSelf(Self self) {
-        this.self = self;
-        return this;
-    }
+	public LinkObjects setSelf(Self self) {
+		this.self = self;
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        LinkObjects that = (LinkObjects) o;
-        return that.canEqual(this) && Objects.equals(self, that.self);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		LinkObjects that = (LinkObjects) o;
+		return that.canEqual(this) && Objects.equals(self, that.self);
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(self);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(self);
+	}
 
-    /**
-     * Checks whether an equals comparison to the given object is possible.
-     * This is needed to support sub classes with additional state while
-     * keeping the contract of equals(). Refer to
-     * <a href="https://www.artima.com/lejava/articles/equality.html">this
-     * article</a> for further details.
-     *
-     * @param o the object to compare to
-     * @return a flag whether this object can be equal to this
-     */
-    public boolean canEqual(Object o) {
-        return o instanceof LinkObjects;
-    }
+	/**
+	 * Checks whether an equals comparison to the given object is possible. This is
+	 * needed to support sub classes with additional state while keeping the
+	 * contract of equals(). Refer to
+	 * <a href="https://www.artima.com/lejava/articles/equality.html">this
+	 * article</a> for further details.
+	 *
+	 * @param o
+	 *            the object to compare to
+	 * @return a flag whether this object can be equal to this
+	 */
+	public boolean canEqual(Object o) {
+		return o instanceof LinkObjects;
+	}
 }

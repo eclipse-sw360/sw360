@@ -38,85 +38,85 @@ import java.util.stream.Stream;
 @PreAuthorize("hasAuthority('ADMIN')")
 public class OAuthClientController {
 
-    public static final String ENDPOINT_URL = "client-management";
+	public static final String ENDPOINT_URL = "client-management";
 
-    @Value("${security.oauth2.resource.id}")
-    private String resourceId;
+	@Value("${security.oauth2.resource.id}")
+	private String resourceId;
 
-    @Autowired
-    private OAuthClientRepository repo;
+	@Autowired
+	private OAuthClientRepository repo;
 
-    @RequestMapping(method = RequestMethod.GET, path = "")
-    public ResponseEntity<List<OAuthClientResource>> getAllClients() {
-        List<OAuthClientResource> clientResources;
+	@RequestMapping(method = RequestMethod.GET, path = "")
+	public ResponseEntity<List<OAuthClientResource>> getAllClients() {
+		List<OAuthClientResource> clientResources;
 
-        List<OAuthClientEntity> clients = repo.getAll();
-        if (clients == null) {
-            clients = new ArrayList<>();
-        }
+		List<OAuthClientEntity> clients = repo.getAll();
+		if (clients == null) {
+			clients = new ArrayList<>();
+		}
 
-        clientResources = clients.stream().map(OAuthClientResource::new).collect(Collectors.toList());
+		clientResources = clients.stream().map(OAuthClientResource::new).collect(Collectors.toList());
 
-        return new ResponseEntity<List<OAuthClientResource>>(clientResources, HttpStatus.OK);
-    }
+		return new ResponseEntity<List<OAuthClientResource>>(clientResources, HttpStatus.OK);
+	}
 
-    @RequestMapping(method = RequestMethod.POST, path = "", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> createOrUpdateClient(@RequestBody OAuthClientResource clientResource) {
-        OAuthClientEntity clientEntity = null;
+	@RequestMapping(method = RequestMethod.POST, path = "", consumes = "application/json", produces = "application/json")
+	public ResponseEntity<?> createOrUpdateClient(@RequestBody OAuthClientResource clientResource) {
+		OAuthClientEntity clientEntity = null;
 
-        if (StringUtils.isNotEmpty(clientResource.getClientId())) {
-            clientEntity = repo.getByClientId(clientResource.getClientId());
-            if (clientEntity == null) {
-                return new ResponseEntity<String>("No client found for given clientId " + clientResource.getClientId(),
-                        HttpStatus.BAD_REQUEST);
-            }
-        } else {
-            clientEntity = new OAuthClientEntity();
+		if (StringUtils.isNotEmpty(clientResource.getClientId())) {
+			clientEntity = repo.getByClientId(clientResource.getClientId());
+			if (clientEntity == null) {
+				return new ResponseEntity<String>("No client found for given clientId " + clientResource.getClientId(),
+						HttpStatus.BAD_REQUEST);
+			}
+		} else {
+			clientEntity = new OAuthClientEntity();
 
-            // store entity to get a new id
-            repo.add(clientEntity);
+			// store entity to get a new id
+			repo.add(clientEntity);
 
-            clientEntity.setClientId(clientEntity.getId());
-            clientEntity.setClientSecret(UUID.randomUUID().toString());
-        }
+			clientEntity.setClientId(clientEntity.getId());
+			clientEntity.setClientSecret(UUID.randomUUID().toString());
+		}
 
-        updateClientEntityFromResource(clientEntity, clientResource);
-        repo.update(clientEntity);
+		updateClientEntityFromResource(clientEntity, clientResource);
+		repo.update(clientEntity);
 
-        return new ResponseEntity<OAuthClientResource>(
-                new OAuthClientResource(repo.getByClientId(clientEntity.getClientId())), HttpStatus.OK);
-    }
+		return new ResponseEntity<OAuthClientResource>(
+				new OAuthClientResource(repo.getByClientId(clientEntity.getClientId())), HttpStatus.OK);
+	}
 
-    @RequestMapping(method = RequestMethod.DELETE, path = "/{clientId}", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<?> deleteClient(@PathVariable("clientId") String clientId) {
-        OAuthClientEntity clientEntity = null;
+	@RequestMapping(method = RequestMethod.DELETE, path = "/{clientId}", consumes = "application/json", produces = "application/json")
+	public ResponseEntity<?> deleteClient(@PathVariable("clientId") String clientId) {
+		OAuthClientEntity clientEntity = null;
 
-        if (StringUtils.isNotEmpty(clientId)) {
-            clientEntity = repo.getByClientId(clientId);
-            if (clientEntity == null) {
-                return new ResponseEntity<String>("No client found for given clientId " + clientId,
-                        HttpStatus.BAD_REQUEST);
-            }
+		if (StringUtils.isNotEmpty(clientId)) {
+			clientEntity = repo.getByClientId(clientId);
+			if (clientEntity == null) {
+				return new ResponseEntity<String>("No client found for given clientId " + clientId,
+						HttpStatus.BAD_REQUEST);
+			}
 
-            repo.remove(clientEntity);
-        }
+			repo.remove(clientEntity);
+		}
 
-        return new ResponseEntity<OAuthClientResource>(new OAuthClientResource(clientEntity), HttpStatus.OK);
-    }
+		return new ResponseEntity<OAuthClientResource>(new OAuthClientResource(clientEntity), HttpStatus.OK);
+	}
 
-    private void updateClientEntityFromResource(OAuthClientEntity clientEntity, OAuthClientResource clientResource) {
-        // updateable properties (clientId and clientSecret cannot be changed)
-        clientEntity.setDescription(clientResource.getDescription());
-        clientEntity.setAuthoritiesAsStrings(clientResource.getAuthorities());
-        clientEntity.setScope(clientResource.getScope());
-        clientEntity.setAccessTokenValiditySeconds(clientResource.getAccessTokenValidity());
-        clientEntity.setRefreshTokenValiditySeconds(clientResource.getRefreshTokenValidity());
+	private void updateClientEntityFromResource(OAuthClientEntity clientEntity, OAuthClientResource clientResource) {
+		// updateable properties (clientId and clientSecret cannot be changed)
+		clientEntity.setDescription(clientResource.getDescription());
+		clientEntity.setAuthoritiesAsStrings(clientResource.getAuthorities());
+		clientEntity.setScope(clientResource.getScope());
+		clientEntity.setAccessTokenValiditySeconds(clientResource.getAccessTokenValidity());
+		clientEntity.setRefreshTokenValiditySeconds(clientResource.getRefreshTokenValidity());
 
-        // static properties
-        clientEntity.setAuthorizedGrantTypes(
-                Stream.of("client_credentials", "password", "refresh_token").collect(Collectors.toSet()));
-        clientEntity.setAutoApproveScopes(Collections.singleton("true"));
-        clientEntity.setResourceIds(Sets.newHashSet(resourceId));
-        clientEntity.setRegisteredRedirectUri(null);
-    }
+		// static properties
+		clientEntity.setAuthorizedGrantTypes(
+				Stream.of("client_credentials", "password", "refresh_token").collect(Collectors.toSet()));
+		clientEntity.setAutoApproveScopes(Collections.singleton("true"));
+		clientEntity.setResourceIds(Sets.newHashSet(resourceId));
+		clientEntity.setRegisteredRedirectUri(null);
+	}
 }

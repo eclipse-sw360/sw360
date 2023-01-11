@@ -22,22 +22,22 @@ import java.util.Map;
 import java.util.Set;
 
 public class AttachmentOwnerRepository extends DatabaseRepositoryCloudantClient<Source> {
-    private static final String ATTACHMENTOWNER_VIEW_NAME = "function(doc) { if (doc.type == 'project' || doc.type == 'component' || doc.type == 'release') { "
-            + "for(var i in doc.attachments) { " + "var source;"
-            + "if (doc.type == 'project') {source = {projectId: doc._id}}"
-            + "if (doc.type == 'component') {source = {componentId: doc._id}}"
-            + "if (doc.type == 'release') {source = {releaseId: doc._id}}"
-            + "emit(doc.attachments[i].attachmentContentId, source); } } }";
+	private static final String ATTACHMENTOWNER_VIEW_NAME = "function(doc) { if (doc.type == 'project' || doc.type == 'component' || doc.type == 'release') { "
+			+ "for(var i in doc.attachments) { " + "var source;"
+			+ "if (doc.type == 'project') {source = {projectId: doc._id}}"
+			+ "if (doc.type == 'component') {source = {componentId: doc._id}}"
+			+ "if (doc.type == 'release') {source = {releaseId: doc._id}}"
+			+ "emit(doc.attachments[i].attachmentContentId, source); } } }";
 
-    public AttachmentOwnerRepository(DatabaseConnectorCloudant db) {
-        super(db, Source.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("attachmentOwner", createMapReduce(ATTACHMENTOWNER_VIEW_NAME, null));
-        initStandardDesignDocument(views, db);
-    }
+	public AttachmentOwnerRepository(DatabaseConnectorCloudant db) {
+		super(db, Source.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("attachmentOwner", createMapReduce(ATTACHMENTOWNER_VIEW_NAME, null));
+		initStandardDesignDocument(views, db);
+	}
 
-    public List<Source> getOwnersByIds(Set<String> ids) {
-        ViewRequestBuilder viewQuery = getConnector().createQuery(Source.class, "attachmentOwner");
-        return queryViewForSource(buildRequest(viewQuery, ids));
-    }
+	public List<Source> getOwnersByIds(Set<String> ids) {
+		ViewRequestBuilder viewQuery = getConnector().createQuery(Source.class, "attachmentOwner");
+		return queryViewForSource(buildRequest(viewQuery, ids));
+	}
 }

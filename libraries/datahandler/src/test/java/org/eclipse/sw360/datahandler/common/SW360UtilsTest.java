@@ -16,9 +16,9 @@ import static org.junit.Assert.assertEquals;
 
 public class SW360UtilsTest {
 
-    @Test
-    public void testGetBUFromOrganisation() throws Exception {
-        assertEquals("CT BE OSS", SW360Utils.getBUFromOrganisation("CT BE OSS NE"));
-        assertEquals("CT BE", SW360Utils.getBUFromOrganisation("CT BE"));
-    }
+	@Test
+	public void testGetBUFromOrganisation() throws Exception {
+		assertEquals("CT BE OSS", SW360Utils.getBUFromOrganisation("CT BE OSS NE"));
+		assertEquals("CT BE", SW360Utils.getBUFromOrganisation("CT BE"));
+	}
 }

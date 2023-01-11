@@ -33,29 +33,36 @@ import java.util.stream.Collectors;
  */
 public class WsImportHandler implements ProjectImportService.Iface {
 
-    private static final Logger LOGGER = LogManager.getLogger(WsImportHandler.class);
+	private static final Logger LOGGER = LogManager.getLogger(WsImportHandler.class);
 
-    @Override
-    public synchronized ImportStatus importData(List<String> projectTokens, User user, TokenCredentials tokenCredentials) throws TException, JsonSyntaxException {
-        List<WsProject> toImport = projectTokens
-                .stream()
-                .map(t -> new WsImportService().getWsProject(t, tokenCredentials))
-                .collect(Collectors.toList());
+	@Override
+	public synchronized ImportStatus importData(List<String> projectTokens, User user,
+			TokenCredentials tokenCredentials) throws TException, JsonSyntaxException {
+		List<WsProject> toImport = projectTokens.stream()
+				.map(t -> new WsImportService().getWsProject(t, tokenCredentials)).collect(Collectors.toList());
 
-        return new ThriftUploader().importWsProjects(toImport, user, tokenCredentials);
-    }
+		return new ThriftUploader().importWsProjects(toImport, user, tokenCredentials);
+	}
 
-    @Override
-    public String getIdName(){
-        return TranslationConstants.WS_ID;
-    }
-    @Override
-    public boolean validateCredentials(RemoteCredentials credentials) { return false; }
-    @Override
-    public List<Project> loadImportables(RemoteCredentials reCred) { return null; }
-    @Override
-    public List<Project> suggestImportables(RemoteCredentials reCred, String projectName) { return null; }
-    @Override
-    public ImportStatus importDatasources(List<String> projectIds, User user, RemoteCredentials reCred) { return null; }
+	@Override
+	public String getIdName() {
+		return TranslationConstants.WS_ID;
+	}
+	@Override
+	public boolean validateCredentials(RemoteCredentials credentials) {
+		return false;
+	}
+	@Override
+	public List<Project> loadImportables(RemoteCredentials reCred) {
+		return null;
+	}
+	@Override
+	public List<Project> suggestImportables(RemoteCredentials reCred, String projectName) {
+		return null;
+	}
+	@Override
+	public ImportStatus importDatasources(List<String> projectIds, User user, RemoteCredentials reCred) {
+		return null;
+	}
 
 }

@@ -16,44 +16,44 @@ import java.util.List;
 
 public class PaginationResult<T> {
 
-    private final List<T> resources;
-    private final int totalCount;
-    private final PaginationOptions<T> paginationOptions;
-    private final Boolean pagingActive;
+	private final List<T> resources;
+	private final int totalCount;
+	private final PaginationOptions<T> paginationOptions;
+	private final Boolean pagingActive;
 
-    public PaginationResult(List<T> resources) {
-        this.resources = resources;
-        totalCount = resources.size();
-        paginationOptions = new PaginationOptions<>(1, totalCount, Comparator.comparing(x -> true));
-        pagingActive = false;
-    }
+	public PaginationResult(List<T> resources) {
+		this.resources = resources;
+		totalCount = resources.size();
+		paginationOptions = new PaginationOptions<>(1, totalCount, Comparator.comparing(x -> true));
+		pagingActive = false;
+	}
 
-    PaginationResult(List<T> resources, int totalCount, PaginationOptions<T> paginationOptions) {
-        this.resources = resources;
-        this.totalCount = totalCount;
-        this.paginationOptions = paginationOptions;
-        pagingActive = true;
-    }
+	PaginationResult(List<T> resources, int totalCount, PaginationOptions<T> paginationOptions) {
+		this.resources = resources;
+		this.totalCount = totalCount;
+		this.paginationOptions = paginationOptions;
+		pagingActive = true;
+	}
 
-    public List<T> getResources() {
-        return resources;
-    }
+	public List<T> getResources() {
+		return resources;
+	}
 
-    public int getTotalCount() {
-        return totalCount;
-    }
+	public int getTotalCount() {
+		return totalCount;
+	}
 
-    public PaginationOptions<T> getPaginationOptions() {
-        return paginationOptions;
-    }
+	public PaginationOptions<T> getPaginationOptions() {
+		return paginationOptions;
+	}
 
-    public int getTotalPageCount() {
-        int numberOfFullPages = getTotalCount() / paginationOptions.getPageSize();
-        boolean hasAdditionalNotFullPage = getTotalCount() % paginationOptions.getPageSize() != 0;
-        return numberOfFullPages + (hasAdditionalNotFullPage ? 1 : 0);
-    }
+	public int getTotalPageCount() {
+		int numberOfFullPages = getTotalCount() / paginationOptions.getPageSize();
+		boolean hasAdditionalNotFullPage = getTotalCount() % paginationOptions.getPageSize() != 0;
+		return numberOfFullPages + (hasAdditionalNotFullPage ? 1 : 0);
+	}
 
-    public boolean isPagingActive() {
-        return pagingActive;
-    }
+	public boolean isPagingActive() {
+		return pagingActive;
+	}
 }

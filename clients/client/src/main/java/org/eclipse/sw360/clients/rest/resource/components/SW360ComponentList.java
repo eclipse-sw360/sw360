@@ -16,23 +16,23 @@ import org.eclipse.sw360.clients.rest.resource.PagingLinkObjects;
 import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
 
 public class SW360ComponentList extends SW360HalResource<PagingLinkObjects, SW360ComponentListEmbedded> {
-    private Paging page;
+	private Paging page;
 
-    public Paging getPage() {
-        return page;
-    }
+	public Paging getPage() {
+		return page;
+	}
 
-    public void setPage(Paging page) {
-        this.page = page;
-    }
+	public void setPage(Paging page) {
+		this.page = page;
+	}
 
-    @Override
-    public PagingLinkObjects createEmptyLinks() {
-        return new PagingLinkObjects();
-    }
+	@Override
+	public PagingLinkObjects createEmptyLinks() {
+		return new PagingLinkObjects();
+	}
 
-    @Override
-    public SW360ComponentListEmbedded createEmptyEmbedded() {
-        return new SW360ComponentListEmbedded();
-    }
+	@Override
+	public SW360ComponentListEmbedded createEmptyEmbedded() {
+		return new SW360ComponentListEmbedded();
+	}
 }

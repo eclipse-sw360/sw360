@@ -36,41 +36,44 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360LicenseInfoService {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
+	@Value("${sw360.thrift-server-url:http://localhost:8080}")
+	private String thriftServerUrl;
 
-    public OutputFormatInfo getOutputFormatInfoForGeneratorClass(String generatorClassName) {
-        try {
-            LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
-            return sw360LicenseInfoClient.getOutputFormatInfoForGeneratorClass(generatorClassName);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public OutputFormatInfo getOutputFormatInfoForGeneratorClass(String generatorClassName) {
+		try {
+			LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
+			return sw360LicenseInfoClient.getOutputFormatInfoForGeneratorClass(generatorClassName);
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public LicenseInfoFile getLicenseInfoFile(Project project, User sw360User, String generatorClassNameWithVariant,
-            Map<String, Map<String, Boolean>> selectedReleaseAndAttachmentIds,
-            Map<String, Set<LicenseNameWithText>> excludedLicenses, String externalIds, String fileName) {
-        try {
-            LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
-            return sw360LicenseInfoClient.getLicenseInfoFile(project, sw360User, generatorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicenses, externalIds, fileName);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public LicenseInfoFile getLicenseInfoFile(Project project, User sw360User, String generatorClassNameWithVariant,
+			Map<String, Map<String, Boolean>> selectedReleaseAndAttachmentIds,
+			Map<String, Set<LicenseNameWithText>> excludedLicenses, String externalIds, String fileName) {
+		try {
+			LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
+			return sw360LicenseInfoClient.getLicenseInfoFile(project, sw360User, generatorClassNameWithVariant,
+					selectedReleaseAndAttachmentIds, excludedLicenses, externalIds, fileName);
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public List<LicenseInfoParsingResult> getLicenseInfoForAttachment(Release release, User sw360User, String attachmentContentId, boolean includeConcludedLicense) {
-        try {
-            LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
-            return sw360LicenseInfoClient.getLicenseInfoForAttachment(release, attachmentContentId, includeConcludedLicense, sw360User);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public List<LicenseInfoParsingResult> getLicenseInfoForAttachment(Release release, User sw360User,
+			String attachmentContentId, boolean includeConcludedLicense) {
+		try {
+			LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
+			return sw360LicenseInfoClient.getLicenseInfoForAttachment(release, attachmentContentId,
+					includeConcludedLicense, sw360User);
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    private LicenseInfoService.Iface getThriftLicenseInfoClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenseinfo/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new LicenseInfoService.Client(protocol);
-    }
+	private LicenseInfoService.Iface getThriftLicenseInfoClient() throws TTransportException {
+		THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenseinfo/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		return new LicenseInfoService.Client(protocol);
+	}
 }

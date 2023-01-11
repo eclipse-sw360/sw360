@@ -24,44 +24,42 @@ import java.util.function.Supplier;
 
 public class HealthDatabaseHandler {
 
-    private final DatabaseInstance db;
+	private final DatabaseInstance db;
 
-    public static final Set<String> DATABASES_TO_CHECK = ImmutableSet.of(
-            DatabaseSettings.COUCH_DB_ATTACHMENTS,
-            DatabaseSettings.COUCH_DB_DATABASE,
-            DatabaseSettings.COUCH_DB_USERS);
+	public static final Set<String> DATABASES_TO_CHECK = ImmutableSet.of(DatabaseSettings.COUCH_DB_ATTACHMENTS,
+			DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_USERS);
 
-    public HealthDatabaseHandler(Supplier<HttpClient> httpClient) throws MalformedURLException {
-        db = new DatabaseInstance(httpClient.get());
-    }
+	public HealthDatabaseHandler(Supplier<HttpClient> httpClient) throws MalformedURLException {
+		db = new DatabaseInstance(httpClient.get());
+	}
 
-    public Health getHealth() {
-        return getHealthOfDbs(DATABASES_TO_CHECK);
-    }
+	public Health getHealth() {
+		return getHealthOfDbs(DATABASES_TO_CHECK);
+	}
 
-    private Health getHealthOfDbs(Set<String> dbsTocheck) {
-        final Health health = new Health().setDetails(new HashMap<>());
+	private Health getHealthOfDbs(Set<String> dbsTocheck) {
+		final Health health = new Health().setDetails(new HashMap<>());
 
-        for (String database : dbsTocheck) {
-            try {
-                if (!db.checkIfDbExists(database)) {
-                    health.getDetails().put(database, String.format("The database '%s' does not exist.", database));
-                }
-            } catch (DbAccessException e) {
-                health.getDetails().put(database, e.getMessage());
-            }
-        }
+		for (String database : dbsTocheck) {
+			try {
+				if (!db.checkIfDbExists(database)) {
+					health.getDetails().put(database, String.format("The database '%s' does not exist.", database));
+				}
+			} catch (DbAccessException e) {
+				health.getDetails().put(database, e.getMessage());
+			}
+		}
 
-        if (health.getDetails().isEmpty()) {
-            return health.setStatus(Status.UP);
-        } else {
-            return health.getDetails().size() == dbsTocheck.size() ?
-                    health.setStatus(Status.DOWN) :
-                    health.setStatus(Status.ERROR);
-        }
-    }
+		if (health.getDetails().isEmpty()) {
+			return health.setStatus(Status.UP);
+		} else {
+			return health.getDetails().size() == dbsTocheck.size()
+					? health.setStatus(Status.DOWN)
+					: health.setStatus(Status.ERROR);
+		}
+	}
 
-    public Health getHealthOfSpecificDbs(Set<String> dbsToCheck) {
-        return getHealthOfDbs(dbsToCheck);
-    }
+	public Health getHealthOfSpecificDbs(Set<String> dbsToCheck) {
+		return getHealthOfDbs(dbsToCheck);
+	}
 }

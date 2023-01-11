@@ -21,22 +21,22 @@ import java.io.IOException;
 
 public class DisplayProjectStateBox extends SimpleTagSupport {
 
-    private ProjectState state;
+	private ProjectState state;
 
-    public void setValue(ProjectState state) {
-        this.state = state;
-    }
+	public void setValue(ProjectState state) {
+		this.state = state;
+	}
 
-    public String makeBox(ProjectState state) {
-        String projectStateBackgroundColour = PortalConstants.PROJECT_STATE_INACTIVE__CSS;
-        if( state == ProjectState.ACTIVE ) {
-            projectStateBackgroundColour = PortalConstants.PROJECT_STATE_ACTIVE__CSS;
-        }
-        return "<div class=\"stateBox capsuleLeft capsuleRight " + projectStateBackgroundColour + "\" title=\"Project state: " + state + "\"> PS </div>";
-    }
+	public String makeBox(ProjectState state) {
+		String projectStateBackgroundColour = PortalConstants.PROJECT_STATE_INACTIVE__CSS;
+		if (state == ProjectState.ACTIVE) {
+			projectStateBackgroundColour = PortalConstants.PROJECT_STATE_ACTIVE__CSS;
+		}
+		return "<div class=\"stateBox capsuleLeft capsuleRight " + projectStateBackgroundColour
+				+ "\" title=\"Project state: " + state + "\"> PS </div>";
+	}
 
-
-    public void doTag() throws JspException, IOException {
-        getJspContext().getOut().print( makeBox( state ) );
-    }
+	public void doTag() throws JspException, IOException {
+		getJspContext().getOut().print(makeBox(state));
+	}
 }

@@ -25,19 +25,19 @@ import java.util.List;
  */
 
 public class LicenseTypeRepository extends DatabaseRepositoryCloudantClient<LicenseType> {
-    private static final String ALL = "function(doc) { if (doc.type == 'licenseType') emit(null, doc._id) }";
-    private static final String BYLICENSETYPE = "function(doc) { if(doc.type == 'licenseType') { emit(doc.licenseType.trim().toLowerCase(), null) } }";
+	private static final String ALL = "function(doc) { if (doc.type == 'licenseType') emit(null, doc._id) }";
+	private static final String BYLICENSETYPE = "function(doc) { if(doc.type == 'licenseType') { emit(doc.licenseType.trim().toLowerCase(), null) } }";
 
-    public LicenseTypeRepository(DatabaseConnectorCloudant db) {
-        super(db, LicenseType.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("all", createMapReduce(ALL, null));
-        views.put("bylicensetype", createMapReduce(BYLICENSETYPE, null));
-        initStandardDesignDocument(views, db);
-    }
+	public LicenseTypeRepository(DatabaseConnectorCloudant db) {
+		super(db, LicenseType.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("all", createMapReduce(ALL, null));
+		views.put("bylicensetype", createMapReduce(BYLICENSETYPE, null));
+		initStandardDesignDocument(views, db);
+	}
 
-    public List<LicenseType> searchByLicenseType(String name) {
-        return queryByPrefix("bylicensetype", name);
-    }
+	public List<LicenseType> searchByLicenseType(String name) {
+		return queryByPrefix("bylicensetype", name);
+	}
 
 }

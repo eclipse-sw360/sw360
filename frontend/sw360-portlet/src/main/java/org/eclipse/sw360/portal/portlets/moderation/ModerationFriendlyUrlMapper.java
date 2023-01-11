@@ -16,16 +16,12 @@ import org.osgi.service.component.annotations.Component;
 
 import static org.eclipse.sw360.portal.common.PortalConstants.MODERATION_PORTLET_NAME;
 
-@Component(
-        property = {
-            "com.liferay.portlet.friendly-url-routes=org/eclipse/sw360/portal/mapper/moderation-friendly-url-routes.xml",
-            "javax.portlet.name=" + MODERATION_PORTLET_NAME,
-        },
-        service = FriendlyURLMapper.class
-    )
+@Component(property = {
+		"com.liferay.portlet.friendly-url-routes=org/eclipse/sw360/portal/mapper/moderation-friendly-url-routes.xml",
+		"javax.portlet.name=" + MODERATION_PORTLET_NAME,}, service = FriendlyURLMapper.class)
 public class ModerationFriendlyUrlMapper extends DefaultFriendlyURLMapper {
-    @Override
-    public String getMapping() {
-        return "moderation";
-    }
+	@Override
+	public String getMapping() {
+		return "moderation";
+	}
 }

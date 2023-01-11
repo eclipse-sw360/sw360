@@ -24,9 +24,10 @@ import java.io.IOException;
  */
 public class ModerationServlet extends Sw360ThriftServlet {
 
-    public ModerationServlet() throws IOException {
-        // Create a service processor using the provided handler
-        super(new ModerationService.Processor<ModerationHandler>(new ModerationHandler()), new TCompactProtocol.Factory());
-    }
+	public ModerationServlet() throws IOException {
+		// Create a service processor using the provided handler
+		super(new ModerationService.Processor<ModerationHandler>(new ModerationHandler()),
+				new TCompactProtocol.Factory());
+	}
 
 }

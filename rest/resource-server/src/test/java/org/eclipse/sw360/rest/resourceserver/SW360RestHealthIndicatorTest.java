@@ -48,184 +48,166 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(classes = Sw360ResourceServer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class SW360RestHealthIndicatorTest {
 
-    @LocalServerPort
-    private int port;
+	@LocalServerPort
+	private int port;
 
-    @SpyBean
-    private SW360RestHealthIndicator restHealthIndicatorMock;
+	@SpyBean
+	private SW360RestHealthIndicator restHealthIndicatorMock;
 
-    @Autowired
-    private TestRestTemplate testRestTemplate;
+	@Autowired
+	private TestRestTemplate testRestTemplate;
 
-    private static final String IS_DB_REACHABLE = "isDbReachable";
-    private static final String IS_THRIFT_REACHABLE = "isThriftReachable";
-    private static final String ERROR = "error";
+	private static final String IS_DB_REACHABLE = "isDbReachable";
+	private static final String IS_THRIFT_REACHABLE = "isThriftReachable";
+	private static final String ERROR = "error";
 
-    private DatabaseInstance databaseInstanceMock;
+	private DatabaseInstance databaseInstanceMock;
 
-    /**
-     * Makes a request to localhost with the default server port and returns
-     * the response as a response entity with type Map
-     * @param endpoint endpoint that will be called
-     * @return response of request
-     */
-    private ResponseEntity<Map> getMapResponseEntityForHealthEndpointRequest(String endpoint) {
-        return this.testRestTemplate.getForEntity(
-                "http://localhost:" + this.port + endpoint, Map.class);
-    }
+	/**
+	 * Makes a request to localhost with the default server port and returns the
+	 * response as a response entity with type Map
+	 * 
+	 * @param endpoint
+	 *            endpoint that will be called
+	 * @return response of request
+	 */
+	private ResponseEntity<Map> getMapResponseEntityForHealthEndpointRequest(String endpoint) {
+		return this.testRestTemplate.getForEntity("http://localhost:" + this.port + endpoint, Map.class);
+	}
 
-    @Test
-    public void info_should_return_200() {
-        ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/info");
+	@Test
+	public void info_should_return_200() {
+		ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/info");
 
-        then(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
-    }
+		then(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
+	}
 
-    @Test
-    public void health_should_return_503_with_missing_db() throws TException, MalformedURLException {
-        databaseInstanceMock = mock(DatabaseInstance.class);
-        when(databaseInstanceMock.checkIfDbExists(anyString()))
-                .thenReturn(false);
+	@Test
+	public void health_should_return_503_with_missing_db() throws TException, MalformedURLException {
+		databaseInstanceMock = mock(DatabaseInstance.class);
+		when(databaseInstanceMock.checkIfDbExists(anyString())).thenReturn(false);
 
-        Health health = new Health().setStatus(Status.UP);
+		Health health = new Health().setStatus(Status.UP);
 
-        final HealthService.Iface healthClient = mock(HealthService.Iface.class);
-        when(healthClient.getHealth())
-                .thenReturn(health);
+		final HealthService.Iface healthClient = mock(HealthService.Iface.class);
+		when(healthClient.getHealth()).thenReturn(health);
 
-        when(restHealthIndicatorMock.makeHealthClient())
-                .thenReturn(healthClient);
-        when(restHealthIndicatorMock.makeDatabaseInstance())
-                .thenReturn(databaseInstanceMock);
+		when(restHealthIndicatorMock.makeHealthClient()).thenReturn(healthClient);
+		when(restHealthIndicatorMock.makeDatabaseInstance()).thenReturn(databaseInstanceMock);
 
-        ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
+		ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
-        then(entity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+		then(entity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
 
-        final LinkedHashMap body = (LinkedHashMap) entity.getBody();
-        final LinkedHashMap bodyDetails =(LinkedHashMap<String, Object>) body.get("components");
-        final LinkedHashMap sW360RestDetails =(LinkedHashMap<String, Object>) bodyDetails.get("SW360Rest");
-        final LinkedHashMap restStateDetails =(LinkedHashMap<String, Object>)sW360RestDetails.get("details");
-        final LinkedHashMap restState = (LinkedHashMap<String, Object>) restStateDetails.get("Rest State");
-        assertFalse((boolean) restState.get(IS_DB_REACHABLE));
-        assertTrue((boolean) restState.get(IS_THRIFT_REACHABLE));
-    }
+		final LinkedHashMap body = (LinkedHashMap) entity.getBody();
+		final LinkedHashMap bodyDetails = (LinkedHashMap<String, Object>) body.get("components");
+		final LinkedHashMap sW360RestDetails = (LinkedHashMap<String, Object>) bodyDetails.get("SW360Rest");
+		final LinkedHashMap restStateDetails = (LinkedHashMap<String, Object>) sW360RestDetails.get("details");
+		final LinkedHashMap restState = (LinkedHashMap<String, Object>) restStateDetails.get("Rest State");
+		assertFalse((boolean) restState.get(IS_DB_REACHABLE));
+		assertTrue((boolean) restState.get(IS_THRIFT_REACHABLE));
+	}
 
-    @Test
-    public void health_should_return_503_with_unhealthy_thrift() throws TException, MalformedURLException {
-        databaseInstanceMock = mock(DatabaseInstance.class);
-        when(databaseInstanceMock.checkIfDbExists(anyString()))
-                .thenReturn(true);
+	@Test
+	public void health_should_return_503_with_unhealthy_thrift() throws TException, MalformedURLException {
+		databaseInstanceMock = mock(DatabaseInstance.class);
+		when(databaseInstanceMock.checkIfDbExists(anyString())).thenReturn(true);
 
-        when(restHealthIndicatorMock.makeDatabaseInstance())
-                .thenReturn(databaseInstanceMock);
+		when(restHealthIndicatorMock.makeDatabaseInstance()).thenReturn(databaseInstanceMock);
 
-        Health health = new Health()
-                .setStatus(Status.DOWN)
-                .setDetails(Collections.singletonMap(DatabaseSettings.COUCH_DB_ATTACHMENTS, new Exception("").getMessage()));
+		Health health = new Health().setStatus(Status.DOWN).setDetails(
+				Collections.singletonMap(DatabaseSettings.COUCH_DB_ATTACHMENTS, new Exception("").getMessage()));
 
-        final HealthService.Iface healthClient = mock(HealthService.Iface.class);
-        when(healthClient.getHealth())
-                .thenReturn(health);
+		final HealthService.Iface healthClient = mock(HealthService.Iface.class);
+		when(healthClient.getHealth()).thenReturn(health);
 
-        when(restHealthIndicatorMock.makeHealthClient())
-                .thenReturn(healthClient);
+		when(restHealthIndicatorMock.makeHealthClient()).thenReturn(healthClient);
 
-        ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
+		ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
-        then(entity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+		then(entity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
 
-        final LinkedHashMap body = (LinkedHashMap) entity.getBody();
-        final LinkedHashMap bodyDetails =(LinkedHashMap<String, Object>) body.get("components");
-        final LinkedHashMap sW360RestDetails =(LinkedHashMap<String, Object>) bodyDetails.get("SW360Rest");
-        final LinkedHashMap sw360Rest =(LinkedHashMap<String, Object>) sW360RestDetails.get("details");
-        final LinkedHashMap restStateDetails =(LinkedHashMap<String, Object>)sW360RestDetails.get("details");
-        final LinkedHashMap restState = (LinkedHashMap<String, Object>) restStateDetails.get("Rest State");
-        assertTrue((boolean) restState.get(IS_DB_REACHABLE));
-        assertFalse((boolean) restState.get(IS_THRIFT_REACHABLE));
-        assertNotNull(sw360Rest.get(ERROR));
-    }
+		final LinkedHashMap body = (LinkedHashMap) entity.getBody();
+		final LinkedHashMap bodyDetails = (LinkedHashMap<String, Object>) body.get("components");
+		final LinkedHashMap sW360RestDetails = (LinkedHashMap<String, Object>) bodyDetails.get("SW360Rest");
+		final LinkedHashMap sw360Rest = (LinkedHashMap<String, Object>) sW360RestDetails.get("details");
+		final LinkedHashMap restStateDetails = (LinkedHashMap<String, Object>) sW360RestDetails.get("details");
+		final LinkedHashMap restState = (LinkedHashMap<String, Object>) restStateDetails.get("Rest State");
+		assertTrue((boolean) restState.get(IS_DB_REACHABLE));
+		assertFalse((boolean) restState.get(IS_THRIFT_REACHABLE));
+		assertNotNull(sw360Rest.get(ERROR));
+	}
 
-    @Test
-    public void health_should_return_503_with_unreachable_thrift() throws TException, MalformedURLException {
-        databaseInstanceMock = mock(DatabaseInstance.class);
-        when(databaseInstanceMock.checkIfDbExists(anyString()))
-                .thenReturn(true);
-        when(restHealthIndicatorMock.makeDatabaseInstance())
-                .thenReturn(databaseInstanceMock);
+	@Test
+	public void health_should_return_503_with_unreachable_thrift() throws TException, MalformedURLException {
+		databaseInstanceMock = mock(DatabaseInstance.class);
+		when(databaseInstanceMock.checkIfDbExists(anyString())).thenReturn(true);
+		when(restHealthIndicatorMock.makeDatabaseInstance()).thenReturn(databaseInstanceMock);
 
-        final HealthService.Iface healthClient = mock(HealthService.Iface.class);
-        when(healthClient.getHealth())
-                .thenThrow(new TTransportException());
+		final HealthService.Iface healthClient = mock(HealthService.Iface.class);
+		when(healthClient.getHealth()).thenThrow(new TTransportException());
 
-        when(restHealthIndicatorMock.makeHealthClient())
-                .thenReturn(healthClient);
+		when(restHealthIndicatorMock.makeHealthClient()).thenReturn(healthClient);
 
-        ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
+		ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
-        then(entity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+		then(entity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
 
-        final LinkedHashMap body = (LinkedHashMap) entity.getBody();
-        final LinkedHashMap bodyDetails =(LinkedHashMap<String, Object>) body.get("components");
-        final LinkedHashMap sW360RestDetails =(LinkedHashMap<String, Object>) bodyDetails.get("SW360Rest");
-        final LinkedHashMap sw360Rest =(LinkedHashMap<String, Object>) sW360RestDetails.get("details");
-        final LinkedHashMap restStateDetails =(LinkedHashMap<String, Object>)sW360RestDetails.get("details");
-        final LinkedHashMap restState = (LinkedHashMap<String, Object>) restStateDetails.get("Rest State");
-        assertTrue((boolean) restState.get(IS_DB_REACHABLE));
-        assertFalse((boolean) restState.get(IS_THRIFT_REACHABLE));
-        assertNotNull(sw360Rest.get(ERROR));
-    }
+		final LinkedHashMap body = (LinkedHashMap) entity.getBody();
+		final LinkedHashMap bodyDetails = (LinkedHashMap<String, Object>) body.get("components");
+		final LinkedHashMap sW360RestDetails = (LinkedHashMap<String, Object>) bodyDetails.get("SW360Rest");
+		final LinkedHashMap sw360Rest = (LinkedHashMap<String, Object>) sW360RestDetails.get("details");
+		final LinkedHashMap restStateDetails = (LinkedHashMap<String, Object>) sW360RestDetails.get("details");
+		final LinkedHashMap restState = (LinkedHashMap<String, Object>) restStateDetails.get("Rest State");
+		assertTrue((boolean) restState.get(IS_DB_REACHABLE));
+		assertFalse((boolean) restState.get(IS_THRIFT_REACHABLE));
+		assertNotNull(sw360Rest.get(ERROR));
+	}
 
-    @Test
-    public void health_should_return_503_with_throwable() throws MalformedURLException {
-        final DatabaseInstance databaseInstanceMock = mock(DatabaseInstance.class);
-        when(databaseInstanceMock.checkIfDbExists(anyString()))
-                .thenThrow(new RuntimeException());
+	@Test
+	public void health_should_return_503_with_throwable() throws MalformedURLException {
+		final DatabaseInstance databaseInstanceMock = mock(DatabaseInstance.class);
+		when(databaseInstanceMock.checkIfDbExists(anyString())).thenThrow(new RuntimeException());
 
-        when(restHealthIndicatorMock.makeDatabaseInstance())
-                .thenReturn(databaseInstanceMock);
+		when(restHealthIndicatorMock.makeDatabaseInstance()).thenReturn(databaseInstanceMock);
 
-        ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
+		ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
-        then(entity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+		then(entity.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
 
-        final LinkedHashMap body = (LinkedHashMap) entity.getBody();
-        final LinkedHashMap bodyDetails =(LinkedHashMap<String, Object>) body.get("components");
-        final LinkedHashMap sW360RestDetails =(LinkedHashMap<String, Object>) bodyDetails.get("SW360Rest");
-        final LinkedHashMap sw360Rest =(LinkedHashMap<String, Object>) sW360RestDetails.get("details");
-        final LinkedHashMap restStateDetails =(LinkedHashMap<String, Object>)sW360RestDetails.get("details");
-        final LinkedHashMap restState = (LinkedHashMap<String, Object>) restStateDetails.get("Rest State");
-        assertFalse((boolean) restState.get(IS_DB_REACHABLE));
-        assertNotNull(sw360Rest.get(ERROR));
-    }
+		final LinkedHashMap body = (LinkedHashMap) entity.getBody();
+		final LinkedHashMap bodyDetails = (LinkedHashMap<String, Object>) body.get("components");
+		final LinkedHashMap sW360RestDetails = (LinkedHashMap<String, Object>) bodyDetails.get("SW360Rest");
+		final LinkedHashMap sw360Rest = (LinkedHashMap<String, Object>) sW360RestDetails.get("details");
+		final LinkedHashMap restStateDetails = (LinkedHashMap<String, Object>) sW360RestDetails.get("details");
+		final LinkedHashMap restState = (LinkedHashMap<String, Object>) restStateDetails.get("Rest State");
+		assertFalse((boolean) restState.get(IS_DB_REACHABLE));
+		assertNotNull(sw360Rest.get(ERROR));
+	}
 
-    @Test
-    public void health_should_return_200_when_healthy() throws TException, MalformedURLException {
-        databaseInstanceMock = mock(DatabaseInstance.class);
-        when(databaseInstanceMock.checkIfDbExists(anyString()))
-                .thenReturn(true);
+	@Test
+	public void health_should_return_200_when_healthy() throws TException, MalformedURLException {
+		databaseInstanceMock = mock(DatabaseInstance.class);
+		when(databaseInstanceMock.checkIfDbExists(anyString())).thenReturn(true);
 
-        when(restHealthIndicatorMock.makeDatabaseInstance())
-                .thenReturn(databaseInstanceMock);
+		when(restHealthIndicatorMock.makeDatabaseInstance()).thenReturn(databaseInstanceMock);
 
-        Health health = new Health().setStatus(Status.UP);
+		Health health = new Health().setStatus(Status.UP);
 
-        final HealthService.Iface healthClient = mock(HealthService.Iface.class);
-        when(healthClient.getHealth())
-                .thenReturn(health);
+		final HealthService.Iface healthClient = mock(HealthService.Iface.class);
+		when(healthClient.getHealth()).thenReturn(health);
 
-        when(restHealthIndicatorMock.makeHealthClient())
-                .thenReturn(healthClient);
+		when(restHealthIndicatorMock.makeHealthClient()).thenReturn(healthClient);
 
-        ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
+		ResponseEntity<Map> entity = getMapResponseEntityForHealthEndpointRequest("/health");
 
-        then(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
-        final LinkedHashMap body = (LinkedHashMap) entity.getBody();
-        final LinkedHashMap bodyDetails =(LinkedHashMap<String, Object>) body.get("components");
-        final LinkedHashMap sW360RestDetails =(LinkedHashMap<String, Object>) bodyDetails.get("SW360Rest");
-        final LinkedHashMap restStateDetails =(LinkedHashMap<String, Object>)sW360RestDetails.get("details");
-        final LinkedHashMap restState = (LinkedHashMap<String, Object>) restStateDetails.get("Rest State");
+		then(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
+		final LinkedHashMap body = (LinkedHashMap) entity.getBody();
+		final LinkedHashMap bodyDetails = (LinkedHashMap<String, Object>) body.get("components");
+		final LinkedHashMap sW360RestDetails = (LinkedHashMap<String, Object>) bodyDetails.get("SW360Rest");
+		final LinkedHashMap restStateDetails = (LinkedHashMap<String, Object>) sW360RestDetails.get("details");
+		final LinkedHashMap restState = (LinkedHashMap<String, Object>) restStateDetails.get("Rest State");
 
-        assertTrue((boolean) restState.get(IS_DB_REACHABLE));
-    }
+		assertTrue((boolean) restState.get(IS_DB_REACHABLE));
+	}
 }

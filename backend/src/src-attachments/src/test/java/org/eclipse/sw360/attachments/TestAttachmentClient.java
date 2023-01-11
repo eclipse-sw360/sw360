@@ -24,14 +24,14 @@ import java.io.IOException;
  */
 public class TestAttachmentClient {
 
-    public static void main(String[] args) {
-        try {
-            THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/attachmentservice/thrift");
-            TProtocol protocol = new TCompactProtocol(thriftClient);
-            AttachmentService.Iface client = new AttachmentService.Client(protocol);
-        } catch (Exception e) {
-            assert(false);
-        }
-    }
+	public static void main(String[] args) {
+		try {
+			THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/attachmentservice/thrift");
+			TProtocol protocol = new TCompactProtocol(thriftClient);
+			AttachmentService.Iface client = new AttachmentService.Client(protocol);
+		} catch (Exception e) {
+			assert (false);
+		}
+	}
 
 }

@@ -37,76 +37,73 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 @Import(Sw360CORSFilter.class)
 public class Sw360ResourceServer extends SpringBootServletInitializer {
 
-    private static final String REST_BASE_PATH = "/api";
+	private static final String REST_BASE_PATH = "/api";
 
-    @Value("${spring.data.rest.default-page-size:10}")
-    private int defaultPageSize;
+	@Value("${spring.data.rest.default-page-size:10}")
+	private int defaultPageSize;
 
-    private static final String SW360_PROPERTIES_FILE_PATH = "/sw360.properties";
-    private static final String CURIE_NAMESPACE = "sw360";
-    private static final String APPLICATION_ID = "rest";
+	private static final String SW360_PROPERTIES_FILE_PATH = "/sw360.properties";
+	private static final String CURIE_NAMESPACE = "sw360";
+	private static final String APPLICATION_ID = "rest";
 
-    public static final String API_TOKEN_HASH_SALT;
-    public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
-    public static final String API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
-    public static final Set<String> DOMAIN;
-    public static final String REPORT_FILENAME_MAPPING;
-    public static final String JWKS_ISSUER_URL;
-    public static final String JWKS_ENDPOINT_URL;
-    public static final Boolean IS_JWKS_VALIDATION_ENABLED;
+	public static final String API_TOKEN_HASH_SALT;
+	public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
+	public static final String API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
+	public static final Set<String> DOMAIN;
+	public static final String REPORT_FILENAME_MAPPING;
+	public static final String JWKS_ISSUER_URL;
+	public static final String JWKS_ENDPOINT_URL;
+	public static final Boolean IS_JWKS_VALIDATION_ENABLED;
 
-    static {
-        Properties props = CommonUtils.loadProperties(Sw360ResourceServer.class, SW360_PROPERTIES_FILE_PATH);
-        API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");
-        API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
-        API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
-        DOMAIN = CommonUtils.splitToSet(props.getProperty("domain",
-                "Application Software, Documentation, Embedded Software, Hardware, Test and Diagnostics"));
-        REPORT_FILENAME_MAPPING = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templatemapping", "");
-        JWKS_ISSUER_URL = props.getProperty("jwks.issuer.url", null);
-        JWKS_ENDPOINT_URL = props.getProperty("jwks.endpoint.url", null);
-        IS_JWKS_VALIDATION_ENABLED = Boolean.parseBoolean(props.getProperty("jwks.validation.enabled", "false"));
-    }
+	static {
+		Properties props = CommonUtils.loadProperties(Sw360ResourceServer.class, SW360_PROPERTIES_FILE_PATH);
+		API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");
+		API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
+		API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
+		DOMAIN = CommonUtils.splitToSet(props.getProperty("domain",
+				"Application Software, Documentation, Embedded Software, Hardware, Test and Diagnostics"));
+		REPORT_FILENAME_MAPPING = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templatemapping", "");
+		JWKS_ISSUER_URL = props.getProperty("jwks.issuer.url", null);
+		JWKS_ENDPOINT_URL = props.getProperty("jwks.endpoint.url", null);
+		IS_JWKS_VALIDATION_ENABLED = Boolean.parseBoolean(props.getProperty("jwks.validation.enabled", "false"));
+	}
 
-    @Bean
-    public CurieProvider curieProvider() {
-        return new DefaultCurieProvider(CURIE_NAMESPACE, UriTemplate.of("/docs/{rel}.html"));
-    }
+	@Bean
+	public CurieProvider curieProvider() {
+		return new DefaultCurieProvider(CURIE_NAMESPACE, UriTemplate.of("/docs/{rel}.html"));
+	}
 
-    @Bean
-    public ApiTokenAuthenticationFilter authFilterBean() {
-        return new ApiTokenAuthenticationFilter();
-    }
+	@Bean
+	public ApiTokenAuthenticationFilter authFilterBean() {
+		return new ApiTokenAuthenticationFilter();
+	}
 
-    @Bean
-    public RepositoryRestConfigurer repositoryRestConfigurer() {
-        return new RepositoryRestConfigurer() {
-            @Override
-            public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config,  CorsRegistry cors) {
-                config.setLimitParamName(RestControllerHelper.PAGINATION_PARAM_PAGE_ENTRIES);
-                config.setBasePath(REST_BASE_PATH);
-            }
-        };
-    }
+	@Bean
+	public RepositoryRestConfigurer repositoryRestConfigurer() {
+		return new RepositoryRestConfigurer() {
+			@Override
+			public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config, CorsRegistry cors) {
+				config.setLimitParamName(RestControllerHelper.PAGINATION_PARAM_PAGE_ENTRIES);
+				config.setBasePath(REST_BASE_PATH);
+			}
+		};
+	}
 
-    @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
-        return builder
-            .sources(Sw360ResourceServer.class)
-            .properties(PropertyUtils.createDefaultProperties(APPLICATION_ID));
-    }
+	@Override
+	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+		return builder.sources(Sw360ResourceServer.class)
+				.properties(PropertyUtils.createDefaultProperties(APPLICATION_ID));
+	}
 
-    public static void main(String[] args) {
-        new SpringApplicationBuilder(Sw360ResourceServer.class)
-            .properties(PropertyUtils.createDefaultProperties(APPLICATION_ID))
-            .build()
-            .run(args);
-    }
+	public static void main(String[] args) {
+		new SpringApplicationBuilder(Sw360ResourceServer.class)
+				.properties(PropertyUtils.createDefaultProperties(APPLICATION_ID)).build().run(args);
+	}
 
-    @Bean
-    public FilterRegistrationBean<ForwardedHeaderFilter> forwardedHeaderFilter() {
-        FilterRegistrationBean<ForwardedHeaderFilter> bean = new FilterRegistrationBean<>();
-        bean.setFilter(new ForwardedHeaderFilter());
-        return bean;
-    }
+	@Bean
+	public FilterRegistrationBean<ForwardedHeaderFilter> forwardedHeaderFilter() {
+		FilterRegistrationBean<ForwardedHeaderFilter> bean = new FilterRegistrationBean<>();
+		bean.setFilter(new ForwardedHeaderFilter());
+		return bean;
+	}
 }

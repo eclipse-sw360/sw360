@@ -25,70 +25,67 @@ import java.util.function.Supplier;
 
 import static org.eclipse.sw360.exporter.utils.ConvertRecord.licenseSerializer;
 
-
 /**
  * Created by bodet on 10/02/15.
  *
  * @author cedric.bodet@tngtech.com
  */
 public class LicenseExporter extends ExcelExporter<License, LicenseExporter.LicenseHelper> {
-    private static final Logger log = LogManager.getLogger(LicenseExporter.class);
+	private static final Logger log = LogManager.getLogger(LicenseExporter.class);
 
-    public LicenseExporter(Function<Logger, List<LicenseType>> getLicenseTypes) {
-        super(new LicenseHelper(() -> getLicenseTypes.apply(log)));
-    }
+	public LicenseExporter(Function<Logger, List<LicenseType>> getLicenseTypes) {
+		super(new LicenseHelper(() -> getLicenseTypes.apply(log)));
+	}
 
-    static class LicenseHelper implements ExporterHelper<License> {
-        private final ConvertRecord.Serializer<License> converter;
-        private Supplier<List<LicenseType>> getLicenseTypes;
-        private HashMap<String, String> formattedStringToTypeId = new HashMap<>();
-        int indexOfTypeOrId;
-        private int licenseTypesSize;
+	static class LicenseHelper implements ExporterHelper<License> {
+		private final ConvertRecord.Serializer<License> converter;
+		private Supplier<List<LicenseType>> getLicenseTypes;
+		private HashMap<String, String> formattedStringToTypeId = new HashMap<>();
+		int indexOfTypeOrId;
+		private int licenseTypesSize;
 
-        public LicenseHelper(Supplier<List<LicenseType>> getLicenseTypes) {
-            this.getLicenseTypes = getLicenseTypes;
-            converter = licenseSerializer();
-            indexOfTypeOrId = converter.headers().indexOf("Type");
-            licenseTypesSize = getLicenseTypes.get().size();
-        }
+		public LicenseHelper(Supplier<List<LicenseType>> getLicenseTypes) {
+			this.getLicenseTypes = getLicenseTypes;
+			converter = licenseSerializer();
+			indexOfTypeOrId = converter.headers().indexOf("Type");
+			licenseTypesSize = getLicenseTypes.get().size();
+		}
 
-        public void fillLicenseTypeIdToFormattedString() {
-            formattedStringToTypeId.put("","");
-            List<LicenseType> licenseTypes = getLicenseTypes.get();
-            for (LicenseType licenseType: licenseTypes) {
-                String type = licenseType.getLicenseType();
-                formattedStringToTypeId.put(String.valueOf(licenseType.getLicenseTypeId()), type);
-                formattedStringToTypeId.put(String.valueOf(licenseType.getId()), type);
-            }
-        }
+		public void fillLicenseTypeIdToFormattedString() {
+			formattedStringToTypeId.put("", "");
+			List<LicenseType> licenseTypes = getLicenseTypes.get();
+			for (LicenseType licenseType : licenseTypes) {
+				String type = licenseType.getLicenseType();
+				formattedStringToTypeId.put(String.valueOf(licenseType.getLicenseTypeId()), type);
+				formattedStringToTypeId.put(String.valueOf(licenseType.getId()), type);
+			}
+		}
 
-        @Override
-        public int getColumns() {
-            return converter.headers().size();
-        }
+		@Override
+		public int getColumns() {
+			return converter.headers().size();
+		}
 
-        @Override
-        public List<String> getHeaders() {
-            return converter.headers();
-        }
+		@Override
+		public List<String> getHeaders() {
+			return converter.headers();
+		}
 
-        private List<String> formatRow(List<String> row) {
-            int formattedSize = formattedStringToTypeId.size();
-            int formattedLicenseTypesSize = formattedSize == 0 ? 0 : (formattedSize - 1) / 2;
-            if(formattedSize == 0 || formattedLicenseTypesSize != licenseTypesSize) {
-                fillLicenseTypeIdToFormattedString();
-            }
+		private List<String> formatRow(List<String> row) {
+			int formattedSize = formattedStringToTypeId.size();
+			int formattedLicenseTypesSize = formattedSize == 0 ? 0 : (formattedSize - 1) / 2;
+			if (formattedSize == 0 || formattedLicenseTypesSize != licenseTypesSize) {
+				fillLicenseTypeIdToFormattedString();
+			}
 
-            row.set(indexOfTypeOrId, formattedStringToTypeId.get(row.get(indexOfTypeOrId)));
-            return row;
-        }
+			row.set(indexOfTypeOrId, formattedStringToTypeId.get(row.get(indexOfTypeOrId)));
+			return row;
+		}
 
-        @Override
-        public SubTable makeRows(License license) {
-            return new SubTable(
-                    formatRow(converter.transformer().apply(license))
-            );
-        }
-    }
+		@Override
+		public SubTable makeRows(License license) {
+			return new SubTable(formatRow(converter.transformer().apply(license)));
+		}
+	}
 
 }

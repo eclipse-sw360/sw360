@@ -29,41 +29,41 @@ import static org.junit.Assert.*;
 
 public class CveSearchGuesserTest extends TestWithCveSearchConnection {
 
-    private CveSearchGuesser cveSearchGuesser;
-    private String PUBLIC_CVE_SEARCH_SERVER = "https://cve.circl.lu";
+	private CveSearchGuesser cveSearchGuesser;
+	private String PUBLIC_CVE_SEARCH_SERVER = "https://cve.circl.lu";
 
-    @Before
-    public void setup() {
-        cveSearchGuesser = new CveSearchGuesser(cveSearchApi);
-    }
+	@Before
+	public void setup() {
+		cveSearchGuesser = new CveSearchGuesser(cveSearchApi);
+	}
 
-    @Test
-    public void getBestZERO() {
-        assert(cveSearchGuesser.getBest(Collections.emptyList(), Integer.MAX_VALUE).size() == 0);
-    }
+	@Test
+	public void getBestZERO() {
+		assert (cveSearchGuesser.getBest(Collections.emptyList(), Integer.MAX_VALUE).size() == 0);
+	}
 
-    @Test
-    public void guessVendorTestApacheFullMatch() throws Exception {
-        String apache = "apache";
+	@Test
+	public void guessVendorTestApacheFullMatch() throws Exception {
+		String apache = "apache";
 
-        String result2 = this.cveSearchGuesser.guessVendors(apache).get(0).getNeedle();
-        assert(result2.equals(apache));
-    }
+		String result2 = this.cveSearchGuesser.guessVendors(apache).get(0).getNeedle();
+		assert (result2.equals(apache));
+	}
 
-    @Test
-    public void guessProductTestMavenFullMatch() throws Exception {
-        String apache = "apache";
-        String maven  = "maven";
+	@Test
+	public void guessProductTestMavenFullMatch() throws Exception {
+		String apache = "apache";
+		String maven = "maven";
 
-        String result2 = this.cveSearchGuesser.guessProducts(apache,maven).get(0).getNeedle();
-        assert(result2.equals(maven));
-    }
+		String result2 = this.cveSearchGuesser.guessProducts(apache, maven).get(0).getNeedle();
+		assert (result2.equals(maven));
+	}
 
-    @Test
-    public void guessProductTestApacheFullMatchWithThreshold() throws Exception {
-        String apache = "apache";
-        this.cveSearchGuesser.setVendorThreshold(5);
-        List<Match> result = this.cveSearchGuesser.guessVendors(apache);
-        assert(result.size() > 1);
-    }
+	@Test
+	public void guessProductTestApacheFullMatchWithThreshold() throws Exception {
+		String apache = "apache";
+		this.cveSearchGuesser.setVendorThreshold(5);
+		List<Match> result = this.cveSearchGuesser.guessVendors(apache);
+		assert (result.size() > 1);
+	}
 }

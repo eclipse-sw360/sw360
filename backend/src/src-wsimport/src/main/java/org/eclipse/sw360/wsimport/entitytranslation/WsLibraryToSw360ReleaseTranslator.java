@@ -26,35 +26,35 @@ import static org.eclipse.sw360.wsimport.utility.TranslationConstants.*;
  */
 public class WsLibraryToSw360ReleaseTranslator implements EntityTranslator<WsLibrary, Release> {
 
-    @Override
-    public Release apply(WsLibrary wsLibrary) {
+	@Override
+	public Release apply(WsLibrary wsLibrary) {
 
-        Release sw360Release = new Release();
-        sw360Release.setExternalIds(new HashMap<>());
-        sw360Release.setName(wsLibrary.getName());
-        sw360Release.getExternalIds().put(TranslationConstants.WS_ID, Integer.toString(wsLibrary.getKeyId()));
-        sw360Release.getExternalIds().put(FILENAME, wsLibrary.getFilename());
+		Release sw360Release = new Release();
+		sw360Release.setExternalIds(new HashMap<>());
+		sw360Release.setName(wsLibrary.getName());
+		sw360Release.getExternalIds().put(TranslationConstants.WS_ID, Integer.toString(wsLibrary.getKeyId()));
+		sw360Release.getExternalIds().put(FILENAME, wsLibrary.getFilename());
 
-        if (wsLibrary.getReferences() != null) {
-            sw360Release.setSourceCodeDownloadurl(wsLibrary.getReferences().getUrl());
-            if (!isNullOrEmpty(wsLibrary.getReferences().getPomUrl())) {
-                sw360Release.getExternalIds().put(POM_FILE_URL, wsLibrary.getReferences().getPomUrl());
-            }
-            if (!isNullOrEmpty(wsLibrary.getReferences().getScmUrl())) {
-                sw360Release.getExternalIds().put(SCM_URL, wsLibrary.getReferences().getScmUrl());
-            }
-        }
+		if (wsLibrary.getReferences() != null) {
+			sw360Release.setSourceCodeDownloadurl(wsLibrary.getReferences().getUrl());
+			if (!isNullOrEmpty(wsLibrary.getReferences().getPomUrl())) {
+				sw360Release.getExternalIds().put(POM_FILE_URL, wsLibrary.getReferences().getPomUrl());
+			}
+			if (!isNullOrEmpty(wsLibrary.getReferences().getScmUrl())) {
+				sw360Release.getExternalIds().put(SCM_URL, wsLibrary.getReferences().getScmUrl());
+			}
+		}
 
-        if (!isNullOrEmpty(wsLibrary.getVersion())) {
-            String version = wsLibrary.getVersion().replaceFirst("^(?i)v","");
-            sw360Release.setVersion(version.replaceAll(VERSION_SUFFIX_REGEX,"").trim());
-        } else {
-            sw360Release.setVersion(UNKNOWN);
-        }
+		if (!isNullOrEmpty(wsLibrary.getVersion())) {
+			String version = wsLibrary.getVersion().replaceFirst("^(?i)v", "");
+			sw360Release.setVersion(version.replaceAll(VERSION_SUFFIX_REGEX, "").trim());
+		} else {
+			sw360Release.setVersion(UNKNOWN);
+		}
 
-        sw360Release.setClearingState(ClearingState.NEW_CLEARING);
+		sw360Release.setClearingState(ClearingState.NEW_CLEARING);
 
-        return sw360Release;
-    }
+		return sw360Release;
+	}
 
 }

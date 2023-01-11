@@ -28,45 +28,35 @@ import java.util.List;
 
 import javax.portlet.*;
 
-@org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-        "/org/eclipse/sw360/portal/portlets/base.properties",
-        "/org/eclipse/sw360/portal/portlets/user.properties"
-    },
-    property = {
-        "javax.portlet.name=" + PortalConstants.MY_SUBSCRIPTIONS_PORTLET_NAME,
+@org.osgi.service.component.annotations.Component(immediate = true, properties = {
+		"/org/eclipse/sw360/portal/portlets/base.properties",
+		"/org/eclipse/sw360/portal/portlets/user.properties"}, property = {
+				"javax.portlet.name=" + PortalConstants.MY_SUBSCRIPTIONS_PORTLET_NAME,
 
-        "javax.portlet.display-name=My Subscriptions",
-        "javax.portlet.info.short-title=My Subscriptions",
-        "javax.portlet.info.title=My Subscriptions",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/homepage/mysubscriptions/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+				"javax.portlet.display-name=My Subscriptions", "javax.portlet.info.short-title=My Subscriptions",
+				"javax.portlet.info.title=My Subscriptions", "javax.portlet.resource-bundle=content.Language",
+				"javax.portlet.init-param.view-template=/html/homepage/mysubscriptions/view.jsp",}, service = Portlet.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class MySubscriptionsPortlet extends Sw360Portlet {
 
-    private static final Logger log = LogManager.getLogger(MySubscriptionsPortlet.class);
+	private static final Logger log = LogManager.getLogger(MySubscriptionsPortlet.class);
 
-    @Override
-    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        List<Component> components=null;
-        List<Release> releases=null;
+	@Override
+	public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+		List<Component> components = null;
+		List<Release> releases = null;
 
-        try {
-            final User user = UserCacheHolder.getUserFromRequest(request);
-            ComponentService.Iface componentClient = thriftClients.makeComponentClient();
-            components = componentClient.getSubscribedComponents(user);
-            releases  = componentClient.getSubscribedReleases(user);
-        } catch (TException e) {
-            log.error("Could not fetch your subscriptions from backend", e);
-        }
+		try {
+			final User user = UserCacheHolder.getUserFromRequest(request);
+			ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+			components = componentClient.getSubscribedComponents(user);
+			releases = componentClient.getSubscribedReleases(user);
+		} catch (TException e) {
+			log.error("Could not fetch your subscriptions from backend", e);
+		}
 
-        request.setAttribute(PortalConstants.COMPONENT_LIST, CommonUtils.nullToEmptyList(components));
-        request.setAttribute(PortalConstants.RELEASE_LIST, CommonUtils.nullToEmptyList( releases));
+		request.setAttribute(PortalConstants.COMPONENT_LIST, CommonUtils.nullToEmptyList(components));
+		request.setAttribute(PortalConstants.RELEASE_LIST, CommonUtils.nullToEmptyList(releases));
 
-        super.doView(request, response);
-    }
+		super.doView(request, response);
+	}
 }

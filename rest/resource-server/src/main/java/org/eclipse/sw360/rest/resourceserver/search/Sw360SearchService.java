@@ -33,19 +33,20 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360SearchService {
-    private static final Logger log = LogManager.getLogger(Sw360SearchService.class);
+	private static final Logger log = LogManager.getLogger(Sw360SearchService.class);
 
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
+	@Value("${sw360.thrift-server-url:http://localhost:8080}")
+	private String thriftServerUrl;
 
-    private SearchService.Iface getThriftSearchClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/search/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new SearchService.Client(protocol);
-    }
+	private SearchService.Iface getThriftSearchClient() throws TTransportException {
+		THttpClient thriftClient = new THttpClient(thriftServerUrl + "/search/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		return new SearchService.Client(protocol);
+	}
 
-    public List<SearchResult> search(String searchText, User sw360User, Optional<List<String>> typeMaskOptional) throws TException {
-        List<String> typeMasks = typeMaskOptional.orElseGet(Lists::newArrayList);
-        return getThriftSearchClient().searchFiltered(searchText, sw360User, typeMasks);
-    }
+	public List<SearchResult> search(String searchText, User sw360User, Optional<List<String>> typeMaskOptional)
+			throws TException {
+		List<String> typeMasks = typeMaskOptional.orElseGet(Lists::newArrayList);
+		return getThriftSearchClient().searchFiltered(searchText, sw360User, typeMasks);
+	}
 }

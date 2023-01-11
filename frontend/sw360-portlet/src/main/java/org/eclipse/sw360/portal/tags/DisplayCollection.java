@@ -28,33 +28,31 @@ import java.util.stream.Collectors;
  */
 public class DisplayCollection extends SimpleTagSupport {
 
-    private Collection<String> value;
-    private Collection<String> autoFillValue;
+	private Collection<String> value;
+	private Collection<String> autoFillValue;
 
-    public void setValue(Collection<String> value) {
-        this.value = value;
-    }
+	public void setValue(Collection<String> value) {
+		this.value = value;
+	}
 
-    public void setAutoFillValue(Collection<String> autoFillValue) {
-        this.autoFillValue = autoFillValue;
-    }
+	public void setAutoFillValue(Collection<String> autoFillValue) {
+		this.autoFillValue = autoFillValue;
+	}
 
-    public void doTag() throws JspException, IOException {
-        Collection<String> fullValue;
+	public void doTag() throws JspException, IOException {
+		Collection<String> fullValue;
 
-        if (value == null)
-            fullValue = autoFillValue;
-        else {
-            fullValue = value;
-        }
+		if (value == null)
+			fullValue = autoFillValue;
+		else {
+			fullValue = value;
+		}
 
-
-        if (null != fullValue && !fullValue.isEmpty()) {
-            List<String> valueList = new ArrayList<>(fullValue);
-            Collections.sort(valueList, String.CASE_INSENSITIVE_ORDER);
-            valueList = valueList.stream().map(StringEscapeUtils::escapeXml)
-                    .collect(Collectors.toList());
-            getJspContext().getOut().print(CommonUtils.COMMA_JOINER.join(valueList));
-        }
-    }
+		if (null != fullValue && !fullValue.isEmpty()) {
+			List<String> valueList = new ArrayList<>(fullValue);
+			Collections.sort(valueList, String.CASE_INSENSITIVE_ORDER);
+			valueList = valueList.stream().map(StringEscapeUtils::escapeXml).collect(Collectors.toList());
+			getJspContext().getOut().print(CommonUtils.COMMA_JOINER.join(valueList));
+		}
+	}
 }

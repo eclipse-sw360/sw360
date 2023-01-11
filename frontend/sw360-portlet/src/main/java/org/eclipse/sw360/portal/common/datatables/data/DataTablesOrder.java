@@ -13,19 +13,19 @@ package org.eclipse.sw360.portal.common.datatables.data;
  * @author daniele.fognini@tngtech.com
  */
 public class DataTablesOrder {
-    private final int column;
-    private final boolean ascending;
+	private final int column;
+	private final boolean ascending;
 
-    public DataTablesOrder(int column, boolean ascending) {
-        this.column = column;
-        this.ascending = ascending;
-    }
+	public DataTablesOrder(int column, boolean ascending) {
+		this.column = column;
+		this.ascending = ascending;
+	}
 
-    public int getColumn() {
-        return column;
-    }
+	public int getColumn() {
+		return column;
+	}
 
-    public boolean isAscending() {
-        return ascending;
-    }
+	public boolean isAscending() {
+		return ascending;
+	}
 }

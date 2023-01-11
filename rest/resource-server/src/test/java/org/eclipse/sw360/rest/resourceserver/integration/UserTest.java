@@ -41,57 +41,54 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @RunWith(SpringJUnit4ClassRunner.class)
 public class UserTest extends TestIntegrationBase {
 
-    @Value("${local.server.port}")
-    private int port;
+	@Value("${local.server.port}")
+	private int port;
 
-    @MockBean
-    private Sw360UserService userServiceMock;
+	@MockBean
+	private Sw360UserService userServiceMock;
 
-    @Before
-    public void before() {
-        List<User> userList = new ArrayList<>();
+	@Before
+	public void before() {
+		List<User> userList = new ArrayList<>();
 
-        User user = new User();
-        user.setId("123456789");
-        user.setEmail("admin@sw360.org");
-        user.setFullname("John Doe");
-        userList.add(user);
+		User user = new User();
+		user.setId("123456789");
+		user.setEmail("admin@sw360.org");
+		user.setFullname("John Doe");
+		userList.add(user);
 
-        user = new User();
-        user.setId("987654321");
-        user.setEmail("jane@sw360.org");
-        user.setFullname("Jane Doe");
-        userList.add(user);
+		user = new User();
+		user.setId("987654321");
+		user.setEmail("jane@sw360.org");
+		user.setFullname("Jane Doe");
+		userList.add(user);
 
-        given(this.userServiceMock.getAllUsers()).willReturn(userList);
+		given(this.userServiceMock.getAllUsers()).willReturn(userList);
 
-        given(this.userServiceMock.getUser(user.getId())).willReturn(user);
-    }
+		given(this.userServiceMock.getUser(user.getId())).willReturn(user);
+	}
 
-    @Test
-    public void should_get_all_users() throws IOException {
-        ResponseEntity<String> response = sendRequest("http://localhost:" + port + "/api/users");
-        assertThat(HttpStatus.OK, is(response.getStatusCode()));
+	@Test
+	public void should_get_all_users() throws IOException {
+		ResponseEntity<String> response = sendRequest("http://localhost:" + port + "/api/users");
+		assertThat(HttpStatus.OK, is(response.getStatusCode()));
 
-        TestHelper.checkResponse(response.getBody(), "users", 2);
-    }
+		TestHelper.checkResponse(response.getBody(), "users", 2);
+	}
 
-    @Test
-    public void should_get_single_user_containing_the_correct_self_link() throws IOException {
-        String userLink = "http://localhost:" + port + "/api/users/byid/987654321";
+	@Test
+	public void should_get_single_user_containing_the_correct_self_link() throws IOException {
+		String userLink = "http://localhost:" + port + "/api/users/byid/987654321";
 
-        ResponseEntity<String> response = sendRequest(userLink);
-        assertThat(HttpStatus.OK, is(response.getStatusCode()));
+		ResponseEntity<String> response = sendRequest(userLink);
+		assertThat(HttpStatus.OK, is(response.getStatusCode()));
 
-        JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
-        assertEquals(responseBody.get("_links").get("self").get("href").textValue(), userLink);
-    }
+		JsonNode responseBody = new ObjectMapper().readTree(response.getBody());
+		assertEquals(responseBody.get("_links").get("self").get("href").textValue(), userLink);
+	}
 
-    private ResponseEntity<String> sendRequest(String url) throws IOException {
-        HttpHeaders headers = getHeaders(port);
-        return new TestRestTemplate().exchange(url,
-                HttpMethod.GET,
-                new HttpEntity<>(null, headers),
-                String.class);
-    }
+	private ResponseEntity<String> sendRequest(String url) throws IOException {
+		HttpHeaders headers = getHeaders(port);
+		return new TestRestTemplate().exchange(url, HttpMethod.GET, new HttpEntity<>(null, headers), String.class);
+	}
 }

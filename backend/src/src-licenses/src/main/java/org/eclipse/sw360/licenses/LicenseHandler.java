@@ -10,7 +10,6 @@
  */
 package org.eclipse.sw360.licenses;
 
-
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -43,327 +42,325 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
  */
 public class LicenseHandler implements LicenseService.Iface {
 
-    LicenseDatabaseHandler handler;
-    ObligationElementSearchHandler searchHandler;
+	LicenseDatabaseHandler handler;
+	ObligationElementSearchHandler searchHandler;
 
-    LicenseHandler() throws MalformedURLException, IOException {
-        handler = new LicenseDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
-        searchHandler = new ObligationElementSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
-    }
+	LicenseHandler() throws MalformedURLException, IOException {
+		handler = new LicenseDatabaseHandler(DatabaseSettings.getConfiguredClient(),
+				DatabaseSettings.COUCH_DB_DATABASE);
+		searchHandler = new ObligationElementSearchHandler(DatabaseSettings.getConfiguredHttpClient(),
+				DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
+	}
 
-    LicenseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException, IOException {
-        handler = new LicenseDatabaseHandler(httpClient, dbName);
-    }
+	LicenseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException, IOException {
+		handler = new LicenseDatabaseHandler(httpClient, dbName);
+	}
 
-    /////////////////////
-    // SUMMARY GETTERS //
-    /////////////////////
+	/////////////////////
+	// SUMMARY GETTERS //
+	/////////////////////
 
+	/**
+	 * Get an list of id/identifier/fullname for all licenses. The other fields will
+	 * be set to null.
+	 */
+	@Override
+	public List<License> getLicenseSummary() throws TException {
+		return handler.getLicenseSummary();
+	}
 
-    /**
-     * Get an list of id/identifier/fullname for all licenses. The other fields will be set to null.
-     */
-    @Override
-    public List<License> getLicenseSummary() throws TException {
-        return handler.getLicenseSummary();
-    }
+	/**
+	 * Get an list of license details for Excel export.
+	 */
+	@Override
+	public List<License> getLicenseSummaryForExport() throws TException {
+		return handler.getLicenseSummaryForExport();
+	}
 
-    /**
-     * Get an list of license details for Excel export.
-     */
-    @Override
-    public List<License> getLicenseSummaryForExport() throws TException {
-        return handler.getLicenseSummaryForExport();
-    }
+	@Override
+	public List<License> getDetailedLicenseSummaryForExport(String organisation) throws TException {
+		return handler.getDetailedLicenseSummaryForExport(organisation);
+	}
 
-    @Override
-    public List<License> getDetailedLicenseSummaryForExport(String organisation) throws TException {
-        return handler.getDetailedLicenseSummaryForExport(organisation);
-    }
+	@Override
+	public List<License> getDetailedLicenseSummary(String organisation, List<String> identifiers) throws TException {
+		return handler.getDetailedLicenseSummaryForExport(organisation, identifiers);
+	}
 
-    @Override
-    public List<License> getDetailedLicenseSummary(String organisation, List<String> identifiers) throws TException {
-        return handler.getDetailedLicenseSummaryForExport(organisation, identifiers);
-    }
+	@Override
+	public RequestStatus addLicenseType(LicenseType licenseType, User user) throws TException {
+		assertNotNull(licenseType);
 
-    @Override
-    public RequestStatus addLicenseType(LicenseType licenseType, User user) throws TException {
-        assertNotNull(licenseType);
+		return handler.addLicenseType(licenseType, user);
+	}
 
-        return handler.addLicenseType(licenseType, user);
-    }
+	@Override
+	public List<LicenseType> addLicenseTypes(List<LicenseType> licenseTypes, User user) throws TException {
+		return handler.addLicenseTypes(licenseTypes, user);
+	}
 
-    @Override
-    public List<LicenseType> addLicenseTypes(List<LicenseType> licenseTypes, User user) throws TException {
-        return handler.addLicenseTypes(licenseTypes, user);
-    }
+	@Override
+	public List<License> addLicenses(List<License> licenses, User user) throws TException {
+		return handler.addOrOverwriteLicenses(licenses, user, false);
+	}
 
-    @Override
-    public List<License> addLicenses(List<License> licenses, User user) throws TException {
-        return handler.addOrOverwriteLicenses(licenses, user, false);
-    }
+	@Override
+	public List<License> addOrOverwriteLicenses(List<License> licenses, User user) throws TException {
+		return handler.addOrOverwriteLicenses(licenses, user, true);
+	}
 
-    @Override
-    public List<License> addOrOverwriteLicenses(List<License> licenses, User user) throws TException {
-        return handler.addOrOverwriteLicenses(licenses, user, true);
-    }
+	@Override
+	public List<Obligation> addListOfObligations(List<Obligation> ListOfObligations, User user) throws TException {
+		return handler.addListOfObligations(ListOfObligations, user);
 
-    @Override
-    public List<Obligation> addListOfObligations(List<Obligation> ListOfObligations, User user) throws TException {
-        return handler.addListOfObligations(ListOfObligations, user);
+	}
 
-    }
+	@Override
+	public List<LicenseType> getLicenseTypes() throws TException {
+		return handler.getLicenseTypes();
+	}
 
-    @Override
-    public List<LicenseType> getLicenseTypes() throws TException {
-        return handler.getLicenseTypes();
-    }
+	@Override
+	public List<License> getLicenses() throws TException {
+		return handler.getLicenses();
+	}
 
-    @Override
-    public List<License> getLicenses() throws TException {
-        return handler.getLicenses();
-    }
+	@Override
+	public List<Obligation> getObligations() throws TException {
+		return handler.getObligations();
+	}
 
-    @Override
-    public List<Obligation> getObligations() throws TException {
-        return handler.getObligations();
-    }
+	@Override
+	public List<ObligationNode> getObligationNodes() throws TException {
+		return handler.getObligationNodes();
+	}
 
-    @Override
-    public List<ObligationNode> getObligationNodes() throws TException {
-        return handler.getObligationNodes();
-    }
+	@Override
+	public List<ObligationElement> getObligationElements() throws TException {
+		return handler.getObligationElements();
+	}
 
-    @Override
-    public List<ObligationElement> getObligationElements() throws TException {
-        return handler.getObligationElements();
-    }
+	@Override
+	public List<LicenseType> getLicenseTypesByIds(List<String> ids) throws TException {
+		assertNotEmpty(ids);
+		return handler.getLicenseTypesByIds(ids);
+	}
 
-    @Override
-    public List<LicenseType> getLicenseTypesByIds(List<String> ids) throws TException {
-        assertNotEmpty(ids);
-        return handler.getLicenseTypesByIds(ids);
-    }
+	@Override
+	public List<Obligation> getObligationsByIds(List<String> ids) throws TException {
+		assertNotEmpty(ids);
+		return handler.getObligationsByIds(ids);
+	}
 
-    @Override
-    public List<Obligation> getObligationsByIds(List<String> ids) throws TException {
-        assertNotEmpty(ids);
-        return handler.getObligationsByIds(ids);
-    }
+	////////////////////////////
+	// GET INDIVIDUAL OBJECTS //
+	////////////////////////////
 
+	/**
+	 * Get a single license by providing its ID, with obligations filtered for the
+	 * given organisation
+	 */
+	@Override
+	public License getByID(String id, String organisation) throws SW360Exception {
+		assertNotEmpty(id);
+		assertNotEmpty(organisation);
 
+		return handler.getLicenseForOrganisation(id, organisation);
+	}
 
-    ////////////////////////////
-    // GET INDIVIDUAL OBJECTS //
-    ////////////////////////////
+	@Override
+	public License getByIDWithOwnModerationRequests(String id, String organisation, User user) throws TException {
+		assertNotEmpty(id);
+		assertNotEmpty(organisation);
+		assertUser(user);
 
-    /**
-     * Get a single license by providing its ID, with obligations filtered for the given organisation
-     */
-    @Override
-    public License getByID(String id, String organisation) throws SW360Exception {
-        assertNotEmpty(id);
-        assertNotEmpty(organisation);
+		return handler.getLicenseForOrganisationWithOwnModerationRequests(id, organisation, user);
+	}
 
-        return handler.getLicenseForOrganisation(id, organisation);
-    }
+	@Override
+	public List<License> getByIds(Set<String> ids, String organisation) throws TException {
+		assertNotNull(ids);
+		assertNotEmpty(organisation);
 
-    @Override
-    public License getByIDWithOwnModerationRequests(String id, String organisation, User user) throws TException {
-        assertNotEmpty(id);
-        assertNotEmpty(organisation);
-        assertUser(user);
+		return handler.getLicenses(ids, organisation);
+	}
 
-        return handler.getLicenseForOrganisationWithOwnModerationRequests(id, organisation, user);
-    }
+	@Override
+	public LicenseType getLicenseTypeById(String id) throws TException {
+		assertNotEmpty(id);
+		return handler.getLicenseTypeById(id);
+	}
 
-    @Override
-    public List<License> getByIds(Set<String> ids, String organisation) throws TException {
-        assertNotNull(ids);
-        assertNotEmpty(organisation);
+	@Override
+	public Obligation getObligationsById(String id) throws TException {
+		assertNotEmpty(id);
+		return handler.getObligationsById(id);
+	}
 
-        return handler.getLicenses(ids, organisation);
-    }
+	@Override
+	public ObligationNode getObligationNodeById(String id) throws TException {
+		assertNotEmpty(id);
+		return handler.getObligationNodeById(id);
+	}
 
-    @Override
-    public LicenseType getLicenseTypeById(String id) throws TException {
-        assertNotEmpty(id);
-        return handler.getLicenseTypeById(id);
-    }
+	@Override
+	public ObligationElement getObligationElementById(String id) throws TException {
+		assertNotEmpty(id);
+		return handler.getObligationElementById(id);
+	}
 
-    @Override
-    public Obligation getObligationsById(String id) throws TException {
-        assertNotEmpty(id);
-        return handler.getObligationsById(id);
-    }
+	////////////////////
+	// BUSINESS LOGIC //
+	////////////////////
 
-    @Override
-    public ObligationNode getObligationNodeById(String id) throws TException {
-        assertNotEmpty(id);
-        return handler.getObligationNodeById(id);
-    }
+	/**
+	 * Add a new obligation object
+	 */
+	@Override
+	public String addObligations(Obligation obligs, User user) throws TException {
+		assertNotNull(obligs);
+		assertIdUnset(obligs.getId());
 
-    @Override
-    public ObligationElement getObligationElementById(String id) throws TException {
-        assertNotEmpty(id);
-        return handler.getObligationElementById(id);
-    }
+		return handler.addObligations(obligs, user);
+	}
 
-    ////////////////////
-    // BUSINESS LOGIC //
-    ////////////////////
+	/**
+	 * Add a new obligation element object
+	 */
+	@Override
+	public String addObligationElements(ObligationElement obligationElement, User user) throws TException {
+		assertNotNull(obligationElement);
+		assertIdUnset(obligationElement.getId());
 
-    /**
-     * Add a new obligation object
-     */
-    @Override
-    public String addObligations(Obligation obligs, User user) throws TException {
-        assertNotNull(obligs);
-        assertIdUnset(obligs.getId());
+		return handler.addObligationElements(obligationElement, user);
+	}
 
-        return handler.addObligations(obligs, user);
-    }
+	/**
+	 * Add a new obligation node object
+	 */
+	@Override
+	public String addObligationNodes(ObligationNode obligationNode, User user) throws TException {
+		assertNotNull(obligationNode);
+		assertIdUnset(obligationNode.getId());
 
-    /**
-     * Add a new obligation element object
-     */
-    @Override
-    public String addObligationElements(ObligationElement obligationElement, User user) throws TException {
-        assertNotNull(obligationElement);
-        assertIdUnset(obligationElement.getId());
+		return handler.addObligationNodes(obligationNode, user);
+	}
 
-        return handler.addObligationElements(obligationElement, user);
-    }
+	/**
+	 * Add an existing oblig to a license
+	 */
+	@Override
+	public RequestStatus addObligationsToLicense(Set<Obligation> obligs, License license, User user) throws TException {
+		assertNotNull(license);
+		return handler.addObligationsToLicense(obligs, license, user);
+	}
 
-    /**
-     * Add a new obligation node object
-     */
-    @Override
-    public String addObligationNodes(ObligationNode obligationNode, User user) throws TException {
-        assertNotNull(obligationNode);
-        assertIdUnset(obligationNode.getId());
+	@Override
+	public RequestStatus updateLicense(License license, User user, User requestingUser) throws TException {
+		return handler.updateLicense(license, user, requestingUser);
+	}
 
-        return handler.addObligationNodes(obligationNode, user);
-    }
+	@Override
+	public RequestStatus updateLicenseFromModerationRequest(License licenseAdditions, License licenseDeletions,
+			User user, User requestingUser) {
+		return handler.updateLicenseFromAdditionsAndDeletions(licenseAdditions, licenseDeletions, user, requestingUser);
+	}
 
-    /**
-     * Add an existing oblig to a license
-     */
-    @Override
-    public RequestStatus addObligationsToLicense(Set<Obligation> obligs, License license, User user) throws TException {
-       assertNotNull(license);
-       return  handler.addObligationsToLicense(obligs, license, user);
-    }
+	@Override
+	public RequestStatus updateWhitelist(String licenceId, Set<String> whitelist, User user) throws TException {
+		assertNotEmpty(licenceId);
+		assertUser(user);
 
-    @Override
-    public RequestStatus updateLicense(License license, User user, User requestingUser) throws TException {
-        return handler.updateLicense(license, user, requestingUser);
-    }
+		return handler.updateWhitelist(licenceId, whitelist, user);
+	}
 
-    @Override
-    public RequestStatus updateLicenseFromModerationRequest(License licenseAdditions,
-                                                            License licenseDeletions,
-                                                            User user,
-                                                            User requestingUser){
-        return handler.updateLicenseFromAdditionsAndDeletions(licenseAdditions,
-                licenseDeletions, user, requestingUser);
-    }
+	@Override
+	public RequestStatus deleteLicense(String id, User user) throws TException {
+		assertId(id);
+		assertUser(user);
 
-    @Override
-    public RequestStatus updateWhitelist(String licenceId, Set<String> whitelist, User user) throws TException {
-        assertNotEmpty(licenceId);
-        assertUser(user);
+		return handler.deleteLicense(id, user);
+	}
 
-        return handler.updateWhitelist(licenceId, whitelist, user);
-    }
+	@Override
+	public List<CustomProperties> getCustomProperties(String documentType) {
+		return handler.getCustomProperties(documentType);
+	}
 
-    @Override
-    public RequestStatus deleteLicense(String id, User user) throws TException {
-        assertId(id);
-        assertUser(user);
+	@Override
+	public RequestStatus updateCustomProperties(CustomProperties customProperties, User user) {
+		if (!PermissionUtils.isAdmin(user)) {
+			return RequestStatus.FAILURE;
+		}
+		return handler.addOrUpdateCustomProperties(customProperties);
+	}
 
-        return handler.deleteLicense(id, user);
-    }
+	@Override
+	public RequestSummary deleteAllLicenseInformation(User user) {
+		if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
+			return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
+		}
+		return handler.deleteAllLicenseInformation();
+	}
 
-    @Override
-    public List<CustomProperties> getCustomProperties(String documentType) {
-        return handler.getCustomProperties(documentType);
-    }
+	@Override
+	public RequestSummary importAllSpdxLicenses(User user) throws TException {
+		if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
+			return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
+		}
+		return handler.importAllSpdxLicenses(user);
+	}
 
-    @Override
-    public RequestStatus updateCustomProperties(CustomProperties customProperties, User user){
-        if(! PermissionUtils.isAdmin(user)){
-            return RequestStatus.FAILURE;
-        }
-        return handler.addOrUpdateCustomProperties(customProperties);
-    }
+	@Override
+	public RequestSummary importAllOSADLLicenses(User user) throws TException {
+		if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
+			return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
+		}
+		return handler.importAllOSADLLicenses(user);
+	}
 
-    @Override
-    public RequestSummary deleteAllLicenseInformation(User user) {
-        if(! PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)){
-            return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
-        }
-        return handler.deleteAllLicenseInformation();
-    }
+	@Override
+	public RequestStatus deleteObligations(String id, User user) throws TException {
+		assertId(id);
+		assertUser(user);
+		return handler.deleteObligations(id, user);
+	}
 
-    @Override
-    public RequestSummary importAllSpdxLicenses(User user) throws TException {
-        if(! PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
-            return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
-        }
-        return handler.importAllSpdxLicenses(user);
-    }
+	@Override
+	public RequestStatus deleteLicenseType(String id, User user) throws TException {
+		assertId(id);
+		assertUser(user);
+		return handler.deleteLicenseType(id, user);
+	}
 
-    @Override
-    public RequestSummary importAllOSADLLicenses(User user) throws TException {
-        if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)) {
-            return new RequestSummary().setRequestStatus(RequestStatus.FAILURE);
-        }
-        return handler.importAllOSADLLicenses(user);
-    }
+	@Override
+	public int checkLicenseTypeInUse(String id) throws TException {
+		assertId(id);
+		return handler.checkLicenseTypeInUse(id);
+	}
 
-    @Override
-    public RequestStatus deleteObligations(String id, User user) throws TException {
-        assertId(id);
-        assertUser(user);
-        return handler.deleteObligations(id, user);
-    }
+	public String addNodes(String jsonString, User user) throws TException {
+		return handler.addNodes(jsonString, user);
+	}
 
-    @Override
-    public RequestStatus deleteLicenseType(String id, User user) throws TException {
-        assertId(id);
-        assertUser(user);
-        return handler.deleteLicenseType(id, user);
-    }
+	@Override
+	public String buildObligationText(String nodes, String level) throws TException {
+		return handler.buildObligationText(nodes, Integer.parseInt(level));
+	}
 
-    @Override
-    public int checkLicenseTypeInUse(String id) throws TException {
-        assertId(id);
-        return handler.checkLicenseTypeInUse(id);
-    }
+	@Override
+	public List<ObligationElement> searchObligationElement(String text) throws TException {
+		return searchHandler.search(text);
+	}
 
-    public String addNodes(String jsonString, User user) throws TException {
-        return handler.addNodes(jsonString, user);
-    }
+	@Override
+	public String convertTextToNode(Obligation obligation, User user) throws TException {
+		String node = handler.convertTextToNodes(obligation, user);
+		return node;
+	}
 
-    @Override
-    public String buildObligationText(String nodes, String level) throws TException {
-        return handler.buildObligationText(nodes, Integer.parseInt(level));
-    }
-
-    @Override
-    public List<ObligationElement> searchObligationElement(String text) throws TException {
-        return searchHandler.search(text);
-    }
-
-    @Override
-    public String convertTextToNode(Obligation obligation, User user) throws TException {
-        String node= handler.convertTextToNodes(obligation,user);
-        return node;
-    }
-
-    @Override
-    public String updateObligation(Obligation oblig, User user) throws TException {
-        return handler.updateObligation(oblig, user);
-    }
+	@Override
+	public String updateObligation(Obligation oblig, User user) throws TException {
+		return handler.updateObligation(oblig, user);
+	}
 }

@@ -23,14 +23,13 @@ import static org.junit.Assert.assertThat;
  * @author johannes.najjar@tngtech.com
  * @author alex.borodin@evosoft.com
  */
-public class ThenHighestAllowedAction  extends Stage<ThenHighestAllowedAction> {
+public class ThenHighestAllowedAction extends Stage<ThenHighestAllowedAction> {
 
-    @ExpectedScenarioState
-    List<RequestedAction> allowedActions;
+	@ExpectedScenarioState
+	List<RequestedAction> allowedActions;
 
-
-    public ThenHighestAllowedAction the_allowed_actions_should_be(List<RequestedAction> i) {
-        assertThat(allowedActions, is(i));
-        return self();
-    }
+	public ThenHighestAllowedAction the_allowed_actions_should_be(List<RequestedAction> i) {
+		assertThat(allowedActions, is(i));
+		return self();
+	}
 }

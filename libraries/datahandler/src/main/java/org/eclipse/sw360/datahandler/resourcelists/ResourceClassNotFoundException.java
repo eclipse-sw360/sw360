@@ -13,8 +13,8 @@ package org.eclipse.sw360.datahandler.resourcelists;
 
 public class ResourceClassNotFoundException extends Exception {
 
-    public ResourceClassNotFoundException(String message) {
-        super(message);
-    }
+	public ResourceClassNotFoundException(String message) {
+		super(message);
+	}
 
 }

@@ -21,21 +21,21 @@ import javax.portlet.PortletRequest;
  */
 
 public abstract class SignupPortletUtils {
-    private SignupPortletUtils() {
-        // Utility class with only static functions
-    }
+	private SignupPortletUtils() {
+		// Utility class with only static functions
+	}
 
-    static void updateUserFromRequest(PortletRequest request, User user) {
-        for (User._Fields field : User._Fields.values()) {
-            switch (field) {
-                default:
-                    setFieldValue(request, user, field);
-            }
-        }
-    }
+	static void updateUserFromRequest(PortletRequest request, User user) {
+		for (User._Fields field : User._Fields.values()) {
+			switch (field) {
+				default :
+					setFieldValue(request, user, field);
+			}
+		}
+	}
 
-    private static void setFieldValue(PortletRequest request, User user , User._Fields field) {
-        PortletUtils.setFieldValue(request, user, field, User.metaDataMap.get(field), "");
-    }
+	private static void setFieldValue(PortletRequest request, User user, User._Fields field) {
+		PortletUtils.setFieldValue(request, user, field, User.metaDataMap.get(field), "");
+	}
 
 }

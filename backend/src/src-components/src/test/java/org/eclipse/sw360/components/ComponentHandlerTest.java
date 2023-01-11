@@ -36,65 +36,66 @@ import static org.junit.Assert.fail;
  */
 public class ComponentHandlerTest {
 
-    private ComponentHandler componentHandler;
-    private User adminUser = TestUtils.getAdminUser(getClass());
+	private ComponentHandler componentHandler;
+	private User adminUser = TestUtils.getAdminUser(getClass());
 
-    @Before
-    public void setUp() throws Exception {
-        assertTestDbNames();
-        deleteAllDatabases();
-        componentHandler = new ComponentHandler(DatabaseSettingsTest.getConfiguredClient(),
-                DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE,
-                DatabaseSettingsTest.COUCH_CHANGELOGS, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
-    }
+	@Before
+	public void setUp() throws Exception {
+		assertTestDbNames();
+		deleteAllDatabases();
+		componentHandler = new ComponentHandler(DatabaseSettingsTest.getConfiguredClient(),
+				DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE,
+				DatabaseSettingsTest.COUCH_CHANGELOGS, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
+	}
 
-    @After
-    public void tearDown() throws Exception {
-        deleteAllDatabases();
-    }
+	@After
+	public void tearDown() throws Exception {
+		deleteAllDatabases();
+	}
 
-    @Test
-    public void testGetByUploadId() throws Exception {
+	@Test
+	public void testGetByUploadId() throws Exception {
 
-        Component originalComponent = new Component("name").setDescription("a desc").setComponentType(ComponentType.OSS);
-        originalComponent.addToCategories("Library");
-        String componentId = componentHandler.addComponent(originalComponent, adminUser).getId();
+		Component originalComponent = new Component("name").setDescription("a desc")
+				.setComponentType(ComponentType.OSS);
+		originalComponent.addToCategories("Library");
+		String componentId = componentHandler.addComponent(originalComponent, adminUser).getId();
 
-        Release release = new Release("name", "version", componentId);
-        ExternalToolProcess etp = new ExternalToolProcess();
-        etp.setExternalTool(ExternalTool.FOSSOLOGY);
-        release.addToExternalToolProcesses(etp);
-        ExternalToolProcessStep etps = new ExternalToolProcessStep();
-        // do not use FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD so that test fails when
-        // it gets refactored and no one thinks of adjusting the view definition in
-        // ComponentRepository
-        etps.setStepName("01_upload");
-        etps.setProcessStepIdInTool("12345");
-        etp.addToProcessSteps(etps);
-        String releaseId = componentHandler.addRelease(release, adminUser).getId();
+		Release release = new Release("name", "version", componentId);
+		ExternalToolProcess etp = new ExternalToolProcess();
+		etp.setExternalTool(ExternalTool.FOSSOLOGY);
+		release.addToExternalToolProcesses(etp);
+		ExternalToolProcessStep etps = new ExternalToolProcessStep();
+		// do not use FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD so that test fails when
+		// it gets refactored and no one thinks of adjusting the view definition in
+		// ComponentRepository
+		etps.setStepName("01_upload");
+		etps.setProcessStepIdInTool("12345");
+		etp.addToProcessSteps(etps);
+		String releaseId = componentHandler.addRelease(release, adminUser).getId();
 
-        Component component = componentHandler.getComponentForReportFromFossologyUploadId("12345");
+		Component component = componentHandler.getComponentForReportFromFossologyUploadId("12345");
 
-        assertThat(component, is(not(nullValue())));
-        assertThat(component, is(equalTo(originalComponent, restrictedToFields(ID, NAME, DESCRIPTION))));
+		assertThat(component, is(not(nullValue())));
+		assertThat(component, is(equalTo(originalComponent, restrictedToFields(ID, NAME, DESCRIPTION))));
 
-        assertThat(componentHandler.getReleaseById(releaseId, adminUser), is(not(nullValue())));
-        assertThat(componentHandler.getComponentById(componentId, adminUser), is(not(nullValue())));
+		assertThat(componentHandler.getReleaseById(releaseId, adminUser), is(not(nullValue())));
+		assertThat(componentHandler.getComponentById(componentId, adminUser), is(not(nullValue())));
 
-        assertThat(componentHandler.deleteRelease(releaseId, adminUser), is(RequestStatus.SUCCESS));
-        assertThat(componentHandler.deleteComponent(componentId, adminUser), is(RequestStatus.SUCCESS));
+		assertThat(componentHandler.deleteRelease(releaseId, adminUser), is(RequestStatus.SUCCESS));
+		assertThat(componentHandler.deleteComponent(componentId, adminUser), is(RequestStatus.SUCCESS));
 
-        try {
-            componentHandler.getReleaseById(releaseId, adminUser);
-            fail("expected exception not thrown");
-        } catch (SW360Exception e) {
-            assertThat(e.getWhy(), containsString("Could not fetch"));
-        }
-        try {
-            componentHandler.getComponentById(componentId, adminUser);
-            fail("expected exception not thrown");
-        } catch (SW360Exception e) {
-            assertThat(e.getWhy(), containsString("Could not fetch"));
-        }
-    }
+		try {
+			componentHandler.getReleaseById(releaseId, adminUser);
+			fail("expected exception not thrown");
+		} catch (SW360Exception e) {
+			assertThat(e.getWhy(), containsString("Could not fetch"));
+		}
+		try {
+			componentHandler.getComponentById(componentId, adminUser);
+			fail("expected exception not thrown");
+		} catch (SW360Exception e) {
+			assertThat(e.getWhy(), containsString("Could not fetch"));
+		}
+	}
 }

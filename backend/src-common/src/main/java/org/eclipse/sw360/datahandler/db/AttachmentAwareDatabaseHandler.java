@@ -36,71 +36,77 @@ import com.google.common.collect.Sets;
 
 public abstract class AttachmentAwareDatabaseHandler {
 
-    protected AttachmentDatabaseHandler attachmentDatabaseHandler;
+	protected AttachmentDatabaseHandler attachmentDatabaseHandler;
 
-    protected AttachmentAwareDatabaseHandler(AttachmentDatabaseHandler attachmentDatabaseHandler) {
-        this.attachmentDatabaseHandler = attachmentDatabaseHandler;
-    }
+	protected AttachmentAwareDatabaseHandler(AttachmentDatabaseHandler attachmentDatabaseHandler) {
+		this.attachmentDatabaseHandler = attachmentDatabaseHandler;
+	}
 
-    protected AttachmentAwareDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
-        this(new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName));
-    }
+	protected AttachmentAwareDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName,
+			String attachmentDbName) throws MalformedURLException {
+		this(new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName));
+	}
 
-    protected Source toSource(Release release){
-        return Source.releaseId(release.getId());
-    }
+	protected Source toSource(Release release) {
+		return Source.releaseId(release.getId());
+	}
 
-    protected Source toSource(Component component){
-        return Source.releaseId(component.getId());
-    }
+	protected Source toSource(Component component) {
+		return Source.releaseId(component.getId());
+	}
 
-    protected Source toSource(Project project){
-        return Source.releaseId(project.getId());
-    }
+	protected Source toSource(Project project) {
+		return Source.releaseId(project.getId());
+	}
 
-    public Set<Attachment> getAllAttachmentsToKeep(Source owner, Set<Attachment> originalAttachments, Set<Attachment> changedAttachments) {
-        Map<String, Attachment> attachmentsToKeep = nullToEmptySet(changedAttachments).stream()
-                .collect(Collectors.toMap(Attachment::getAttachmentContentId, a -> a));
-        Set<Attachment> actualAttachments = nullToEmptySet(originalAttachments);
+	public Set<Attachment> getAllAttachmentsToKeep(Source owner, Set<Attachment> originalAttachments,
+			Set<Attachment> changedAttachments) {
+		Map<String, Attachment> attachmentsToKeep = nullToEmptySet(changedAttachments).stream()
+				.collect(Collectors.toMap(Attachment::getAttachmentContentId, a -> a));
+		Set<Attachment> actualAttachments = nullToEmptySet(originalAttachments);
 
-        // prevent deletion of already accepted attachments
-        Set<Attachment> checkedActualAttachments = actualAttachments.stream()
-                .filter(a -> (a.getCheckStatus() == CheckStatus.ACCEPTED)).collect(Collectors.toSet());
+		// prevent deletion of already accepted attachments
+		Set<Attachment> checkedActualAttachments = actualAttachments.stream()
+				.filter(a -> (a.getCheckStatus() == CheckStatus.ACCEPTED)).collect(Collectors.toSet());
 
-        checkedActualAttachments.forEach(a -> attachmentsToKeep.putIfAbsent(a.getAttachmentContentId(), a));
+		checkedActualAttachments.forEach(a -> attachmentsToKeep.putIfAbsent(a.getAttachmentContentId(), a));
 
-        // prevent deletion of used attachments
-        Set<String> attachmentContentIds = actualAttachments.stream().map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
-        ImmutableMap<Source, Set<String>> usageSearchParameter = ImmutableMap.of(owner, attachmentContentIds);
-        Map<Map<Source, String>, Integer> attachmentUsageCount = attachmentDatabaseHandler.getAttachmentUsageCount(usageSearchParameter, null);
-        Set<Attachment> usedActualAttachments = actualAttachments.stream()
-                .filter(attachment -> attachmentUsageCount.getOrDefault(ImmutableMap.of(owner, attachment.getAttachmentContentId()), 0) > 0)
-                .collect(Collectors.toSet());
+		// prevent deletion of used attachments
+		Set<String> attachmentContentIds = actualAttachments.stream().map(Attachment::getAttachmentContentId)
+				.collect(Collectors.toSet());
+		ImmutableMap<Source, Set<String>> usageSearchParameter = ImmutableMap.of(owner, attachmentContentIds);
+		Map<Map<Source, String>, Integer> attachmentUsageCount = attachmentDatabaseHandler
+				.getAttachmentUsageCount(usageSearchParameter, null);
+		Set<Attachment> usedActualAttachments = actualAttachments.stream()
+				.filter(attachment -> attachmentUsageCount
+						.getOrDefault(ImmutableMap.of(owner, attachment.getAttachmentContentId()), 0) > 0)
+				.collect(Collectors.toSet());
 
-        usedActualAttachments.forEach(a -> attachmentsToKeep.putIfAbsent(a.getAttachmentContentId(), a));
+		usedActualAttachments.forEach(a -> attachmentsToKeep.putIfAbsent(a.getAttachmentContentId(), a));
 
-        return new HashSet<>(attachmentsToKeep.values());
-    }
+		return new HashSet<>(attachmentsToKeep.values());
+	}
 
-    protected void deleteAttachmentUsagesOfUnlinkedReleases(Source usedBy, Set<String> updatedLinkedReleaseIds, Set<String> actualLinkedReleaseIds) throws SW360Exception {
-        Sets.SetView<String> deletedLinkedReleaseIds = Sets.difference(actualLinkedReleaseIds, updatedLinkedReleaseIds);
-        Set<Source> owners = deletedLinkedReleaseIds.stream().map(Source::releaseId).collect(Collectors.toSet());
-        attachmentDatabaseHandler.deleteUsagesBy(usedBy, owners);
-    }
+	protected void deleteAttachmentUsagesOfUnlinkedReleases(Source usedBy, Set<String> updatedLinkedReleaseIds,
+			Set<String> actualLinkedReleaseIds) throws SW360Exception {
+		Sets.SetView<String> deletedLinkedReleaseIds = Sets.difference(actualLinkedReleaseIds, updatedLinkedReleaseIds);
+		Set<Source> owners = deletedLinkedReleaseIds.stream().map(Source::releaseId).collect(Collectors.toSet());
+		attachmentDatabaseHandler.deleteUsagesBy(usedBy, owners);
+	}
 
-    protected <T extends TBase<T, ? extends TFieldIdEnum>> void updateModifiedFields(T type, String userEmail) {
-        if (type instanceof Release) {
-            Release release = (Release) type;
-            release.setModifiedBy(userEmail);
-            release.setModifiedOn(SW360Utils.getCreatedOn());
-        } else if (type instanceof Component) {
-            Component component = (Component) type;
-            component.setModifiedBy(userEmail);
-            component.setModifiedOn(SW360Utils.getCreatedOn());
-        } else if (type instanceof Project) {
-            Project project = (Project) type;
-            project.setModifiedBy(userEmail);
-            project.setModifiedOn(SW360Utils.getCreatedOn());
-        }
-    }
+	protected <T extends TBase<T, ? extends TFieldIdEnum>> void updateModifiedFields(T type, String userEmail) {
+		if (type instanceof Release) {
+			Release release = (Release) type;
+			release.setModifiedBy(userEmail);
+			release.setModifiedOn(SW360Utils.getCreatedOn());
+		} else if (type instanceof Component) {
+			Component component = (Component) type;
+			component.setModifiedBy(userEmail);
+			component.setModifiedOn(SW360Utils.getCreatedOn());
+		} else if (type instanceof Project) {
+			Project project = (Project) type;
+			project.setModifiedBy(userEmail);
+			project.setModifiedOn(SW360Utils.getCreatedOn());
+		}
+	}
 }

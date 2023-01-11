@@ -29,112 +29,115 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
-
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360VendorService {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
+	@Value("${sw360.thrift-server-url:http://localhost:8080}")
+	private String thriftServerUrl;
 
-    public List<Vendor> getVendors() {
-        try {
-            VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            return sw360VendorClient.getAllVendors();
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public List<Vendor> getVendors() {
+		try {
+			VendorService.Iface sw360VendorClient = getThriftVendorClient();
+			return sw360VendorClient.getAllVendors();
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public Vendor getVendorById(String vendorId) {
-        try {
-            VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            return sw360VendorClient.getByID(vendorId);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public Vendor getVendorById(String vendorId) {
+		try {
+			VendorService.Iface sw360VendorClient = getThriftVendorClient();
+			return sw360VendorClient.getByID(vendorId);
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public Vendor getVendorByFullName(String fullName) {
-        try {
-            VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            for (Vendor vendor : sw360VendorClient.getAllVendors()) {
-                if(fullName.equals(vendor.getFullname())) {
-                    return vendor;
-                }
-            }
-            return null;
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public Vendor getVendorByFullName(String fullName) {
+		try {
+			VendorService.Iface sw360VendorClient = getThriftVendorClient();
+			for (Vendor vendor : sw360VendorClient.getAllVendors()) {
+				if (fullName.equals(vendor.getFullname())) {
+					return vendor;
+				}
+			}
+			return null;
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public Vendor createVendor(Vendor vendor) {
-        try {
-            VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            if (CommonUtils.isNullEmptyOrWhitespace(vendor.getFullname()) || CommonUtils.isNullEmptyOrWhitespace(vendor.getShortname())
-                    || CommonUtils.isNullEmptyOrWhitespace(vendor.getUrl())) {
-                throw new HttpMessageNotReadableException("A Vendor cannot have null or empty 'Full Name' or 'Short Name' or 'URL'!");
-            }
-            AddDocumentRequestSummary summary = sw360VendorClient.addVendor(vendor);
-            if (AddDocumentRequestStatus.SUCCESS.equals(summary.getRequestStatus())) {
-                vendor.setId(summary.getId());
-                return vendor;
-            } else if (AddDocumentRequestStatus.DUPLICATE.equals(summary.getRequestStatus())) {
-                throw new DataIntegrityViolationException("A Vendor with same full name '" + vendor.getFullname() + "' and URL already exists!");
-            } else if (AddDocumentRequestStatus.FAILURE.equals(summary.getRequestStatus())) {
-                throw new HttpMessageNotReadableException(summary.getMessage());
-            }
-            return null;
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public Vendor createVendor(Vendor vendor) {
+		try {
+			VendorService.Iface sw360VendorClient = getThriftVendorClient();
+			if (CommonUtils.isNullEmptyOrWhitespace(vendor.getFullname())
+					|| CommonUtils.isNullEmptyOrWhitespace(vendor.getShortname())
+					|| CommonUtils.isNullEmptyOrWhitespace(vendor.getUrl())) {
+				throw new HttpMessageNotReadableException(
+						"A Vendor cannot have null or empty 'Full Name' or 'Short Name' or 'URL'!");
+			}
+			AddDocumentRequestSummary summary = sw360VendorClient.addVendor(vendor);
+			if (AddDocumentRequestStatus.SUCCESS.equals(summary.getRequestStatus())) {
+				vendor.setId(summary.getId());
+				return vendor;
+			} else if (AddDocumentRequestStatus.DUPLICATE.equals(summary.getRequestStatus())) {
+				throw new DataIntegrityViolationException(
+						"A Vendor with same full name '" + vendor.getFullname() + "' and URL already exists!");
+			} else if (AddDocumentRequestStatus.FAILURE.equals(summary.getRequestStatus())) {
+				throw new HttpMessageNotReadableException(summary.getMessage());
+			}
+			return null;
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public void updateVendor(Vendor vendor, User sw360User) {
-        try {
-            VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            RequestStatus requestStatus = sw360VendorClient.updateVendor(vendor, sw360User);
-            if (RequestStatus.SUCCESS.equals(requestStatus)) {
-                return;
-            } else if (RequestStatus.DUPLICATE.equals(requestStatus)) {
-                throw new DataIntegrityViolationException("A Vendor with same full name '" + vendor.getFullname() + "' and URL already exists!");
-            }
-            throw new RuntimeException("sw360 vendor with full name '" + vendor.getFullname() + " cannot be updated.");
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public void updateVendor(Vendor vendor, User sw360User) {
+		try {
+			VendorService.Iface sw360VendorClient = getThriftVendorClient();
+			RequestStatus requestStatus = sw360VendorClient.updateVendor(vendor, sw360User);
+			if (RequestStatus.SUCCESS.equals(requestStatus)) {
+				return;
+			} else if (RequestStatus.DUPLICATE.equals(requestStatus)) {
+				throw new DataIntegrityViolationException(
+						"A Vendor with same full name '" + vendor.getFullname() + "' and URL already exists!");
+			}
+			throw new RuntimeException("sw360 vendor with full name '" + vendor.getFullname() + " cannot be updated.");
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public void deleteVendor(Vendor vendor, User sw360User) {
-        try {
-            VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            RequestStatus requestStatus = sw360VendorClient.deleteVendor(vendor.getId(), sw360User);
-            if (requestStatus == RequestStatus.SUCCESS) {
-                return;
-            }
-            throw new RuntimeException("sw360 vendor with name '" + vendor.getFullname() + " cannot be deleted.");
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public void deleteVendor(Vendor vendor, User sw360User) {
+		try {
+			VendorService.Iface sw360VendorClient = getThriftVendorClient();
+			RequestStatus requestStatus = sw360VendorClient.deleteVendor(vendor.getId(), sw360User);
+			if (requestStatus == RequestStatus.SUCCESS) {
+				return;
+			}
+			throw new RuntimeException("sw360 vendor with name '" + vendor.getFullname() + " cannot be deleted.");
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public void deleteAllVendors(User sw360User) {
-        try {
-            VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            List<Vendor> vendors = sw360VendorClient.getAllVendors();
-            for (Vendor vendor : vendors) {
-                sw360VendorClient.deleteVendor(vendor.getId(), sw360User);
-            }
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public void deleteAllVendors(User sw360User) {
+		try {
+			VendorService.Iface sw360VendorClient = getThriftVendorClient();
+			List<Vendor> vendors = sw360VendorClient.getAllVendors();
+			for (Vendor vendor : vendors) {
+				sw360VendorClient.deleteVendor(vendor.getId(), sw360User);
+			}
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    private VendorService.Iface getThriftVendorClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/vendors/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new VendorService.Client(protocol);
-    }
+	private VendorService.Iface getThriftVendorClient() throws TTransportException {
+		THttpClient thriftClient = new THttpClient(thriftServerUrl + "/vendors/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		return new VendorService.Client(protocol);
+	}
 }

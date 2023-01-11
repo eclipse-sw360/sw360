@@ -23,16 +23,16 @@ import org.eclipse.sw360.clients.rest.resource.Embedded;
  * </p>
  * <p>
  * Normally, the Jackson deserializer has sufficient information to derive the
- * class of an object to be de-serialized from the context, i.e. the object
- * that embeds another one. Only in the special case that no concrete value is
+ * class of an object to be de-serialized from the context, i.e. the object that
+ * embeds another one. Only in the special case that no concrete value is
  * available, is this implementation invoked. Therefore, this implementation
- * always returns <strong>null</strong>; this will cause a dummy embedded
- * object to be used.
+ * always returns <strong>null</strong>; this will cause a dummy embedded object
+ * to be used.
  * </p>
  */
 public class SW360ResourceDeserializer extends JsonDeserializer<Embedded> {
-    @Override
-    public Embedded deserialize(JsonParser p, DeserializationContext ctxt) {
-        return null;
-    }
+	@Override
+	public Embedded deserialize(JsonParser p, DeserializationContext ctxt) {
+		return null;
+	}
 }

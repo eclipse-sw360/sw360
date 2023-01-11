@@ -31,56 +31,45 @@ import java.util.List;
  * connection has to be available to Spring's {@link Value} infrastructure.
  */
 @Component
-@Views({
-        @View(name = "all", map = "function(doc) { emit(null, doc._id); }"),
-        @View(name = "byId", map = "function(doc) { emit(doc._id, null); }"),
-        @View(name = "byClientId", map = "function(doc) { emit(doc.client_id, null); }")
-})
+@Views({@View(name = "all", map = "function(doc) { emit(null, doc._id); }"),
+		@View(name = "byId", map = "function(doc) { emit(doc._id, null); }"),
+		@View(name = "byClientId", map = "function(doc) { emit(doc.client_id, null); }")})
 public class OAuthClientRepository extends CouchDbRepositorySupport<OAuthClientEntity> {
 
-    protected OAuthClientRepository(
-            @Value("${couchdb.url}") final String dbUrl,
-            @Value("${couchdb.database}") final String dbName,
-            @Value("${couchdb.username:#{null}}") final String dbUsername,
-            @Value("${couchdb.password:#{null}}") final String dbPassword) throws MalformedURLException {
+	protected OAuthClientRepository(@Value("${couchdb.url}") final String dbUrl,
+			@Value("${couchdb.database}") final String dbName,
+			@Value("${couchdb.username:#{null}}") final String dbUsername,
+			@Value("${couchdb.password:#{null}}") final String dbPassword) throws MalformedURLException {
 
-        super(OAuthClientEntity.class, new StdCouchDbConnector(dbName,
-                        new StdCouchDbInstance(
-                                new StdHttpClient.Builder()
-                                        .caching(false)
-                                        .url(dbUrl)
-                                        .username(dbUsername)
-                                        .password(dbPassword)
-                                        .build()
-                                )
-                        )
-                );
+		super(OAuthClientEntity.class,
+				new StdCouchDbConnector(dbName, new StdCouchDbInstance(new StdHttpClient.Builder().caching(false)
+						.url(dbUrl).username(dbUsername).password(dbPassword).build())));
 
-        initStandardDesignDocument();
-    }
+		initStandardDesignDocument();
+	}
 
-    public OAuthClientEntity getByClientId(String clientId) {
-        ViewQuery query = createQuery("byClientId");
-        query.setIgnoreNotFound(true);
-        query.key(clientId);
+	public OAuthClientEntity getByClientId(String clientId) {
+		ViewQuery query = createQuery("byClientId");
+		query.setIgnoreNotFound(true);
+		query.key(clientId);
 
-        List<OAuthClientEntity> clients = Lists.newArrayList();
-        ViewResult result = db.queryView(query);
-        for (ViewResult.Row row : result.getRows()) {
-            String id = row.getId();
-            clients.add(super.get(id));
-        }
+		List<OAuthClientEntity> clients = Lists.newArrayList();
+		ViewResult result = db.queryView(query);
+		for (ViewResult.Row row : result.getRows()) {
+			String id = row.getId();
+			clients.add(super.get(id));
+		}
 
-        if (clients.size() < 1) {
-            log.warn("No clients found for clientId <{}>.", clientId);
-            return null;
-        } else if (clients.size() > 1) {
-            log.warn("More than one client found ({}) for clientId <{}>.", clients.size(), clientId);
-            return clients.get(0);
-        } else {
-            log.debug("Client found for clientId <{}>", clientId);
-            return clients.get(0);
-        }
-    }
+		if (clients.size() < 1) {
+			log.warn("No clients found for clientId <{}>.", clientId);
+			return null;
+		} else if (clients.size() > 1) {
+			log.warn("More than one client found ({}) for clientId <{}>.", clients.size(), clientId);
+			return clients.get(0);
+		} else {
+			log.debug("Client found for clientId <{}>", clientId);
+			return clients.get(0);
+		}
+	}
 
 }

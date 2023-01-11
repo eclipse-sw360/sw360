@@ -28,37 +28,38 @@ import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 
 public abstract class AbstractTasksPortlet extends Sw360Portlet {
 
-    protected void sendModerations(ResourceRequest request, ResourceResponse response, List<ModerationRequest> moderations) throws IOException, PortletException {
-        JSONArray jsonModerations = getModerationData(moderations);
-        JSONObject jsonResult = JSONFactoryUtil.createJSONObject();
-        jsonResult.put("aaData", jsonModerations);
+	protected void sendModerations(ResourceRequest request, ResourceResponse response,
+			List<ModerationRequest> moderations) throws IOException, PortletException {
+		JSONArray jsonModerations = getModerationData(moderations);
+		JSONObject jsonResult = JSONFactoryUtil.createJSONObject();
+		jsonResult.put("aaData", jsonModerations);
 
-        try {
-            writeJSON(request, response, jsonResult);
-        } catch (IOException e) {
-            log.error("Problem generating task list", e);
-        }
-    }
+		try {
+			writeJSON(request, response, jsonResult);
+		} catch (IOException e) {
+			log.error("Problem generating task list", e);
+		}
+	}
 
-    public JSONArray getModerationData(List<ModerationRequest> moderationList) {
-        JSONArray projectData = JSONFactoryUtil.createJSONArray();
-        for(ModerationRequest moderationRequest : moderationList) {
-            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+	public JSONArray getModerationData(List<ModerationRequest> moderationList) {
+		JSONArray projectData = JSONFactoryUtil.createJSONArray();
+		for (ModerationRequest moderationRequest : moderationList) {
+			JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-            jsonObject.put("DT_RowId", moderationRequest.getId());
-            jsonObject.put("id", moderationRequest.getId());
-            jsonObject.put("name", moderationRequest.getDocumentName());
-            jsonObject.put("state", moderationState(moderationRequest.getModerationState()));
+			jsonObject.put("DT_RowId", moderationRequest.getId());
+			jsonObject.put("id", moderationRequest.getId());
+			jsonObject.put("name", moderationRequest.getDocumentName());
+			jsonObject.put("state", moderationState(moderationRequest.getModerationState()));
 
-            projectData.put(jsonObject);
-        }
+			projectData.put(jsonObject);
+		}
 
-        return projectData;
-    }
+		return projectData;
+	}
 
-    private String moderationState(ModerationState moderationState) {
-        return "<span class='" + PortalConstants.TOOLTIP_CLASS__CSS + " "
-            + PortalConstants.TOOLTIP_CLASS__CSS + "-" + moderationState.getClass().getSimpleName() + "-" + moderationState.toString() + "'>"
-            + ThriftEnumUtils.enumToString(moderationState) + "</span>";
-    }
+	private String moderationState(ModerationState moderationState) {
+		return "<span class='" + PortalConstants.TOOLTIP_CLASS__CSS + " " + PortalConstants.TOOLTIP_CLASS__CSS + "-"
+				+ moderationState.getClass().getSimpleName() + "-" + moderationState.toString() + "'>"
+				+ ThriftEnumUtils.enumToString(moderationState) + "</span>";
+	}
 }

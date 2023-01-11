@@ -28,46 +28,55 @@ import java.util.Set;
  */
 public class DisplayLicensesEdit extends NameSpaceAwareTag {
 
-    private String id;
-    private Set<String> licenseIds = new HashSet<>();
-    private String namespace;
-    private boolean main = true;
+	private String id;
+	private Set<String> licenseIds = new HashSet<>();
+	private String namespace;
+	private boolean main = true;
 
-    public void setId(String id) {
-        this.id = id;
-    }
+	public void setId(String id) {
+		this.id = id;
+	}
 
-    public void setMain(Boolean main) {
-        this.main = main;
-    }
+	public void setMain(Boolean main) {
+		this.main = main;
+	}
 
-    public void setLicenseIds(Set<String> licenseIds) {
-        this.licenseIds = licenseIds;
-    }
+	public void setLicenseIds(Set<String> licenseIds) {
+		this.licenseIds = licenseIds;
+	}
 
-    public int doStartTag() throws JspException {
-        JspWriter jspWriter = pageContext.getOut();
+	public int doStartTag() throws JspException {
+		JspWriter jspWriter = pageContext.getOut();
 
-        namespace = getNamespace();
-        StringBuilder display = new StringBuilder();
-        try {
-            String licenseIdsString = (licenseIds != null && !licenseIds.isEmpty()) ? Joiner.on(", ").join(licenseIds) : "";
-            printHtmlElements(display, licenseIdsString);
-            jspWriter.print(display.toString());
-        } catch (Exception e) {
-            throw new JspException(e);
-        }
-        return SKIP_BODY;
-    }
+		namespace = getNamespace();
+		StringBuilder display = new StringBuilder();
+		try {
+			String licenseIdsString = (licenseIds != null && !licenseIds.isEmpty())
+					? Joiner.on(", ").join(licenseIds)
+					: "";
+			printHtmlElements(display, licenseIdsString);
+			jspWriter.print(display.toString());
+		} catch (Exception e) {
+			throw new JspException(e);
+		}
+		return SKIP_BODY;
+	}
 
-    private void printHtmlElements(StringBuilder display, String licenseIdsStr) {
-    	HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-        
-        display.append("<div class=\"form-group\">");
-        display.append(String.format("<label for=\"%sDisplay\">" + LanguageUtil.get(resourceBundle, main ? "main.licenses" : "other.licenses") + "</label>", id))
-                .append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\" id=\"%s\" name=\"%s%s\"/>", licenseIdsStr, id, namespace, id))
-                .append(String.format("<input class=\"clickable licenseSearchDialogInteractive form-control\" data-id=\"%s\" type=\"text\" readonly=\"\" placeholder=\""+LanguageUtil.get(resourceBundle,"click.to.set.licenses")+"\" value=\"%s\" id=\"%sDisplay\" />", id, licenseIdsStr, id));
-        display.append("</div>");
-    }
+	private void printHtmlElements(StringBuilder display, String licenseIdsStr) {
+		HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+				getClass());
+
+		display.append("<div class=\"form-group\">");
+		display.append(String.format("<label for=\"%sDisplay\">"
+				+ LanguageUtil.get(resourceBundle, main ? "main.licenses" : "other.licenses") + "</label>", id))
+				.append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\" id=\"%s\" name=\"%s%s\"/>",
+						licenseIdsStr, id, namespace, id))
+				.append(String.format(
+						"<input class=\"clickable licenseSearchDialogInteractive form-control\" data-id=\"%s\" type=\"text\" readonly=\"\" placeholder=\""
+								+ LanguageUtil.get(resourceBundle, "click.to.set.licenses")
+								+ "\" value=\"%s\" id=\"%sDisplay\" />",
+						id, licenseIdsStr, id));
+		display.append("</div>");
+	}
 }

@@ -49,45 +49,45 @@ import lombok.RequiredArgsConstructor;
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class SearchController implements RepresentationModelProcessor<RepositoryLinksResource> {
-    
-    private static final Logger log = LogManager.getLogger(SearchController.class);
-    
-    public static final String SEARCH_URL = "/search";
-    
-    @Autowired
-    private Sw360SearchService sw360SearchService;
-    
-    @NonNull
-    private final RestControllerHelper restControllerHelper;
-    
 
-    @RequestMapping(value = SEARCH_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<SearchResult>>> getSearchResult(Pageable pageable,
-            @RequestParam(value = "searchText") String searchText, @RequestParam Optional<List<String>> typeMasks,
-            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
-        log.debug("SearchText = {} typeMasks = {}", searchText, typeMasks);
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        List<SearchResult> searchResults = sw360SearchService.search(searchText, sw360User, typeMasks);
+	private static final Logger log = LogManager.getLogger(SearchController.class);
 
-        PaginationResult<SearchResult> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                searchResults, SW360Constants.TYPE_SEARCHRESULT);
+	public static final String SEARCH_URL = "/search";
 
-        List<EntityModel<SearchResult>> searchResources = paginationResult.getResources().stream()
-                .map(sr -> EntityModel.of(sr)).collect(Collectors.toList());
+	@Autowired
+	private Sw360SearchService sw360SearchService;
 
-        CollectionModel resources = null;
-        if (CommonUtils.isNotEmpty(searchResources)) {
-            resources = restControllerHelper.generatePagesResource(paginationResult, searchResources);
-        }
+	@NonNull
+	private final RestControllerHelper restControllerHelper;
 
-        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(resources, status);
-    }
+	@RequestMapping(value = SEARCH_URL, method = RequestMethod.GET)
+	public ResponseEntity<CollectionModel<EntityModel<SearchResult>>> getSearchResult(Pageable pageable,
+			@RequestParam(value = "searchText") String searchText, @RequestParam Optional<List<String>> typeMasks,
+			HttpServletRequest request)
+			throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+		log.debug("SearchText = {} typeMasks = {}", searchText, typeMasks);
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		List<SearchResult> searchResults = sw360SearchService.search(searchText, sw360User, typeMasks);
 
-    @Override
-    public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        resource.add(linkTo(SearchController.class).slash("api" + SEARCH_URL).withRel("searchs"));
-        return resource;
-    }
+		PaginationResult<SearchResult> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+				searchResults, SW360Constants.TYPE_SEARCHRESULT);
+
+		List<EntityModel<SearchResult>> searchResources = paginationResult.getResources().stream()
+				.map(sr -> EntityModel.of(sr)).collect(Collectors.toList());
+
+		CollectionModel resources = null;
+		if (CommonUtils.isNotEmpty(searchResources)) {
+			resources = restControllerHelper.generatePagesResource(paginationResult, searchResources);
+		}
+
+		HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+		return new ResponseEntity<>(resources, status);
+	}
+
+	@Override
+	public RepositoryLinksResource process(RepositoryLinksResource resource) {
+		resource.add(linkTo(SearchController.class).slash("api" + SEARCH_URL).withRel("searchs"));
+		return resource;
+	}
 
 }

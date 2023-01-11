@@ -18,18 +18,19 @@ import org.eclipse.sw360.http.config.HttpClientConfig;
  * object.
  * </p>
  * <p>
- * This interface defines a factory method that can be used to create new,
- * fully configured instances of {@link HttpClient}. The new instances are
- * created based on a configuration object.
+ * This interface defines a factory method that can be used to create new, fully
+ * configured instances of {@link HttpClient}. The new instances are created
+ * based on a configuration object.
  * </p>
  */
 public interface HttpClientFactory {
-    /**
-     * Creates a new instance of {@code HttpClient} and configures it
-     * according to the passed in configuration object.
-     *
-     * @param config the configuration for the new client
-     * @return the new {@code HttpClient} instance
-     */
-    HttpClient newHttpClient(HttpClientConfig config);
+	/**
+	 * Creates a new instance of {@code HttpClient} and configures it according to
+	 * the passed in configuration object.
+	 *
+	 * @param config
+	 *            the configuration for the new client
+	 * @return the new {@code HttpClient} instance
+	 */
+	HttpClient newHttpClient(HttpClientConfig config);
 }

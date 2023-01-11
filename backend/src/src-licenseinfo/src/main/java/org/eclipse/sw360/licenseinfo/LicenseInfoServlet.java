@@ -22,9 +22,9 @@ import java.net.MalformedURLException;
  */
 public class LicenseInfoServlet extends Sw360ThriftServlet {
 
-    public LicenseInfoServlet() throws MalformedURLException {
-        // Create a service processor using the provided handler
-        super(new LicenseInfoService.Processor<>(new LicenseInfoHandler()), new TCompactProtocol.Factory());
-    }
+	public LicenseInfoServlet() throws MalformedURLException {
+		// Create a service processor using the provided handler
+		super(new LicenseInfoService.Processor<>(new LicenseInfoHandler()), new TCompactProtocol.Factory());
+	}
 
 }

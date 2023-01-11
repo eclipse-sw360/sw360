@@ -16,16 +16,16 @@ import static org.junit.Assert.assertEquals;
 
 public class DisplayDownloadAttachmentFileTest {
 
-    @Test
-    public void testThatTextsAreEscaped() throws Exception {
-        DisplayDownloadAttachmentFile displayDownloadAttachment = new DisplayDownloadAttachmentFile();
-        displayDownloadAttachment.setAttachment(createAttachment("Html <>&' entities"));
-        assertEquals("Download Html &lt;&gt;&amp;&#39; entities", displayDownloadAttachment.getTitleText());
-    }
-    
-    private Attachment createAttachment(String filename) {
-        Attachment attachment = new Attachment();
-        attachment.setFilename(filename);
-        return attachment;
-    }
+	@Test
+	public void testThatTextsAreEscaped() throws Exception {
+		DisplayDownloadAttachmentFile displayDownloadAttachment = new DisplayDownloadAttachmentFile();
+		displayDownloadAttachment.setAttachment(createAttachment("Html <>&' entities"));
+		assertEquals("Download Html &lt;&gt;&amp;&#39; entities", displayDownloadAttachment.getTitleText());
+	}
+
+	private Attachment createAttachment(String filename) {
+		Attachment attachment = new Attachment();
+		attachment.setFilename(filename);
+		return attachment;
+	}
 }

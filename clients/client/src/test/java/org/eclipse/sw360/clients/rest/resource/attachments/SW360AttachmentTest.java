@@ -13,21 +13,21 @@ package org.eclipse.sw360.clients.rest.resource.attachments;
 import org.eclipse.sw360.clients.rest.resource.SW360ResourcesTestUtils;
 
 public class SW360AttachmentTest extends SW360ResourcesTestUtils<SW360Attachment> {
-    @Override
-    public SW360Attachment prepareItem() {
-        SW360Attachment sw360Attachment = new SW360Attachment("test.doc", SW360AttachmentType.SOURCE);
-        return sw360Attachment;
-    }
+	@Override
+	public SW360Attachment prepareItem() {
+		SW360Attachment sw360Attachment = new SW360Attachment("test.doc", SW360AttachmentType.SOURCE);
+		return sw360Attachment;
+	}
 
-    @Override
-    public SW360Attachment prepareItemWithoutOptionalInput() {
-        SW360Attachment sw360Attachment = new SW360Attachment();
-        sw360Attachment.setFilename("");
-        return sw360Attachment;
-    }
+	@Override
+	public SW360Attachment prepareItemWithoutOptionalInput() {
+		SW360Attachment sw360Attachment = new SW360Attachment();
+		sw360Attachment.setFilename("");
+		return sw360Attachment;
+	}
 
-    @Override
-    public Class<SW360Attachment> getHandledClassType() {
-        return SW360Attachment.class;
-    }
+	@Override
+	public Class<SW360Attachment> getHandledClassType() {
+		return SW360Attachment.class;
+	}
 }

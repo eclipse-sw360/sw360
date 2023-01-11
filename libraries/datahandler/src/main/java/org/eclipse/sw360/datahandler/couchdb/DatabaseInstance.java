@@ -20,25 +20,26 @@ import java.net.MalformedURLException;
  */
 public class DatabaseInstance extends StdCouchDbInstance {
 
-    /**
-     * Builds a CouchDB instance using ektorp
-     *
-     * @param httpClient HttpClient with authentication of the CouchDB instance
-     * @throws MalformedURLException
-     */
-    public DatabaseInstance(HttpClient httpClient) throws MalformedURLException {
-        super(httpClient);
-        DatabaseInstanceTracker.track(this);
-    }
+	/**
+	 * Builds a CouchDB instance using ektorp
+	 *
+	 * @param httpClient
+	 *            HttpClient with authentication of the CouchDB instance
+	 * @throws MalformedURLException
+	 */
+	public DatabaseInstance(HttpClient httpClient) throws MalformedURLException {
+		super(httpClient);
+		DatabaseInstanceTracker.track(this);
+	}
 
-    @Override
-    public void createDatabase(String dbName) {
-        if (!checkIfDbExists(dbName)) {
-            super.createDatabase(dbName);
-        }
-    }
+	@Override
+	public void createDatabase(String dbName) {
+		if (!checkIfDbExists(dbName)) {
+			super.createDatabase(dbName);
+		}
+	}
 
-    public void destroy() {
-        getConnection().shutdown();
-    }
+	public void destroy() {
+		getConnection().shutdown();
+	}
 }

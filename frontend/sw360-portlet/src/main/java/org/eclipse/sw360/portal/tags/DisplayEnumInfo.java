@@ -32,44 +32,46 @@ import static com.google.common.collect.Iterables.all;
  * @author thomas.maier@evosoft.com
  */
 public class DisplayEnumInfo extends SimpleTagSupport {
-    private Class type;
+	private Class type;
 
-    private Iterable<? extends TEnum> options;
+	private Iterable<? extends TEnum> options;
 
-    public void setType(Class type) {
-        this.type = type;
-    }
+	public void setType(Class type) {
+		this.type = type;
+	}
 
-    @SuppressWarnings("unchecked")
-    public void setOptions(Iterable options) throws JspException {
-        if (!all(options, instanceOf(TEnum.class))) {
-            throw new JspException("given type options are not of class TEnum");
-        }
+	@SuppressWarnings("unchecked")
+	public void setOptions(Iterable options) throws JspException {
+		if (!all(options, instanceOf(TEnum.class))) {
+			throw new JspException("given type options are not of class TEnum");
+		}
 
-        this.options = (Iterable<? extends TEnum>) options;
-    }
+		this.options = (Iterable<? extends TEnum>) options;
+	}
 
-    public void doTag() throws JspException, IOException {
-        if (options != null) {
-            printEnumValuesInfo(options.getClass());
-        } else if (type != null) {
-            printEnumValuesInfo(type);
-        } else {
-            throw new JspException("you must select either a TEnum type or a collection of values");
-        }
-    }
+	public void doTag() throws JspException, IOException {
+		if (options != null) {
+			printEnumValuesInfo(options.getClass());
+		} else if (type != null) {
+			printEnumValuesInfo(type);
+		} else {
+			throw new JspException("you must select either a TEnum type or a collection of values");
+		}
+	}
 
-    private void printEnumValuesInfo(Class enumClass) throws IOException {
-        PageContext pageContext = (PageContext) getJspContext();
-        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-        JspWriter jspWriter = getJspContext().getOut();
+	private void printEnumValuesInfo(Class enumClass) throws IOException {
+		PageContext pageContext = (PageContext) getJspContext();
+		HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+				getClass());
+		JspWriter jspWriter = getJspContext().getOut();
 
-        String result = "<span class='" + PortalConstants.TOOLTIP_CLASS__CSS + " "
-                + PortalConstants.TOOLTIP_CLASS__CSS + "-" + enumClass.getSimpleName() + "' data-content='"+LanguageUtil.get(resourceBundle,enumClass.getSimpleName())+"'>"
-                + "<svg class='lexicon-icon'><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' /></svg></span>";
+		String result = "<span class='" + PortalConstants.TOOLTIP_CLASS__CSS + " " + PortalConstants.TOOLTIP_CLASS__CSS
+				+ "-" + enumClass.getSimpleName() + "' data-content='"
+				+ LanguageUtil.get(resourceBundle, enumClass.getSimpleName()) + "'>"
+				+ "<svg class='lexicon-icon'><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' /></svg></span>";
 
-        jspWriter.print(result);
+		jspWriter.print(result);
 
-    }
+	}
 }

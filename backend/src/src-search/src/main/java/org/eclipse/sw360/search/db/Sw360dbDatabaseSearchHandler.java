@@ -35,53 +35,55 @@ import java.util.function.Supplier;
 
 public class Sw360dbDatabaseSearchHandler extends AbstractDatabaseSearchHandler {
 
-    private final ProjectRepository projectRepository;
+	private final ProjectRepository projectRepository;
 
-    private final ComponentRepository componentRepository;
-    private final VendorRepository vendorRepository;
-    private final ReleaseRepository releaseRepository;
+	private final ComponentRepository componentRepository;
+	private final VendorRepository vendorRepository;
+	private final ReleaseRepository releaseRepository;
 
-    public Sw360dbDatabaseSearchHandler() throws IOException {
-        super(DatabaseSettings.COUCH_DB_DATABASE);
-        
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
-        
-        projectRepository = new ProjectRepository(db);
-        vendorRepository = new VendorRepository(db);
-        releaseRepository = new ReleaseRepository(db, vendorRepository);
-        componentRepository = new ComponentRepository(db, releaseRepository, vendorRepository);
-    }
+	public Sw360dbDatabaseSearchHandler() throws IOException {
+		super(DatabaseSettings.COUCH_DB_DATABASE);
 
-    public Sw360dbDatabaseSearchHandler(Supplier<HttpClient> client, Supplier<CloudantClient> cclient, String dbName) throws IOException {
-        super(client, cclient, dbName);
+		DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettings.getConfiguredClient(),
+				DatabaseSettings.COUCH_DB_DATABASE);
 
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cclient, dbName);
-        
-        projectRepository = new ProjectRepository(db);
-        vendorRepository = new VendorRepository(db);
-        releaseRepository = new ReleaseRepository(db, vendorRepository);
-        componentRepository = new ComponentRepository(db, releaseRepository, vendorRepository);
-    }
+		projectRepository = new ProjectRepository(db);
+		vendorRepository = new VendorRepository(db);
+		releaseRepository = new ReleaseRepository(db, vendorRepository);
+		componentRepository = new ComponentRepository(db, releaseRepository, vendorRepository);
+	}
 
-    protected boolean isVisibleToUser(SearchResult result, User user) {
-        if (result.type.equals(SW360Constants.TYPE_PROJECT)) {
-	        Project project = projectRepository.get(result.id);
-	        return ProjectPermissions.isVisible(user).test(project);
-        } else if(result.type.equals(SW360Constants.TYPE_COMPONENT)) {
-            Component component = componentRepository.get(result.id);
-            return ComponentPermissions.isVisible(user).test(component);    	
-        } else if(result.type.equals(SW360Constants.TYPE_RELEASE)) {
-            Release release = releaseRepository.get(result.id);
-            boolean isReleaseVisible = ReleasePermissions.isVisible(user).test(release);
-            boolean isComponentVisible = false;
-            String componentId = release.getComponentId();
-            if(CommonUtils.isNotNullEmptyOrWhitespace(componentId)) {
-                Component component = componentRepository.get(componentId);
-                isComponentVisible = ComponentPermissions.isVisible(user).test(component); 
-            }
-            return isReleaseVisible && isComponentVisible;
-        } else {
-            return true;
-        }
-    }
+	public Sw360dbDatabaseSearchHandler(Supplier<HttpClient> client, Supplier<CloudantClient> cclient, String dbName)
+			throws IOException {
+		super(client, cclient, dbName);
+
+		DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cclient, dbName);
+
+		projectRepository = new ProjectRepository(db);
+		vendorRepository = new VendorRepository(db);
+		releaseRepository = new ReleaseRepository(db, vendorRepository);
+		componentRepository = new ComponentRepository(db, releaseRepository, vendorRepository);
+	}
+
+	protected boolean isVisibleToUser(SearchResult result, User user) {
+		if (result.type.equals(SW360Constants.TYPE_PROJECT)) {
+			Project project = projectRepository.get(result.id);
+			return ProjectPermissions.isVisible(user).test(project);
+		} else if (result.type.equals(SW360Constants.TYPE_COMPONENT)) {
+			Component component = componentRepository.get(result.id);
+			return ComponentPermissions.isVisible(user).test(component);
+		} else if (result.type.equals(SW360Constants.TYPE_RELEASE)) {
+			Release release = releaseRepository.get(result.id);
+			boolean isReleaseVisible = ReleasePermissions.isVisible(user).test(release);
+			boolean isComponentVisible = false;
+			String componentId = release.getComponentId();
+			if (CommonUtils.isNotNullEmptyOrWhitespace(componentId)) {
+				Component component = componentRepository.get(componentId);
+				isComponentVisible = ComponentPermissions.isVisible(user).test(component);
+			}
+			return isReleaseVisible && isComponentVisible;
+		} else {
+			return true;
+		}
+	}
 }

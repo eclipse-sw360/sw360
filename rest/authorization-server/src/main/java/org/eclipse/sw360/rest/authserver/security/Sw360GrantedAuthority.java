@@ -14,33 +14,33 @@ import org.springframework.security.core.GrantedAuthority;
 
 public enum Sw360GrantedAuthority implements GrantedAuthority {
 
-    /*
-    * BASIC:
-    *    only authorized with clientName/clientSecret secret (without valid sw360 user credentials)
-    */
-    BASIC,
+	/*
+	 * BASIC: only authorized with clientName/clientSecret secret (without valid
+	 * sw360 user credentials)
+	 */
+	BASIC,
 
-    /*
-    * READ:
-    *    authorized with clientName/clientSecret and valid sw360 user (without rest api write privileges)
-    */
-    READ,
+	/*
+	 * READ: authorized with clientName/clientSecret and valid sw360 user (without
+	 * rest api write privileges)
+	 */
+	READ,
 
-    /*
-    * WRITE
-    *    authorized with clientName/clientSecret and valid sw360 user with rest api write privileges
-    */
-    WRITE,
+	/*
+	 * WRITE authorized with clientName/clientSecret and valid sw360 user with rest
+	 * api write privileges
+	 */
+	WRITE,
 
-    /*
-     * ADMIN
-     *    authorized and valid sw360 user with auth server administration privileges
-     */
-    ADMIN;
+	/*
+	 * ADMIN authorized and valid sw360 user with auth server administration
+	 * privileges
+	 */
+	ADMIN;
 
-    @Override
-    public String getAuthority() {
-        return toString();
-    }
+	@Override
+	public String getAuthority() {
+		return toString();
+	}
 
 }

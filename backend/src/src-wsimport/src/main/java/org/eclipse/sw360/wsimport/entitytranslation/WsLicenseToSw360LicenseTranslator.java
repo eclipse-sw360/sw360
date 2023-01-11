@@ -19,24 +19,25 @@ import java.util.HashMap;
 /**
  * @author ksoranko@verifa.io
  */
-public class WsLicenseToSw360LicenseTranslator implements EntityTranslator<WsLicense, org.eclipse.sw360.datahandler.thrift.licenses.License> {
+public class WsLicenseToSw360LicenseTranslator
+		implements
+			EntityTranslator<WsLicense, org.eclipse.sw360.datahandler.thrift.licenses.License> {
 
-    @Override
-    public License apply(WsLicense wsLicense) {
-        String licenseName = wsLicense.getName();
-        String licenseShortName = licenseName
-                .replaceAll("[\\s+/]","-");
+	@Override
+	public License apply(WsLicense wsLicense) {
+		String licenseName = wsLicense.getName();
+		String licenseShortName = licenseName.replaceAll("[\\s+/]", "-");
 
-        License sw360License = new License();
-        sw360License.setId(licenseShortName);
-        sw360License.setExternalIds(new HashMap<>());
-        sw360License.getExternalIds().put(TranslationConstants.WS_ID, wsLicense.getName());
-        sw360License.setShortname(licenseShortName);
-        sw360License.setFullname(licenseName);
-        if (wsLicense.getUrl() != null) {
-            sw360License.setExternalLicenseLink(wsLicense.getUrl());
-        }
-        return sw360License;
-    }
+		License sw360License = new License();
+		sw360License.setId(licenseShortName);
+		sw360License.setExternalIds(new HashMap<>());
+		sw360License.getExternalIds().put(TranslationConstants.WS_ID, wsLicense.getName());
+		sw360License.setShortname(licenseShortName);
+		sw360License.setFullname(licenseName);
+		if (wsLicense.getUrl() != null) {
+			sw360License.setExternalLicenseLink(wsLicense.getUrl());
+		}
+		return sw360License;
+	}
 
 }

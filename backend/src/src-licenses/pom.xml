@@ -8,48 +8,46 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.eclipse.sw360</groupId>
-        <artifactId>backend-src</artifactId>
-        <version>${revision}</version>
-    </parent>
+  <parent>
+    <groupId>org.eclipse.sw360</groupId>
+    <artifactId>backend-src</artifactId>
+    <version>${revision}</version>
+  </parent>
 
-    <artifactId>src-licenses</artifactId>
-    <packaging>jar</packaging>
-    <name>src-licenses</name>
-        
-    <properties>
-        <liferay.petra.function.version>5.1.2</liferay.petra.function.version>
-    </properties>
+  <artifactId>src-licenses</artifactId>
+  <packaging>jar</packaging>
+  <name>src-licenses</name>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.spdx</groupId>
-            <artifactId>tools-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
-        </dependency>
-        <!-- Needed by spdx-tools -->
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-1.2-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.liferay</groupId>
-            <artifactId>com.liferay.petra.function</artifactId>
-            <version>${liferay.petra.function.version}</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
+  <properties>
+    <liferay.petra.function.version>5.1.2</liferay.petra.function.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.spdx</groupId>
+      <artifactId>tools-java</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.googlecode.json-simple</groupId>
+      <artifactId>json-simple</artifactId>
+    </dependency>
+    <!-- Needed by spdx-tools -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-1.2-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.liferay</groupId>
+      <artifactId>com.liferay.petra.function</artifactId>
+      <version>${liferay.petra.function.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
 </project>

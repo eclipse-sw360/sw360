@@ -29,34 +29,38 @@ import java.util.List;
  */
 public class TestVendorClient {
 
-    @SuppressWarnings("unused")
-    public static void InitDatabase() throws MalformedURLException {
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
+	@SuppressWarnings("unused")
+	public static void InitDatabase() throws MalformedURLException {
+		DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(),
+				DatabaseSettingsTest.COUCH_DB_DATABASE);
 
-        databaseConnector.add(new Vendor().setShortname("Microsoft").setFullname("Microsoft Corporation").setUrl("http://www.microsoft.com"));
-        databaseConnector.add(new Vendor().setShortname("Apache").setFullname("The Apache Software Foundation").setUrl("http://www.apache.org"));
-        databaseConnector.add(new Vendor().setShortname("Oracle").setFullname("Oracle Corporation Inc").setUrl("http://www.oracle.com"));
-    }
+		databaseConnector.add(new Vendor().setShortname("Microsoft").setFullname("Microsoft Corporation")
+				.setUrl("http://www.microsoft.com"));
+		databaseConnector.add(new Vendor().setShortname("Apache").setFullname("The Apache Software Foundation")
+				.setUrl("http://www.apache.org"));
+		databaseConnector.add(new Vendor().setShortname("Oracle").setFullname("Oracle Corporation Inc")
+				.setUrl("http://www.oracle.com"));
+	}
 
-    public static void main(String[] args) throws TException, IOException {
-        THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/vendorservice/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        VendorService.Iface client = new VendorService.Client(protocol);
+	public static void main(String[] args) throws TException, IOException {
+		THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/vendorservice/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		VendorService.Iface client = new VendorService.Client(protocol);
 
-        List<Vendor> vendors = client.getAllVendors();
+		List<Vendor> vendors = client.getAllVendors();
 
-        reportFindings(vendors);
+		reportFindings(vendors);
 
-        System.out.println("Now looking for matches starting with 'm' from vendor service");
+		System.out.println("Now looking for matches starting with 'm' from vendor service");
 
-        reportFindings(client.searchVendors("m"));
-    }
+		reportFindings(client.searchVendors("m"));
+	}
 
-    private static void reportFindings(List<Vendor> vendors) {
-        System.out.println("Fetched " + vendors.size() + " from vendor service");
-        for (Vendor vendor : vendors) {
-            System.out.println(vendor.getId() + ": " + vendor.getFullname() + " (" + vendor.getShortname() + ")");
-        }
-    }
+	private static void reportFindings(List<Vendor> vendors) {
+		System.out.println("Fetched " + vendors.size() + " from vendor service");
+		for (Vendor vendor : vendors) {
+			System.out.println(vendor.getId() + ": " + vendor.getFullname() + " (" + vendor.getShortname() + ")");
+		}
+	}
 
 }

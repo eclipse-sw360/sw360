@@ -27,27 +27,27 @@ import static org.junit.Assert.assertEquals;
  */
 public class ImportCSVTest {
 
-    private static final int NUMBER_OF_LINES = 3;
-    private static final int NUMBER_OF_COLUMNS = 2;
+	private static final int NUMBER_OF_LINES = 3;
+	private static final int NUMBER_OF_COLUMNS = 2;
 
-    List<CSVRecord> records;
+	List<CSVRecord> records;
 
-    @Before
-    public void setUp() throws Exception {
-        records = ImportCSV.readAsCSVRecords(getClass().getResource("/riskcategory.csv").openStream());
-    }
+	@Before
+	public void setUp() throws Exception {
+		records = ImportCSV.readAsCSVRecords(getClass().getResource("/riskcategory.csv").openStream());
+	}
 
-    @Test
-    public void testReadCSV() throws Exception {
-        assertEquals(NUMBER_OF_LINES, records.size());
-    }
+	@Test
+	public void testReadCSV() throws Exception {
+		assertEquals(NUMBER_OF_LINES, records.size());
+	}
 
-    @Test
-    public void testReadAsCSVRecords() throws Exception {
-        assertEquals(NUMBER_OF_LINES, records.size());
-        for (CSVRecord record : records) {
-            assertEquals(NUMBER_OF_COLUMNS, record.size());
-        }
-    }
+	@Test
+	public void testReadAsCSVRecords() throws Exception {
+		assertEquals(NUMBER_OF_LINES, records.size());
+		for (CSVRecord record : records) {
+			assertEquals(NUMBER_OF_COLUMNS, record.size());
+		}
+	}
 
 }

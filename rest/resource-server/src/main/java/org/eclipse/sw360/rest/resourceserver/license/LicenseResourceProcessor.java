@@ -22,12 +22,12 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RequiredArgsConstructor
 class LicenseResourceProcessor implements RepresentationModelProcessor<EntityModel<License>> {
 
-    @Override
-    public EntityModel<License> process(EntityModel<License> resource) {
-        License license = resource.getContent();
-        Link selfLink = linkTo(LicenseController.class)
-                .slash("api" + LicenseController.LICENSES_URL + "/" + license.getId()).withSelfRel();
-        resource.add(selfLink);
-        return resource;
-    }
+	@Override
+	public EntityModel<License> process(EntityModel<License> resource) {
+		License license = resource.getContent();
+		Link selfLink = linkTo(LicenseController.class)
+				.slash("api" + LicenseController.LICENSES_URL + "/" + license.getId()).withSelfRel();
+		resource.add(selfLink);
+		return resource;
+	}
 }

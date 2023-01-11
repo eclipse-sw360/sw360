@@ -49,407 +49,408 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeFalse;
 
 public class SW360ComponentClientIT extends AbstractMockServerTest {
-    /**
-     * An array with the names of test components contained in the test file.
-     */
-    private static final String[] TEST_COMPONENTS = {
-            "jackson-annotations", "jakarta.validation-api", "jsoup"
-    };
-
-    /**
-     * Name of the test file containing a single component.
-     */
-    private static final String FILE_COMPONENT = "component.json";
-
-    private static final String FILE_COMPONENT_ALL = "all_components.json";
-
-    private SW360ComponentClient componentClient;
-
-    @Before
-    public void setUp() {
-        if (RUN_REST_INTEGRATION_TEST) {
-            SW360ConnectionFactory scf = new SW360ConnectionFactory();
-            SW360ComponentClientAdapterAsync componentClientAsync = scf.newConnection(createClientConfig())
-                    .getComponentAdapterAsync();
-            componentClient = componentClientAsync.getComponentClient();
-        } else {
-            componentClient = new SW360ComponentClient(createClientConfig(), createMockTokenProvider());
-            prepareAccessTokens(componentClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
-        }
-    }
-
-    /**
-     * Checks whether a request yields the expected list of test components.
-     *
-     * @param components the list with components
-     */
-    private static void checkComponentsList(List<SW360SparseComponent> components) {
-        assertThat(components).hasSize(TEST_COMPONENTS.length);
-        List<String> componentNames = components.stream().map(SW360SparseComponent::getName)
-                .collect(Collectors.toList());
-        assertThat(componentNames).containsExactlyInAnyOrder(TEST_COMPONENTS);
-        assertHasLinks(components);
-    }
-
-    /**
-     * Returns a component instance that was read from the test JSON file.
-     *
-     * @return the component read from JSON
-     * @throws IOException if an error occurs
-     */
-    private static SW360Component componentFromJson() throws IOException {
-        return readTestJsonFile(resolveTestFileURL(FILE_COMPONENT), SW360Component.class);
-    }
-
-    /**
-     * Returns a component instance that was read from the test JSON file.
-     *
-     * @return the component read from JSON
-     * @throws IOException if an error occurs
-     */
-    private static List<SW360Component> multipleComponentsFromJson() throws IOException {
-        return readTestJsonFile(resolveTestFileURLForRealDB(FILE_COMPONENT_ALL),
-                new TypeReference<List<SW360Component>>() {
-                });
-    }
+	/**
+	 * An array with the names of test components contained in the test file.
+	 */
+	private static final String[] TEST_COMPONENTS = {"jackson-annotations", "jakarta.validation-api", "jsoup"};
 
 	/**
-     * Returns a component instance that was read from the test JSON file.
-     *
-     * @return the component read from JSON
-     * @throws IOException if an error occurs
-     */
-    private static SW360Component componentFromJsonForIntegrationTest() throws IOException {
-        return readTestJsonFile(resolveTestFileURLForRealDB(FILE_COMPONENT), SW360Component.class);
-    }
+	 * Name of the test file containing a single component.
+	 */
+	private static final String FILE_COMPONENT = "component.json";
 
-    @Test
-    public void testSearchNoParameters() throws IOException {
-        if (!RUN_REST_INTEGRATION_TEST) {
-            wireMockRule.stubFor(get(urlPathEqualTo("/components")).withQueryParams(Collections.emptyMap())
-                    .willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBodyFile("all_components.json")));
-            PagingResult<SW360SparseComponent> result = waitFor(
-                    componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
-            checkComponentsList(result.getResult());
-            assertThat(result.getPaging()).isNull();
-            Assertions.assertThat(result.getPagingLinkObjects().getFirst()).isNull();
-        } else {
-            cleanup();
-            List<SW360Component> components = multipleComponentsFromJson();
-            components.stream().forEach(component -> {
-                try {
-                    waitFor(componentClient.createComponent(component));
-                } catch (IOException e) {
-                    System.err.println("Error creating test component");
-                }
-            });
-            PagingResult<SW360SparseComponent> result = waitFor(
-                    componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
-            checkComponentsList(result.getResult());
-            assertThat(result.getPaging()).isNull();
-            Assertions.assertThat(result.getPagingLinkObjects().getFirst()).isNull();
-        }
-    }
+	private static final String FILE_COMPONENT_ALL = "all_components.json";
 
-    @Test
-    public void testSearchNoBody() throws IOException {
-        if (!RUN_REST_INTEGRATION_TEST) {
-            wireMockRule.stubFor(get(urlPathEqualTo("/components")).willReturn(aJsonResponse(HttpConstants.STATUS_OK)));
-            extractException(componentClient.search(ComponentSearchParams.ALL_COMPONENTS), IOException.class);
-        } else {
-            cleanup();
-            PagingResult<SW360SparseComponent> components = waitFor(
-                    componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
-            assertEquals(components.getResult().size(), 0);
-        }
-    }
+	private SW360ComponentClient componentClient;
 
-    @Test
-    public void testSearchNoContent() throws IOException {
-        if (!RUN_REST_INTEGRATION_TEST) {
-            wireMockRule.stubFor(get(urlPathEqualTo("/components"))
-                    .willReturn(aResponse().withStatus(HttpConstants.STATUS_NO_CONTENT)));
-            PagingResult<SW360SparseComponent> result = waitFor(
-                    componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
-            assertThat(result.getResult()).isEmpty();
-        }
-        cleanup();
-        PagingResult<SW360SparseComponent> result = waitFor(
-                componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
-        assertThat(result.getResult()).isEmpty();
-    }
+	@Before
+	public void setUp() {
+		if (RUN_REST_INTEGRATION_TEST) {
+			SW360ConnectionFactory scf = new SW360ConnectionFactory();
+			SW360ComponentClientAdapterAsync componentClientAsync = scf.newConnection(createClientConfig())
+					.getComponentAdapterAsync();
+			componentClient = componentClientAsync.getComponentClient();
+		} else {
+			componentClient = new SW360ComponentClient(createClientConfig(), createMockTokenProvider());
+			prepareAccessTokens(componentClient.getTokenProvider(), CompletableFuture.completedFuture(ACCESS_TOKEN));
+		}
+	}
 
-    @Test
-    public void testSearchError() {
-        if (!RUN_REST_INTEGRATION_TEST) {
-            wireMockRule.stubFor(
-                    get(urlPathEqualTo("/components")).willReturn(aJsonResponse(HttpConstants.STATUS_ERR_NOT_FOUND)));
-        }
+	/**
+	 * Checks whether a request yields the expected list of test components.
+	 *
+	 * @param components
+	 *            the list with components
+	 */
+	private static void checkComponentsList(List<SW360SparseComponent> components) {
+		assertThat(components).hasSize(TEST_COMPONENTS.length);
+		List<String> componentNames = components.stream().map(SW360SparseComponent::getName)
+				.collect(Collectors.toList());
+		assertThat(componentNames).containsExactlyInAnyOrder(TEST_COMPONENTS);
+		assertHasLinks(components);
+	}
 
-        FailedRequestException exception = expectFailedRequest(
-                componentClient.search(ComponentSearchParams.ALL_COMPONENTS.builder().withPage(5).build()),
-                HttpConstants.STATUS_ERR_NOT_FOUND);
-        assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_GET_COMPONENTS);
-    }
+	/**
+	 * Returns a component instance that was read from the test JSON file.
+	 *
+	 * @return the component read from JSON
+	 * @throws IOException
+	 *             if an error occurs
+	 */
+	private static SW360Component componentFromJson() throws IOException {
+		return readTestJsonFile(resolveTestFileURL(FILE_COMPONENT), SW360Component.class);
+	}
 
-    @Test
-    public void testSearchWithParameters() throws IOException {
-        if (!RUN_REST_INTEGRATION_TEST) {
-            final String name = "desiredComponent";
-            final SW360ComponentType componentType = SW360ComponentType.SERVICE;
-            final int pageIndex = 42;
-            final int pageSize = 11;
-            wireMockRule.stubFor(get(urlPathEqualTo("/components")).withQueryParam("name", equalTo(name))
-                    .withQueryParam("type", equalTo(componentType.name()))
-                    .withQueryParam("page", equalTo(String.valueOf(pageIndex)))
-                    .withQueryParam("page_entries", equalTo(String.valueOf(pageSize)))
-                    .withQueryParam("fields", equalTo("name,createdOn,type,releaseIds"))
-                    .withQueryParam("sort", equalTo("name,ASC,createdOn,DESC"))
-                    .willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBodyFile("all_components_paging.json")));
+	/**
+	 * Returns a component instance that was read from the test JSON file.
+	 *
+	 * @return the component read from JSON
+	 * @throws IOException
+	 *             if an error occurs
+	 */
+	private static List<SW360Component> multipleComponentsFromJson() throws IOException {
+		return readTestJsonFile(resolveTestFileURLForRealDB(FILE_COMPONENT_ALL),
+				new TypeReference<List<SW360Component>>() {
+				});
+	}
 
-            ComponentSearchParams params = ComponentSearchParams.builder().withName(name)
-                    .withComponentType(componentType).withPage(pageIndex).withPageSize(pageSize).orderAscending("name")
-                    .orderDescending("createdOn").retrieveFields("name", "createdOn", "type")
-                    .retrieveFields("releaseIds").build();
-            PagingResult<SW360SparseComponent> result = waitFor(componentClient.search(params));
-            checkComponentsList(result.getResult());
-            assertThat(result.getPaging()).isEqualTo(new Paging(5, 1, 12, 3));
-            Assertions.assertThat(result.getPagingLinkObjects().getFirst()).isNotNull();
-        } else {
-            cleanup();
-            List<SW360Component> components = multipleComponentsFromJson();
-            components.stream().forEach(component -> {
-                try {
-                    waitFor(componentClient.createComponent(component));
-                } catch (IOException e) {
-                    System.err.println("Error creating test component");
-                }
-            });
-            final SW360ComponentType componentType = SW360ComponentType.OSS;
-            final int pageIndex = 0;
-            final int pageSize = 3;
-            ComponentSearchParams params = ComponentSearchParams.builder().withComponentType(componentType)
-                    .withPage(pageIndex).withPageSize(pageSize).orderAscending("name").orderDescending("createdOn")
-                    .retrieveFields("name", "createdOn", "type").retrieveFields("releaseIds").build();
-            PagingResult<SW360SparseComponent> result = waitFor(componentClient.search(params));
-            checkComponentsList(result.getResult());
-            assertThat(result.getPaging()).isEqualTo(new Paging(3, 0, 3, 1));
-            Assertions.assertThat(result.getPagingLinkObjects().getFirst()).isNotNull();
+	/**
+	 * Returns a component instance that was read from the test JSON file.
+	 *
+	 * @return the component read from JSON
+	 * @throws IOException
+	 *             if an error occurs
+	 */
+	private static SW360Component componentFromJsonForIntegrationTest() throws IOException {
+		return readTestJsonFile(resolveTestFileURLForRealDB(FILE_COMPONENT), SW360Component.class);
+	}
 
-        }
-    }
+	@Test
+	public void testSearchNoParameters() throws IOException {
+		if (!RUN_REST_INTEGRATION_TEST) {
+			wireMockRule.stubFor(get(urlPathEqualTo("/components")).withQueryParams(Collections.emptyMap())
+					.willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBodyFile("all_components.json")));
+			PagingResult<SW360SparseComponent> result = waitFor(
+					componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
+			checkComponentsList(result.getResult());
+			assertThat(result.getPaging()).isNull();
+			Assertions.assertThat(result.getPagingLinkObjects().getFirst()).isNull();
+		} else {
+			cleanup();
+			List<SW360Component> components = multipleComponentsFromJson();
+			components.stream().forEach(component -> {
+				try {
+					waitFor(componentClient.createComponent(component));
+				} catch (IOException e) {
+					System.err.println("Error creating test component");
+				}
+			});
+			PagingResult<SW360SparseComponent> result = waitFor(
+					componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
+			checkComponentsList(result.getResult());
+			assertThat(result.getPaging()).isNull();
+			Assertions.assertThat(result.getPagingLinkObjects().getFirst()).isNull();
+		}
+	}
 
-    @Test
-    public void testGetComponent() throws IOException {
-        SW360Component component = null;
-        SW360Component createdComponent = null;
-        SW360Component get_component;
-        final String componentId = "testComponentID";
-        if (!RUN_REST_INTEGRATION_TEST) {
-            component = componentFromJson();
-            wireMockRule.stubFor(get(urlPathEqualTo("/components/" + componentId))
-                    .willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBodyFile(FILE_COMPONENT)));
-            get_component = waitFor(componentClient.getComponent(componentId));
-            assertThat(get_component.getName()).isEqualTo("jackson-annotations");
-            SW360ComponentEmbedded embedded = get_component.getEmbedded();
-            assertThat(embedded.getCreatedBy().getEmail()).isEqualTo("osi9be@bosch.com");
-            List<SW360SparseRelease> releases = embedded.getReleases();
-            assertThat(releases).hasSize(10);
-        } else {
-            component = componentFromJsonForIntegrationTest();
-            createdComponent = waitFor(componentClient.createComponent(component));
-            get_component = waitFor(componentClient.getComponent(createdComponent.getId()));
-            assertThat(get_component.getName()).isEqualTo("jackson-annotations");
-            List<SW360SparseRelease> releases = get_component.getEmbedded().getReleases();
-            assertThat(releases).hasSize(0);
-        }
-    }
+	@Test
+	public void testSearchNoBody() throws IOException {
+		if (!RUN_REST_INTEGRATION_TEST) {
+			wireMockRule.stubFor(get(urlPathEqualTo("/components")).willReturn(aJsonResponse(HttpConstants.STATUS_OK)));
+			extractException(componentClient.search(ComponentSearchParams.ALL_COMPONENTS), IOException.class);
+		} else {
+			cleanup();
+			PagingResult<SW360SparseComponent> components = waitFor(
+					componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
+			assertEquals(components.getResult().size(), 0);
+		}
+	}
 
-    @Test
-    public void testGetComponentNotFound() throws IOException {
-        if (!RUN_REST_INTEGRATION_TEST) {
-            wireMockRule.stubFor(get(anyUrl()).willReturn(aJsonResponse(HttpConstants.STATUS_ERR_NOT_FOUND)));
+	@Test
+	public void testSearchNoContent() throws IOException {
+		if (!RUN_REST_INTEGRATION_TEST) {
+			wireMockRule.stubFor(get(urlPathEqualTo("/components"))
+					.willReturn(aResponse().withStatus(HttpConstants.STATUS_NO_CONTENT)));
+			PagingResult<SW360SparseComponent> result = waitFor(
+					componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
+			assertThat(result.getResult()).isEmpty();
+		}
+		cleanup();
+		PagingResult<SW360SparseComponent> result = waitFor(
+				componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
+		assertThat(result.getResult()).isEmpty();
+	}
 
-            FailedRequestException exception = expectFailedRequest(componentClient.getComponent("unknownComponent"),
-                    HttpConstants.STATUS_ERR_NOT_FOUND);
-            assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_GET_COMPONENT);
-        } else {
-            FailedRequestException exception = expectFailedRequest(componentClient.getComponent("unknownComponent"),
-                    HttpConstants.STATUS_ERR_SERVER);
-            assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_GET_COMPONENT);
-        }
-    }
+	@Test
+	public void testSearchError() {
+		if (!RUN_REST_INTEGRATION_TEST) {
+			wireMockRule.stubFor(
+					get(urlPathEqualTo("/components")).willReturn(aJsonResponse(HttpConstants.STATUS_ERR_NOT_FOUND)));
+		}
 
-    @Test
-    public void testGetComponentEmptyBody() {
-        wireMockRule.stubFor(get(anyUrl())
-                .willReturn(aJsonResponse(HttpConstants.STATUS_OK)));
+		FailedRequestException exception = expectFailedRequest(
+				componentClient.search(ComponentSearchParams.ALL_COMPONENTS.builder().withPage(5).build()),
+				HttpConstants.STATUS_ERR_NOT_FOUND);
+		assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_GET_COMPONENTS);
+	}
 
-        extractException(componentClient.getComponent("bar"), IOException.class);
-    }
+	@Test
+	public void testSearchWithParameters() throws IOException {
+		if (!RUN_REST_INTEGRATION_TEST) {
+			final String name = "desiredComponent";
+			final SW360ComponentType componentType = SW360ComponentType.SERVICE;
+			final int pageIndex = 42;
+			final int pageSize = 11;
+			wireMockRule.stubFor(get(urlPathEqualTo("/components")).withQueryParam("name", equalTo(name))
+					.withQueryParam("type", equalTo(componentType.name()))
+					.withQueryParam("page", equalTo(String.valueOf(pageIndex)))
+					.withQueryParam("page_entries", equalTo(String.valueOf(pageSize)))
+					.withQueryParam("fields", equalTo("name,createdOn,type,releaseIds"))
+					.withQueryParam("sort", equalTo("name,ASC,createdOn,DESC"))
+					.willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBodyFile("all_components_paging.json")));
 
-    @Test
-    public void testCreateComponent() throws IOException {
-        if (!RUN_REST_INTEGRATION_TEST) {
-            SW360Component component = componentFromJson();
-            wireMockRule.stubFor(post(urlPathEqualTo("/components"))
-                    .willReturn(aJsonResponse(HttpConstants.STATUS_CREATED).withBodyFile(FILE_COMPONENT)));
-            SW360Component createdComponent = waitFor(componentClient.createComponent(component));
-            assertThat(createdComponent).isEqualTo(component);
-        } else {
-            cleanup();
-            SW360Component component = componentFromJsonForIntegrationTest();
-            SW360Component createdComponent = waitFor(componentClient.createComponent(component));
-            assertEquals(createdComponent.getName(), component.getName());
-            assertEquals(createdComponent.getComponentType(), component.getComponentType());
-            assertEquals(createdComponent.getCreatedOn(), component.getCreatedOn());
-            assertEquals(createdComponent.getHomepage(), component.getHomepage());
-        }
-    }
+			ComponentSearchParams params = ComponentSearchParams.builder().withName(name)
+					.withComponentType(componentType).withPage(pageIndex).withPageSize(pageSize).orderAscending("name")
+					.orderDescending("createdOn").retrieveFields("name", "createdOn", "type")
+					.retrieveFields("releaseIds").build();
+			PagingResult<SW360SparseComponent> result = waitFor(componentClient.search(params));
+			checkComponentsList(result.getResult());
+			assertThat(result.getPaging()).isEqualTo(new Paging(5, 1, 12, 3));
+			Assertions.assertThat(result.getPagingLinkObjects().getFirst()).isNotNull();
+		} else {
+			cleanup();
+			List<SW360Component> components = multipleComponentsFromJson();
+			components.stream().forEach(component -> {
+				try {
+					waitFor(componentClient.createComponent(component));
+				} catch (IOException e) {
+					System.err.println("Error creating test component");
+				}
+			});
+			final SW360ComponentType componentType = SW360ComponentType.OSS;
+			final int pageIndex = 0;
+			final int pageSize = 3;
+			ComponentSearchParams params = ComponentSearchParams.builder().withComponentType(componentType)
+					.withPage(pageIndex).withPageSize(pageSize).orderAscending("name").orderDescending("createdOn")
+					.retrieveFields("name", "createdOn", "type").retrieveFields("releaseIds").build();
+			PagingResult<SW360SparseComponent> result = waitFor(componentClient.search(params));
+			checkComponentsList(result.getResult());
+			assertThat(result.getPaging()).isEqualTo(new Paging(3, 0, 3, 1));
+			Assertions.assertThat(result.getPagingLinkObjects().getFirst()).isNotNull();
 
-    private void cleanup() throws IOException {
-        PagingResult<SW360SparseComponent> allComponentsWithPaging = waitFor(
-                componentClient.search(ComponentSearchParams.ALL_COMPONENTS.builder().build()));
-        List<SW360SparseComponent> allComponents = allComponentsWithPaging.getResult();
-        List<String> componentIds = allComponents.stream().map(x -> x.getId()).collect(Collectors.toList());
-        if (!componentIds.isEmpty()) {
-            waitFor(componentClient.deleteComponents(componentIds));
-        }
-    }
+		}
+	}
 
-    @Test
-    public void testCreateComponentError() throws IOException {
-        SW360Component component = componentFromJson();
-        component.setName("");
-        if (!RUN_REST_INTEGRATION_TEST) {
-            wireMockRule.stubFor(post(urlPathEqualTo("/components"))
-                    .willReturn(aJsonResponse(HttpConstants.STATUS_ERR_BAD_REQUEST)));
-            FailedRequestException exception = expectFailedRequest(componentClient.createComponent(component),
-                    HttpConstants.STATUS_ERR_BAD_REQUEST);
-            assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_CREATE_COMPONENT);
-        } else {
-            cleanup();
-            FailedRequestException exception = expectFailedRequest(componentClient.createComponent(component),
-                    HttpConstants.STATUS_ERR_BAD_REQUEST);
-            assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_CREATE_COMPONENT);
-        }
-    }
+	@Test
+	public void testGetComponent() throws IOException {
+		SW360Component component = null;
+		SW360Component createdComponent = null;
+		SW360Component get_component;
+		final String componentId = "testComponentID";
+		if (!RUN_REST_INTEGRATION_TEST) {
+			component = componentFromJson();
+			wireMockRule.stubFor(get(urlPathEqualTo("/components/" + componentId))
+					.willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBodyFile(FILE_COMPONENT)));
+			get_component = waitFor(componentClient.getComponent(componentId));
+			assertThat(get_component.getName()).isEqualTo("jackson-annotations");
+			SW360ComponentEmbedded embedded = get_component.getEmbedded();
+			assertThat(embedded.getCreatedBy().getEmail()).isEqualTo("osi9be@bosch.com");
+			List<SW360SparseRelease> releases = embedded.getReleases();
+			assertThat(releases).hasSize(10);
+		} else {
+			component = componentFromJsonForIntegrationTest();
+			createdComponent = waitFor(componentClient.createComponent(component));
+			get_component = waitFor(componentClient.getComponent(createdComponent.getId()));
+			assertThat(get_component.getName()).isEqualTo("jackson-annotations");
+			List<SW360SparseRelease> releases = get_component.getEmbedded().getReleases();
+			assertThat(releases).hasSize(0);
+		}
+	}
 
-    @Test
-    public void testPatchComponent() throws IOException {
-        if (!RUN_REST_INTEGRATION_TEST) {
-            SW360Component component = componentFromJson();
-            SW360Component componentUpdated = componentFromJson();
-            component.setName("toBeUpdated");
-            wireMockRule.stubFor(patch(urlPathEqualTo("/components/" + component.getId()))
-                    .withRequestBody(equalToJson(toJson(component)))
-                    .willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBodyFile(FILE_COMPONENT)));
+	@Test
+	public void testGetComponentNotFound() throws IOException {
+		if (!RUN_REST_INTEGRATION_TEST) {
+			wireMockRule.stubFor(get(anyUrl()).willReturn(aJsonResponse(HttpConstants.STATUS_ERR_NOT_FOUND)));
 
-            SW360Component result = waitFor(componentClient.patchComponent(component));
-            assertThat(result).isEqualTo(componentUpdated);
-        } else {
-            cleanup();
-            SW360Component component = componentFromJsonForIntegrationTest();
-            component.setName("toBeUpdated");
-            SW360Component createdComponent = waitFor(componentClient.createComponent(component));
-            SW360Component result = waitFor(componentClient.patchComponent(createdComponent));
-            assertEquals(result.getName(), "toBeUpdated");
-        }
-    }
+			FailedRequestException exception = expectFailedRequest(componentClient.getComponent("unknownComponent"),
+					HttpConstants.STATUS_ERR_NOT_FOUND);
+			assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_GET_COMPONENT);
+		} else {
+			FailedRequestException exception = expectFailedRequest(componentClient.getComponent("unknownComponent"),
+					HttpConstants.STATUS_ERR_SERVER);
+			assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_GET_COMPONENT);
+		}
+	}
 
-    @Test
-    public void testPatchComponentError() throws IOException {
-        if (!RUN_REST_INTEGRATION_TEST) {
-            SW360Component component = componentFromJson();
-            wireMockRule.stubFor(patch(urlPathEqualTo("/components/" + component.getId()))
-                    .withRequestBody(equalToJson(toJson(component)))
-                    .willReturn(aJsonResponse(HttpConstants.STATUS_ERR_UNAUTHORIZED)));
+	@Test
+	public void testGetComponentEmptyBody() {
+		wireMockRule.stubFor(get(anyUrl()).willReturn(aJsonResponse(HttpConstants.STATUS_OK)));
 
-            FailedRequestException exception = expectFailedRequest(componentClient.patchComponent(component),
-                    HttpConstants.STATUS_ERR_UNAUTHORIZED);
-            assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_UPDATE_COMPONENT);
-        } else {
-            cleanup();
-            SW360Component component = componentFromJsonForIntegrationTest();
-            SW360Component createdComponent = waitFor(componentClient.createComponent(component));
-            createdComponent.setName("");
-            FailedRequestException exception = expectFailedRequest(componentClient.patchComponent(createdComponent),
-                    HttpConstants.STATUS_ERR_BAD_REQUEST);
-        }
-    }
+		extractException(componentClient.getComponent("bar"), IOException.class);
+	}
 
-    @Test
-    public void testDeleteComponents() throws IOException {
-        if (!RUN_REST_INTEGRATION_TEST) {
-            String compId1 = "res-1";
-            String compId2 = "res-2";
-            wireMockRule.stubFor(delete(urlPathEqualTo("/components/" + compId1 + "," + compId2)).willReturn(
-                    aJsonResponse(HttpConstants.STATUS_MULTI_STATUS).withBodyFile("multi_status_success.json")));
+	@Test
+	public void testCreateComponent() throws IOException {
+		if (!RUN_REST_INTEGRATION_TEST) {
+			SW360Component component = componentFromJson();
+			wireMockRule.stubFor(post(urlPathEqualTo("/components"))
+					.willReturn(aJsonResponse(HttpConstants.STATUS_CREATED).withBodyFile(FILE_COMPONENT)));
+			SW360Component createdComponent = waitFor(componentClient.createComponent(component));
+			assertThat(createdComponent).isEqualTo(component);
+		} else {
+			cleanup();
+			SW360Component component = componentFromJsonForIntegrationTest();
+			SW360Component createdComponent = waitFor(componentClient.createComponent(component));
+			assertEquals(createdComponent.getName(), component.getName());
+			assertEquals(createdComponent.getComponentType(), component.getComponentType());
+			assertEquals(createdComponent.getCreatedOn(), component.getCreatedOn());
+			assertEquals(createdComponent.getHomepage(), component.getHomepage());
+		}
+	}
 
-            MultiStatusResponse multiResponse = waitFor(
-                    componentClient.deleteComponents(Arrays.asList(compId1, compId2)));
-            assertThat(multiResponse.responseCount()).isEqualTo(2);
-            assertThat(multiResponse.getStatus("res-1")).isEqualTo(200);
-            assertThat(multiResponse.getStatus("res-2")).isEqualTo(200);
-        } else {
-            cleanup();
-            List<SW360Component> components = multipleComponentsFromJson();
-            components.stream().forEach(component -> {
-                try {
-                    waitFor(componentClient.createComponent(component));
-                } catch (IOException e) {
-                    System.err.println("Error creating test component");
-                }
-            });
-            PagingResult<SW360SparseComponent> result = waitFor(
-                    componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
-            List<String> ids = result.getResult().stream().map(component -> component.getId())
-                    .collect(Collectors.toList());
-            MultiStatusResponse multiResponse = waitFor(componentClient.deleteComponents(ids));
-            assertThat(multiResponse.responseCount()).isEqualTo(3);
-            ids.stream().forEach(id -> {
-                assertThat(multiResponse.getStatus(id)).isEqualTo(200);
-            });
-        }
-    }
+	private void cleanup() throws IOException {
+		PagingResult<SW360SparseComponent> allComponentsWithPaging = waitFor(
+				componentClient.search(ComponentSearchParams.ALL_COMPONENTS.builder().build()));
+		List<SW360SparseComponent> allComponents = allComponentsWithPaging.getResult();
+		List<String> componentIds = allComponents.stream().map(x -> x.getId()).collect(Collectors.toList());
+		if (!componentIds.isEmpty()) {
+			waitFor(componentClient.deleteComponents(componentIds));
+		}
+	}
 
-    @Test
-    public void testDeleteComponentsUnexpectedStatus() throws IOException {
-        if (!RUN_REST_INTEGRATION_TEST) {
-            wireMockRule.stubFor(delete(anyUrl())
-                    .willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBodyFile("multi_status_success.json")));
+	@Test
+	public void testCreateComponentError() throws IOException {
+		SW360Component component = componentFromJson();
+		component.setName("");
+		if (!RUN_REST_INTEGRATION_TEST) {
+			wireMockRule.stubFor(post(urlPathEqualTo("/components"))
+					.willReturn(aJsonResponse(HttpConstants.STATUS_ERR_BAD_REQUEST)));
+			FailedRequestException exception = expectFailedRequest(componentClient.createComponent(component),
+					HttpConstants.STATUS_ERR_BAD_REQUEST);
+			assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_CREATE_COMPONENT);
+		} else {
+			cleanup();
+			FailedRequestException exception = expectFailedRequest(componentClient.createComponent(component),
+					HttpConstants.STATUS_ERR_BAD_REQUEST);
+			assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_CREATE_COMPONENT);
+		}
+	}
 
-            FailedRequestException exception = expectFailedRequest(
-                    componentClient.deleteComponents(Collections.singletonList("c1")), HttpConstants.STATUS_OK);
-            assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_DELETE_COMPONENTS);
-        } else {
-            cleanup();
-            MultiStatusResponse response = waitFor(componentClient.deleteComponents(Collections.singletonList("c1")));
-            assertEquals(response.getStatus("c1"), HttpConstants.STATUS_ERR_SERVER);
-            assertEquals(response.getResponses().size(), 1);
-        }
-    }
+	@Test
+	public void testPatchComponent() throws IOException {
+		if (!RUN_REST_INTEGRATION_TEST) {
+			SW360Component component = componentFromJson();
+			SW360Component componentUpdated = componentFromJson();
+			component.setName("toBeUpdated");
+			wireMockRule.stubFor(patch(urlPathEqualTo("/components/" + component.getId()))
+					.withRequestBody(equalToJson(toJson(component)))
+					.willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBodyFile(FILE_COMPONENT)));
 
-    @Test
-    public void testDeleteComponentsUnexpectedResponse() throws IOException {
-        if (!RUN_REST_INTEGRATION_TEST) {
-            wireMockRule.stubFor(delete(anyUrl())
-                    .willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBodyFile("all_components.json")));
-            extractException(componentClient.deleteComponents(Collections.singletonList("cDel")), IOException.class);
-        } else {
-            cleanup();
-            MultiStatusResponse response = waitFor(componentClient.deleteComponents(Collections.singletonList("cDel")));
-            assertEquals(response.getStatus("cDel"), HttpConstants.STATUS_ERR_SERVER);
-        }
-    }
+			SW360Component result = waitFor(componentClient.patchComponent(component));
+			assertThat(result).isEqualTo(componentUpdated);
+		} else {
+			cleanup();
+			SW360Component component = componentFromJsonForIntegrationTest();
+			component.setName("toBeUpdated");
+			SW360Component createdComponent = waitFor(componentClient.createComponent(component));
+			SW360Component result = waitFor(componentClient.patchComponent(createdComponent));
+			assertEquals(result.getName(), "toBeUpdated");
+		}
+	}
 
-    @Test
-    public void testDeleteComponentsEmptyResponse() {
-        // skipping this for real DB as it will be duplicate as
-        // `testDeleteComponentsUnexpectedResponse()`
-        assumeFalse(RUN_REST_INTEGRATION_TEST);
-        wireMockRule.stubFor(delete(anyUrl()).willReturn(aResponse().withStatus(HttpConstants.STATUS_MULTI_STATUS)));
+	@Test
+	public void testPatchComponentError() throws IOException {
+		if (!RUN_REST_INTEGRATION_TEST) {
+			SW360Component component = componentFromJson();
+			wireMockRule.stubFor(patch(urlPathEqualTo("/components/" + component.getId()))
+					.withRequestBody(equalToJson(toJson(component)))
+					.willReturn(aJsonResponse(HttpConstants.STATUS_ERR_UNAUTHORIZED)));
 
-        extractException(componentClient.deleteComponents(Collections.singletonList("cDel")), IOException.class);
-    }
+			FailedRequestException exception = expectFailedRequest(componentClient.patchComponent(component),
+					HttpConstants.STATUS_ERR_UNAUTHORIZED);
+			assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_UPDATE_COMPONENT);
+		} else {
+			cleanup();
+			SW360Component component = componentFromJsonForIntegrationTest();
+			SW360Component createdComponent = waitFor(componentClient.createComponent(component));
+			createdComponent.setName("");
+			FailedRequestException exception = expectFailedRequest(componentClient.patchComponent(createdComponent),
+					HttpConstants.STATUS_ERR_BAD_REQUEST);
+		}
+	}
+
+	@Test
+	public void testDeleteComponents() throws IOException {
+		if (!RUN_REST_INTEGRATION_TEST) {
+			String compId1 = "res-1";
+			String compId2 = "res-2";
+			wireMockRule.stubFor(delete(urlPathEqualTo("/components/" + compId1 + "," + compId2)).willReturn(
+					aJsonResponse(HttpConstants.STATUS_MULTI_STATUS).withBodyFile("multi_status_success.json")));
+
+			MultiStatusResponse multiResponse = waitFor(
+					componentClient.deleteComponents(Arrays.asList(compId1, compId2)));
+			assertThat(multiResponse.responseCount()).isEqualTo(2);
+			assertThat(multiResponse.getStatus("res-1")).isEqualTo(200);
+			assertThat(multiResponse.getStatus("res-2")).isEqualTo(200);
+		} else {
+			cleanup();
+			List<SW360Component> components = multipleComponentsFromJson();
+			components.stream().forEach(component -> {
+				try {
+					waitFor(componentClient.createComponent(component));
+				} catch (IOException e) {
+					System.err.println("Error creating test component");
+				}
+			});
+			PagingResult<SW360SparseComponent> result = waitFor(
+					componentClient.search(ComponentSearchParams.ALL_COMPONENTS));
+			List<String> ids = result.getResult().stream().map(component -> component.getId())
+					.collect(Collectors.toList());
+			MultiStatusResponse multiResponse = waitFor(componentClient.deleteComponents(ids));
+			assertThat(multiResponse.responseCount()).isEqualTo(3);
+			ids.stream().forEach(id -> {
+				assertThat(multiResponse.getStatus(id)).isEqualTo(200);
+			});
+		}
+	}
+
+	@Test
+	public void testDeleteComponentsUnexpectedStatus() throws IOException {
+		if (!RUN_REST_INTEGRATION_TEST) {
+			wireMockRule.stubFor(delete(anyUrl())
+					.willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBodyFile("multi_status_success.json")));
+
+			FailedRequestException exception = expectFailedRequest(
+					componentClient.deleteComponents(Collections.singletonList("c1")), HttpConstants.STATUS_OK);
+			assertThat(exception.getTag()).isEqualTo(SW360ComponentClient.TAG_DELETE_COMPONENTS);
+		} else {
+			cleanup();
+			MultiStatusResponse response = waitFor(componentClient.deleteComponents(Collections.singletonList("c1")));
+			assertEquals(response.getStatus("c1"), HttpConstants.STATUS_ERR_SERVER);
+			assertEquals(response.getResponses().size(), 1);
+		}
+	}
+
+	@Test
+	public void testDeleteComponentsUnexpectedResponse() throws IOException {
+		if (!RUN_REST_INTEGRATION_TEST) {
+			wireMockRule.stubFor(delete(anyUrl())
+					.willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBodyFile("all_components.json")));
+			extractException(componentClient.deleteComponents(Collections.singletonList("cDel")), IOException.class);
+		} else {
+			cleanup();
+			MultiStatusResponse response = waitFor(componentClient.deleteComponents(Collections.singletonList("cDel")));
+			assertEquals(response.getStatus("cDel"), HttpConstants.STATUS_ERR_SERVER);
+		}
+	}
+
+	@Test
+	public void testDeleteComponentsEmptyResponse() {
+		// skipping this for real DB as it will be duplicate as
+		// `testDeleteComponentsUnexpectedResponse()`
+		assumeFalse(RUN_REST_INTEGRATION_TEST);
+		wireMockRule.stubFor(delete(anyUrl()).willReturn(aResponse().withStatus(HttpConstants.STATUS_MULTI_STATUS)));
+
+		extractException(componentClient.deleteComponents(Collections.singletonList("cDel")), IOException.class);
+	}
 }

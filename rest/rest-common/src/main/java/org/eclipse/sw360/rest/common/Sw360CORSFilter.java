@@ -28,59 +28,62 @@ import java.util.List;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public abstract class Sw360CORSFilter implements Filter {
 
-    @Value("${sw360.cors.allowed-origin:}")
-    private String allowedOrigin;
-    @Value("${sw360.cors.max-age:3600}")
-    private String accessControlMaxAge;
-    @Value("${sw360.cors.allow-credentials:true}")
-    private String accessControlAllowCredentials;
+	@Value("${sw360.cors.allowed-origin:}")
+	private String allowedOrigin;
+	@Value("${sw360.cors.max-age:3600}")
+	private String accessControlMaxAge;
+	@Value("${sw360.cors.allow-credentials:true}")
+	private String accessControlAllowCredentials;
 
-    private static final String ALLOWED_HTTP_METHODS = allowedHttpMethods();
-    private static final String ALLOWED_HTTP_HEADERS = allowedHttpHeaders();
+	private static final String ALLOWED_HTTP_METHODS = allowedHttpMethods();
+	private static final String ALLOWED_HTTP_HEADERS = allowedHttpHeaders();
 
-    @Override
-    public void init(FilterConfig filterConfig)  {}
+	@Override
+	public void init(FilterConfig filterConfig) {
+	}
 
-    @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        if(allowedOrigin != null) {
-            HttpServletRequest httpServletRequest = (HttpServletRequest)servletRequest;
-            HttpServletResponse httpServletResponse = (HttpServletResponse)servletResponse;
-            setCORSHeader(httpServletResponse);
-            if(httpServletRequest.getMethod().equalsIgnoreCase(HttpMethod.OPTIONS.name())) {
-                httpServletResponse.setStatus(HttpServletResponse.SC_OK);
-            } else {
-                filterChain.doFilter(servletRequest, servletResponse);
-            }
-        } else {
-            filterChain.doFilter(servletRequest, servletResponse);
-        }
-    }
+	@Override
+	public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+			throws IOException, ServletException {
+		if (allowedOrigin != null) {
+			HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
+			HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
+			setCORSHeader(httpServletResponse);
+			if (httpServletRequest.getMethod().equalsIgnoreCase(HttpMethod.OPTIONS.name())) {
+				httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+			} else {
+				filterChain.doFilter(servletRequest, servletResponse);
+			}
+		} else {
+			filterChain.doFilter(servletRequest, servletResponse);
+		}
+	}
 
-    @Override
-    public void destroy() {}
+	@Override
+	public void destroy() {
+	}
 
-    private void setCORSHeader(HttpServletResponse httpServletResponse) {
-        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigin);
-        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, ALLOWED_HTTP_METHODS);
-        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_MAX_AGE, accessControlMaxAge);
-        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, ALLOWED_HTTP_HEADERS);
-        httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, accessControlAllowCredentials);
-    }
+	private void setCORSHeader(HttpServletResponse httpServletResponse) {
+		httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigin);
+		httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, ALLOWED_HTTP_METHODS);
+		httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_MAX_AGE, accessControlMaxAge);
+		httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, ALLOWED_HTTP_HEADERS);
+		httpServletResponse.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, accessControlAllowCredentials);
+	}
 
-    private static String allowedHttpMethods() {
-        List<String> httpMethods = new ArrayList<>();
-        httpMethods.add(HttpMethod.GET.name());
-        httpMethods.add(HttpMethod.POST.name());
-        httpMethods.add(HttpMethod.DELETE.name());
-        httpMethods.add(HttpMethod.PATCH.name());
-        return String.join(",", httpMethods);
-    }
+	private static String allowedHttpMethods() {
+		List<String> httpMethods = new ArrayList<>();
+		httpMethods.add(HttpMethod.GET.name());
+		httpMethods.add(HttpMethod.POST.name());
+		httpMethods.add(HttpMethod.DELETE.name());
+		httpMethods.add(HttpMethod.PATCH.name());
+		return String.join(",", httpMethods);
+	}
 
-    private static String allowedHttpHeaders() {
-        List<String> httpHeaders = new ArrayList<>();
-        httpHeaders.add(HttpHeaders.CONTENT_TYPE);
-        httpHeaders.add(HttpHeaders.AUTHORIZATION);
-        return String.join(",", httpHeaders);
-    }
+	private static String allowedHttpHeaders() {
+		List<String> httpHeaders = new ArrayList<>();
+		httpHeaders.add(HttpHeaders.CONTENT_TYPE);
+		httpHeaders.add(HttpHeaders.AUTHORIZATION);
+		return String.join(",", httpHeaders);
+	}
 }

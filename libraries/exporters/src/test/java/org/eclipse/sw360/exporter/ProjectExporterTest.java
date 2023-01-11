@@ -27,19 +27,19 @@ import static org.junit.Assert.assertThat;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ProjectExporterTest {
-    @Mock
-    ComponentService.Iface componentClient;
+	@Mock
+	ComponentService.Iface componentClient;
 
-    @Mock
-    ProjectService.Iface projectClient;
+	@Mock
+	ProjectService.Iface projectClient;
 
-    @Mock
-    User user;
+	@Mock
+	User user;
 
-    @Test
-    public void testEveryRenderedProjectFieldHasAHeader() throws Exception {
-        ProjectExporter exporter = new ProjectExporter(componentClient,
-                projectClient, user, Collections.emptyList(), false);
-        assertThat(ProjectExporter.PROJECT_RENDERED_FIELDS.size(), is(ProjectExporter.HEADERS.size()));
-    }
+	@Test
+	public void testEveryRenderedProjectFieldHasAHeader() throws Exception {
+		ProjectExporter exporter = new ProjectExporter(componentClient, projectClient, user, Collections.emptyList(),
+				false);
+		assertThat(ProjectExporter.PROJECT_RENDERED_FIELDS.size(), is(ProjectExporter.HEADERS.size()));
+	}
 }

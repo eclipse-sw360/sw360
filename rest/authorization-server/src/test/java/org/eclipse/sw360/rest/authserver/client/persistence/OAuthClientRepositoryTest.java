@@ -35,34 +35,34 @@ import static org.junit.Assert.assertTrue;
  */
 public class OAuthClientRepositoryTest extends IntegrationTestBase {
 
-    @Autowired
-    private OAuthClientRepository uut;
+	@Autowired
+	private OAuthClientRepository uut;
 
-    @Before
-    public void setup() {
-        uut.getAll().stream().forEach(uut::remove);
-    }
+	@Before
+	public void setup() {
+		uut.getAll().stream().forEach(uut::remove);
+	}
 
-    // just to satisfy subclass expectations of JUnit
-    @Test
-    public void testNoop() {
-        assertTrue(true);
-    }
+	// just to satisfy subclass expectations of JUnit
+	@Test
+	public void testNoop() {
+		assertTrue(true);
+	}
 
-    // @Test
-    public void testInsertNewClient() {
-        // given:
-        String clientId = "foo";
-        OAuthClientEntity client = new OAuthClientEntity();
-        client.setId(clientId);
+	// @Test
+	public void testInsertNewClient() {
+		// given:
+		String clientId = "foo";
+		OAuthClientEntity client = new OAuthClientEntity();
+		client.setId(clientId);
 
-        // when:
-        uut.add(client);
+		// when:
+		uut.add(client);
 
-        // then:
-        List<OAuthClientEntity> actualClients = uut.getAll();
-        assertThat(actualClients.size(), is(1));
-        assertThat(actualClients.get(0).getId(), is(clientId));
-    }
+		// then:
+		List<OAuthClientEntity> actualClients = uut.getAll();
+		assertThat(actualClients.size(), is(1));
+		assertThat(actualClients.get(0).getId(), is(clientId));
+	}
 
 }

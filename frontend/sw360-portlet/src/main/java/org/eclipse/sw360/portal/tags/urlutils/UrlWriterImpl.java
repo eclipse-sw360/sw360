@@ -25,53 +25,53 @@ import javax.servlet.jsp.PageContext;
  */
 public class UrlWriterImpl implements UrlWriter {
 
-    private final ActionURLTag urlTag;
-    private boolean done = false;
+	private final ActionURLTag urlTag;
+	private boolean done = false;
 
-    private UrlWriterImpl(PageContext pageContext, ActionURLTag urlTag) {
-        this.urlTag = urlTag;
-        this.urlTag.setPageContext(pageContext);
-    }
+	private UrlWriterImpl(PageContext pageContext, ActionURLTag urlTag) {
+		this.urlTag = urlTag;
+		this.urlTag.setPageContext(pageContext);
+	}
 
-    @Override
-    public UrlWriter withParam(String name, String value) throws JspException {
-        checkNotDone();
-        urlTag.addParam(name, value);
-        return this;
-    }
+	@Override
+	public UrlWriter withParam(String name, String value) throws JspException {
+		checkNotDone();
+		urlTag.addParam(name, value);
+		return this;
+	}
 
-    @Override
-    public UrlWriter toPortlet(LinkToPortletConfiguration portlet, Long scopeGroupId) throws JspException {
-        checkNotDone();
-        urlTag.setPortletName(portlet.portletName());
-        urlTag.setPlid(portlet.findPlid(scopeGroupId));
-        return this;
-    }
+	@Override
+	public UrlWriter toPortlet(LinkToPortletConfiguration portlet, Long scopeGroupId) throws JspException {
+		checkNotDone();
+		urlTag.setPortletName(portlet.portletName());
+		urlTag.setPlid(portlet.findPlid(scopeGroupId));
+		return this;
+	}
 
-    @Override
-    public UrlWriter toPage(PortletPage page) throws JspException {
-        return withParam(PortalConstants.PAGENAME, page.pagename());
-    }
+	@Override
+	public UrlWriter toPage(PortletPage page) throws JspException {
+		return withParam(PortalConstants.PAGENAME, page.pagename());
+	}
 
-    @Override
-    public void writeUrlToJspWriter() throws JspException {
-        checkNotDone();
-        urlTag.doStartTag();
-        urlTag.doEndTag();
-        done = true;
-    }
+	@Override
+	public void writeUrlToJspWriter() throws JspException {
+		checkNotDone();
+		urlTag.doStartTag();
+		urlTag.doEndTag();
+		done = true;
+	}
 
-    private void checkNotDone() throws JspException {
-        if (done) {
-            throw new JspException("this url writer has already been written");
-        }
-    }
+	private void checkNotDone() throws JspException {
+		if (done) {
+			throw new JspException("this url writer has already been written");
+		}
+	}
 
-    public static UrlWriter resourceUrl(PageContext pageContext) {
-        return new UrlWriterImpl(pageContext, new ResourceURLTag());
-    }
+	public static UrlWriter resourceUrl(PageContext pageContext) {
+		return new UrlWriterImpl(pageContext, new ResourceURLTag());
+	}
 
-    public static UrlWriter renderUrl(PageContext pageContext) {
-        return new UrlWriterImpl(pageContext, new RenderURLTag());
-    }
+	public static UrlWriter renderUrl(PageContext pageContext) {
+		return new UrlWriterImpl(pageContext, new RenderURLTag());
+	}
 }

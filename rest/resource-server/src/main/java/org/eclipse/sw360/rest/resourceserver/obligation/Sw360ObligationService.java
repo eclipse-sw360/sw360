@@ -32,52 +32,52 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ObligationService {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
+	@Value("${sw360.thrift-server-url:http://localhost:8080}")
+	private String thriftServerUrl;
 
-    public List<Obligation> getObligations() {
-        try {
-            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            return sw360LicenseClient.getObligations();
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public List<Obligation> getObligations() {
+		try {
+			LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+			return sw360LicenseClient.getObligations();
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public Obligation getObligationById(String obligationId) {
-        try {
-            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-            return sw360LicenseClient.getObligationsById(obligationId);
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public Obligation getObligationById(String obligationId) {
+		try {
+			LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+			return sw360LicenseClient.getObligationsById(obligationId);
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public Obligation createObligation(Obligation obligation, User sw360User) {
-        try {
-            if (obligation.getTitle() != null && !obligation.getTitle().trim().isEmpty()
-            && obligation.getText() != null && !obligation.getText().trim().isEmpty()
-            && obligation.getObligationLevel() != null) {
-                LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-                String obligationId = sw360LicenseClient.addObligations(obligation, sw360User);
-                obligation.setId(obligationId);
-                return obligation;
-            } else {
-                throw new HttpMessageNotReadableException("Obligation Title, Text, Level are required. Obligation Title, Text cannot contain only space character.");
-            }
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public Obligation createObligation(Obligation obligation, User sw360User) {
+		try {
+			if (obligation.getTitle() != null && !obligation.getTitle().trim().isEmpty() && obligation.getText() != null
+					&& !obligation.getText().trim().isEmpty() && obligation.getObligationLevel() != null) {
+				LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+				String obligationId = sw360LicenseClient.addObligations(obligation, sw360User);
+				obligation.setId(obligationId);
+				return obligation;
+			} else {
+				throw new HttpMessageNotReadableException(
+						"Obligation Title, Text, Level are required. Obligation Title, Text cannot contain only space character.");
+			}
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public RequestStatus deleteObligation(String obligationId, User sw360User) throws TException {
-        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        return sw360LicenseClient.deleteObligations(obligationId, sw360User);
-    }
+	public RequestStatus deleteObligation(String obligationId, User sw360User) throws TException {
+		LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+		return sw360LicenseClient.deleteObligations(obligationId, sw360User);
+	}
 
-    private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenses/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new LicenseService.Client(protocol);
-    }
+	private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
+		THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenses/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		return new LicenseService.Client(protocol);
+	}
 }

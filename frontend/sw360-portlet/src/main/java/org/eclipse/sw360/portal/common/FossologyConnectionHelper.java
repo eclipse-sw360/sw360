@@ -24,35 +24,35 @@ import org.apache.thrift.TException;
  */
 public class FossologyConnectionHelper {
 
-    private static final Logger log = LogManager.getLogger(FossologyConnectionHelper.class);
-    private static FossologyConnectionHelper instance;
-    private boolean fossologyConnectionEnabled;
+	private static final Logger log = LogManager.getLogger(FossologyConnectionHelper.class);
+	private static FossologyConnectionHelper instance;
+	private boolean fossologyConnectionEnabled;
 
-    private FossologyConnectionHelper() {
-    }
+	private FossologyConnectionHelper() {
+	}
 
-    public RequestStatus checkFossologyConnection() {
+	public RequestStatus checkFossologyConnection() {
 
-        RequestStatus checkConnection = RequestStatus.FAILURE;
-        try {
-            checkConnection = new ThriftClients().makeFossologyClient().checkConnection();
-        } catch (TException e) {
-            fossologyConnectionEnabled = false;
-            log.error("Error connecting to backend", e);
-        }
-        fossologyConnectionEnabled = checkConnection.equals(RequestStatus.SUCCESS);
-        return checkConnection;
+		RequestStatus checkConnection = RequestStatus.FAILURE;
+		try {
+			checkConnection = new ThriftClients().makeFossologyClient().checkConnection();
+		} catch (TException e) {
+			fossologyConnectionEnabled = false;
+			log.error("Error connecting to backend", e);
+		}
+		fossologyConnectionEnabled = checkConnection.equals(RequestStatus.SUCCESS);
+		return checkConnection;
 
-    }
+	}
 
-    public static synchronized FossologyConnectionHelper getInstance() {
-        if (instance == null) {
-            instance = new FossologyConnectionHelper();
-        }
-        return instance;
-    }
+	public static synchronized FossologyConnectionHelper getInstance() {
+		if (instance == null) {
+			instance = new FossologyConnectionHelper();
+		}
+		return instance;
+	}
 
-    public boolean isFossologyConnectionEnabled() {
-        return fossologyConnectionEnabled;
-    }
+	public boolean isFossologyConnectionEnabled() {
+		return fossologyConnectionEnabled;
+	}
 }

@@ -32,76 +32,58 @@ import com.cloudant.client.api.model.DesignDocument.MapReduce;
  * @author abdul.mannankapti@siemens.com
  */
 public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<ClearingRequest> {
-    private static final String ALL = "function(doc) { if (doc.type == 'clearingRequest') emit(null, doc._id) }";
+	private static final String ALL = "function(doc) { if (doc.type == 'clearingRequest') emit(null, doc._id) }";
 
-    private static final String BY_PROJECT_ID = "function(doc) { " +
-            "  if (doc.type == 'clearingRequest') {" +
-            "    emit(doc.projectId, null);" +
-            "    }" +
-            "}";
+	private static final String BY_PROJECT_ID = "function(doc) { " + "  if (doc.type == 'clearingRequest') {"
+			+ "    emit(doc.projectId, null);" + "    }" + "}";
 
-    private static final String MY_CLEARING_REQUESTS = "function(doc) { " +
-            "    if (doc.type == 'clearingRequest') {" +
-            "        var acc = {};" +
-            "        if (doc.requestingUser) {" +
-            "            acc[doc.requestingUser] = 1;" +
-            "        }" +
-            "        if (doc.clearingTeam) {" +
-            "            acc[doc.clearingTeam] = 1 ;" +
-            "        }" +
-            "        for (var i in acc) {" +
-            "            emit(i, null);" +
-            "        }" +
-            "    }" +
-            "}";
+	private static final String MY_CLEARING_REQUESTS = "function(doc) { " + "    if (doc.type == 'clearingRequest') {"
+			+ "        var acc = {};" + "        if (doc.requestingUser) {" + "            acc[doc.requestingUser] = 1;"
+			+ "        }" + "        if (doc.clearingTeam) {" + "            acc[doc.clearingTeam] = 1 ;" + "        }"
+			+ "        for (var i in acc) {" + "            emit(i, null);" + "        }" + "    }" + "}";
 
-    private static final String BY_BUSINESS_UNIT = "function(doc) { " +
-            "  if (doc.type == 'clearingRequest') {" +
-            "    emit(doc.projectBU, null);" +
-            "    }" +
-            "}";
+	private static final String BY_BUSINESS_UNIT = "function(doc) { " + "  if (doc.type == 'clearingRequest') {"
+			+ "    emit(doc.projectBU, null);" + "    }" + "}";
 
-    private static final String BY_PRIORITY = "function(doc) { " +
-            "  if (doc.type == 'clearingRequest') {" +
-            "    emit(doc.priority, null);" +
-            "    }" +
-            "}";
+	private static final String BY_PRIORITY = "function(doc) { " + "  if (doc.type == 'clearingRequest') {"
+			+ "    emit(doc.priority, null);" + "    }" + "}";
 
-    public ClearingRequestRepository(DatabaseConnectorCloudant db) {
-        super(db, ClearingRequest.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("all", createMapReduce(ALL, null));
-        views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));
-        views.put("myClearingRequests", createMapReduce(MY_CLEARING_REQUESTS, null));
-        views.put("byBusinessUnit", createMapReduce(BY_BUSINESS_UNIT, null));
-        views.put("byPriority", createMapReduce(BY_PRIORITY, null));
-        initStandardDesignDocument(views, db);
-    }
+	public ClearingRequestRepository(DatabaseConnectorCloudant db) {
+		super(db, ClearingRequest.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("all", createMapReduce(ALL, null));
+		views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));
+		views.put("myClearingRequests", createMapReduce(MY_CLEARING_REQUESTS, null));
+		views.put("byBusinessUnit", createMapReduce(BY_BUSINESS_UNIT, null));
+		views.put("byPriority", createMapReduce(BY_PRIORITY, null));
+		initStandardDesignDocument(views, db);
+	}
 
-    public ClearingRequest getClearingRequestByProjectId(String projectId) {
-        List<ClearingRequest> requests = queryView("byProjectId", projectId);
-        if (CommonUtils.isNotEmpty(requests)) {
-            ClearingRequest request = requests.stream()
-                    .findFirst().orElse(null);
-            return request;
-        }
-        return null;
-    }
+	public ClearingRequest getClearingRequestByProjectId(String projectId) {
+		List<ClearingRequest> requests = queryView("byProjectId", projectId);
+		if (CommonUtils.isNotEmpty(requests)) {
+			ClearingRequest request = requests.stream().findFirst().orElse(null);
+			return request;
+		}
+		return null;
+	}
 
-    public Set<ClearingRequest> getMyClearingRequests(String user) {
-        return new HashSet<ClearingRequest>(queryView("myClearingRequests", user));
-    }
+	public Set<ClearingRequest> getMyClearingRequests(String user) {
+		return new HashSet<ClearingRequest>(queryView("myClearingRequests", user));
+	}
 
-    public Set<ClearingRequest> getClearingRequestsByBU(String businessUnit) {
-        return new HashSet<ClearingRequest>(queryView("byBusinessUnit", businessUnit));
-    }
+	public Set<ClearingRequest> getClearingRequestsByBU(String businessUnit) {
+		return new HashSet<ClearingRequest>(queryView("byBusinessUnit", businessUnit));
+	}
 
-    public Integer getOpenCriticalClearingRequestCount(String group) {
-        Set<ClearingRequest> criticalCr = new HashSet<ClearingRequest>(queryView("byPriority", ClearingRequestPriority.CRITICAL.name()));
-        // filter the CLOSED / REJECTED and CR belong to same group as user
-        return (int) CommonUtils.nullToEmptySet(criticalCr).stream()
-                .filter(cr -> !(ClearingRequestState.CLOSED.equals(cr.getClearingState()) || ClearingRequestState.REJECTED.equals(cr.getClearingState()))
-                        && cr.getProjectBU().trim().toUpperCase().startsWith(group.trim().toUpperCase()))
-                .distinct().count();
-    }
+	public Integer getOpenCriticalClearingRequestCount(String group) {
+		Set<ClearingRequest> criticalCr = new HashSet<ClearingRequest>(
+				queryView("byPriority", ClearingRequestPriority.CRITICAL.name()));
+		// filter the CLOSED / REJECTED and CR belong to same group as user
+		return (int) CommonUtils.nullToEmptySet(criticalCr).stream()
+				.filter(cr -> !(ClearingRequestState.CLOSED.equals(cr.getClearingState())
+						|| ClearingRequestState.REJECTED.equals(cr.getClearingState()))
+						&& cr.getProjectBU().trim().toUpperCase().startsWith(group.trim().toUpperCase()))
+				.distinct().count();
+	}
 }

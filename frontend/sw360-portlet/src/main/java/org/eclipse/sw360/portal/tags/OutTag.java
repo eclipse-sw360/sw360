@@ -28,78 +28,78 @@ import static org.eclipse.sw360.portal.tags.TagUtils.escapeAttributeValue;
  * @author thomas.maier@evosoft.com
  */
 public class OutTag extends OutSupport {
-    private boolean jsQuoting = false;
-    private boolean stripNewlines = true;
-    private boolean bare = false;
-    private Integer maxChar = -1;
+	private boolean jsQuoting = false;
+	private boolean stripNewlines = true;
+	private boolean bare = false;
+	private Integer maxChar = -1;
 
-    public OutTag() {
-    }
+	public OutTag() {
+	}
 
-    @Override
-    public int doStartTag() throws JspException {
-        if (value instanceof String) {
-            boolean abbreviated = false;
-            String candidate = (String) this.value;
-            String originalValue = candidate;
+	@Override
+	public int doStartTag() throws JspException {
+		if (value instanceof String) {
+			boolean abbreviated = false;
+			String candidate = (String) this.value;
+			String originalValue = candidate;
 
-            if (maxChar > 4) {
-                candidate = StringUtils.abbreviate(candidate, maxChar);
-                if (!originalValue.equals(candidate)) {
-                    abbreviated = true;
-                }
-            }
+			if (maxChar > 4) {
+				candidate = StringUtils.abbreviate(candidate, maxChar);
+				if (!originalValue.equals(candidate)) {
+					abbreviated = true;
+				}
+			}
 
-            if (jsQuoting) {
-                candidate = StringEscapeUtils.escapeJavaScript(candidate);
-            }
+			if (jsQuoting) {
+				candidate = StringEscapeUtils.escapeJavaScript(candidate);
+			}
 
-            if (stripNewlines) {
-                candidate = candidate.replaceAll("[\r\n]+", " ");
-            }
+			if (stripNewlines) {
+				candidate = candidate.replaceAll("[\r\n]+", " ");
+			}
 
-            this.value = candidate;
+			this.value = candidate;
 
-            if (!bare && abbreviated) {
-                try {
-                    this.pageContext.getOut().write("<span title=\"" + prepareTitleAttribute(originalValue) + "\">");
-                    int i = super.doStartTag();
-                    this.pageContext.getOut().write("</span>");
-                    return i;
-                } catch (IOException e) {
-                    throw new JspException(e.toString(), e);
-                }
-            }
-        }
+			if (!bare && abbreviated) {
+				try {
+					this.pageContext.getOut().write("<span title=\"" + prepareTitleAttribute(originalValue) + "\">");
+					int i = super.doStartTag();
+					this.pageContext.getOut().write("</span>");
+					return i;
+				} catch (IOException e) {
+					throw new JspException(e.toString(), e);
+				}
+			}
+		}
 
-        return super.doStartTag();
-    }
+		return super.doStartTag();
+	}
 
-    public void setValue(Object value) {
-        this.value = value;
-    }
+	public void setValue(Object value) {
+		this.value = value;
+	}
 
-    public void setDefault(String def) {
-        this.def = def;
-    }
+	public void setDefault(String def) {
+		this.def = def;
+	}
 
-    public void setJsQuoting(boolean jsQuoting) {
-        this.jsQuoting = jsQuoting;
-    }
+	public void setJsQuoting(boolean jsQuoting) {
+		this.jsQuoting = jsQuoting;
+	}
 
-    public void setMaxChar(Integer maxChar) {
-        this.maxChar = maxChar;
-    }
+	public void setMaxChar(Integer maxChar) {
+		this.maxChar = maxChar;
+	}
 
-    public void setStripNewlines(boolean stripNewlines) {
-        this.stripNewlines = stripNewlines;
-    }
+	public void setStripNewlines(boolean stripNewlines) {
+		this.stripNewlines = stripNewlines;
+	}
 
-    public void setBare(boolean bare) { this.bare = bare; }
+	public void setBare(boolean bare) {
+		this.bare = bare;
+	}
 
-    private String prepareTitleAttribute(String value) {
-        return escapeAttributeValue(value).replaceAll("[\r\n]+", "&#013;&#010;");
-    }
+	private String prepareTitleAttribute(String value) {
+		return escapeAttributeValue(value).replaceAll("[\r\n]+", "&#013;&#010;");
+	}
 }
-
-

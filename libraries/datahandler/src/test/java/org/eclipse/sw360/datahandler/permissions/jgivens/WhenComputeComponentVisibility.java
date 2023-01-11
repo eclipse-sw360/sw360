@@ -25,27 +25,29 @@ import com.tngtech.jgiven.annotation.Quoted;
  * @author kouki1.hama@toshiba.co.jp
  */
 public class WhenComputeComponentVisibility extends Stage<WhenComputeComponentVisibility> {
-    @ExpectedScenarioState
-    Component component;
+	@ExpectedScenarioState
+	Component component;
 
-    @ProvidedScenarioState
-    Boolean isVisible;
+	@ProvidedScenarioState
+	Boolean isVisible;
 
-    private static String DUMMY_MAIL = "DAU@dau.com";
-    private static String DUMMY_DEP = "definitleyTheWrongDepartment YO HO HO";
+	private static String DUMMY_MAIL = "DAU@dau.com";
+	private static String DUMMY_DEP = "definitleyTheWrongDepartment YO HO HO";
 
-    public WhenComputeComponentVisibility the_visibility_is_computed_for_department_$_and_user_group_$(@Quoted String department, @TEnumToString UserGroup userGroup) {
-        final User user = new User(DUMMY_MAIL, department).setUserGroup(userGroup);
+	public WhenComputeComponentVisibility the_visibility_is_computed_for_department_$_and_user_group_$(
+			@Quoted String department, @TEnumToString UserGroup userGroup) {
+		final User user = new User(DUMMY_MAIL, department).setUserGroup(userGroup);
 
-        isVisible = ComponentPermissions.isVisible(user).test(component);
-        return self();
-    }
+		isVisible = ComponentPermissions.isVisible(user).test(component);
+		return self();
+	}
 
-    public WhenComputeComponentVisibility the_visibility_is_computed_for_the_wrong_department_and_the_user_$(@Quoted String mail) {
-        final User user = new User(mail, DUMMY_DEP).setUserGroup(UserGroup.USER);
+	public WhenComputeComponentVisibility the_visibility_is_computed_for_the_wrong_department_and_the_user_$(
+			@Quoted String mail) {
+		final User user = new User(mail, DUMMY_DEP).setUserGroup(UserGroup.USER);
 
-        isVisible = ComponentPermissions.isVisible(user).test(component);
-        return self();
-    }
+		isVisible = ComponentPermissions.isVisible(user).test(component);
+		return self();
+	}
 
 }

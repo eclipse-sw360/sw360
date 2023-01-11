@@ -31,68 +31,68 @@ import static org.mockito.Mockito.when;
  * corner cases; the main logic is tested by integration tests.
  */
 public class RequestBodyBuilderImplTest {
-    /**
-     * Mock for the JSON mapper.
-     */
-    private ObjectMapper mapper;
+	/**
+	 * Mock for the JSON mapper.
+	 */
+	private ObjectMapper mapper;
 
-    /**
-     * The builder to be tested.
-     */
-    private RequestBodyBuilderImpl bodyBuilder;
+	/**
+	 * The builder to be tested.
+	 */
+	private RequestBodyBuilderImpl bodyBuilder;
 
-    @Before
-    public void setUp() {
-        mapper = mock(ObjectMapper.class);
-        bodyBuilder = new RequestBodyBuilderImpl(mapper);
-    }
+	@Before
+	public void setUp() {
+		mapper = mock(ObjectMapper.class);
+		bodyBuilder = new RequestBodyBuilderImpl(mapper);
+	}
 
-    @Test(expected = IllegalStateException.class)
-    public void testStringBodyIfBodyIsAlreadyDefined() {
-        bodyBuilder.string("body1", HttpConstants.CONTENT_TEXT_PLAIN);
+	@Test(expected = IllegalStateException.class)
+	public void testStringBodyIfBodyIsAlreadyDefined() {
+		bodyBuilder.string("body1", HttpConstants.CONTENT_TEXT_PLAIN);
 
-        bodyBuilder.string("body2", HttpConstants.CONTENT_TEXT_PLAIN);
-    }
+		bodyBuilder.string("body2", HttpConstants.CONTENT_TEXT_PLAIN);
+	}
 
-    @Test(expected = IllegalStateException.class)
-    public void testFileBodyIfBodyIsAlreadyDefined() {
-        bodyBuilder.string("body1", HttpConstants.CONTENT_TEXT_PLAIN);
+	@Test(expected = IllegalStateException.class)
+	public void testFileBodyIfBodyIsAlreadyDefined() {
+		bodyBuilder.string("body1", HttpConstants.CONTENT_TEXT_PLAIN);
 
-        bodyBuilder.file(Paths.get("test.doc"), HttpConstants.CONTENT_OCTET_STREAM);
-    }
+		bodyBuilder.file(Paths.get("test.doc"), HttpConstants.CONTENT_OCTET_STREAM);
+	}
 
-    @Test(expected = IllegalStateException.class)
-    public void testJsonBodyIfBodyIsAlreadyDefined() throws JsonProcessingException {
-        when(mapper.writeValueAsString(any())).thenReturn("some body content");
-        bodyBuilder.string("body1", HttpConstants.CONTENT_TEXT_PLAIN);
+	@Test(expected = IllegalStateException.class)
+	public void testJsonBodyIfBodyIsAlreadyDefined() throws JsonProcessingException {
+		when(mapper.writeValueAsString(any())).thenReturn("some body content");
+		bodyBuilder.string("body1", HttpConstants.CONTENT_TEXT_PLAIN);
 
-        bodyBuilder.json(new HashMap<String, Object>());
-    }
+		bodyBuilder.json(new HashMap<String, Object>());
+	}
 
-    @Test(expected = IllegalStateException.class)
-    public void testGetBodyIfUndefined() {
-        bodyBuilder.getBody();
-    }
+	@Test(expected = IllegalStateException.class)
+	public void testGetBodyIfUndefined() {
+		bodyBuilder.getBody();
+	}
 
-    @Test
-    public void testHandlingOfJsonProcessingException() throws JsonProcessingException {
-        Object data = new Object();
-        JsonProcessingException exception = mock(JsonProcessingException.class);
-        when(mapper.writeValueAsString(data)).thenThrow(exception);
+	@Test
+	public void testHandlingOfJsonProcessingException() throws JsonProcessingException {
+		Object data = new Object();
+		JsonProcessingException exception = mock(JsonProcessingException.class);
+		when(mapper.writeValueAsString(data)).thenThrow(exception);
 
-        try {
-            bodyBuilder.json(data);
-            fail("No exception thrown!");
-        } catch (IllegalStateException iex) {
-            assertThat(iex.getCause()).isEqualTo(exception);
-        }
-    }
+		try {
+			bodyBuilder.json(data);
+			fail("No exception thrown!");
+		} catch (IllegalStateException iex) {
+			assertThat(iex.getCause()).isEqualTo(exception);
+		}
+	}
 
-    @Test
-    public void testBodyFileNoFileName() {
-        Path folderPath = Paths.get("/");
+	@Test
+	public void testBodyFileNoFileName() {
+		Path folderPath = Paths.get("/");
 
-        bodyBuilder.file(folderPath, "text/plain");
-        assertThat(bodyBuilder.getFileName()).isNull();
-    }
+		bodyBuilder.file(folderPath, "text/plain");
+		assertThat(bodyBuilder.getFileName()).isNull();
+	}
 }

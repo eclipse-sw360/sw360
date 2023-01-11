@@ -23,41 +23,40 @@ import java.net.URL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class PagingLinkObjectsTest {
-    /**
-     * Template for the base URL used to request a specific page.
-     */
-    private static final String PAGING_URL = "https://sw360.test.com//resource/api/components?page=%d&page_entries=5";
+	/**
+	 * Template for the base URL used to request a specific page.
+	 */
+	private static final String PAGING_URL = "https://sw360.test.com//resource/api/components?page=%d&page_entries=5";
 
-    /**
-     * Checks whether a paging link contains the expected URI.
-     *
-     * @param index the index of the expected target page
-     * @param link  the link to be checked
-     */
-    private static void assertPage(int index, Self link) {
-        String expUri = String.format(PAGING_URL, index);
-        assertThat(link.getHref()).isEqualTo(expUri);
-    }
+	/**
+	 * Checks whether a paging link contains the expected URI.
+	 *
+	 * @param index
+	 *            the index of the expected target page
+	 * @param link
+	 *            the link to be checked
+	 */
+	private static void assertPage(int index, Self link) {
+		String expUri = String.format(PAGING_URL, index);
+		assertThat(link.getHref()).isEqualTo(expUri);
+	}
 
-    @Test
-    public void testDeserializeFromJson() throws IOException {
-        URL testFile = getClass().getResource("/__files/all_components_paging.json");
-        ObjectMapper mapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+	@Test
+	public void testDeserializeFromJson() throws IOException {
+		URL testFile = getClass().getResource("/__files/all_components_paging.json");
+		ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        SW360ComponentList componentList = mapper.readValue(testFile, SW360ComponentList.class);
-        PagingLinkObjects links = componentList.getLinks();
-        assertPage(0, links.getFirst());
-        assertPage(1, links.getPrevious());
-        assertPage(2, links.getNext());
-        assertPage(3, links.getLast());
-    }
+		SW360ComponentList componentList = mapper.readValue(testFile, SW360ComponentList.class);
+		PagingLinkObjects links = componentList.getLinks();
+		assertPage(0, links.getFirst());
+		assertPage(1, links.getPrevious());
+		assertPage(2, links.getNext());
+		assertPage(3, links.getLast());
+	}
 
-    @Test
-    public void testEquals() {
-        EqualsVerifier.forClass(PagingLinkObjects.class)
-                .withRedefinedSuperclass()
-                .suppress(Warning.NONFINAL_FIELDS)
-                .verify();
-    }
+	@Test
+	public void testEquals() {
+		EqualsVerifier.forClass(PagingLinkObjects.class).withRedefinedSuperclass().suppress(Warning.NONFINAL_FIELDS)
+				.verify();
+	}
 }

@@ -29,49 +29,38 @@ import javax.portlet.*;
 import static org.eclipse.sw360.portal.common.PortalConstants.ECC_PORTLET_NAME;
 import static org.eclipse.sw360.portal.common.PortalConstants.RELEASE_LIST;
 
-@org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-        "/org/eclipse/sw360/portal/portlets/base.properties",
-        "/org/eclipse/sw360/portal/portlets/default.properties"
-    },
-    property = {
-        "javax.portlet.name=" + ECC_PORTLET_NAME,
+@org.osgi.service.component.annotations.Component(immediate = true, properties = {
+		"/org/eclipse/sw360/portal/portlets/base.properties",
+		"/org/eclipse/sw360/portal/portlets/default.properties"}, property = {"javax.portlet.name=" + ECC_PORTLET_NAME,
 
-        "javax.portlet.display-name=ECC",
-        "javax.portlet.info.short-title=ECC",
-        "javax.portlet.info.title=ECC",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/ecc/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+				"javax.portlet.display-name=ECC", "javax.portlet.info.short-title=ECC", "javax.portlet.info.title=ECC",
+				"javax.portlet.resource-bundle=content.Language",
+				"javax.portlet.init-param.view-template=/html/ecc/view.jsp",}, service = Portlet.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class EccPortlet extends Sw360Portlet {
 
-    private static final Logger log = LogManager.getLogger(EccPortlet.class);
+	private static final Logger log = LogManager.getLogger(EccPortlet.class);
 
-    @Override
-    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        prepareStandardView(request);
-        // Proceed with page rendering
-        super.doView(request, response);
-    }
+	@Override
+	public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+		prepareStandardView(request);
+		// Proceed with page rendering
+		super.doView(request, response);
+	}
 
-    private void prepareStandardView(RenderRequest request) {
-        final User user = UserCacheHolder.getUserFromRequest(request);
-        ComponentService.Iface client = thriftClients.makeComponentClient();
+	private void prepareStandardView(RenderRequest request) {
+		final User user = UserCacheHolder.getUserFromRequest(request);
+		ComponentService.Iface client = thriftClients.makeComponentClient();
 
-        try {
-            final List<Release> releaseSummary = client.getAccessibleReleaseSummary(user);
+		try {
+			final List<Release> releaseSummary = client.getAccessibleReleaseSummary(user);
 
-            request.setAttribute(RELEASE_LIST, releaseSummary);
+			request.setAttribute(RELEASE_LIST, releaseSummary);
 
-        } catch (TException e) {
-            log.error("Could not fetch releases from backend", e);
-            request.setAttribute(RELEASE_LIST, Collections.emptyList());
-        }
+		} catch (TException e) {
+			log.error("Could not fetch releases from backend", e);
+			request.setAttribute(RELEASE_LIST, Collections.emptyList());
+		}
 
-    }
+	}
 
 }

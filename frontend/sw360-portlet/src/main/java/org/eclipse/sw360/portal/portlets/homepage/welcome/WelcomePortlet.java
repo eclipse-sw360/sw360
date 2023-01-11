@@ -23,28 +23,18 @@ import static org.eclipse.sw360.portal.common.PortalConstants.WELCOME_PORTLET_NA
 
 import java.io.IOException;
 
-@org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-        "/org/eclipse/sw360/portal/portlets/base.properties",
-        "/org/eclipse/sw360/portal/portlets/welcome.properties"
-    },
-    property = {
-        "javax.portlet.name=" + WELCOME_PORTLET_NAME,
+@org.osgi.service.component.annotations.Component(immediate = true, properties = {
+		"/org/eclipse/sw360/portal/portlets/base.properties",
+		"/org/eclipse/sw360/portal/portlets/welcome.properties"}, property = {
+				"javax.portlet.name=" + WELCOME_PORTLET_NAME,
 
-        "javax.portlet.display-name=Welcome",
-        "javax.portlet.info.short-title=Welcome",
-        "javax.portlet.info.title=Welcome",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/homepage/welcome/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+				"javax.portlet.display-name=Welcome", "javax.portlet.info.short-title=Welcome",
+				"javax.portlet.info.title=Welcome", "javax.portlet.resource-bundle=content.Language",
+				"javax.portlet.init-param.view-template=/html/homepage/welcome/view.jsp",}, service = Portlet.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class WelcomePortlet extends MVCPortlet {
-    @Override
-    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        PortletUtils.setWelcomePageGuideLine(request);
-        super.doView(request, response);
-    }
+	@Override
+	public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+		PortletUtils.setWelcomePageGuideLine(request);
+		super.doView(request, response);
+	}
 }

@@ -24,39 +24,42 @@ import java.util.*;
  */
 public class RepositoryUtils {
 
-    //This works with any repository
-    public static RequestSummary doBulk(Collection<?> objects, User user, DatabaseRepositoryCloudantClient<?> repository){
+	// This works with any repository
+	public static RequestSummary doBulk(Collection<?> objects, User user,
+			DatabaseRepositoryCloudantClient<?> repository) {
 
-        RequestSummary requestSummary =  new RequestSummary();
-        if(PermissionUtils.isAdmin(user)) {
-            // Prepare component for database
-            final List<Response> documentOperationResults = repository.executeBulk(objects);
+		RequestSummary requestSummary = new RequestSummary();
+		if (PermissionUtils.isAdmin(user)) {
+			// Prepare component for database
+			final List<Response> documentOperationResults = repository.executeBulk(objects);
 
-            requestSummary.setTotalElements(objects.size() );
-            requestSummary.setTotalAffectedElements(objects.size() - documentOperationResults.size());
+			requestSummary.setTotalElements(objects.size());
+			requestSummary.setTotalAffectedElements(objects.size() - documentOperationResults.size());
 
-            requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        } else {
-            requestSummary.setRequestStatus(RequestStatus.FAILURE);
-        }
-        return requestSummary;
-    }
+			requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+		} else {
+			requestSummary.setRequestStatus(RequestStatus.FAILURE);
+		}
+		return requestSummary;
+	}
 
-    public Set<String> searchByExternalIds(DatabaseRepositoryCloudantClient<?> repository, String queryName, Map<String, Set<String>> externalIds) {
-        Set<String> searchIds = new HashSet<>();
-        for (Iterator<Map.Entry<String, Set<String>>> it = externalIds.entrySet().iterator(); it.hasNext(); ) {
-            Map.Entry<String, Set<String>> externalId = it.next();
-            Set<String> externalValues = externalId.getValue();
-            if (externalValues.isEmpty() || (externalValues.size() == 1 && externalValues.iterator().next().isEmpty())) {
-                searchIds.addAll(repository.queryForIdsOnlyComplexKey(queryName, externalId.getKey()));
-                it.remove();
-            }
-        }
+	public Set<String> searchByExternalIds(DatabaseRepositoryCloudantClient<?> repository, String queryName,
+			Map<String, Set<String>> externalIds) {
+		Set<String> searchIds = new HashSet<>();
+		for (Iterator<Map.Entry<String, Set<String>>> it = externalIds.entrySet().iterator(); it.hasNext();) {
+			Map.Entry<String, Set<String>> externalId = it.next();
+			Set<String> externalValues = externalId.getValue();
+			if (externalValues.isEmpty()
+					|| (externalValues.size() == 1 && externalValues.iterator().next().isEmpty())) {
+				searchIds.addAll(repository.queryForIdsOnlyComplexKey(queryName, externalId.getKey()));
+				it.remove();
+			}
+		}
 
-        if (!externalIds.isEmpty()) {
-            searchIds.addAll(repository.queryForIdsAsComplexValues(queryName, externalIds));
-        }
+		if (!externalIds.isEmpty()) {
+			searchIds.addAll(repository.queryForIdsAsComplexValues(queryName, externalIds));
+		}
 
-        return searchIds;
-    }
+		return searchIds;
+	}
 }

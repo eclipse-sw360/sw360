@@ -53,85 +53,88 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class CombinedCLIParserTest {
-    private static final String TEST_XML_FILENAME = "CombinedCLITest.xml";
+	private static final String TEST_XML_FILENAME = "CombinedCLITest.xml";
 
-    @Mock
-    private AttachmentConnector connector;
-    private CombinedCLIParser parser;
-    private AttachmentContent content;
-    private Attachment attachment;
-    @Mock
-    private ComponentDatabaseHandler componentDatabaseHandler;
-    private String cliTestfile;
+	@Mock
+	private AttachmentConnector connector;
+	private CombinedCLIParser parser;
+	private AttachmentContent content;
+	private Attachment attachment;
+	@Mock
+	private ComponentDatabaseHandler componentDatabaseHandler;
+	private String cliTestfile;
 
-    @Before
-    public void setUp() throws Exception {
-        cliTestfile = IOUtils.toString(makeAttachmentContentStream(TEST_XML_FILENAME));
-        attachment = new Attachment("A1", "a.xml").setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
-        content = new AttachmentContent().setId("A1").setFilename("a.xml").setContentType("application/xml");
-        parser = spy(new CombinedCLIParser(connector, attachment -> content, componentDatabaseHandler));
-        doReturn("external-correlation-id").when(parser).getCorrelationKey();
-        Release r1 = new Release().setId("id1")
-                .setName("r1")
-                .setVersion("1.0")
-                .setVendor(new Vendor().setFullname("VendorA Fullname").setShortname("VendorA"))
-                .setExternalIds(ImmutableMap.of(parser.getCorrelationKey(), "1234"));
-        Release r2 = new Release().setId("id2")
-                .setName("r2")
-                .setVersion("2.0")
-                .setVendor(new Vendor().setFullname("VendorB Fullname").setShortname("VendorB"))
-                .setExternalIds(ImmutableMap.of(parser.getCorrelationKey(), "4321"));
-        Release r3 = new Release().setId("id3")
-                .setName("r3")
-                .setVersion("3.0")
-                .setVendor(new Vendor().setFullname("VendorC Fullname").setShortname("VendorC"));
-        Release r4 = new Release().setId("id4")
-                .setName("r4")
-                .setVersion("4.0")
-                .setVendor(new Vendor().setFullname("VendorD Fullname").setShortname("VendorD"))
-                .setExternalIds(ImmutableMap.of("some_external_id", "1234"));
+	@Before
+	public void setUp() throws Exception {
+		cliTestfile = IOUtils.toString(makeAttachmentContentStream(TEST_XML_FILENAME));
+		attachment = new Attachment("A1", "a.xml").setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
+		content = new AttachmentContent().setId("A1").setFilename("a.xml").setContentType("application/xml");
+		parser = spy(new CombinedCLIParser(connector, attachment -> content, componentDatabaseHandler));
+		doReturn("external-correlation-id").when(parser).getCorrelationKey();
+		Release r1 = new Release().setId("id1").setName("r1").setVersion("1.0")
+				.setVendor(new Vendor().setFullname("VendorA Fullname").setShortname("VendorA"))
+				.setExternalIds(ImmutableMap.of(parser.getCorrelationKey(), "1234"));
+		Release r2 = new Release().setId("id2").setName("r2").setVersion("2.0")
+				.setVendor(new Vendor().setFullname("VendorB Fullname").setShortname("VendorB"))
+				.setExternalIds(ImmutableMap.of(parser.getCorrelationKey(), "4321"));
+		Release r3 = new Release().setId("id3").setName("r3").setVersion("3.0")
+				.setVendor(new Vendor().setFullname("VendorC Fullname").setShortname("VendorC"));
+		Release r4 = new Release().setId("id4").setName("r4").setVersion("4.0")
+				.setVendor(new Vendor().setFullname("VendorD Fullname").setShortname("VendorD"))
+				.setExternalIds(ImmutableMap.of("some_external_id", "1234"));
 
-        when(componentDatabaseHandler.getAllReleasesIdMap()).thenReturn(ImmutableMap.of(r1.getId(), r1, r2.getId(), r2, r3.getId(), r3, r4.getId(), r4));
-    }
+		when(componentDatabaseHandler.getAllReleasesIdMap())
+				.thenReturn(ImmutableMap.of(r1.getId(), r1, r2.getId(), r2, r3.getId(), r3, r4.getId(), r4));
+	}
 
-    @Test
-    public void testIsApplicableTo() throws Exception {
-        when(connector.getAttachmentStream(content, new User(), new Project())).thenReturn(makeAttachmentContentStream(TEST_XML_FILENAME));
-        assertTrue(parser.isApplicableTo(attachment, new User(), new Project()));
-    }
+	@Test
+	public void testIsApplicableTo() throws Exception {
+		when(connector.getAttachmentStream(content, new User(), new Project()))
+				.thenReturn(makeAttachmentContentStream(TEST_XML_FILENAME));
+		assertTrue(parser.isApplicableTo(attachment, new User(), new Project()));
+	}
 
-    @Test
-    public void testIsApplicableToFailsOnIncorrectRootElement() throws Exception {
-        AttachmentContent content = new AttachmentContent().setId("A1").setFilename("a.xml").setContentType("application/xml");
-        when(connector.getAttachmentStream(content, new User(), new Project())).thenReturn(new ReaderInputStream(new StringReader("<wrong-root/>")));
-        assertFalse(parser.isApplicableTo(attachment, new User(), new Project()));
-    }
+	@Test
+	public void testIsApplicableToFailsOnIncorrectRootElement() throws Exception {
+		AttachmentContent content = new AttachmentContent().setId("A1").setFilename("a.xml")
+				.setContentType("application/xml");
+		when(connector.getAttachmentStream(content, new User(), new Project()))
+				.thenReturn(new ReaderInputStream(new StringReader("<wrong-root/>")));
+		assertFalse(parser.isApplicableTo(attachment, new User(), new Project()));
+	}
 
-    @Test
-    public void testIsApplicableToFailsOnMalformedXML() throws Exception {
-        AttachmentContent content = new AttachmentContent().setId("A1").setFilename("a.xml").setContentType("application/xml");
-        when(connector.getAttachmentStream(content, new User(), new Project())).thenReturn(new ReaderInputStream(new StringReader("this is not an xml file")));
-        assertFalse(parser.isApplicableTo(attachment, new User(), new Project()));
-    }
+	@Test
+	public void testIsApplicableToFailsOnMalformedXML() throws Exception {
+		AttachmentContent content = new AttachmentContent().setId("A1").setFilename("a.xml")
+				.setContentType("application/xml");
+		when(connector.getAttachmentStream(content, new User(), new Project()))
+				.thenReturn(new ReaderInputStream(new StringReader("this is not an xml file")));
+		assertFalse(parser.isApplicableTo(attachment, new User(), new Project()));
+	}
 
-    @Test
-    public void testGetCLI() throws Exception {
-        Attachment cliAttachment = new Attachment("A1", "a.xml");
-        when(connector.getAttachmentStream(any(), any(), any())).thenReturn(new ReaderInputStream(new StringReader(cliTestfile)));
-        List<LicenseInfoParsingResult> results = parser.getLicenseInfos(cliAttachment, new User(), new Project());
-        assertThat(results.size(), is(1));
-        LicenseInfoParsingResult res = results.get(0);
-        assertLicenseInfoParsingResult(res);
-        assertThat(res.getLicenseInfo().getFilenames(), containsInAnyOrder("a.xml"));
-        assertThat(res.getLicenseInfo().getLicenseNamesWithTexts().size(), is(3));
-        assertThat(res.getLicenseInfo().getLicenseNamesWithTexts().stream().map(LicenseNameWithText::getLicenseText).collect(Collectors.toSet()),
-                containsInAnyOrder("License1Text", "License2Text", "License3&'Text"));
-        LicenseNameWithText l2 = res.getLicenseInfo().getLicenseNamesWithTexts().stream().filter(l -> l.getLicenseName().equals("License2")).findFirst().orElseThrow(AssertionError::new);
-        assertThat(l2.getAcknowledgements(), is("License2Acknowledgements"));
-        assertThat(res.getLicenseInfo().getCopyrights().size(), is(5));
-        assertThat(res.getLicenseInfo().getCopyrights(), containsInAnyOrder("Copyright1", "Copyright2", "Copyright3", "Copyright4", "Copyright5"));
-        assertThat(res.getVendor(), is("VendorA"));
-        assertThat(res.getName(), is("r1"));
-        assertThat(res.getVersion(), is("1.0"));
-    }
+	@Test
+	public void testGetCLI() throws Exception {
+		Attachment cliAttachment = new Attachment("A1", "a.xml");
+		when(connector.getAttachmentStream(any(), any(), any()))
+				.thenReturn(new ReaderInputStream(new StringReader(cliTestfile)));
+		List<LicenseInfoParsingResult> results = parser.getLicenseInfos(cliAttachment, new User(), new Project());
+		assertThat(results.size(), is(1));
+		LicenseInfoParsingResult res = results.get(0);
+		assertLicenseInfoParsingResult(res);
+		assertThat(res.getLicenseInfo().getFilenames(), containsInAnyOrder("a.xml"));
+		assertThat(res.getLicenseInfo().getLicenseNamesWithTexts().size(), is(3));
+		assertThat(
+				res.getLicenseInfo().getLicenseNamesWithTexts().stream().map(LicenseNameWithText::getLicenseText)
+						.collect(Collectors.toSet()),
+				containsInAnyOrder("License1Text", "License2Text", "License3&'Text"));
+		LicenseNameWithText l2 = res.getLicenseInfo().getLicenseNamesWithTexts().stream()
+				.filter(l -> l.getLicenseName().equals("License2")).findFirst().orElseThrow(AssertionError::new);
+		assertThat(l2.getAcknowledgements(), is("License2Acknowledgements"));
+		assertThat(res.getLicenseInfo().getCopyrights().size(), is(5));
+		assertThat(res.getLicenseInfo().getCopyrights(),
+				containsInAnyOrder("Copyright1", "Copyright2", "Copyright3", "Copyright4", "Copyright5"));
+		assertThat(res.getVendor(), is("VendorA"));
+		assertThat(res.getName(), is("r1"));
+		assertThat(res.getVersion(), is("1.0"));
+	}
 }

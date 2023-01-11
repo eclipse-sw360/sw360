@@ -28,71 +28,48 @@ import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseCo
 
 public class ProjectSearchHandler {
 
-    private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "projects",
-            "function(doc) {" +
-                    "    var ret = new Document();" +
-                    "    if(!doc.type) return ret;" +
-                    "    if(doc.type != 'project') return ret;" +
-                    "    function idx(obj) {" +
-                    "        for (var key in obj) {" +
-                    "            switch (typeof obj[key]) {" +
-                    "                case 'object':" +
-                    "                    idx(obj[key]);" +
-                    "                    break;" +
-                    "                case 'function':" +
-                    "                    break;" +
-                    "                default:" +
-                    "                    ret.add(obj[key]);" +
-                    "                    break;" +
-                    "            }" +
-                    "        }" +
-                    "    };" +
-                    "    idx(doc);" +
-                    "    if(doc.businessUnit !== undefined && doc.businessUnit != null && doc.businessUnit.length >0) {  "+
-                    "         ret.add(doc.businessUnit, {\"field\": \"businessUnit\"} );" +
-                    "    }" +
-                    "    if(doc.projectType !== undefined && doc.projectType != null && doc.projectType.length >0) {  "+
-                    "      ret.add(doc.projectType, {\"field\": \"projectType\"} );" +
-                    "    }" +
-                    "    if(doc.projectResponsible !== undefined && doc.projectResponsible != null && doc.projectResponsible.length >0) {  "+
-                    "      ret.add(doc.projectResponsible, {\"field\": \"projectResponsible\"} );" +
-                    "    }" +
-                    "    if(doc.name !== undefined && doc.name != null && doc.name.length >0) {  "+
-                    "      ret.add(doc.name, {\"field\": \"name\"} );" +
-                    "    }" +
-                    "    if(doc.version !== undefined && doc.version != null && doc.version.length >0) {  "+
-                    "      ret.add(doc.version, {\"field\": \"version\"} );" +
-                    "    }" +
-                    "    if(doc.state !== undefined && doc.state != null && doc.state.length >0) {  "+
-                    "      ret.add(doc.state, {\"field\": \"state\"} );" +
-                    "    }" +
-                    "    if(doc.clearingState) {  "+
-                    "      ret.add(doc.clearingState, {\"field\": \"clearingState\"} );" +
-                    "    }" +
-                    "    if(doc.tag !== undefined && doc.tag != null && doc.tag.length >0) {  "+
-                    "      ret.add(doc.tag, {\"field\": \"tag\"} );" +
-                    "    }" +
-                    "    for(var [key, value] in doc.additionalData) {" +
-                    "      ret.add(doc.additionalData[key], {\"field\": \"additionalData\"} );" +
-                    "    }" +
-                    "    return ret;" +
-                    "}");
+	private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "projects",
+			"function(doc) {" + "    var ret = new Document();" + "    if(!doc.type) return ret;"
+					+ "    if(doc.type != 'project') return ret;" + "    function idx(obj) {"
+					+ "        for (var key in obj) {" + "            switch (typeof obj[key]) {"
+					+ "                case 'object':" + "                    idx(obj[key]);"
+					+ "                    break;" + "                case 'function':" + "                    break;"
+					+ "                default:" + "                    ret.add(obj[key]);"
+					+ "                    break;" + "            }" + "        }" + "    };" + "    idx(doc);"
+					+ "    if(doc.businessUnit !== undefined && doc.businessUnit != null && doc.businessUnit.length >0) {  "
+					+ "         ret.add(doc.businessUnit, {\"field\": \"businessUnit\"} );" + "    }"
+					+ "    if(doc.projectType !== undefined && doc.projectType != null && doc.projectType.length >0) {  "
+					+ "      ret.add(doc.projectType, {\"field\": \"projectType\"} );" + "    }"
+					+ "    if(doc.projectResponsible !== undefined && doc.projectResponsible != null && doc.projectResponsible.length >0) {  "
+					+ "      ret.add(doc.projectResponsible, {\"field\": \"projectResponsible\"} );" + "    }"
+					+ "    if(doc.name !== undefined && doc.name != null && doc.name.length >0) {  "
+					+ "      ret.add(doc.name, {\"field\": \"name\"} );" + "    }"
+					+ "    if(doc.version !== undefined && doc.version != null && doc.version.length >0) {  "
+					+ "      ret.add(doc.version, {\"field\": \"version\"} );" + "    }"
+					+ "    if(doc.state !== undefined && doc.state != null && doc.state.length >0) {  "
+					+ "      ret.add(doc.state, {\"field\": \"state\"} );" + "    }" + "    if(doc.clearingState) {  "
+					+ "      ret.add(doc.clearingState, {\"field\": \"clearingState\"} );" + "    }"
+					+ "    if(doc.tag !== undefined && doc.tag != null && doc.tag.length >0) {  "
+					+ "      ret.add(doc.tag, {\"field\": \"tag\"} );" + "    }"
+					+ "    for(var [key, value] in doc.additionalData) {"
+					+ "      ret.add(doc.additionalData[key], {\"field\": \"additionalData\"} );" + "    }"
+					+ "    return ret;" + "}");
 
+	private final LuceneAwareDatabaseConnector connector;
 
-    private final LuceneAwareDatabaseConnector connector;
+	public ProjectSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cCLient, String dbName)
+			throws IOException {
+		connector = new LuceneAwareDatabaseConnector(httpClient, cCLient, dbName);
+		connector.addView(luceneSearchView);
+		connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+	}
 
-    public ProjectSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cCLient, String dbName) throws IOException {
-        connector = new LuceneAwareDatabaseConnector(httpClient, cCLient, dbName);
-        connector.addView(luceneSearchView);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
-    }
+	public List<Project> search(String text, final Map<String, Set<String>> subQueryRestrictions, User user) {
+		return connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView, text, subQueryRestrictions, user);
+	}
 
-    public List<Project> search(String text, final Map<String , Set<String > > subQueryRestrictions, User user ){
-        return connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView, text, subQueryRestrictions, user);
-    }
-
-    public List<Project> search(String searchText) {
-        return connector.searchView(Project.class, luceneSearchView, prepareWildcardQuery(searchText));
-    }
+	public List<Project> search(String searchText) {
+		return connector.searchView(Project.class, luceneSearchView, prepareWildcardQuery(searchText));
+	}
 
 }

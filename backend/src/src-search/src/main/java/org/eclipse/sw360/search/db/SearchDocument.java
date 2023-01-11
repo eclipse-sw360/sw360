@@ -25,71 +25,73 @@ import static org.eclipse.sw360.search.common.SearchConstants.NAME_MAX_LENGTH;
  */
 class SearchDocument {
 
-    /**
-     * Map representation of the document
-     */
-    private final Map<String, Object> document;
+	/**
+	 * Map representation of the document
+	 */
+	private final Map<String, Object> document;
 
-    private final String type;
+	private final String type;
 
-    /**
-     * Constructor, create empty hashmap if the one provided is null, avoiding null pointer exception
-     */
-    SearchDocument(Map<String, Object> document) {
-        if (document != null) {
-            this.document = Collections.unmodifiableMap(document);
-        } else {
-            this.document = new HashMap<>();
-        }
-        // Set the type of the document
-        type = getProperty("type");
-    }
+	/**
+	 * Constructor, create empty hashmap if the one provided is null, avoiding null
+	 * pointer exception
+	 */
+	SearchDocument(Map<String, Object> document) {
+		if (document != null) {
+			this.document = Collections.unmodifiableMap(document);
+		} else {
+			this.document = new HashMap<>();
+		}
+		// Set the type of the document
+		type = getProperty("type");
+	}
 
-    /**
-     * Get document type
-     */
-    String getType() {
-        return type;
-    }
+	/**
+	 * Get document type
+	 */
+	String getType() {
+		return type;
+	}
 
-    /**
-     * Get document name
-     */
-    String getName() {
-        if (!SW360Constants.MAP_FULLTEXT_SEARCH_NAME.containsKey(type)) {
-            return "";
-        } else {
-            String name = getProperty(SW360Constants.MAP_FULLTEXT_SEARCH_NAME.get(type));
-            return StringUtils.abbreviate(name, NAME_MAX_LENGTH);
-        }
-    }
+	/**
+	 * Get document name
+	 */
+	String getName() {
+		if (!SW360Constants.MAP_FULLTEXT_SEARCH_NAME.containsKey(type)) {
+			return "";
+		} else {
+			String name = getProperty(SW360Constants.MAP_FULLTEXT_SEARCH_NAME.get(type));
+			return StringUtils.abbreviate(name, NAME_MAX_LENGTH);
+		}
+	}
 
-    /**
-     * Get property from document hashmap, returning an empty string in case of error
-     */
-    String getProperty(String key) {
-        if (key == null) {
-            return "";
-        }
+	/**
+	 * Get property from document hashmap, returning an empty string in case of
+	 * error
+	 */
+	String getProperty(String key) {
+		if (key == null) {
+			return "";
+		}
 
-        if (!key.contains(" ")) {
-            // Get a single key
-            Object value = document.get(key);
+		if (!key.contains(" ")) {
+			// Get a single key
+			Object value = document.get(key);
 
-            if (value instanceof String) {
-                return (String) value;
-            } else {
-                return "";
-            }
-        } else {
-            // Build a name containing all keys
-            StringBuilder builder = new StringBuilder("");
-            String[] parts = key.split(" ");
-            for (String part : parts) {
-                builder.append(getProperty(part)).append(' ');
-            }
-            return builder.toString();
-        }
-    }
+			if (value instanceof String) {
+				return (String) value;
+			} else {
+				return "";
+			}
+		} else {
+			// Build a name containing all keys
+			StringBuilder builder = new StringBuilder("");
+			String[] parts = key.split(" ");
+			for (String part : parts) {
+				builder.append(getProperty(part)).append(' ');
+			}
+			return builder.toString();
+		}
+	}
 
 }

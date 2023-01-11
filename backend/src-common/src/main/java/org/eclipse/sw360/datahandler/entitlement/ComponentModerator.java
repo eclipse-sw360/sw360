@@ -29,75 +29,73 @@ import org.apache.thrift.TException;
  */
 public class ComponentModerator extends Moderator<Component._Fields, Component> {
 
-    private static final Logger log = LogManager.getLogger(ComponentModerator.class);
+	private static final Logger log = LogManager.getLogger(ComponentModerator.class);
 
-    public ComponentModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
+	public ComponentModerator(ThriftClients thriftClients) {
+		super(thriftClients);
+	}
 
-    public ComponentModerator() {
-        super(new ThriftClients());
-    }
+	public ComponentModerator() {
+		super(new ThriftClients());
+	}
 
-    public RequestStatus updateComponent(Component component, User user) {
+	public RequestStatus updateComponent(Component component, User user) {
 
-        try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
-            client.createComponentRequest(component, user);
-            return RequestStatus.SENT_TO_MODERATOR;
-        } catch (TException e) {
-            log.error("Could not moderate component " + component.getId() + " for User " + user.getEmail(), e);
-            return RequestStatus.FAILURE;
-        }
-    }
+		try {
+			ModerationService.Iface client = thriftClients.makeModerationClient();
+			client.createComponentRequest(component, user);
+			return RequestStatus.SENT_TO_MODERATOR;
+		} catch (TException e) {
+			log.error("Could not moderate component " + component.getId() + " for User " + user.getEmail(), e);
+			return RequestStatus.FAILURE;
+		}
+	}
 
-    public Component updateComponentFromModerationRequest(Component component,
-                                                          Component componentAdditions,
-                                                          Component componentDeletions){
+	public Component updateComponentFromModerationRequest(Component component, Component componentAdditions,
+			Component componentDeletions) {
 
-        for (Component._Fields field : Component._Fields.values()) {
-            if(componentAdditions.getFieldValue(field) == null && componentDeletions.getFieldValue(field) == null){
-                continue;
-            }
+		for (Component._Fields field : Component._Fields.values()) {
+			if (componentAdditions.getFieldValue(field) == null && componentDeletions.getFieldValue(field) == null) {
+				continue;
+			}
 
-            switch (field) {
-                case ID:
-                case REVISION:
-                case TYPE:
-                case CREATED_BY:
-                case CREATED_ON:
-                case PERMISSIONS:
-                case DOCUMENT_STATE:
-                    //Releases and aggregates:
-                case RELEASES:
-                case RELEASE_IDS:
-                case MAIN_LICENSE_IDS:
-                case LANGUAGES:
-                case OPERATING_SYSTEMS:
-                case VENDOR_NAMES:
-                    break;
-                case ATTACHMENTS:
-                    component.setAttachments( updateAttachments(
-                            component.getAttachments(),
-                            componentAdditions.getAttachments(),
-                            componentDeletions.getAttachments()));
-                    break;
-                default:
-                    component = updateBasicField(field, Component.metaDataMap.get(field), component, componentAdditions, componentDeletions);
-            }
+			switch (field) {
+				case ID :
+				case REVISION :
+				case TYPE :
+				case CREATED_BY :
+				case CREATED_ON :
+				case PERMISSIONS :
+				case DOCUMENT_STATE :
+					// Releases and aggregates:
+				case RELEASES :
+				case RELEASE_IDS :
+				case MAIN_LICENSE_IDS :
+				case LANGUAGES :
+				case OPERATING_SYSTEMS :
+				case VENDOR_NAMES :
+					break;
+				case ATTACHMENTS :
+					component.setAttachments(updateAttachments(component.getAttachments(),
+							componentAdditions.getAttachments(), componentDeletions.getAttachments()));
+					break;
+				default :
+					component = updateBasicField(field, Component.metaDataMap.get(field), component, componentAdditions,
+							componentDeletions);
+			}
 
-        }
-        return component;
-    }
-    public RequestStatus deleteComponent(Component component, User user) {
-        try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
-            client.createComponentDeleteRequest(component, user);
-            return RequestStatus.SENT_TO_MODERATOR;
-        } catch (TException e) {
-            log.error("Could not moderate delete component " + component.getId() + " for User " + user.getEmail(), e);
-            return RequestStatus.FAILURE;
-        }
-    }
+		}
+		return component;
+	}
+	public RequestStatus deleteComponent(Component component, User user) {
+		try {
+			ModerationService.Iface client = thriftClients.makeModerationClient();
+			client.createComponentDeleteRequest(component, user);
+			return RequestStatus.SENT_TO_MODERATOR;
+		} catch (TException e) {
+			log.error("Could not moderate delete component " + component.getId() + " for User " + user.getEmail(), e);
+			return RequestStatus.FAILURE;
+		}
+	}
 
 }

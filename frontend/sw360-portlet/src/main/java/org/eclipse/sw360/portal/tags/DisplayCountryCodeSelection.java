@@ -23,78 +23,80 @@ import java.util.*;
 
 public class DisplayCountryCodeSelection extends SimpleTagSupport {
 
-    private String selected;
-    private String preferredCountryCodes;
-    private Map<String, Locale> countryCodeMap;
+	private String selected;
+	private String preferredCountryCodes;
+	private Map<String, Locale> countryCodeMap;
 
-    public void setSelected(String selected) {
-        this.selected = selected;
-    }
+	public void setSelected(String selected) {
+		this.selected = selected;
+	}
 
-    public void setPreferredCountryCodes(String preferredCountryCodes) {
-        this.preferredCountryCodes = preferredCountryCodes;
-    }
+	public void setPreferredCountryCodes(String preferredCountryCodes) {
+		this.preferredCountryCodes = preferredCountryCodes;
+	}
 
-    public void doTag() throws JspException, IOException {
-        populateCountryCodeMap();
-        writeOptions(selected, preferredCountryCodes);
-    }
+	public void doTag() throws JspException, IOException {
+		populateCountryCodeMap();
+		writeOptions(selected, preferredCountryCodes);
+	}
 
-    private void writeOptions(String selected, String preferredCountryCodes) throws IOException {
-        PageContext pageContext = (PageContext) getJspContext();
-        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-        JspWriter jspWriter = getJspContext().getOut();
+	private void writeOptions(String selected, String preferredCountryCodes) throws IOException {
+		PageContext pageContext = (PageContext) getJspContext();
+		HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+				getClass());
+		JspWriter jspWriter = getJspContext().getOut();
 
-        if (selected == null || selected.isEmpty()) {
-            jspWriter.write("<option value=\"\">"+LanguageUtil.get(resourceBundle,"select.a.country")+"</option>");
-        }
+		if (selected == null || selected.isEmpty()) {
+			jspWriter.write("<option value=\"\">" + LanguageUtil.get(resourceBundle, "select.a.country") + "</option>");
+		}
 
-        List<String> validCountryCodeList = applyCountryCodes(preferredCountryCodes);
-        if (!validCountryCodeList.isEmpty()) {
-            for (String countryCode : validCountryCodeList) {
-                writeOption(jspWriter, countryCodeMap.get(countryCode));
-            }
-            jspWriter.write("<option disabled>───────────────</option>");
-        }
+		List<String> validCountryCodeList = applyCountryCodes(preferredCountryCodes);
+		if (!validCountryCodeList.isEmpty()) {
+			for (String countryCode : validCountryCodeList) {
+				writeOption(jspWriter, countryCodeMap.get(countryCode));
+			}
+			jspWriter.write("<option disabled>───────────────</option>");
+		}
 
-        for (Locale locale : countryCodeMap.values()) {
-            if (!validCountryCodeList.contains(locale.getCountry())) {
-                writeOption(jspWriter, locale);
-            }
-        }
-    }
+		for (Locale locale : countryCodeMap.values()) {
+			if (!validCountryCodeList.contains(locale.getCountry())) {
+				writeOption(jspWriter, locale);
+			}
+		}
+	}
 
-    private void writeOption(JspWriter jspWriter, Locale locale) throws IOException {
-        boolean selected = locale.getCountry().equalsIgnoreCase(this.selected);
-        jspWriter.write(String.format(
-                "<option value=\"%s\" class=\"textlabel stackedLabel\" " +
-                        (selected ? "selected=\"selected\" " : "") + ">%s</option>",
-                locale.getCountry(), locale.getDisplayCountry()));
-    }
+	private void writeOption(JspWriter jspWriter, Locale locale) throws IOException {
+		boolean selected = locale.getCountry().equalsIgnoreCase(this.selected);
+		jspWriter
+				.write(String.format(
+						"<option value=\"%s\" class=\"textlabel stackedLabel\" "
+								+ (selected ? "selected=\"selected\" " : "") + ">%s</option>",
+						locale.getCountry(), locale.getDisplayCountry()));
+	}
 
-    private List<String> applyCountryCodes(String countryCodes) {
-        List<String> result = new ArrayList<>();
-        if (countryCodes != null && !countryCodes.isEmpty()) {
-            for (String countryCode : countryCodes.split(",")) {
-                if (countryCodeMap.get(countryCode) != null) {
-                    result.add(countryCode);
-                }
-            }
-        }
-        return result;
-    }
+	private List<String> applyCountryCodes(String countryCodes) {
+		List<String> result = new ArrayList<>();
+		if (countryCodes != null && !countryCodes.isEmpty()) {
+			for (String countryCode : countryCodes.split(",")) {
+				if (countryCodeMap.get(countryCode) != null) {
+					result.add(countryCode);
+				}
+			}
+		}
+		return result;
+	}
 
-    private void populateCountryCodeMap() {
-        String[] countryCodes = Locale.getISOCountries();
-        List<Locale> locales = new ArrayList<>();
-        countryCodeMap = new LinkedHashMap<>();
-        for (String countryCode : countryCodes) {
-            locales.add(new Locale("", countryCode));
-        }
-        locales.sort(Comparator.comparing(Locale::getDisplayCountry));
-        for (Locale locale : locales) {
-            countryCodeMap.put(locale.getCountry(), locale);
-        }
-    }
+	private void populateCountryCodeMap() {
+		String[] countryCodes = Locale.getISOCountries();
+		List<Locale> locales = new ArrayList<>();
+		countryCodeMap = new LinkedHashMap<>();
+		for (String countryCode : countryCodes) {
+			locales.add(new Locale("", countryCode));
+		}
+		locales.sort(Comparator.comparing(Locale::getDisplayCountry));
+		for (Locale locale : locales) {
+			countryCodeMap.put(locale.getCountry(), locale);
+		}
+	}
 }

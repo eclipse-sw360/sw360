@@ -16,15 +16,16 @@ import org.eclipse.sw360.clients.rest.resource.projects.SW360Project;
 
 class SW360ProjectAdapterUtils {
 
-    private SW360ProjectAdapterUtils() {}
+	private SW360ProjectAdapterUtils() {
+	}
 
-    public static boolean isValidProject(SW360Project project) {
-        return StringUtils.isNotEmpty(project.getName()) && StringUtils.isNotEmpty(project.getVersion());
-    }
+	public static boolean isValidProject(SW360Project project) {
+		return StringUtils.isNotEmpty(project.getName()) && StringUtils.isNotEmpty(project.getVersion());
+	}
 
-    public static boolean hasEqualCoordinates(SW360Project sw360Project, String projectName, String projectVersion) {
-        boolean isAppIdEqual = sw360Project.getName().equalsIgnoreCase(projectName);
-        boolean isProjectVersionEqual = sw360Project.getVersion().equalsIgnoreCase(projectVersion);
-        return isAppIdEqual && isProjectVersionEqual;
-    }
+	public static boolean hasEqualCoordinates(SW360Project sw360Project, String projectName, String projectVersion) {
+		boolean isAppIdEqual = sw360Project.getName().equalsIgnoreCase(projectName);
+		boolean isProjectVersionEqual = sw360Project.getVersion().equalsIgnoreCase(projectVersion);
+		return isAppIdEqual && isProjectVersionEqual;
+	}
 }

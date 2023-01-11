@@ -26,43 +26,40 @@ import static org.eclipse.sw360.portal.tags.urlutils.UrlWriterImpl.renderUrl;
  * @author alex.borodin@evosoft.com
  */
 public class DisplayLinkToRelease extends DisplayLinkAbstract {
-    private Release release;
-    private PortletReleasePage page = PortletReleasePage.DETAIL;
-    private Boolean showName = true;
-    private String releaseId;
-    private Boolean showFullname = false;
+	private Release release;
+	private PortletReleasePage page = PortletReleasePage.DETAIL;
+	private Boolean showName = true;
+	private String releaseId;
+	private Boolean showFullname = false;
 
-    public void setRelease(Release release) {
-        this.release = release;
-        releaseId=release.getId();
-    }
+	public void setRelease(Release release) {
+		this.release = release;
+		releaseId = release.getId();
+	}
 
-    public void setPage(PortletReleasePage page) {
-        this.page = page;
-    }
-    public void setReleaseId(String releaseId) {
-        this.releaseId = releaseId;
-        showName=false;
-    }
-    public void setShowName(Boolean showName) {
-        this.showName = showName;
-    }
+	public void setPage(PortletReleasePage page) {
+		this.page = page;
+	}
+	public void setReleaseId(String releaseId) {
+		this.releaseId = releaseId;
+		showName = false;
+	}
+	public void setShowName(Boolean showName) {
+		this.showName = showName;
+	}
 
-    public void setShowFullname(Boolean showFullname) {
-        this.showFullname = showFullname;
-    }
+	public void setShowFullname(Boolean showFullname) {
+		this.showFullname = showFullname;
+	}
 
-    @Override
-    protected String getTextDisplay() {
-        return showName ? (showFullname ? printFullname(release) : printName(release)): null;
-    }
+	@Override
+	protected String getTextDisplay() {
+		return showName ? (showFullname ? printFullname(release) : printName(release)) : null;
+	}
 
-    @Override
-    protected void writeUrl() throws JspException {
-        renderUrl(pageContext)
-                .toPortlet(LinkToPortletConfiguration.COMPONENTS, scopeGroupId)
-                .toPage(page)
-                .withParam(PortalConstants.RELEASE_ID, releaseId)
-                .writeUrlToJspWriter();
-    }
+	@Override
+	protected void writeUrl() throws JspException {
+		renderUrl(pageContext).toPortlet(LinkToPortletConfiguration.COMPONENTS, scopeGroupId).toPage(page)
+				.withParam(PortalConstants.RELEASE_ID, releaseId).writeUrlToJspWriter();
+	}
 }

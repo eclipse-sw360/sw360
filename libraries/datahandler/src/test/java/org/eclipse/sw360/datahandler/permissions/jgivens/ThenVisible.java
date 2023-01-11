@@ -20,11 +20,11 @@ import static org.hamcrest.core.Is.is;
  */
 public class ThenVisible extends Stage<ThenVisible> {
 
-    @ExpectedScenarioState
-    Boolean isVisible;
+	@ExpectedScenarioState
+	Boolean isVisible;
 
-    public ThenVisible the_visibility_should_be(Boolean i) {
-        assertThat(isVisible, is(i));
-        return self();
-    }
+	public ThenVisible the_visibility_should_be(Boolean i) {
+		assertThat(isVisible, is(i));
+		return self();
+	}
 }

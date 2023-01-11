@@ -17,67 +17,67 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SW360VerificationStateInfo {
-    private String checkedOn;
-    private String checkedBy;
-    private String comment;
-    private SW360VerificationState verificationState;
+	private String checkedOn;
+	private String checkedBy;
+	private String comment;
+	private SW360VerificationState verificationState;
 
-    public String getCheckedOn() {
-        return checkedOn;
-    }
+	public String getCheckedOn() {
+		return checkedOn;
+	}
 
-    public SW360VerificationStateInfo setCheckedOn(String checkedOn) {
-        this.checkedOn = checkedOn;
-        return this;
-    }
+	public SW360VerificationStateInfo setCheckedOn(String checkedOn) {
+		this.checkedOn = checkedOn;
+		return this;
+	}
 
-    public String getCheckedBy() {
-        return checkedBy;
-    }
+	public String getCheckedBy() {
+		return checkedBy;
+	}
 
-    public SW360VerificationStateInfo setCheckedBy(String checkedBy) {
-        this.checkedBy = checkedBy;
-        return this;
-    }
+	public SW360VerificationStateInfo setCheckedBy(String checkedBy) {
+		this.checkedBy = checkedBy;
+		return this;
+	}
 
-    public String getComment() {
-        return comment;
-    }
+	public String getComment() {
+		return comment;
+	}
 
-    public SW360VerificationStateInfo setComment(String comment) {
-        this.comment = comment;
-        return this;
-    }
+	public SW360VerificationStateInfo setComment(String comment) {
+		this.comment = comment;
+		return this;
+	}
 
-    public SW360VerificationState getVerificationState() {
-        return verificationState;
-    }
+	public SW360VerificationState getVerificationState() {
+		return verificationState;
+	}
 
-    public SW360VerificationStateInfo setVerificationState(SW360VerificationState verificationState) {
-        this.verificationState = verificationState;
-        return this;
-    }
+	public SW360VerificationStateInfo setVerificationState(SW360VerificationState verificationState) {
+		this.verificationState = verificationState;
+		return this;
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), checkedOn, checkedBy, comment, verificationState);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(super.hashCode(), checkedOn, checkedBy, comment, verificationState);
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        SW360VerificationStateInfo sw360VerificationStateInfo = null;
+	@Override
+	public boolean equals(Object obj) {
+		SW360VerificationStateInfo sw360VerificationStateInfo = null;
 
-        if (this == obj)
-            return true;
-        if ((obj instanceof SW360VerificationStateInfo) || super.equals(obj)) {
-            sw360VerificationStateInfo = (SW360VerificationStateInfo) obj;
-        } else {
-            return false;
-        }
+		if (this == obj)
+			return true;
+		if ((obj instanceof SW360VerificationStateInfo) || super.equals(obj)) {
+			sw360VerificationStateInfo = (SW360VerificationStateInfo) obj;
+		} else {
+			return false;
+		}
 
-        return Objects.equals(checkedOn, sw360VerificationStateInfo.getCheckedOn())
-                && Objects.equals(checkedBy, sw360VerificationStateInfo.getCheckedBy())
-                && Objects.equals(comment, sw360VerificationStateInfo.getComment())
-                && Objects.equals(verificationState, sw360VerificationStateInfo.getVerificationState());
-    }
+		return Objects.equals(checkedOn, sw360VerificationStateInfo.getCheckedOn())
+				&& Objects.equals(checkedBy, sw360VerificationStateInfo.getCheckedBy())
+				&& Objects.equals(comment, sw360VerificationStateInfo.getComment())
+				&& Objects.equals(verificationState, sw360VerificationStateInfo.getVerificationState());
+	}
 }

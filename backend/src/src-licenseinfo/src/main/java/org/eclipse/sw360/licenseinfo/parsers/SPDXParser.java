@@ -45,74 +45,74 @@ import static org.eclipse.sw360.licenseinfo.parsers.SPDXParserTools.getLicenseIn
  * @author: maximilian.huber@tngtech.com
  */
 public class SPDXParser extends LicenseInfoParser {
-    protected static final String FILETYPE_SPDX_EXTENSION = ".rdf";
+	protected static final String FILETYPE_SPDX_EXTENSION = ".rdf";
 
-    private static final Logger log = LogManager.getLogger(SPDXParser.class);
+	private static final Logger log = LogManager.getLogger(SPDXParser.class);
 
-    public SPDXParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
-        super(attachmentConnector, attachmentContentProvider);
-    }
+	public SPDXParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider) {
+		super(attachmentConnector, attachmentContentProvider);
+	}
 
-    @Override
-    public List<String> getApplicableFileExtensions() {
-        return Collections.singletonList(FILETYPE_SPDX_EXTENSION);
-    }
+	@Override
+	public List<String> getApplicableFileExtensions() {
+		return Collections.singletonList(FILETYPE_SPDX_EXTENSION);
+	}
 
-    @Override
-    public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context)
-            throws TException {
-        return Collections.singletonList(getLicenseInfo(attachment, true, false, user, context));
-    }
+	@Override
+	public <T> List<LicenseInfoParsingResult> getLicenseInfos(Attachment attachment, User user, T context)
+			throws TException {
+		return Collections.singletonList(getLicenseInfo(attachment, true, false, user, context));
+	}
 
-    @Override
-    public <T> List<LicenseInfoParsingResult> getLicenseInfosIncludeConcludedLicense(Attachment attachment,
-            boolean includeConcludedLicense, User user, T context) throws TException {
-        return Collections.singletonList(getLicenseInfo(attachment, includeConcludedLicense, false, user, context));
-    }
+	@Override
+	public <T> List<LicenseInfoParsingResult> getLicenseInfosIncludeConcludedLicense(Attachment attachment,
+			boolean includeConcludedLicense, User user, T context) throws TException {
+		return Collections.singletonList(getLicenseInfo(attachment, includeConcludedLicense, false, user, context));
+	}
 
-    public <T> LicenseInfoParsingResult getLicenseInfo(Attachment attachment, boolean includeConcludedLicense, boolean includeFileInformation, User user,
-            T context) throws TException {
-        AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
+	public <T> LicenseInfoParsingResult getLicenseInfo(Attachment attachment, boolean includeConcludedLicense,
+			boolean includeFileInformation, User user, T context) throws TException {
+		AttachmentContent attachmentContent = attachmentContentProvider.getAttachmentContent(attachment);
 
-        final Optional<Document> spdxDocument = openAsSpdx(attachmentContent, user, context);
-        if(! spdxDocument.isPresent()){
-            return new LicenseInfoParsingResult()
-                    .setStatus(LicenseInfoRequestStatus.FAILURE);
-        }
-        if (attachment.getAttachmentType().equals(AttachmentType.INITIAL_SCAN_REPORT)) {
-            return getLicenseInfoFromSpdx(attachmentContent, includeConcludedLicense, true, spdxDocument.get());
-        }
-        return getLicenseInfoFromSpdx(attachmentContent, includeConcludedLicense, false, spdxDocument.get());
-    }
+		final Optional<Document> spdxDocument = openAsSpdx(attachmentContent, user, context);
+		if (!spdxDocument.isPresent()) {
+			return new LicenseInfoParsingResult().setStatus(LicenseInfoRequestStatus.FAILURE);
+		}
+		if (attachment.getAttachmentType().equals(AttachmentType.INITIAL_SCAN_REPORT)) {
+			return getLicenseInfoFromSpdx(attachmentContent, includeConcludedLicense, true, spdxDocument.get());
+		}
+		return getLicenseInfoFromSpdx(attachmentContent, includeConcludedLicense, false, spdxDocument.get());
+	}
 
-    protected String getUriOfAttachment(AttachmentContent attachmentContent) throws URISyntaxException {
-        String filename = attachmentContent.getFilename();
-        String filePath = "///" + new File(filename).getAbsoluteFile().toString().replace('\\', '/');
-        return new URI("file", filePath, null).toString();
-    }
+	protected String getUriOfAttachment(AttachmentContent attachmentContent) throws URISyntaxException {
+		String filename = attachmentContent.getFilename();
+		String filePath = "///" + new File(filename).getAbsoluteFile().toString().replace('\\', '/');
+		return new URI("file", filePath, null).toString();
+	}
 
-    protected <T> Optional<Document> openAsSpdx(AttachmentContent attachmentContent, User user, T context) throws SW360Exception {
-        try (InputStream attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, context)) {
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            dbFactory.setNamespaceAware(true);
-            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            Document doc = dBuilder.parse(attachmentStream);
-            doc.getDocumentElement().normalize();
-            return Optional.ofNullable(doc);
-        } catch (ParserConfigurationException e) {
-            String msg = "Unable to parse SPDX for attachment=" + attachmentContent.getFilename() + " with id="
-                    + attachmentContent.getId() + "\nThe message was: " + e.getMessage();
-            log.info(msg, e);
-            return Optional.empty();
-        } catch (IOException | TException e) {
-            String msg = "failed to read attachment=" + attachmentContent.getFilename() + " with id="
-                    + attachmentContent.getId();
-            log.error(msg, e);
-            throw new SW360Exception(msg);
-        } catch (SAXException e) {
-            String msg = "failed to parse attachment=" + attachmentContent.getFilename() + " with id="
-                    + attachmentContent.getId();
-            throw new SW360Exception(msg);
-        }
-    }
+	protected <T> Optional<Document> openAsSpdx(AttachmentContent attachmentContent, User user, T context)
+			throws SW360Exception {
+		try (InputStream attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, context)) {
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			dbFactory.setNamespaceAware(true);
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(attachmentStream);
+			doc.getDocumentElement().normalize();
+			return Optional.ofNullable(doc);
+		} catch (ParserConfigurationException e) {
+			String msg = "Unable to parse SPDX for attachment=" + attachmentContent.getFilename() + " with id="
+					+ attachmentContent.getId() + "\nThe message was: " + e.getMessage();
+			log.info(msg, e);
+			return Optional.empty();
+		} catch (IOException | TException e) {
+			String msg = "failed to read attachment=" + attachmentContent.getFilename() + " with id="
+					+ attachmentContent.getId();
+			log.error(msg, e);
+			throw new SW360Exception(msg);
+		} catch (SAXException e) {
+			String msg = "failed to parse attachment=" + attachmentContent.getFilename() + " with id="
+					+ attachmentContent.getId();
+			throw new SW360Exception(msg);
+		}
+	}
 }

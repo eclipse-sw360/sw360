@@ -35,71 +35,69 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
  */
 public class LicenseModerator extends Moderator<License._Fields, License> {
 
-    private static final Logger log = LogManager.getLogger(LicenseModerator.class);
+	private static final Logger log = LogManager.getLogger(LicenseModerator.class);
 
+	public LicenseModerator(ThriftClients thriftClients) {
+		super(thriftClients);
+	}
 
-    public LicenseModerator(ThriftClients thriftClients) {
-        super(thriftClients);
-    }
+	public LicenseModerator() {
+		super(new ThriftClients());
+	}
 
-    public LicenseModerator() {
-        super(new ThriftClients());
-    }
+	public RequestStatus updateLicense(License license, User user) {
 
-    public RequestStatus updateLicense(License license, User user) {
+		try {
+			ModerationService.Iface client = thriftClients.makeModerationClient();
+			client.createLicenseRequest(license, user);
+			return RequestStatus.SENT_TO_MODERATOR;
+		} catch (TException e) {
+			log.error("Could not moderate license " + license.getId() + " for User " + user.getEmail(), e);
+			return RequestStatus.FAILURE;
+		}
+	}
 
-        try {
-            ModerationService.Iface client = thriftClients.makeModerationClient();
-            client.createLicenseRequest(license, user);
-            return RequestStatus.SENT_TO_MODERATOR;
-        } catch (TException e) {
-            log.error("Could not moderate license " + license.getId() + " for User " + user.getEmail(), e);
-            return RequestStatus.FAILURE;
-        }
-    }
+	public License updateLicenseFromModerationRequest(License license, License licenseAdditions,
+			License licenseDeletions, String department) {
+		Map<String, Obligation> actualTodoMap = Maps.uniqueIndex(nullToEmptyList(license.getObligations()),
+				Obligation::getId);
 
-    public License updateLicenseFromModerationRequest(License license,
-                                                      License licenseAdditions,
-                                                      License licenseDeletions,
-                                                      String department) {
-        Map<String, Obligation> actualTodoMap = Maps.uniqueIndex(nullToEmptyList(license.getObligations()), Obligation::getId);
-
-        for (Obligation added : nullToEmptyList(licenseAdditions.getObligations())) {
-            if (!added.isSetId()) {
-                log.error("Obligation id not set in licenseAdditions.");
-                continue;
-            }
-            if (isTemporaryObligation(added)) {
-                if(!license.isSetObligations()){
-                    license.setObligations(new ArrayList<>());
-                }
-                license.getObligations().add(added);
-            } else {
-                Obligation actual = actualTodoMap.get(added.getId());
-                if (added.isSetWhitelist() && added.getWhitelist().contains(department)) {
-                    if(!actual.isSetWhitelist()){
-                        actual.setWhitelist(new HashSet<>());
-                    }
-                    actual.getWhitelist().add(department);
-                }
-            }
-        }
-        for (Obligation deleted : nullToEmptyList(licenseDeletions.getObligations())) {
-            if (!deleted.isSetId()) {
-                log.error("Obligation id is not set in licenseDeletions.");
-                continue;
-            }
-            Obligation actual = actualTodoMap.get(deleted.getId());
-            if (actual == null) {
-                log.info("Obligation from licenseDeletions does not exist (any more) in license.");
-                continue;
-            }
-            if (deleted.isSetWhitelist() && deleted.getWhitelist().contains(department)) {
-                if (actual.isSetWhitelist() && actual.getWhitelist().contains(department)) {
-                    actual.getWhitelist().remove(department);
-                }
-            }
-        }
-        return license;
-    }
+		for (Obligation added : nullToEmptyList(licenseAdditions.getObligations())) {
+			if (!added.isSetId()) {
+				log.error("Obligation id not set in licenseAdditions.");
+				continue;
+			}
+			if (isTemporaryObligation(added)) {
+				if (!license.isSetObligations()) {
+					license.setObligations(new ArrayList<>());
+				}
+				license.getObligations().add(added);
+			} else {
+				Obligation actual = actualTodoMap.get(added.getId());
+				if (added.isSetWhitelist() && added.getWhitelist().contains(department)) {
+					if (!actual.isSetWhitelist()) {
+						actual.setWhitelist(new HashSet<>());
+					}
+					actual.getWhitelist().add(department);
+				}
+			}
+		}
+		for (Obligation deleted : nullToEmptyList(licenseDeletions.getObligations())) {
+			if (!deleted.isSetId()) {
+				log.error("Obligation id is not set in licenseDeletions.");
+				continue;
+			}
+			Obligation actual = actualTodoMap.get(deleted.getId());
+			if (actual == null) {
+				log.info("Obligation from licenseDeletions does not exist (any more) in license.");
+				continue;
+			}
+			if (deleted.isSetWhitelist() && deleted.getWhitelist().contains(department)) {
+				if (actual.isSetWhitelist() && actual.getWhitelist().contains(department)) {
+					actual.getWhitelist().remove(department);
+				}
+			}
+		}
+		return license;
+	}
 }

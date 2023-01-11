@@ -27,24 +27,20 @@ import com.cloudant.client.api.model.DesignDocument.MapReduce;
  */
 public class ObligationListRepository extends DatabaseRepositoryCloudantClient<ObligationList> {
 
-    private static final String BY_PROJECT_ID =
-            "function(doc) {" +
-                    "  if (doc.type == 'obligationList') {" +
-                    "    emit(doc.projectId, null);" +
-                    "  }" +
-                    "}";
+	private static final String BY_PROJECT_ID = "function(doc) {" + "  if (doc.type == 'obligationList') {"
+			+ "    emit(doc.projectId, null);" + "  }" + "}";
 
-    private static final String ALL = "function(doc) { if (doc.type == 'obligationList') emit(null, doc._id) }";
+	private static final String ALL = "function(doc) { if (doc.type == 'obligationList') emit(null, doc._id) }";
 
-    public ObligationListRepository(DatabaseConnectorCloudant db) {
-        super(db, ObligationList.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));
-        views.put("all", createMapReduce(ALL, null));
-        initStandardDesignDocument(views, db);
-    }
+	public ObligationListRepository(DatabaseConnectorCloudant db) {
+		super(db, ObligationList.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));
+		views.put("all", createMapReduce(ALL, null));
+		initStandardDesignDocument(views, db);
+	}
 
-    public Optional<ObligationList> getObligationByProjectid(String projectId) {
-        return queryView("byProjectId", projectId).stream().findFirst();
-    }
+	public Optional<ObligationList> getObligationByProjectid(String projectId) {
+		return queryView("byProjectId", projectId).stream().findFirst();
+	}
 }

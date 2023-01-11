@@ -27,55 +27,56 @@ import static org.eclipse.sw360.portal.tags.TagUtils.escapeAttributeValue;
  * further information.
  */
 public class DisplayDownloadApprovedClearingReport extends DisplayDownloadAbstract {
-    private static final Logger LOGGER = LogManager.getLogger(DisplayDownloadApprovedClearingReport.class);
+	private static final Logger LOGGER = LogManager.getLogger(DisplayDownloadApprovedClearingReport.class);
 
-    private Attachment attachment;
+	private Attachment attachment;
 
-    @Override
-    protected String getTitleText() {
-        String titleTemplateChecked = "Filename: %s&#010;Status: %s by %s on %s&#010;Comment: %s&#010;Created: %s on %s";
+	@Override
+	protected String getTitleText() {
+		String titleTemplateChecked = "Filename: %s&#010;Status: %s by %s on %s&#010;Comment: %s&#010;Created: %s on %s";
 
-        String name = escapeAttributeValue(attachment.getFilename());
-        String createdBy = escapeAttributeValue(attachment.getCreatedBy());
-        String createdOn = escapeAttributeValue(attachment.getCreatedOn());
-        String checkedBy = escapeAttributeValue(attachment.getCheckedBy());
-        String checkedOn = escapeAttributeValue(attachment.getCheckedOn());
-        String checkComment = escapeAttributeValue(attachment.getCheckedComment());
+		String name = escapeAttributeValue(attachment.getFilename());
+		String createdBy = escapeAttributeValue(attachment.getCreatedBy());
+		String createdOn = escapeAttributeValue(attachment.getCreatedOn());
+		String checkedBy = escapeAttributeValue(attachment.getCheckedBy());
+		String checkedOn = escapeAttributeValue(attachment.getCheckedOn());
+		String checkComment = escapeAttributeValue(attachment.getCheckedComment());
 
-        return String.format(titleTemplateChecked, name, "APPROVED", checkedBy, checkedOn, checkComment, createdBy, createdOn);
-    }
+		return String.format(titleTemplateChecked, name, "APPROVED", checkedBy, checkedOn, checkComment, createdBy,
+				createdOn);
+	}
 
-    @Override
-    protected void configureUrlWriter(UrlWriter urlWriter) throws JspException {
-        urlWriter.withParam(PortalConstants.ATTACHMENT_ID, attachment.attachmentContentId);
-    }
+	@Override
+	protected void configureUrlWriter(UrlWriter urlWriter) throws JspException {
+		urlWriter.withParam(PortalConstants.ATTACHMENT_ID, attachment.attachmentContentId);
+	}
 
-    @Override
-    public int doStartTag() throws JspException {
-        if(attachment == null) {
-            LOGGER.error("No attachment given!");
-            return SKIP_BODY;
-        }
+	@Override
+	public int doStartTag() throws JspException {
+		if (attachment == null) {
+			LOGGER.error("No attachment given!");
+			return SKIP_BODY;
+		}
 
-        if (attachment.getAttachmentType() != AttachmentType.CLEARING_REPORT
-                && attachment.getAttachmentType() != AttachmentType.COMPONENT_LICENSE_INFO_XML) {
-            LOGGER.error("Invalid attachment type: " + attachment.getAttachmentType() + ". Expected CLEARING_REPORT("
-                    + AttachmentType.CLEARING_REPORT.getValue() + ") or COMPONENT_LICENSE_INFO_XML("
-                    + AttachmentType.COMPONENT_LICENSE_INFO_XML.getValue() + ".");
-            return SKIP_BODY;
-        }
+		if (attachment.getAttachmentType() != AttachmentType.CLEARING_REPORT
+				&& attachment.getAttachmentType() != AttachmentType.COMPONENT_LICENSE_INFO_XML) {
+			LOGGER.error("Invalid attachment type: " + attachment.getAttachmentType() + ". Expected CLEARING_REPORT("
+					+ AttachmentType.CLEARING_REPORT.getValue() + ") or COMPONENT_LICENSE_INFO_XML("
+					+ AttachmentType.COMPONENT_LICENSE_INFO_XML.getValue() + ".");
+			return SKIP_BODY;
+		}
 
-        if (attachment.getCheckStatus() != CheckStatus.ACCEPTED) {
-            LOGGER.info("Attachment with content id " + attachment.getAttachmentContentId()
-                    + " is of correct type to be displayed as clearing report, but is not yet accepted. So not dispaying it.");
-            // show only approved reports
-            return SKIP_BODY;
-        }
-    
-        return super.doStartTag();
-    }
+		if (attachment.getCheckStatus() != CheckStatus.ACCEPTED) {
+			LOGGER.info("Attachment with content id " + attachment.getAttachmentContentId()
+					+ " is of correct type to be displayed as clearing report, but is not yet accepted. So not dispaying it.");
+			// show only approved reports
+			return SKIP_BODY;
+		}
 
-    public void setAttachment(Attachment attachment) {
-        this.attachment = attachment;
-    }
+		return super.doStartTag();
+	}
+
+	public void setAttachment(Attachment attachment) {
+		this.attachment = attachment;
+	}
 }

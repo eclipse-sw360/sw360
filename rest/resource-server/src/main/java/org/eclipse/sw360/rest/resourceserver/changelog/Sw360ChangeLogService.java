@@ -30,18 +30,18 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ChangeLogService {
-    private static final Logger log = LogManager.getLogger(Sw360ChangeLogService.class);
+	private static final Logger log = LogManager.getLogger(Sw360ChangeLogService.class);
 
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
+	@Value("${sw360.thrift-server-url:http://localhost:8080}")
+	private String thriftServerUrl;
 
-    private ChangeLogsService.Iface getThriftChangeLogClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/changelogs/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new ChangeLogsService.Client(protocol);
-    }
+	private ChangeLogsService.Iface getThriftChangeLogClient() throws TTransportException {
+		THttpClient thriftClient = new THttpClient(thriftServerUrl + "/changelogs/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		return new ChangeLogsService.Client(protocol);
+	}
 
-    public List<ChangeLogs> getChangeLogsByDocumentId(String docId, User sw360User) throws TException {
-        return getThriftChangeLogClient().getChangeLogsByDocumentId(sw360User, docId);
-    }
+	public List<ChangeLogs> getChangeLogsByDocumentId(String docId, User sw360User) throws TException {
+		return getThriftChangeLogClient().getChangeLogsByDocumentId(sw360User, docId);
+	}
 }

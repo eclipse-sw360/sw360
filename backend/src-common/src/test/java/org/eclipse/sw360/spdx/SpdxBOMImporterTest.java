@@ -30,63 +30,62 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class SpdxBOMImporterTest {
 
-    private InputStream inputStream;
-    private AttachmentContent attachmentContent;
+	private InputStream inputStream;
+	private AttachmentContent attachmentContent;
 
-    @Mock
-    private SpdxBOMImporterSink spdxBOMImporterSink;
+	@Mock
+	private SpdxBOMImporterSink spdxBOMImporterSink;
 
-    private SpdxBOMImporter spdxBOMImporter;
+	private SpdxBOMImporter spdxBOMImporter;
 
-    @Before
-    public void before() throws Exception {
-        spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
+	@Before
+	public void before() throws Exception {
+		spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
 
-        inputStream = getClass()
-             .getClassLoader().getResourceAsStream("bom.spdx.rdf");
+		inputStream = getClass().getClassLoader().getResourceAsStream("bom.spdx.rdf");
 
-        when(spdxBOMImporterSink.addProject(any(Project.class))).then(i -> {
-            Project project = i.getArgument(0);
-            return new SpdxBOMImporterSink.Response(project.getName() + "-" + project.getVersion());
-        });
-        when(spdxBOMImporterSink.addRelease(any(Release.class))).then(i -> {
-            Release release = i.getArgument(0);
-            return new SpdxBOMImporterSink.Response(release.getName() + "-" + release.getVersion());
-        });
-        when(spdxBOMImporterSink.addComponent(any(Component.class))).then(i -> {
-            Component component = i.getArgument(0);
-            return new SpdxBOMImporterSink.Response(component.getName());
-        });
+		when(spdxBOMImporterSink.addProject(any(Project.class))).then(i -> {
+			Project project = i.getArgument(0);
+			return new SpdxBOMImporterSink.Response(project.getName() + "-" + project.getVersion());
+		});
+		when(spdxBOMImporterSink.addRelease(any(Release.class))).then(i -> {
+			Release release = i.getArgument(0);
+			return new SpdxBOMImporterSink.Response(release.getName() + "-" + release.getVersion());
+		});
+		when(spdxBOMImporterSink.addComponent(any(Component.class))).then(i -> {
+			Component component = i.getArgument(0);
+			return new SpdxBOMImporterSink.Response(component.getName());
+		});
 
-        attachmentContent = new AttachmentContent();
-        attachmentContent.setFilename("attchmentContentFilename.rdf");
-        attachmentContent.setContentType("contentType");
-        attachmentContent.setId("attachmentContentId");
-    }
+		attachmentContent = new AttachmentContent();
+		attachmentContent.setFilename("attchmentContentFilename.rdf");
+		attachmentContent.setContentType("contentType");
+		attachmentContent.setId("attachmentContentId");
+	}
 
-    @After
-    public void after() throws Exception {
-        if(inputStream != null) {
-            inputStream.close();
-        }
-    }
+	@After
+	public void after() throws Exception {
+		if (inputStream != null) {
+			inputStream.close();
+		}
+	}
 
-    @Test
-    public void testProject() throws  Exception {
-        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
-        assertNotNull(requestSummary);
+	@Test
+	public void testProject() throws Exception {
+		final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
+		assertNotNull(requestSummary);
 
-        verify(spdxBOMImporterSink, times(1)).addProject(ArgumentMatchers.any());
-        verify(spdxBOMImporterSink, times(3)).addComponent(ArgumentMatchers.any());
-        verify(spdxBOMImporterSink, times(3)).addRelease(ArgumentMatchers.any());
-    }
+		verify(spdxBOMImporterSink, times(1)).addProject(ArgumentMatchers.any());
+		verify(spdxBOMImporterSink, times(3)).addComponent(ArgumentMatchers.any());
+		verify(spdxBOMImporterSink, times(3)).addRelease(ArgumentMatchers.any());
+	}
 
-    @Test
-    public void testRelease() throws  Exception {
-        final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
-        assertNotNull(requestSummary);
+	@Test
+	public void testRelease() throws Exception {
+		final RequestSummary requestSummary = spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
+		assertNotNull(requestSummary);
 
-        verify(spdxBOMImporterSink, times(4)).addComponent(ArgumentMatchers.any());
-        verify(spdxBOMImporterSink, times(4)).addRelease(ArgumentMatchers.any());
-    }
+		verify(spdxBOMImporterSink, times(4)).addComponent(ArgumentMatchers.any());
+		verify(spdxBOMImporterSink, times(4)).addRelease(ArgumentMatchers.any());
+	}
 }

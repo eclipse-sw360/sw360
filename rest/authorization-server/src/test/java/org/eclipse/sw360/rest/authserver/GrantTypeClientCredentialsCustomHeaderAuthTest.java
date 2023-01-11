@@ -26,20 +26,20 @@ import static org.junit.Assert.assertThat;
  */
 public class GrantTypeClientCredentialsCustomHeaderAuthTest extends IntegrationTestBase {
 
-    @Test
-    public void should_not_login_with_custom_header() throws IOException {
-        String url = "http://localhost:" + String.valueOf(port)
-                + "/oauth/token?grant_type=client_credentials&client_id=" + testClient.getClientId() + "&client_secret="
-                + testClient.getClientSecret();
+	@Test
+	public void should_not_login_with_custom_header() throws IOException {
+		String url = "http://localhost:" + String.valueOf(port)
+				+ "/oauth/token?grant_type=client_credentials&client_id=" + testClient.getClientId() + "&client_secret="
+				+ testClient.getClientSecret();
 
-        // since we do not have a proxy that sets the header during test, we set it
-        // already on client-side
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("authenticated-email", adminTestUser.email);
+		// since we do not have a proxy that sets the header during test, we set it
+		// already on client-side
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("authenticated-email", adminTestUser.email);
 
-        responseEntity = new TestRestTemplate().postForEntity(url, new HttpEntity<>(headers), String.class);
+		responseEntity = new TestRestTemplate().postForEntity(url, new HttpEntity<>(headers), String.class);
 
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
-    }
+		assertThat(responseEntity.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
+	}
 
 }

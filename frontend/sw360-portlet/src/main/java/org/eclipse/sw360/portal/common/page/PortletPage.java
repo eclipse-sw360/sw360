@@ -13,5 +13,5 @@ package org.eclipse.sw360.portal.common.page;
  * @author daniele.fognini@tngtech.com
  */
 public interface PortletPage {
-    String pagename();
+	String pagename();
 }

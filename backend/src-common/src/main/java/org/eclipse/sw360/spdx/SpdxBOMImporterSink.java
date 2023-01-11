@@ -26,119 +26,118 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SpdxBOMImporterSink {
-    private static final Logger log = LogManager.getLogger(SpdxBOMImporterSink.class);
+	private static final Logger log = LogManager.getLogger(SpdxBOMImporterSink.class);
 
-    private final ProjectDatabaseHandler projectDatabaseHandler;
-    private final ComponentDatabaseHandler componentDatabaseHandler;
-    private final User user;
+	private final ProjectDatabaseHandler projectDatabaseHandler;
+	private final ComponentDatabaseHandler componentDatabaseHandler;
+	private final User user;
 
-    public SpdxBOMImporterSink(User user, ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) {
-        this.projectDatabaseHandler = projectDatabaseHandler;
-        this.componentDatabaseHandler = componentDatabaseHandler;
-        this.user = user;
-    }
+	public SpdxBOMImporterSink(User user, ProjectDatabaseHandler projectDatabaseHandler,
+			ComponentDatabaseHandler componentDatabaseHandler) {
+		this.projectDatabaseHandler = projectDatabaseHandler;
+		this.componentDatabaseHandler = componentDatabaseHandler;
+		this.user = user;
+	}
 
-    public Response addComponent(Component component) throws SW360Exception {
-        log.debug("create Component { name='" + component.getName() + "' }");
-        
-        if (CommonUtils.isNotNullEmptyOrWhitespace(user.getDepartment())) {
-            component.setBusinessUnit(user.getDepartment());
-        } else {
-            log.error("Could not get the user department. component name=" +  component.getName());
-        }
-        final AddDocumentRequestSummary addDocumentRequestSummary = componentDatabaseHandler.addComponent(component,
-                user.getEmail());
+	public Response addComponent(Component component) throws SW360Exception {
+		log.debug("create Component { name='" + component.getName() + "' }");
 
-        final String componentId = addDocumentRequestSummary.getId();
-        if (componentId == null || componentId.isEmpty()) {
-            throw new SW360Exception("Id of added component should not be empty. " + addDocumentRequestSummary.toString());
-        }
-        return new Response(componentId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
-    }
+		if (CommonUtils.isNotNullEmptyOrWhitespace(user.getDepartment())) {
+			component.setBusinessUnit(user.getDepartment());
+		} else {
+			log.error("Could not get the user department. component name=" + component.getName());
+		}
+		final AddDocumentRequestSummary addDocumentRequestSummary = componentDatabaseHandler.addComponent(component,
+				user.getEmail());
 
-    public Response addRelease(Release release) throws SW360Exception {
-        log.debug("create Release { name='" + release.getName() + "', version='" + release.getVersion() + "' }");
-        final AddDocumentRequestSummary addDocumentRequestSummary = componentDatabaseHandler.addRelease(release,
-                user);
+		final String componentId = addDocumentRequestSummary.getId();
+		if (componentId == null || componentId.isEmpty()) {
+			throw new SW360Exception(
+					"Id of added component should not be empty. " + addDocumentRequestSummary.toString());
+		}
+		return new Response(componentId,
+				AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
+	}
 
-        final String releaseId = addDocumentRequestSummary.getId();
-        if(releaseId == null || releaseId.isEmpty()) {
-            throw new SW360Exception("Id of added release should not be empty. " + addDocumentRequestSummary.toString());
-        }
-        return new Response(releaseId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
-    }
+	public Response addRelease(Release release) throws SW360Exception {
+		log.debug("create Release { name='" + release.getName() + "', version='" + release.getVersion() + "' }");
+		final AddDocumentRequestSummary addDocumentRequestSummary = componentDatabaseHandler.addRelease(release, user);
 
-    public Response addProject(Project project) throws SW360Exception {
-        log.debug("create Project { name='" + project.getName() + "', version='" + project.getVersion() + "' }");
+		final String releaseId = addDocumentRequestSummary.getId();
+		if (releaseId == null || releaseId.isEmpty()) {
+			throw new SW360Exception(
+					"Id of added release should not be empty. " + addDocumentRequestSummary.toString());
+		}
+		return new Response(releaseId,
+				AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
+	}
 
-        if (projectDatabaseHandler == null) {
-            throw new SW360Exception("ProjectDatabaseHandler was not set, not able to add a project");
-        }
+	public Response addProject(Project project) throws SW360Exception {
+		log.debug("create Project { name='" + project.getName() + "', version='" + project.getVersion() + "' }");
 
-        final Set<Attachment> attachments = project.getAttachments();
-        if(attachments != null && attachments.size() > 0) {
-            project.setAttachments(attachments.stream()
-                    .map(a -> a.setCreatedBy(user.getEmail()))
-                    .collect(Collectors.toSet()));
-        }
-        final AddDocumentRequestSummary addDocumentRequestSummary = projectDatabaseHandler.addProject(project,
-                user);
+		if (projectDatabaseHandler == null) {
+			throw new SW360Exception("ProjectDatabaseHandler was not set, not able to add a project");
+		}
 
-        final String projectId = addDocumentRequestSummary.getId();
-        if(projectId == null || projectId.isEmpty()) {
-            throw new SW360Exception("Id of added project should not be empty. " + addDocumentRequestSummary.toString());
-        }
-        return new Response(projectId, AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
-    }
+		final Set<Attachment> attachments = project.getAttachments();
+		if (attachments != null && attachments.size() > 0) {
+			project.setAttachments(
+					attachments.stream().map(a -> a.setCreatedBy(user.getEmail())).collect(Collectors.toSet()));
+		}
+		final AddDocumentRequestSummary addDocumentRequestSummary = projectDatabaseHandler.addProject(project, user);
 
-    public static class Response {
-        private final String id;
-        private final List<Response> childs;
-        private final boolean isAffected;
-        private ReleaseRelationship releaseRelationship = ReleaseRelationship.UNKNOWN;
+		final String projectId = addDocumentRequestSummary.getId();
+		if (projectId == null || projectId.isEmpty()) {
+			throw new SW360Exception(
+					"Id of added project should not be empty. " + addDocumentRequestSummary.toString());
+		}
+		return new Response(projectId,
+				AddDocumentRequestStatus.SUCCESS.equals(addDocumentRequestSummary.getRequestStatus()));
+	}
 
-        public Response(String id) {
-            this.id = id;
-            this.childs = new ArrayList<>();
-            this.isAffected = true;
-        }
+	public static class Response {
+		private final String id;
+		private final List<Response> childs;
+		private final boolean isAffected;
+		private ReleaseRelationship releaseRelationship = ReleaseRelationship.UNKNOWN;
 
-        public Response(String id, boolean isAffected) {
-            this.id = id;
-            this.childs = new ArrayList<>();
-            this.isAffected = isAffected;
-        }
-        public void addChild(Response child) {
-            this.childs.add(child);
-        }
+		public Response(String id) {
+			this.id = id;
+			this.childs = new ArrayList<>();
+			this.isAffected = true;
+		}
 
+		public Response(String id, boolean isAffected) {
+			this.id = id;
+			this.childs = new ArrayList<>();
+			this.isAffected = isAffected;
+		}
+		public void addChild(Response child) {
+			this.childs.add(child);
+		}
 
-        public void addChilds(Collection<Response> childs) {
-            this.childs.addAll(childs);
-        }
+		public void addChilds(Collection<Response> childs) {
+			this.childs.addAll(childs);
+		}
 
-        public String getId() {
-            return id;
-        }
+		public String getId() {
+			return id;
+		}
 
-        public int count() {
-            return childs.stream()
-                    .map(Response::count)
-                    .reduce(1, Integer::sum);
-        }
+		public int count() {
+			return childs.stream().map(Response::count).reduce(1, Integer::sum);
+		}
 
-        public int countAffected() {
-            return childs.stream()
-                    .map(Response::countAffected)
-                    .reduce((isAffected ? 1 : 0), Integer::sum);
-        }
+		public int countAffected() {
+			return childs.stream().map(Response::countAffected).reduce((isAffected ? 1 : 0), Integer::sum);
+		}
 
-        public void setReleaseRelationship(ReleaseRelationship releaseRelationship) {
-            this.releaseRelationship = releaseRelationship;
-        }
+		public void setReleaseRelationship(ReleaseRelationship releaseRelationship) {
+			this.releaseRelationship = releaseRelationship;
+		}
 
-        public ReleaseRelationship getReleaseRelationship() {
-            return releaseRelationship;
-        }
-    }
+		public ReleaseRelationship getReleaseRelationship() {
+			return releaseRelationship;
+		}
+	}
 }

@@ -20,29 +20,27 @@ import java.util.stream.IntStream;
 
 public class CveSearchDataTestHelper {
 
+	private static final int CONNECT_TIMEOUT = 10000;
 
-    private static final int CONNECT_TIMEOUT = 10000;
+	public static boolean isEquivalent(List<CveSearchData> l1, List<CveSearchData> l2) {
+		int s = l1.size();
+		if (s != l2.size())
+			return false;
 
-    public static boolean isEquivalent(List<CveSearchData> l1, List<CveSearchData> l2){
-        int s = l1.size();
-        if(s != l2.size()) return false;
+		List<String> ids1 = l1.stream().map(CveSearchData::getId).sorted().collect(Collectors.toList());
+		List<String> ids2 = l2.stream().map(CveSearchData::getId).sorted().collect(Collectors.toList());
 
-        List<String> ids1 = l1.stream().map(CveSearchData::getId).sorted().collect(Collectors.toList());
-        List<String> ids2 = l2.stream().map(CveSearchData::getId).sorted().collect(Collectors.toList());
+		return IntStream.range(0, s).mapToObj(i -> ids1.get(i).equals(ids2.get(i))).reduce(true, Boolean::logicalAnd);
+	}
 
-        return IntStream.range(0,s)
-                .mapToObj(i -> ids1.get(i).equals(ids2.get(i)))
-                .reduce(true, Boolean::logicalAnd);
-    }
-
-    public static boolean isUrlReachable(String url) {
-        try {
-            final URLConnection connection = new URL(url).openConnection();
-            connection.setConnectTimeout(CONNECT_TIMEOUT);
-            connection.connect();
-            return true;
-        } catch (final IOException e) {
-            return false;
-        }
-    }
+	public static boolean isUrlReachable(String url) {
+		try {
+			final URLConnection connection = new URL(url).openConnection();
+			connection.setConnectTimeout(CONNECT_TIMEOUT);
+			connection.connect();
+			return true;
+		} catch (final IOException e) {
+			return false;
+		}
+	}
 }

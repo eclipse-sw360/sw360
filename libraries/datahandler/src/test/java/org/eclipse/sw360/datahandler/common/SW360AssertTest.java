@@ -18,29 +18,30 @@ import java.util.Set;
 
 public class SW360AssertTest {
 
-    @Test
-    public void testAssertIdsSuccess() throws SW360Exception {
-        Set<ObjectWithId> set = Sets.newHashSet(new ObjectWithId(true), new ObjectWithId(true));
+	@Test
+	public void testAssertIdsSuccess() throws SW360Exception {
+		Set<ObjectWithId> set = Sets.newHashSet(new ObjectWithId(true), new ObjectWithId(true));
 
-        SW360Assert.assertIds(set, o -> o.isSet());
-    }
+		SW360Assert.assertIds(set, o -> o.isSet());
+	}
 
-    @Test(expected = SW360Exception.class)
-    public void testAssertIdsFails() throws SW360Exception {
-        Set<ObjectWithId> set = Sets.newHashSet(new ObjectWithId(true), new ObjectWithId(false), new ObjectWithId(true));
+	@Test(expected = SW360Exception.class)
+	public void testAssertIdsFails() throws SW360Exception {
+		Set<ObjectWithId> set = Sets.newHashSet(new ObjectWithId(true), new ObjectWithId(false),
+				new ObjectWithId(true));
 
-        SW360Assert.assertIdsUnset(set, o -> o.isSet());
-    }
+		SW360Assert.assertIdsUnset(set, o -> o.isSet());
+	}
 
-    private class ObjectWithId {
-        private boolean isSet;
+	private class ObjectWithId {
+		private boolean isSet;
 
-        public ObjectWithId(boolean isSet) {
-            this.isSet = isSet;
-        }
+		public ObjectWithId(boolean isSet) {
+			this.isSet = isSet;
+		}
 
-        public boolean isSet() {
-            return isSet;
-        }
-    }
+		public boolean isSet() {
+			return isSet;
+		}
+	}
 }

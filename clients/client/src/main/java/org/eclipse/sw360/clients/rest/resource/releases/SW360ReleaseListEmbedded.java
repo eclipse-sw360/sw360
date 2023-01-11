@@ -20,27 +20,31 @@ import java.util.Objects;
 
 @JsonDeserialize(as = SW360ReleaseListEmbedded.class)
 public final class SW360ReleaseListEmbedded implements Embedded {
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @JsonProperty("sw360:releases")
-    private List<SW360SparseRelease> releases;
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)
+	@JsonProperty("sw360:releases")
+	private List<SW360SparseRelease> releases;
 
-    public List<SW360SparseRelease> getReleases() { return releases; }
+	public List<SW360SparseRelease> getReleases() {
+		return releases;
+	}
 
-    public SW360ReleaseListEmbedded setReleases(List<SW360SparseRelease> releases) {
-        this.releases = releases;
-        return this;
-    }
+	public SW360ReleaseListEmbedded setReleases(List<SW360SparseRelease> releases) {
+		this.releases = releases;
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SW360ReleaseListEmbedded that = (SW360ReleaseListEmbedded) o;
-        return Objects.equals(releases, that.releases);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		SW360ReleaseListEmbedded that = (SW360ReleaseListEmbedded) o;
+		return Objects.equals(releases, that.releases);
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(releases);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(releases);
+	}
 }

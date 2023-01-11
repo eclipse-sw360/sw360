@@ -26,104 +26,100 @@ import java.util.function.Supplier;
  * @author stefan.jaeger@evosoft.com
  */
 public class Scheduler {
-    private static final Logger log = LogManager.getLogger(Scheduler.class);
-    private static Date nextSync = null;
-    private static final ConcurrentHashMap<String, SW360Task> scheduledJobs = new ConcurrentHashMap<>();
+	private static final Logger log = LogManager.getLogger(Scheduler.class);
+	private static Date nextSync = null;
+	private static final ConcurrentHashMap<String, SW360Task> scheduledJobs = new ConcurrentHashMap<>();
 
-    private static Timer timer = null;
+	private static Timer timer = null;
 
-    private Scheduler() {
-        //only static members
-    }
+	private Scheduler() {
+		// only static members
+	}
 
-    public static Date getNextSync() {
-        return nextSync;
-    }
+	public static Date getNextSync() {
+		return nextSync;
+	}
 
-    public static synchronized boolean scheduleNextSync(Supplier<RequestStatus> body, String serviceName) {
-        if (timer == null) {
-            timer = new Timer();
-        }
-        ScheduleSyncTask syncTask = new ScheduleSyncTask(body, serviceName);
-        Integer firstRunOffset = ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName);
-        Integer syncInterval = ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName);
-        nextSync = getNextSyncDate(firstRunOffset, syncInterval);
+	public static synchronized boolean scheduleNextSync(Supplier<RequestStatus> body, String serviceName) {
+		if (timer == null) {
+			timer = new Timer();
+		}
+		ScheduleSyncTask syncTask = new ScheduleSyncTask(body, serviceName);
+		Integer firstRunOffset = ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName);
+		Integer syncInterval = ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName);
+		nextSync = getNextSyncDate(firstRunOffset, syncInterval);
 
-        try {
-            timer.scheduleAtFixedRate(syncTask, nextSync, syncInterval * 1000);
-        } catch (IllegalStateException e) {
-            log.error(e.getMessage(), e);
-            return false;
-        }
+		try {
+			timer.scheduleAtFixedRate(syncTask, nextSync, syncInterval * 1000);
+		} catch (IllegalStateException e) {
+			log.error(e.getMessage(), e);
+			return false;
+		}
 
-        scheduledJobs.put(syncTask.getId(), syncTask);
-        log.info("New task scheduled. Interval=" + syncInterval + "sec " + syncTask.toString());
-        return true;
-    }
+		scheduledJobs.put(syncTask.getId(), syncTask);
+		log.info("New task scheduled. Interval=" + syncInterval + "sec " + syncTask.toString());
+		return true;
+	}
 
-    private static Date getNextSyncDate(int firstRunOffset, int interval) {
-        GregorianCalendar calendar = new GregorianCalendar(); // use today 00:00:00.000 as base date
-        long now = calendar.getTime().getTime();
-        calendar.set(GregorianCalendar.HOUR_OF_DAY, 0);
-        calendar.set(GregorianCalendar.MINUTE, 0);
-        calendar.set(GregorianCalendar.SECOND, 0);
-        calendar.set(GregorianCalendar.MILLISECOND, 0);
+	private static Date getNextSyncDate(int firstRunOffset, int interval) {
+		GregorianCalendar calendar = new GregorianCalendar(); // use today 00:00:00.000 as base date
+		long now = calendar.getTime().getTime();
+		calendar.set(GregorianCalendar.HOUR_OF_DAY, 0);
+		calendar.set(GregorianCalendar.MINUTE, 0);
+		calendar.set(GregorianCalendar.SECOND, 0);
+		calendar.set(GregorianCalendar.MILLISECOND, 0);
 
-        calendar.add(GregorianCalendar.SECOND, firstRunOffset);//today with offset time as specified
+		calendar.add(GregorianCalendar.SECOND, firstRunOffset);// today with offset time as specified
 
-        // if firstRunOffset is in the past compute next run
-        if (calendar.getTime().getTime() < now) {
-            long timeLeftToNextRunInMilliSeconds = interval * 1000 - ((now - calendar.getTime().getTime()) % (interval * 1000));
-            calendar.setTimeInMillis(now + timeLeftToNextRunInMilliSeconds);
-        }
-        ;
-        return calendar.getTime();
-    }
+		// if firstRunOffset is in the past compute next run
+		if (calendar.getTime().getTime() < now) {
+			long timeLeftToNextRunInMilliSeconds = interval * 1000
+					- ((now - calendar.getTime().getTime()) % (interval * 1000));
+			calendar.setTimeInMillis(now + timeLeftToNextRunInMilliSeconds);
+		} ;
+		return calendar.getTime();
+	}
 
-    public static Optional<Date> getNextSync(String serviceName) {
+	public static Optional<Date> getNextSync(String serviceName) {
 
-        if (ScheduleConstants.invalidConfiguredServices.contains(serviceName)) {
-            return Optional.empty();
-        }
-        return Optional.of(getNextSyncDate(
-                ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName),
-                ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName)));
-    }
+		if (ScheduleConstants.invalidConfiguredServices.contains(serviceName)) {
+			return Optional.empty();
+		}
+		return Optional.of(getNextSyncDate(ScheduleConstants.SYNC_FIRST_RUN_OFFSET_SEC.get(serviceName),
+				ScheduleConstants.SYNC_INTERVAL_SEC.get(serviceName)));
+	}
 
-    public static synchronized RequestStatus cancelAllSyncJobs() {
-        return scheduledJobs.values().stream()
-                .map(Scheduler::cancelJob)
-                .reduce(RequestStatus.SUCCESS, CommonUtils::reduceRequestStatus);
-    }
+	public static synchronized RequestStatus cancelAllSyncJobs() {
+		return scheduledJobs.values().stream().map(Scheduler::cancelJob).reduce(RequestStatus.SUCCESS,
+				CommonUtils::reduceRequestStatus);
+	}
 
-    public static synchronized RequestStatus cancelSyncJobOfService(String serviceName) {
-        return scheduledJobs.values().stream()
-                .filter(job -> serviceName.equals(job.getName()))
-                .map(Scheduler::cancelJob)
-                .reduce(RequestStatus.SUCCESS, CommonUtils::reduceRequestStatus);
-    }
+	public static synchronized RequestStatus cancelSyncJobOfService(String serviceName) {
+		return scheduledJobs.values().stream().filter(job -> serviceName.equals(job.getName()))
+				.map(Scheduler::cancelJob).reduce(RequestStatus.SUCCESS, CommonUtils::reduceRequestStatus);
+	}
 
-    private static synchronized RequestStatus cancelJob(SW360Task job) {
-        long executionTime = job.scheduledExecutionTime();
-        try {
-            job.cancel();
-        } catch (IllegalStateException e) {
-            log.error(e.getMessage(), e);
-            return RequestStatus.FAILURE;
-        }
-        scheduledJobs.remove(job.getId());
-        log.info("Task " + job.getClass().getSimpleName() + " for " + SW360Utils.getDateTimeString(new Date(executionTime)) + " cancelled. " + job.toString());
-        return RequestStatus.SUCCESS;
-    }
+	private static synchronized RequestStatus cancelJob(SW360Task job) {
+		long executionTime = job.scheduledExecutionTime();
+		try {
+			job.cancel();
+		} catch (IllegalStateException e) {
+			log.error(e.getMessage(), e);
+			return RequestStatus.FAILURE;
+		}
+		scheduledJobs.remove(job.getId());
+		log.info("Task " + job.getClass().getSimpleName() + " for "
+				+ SW360Utils.getDateTimeString(new Date(executionTime)) + " cancelled. " + job.toString());
+		return RequestStatus.SUCCESS;
+	}
 
-    public static boolean isServiceScheduled(String serviceName) {
-        boolean scheduledJobsContainsMatchingJob = scheduledJobs.values().stream()
-                .filter(job -> serviceName.equals(job.getName()))
-                .findAny().isPresent();
-        return scheduledJobsContainsMatchingJob;
-    }
+	public static boolean isServiceScheduled(String serviceName) {
+		boolean scheduledJobsContainsMatchingJob = scheduledJobs.values().stream()
+				.filter(job -> serviceName.equals(job.getName())).findAny().isPresent();
+		return scheduledJobsContainsMatchingJob;
+	}
 
-    public static boolean isAnyServiceScheduled() {
-        return (!scheduledJobs.isEmpty());
-    }
+	public static boolean isAnyServiceScheduled() {
+		return (!scheduledJobs.isEmpty());
+	}
 }

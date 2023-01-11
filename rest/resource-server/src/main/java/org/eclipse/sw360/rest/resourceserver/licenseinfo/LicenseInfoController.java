@@ -27,15 +27,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class LicenseInfoController implements RepresentationModelProcessor<RepositoryLinksResource> {
-    public static final String LICENSE_INFO_URL = "/licenseinfo";
+	public static final String LICENSE_INFO_URL = "/licenseinfo";
 
-    @Override
-    public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        resource.add(linkTo(LicenseController.class).slash("api/licenseinfo").withRel("licenseinfo"));
-        return resource;
-    }
+	@Override
+	public RepositoryLinksResource process(RepositoryLinksResource resource) {
+		resource.add(linkTo(LicenseController.class).slash("api/licenseinfo").withRel("licenseinfo"));
+		return resource;
+	}
 
-    private HalResource<LicenseInfo> createHalLicense(LicenseInfo sw360LicenseInfo) {
-        return new HalResource<>(sw360LicenseInfo);
-    }
+	private HalResource<LicenseInfo> createHalLicense(LicenseInfo sw360LicenseInfo) {
+		return new HalResource<>(sw360LicenseInfo);
+	}
 }

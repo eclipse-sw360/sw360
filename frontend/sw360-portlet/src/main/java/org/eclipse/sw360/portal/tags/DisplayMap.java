@@ -25,43 +25,40 @@ import java.util.Map;
  */
 public class DisplayMap extends SimpleTagSupport {
 
-    private Map<String, String> value;
-    private Map<String, String> autoFillValue;
+	private Map<String, String> value;
+	private Map<String, String> autoFillValue;
 
-    public void setValue(Map<String, String> value) {
-        this.value = value;
-    }
+	public void setValue(Map<String, String> value) {
+		this.value = value;
+	}
 
-    public void setAutoFillValue(Map<String, String> autoFillValue) {
-        this.autoFillValue = autoFillValue;
-    }
+	public void setAutoFillValue(Map<String, String> autoFillValue) {
+		this.autoFillValue = autoFillValue;
+	}
 
-    public void doTag() throws JspException, IOException {
-        Map<String, String> fullValue;
+	public void doTag() throws JspException, IOException {
+		Map<String, String> fullValue;
 
-        if (value == null) {
-            fullValue = autoFillValue;
-        } else {
-            fullValue = value;
-        }
+		if (value == null) {
+			fullValue = autoFillValue;
+		} else {
+			fullValue = value;
+		}
 
-        if (null != fullValue && !fullValue.isEmpty()) {
-            String result = getMapAsString(fullValue);
-            getJspContext().getOut().print(result);
-        }
-    }
+		if (null != fullValue && !fullValue.isEmpty()) {
+			String result = getMapAsString(fullValue);
+			getJspContext().getOut().print(result);
+		}
+	}
 
-    public static String getMapAsString(Map<String, String> map) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<ul class=\"mapDisplayRootItem\">");
-        map.entrySet().stream().forEach(e -> sb.append(
-                "<li><span class=\"mapDisplayChildItemLeft\">"
-                        + StringEscapeUtils.escapeXml(e.getKey())
-                        + "</span><span class=\"mapDisplayChildItemRight\"> "
-                        + StringEscapeUtils.escapeXml(e.getValue())
-                        + "</span></li>"
-        ));
-        sb.append("</ul>");
-        return sb.toString();
-    }
+	public static String getMapAsString(Map<String, String> map) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("<ul class=\"mapDisplayRootItem\">");
+		map.entrySet().stream()
+				.forEach(e -> sb.append("<li><span class=\"mapDisplayChildItemLeft\">"
+						+ StringEscapeUtils.escapeXml(e.getKey()) + "</span><span class=\"mapDisplayChildItemRight\"> "
+						+ StringEscapeUtils.escapeXml(e.getValue()) + "</span></li>"));
+		sb.append("</ul>");
+		return sb.toString();
+	}
 }

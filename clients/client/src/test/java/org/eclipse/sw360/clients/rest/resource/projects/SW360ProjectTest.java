@@ -17,35 +17,33 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class SW360ProjectTest extends SW360ResourcesTestUtils<SW360Project> {
-    @Override
-    public SW360Project prepareItem() {
-        SW360Project sw360Project = new SW360Project();
-        sw360Project.setName("Project Name");
-        sw360Project.setVersion("1.0.0-SNAPSHOT");
-        sw360Project.setCreatedOn("2019-12-09");
-        sw360Project.setBusinessUnit("TestUnit");
-        sw360Project.setClearingTeam("ClearingUnit");
-        sw360Project.setDescription("This is a test project");
-        sw360Project.setProjectType(SW360ProjectType.SERVICE);
-        sw360Project.setVisibility(SW360Visibility.EVERYONE);
-        Map<String, SW360ProjectReleaseRelationship> releaseRelationshipMap = new LinkedHashMap<>();
-                releaseRelationshipMap.put("releaseName",
-                new SW360ProjectReleaseRelationship(
-                        SW360ReleaseRelationship.OPTIONAL,
-                        SW360MainlineState.OPEN));
-        sw360Project.setReleaseIdToUsage(releaseRelationshipMap);
-        return sw360Project;
-    }
+	@Override
+	public SW360Project prepareItem() {
+		SW360Project sw360Project = new SW360Project();
+		sw360Project.setName("Project Name");
+		sw360Project.setVersion("1.0.0-SNAPSHOT");
+		sw360Project.setCreatedOn("2019-12-09");
+		sw360Project.setBusinessUnit("TestUnit");
+		sw360Project.setClearingTeam("ClearingUnit");
+		sw360Project.setDescription("This is a test project");
+		sw360Project.setProjectType(SW360ProjectType.SERVICE);
+		sw360Project.setVisibility(SW360Visibility.EVERYONE);
+		Map<String, SW360ProjectReleaseRelationship> releaseRelationshipMap = new LinkedHashMap<>();
+		releaseRelationshipMap.put("releaseName",
+				new SW360ProjectReleaseRelationship(SW360ReleaseRelationship.OPTIONAL, SW360MainlineState.OPEN));
+		sw360Project.setReleaseIdToUsage(releaseRelationshipMap);
+		return sw360Project;
+	}
 
-    @Override
-    public SW360Project prepareItemWithoutOptionalInput() {
-        SW360Project sw360Project = new SW360Project();
-        sw360Project.setName("Project Name");
-        return sw360Project;
-    }
+	@Override
+	public SW360Project prepareItemWithoutOptionalInput() {
+		SW360Project sw360Project = new SW360Project();
+		sw360Project.setName("Project Name");
+		return sw360Project;
+	}
 
-    @Override
-    public Class<SW360Project> getHandledClassType() {
-        return SW360Project.class;
-    }
+	@Override
+	public Class<SW360Project> getHandledClassType() {
+		return SW360Project.class;
+	}
 }

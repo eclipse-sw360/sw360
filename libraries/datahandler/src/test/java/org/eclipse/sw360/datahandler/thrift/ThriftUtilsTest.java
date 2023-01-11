@@ -26,36 +26,35 @@ import static org.hamcrest.core.Is.is;
  */
 public class ThriftUtilsTest {
 
+	private Function<Attachment, Object> objectIdExtractor;
+	private Function<Attachment, String> stringIdExtractor;
 
-    private Function<Attachment, Object> objectIdExtractor;
-    private Function<Attachment, String> stringIdExtractor;
+	@Before
+	public void setUp() throws Exception {
+		objectIdExtractor = ThriftUtils.extractField(Attachment._Fields.ATTACHMENT_CONTENT_ID);
+		stringIdExtractor = ThriftUtils.extractField(Attachment._Fields.ATTACHMENT_CONTENT_ID, String.class);
+	}
 
-    @Before
-    public void setUp() throws Exception {
-        objectIdExtractor = ThriftUtils.extractField(Attachment._Fields.ATTACHMENT_CONTENT_ID);
-        stringIdExtractor = ThriftUtils.extractField(Attachment._Fields.ATTACHMENT_CONTENT_ID, String.class);
-    }
+	@Test
+	public void testExtractId() throws Exception {
+		String contentId = "42";
+		Attachment attachment = getAttachment(contentId);
 
-    @Test
-    public void testExtractId() throws Exception {
-        String contentId = "42";
-        Attachment attachment = getAttachment(contentId);
+		assertThat(objectIdExtractor.apply(attachment), is((Object) contentId));
+		assertThat(stringIdExtractor.apply(attachment), is(contentId));
+	}
 
-        assertThat(objectIdExtractor.apply(attachment), is((Object) contentId));
-        assertThat(stringIdExtractor.apply(attachment), is(contentId));
-    }
+	@Test
+	public void testExtractIdTransformer() throws Exception {
+		String contentId = "42";
+		String contentId1 = "44";
+		List<Attachment> input = ImmutableList.of(getAttachment(contentId), getAttachment(contentId1));
+		List<String> expected = ImmutableList.of(contentId, contentId1);
 
-    @Test
-    public void testExtractIdTransformer() throws Exception {
-        String contentId = "42";
-        String contentId1 = "44";
-        List<Attachment> input = ImmutableList.of(getAttachment(contentId), getAttachment(contentId1));
-        List<String> expected = ImmutableList.of(contentId, contentId1);
+		assertThat(input.stream().map(stringIdExtractor).collect(Collectors.toList()), is(expected));
+	}
 
-        assertThat(input.stream().map(stringIdExtractor).collect(Collectors.toList()), is(expected));
-    }
-
-    private static Attachment getAttachment(String contentId) {
-        return new Attachment().setAttachmentContentId(contentId);
-    }
+	private static Attachment getAttachment(String contentId) {
+		return new Attachment().setAttachmentContentId(contentId);
+	}
 }

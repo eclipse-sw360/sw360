@@ -18,67 +18,71 @@ import javax.servlet.jsp.JspWriter;
 import java.io.IOException;
 
 /**
- * Tag to create a link to a portlet.
- * Can link to portlet on different pages (layouts in liferay terminology).
- * Sets the current scopeGroupId on doStartTag for derived classes.
+ * Tag to create a link to a portlet. Can link to portlet on different pages
+ * (layouts in liferay terminology). Sets the current scopeGroupId on doStartTag
+ * for derived classes.
+ * 
  * @author daniele.fognini@tngtech.com
  */
 public abstract class DisplayLinkAbstract extends TagSupport {
-    public Boolean bare = false;
-    protected Long scopeGroupId;
+	public Boolean bare = false;
+	protected Long scopeGroupId;
 
-    public void setScopeGroupId(Long scopeGroupId) {
-        if(scopeGroupId != null && scopeGroupId != 0) {
-            this.scopeGroupId = scopeGroupId;
-        }
-    }
+	public void setScopeGroupId(Long scopeGroupId) {
+		if (scopeGroupId != null && scopeGroupId != 0) {
+			this.scopeGroupId = scopeGroupId;
+		}
+	}
 
-    @Override
-    public int doStartTag() throws JspException {
-        Long scopeGroupIdAttribute = (Long) pageContext.getAttribute("scopeGroupId");
-        if (scopeGroupIdAttribute != null && scopeGroupIdAttribute != 0 && (scopeGroupId == null || scopeGroupId == 0)) {
-            this.scopeGroupId = scopeGroupIdAttribute;
-        }
-        try {
-            JspWriter jspWriter = pageContext.getOut();
-            if (!bare) jspWriter.write("<a href='");
-            writeUrl();
-            if (!bare) jspWriter.write("'>");
+	@Override
+	public int doStartTag() throws JspException {
+		Long scopeGroupIdAttribute = (Long) pageContext.getAttribute("scopeGroupId");
+		if (scopeGroupIdAttribute != null && scopeGroupIdAttribute != 0
+				&& (scopeGroupId == null || scopeGroupId == 0)) {
+			this.scopeGroupId = scopeGroupIdAttribute;
+		}
+		try {
+			JspWriter jspWriter = pageContext.getOut();
+			if (!bare)
+				jspWriter.write("<a href='");
+			writeUrl();
+			if (!bare)
+				jspWriter.write("'>");
 
-            String value = getTextDisplay();
-            if (value != null) {
-                OutTag outTag = new OutTag();
-                outTag.setPageContext(pageContext);
-                outTag.setValue(value);
+			String value = getTextDisplay();
+			if (value != null) {
+				OutTag outTag = new OutTag();
+				outTag.setPageContext(pageContext);
+				outTag.setValue(value);
 
-                outTag.doStartTag();
-                outTag.doEndTag();
-            }
-        } catch (IOException e) {
-            throw new JspException("cannot write", e);
-        }
+				outTag.doStartTag();
+				outTag.doEndTag();
+			}
+		} catch (IOException e) {
+			throw new JspException("cannot write", e);
+		}
 
-        return EVAL_BODY_INCLUDE;
-    }
+		return EVAL_BODY_INCLUDE;
+	}
 
-    @Override
-    public int doEndTag() throws JspException {
-        try {
-            if (!bare) {
-                JspWriter jspWriter = pageContext.getOut();
-                jspWriter.write("</a>");
-            }
-        } catch (IOException e) {
-            throw new JspException("cannot write", e);
-        }
-        return super.doEndTag();
-    }
+	@Override
+	public int doEndTag() throws JspException {
+		try {
+			if (!bare) {
+				JspWriter jspWriter = pageContext.getOut();
+				jspWriter.write("</a>");
+			}
+		} catch (IOException e) {
+			throw new JspException("cannot write", e);
+		}
+		return super.doEndTag();
+	}
 
-    public void setBare(Boolean bare) {
-        this.bare = bare;
-    }
+	public void setBare(Boolean bare) {
+		this.bare = bare;
+	}
 
-    protected abstract void writeUrl() throws JspException;
+	protected abstract void writeUrl() throws JspException;
 
-    protected abstract String getTextDisplay();
+	protected abstract String getTextDisplay();
 }

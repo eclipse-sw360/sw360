@@ -24,9 +24,9 @@ import java.io.IOException;
  */
 public class LicenseServlet extends Sw360ThriftServlet {
 
-    public LicenseServlet() throws MalformedURLException, IOException {
-        // Create a service processor using the provided handler
-        super(new LicenseService.Processor<>(new LicenseHandler()), new TCompactProtocol.Factory());
-    }
+	public LicenseServlet() throws MalformedURLException, IOException {
+		// Create a service processor using the provided handler
+		super(new LicenseService.Processor<>(new LicenseHandler()), new TCompactProtocol.Factory());
+	}
 
 }

@@ -24,33 +24,31 @@ import static org.eclipse.sw360.portal.tags.urlutils.UrlWriterImpl.renderUrl;
  * @author daniele.fognini@tngtech.com
  */
 public class DisplayLinkToProject extends DisplayLinkAbstract {
-    private Project project;
-    private Boolean showName = true;
+	private Project project;
+	private Boolean showName = true;
 
-    private String projectId;
-    public void setProject(Project project) {
-        this.project = project;
-        projectId=project.getId();
-    }
-    public void setProjectId(String projectId) {
-        this.projectId = projectId;
-        showName=false;
-    }
-    public void setShowName(Boolean showName) {
-        this.showName = showName;
-    }
+	private String projectId;
+	public void setProject(Project project) {
+		this.project = project;
+		projectId = project.getId();
+	}
+	public void setProjectId(String projectId) {
+		this.projectId = projectId;
+		showName = false;
+	}
+	public void setShowName(Boolean showName) {
+		this.showName = showName;
+	}
 
-    @Override
-    protected String getTextDisplay() {
-        return showName ? printName(project) : null;
-    }
+	@Override
+	protected String getTextDisplay() {
+		return showName ? printName(project) : null;
+	}
 
-    @Override
-    protected void writeUrl() throws JspException {
-        renderUrl(pageContext)
-                .toPortlet(LinkToPortletConfiguration.PROJECTS, scopeGroupId)
-                .toPage(PortletDefaultPage.DETAIL)
-                .withParam(PortalConstants.PROJECT_ID, projectId)
-                .writeUrlToJspWriter();
-    }
+	@Override
+	protected void writeUrl() throws JspException {
+		renderUrl(pageContext).toPortlet(LinkToPortletConfiguration.PROJECTS, scopeGroupId)
+				.toPage(PortletDefaultPage.DETAIL).withParam(PortalConstants.PROJECT_ID, projectId)
+				.writeUrlToJspWriter();
+	}
 }

@@ -24,61 +24,53 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class WsImportPortletTest extends TestCase {
-    private final String token = "token";
-    private final String userKey = "userKey";
-    private final String newURL = "newURL";
+	private final String token = "token";
+	private final String userKey = "userKey";
+	private final String newURL = "newURL";
 
-    @Mock
-    private PortletSession session;
+	@Mock
+	private PortletSession session;
 
-    @Mock
-    private JSONObject responseData;
+	@Mock
+	private JSONObject responseData;
 
-    @Test
-    public void testUpdateInputSourceWithoutUrl() throws Exception {
+	@Test
+	public void testUpdateInputSourceWithoutUrl() throws Exception {
 
-        TokenCredentials tokenCredentials = new TokenCredentials();
+		TokenCredentials tokenCredentials = new TokenCredentials();
 
-        new WsImportPortlet().setNewImportSource(
-                tokenCredentials,
-                session,
-                responseData);
-        verify(responseData).put(ProjectImportConstants.RESPONSE__STATUS, ProjectImportConstants.RESPONSE__DB_URL_NOT_SET);
-    }
+		new WsImportPortlet().setNewImportSource(tokenCredentials, session, responseData);
+		verify(responseData).put(ProjectImportConstants.RESPONSE__STATUS,
+				ProjectImportConstants.RESPONSE__DB_URL_NOT_SET);
+	}
 
-    @Test
-    public void testUpdateInputSourceWithUrlUpdatesResponse() throws Exception {
+	@Test
+	public void testUpdateInputSourceWithUrlUpdatesResponse() throws Exception {
 
-        TokenCredentials tokenCredentials = new TokenCredentials();
-        tokenCredentials.setToken(token);
-        tokenCredentials.setUserKey(userKey);
-        tokenCredentials.setServerUrl(newURL);
+		TokenCredentials tokenCredentials = new TokenCredentials();
+		tokenCredentials.setToken(token);
+		tokenCredentials.setUserKey(userKey);
+		tokenCredentials.setServerUrl(newURL);
 
-        new WsImportPortlet().setNewImportSource(
-                tokenCredentials,
-                session,
-                responseData);
+		new WsImportPortlet().setNewImportSource(tokenCredentials, session, responseData);
 
-        verify(responseData).put(ProjectImportConstants.RESPONSE__STATUS, ProjectImportConstants.RESPONSE__DB_CHANGED);
-        verify(responseData).put(ProjectImportConstants.RESPONSE__DB_URL, newURL);
-    }
+		verify(responseData).put(ProjectImportConstants.RESPONSE__STATUS, ProjectImportConstants.RESPONSE__DB_CHANGED);
+		verify(responseData).put(ProjectImportConstants.RESPONSE__DB_URL, newURL);
+	}
 
-    @Test
-    public void testUpdateInputSourceWithUrlUpdatesSession() throws Exception {
+	@Test
+	public void testUpdateInputSourceWithUrlUpdatesSession() throws Exception {
 
-        TokenCredentials tokenCredentials = new TokenCredentials();
-        tokenCredentials.setToken(token);
-        tokenCredentials.setUserKey(userKey);
-        tokenCredentials.setServerUrl(newURL);
+		TokenCredentials tokenCredentials = new TokenCredentials();
+		tokenCredentials.setToken(token);
+		tokenCredentials.setUserKey(userKey);
+		tokenCredentials.setServerUrl(newURL);
 
-        new WsImportPortlet().setNewImportSource(
-                tokenCredentials,
-                session,
-                responseData);
+		new WsImportPortlet().setNewImportSource(tokenCredentials, session, responseData);
 
-        verify(session).setAttribute(ProjectImportConstants.TOKEN, token);
-        verify(session).setAttribute(ProjectImportConstants.USER_KEY, userKey);
-        verify(session).setAttribute(ProjectImportConstants.SERVER_URL, newURL);
-    }
+		verify(session).setAttribute(ProjectImportConstants.TOKEN, token);
+		verify(session).setAttribute(ProjectImportConstants.USER_KEY, userKey);
+		verify(session).setAttribute(ProjectImportConstants.SERVER_URL, newURL);
+	}
 
 }

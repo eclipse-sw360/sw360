@@ -40,65 +40,64 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class UserController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
-    protected final EntityLinks entityLinks;
+	protected final EntityLinks entityLinks;
 
-    static final String USERS_URL = "/users";
+	static final String USERS_URL = "/users";
 
-    @NonNull
-    private final Sw360UserService userService;
+	@NonNull
+	private final Sw360UserService userService;
 
-    @NonNull
-    private final RestControllerHelper restControllerHelper;
+	@NonNull
+	private final RestControllerHelper restControllerHelper;
 
-    @RequestMapping(value = USERS_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers() {
-        List<User> sw360Users = userService.getAllUsers();
+	@RequestMapping(value = USERS_URL, method = RequestMethod.GET)
+	public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers() {
+		List<User> sw360Users = userService.getAllUsers();
 
-        List<EntityModel<User>> userResources = new ArrayList<>();
-        for (User sw360User : sw360Users) {
-            User embeddedUser = restControllerHelper.convertToEmbeddedUser(sw360User);
-            EntityModel<User> userResource = EntityModel.of(embeddedUser);
-            userResources.add(userResource);
-        }
+		List<EntityModel<User>> userResources = new ArrayList<>();
+		for (User sw360User : sw360Users) {
+			User embeddedUser = restControllerHelper.convertToEmbeddedUser(sw360User);
+			EntityModel<User> userResource = EntityModel.of(embeddedUser);
+			userResources.add(userResource);
+		}
 
-        CollectionModel<EntityModel<User>> resources = CollectionModel.of(userResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
-    }
+		CollectionModel<EntityModel<User>> resources = CollectionModel.of(userResources);
+		return new ResponseEntity<>(resources, HttpStatus.OK);
+	}
 
-    // '/users/{xyz}' searches by email, as opposed to by id, as is customary,
-    // for compatibility with older version of the REST API
-    @RequestMapping(value = USERS_URL + "/{email:.+}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<User>> getUserByEmail(
-            @PathVariable("email") String email) {
+	// '/users/{xyz}' searches by email, as opposed to by id, as is customary,
+	// for compatibility with older version of the REST API
+	@RequestMapping(value = USERS_URL + "/{email:.+}", method = RequestMethod.GET)
+	public ResponseEntity<EntityModel<User>> getUserByEmail(@PathVariable("email") String email) {
 
-        String decodedEmail;
-        try {
-            decodedEmail = URLDecoder.decode(email, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+		String decodedEmail;
+		try {
+			decodedEmail = URLDecoder.decode(email, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
 
-        User sw360User = userService.getUserByEmail(decodedEmail);
-        HalResource<User> halResource = createHalUser(sw360User);
-        return new ResponseEntity<>(halResource, HttpStatus.OK);
-    }
+		User sw360User = userService.getUserByEmail(decodedEmail);
+		HalResource<User> halResource = createHalUser(sw360User);
+		return new ResponseEntity<>(halResource, HttpStatus.OK);
+	}
 
-    // unusual URL mapping for compatibility with older version of the REST API (see getUserByEmail())
-    @RequestMapping(value = USERS_URL + "/byid/{id:.+}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<User>> getUser(
-            @PathVariable("id") String id) {
-        User sw360User = userService.getUser(id);
-        HalResource<User> halResource = createHalUser(sw360User);
-        return new ResponseEntity<>(halResource, HttpStatus.OK);
-    }
+	// unusual URL mapping for compatibility with older version of the REST API (see
+	// getUserByEmail())
+	@RequestMapping(value = USERS_URL + "/byid/{id:.+}", method = RequestMethod.GET)
+	public ResponseEntity<EntityModel<User>> getUser(@PathVariable("id") String id) {
+		User sw360User = userService.getUser(id);
+		HalResource<User> halResource = createHalUser(sw360User);
+		return new ResponseEntity<>(halResource, HttpStatus.OK);
+	}
 
-    @Override
-    public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        resource.add(linkTo(UserController.class).slash("api/users").withRel("users"));
-        return resource;
-    }
+	@Override
+	public RepositoryLinksResource process(RepositoryLinksResource resource) {
+		resource.add(linkTo(UserController.class).slash("api/users").withRel("users"));
+		return resource;
+	}
 
-    private HalResource<User> createHalUser(User sw360User) {
-        return new HalResource<>(sw360User);
-    }
+	private HalResource<User> createHalUser(User sw360User) {
+		return new HalResource<>(sw360User);
+	}
 }

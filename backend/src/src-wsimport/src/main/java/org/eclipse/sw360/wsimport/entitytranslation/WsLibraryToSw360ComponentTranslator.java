@@ -20,16 +20,18 @@ import java.util.HashSet;
 /**
  * @author ksoranko@verifa.io
  */
-public class WsLibraryToSw360ComponentTranslator implements EntityTranslator<WsLibrary, org.eclipse.sw360.datahandler.thrift.components.Component> {
+public class WsLibraryToSw360ComponentTranslator
+		implements
+			EntityTranslator<WsLibrary, org.eclipse.sw360.datahandler.thrift.components.Component> {
 
-    @Override
-    public org.eclipse.sw360.datahandler.thrift.components.Component apply(WsLibrary wsLibrary) {
+	@Override
+	public org.eclipse.sw360.datahandler.thrift.components.Component apply(WsLibrary wsLibrary) {
 
-        Component sw360Component = new Component(wsLibrary.getName());
-        sw360Component.setCategories(new HashSet<>(Collections.singletonList(wsLibrary.getType())));
-        sw360Component.setComponentType(ComponentType.OSS);
+		Component sw360Component = new Component(wsLibrary.getName());
+		sw360Component.setCategories(new HashSet<>(Collections.singletonList(wsLibrary.getType())));
+		sw360Component.setComponentType(ComponentType.OSS);
 
-        return sw360Component;
-    }
+		return sw360Component;
+	}
 
 }

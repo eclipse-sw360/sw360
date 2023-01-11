@@ -33,34 +33,34 @@ import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 @Configuration
 @ComponentScan({"org.eclipse.sw360.fossology"})
 public class FossologyConfig {
-    // TODO get from a config class
-    private final Duration downloadTimeout = durationOf(2, TimeUnit.MINUTES);
+	// TODO get from a config class
+	private final Duration downloadTimeout = durationOf(2, TimeUnit.MINUTES);
 
-    @Bean
-    public ConfigContainerRepository configContainerRepository() throws MalformedURLException {
-        DatabaseConnectorCloudant configContainerDatabaseConnector = new DatabaseConnectorCloudant(getConfiguredClient(),
-                COUCH_DB_CONFIG);
-        return new ConfigContainerRepository(configContainerDatabaseConnector);
-    }
+	@Bean
+	public ConfigContainerRepository configContainerRepository() throws MalformedURLException {
+		DatabaseConnectorCloudant configContainerDatabaseConnector = new DatabaseConnectorCloudant(
+				getConfiguredClient(), COUCH_DB_CONFIG);
+		return new ConfigContainerRepository(configContainerDatabaseConnector);
+	}
 
-    @Bean
-    public AttachmentConnector attachmentConnector() throws MalformedURLException {
-        return new AttachmentConnector(getConfiguredClient(), COUCH_DB_ATTACHMENTS, downloadTimeout);
-    }
+	@Bean
+	public AttachmentConnector attachmentConnector() throws MalformedURLException {
+		return new AttachmentConnector(getConfiguredClient(), COUCH_DB_ATTACHMENTS, downloadTimeout);
+	}
 
-    @Bean
-    public ThriftClients thriftClients() {
-        return new ThriftClients();
-    }
+	@Bean
+	public ThriftClients thriftClients() {
+		return new ThriftClients();
+	}
 
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
+	@Bean
+	public RestTemplate restTemplate() {
+		return new RestTemplate();
+	}
 
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
+	@Bean
+	public ObjectMapper objectMapper() {
+		return new ObjectMapper();
+	}
 
 }

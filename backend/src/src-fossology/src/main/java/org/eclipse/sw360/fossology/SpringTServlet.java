@@ -22,24 +22,27 @@ import java.io.IOException;
 
 @RequestMapping("/thrift")
 public class SpringTServlet extends Sw360ThriftServlet {
-    public SpringTServlet(TProcessor processor, TProtocolFactory inProtocolFactory, TProtocolFactory outProtocolFactory) {
-        super(processor, inProtocolFactory, outProtocolFactory);
-    }
+	public SpringTServlet(TProcessor processor, TProtocolFactory inProtocolFactory,
+			TProtocolFactory outProtocolFactory) {
+		super(processor, inProtocolFactory, outProtocolFactory);
+	}
 
-    public SpringTServlet(TProcessor processor, TProtocolFactory protocolFactory) {
-        super(processor, protocolFactory);
-    }
+	public SpringTServlet(TProcessor processor, TProtocolFactory protocolFactory) {
+		super(processor, protocolFactory);
+	}
 
-    @RequestMapping(method = RequestMethod.POST)
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        super.doPost(request, response);
-    }
+	@RequestMapping(method = RequestMethod.POST)
+	@Override
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		super.doPost(request, response);
+	}
 
-    @RequestMapping(method = RequestMethod.GET)
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        super.doGet(request, response);
-    }
+	@RequestMapping(method = RequestMethod.GET)
+	@Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		super.doGet(request, response);
+	}
 
 }

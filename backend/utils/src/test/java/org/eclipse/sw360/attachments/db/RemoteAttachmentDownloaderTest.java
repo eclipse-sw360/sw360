@@ -55,151 +55,155 @@ import static org.junit.Assume.assumeThat;
  */
 public class RemoteAttachmentDownloaderTest {
 
-    private static final String url = DatabaseSettingsTest.COUCH_DB_URL;
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
+	private static final String url = DatabaseSettingsTest.COUCH_DB_URL;
+	private static final String dbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
 
-    private AttachmentConnector attachmentConnector;
-    private AttachmentContentRepository repository;
+	private AttachmentConnector attachmentConnector;
+	private AttachmentContentRepository repository;
 
-    private List<String> garbage;
-    private Duration downloadTimeout = Duration.durationOf(5, TimeUnit.SECONDS);
+	private List<String> garbage;
+	private Duration downloadTimeout = Duration.durationOf(5, TimeUnit.SECONDS);
 
-    private User dummyUser = new User().setEmail("dummy@some.domain");
+	private User dummyUser = new User().setEmail("dummy@some.domain");
 
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-        assertTestString(dbName);
-        deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-    }
+	@BeforeClass
+	public static void setUpClass() throws Exception {
+		assertTestString(dbName);
+		deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+	}
 
-    @Before
-    public void setUp() throws Exception {
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
-        attachmentConnector = new AttachmentConnector(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout);
-        repository = new AttachmentContentRepository(databaseConnector);
+	@Before
+	public void setUp() throws Exception {
+		DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(
+				DatabaseSettingsTest.getConfiguredClient(), dbName);
+		attachmentConnector = new AttachmentConnector(DatabaseSettingsTest.getConfiguredClient(), dbName,
+				downloadTimeout);
+		repository = new AttachmentContentRepository(databaseConnector);
 
-        garbage = new ArrayList<>();
-    }
+		garbage = new ArrayList<>();
+	}
 
-    @After
-    public void tearDown() throws Exception {
-        for (String id : garbage) {
-            repository.remove(id);
-        }
-    }
+	@After
+	public void tearDown() throws Exception {
+		for (String id : garbage) {
+			repository.remove(id);
+		}
+	}
 
-    @Test
-    public void testIntegration() throws Exception {
-        AttachmentContent attachmentContent = saveRemoteAttachment(url);
+	@Test
+	public void testIntegration() throws Exception {
+		AttachmentContent attachmentContent = saveRemoteAttachment(url);
 
-        assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout), is(1));
+		assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout),
+				is(1));
 
-        assertThat(attachmentConnector.getAttachmentStream(attachmentContent, dummyUser,
-                        new Project()
-                                .setVisbility(Visibility.ME_AND_MODERATORS)
-                                .setCreatedBy(dummyUser.getEmail())
-                                .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentContent.getId())))),
-                hasLength(greaterThan(0l)));
+		assertThat(
+				attachmentConnector.getAttachmentStream(attachmentContent, dummyUser,
+						new Project().setVisbility(Visibility.ME_AND_MODERATORS).setCreatedBy(dummyUser.getEmail())
+								.setAttachments(Collections.singleton(
+										new Attachment().setAttachmentContentId(attachmentContent.getId())))),
+				hasLength(greaterThan(0l)));
 
-        assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout), is(0));
-    }
+		assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout),
+				is(0));
+	}
 
-    @Test
-    public void testWithBlackHole() throws Exception {
-        assumeThat(getAvailableNetworkInterface(), isAvailable());
+	@Test
+	public void testWithBlackHole() throws Exception {
+		assumeThat(getAvailableNetworkInterface(), isAvailable());
 
-        saveRemoteAttachment("http://" + BLACK_HOLE_ADDRESS + "/filename");
-        assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
+		saveRemoteAttachment("http://" + BLACK_HOLE_ADDRESS + "/filename");
+		assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
 
-        ExecutorService executor = newSingleThreadExecutor();
+		ExecutorService executor = newSingleThreadExecutor();
 
-        try {
-            Future<Integer> future = executor.submit(new Callable<Integer>() {
-                @Override
-                public Integer call() throws Exception {
-                    return retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout);
-                }
-            });
+		try {
+			Future<Integer> future = executor.submit(new Callable<Integer>() {
+				@Override
+				public Integer call() throws Exception {
+					return retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName,
+							downloadTimeout);
+				}
+			});
 
-            try {
-                Integer downloadedSuccessfully = future.get(1, TimeUnit.MINUTES);
-                assertThat(downloadedSuccessfully, is(0));
-            } catch (TimeoutException e) {
-                fail("retriever got stuck on a black hole");
-                throw e; // unreachable
-            }
-        } finally {
-            executor.shutdown();
-            executor.awaitTermination(1, TimeUnit.MINUTES);
-        }
+			try {
+				Integer downloadedSuccessfully = future.get(1, TimeUnit.MINUTES);
+				assertThat(downloadedSuccessfully, is(0));
+			} catch (TimeoutException e) {
+				fail("retriever got stuck on a black hole");
+				throw e; // unreachable
+			}
+		} finally {
+			executor.shutdown();
+			executor.awaitTermination(1, TimeUnit.MINUTES);
+		}
 
-        assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
-    }
+		assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
+	}
 
-    @Test
-    public void testWithBrokenURL() throws Exception {
-        AttachmentContent attachmentContent = saveRemoteAttachment(TestUtils.BLACK_HOLE_ADDRESS);
-        AttachmentContent attachmentGood = saveRemoteAttachment(url);
+	@Test
+	public void testWithBrokenURL() throws Exception {
+		AttachmentContent attachmentContent = saveRemoteAttachment(TestUtils.BLACK_HOLE_ADDRESS);
+		AttachmentContent attachmentGood = saveRemoteAttachment(url);
 
-        assertThat(repository.getOnlyRemoteAttachments(), hasSize(2));
-        assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout), is(1));
-        assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
+		assertThat(repository.getOnlyRemoteAttachments(), hasSize(2));
+		assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout),
+				is(1));
+		assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
 
-        assertThat(attachmentConnector.getAttachmentStream(attachmentGood, dummyUser,
-                new Project()
-                        .setVisbility(Visibility.ME_AND_MODERATORS)
-                        .setCreatedBy(dummyUser.getEmail())
-                        .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentGood.getId())))),
-                hasLength(greaterThan(0l)));
+		assertThat(
+				attachmentConnector.getAttachmentStream(attachmentGood, dummyUser,
+						new Project().setVisbility(Visibility.ME_AND_MODERATORS).setCreatedBy(dummyUser.getEmail())
+								.setAttachments(Collections
+										.singleton(new Attachment().setAttachmentContentId(attachmentGood.getId())))),
+				hasLength(greaterThan(0l)));
 
-        assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
-        assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout), is(0));
-        assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
+		assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
+		assertThat(retrieveRemoteAttachments(DatabaseSettingsTest.getConfiguredClient(), dbName, downloadTimeout),
+				is(0));
+		assertThat(repository.getOnlyRemoteAttachments(), hasSize(1));
 
-        try {
-            assertThat(attachmentConnector.getAttachmentStream(attachmentContent, dummyUser,
-                new Project()
-                        .setVisbility(Visibility.ME_AND_MODERATORS)
-                        .setCreatedBy(dummyUser.getEmail())
-                        .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentContent.getId())))),
-                hasLength(greaterThan(0l)));
-            fail("expected exception not thrown");
-        } catch (SW360Exception e) {
-            assertThat(e.getWhy(), containsString(attachmentContent.getId()));
-        }
-    }
+		try {
+			assertThat(
+					attachmentConnector.getAttachmentStream(attachmentContent, dummyUser,
+							new Project().setVisbility(Visibility.ME_AND_MODERATORS).setCreatedBy(dummyUser.getEmail())
+									.setAttachments(Collections.singleton(
+											new Attachment().setAttachmentContentId(attachmentContent.getId())))),
+					hasLength(greaterThan(0l)));
+			fail("expected exception not thrown");
+		} catch (SW360Exception e) {
+			assertThat(e.getWhy(), containsString(attachmentContent.getId()));
+		}
+	}
 
-    private AttachmentContent saveRemoteAttachment(String remoteUrl) {
-        AttachmentContent attachmentContent = new AttachmentContent()
-                .setFilename("testfile")
-                .setContentType("text")
-                .setOnlyRemote(true)
-                .setRemoteUrl(remoteUrl);
+	private AttachmentContent saveRemoteAttachment(String remoteUrl) {
+		AttachmentContent attachmentContent = new AttachmentContent().setFilename("testfile").setContentType("text")
+				.setOnlyRemote(true).setRemoteUrl(remoteUrl);
 
-        repository.add(attachmentContent);
+		repository.add(attachmentContent);
 
-        garbage.add(attachmentContent.getId());
+		garbage.add(attachmentContent.getId());
 
-        return attachmentContent;
-    }
+		return attachmentContent;
+	}
 
-    private static Matcher<InputStream> hasLength(final Matcher<Long> lengthMatcher) {
-        return new TypeSafeMatcher<InputStream>() {
-            @Override
-            protected boolean matchesSafely(InputStream item) {
-                try {
-                    return lengthMatcher.matches(length(item));
-                } catch (IOException e) {
-                    return false;
-                }
-            }
+	private static Matcher<InputStream> hasLength(final Matcher<Long> lengthMatcher) {
+		return new TypeSafeMatcher<InputStream>() {
+			@Override
+			protected boolean matchesSafely(InputStream item) {
+				try {
+					return lengthMatcher.matches(length(item));
+				} catch (IOException e) {
+					return false;
+				}
+			}
 
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("has Length: ");
-                lengthMatcher.describeTo(description);
-            }
-        };
-    }
+			@Override
+			public void describeTo(Description description) {
+				description.appendText("has Length: ");
+				lengthMatcher.describeTo(description);
+			}
+		};
+	}
 
 }

@@ -74,325 +74,329 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ComponentController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
-    public static final String COMPONENTS_URL = "/components";
-    private static final Logger log = LogManager.getLogger(ComponentController.class);
-    private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
-            .put("message", "Moderation request is created").build();
+	public static final String COMPONENTS_URL = "/components";
+	private static final Logger log = LogManager.getLogger(ComponentController.class);
+	private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap
+			.<String, String>builder().put("message", "Moderation request is created").build();
 
-    @NonNull
-    private final Sw360ComponentService componentService;
+	@NonNull
+	private final Sw360ComponentService componentService;
 
-    @NonNull
-    private final Sw360ReleaseService releaseService;
+	@NonNull
+	private final Sw360ReleaseService releaseService;
 
-    @NonNull
-    private final Sw360VendorService vendorService;
+	@NonNull
+	private final Sw360VendorService vendorService;
 
-    @NonNull
-    private final Sw360UserService userService;
+	@NonNull
+	private final Sw360UserService userService;
 
-    @NonNull
-    private final Sw360AttachmentService attachmentService;
+	@NonNull
+	private final Sw360AttachmentService attachmentService;
 
-    @NonNull
-    private final RestControllerHelper<Component> restControllerHelper;
+	@NonNull
+	private final RestControllerHelper<Component> restControllerHelper;
 
-    @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel> getComponents(Pageable pageable,
-                                                                        @RequestParam(value = "name", required = false) String name,
-                                                                        @RequestParam(value = "type", required = false) String componentType,
-                                                                        @RequestParam(value = "fields", required = false) List<String> fields,
-                                                                        @RequestParam(value = "allDetails", required = false) boolean allDetails,
-                                                                        HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+	@RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
+	public ResponseEntity<CollectionModel> getComponents(Pageable pageable,
+			@RequestParam(value = "name", required = false) String name,
+			@RequestParam(value = "type", required = false) String componentType,
+			@RequestParam(value = "fields", required = false) List<String> fields,
+			@RequestParam(value = "allDetails", required = false) boolean allDetails, HttpServletRequest request)
+			throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
-        List<Component> allComponents = new ArrayList<>();
-        if (name != null && !name.isEmpty()) {
-            allComponents.addAll(componentService.searchComponentByName(name));
-        } else {
-            allComponents.addAll(componentService.getComponentsForUser(sw360User));
-        }
+		List<Component> allComponents = new ArrayList<>();
+		if (name != null && !name.isEmpty()) {
+			allComponents.addAll(componentService.searchComponentByName(name));
+		} else {
+			allComponents.addAll(componentService.getComponentsForUser(sw360User));
+		}
 
-        PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable, allComponents, SW360Constants.TYPE_COMPONENT);
+		PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+				allComponents, SW360Constants.TYPE_COMPONENT);
 
-        List<EntityModel<Component>> componentResources = new ArrayList<>();
-        paginationResult.getResources().stream()
-                .filter(component -> componentType == null || (component.isSetComponentType() && componentType.equals(component.componentType.name())))
-                .forEach(c -> {
-                    EntityModel<Component> embeddedComponentResource = null;
-                    if (!allDetails) {
-                        Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
-                        embeddedComponentResource = EntityModel.of(embeddedComponent);
-                    } else {
-                        try {
-                            embeddedComponentResource = createHalComponent(c, sw360User);
-                        } catch (TException e) {
-                            throw new RuntimeException(e);
-                        }
-                        if (embeddedComponentResource == null) {
-                            return;
-                        }
-                    }
-                    componentResources.add(embeddedComponentResource);
-                });
+		List<EntityModel<Component>> componentResources = new ArrayList<>();
+		paginationResult.getResources().stream()
+				.filter(component -> componentType == null
+						|| (component.isSetComponentType() && componentType.equals(component.componentType.name())))
+				.forEach(c -> {
+					EntityModel<Component> embeddedComponentResource = null;
+					if (!allDetails) {
+						Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
+						embeddedComponentResource = EntityModel.of(embeddedComponent);
+					} else {
+						try {
+							embeddedComponentResource = createHalComponent(c, sw360User);
+						} catch (TException e) {
+							throw new RuntimeException(e);
+						}
+						if (embeddedComponentResource == null) {
+							return;
+						}
+					}
+					componentResources.add(embeddedComponentResource);
+				});
 
-        CollectionModel resources;
-        if (componentResources.size() == 0) {
-            resources = restControllerHelper.emptyPageResource(Component.class, paginationResult);
-        } else {
-            resources = restControllerHelper.generatePagesResource(paginationResult, componentResources);
-        }
-        return new ResponseEntity<>(resources, HttpStatus.OK);
-    }
+		CollectionModel resources;
+		if (componentResources.size() == 0) {
+			resources = restControllerHelper.emptyPageResource(Component.class, paginationResult);
+		} else {
+			resources = restControllerHelper.generatePagesResource(paginationResult, componentResources);
+		}
+		return new ResponseEntity<>(resources, HttpStatus.OK);
+	}
 
-    @RequestMapping(value = COMPONENTS_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
-            throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
-        Set<Project> sw360Projects = componentService.getProjectsByComponentId(id, user);
-        Set<Component> sw360Components = componentService.getUsingComponentsForComponent(id, user);
+	@RequestMapping(value = COMPONENTS_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
+	public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
+			throws TException {
+		User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
+		Set<Project> sw360Projects = componentService.getProjectsByComponentId(id, user);
+		Set<Component> sw360Components = componentService.getUsingComponentsForComponent(id, user);
 
-        List<EntityModel> resources = new ArrayList<>();
-        sw360Projects.forEach(p -> {
-            Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
-            resources.add(EntityModel.of(embeddedProject));
-        });
+		List<EntityModel> resources = new ArrayList<>();
+		sw360Projects.forEach(p -> {
+			Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+			resources.add(EntityModel.of(embeddedProject));
+		});
 
-        sw360Components.forEach(c -> {
-                    Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
-                    resources.add(EntityModel.of(embeddedComponent));
-                });
+		sw360Components.forEach(c -> {
+			Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
+			resources.add(EntityModel.of(embeddedComponent));
+		});
 
-        CollectionModel<EntityModel> finalResources = CollectionModel.of(resources);
-        return new ResponseEntity(finalResources, HttpStatus.OK);
-    }
+		CollectionModel<EntityModel> finalResources = CollectionModel.of(resources);
+		return new ResponseEntity(finalResources, HttpStatus.OK);
+	}
 
-    @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<Component>> getComponent(
-            @PathVariable("id") String id) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        Component sw360Component = componentService.getComponentForUserById(id, user);
-        HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
-        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
-    }
+	@RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.GET)
+	public ResponseEntity<EntityModel<Component>> getComponent(@PathVariable("id") String id) throws TException {
+		User user = restControllerHelper.getSw360UserFromAuthentication();
+		Component sw360Component = componentService.getComponentForUserById(id, user);
+		HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
+		return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+	}
 
-    @RequestMapping(value = COMPONENTS_URL + "/searchByExternalIds", method = RequestMethod.GET)
-    public ResponseEntity searchByExternalIds(@RequestParam MultiValueMap<String, String> externalIdsMultiMap) throws TException {
-        return restControllerHelper.searchByExternalIds(externalIdsMultiMap, componentService, null);
-    }
+	@RequestMapping(value = COMPONENTS_URL + "/searchByExternalIds", method = RequestMethod.GET)
+	public ResponseEntity searchByExternalIds(@RequestParam MultiValueMap<String, String> externalIdsMultiMap)
+			throws TException {
+		return restControllerHelper.searchByExternalIds(externalIdsMultiMap, componentService, null);
+	}
 
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.PATCH)
-    public ResponseEntity<EntityModel<Component>> patchComponent(
-            @PathVariable("id") String id,
-            @RequestBody Component updateComponent) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        Component sw360Component = componentService.getComponentForUserById(id, user);
-        sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponent);
-        RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, user);
-        HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
-        if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
-    }
+	@PreAuthorize("hasAuthority('WRITE')")
+	@RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.PATCH)
+	public ResponseEntity<EntityModel<Component>> patchComponent(@PathVariable("id") String id,
+			@RequestBody Component updateComponent) throws TException {
+		User user = restControllerHelper.getSw360UserFromAuthentication();
+		Component sw360Component = componentService.getComponentForUserById(id, user);
+		sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponent);
+		RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, user);
+		HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
+		if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
+			return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+		}
+		return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+	}
 
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = COMPONENTS_URL + "/{ids}", method = RequestMethod.DELETE)
-    public ResponseEntity<List<MultiStatus>> deleteComponents(
-            @PathVariable("ids") List<String> idsToDelete) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        List<MultiStatus> results = new ArrayList<>();
-        for(String id:idsToDelete) {
-            RequestStatus requestStatus = componentService.deleteComponent(id, user);
-            if(requestStatus == RequestStatus.SUCCESS) {
-                results.add(new MultiStatus(id, HttpStatus.OK));
-            } else if(requestStatus == RequestStatus.IN_USE) {
-                results.add(new MultiStatus(id, HttpStatus.CONFLICT));
-            } else if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
-                results.add(new MultiStatus(id, HttpStatus.ACCEPTED));
-            } else {
-                results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
-            }
-        }
-        return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
-    }
+	@PreAuthorize("hasAuthority('WRITE')")
+	@RequestMapping(value = COMPONENTS_URL + "/{ids}", method = RequestMethod.DELETE)
+	public ResponseEntity<List<MultiStatus>> deleteComponents(@PathVariable("ids") List<String> idsToDelete)
+			throws TException {
+		User user = restControllerHelper.getSw360UserFromAuthentication();
+		List<MultiStatus> results = new ArrayList<>();
+		for (String id : idsToDelete) {
+			RequestStatus requestStatus = componentService.deleteComponent(id, user);
+			if (requestStatus == RequestStatus.SUCCESS) {
+				results.add(new MultiStatus(id, HttpStatus.OK));
+			} else if (requestStatus == RequestStatus.IN_USE) {
+				results.add(new MultiStatus(id, HttpStatus.CONFLICT));
+			} else if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
+				results.add(new MultiStatus(id, HttpStatus.ACCEPTED));
+			} else {
+				results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
+			}
+		}
+		return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
+	}
 
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.POST)
-    public ResponseEntity<EntityModel<Component>> createComponent(@RequestBody Component component) throws URISyntaxException, TException {
+	@PreAuthorize("hasAuthority('WRITE')")
+	@RequestMapping(value = COMPONENTS_URL, method = RequestMethod.POST)
+	public ResponseEntity<EntityModel<Component>> createComponent(@RequestBody Component component)
+			throws URISyntaxException, TException {
 
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        if(component.getComponentType() == null) {
-            throw new HttpMessageNotReadableException("Required field componentType is not present");
-        }
+		User user = restControllerHelper.getSw360UserFromAuthentication();
+		if (component.getComponentType() == null) {
+			throw new HttpMessageNotReadableException("Required field componentType is not present");
+		}
 
-        if (component.getVendorNames() != null) {
-            Set<String> vendors = new HashSet<>();
-            for (String vendorUriString : component.getVendorNames()) {
-                URI vendorURI = new URI(vendorUriString);
-                String path = vendorURI.getPath();
-                String vendorId = path.substring(path.lastIndexOf('/') + 1);
-                Vendor vendor = vendorService.getVendorById(vendorId);
-                String vendorFullName = vendor.getFullname();
-                vendors.add(vendorFullName);
-            }
-            component.setVendorNames(vendors);
-        }
+		if (component.getVendorNames() != null) {
+			Set<String> vendors = new HashSet<>();
+			for (String vendorUriString : component.getVendorNames()) {
+				URI vendorURI = new URI(vendorUriString);
+				String path = vendorURI.getPath();
+				String vendorId = path.substring(path.lastIndexOf('/') + 1);
+				Vendor vendor = vendorService.getVendorById(vendorId);
+				String vendorFullName = vendor.getFullname();
+				vendors.add(vendorFullName);
+			}
+			component.setVendorNames(vendors);
+		}
 
-        Component sw360Component = componentService.createComponent(component, user);
-        HalResource<Component> halResource = createHalComponent(sw360Component, user);
+		Component sw360Component = componentService.createComponent(component, user);
+		HalResource<Component> halResource = createHalComponent(sw360Component, user);
 
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest().path("/{id}")
-                .buildAndExpand(sw360Component.getId()).toUri();
+		URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+				.buildAndExpand(sw360Component.getId()).toUri();
 
-        return ResponseEntity.created(location).body(halResource);
-    }
+		return ResponseEntity.created(location).body(halResource);
+	}
 
-    @RequestMapping(value = COMPONENTS_URL + "/{id}/attachments", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getComponentAttachments(
-            @PathVariable("id") String id) throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
-        final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getResourcesFromList(sw360Component.getAttachments());
-        return new ResponseEntity<>(resources, HttpStatus.OK);
-    }
+	@RequestMapping(value = COMPONENTS_URL + "/{id}/attachments", method = RequestMethod.GET)
+	public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getComponentAttachments(
+			@PathVariable("id") String id) throws TException {
+		final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
+		final CollectionModel<EntityModel<Attachment>> resources = attachmentService
+				.getResourcesFromList(sw360Component.getAttachments());
+		return new ResponseEntity<>(resources, HttpStatus.OK);
+	}
 
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = COMPONENTS_URL + "/{id}/attachment/{attachmentId}", method = RequestMethod.PATCH)
-    public ResponseEntity<EntityModel<Attachment>> patchComponentAttachmentInfo(@PathVariable("id") String id,
-            @PathVariable("attachmentId") String attachmentId, @RequestBody Attachment attachmentData)
-            throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
-        Set<Attachment> attachments = sw360Component.getAttachments();
-        Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId, sw360User);
-        RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, sw360User);
-        if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        EntityModel<Attachment> attachmentResource = EntityModel.of(updatedAttachment);
-        return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
-    }
+	@PreAuthorize("hasAuthority('WRITE')")
+	@RequestMapping(value = COMPONENTS_URL + "/{id}/attachment/{attachmentId}", method = RequestMethod.PATCH)
+	public ResponseEntity<EntityModel<Attachment>> patchComponentAttachmentInfo(@PathVariable("id") String id,
+			@PathVariable("attachmentId") String attachmentId, @RequestBody Attachment attachmentData)
+			throws TException {
+		final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
+		Set<Attachment> attachments = sw360Component.getAttachments();
+		Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId,
+				sw360User);
+		RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, sw360User);
+		if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
+			return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+		}
+		EntityModel<Attachment> attachmentResource = EntityModel.of(updatedAttachment);
+		return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
+	}
 
-    @RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
-    public ResponseEntity<HalResource> addAttachmentToComponent(@PathVariable("componentId") String componentId,
-                                                                @RequestPart("file") MultipartFile file,
-                                                                @RequestPart("attachment") Attachment newAttachment) throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        final Component component = componentService.getComponentForUserById(componentId, sw360User);
-        Attachment attachment = null;
-        try {
-            attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
-        } catch (IOException e) {
-            log.error("failed to upload attachment", e);
-            throw new RuntimeException("failed to upload attachment", e);
-        }
+	@RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments", method = RequestMethod.POST, consumes = {
+			"multipart/mixed", "multipart/form-data"})
+	public ResponseEntity<HalResource> addAttachmentToComponent(@PathVariable("componentId") String componentId,
+			@RequestPart("file") MultipartFile file, @RequestPart("attachment") Attachment newAttachment)
+			throws TException {
+		final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		final Component component = componentService.getComponentForUserById(componentId, sw360User);
+		Attachment attachment = null;
+		try {
+			attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
+		} catch (IOException e) {
+			log.error("failed to upload attachment", e);
+			throw new RuntimeException("failed to upload attachment", e);
+		}
 
-        component.addToAttachments(attachment);
-        RequestStatus updateComponentStatus = componentService.updateComponent(component, sw360User);
-        HalResource halComponent = createHalComponent(component, sw360User);
-        if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(halComponent, HttpStatus.OK);
-    }
+		component.addToAttachments(attachment);
+		RequestStatus updateComponentStatus = componentService.updateComponent(component, sw360User);
+		HalResource halComponent = createHalComponent(component, sw360User);
+		if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
+			return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+		}
+		return new ResponseEntity<>(halComponent, HttpStatus.OK);
+	}
 
-    @RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments/{attachmentId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public void downloadAttachmentFromComponent(
-            @PathVariable("componentId") String componentId,
-            @PathVariable("attachmentId") String attachmentId,
-            HttpServletResponse response) throws TException {
-        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        final Component component = componentService.getComponentForUserById(componentId, sw360User);
-        attachmentService.downloadAttachmentWithContext(component, attachmentId, response, sw360User);
-    }
+	@RequestMapping(value = COMPONENTS_URL
+			+ "/{componentId}/attachments/{attachmentId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+	public void downloadAttachmentFromComponent(@PathVariable("componentId") String componentId,
+			@PathVariable("attachmentId") String attachmentId, HttpServletResponse response) throws TException {
+		final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		final Component component = componentService.getComponentForUserById(componentId, sw360User);
+		attachmentService.downloadAttachmentWithContext(component, attachmentId, response, sw360User);
+	}
 
-    @DeleteMapping(COMPONENTS_URL + "/{componentId}/attachments/{attachmentIds}")
-    public ResponseEntity<HalResource<Component>> deleteAttachmentsFromComponent(
-            @PathVariable("componentId") String componentId,
-            @PathVariable("attachmentIds") List<String> attachmentIds) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        Component component = componentService.getComponentForUserById(componentId, user);
+	@DeleteMapping(COMPONENTS_URL + "/{componentId}/attachments/{attachmentIds}")
+	public ResponseEntity<HalResource<Component>> deleteAttachmentsFromComponent(
+			@PathVariable("componentId") String componentId, @PathVariable("attachmentIds") List<String> attachmentIds)
+			throws TException {
+		User user = restControllerHelper.getSw360UserFromAuthentication();
+		Component component = componentService.getComponentForUserById(componentId, user);
 
-        Set<Attachment> attachmentsToDelete = attachmentService.filterAttachmentsToRemove(Source.componentId(componentId),
-                component.getAttachments(), attachmentIds);
-        if (attachmentsToDelete.isEmpty()) {
-            // let the whole action fail if nothing can be deleted
-            throw new RuntimeException("Could not delete attachments " + attachmentIds + " from component " + componentId);
-        }
-        log.debug("Deleting the following attachments from component " + componentId + ": " + attachmentsToDelete);
-        component.getAttachments().removeAll(attachmentsToDelete);
-        RequestStatus updateComponentStatus = componentService.updateComponent(component, user);
-        HalResource<Component> halComponent = createHalComponent(component, user);
-        if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(halComponent, HttpStatus.OK);
-    }
+		Set<Attachment> attachmentsToDelete = attachmentService
+				.filterAttachmentsToRemove(Source.componentId(componentId), component.getAttachments(), attachmentIds);
+		if (attachmentsToDelete.isEmpty()) {
+			// let the whole action fail if nothing can be deleted
+			throw new RuntimeException(
+					"Could not delete attachments " + attachmentIds + " from component " + componentId);
+		}
+		log.debug("Deleting the following attachments from component " + componentId + ": " + attachmentsToDelete);
+		component.getAttachments().removeAll(attachmentsToDelete);
+		RequestStatus updateComponentStatus = componentService.updateComponent(component, user);
+		HalResource<Component> halComponent = createHalComponent(component, user);
+		if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
+			return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+		}
+		return new ResponseEntity<>(halComponent, HttpStatus.OK);
+	}
 
-    @Override
-    public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        resource.add(linkTo(ComponentController.class).slash("api/components").withRel("components"));
-        return resource;
-    }
+	@Override
+	public RepositoryLinksResource process(RepositoryLinksResource resource) {
+		resource.add(linkTo(ComponentController.class).slash("api/components").withRel("components"));
+		return resource;
+	}
 
-    private HalResource<Component> createHalComponent(Component sw360Component, User user) throws TException {
-        HalResource<Component> halComponent = new HalResource<>(sw360Component);
-        User componentCreator = restControllerHelper.getUserByEmail(sw360Component.getCreatedBy());
+	private HalResource<Component> createHalComponent(Component sw360Component, User user) throws TException {
+		HalResource<Component> halComponent = new HalResource<>(sw360Component);
+		User componentCreator = restControllerHelper.getUserByEmail(sw360Component.getCreatedBy());
 
-        if (sw360Component.getReleaseIds() != null) {
-            Set<String> releases = sw360Component.getReleaseIds();
-            restControllerHelper.addEmbeddedReleases(halComponent, releases, releaseService, user);
-        }
+		if (sw360Component.getReleaseIds() != null) {
+			Set<String> releases = sw360Component.getReleaseIds();
+			restControllerHelper.addEmbeddedReleases(halComponent, releases, releaseService, user);
+		}
 
-        if (sw360Component.getReleases() != null) {
-            List<Release> releases = sw360Component.getReleases();
-            restControllerHelper.addEmbeddedReleases(halComponent, releases);
-        }
+		if (sw360Component.getReleases() != null) {
+			List<Release> releases = sw360Component.getReleases();
+			restControllerHelper.addEmbeddedReleases(halComponent, releases);
+		}
 
-        if (sw360Component.getModerators() != null) {
-            Set<String> moderators = sw360Component.getModerators();
-            restControllerHelper.addEmbeddedModerators(halComponent, moderators);
-        }
+		if (sw360Component.getModerators() != null) {
+			Set<String> moderators = sw360Component.getModerators();
+			restControllerHelper.addEmbeddedModerators(halComponent, moderators);
+		}
 
-        if (!isNullOrEmpty(sw360Component.getDefaultVendorId())) {
-            Vendor defaultVendor;
-            if (sw360Component.getDefaultVendor() == null
-                    || !sw360Component.getDefaultVendor().getId().equals(sw360Component.getDefaultVendorId())) {
-                defaultVendor = vendorService.getVendorById(sw360Component.getDefaultVendorId());
-            } else {
-                defaultVendor = sw360Component.getDefaultVendor();
-            }
-            addEmbeddedDefaultVendor(halComponent, defaultVendor);
-            // delete default vendor so that this object is not put directly in the
-            // component object (it is available in the embedded resources path though)
-            // but keep id so that this field is put directly into the component json
-            sw360Component.setDefaultVendor(null);
-        }
+		if (!isNullOrEmpty(sw360Component.getDefaultVendorId())) {
+			Vendor defaultVendor;
+			if (sw360Component.getDefaultVendor() == null
+					|| !sw360Component.getDefaultVendor().getId().equals(sw360Component.getDefaultVendorId())) {
+				defaultVendor = vendorService.getVendorById(sw360Component.getDefaultVendorId());
+			} else {
+				defaultVendor = sw360Component.getDefaultVendor();
+			}
+			addEmbeddedDefaultVendor(halComponent, defaultVendor);
+			// delete default vendor so that this object is not put directly in the
+			// component object (it is available in the embedded resources path though)
+			// but keep id so that this field is put directly into the component json
+			sw360Component.setDefaultVendor(null);
+		}
 
-        if (sw360Component.getVendorNames() != null) {
-            Set<String> vendors = sw360Component.getVendorNames();
-            restControllerHelper.addEmbeddedVendors(halComponent, vendors);
-            sw360Component.setVendorNames(null);
-        }
+		if (sw360Component.getVendorNames() != null) {
+			Set<String> vendors = sw360Component.getVendorNames();
+			restControllerHelper.addEmbeddedVendors(halComponent, vendors);
+			sw360Component.setVendorNames(null);
+		}
 
-        if (sw360Component.getAttachments() != null) {
-            restControllerHelper.addEmbeddedAttachments(halComponent, sw360Component.getAttachments());
-        }
+		if (sw360Component.getAttachments() != null) {
+			restControllerHelper.addEmbeddedAttachments(halComponent, sw360Component.getAttachments());
+		}
 
-        restControllerHelper.addEmbeddedUser(halComponent, componentCreator, "createdBy");
+		restControllerHelper.addEmbeddedUser(halComponent, componentCreator, "createdBy");
 
-        return halComponent;
-    }
+		return halComponent;
+	}
 
-    private void addEmbeddedDefaultVendor(HalResource<Component> halComponent, Vendor defaultVendor) {
-        HalResource<Vendor> halDefaultVendor = new HalResource<>(defaultVendor);
-        Link vendorSelfLink = linkTo(UserController.class)
-                .slash("api" + VendorController.VENDORS_URL + "/" + defaultVendor.getId()).withSelfRel();
-        halDefaultVendor.add(vendorSelfLink);
-        halComponent.addEmbeddedResource("defaultVendor", halDefaultVendor);
-    }
+	private void addEmbeddedDefaultVendor(HalResource<Component> halComponent, Vendor defaultVendor) {
+		HalResource<Vendor> halDefaultVendor = new HalResource<>(defaultVendor);
+		Link vendorSelfLink = linkTo(UserController.class)
+				.slash("api" + VendorController.VENDORS_URL + "/" + defaultVendor.getId()).withSelfRel();
+		halDefaultVendor.add(vendorSelfLink);
+		halComponent.addEmbeddedResource("defaultVendor", halDefaultVendor);
+	}
 }

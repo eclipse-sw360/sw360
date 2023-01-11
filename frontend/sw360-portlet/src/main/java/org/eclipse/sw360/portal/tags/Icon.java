@@ -25,35 +25,37 @@ import java.util.ResourceBundle;
 
 public class Icon extends SimpleTagSupport {
 
-    private String icon = "";
-    private String title = "";
-    private String className = "";
-    
-    public void setIcon(String icon) {
-        this.icon = icon;
-    }
+	private String icon = "";
+	private String title = "";
+	private String className = "";
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
 
-    public void setClassName(String className) {
-        this.className = className;
-    }
+	public void setTitle(String title) {
+		this.title = title;
+	}
 
-    public void doTag() throws JspException, IOException {   
-        
-        PageContext pageContext = (PageContext) getJspContext();  
-        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();   
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-        String tag = "<svg class=\"lexicon-icon " + className + "\">";
-        
-        if(!Strings.isNullOrEmpty(title)) {
-            tag += "<title>" + StringEscapeUtils.escapeHtml(LanguageUtil.get(resourceBundle, title)) + "</title>";
-        }
-        tag += "<use href=\"" + ((PageContext) getJspContext()).getServletContext().getContextPath() + "/images/icons.svg#" + icon + "\"/>";
+	public void setClassName(String className) {
+		this.className = className;
+	}
 
-        tag += "</svg>";
-        getJspContext().getOut().print(tag);
-    }
+	public void doTag() throws JspException, IOException {
+
+		PageContext pageContext = (PageContext) getJspContext();
+		HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+				getClass());
+		String tag = "<svg class=\"lexicon-icon " + className + "\">";
+
+		if (!Strings.isNullOrEmpty(title)) {
+			tag += "<title>" + StringEscapeUtils.escapeHtml(LanguageUtil.get(resourceBundle, title)) + "</title>";
+		}
+		tag += "<use href=\"" + ((PageContext) getJspContext()).getServletContext().getContextPath()
+				+ "/images/icons.svg#" + icon + "\"/>";
+
+		tag += "</svg>";
+		getJspContext().getOut().print(tag);
+	}
 }

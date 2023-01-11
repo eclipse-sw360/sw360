@@ -24,32 +24,32 @@ import java.net.MalformedURLException;
 
 public class ScheduleServlet extends Sw360ThriftServlet {
 
-    Logger log = LogManager.getLogger(ScheduleServlet.class);
-    static ScheduleHandler handler = new ScheduleHandler();
+	Logger log = LogManager.getLogger(ScheduleServlet.class);
+	static ScheduleHandler handler = new ScheduleHandler();
 
-    public ScheduleServlet() throws MalformedURLException, FileNotFoundException, TException {
-        // Create a service processor using the provided handler
-        super(new ScheduleService.Processor<>(handler), new TCompactProtocol.Factory());
-    }
+	public ScheduleServlet() throws MalformedURLException, FileNotFoundException, TException {
+		// Create a service processor using the provided handler
+		super(new ScheduleService.Processor<>(handler), new TCompactProtocol.Factory());
+	}
 
-    public void init() throws ServletException {
-        super.init();
-        try {
-            autoStart();
-        } catch (TException te) {
-            throw new ServletException(te.getMessage());
-        }
-    }
+	public void init() throws ServletException {
+		super.init();
+		try {
+			autoStart();
+		} catch (TException te) {
+			throw new ServletException(te.getMessage());
+		}
+	}
 
-    private void autoStart() throws TException {
-        log.info("Auto-starting scheduling tasks in schedule service...");
-        String[] servicesToSchedule = ScheduleConstants.autostartServices;
-        for (String serviceName : servicesToSchedule) {
-            String cleanServiceName = serviceName.trim();
-            if(! "".equals(cleanServiceName)){
-                handler.scheduleService(cleanServiceName);
-            }
-        }
-        log.info("Auto-start completed.");
-    }
+	private void autoStart() throws TException {
+		log.info("Auto-starting scheduling tasks in schedule service...");
+		String[] servicesToSchedule = ScheduleConstants.autostartServices;
+		for (String serviceName : servicesToSchedule) {
+			String cleanServiceName = serviceName.trim();
+			if (!"".equals(cleanServiceName)) {
+				handler.scheduleService(cleanServiceName);
+			}
+		}
+		log.info("Auto-start completed.");
+	}
 }

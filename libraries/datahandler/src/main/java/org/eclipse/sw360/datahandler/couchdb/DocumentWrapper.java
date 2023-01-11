@@ -13,5 +13,5 @@ package org.eclipse.sw360.datahandler.couchdb;
 import org.ektorp.support.CouchDbDocument;
 
 public abstract class DocumentWrapper<T> extends CouchDbDocument {
-    public abstract void updateNonMetadata(T source);
+	public abstract void updateNonMetadata(T source);
 }

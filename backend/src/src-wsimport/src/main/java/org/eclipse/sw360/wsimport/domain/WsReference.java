@@ -14,41 +14,40 @@ package org.eclipse.sw360.wsimport.domain;
  */
 public class WsReference {
 
-    private String url;
-    private String issueUrl;
-    private String pomUrl;
-    private String scmUrl;
+	private String url;
+	private String issueUrl;
+	private String pomUrl;
+	private String scmUrl;
 
-    public String getUrl() {
-        return url;
-    }
+	public String getUrl() {
+		return url;
+	}
 
-    public void setUrl(String url) {
-        this.url = url;
-    }
+	public void setUrl(String url) {
+		this.url = url;
+	}
 
-    public String getIssueUrl() {
-        return issueUrl;
-    }
+	public String getIssueUrl() {
+		return issueUrl;
+	}
 
-    public void setIssueUrl(String issueUrl) {
-        this.issueUrl = issueUrl;
-    }
+	public void setIssueUrl(String issueUrl) {
+		this.issueUrl = issueUrl;
+	}
 
-    public String getPomUrl() {
-        return pomUrl;
-    }
+	public String getPomUrl() {
+		return pomUrl;
+	}
 
-    public void setPomUrl(String pomUrl) {
-        this.pomUrl = pomUrl;
-    }
+	public void setPomUrl(String pomUrl) {
+		this.pomUrl = pomUrl;
+	}
 
-    public String getScmUrl() {
-        return scmUrl;
-    }
+	public String getScmUrl() {
+		return scmUrl;
+	}
 
-    public void setScmUrl(String scmUrl) {
-        this.scmUrl = scmUrl;
-    }
+	public void setScmUrl(String scmUrl) {
+		this.scmUrl = scmUrl;
+	}
 }
-

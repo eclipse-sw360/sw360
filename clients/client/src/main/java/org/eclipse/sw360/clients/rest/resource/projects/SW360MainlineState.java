@@ -12,36 +12,32 @@
 package org.eclipse.sw360.clients.rest.resource.projects;
 
 public enum SW360MainlineState {
-    OPEN(0),
-    MAINLINE(1),
-    SPECIFIC(2),
-    PHASEOUT(3),
-    DENIED(4);
+	OPEN(0), MAINLINE(1), SPECIFIC(2), PHASEOUT(3), DENIED(4);
 
-    private final int value;
+	private final int value;
 
-    SW360MainlineState(int value) {
-        this.value = value;
-    }
+	SW360MainlineState(int value) {
+		this.value = value;
+	}
 
-    public int getValue() {
-        return this.value;
-    }
+	public int getValue() {
+		return this.value;
+	}
 
-    public static SW360MainlineState findByValue(int value) {
-        switch (value) {
-            case 0:
-                return OPEN;
-            case 1:
-                return MAINLINE;
-            case 2:
-                return SPECIFIC;
-            case 3:
-                return PHASEOUT;
-            case 4:
-                return DENIED;
-            default:
-                return null;
-        }
-    }
+	public static SW360MainlineState findByValue(int value) {
+		switch (value) {
+			case 0 :
+				return OPEN;
+			case 1 :
+				return MAINLINE;
+			case 2 :
+				return SPECIFIC;
+			case 3 :
+				return PHASEOUT;
+			case 4 :
+				return DENIED;
+			default :
+				return null;
+		}
+	}
 }

@@ -22,11 +22,11 @@ import static org.junit.Assert.assertEquals;
 @RunWith(MockitoJUnitRunner.class)
 public class PaginationResultTest {
 
-    @Test
-    public void createPaginationResult() {
-        PaginationOptions paginationOptions = new PaginationOptions(0, 10, null);
-        PaginationResult paginationResult = new PaginationResult(new ArrayList(), 23, paginationOptions);
-        assertEquals(paginationResult.getTotalPageCount(), 3);
-    }
+	@Test
+	public void createPaginationResult() {
+		PaginationOptions paginationOptions = new PaginationOptions(0, 10, null);
+		PaginationResult paginationResult = new PaginationResult(new ArrayList(), 23, paginationOptions);
+		assertEquals(paginationResult.getTotalPageCount(), 3);
+	}
 
 }

@@ -11,11 +11,11 @@
 package org.eclipse.sw360.clients.utils;
 
 public class SW360ClientException extends RuntimeException {
-    public SW360ClientException(String s) {
-        super(s);
-    }
+	public SW360ClientException(String s) {
+		super(s);
+	}
 
-    public SW360ClientException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
+	public SW360ClientException(String s, Throwable throwable) {
+		super(s, throwable);
+	}
 }

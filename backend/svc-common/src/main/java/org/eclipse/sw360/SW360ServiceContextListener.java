@@ -20,13 +20,13 @@ import javax.servlet.ServletContextListener;
  * @author daniele.fognini@tngtech.com
  */
 public class SW360ServiceContextListener implements ServletContextListener {
-    @Override
-    public void contextInitialized(ServletContextEvent sce) {
-    }
+	@Override
+	public void contextInitialized(ServletContextEvent sce) {
+	}
 
-    @Override
-    public void contextDestroyed(ServletContextEvent sce) {
-        DatabaseInstanceTracker.destroy();
-        IdleConnectionMonitor.shutdown();
-    }
+	@Override
+	public void contextDestroyed(ServletContextEvent sce) {
+		DatabaseInstanceTracker.destroy();
+		IdleConnectionMonitor.shutdown();
+	}
 }

@@ -15,13 +15,13 @@ import org.eclipse.sw360.clients.rest.resource.SW360HalResource;
 
 public class SW360ProjectList extends SW360HalResource<LinkObjects, SW360ProjectListEmbedded> {
 
-    @Override
-    public LinkObjects createEmptyLinks() {
-        return new LinkObjects();
-    }
+	@Override
+	public LinkObjects createEmptyLinks() {
+		return new LinkObjects();
+	}
 
-    @Override
-    public SW360ProjectListEmbedded createEmptyEmbedded() {
-        return new SW360ProjectListEmbedded();
-    }
+	@Override
+	public SW360ProjectListEmbedded createEmptyEmbedded() {
+		return new SW360ProjectListEmbedded();
+	}
 }

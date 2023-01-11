@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 interface RequestAdapter {
-    long getCompanyId();
-    Consumer<String> getErrorMessagesConsumer();
-    Optional<ServiceContext> getServiceContext();
+	long getCompanyId();
+	Consumer<String> getErrorMessagesConsumer();
+	Optional<ServiceContext> getServiceContext();
 }

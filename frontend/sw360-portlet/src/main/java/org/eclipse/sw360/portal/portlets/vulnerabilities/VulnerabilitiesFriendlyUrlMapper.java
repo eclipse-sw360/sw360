@@ -16,16 +16,12 @@ import org.osgi.service.component.annotations.Component;
 
 import static org.eclipse.sw360.portal.common.PortalConstants.VULNERABILITIES_PORTLET_NAME;
 
-@Component(
-        property = {
-            "com.liferay.portlet.friendly-url-routes=org/eclipse/sw360/portal/mapper/vulnerability-friendly-url-routes.xml",
-            "javax.portlet.name=" + VULNERABILITIES_PORTLET_NAME,
-        },
-        service = FriendlyURLMapper.class
-    )
+@Component(property = {
+		"com.liferay.portlet.friendly-url-routes=org/eclipse/sw360/portal/mapper/vulnerability-friendly-url-routes.xml",
+		"javax.portlet.name=" + VULNERABILITIES_PORTLET_NAME,}, service = FriendlyURLMapper.class)
 public class VulnerabilitiesFriendlyUrlMapper extends DefaultFriendlyURLMapper {
-    @Override
-    public String getMapping() {
-        return "vulnerability";
-    }
+	@Override
+	public String getMapping() {
+		return "vulnerability";
+	}
 }

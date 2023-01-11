@@ -33,109 +33,111 @@ import java.util.concurrent.TimeUnit;
 
 public class AttachmentFrontendUtils {
 
-    private static final Logger log = LogManager.getLogger(AttachmentFrontendUtils.class);
+	private static final Logger log = LogManager.getLogger(AttachmentFrontendUtils.class);
 
-    private AttachmentStreamConnector connector;
-    // TODO add Config class and DI
-    private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
+	private AttachmentStreamConnector connector;
+	// TODO add Config class and DI
+	private final Duration downloadTimeout = Duration.durationOf(30, TimeUnit.SECONDS);
 
-    protected final ThreadLocal<AttachmentService.Iface> attchmntClient = ThreadLocal.<AttachmentService.Iface>withInitial(
-            () -> {
-                return new ThriftClients().makeAttachmentClient();
-            });
+	protected final ThreadLocal<AttachmentService.Iface> attchmntClient = ThreadLocal.<AttachmentService.Iface>withInitial(
+			() -> {
+				return new ThriftClients().makeAttachmentClient();
+			});
 
-    public AttachmentFrontendUtils() {
-    }
+	public AttachmentFrontendUtils() {
+	}
 
-    public InputStream getStreamToServeAFile(Collection<AttachmentContent> attachments, User user, Object context)
-            throws TException, IOException {
-        if (attachments == null) {
-            throw new SW360Exception("Tried to download empty set of Attachments");
-        } else if (attachments.size() == 0) {
-            return getConnector().getAttachmentBundleStream(new HashSet<>(), user, context);
-        } else if(attachments.size() == 1) {
-            // Temporary solutions, permission check needs to be implemented (getAttachmentStream)
-            return getConnector().unsafeGetAttachmentStream(attachments.iterator().next());
-        } else {
-            return getConnector().getAttachmentBundleStream(new HashSet<>(attachments), user, context);
-        }
-    }
+	public InputStream getStreamToServeAFile(Collection<AttachmentContent> attachments, User user, Object context)
+			throws TException, IOException {
+		if (attachments == null) {
+			throw new SW360Exception("Tried to download empty set of Attachments");
+		} else if (attachments.size() == 0) {
+			return getConnector().getAttachmentBundleStream(new HashSet<>(), user, context);
+		} else if (attachments.size() == 1) {
+			// Temporary solutions, permission check needs to be implemented
+			// (getAttachmentStream)
+			return getConnector().unsafeGetAttachmentStream(attachments.iterator().next());
+		} else {
+			return getConnector().getAttachmentBundleStream(new HashSet<>(attachments), user, context);
+		}
+	}
 
-    public InputStream getStreamToServeBundle(Collection<AttachmentContent> attachments, User user, Object context)
-            throws TException, IOException {
-        if (attachments == null || attachments.size() == 0) {
-            throw new SW360Exception("Tried to download empty set of Attachments");
-        } else {
-            return getConnector().getAttachmentBundleStream(new HashSet<>(attachments), user, context);
-        }
-    }
+	public InputStream getStreamToServeBundle(Collection<AttachmentContent> attachments, User user, Object context)
+			throws TException, IOException {
+		if (attachments == null || attachments.size() == 0) {
+			throw new SW360Exception("Tried to download empty set of Attachments");
+		} else {
+			return getConnector().getAttachmentBundleStream(new HashSet<>(attachments), user, context);
+		}
+	}
 
-    private synchronized void makeConnector() throws TException {
-        if (connector == null) {
-            try {
-                connector = new AttachmentStreamConnector(downloadTimeout);
-            } catch (MalformedURLException e) {
-                log.error("Invalid database address received...", e);
-                throw new TException(e);
-            }
-        }
-    }
+	private synchronized void makeConnector() throws TException {
+		if (connector == null) {
+			try {
+				connector = new AttachmentStreamConnector(downloadTimeout);
+			} catch (MalformedURLException e) {
+				log.error("Invalid database address received...", e);
+				throw new TException(e);
+			}
+		}
+	}
 
-    public AttachmentStreamConnector getConnector() throws TException {
-        if (connector == null) makeConnector();
-        return connector;
-    }
+	public AttachmentStreamConnector getConnector() throws TException {
+		if (connector == null)
+			makeConnector();
+		return connector;
+	}
 
-    public AttachmentContent getAttachmentContent(String id) throws TException {
-        return attchmntClient.get().getAttachmentContent(id);
-    }
+	public AttachmentContent getAttachmentContent(String id) throws TException {
+		return attchmntClient.get().getAttachmentContent(id);
+	}
 
-    public AttachmentContent makeAttachmentContent(AttachmentContent attachmentContent) throws TException {
-        return attchmntClient.get().makeAttachmentContent(attachmentContent);
-    }
+	public AttachmentContent makeAttachmentContent(AttachmentContent attachmentContent) throws TException {
+		return attchmntClient.get().makeAttachmentContent(attachmentContent);
+	}
 
-    public Attachment getAttachmentForDisplay(User user, String attachmentContentId) {
-        try {
-            String filename = getAttachmentContent(attachmentContentId).getFilename();
-            return CommonUtils.getNewAttachment(user, attachmentContentId, filename);
-        } catch (TException e) {
-            log.error("Could not get attachment content", e);
-        }
-        return null;
-    }
+	public Attachment getAttachmentForDisplay(User user, String attachmentContentId) {
+		try {
+			String filename = getAttachmentContent(attachmentContentId).getFilename();
+			return CommonUtils.getNewAttachment(user, attachmentContentId, filename);
+		} catch (TException e) {
+			log.error("Could not get attachment content", e);
+		}
+		return null;
+	}
 
-    public void deleteAttachments(Set<String> attachmentContentIds){
-        try {
-            for(String id: attachmentContentIds) {
-                attchmntClient.get().deleteAttachmentContent(id);
-            }
-        } catch (TException e){
-            log.error("Could not delete attachments from database.",e);
-        }
-    }
+	public void deleteAttachments(Set<String> attachmentContentIds) {
+		try {
+			for (String id : attachmentContentIds) {
+				attchmntClient.get().deleteAttachmentContent(id);
+			}
+		} catch (TException e) {
+			log.error("Could not delete attachments from database.", e);
+		}
+	}
 
+	public Attachment uploadAttachmentContent(AttachmentContent attachmentContent, InputStream fileStream,
+			User sw360User) throws TException {
+		final AttachmentStreamConnector attachmentStreamConnector = getConnector();
+		if (attachmentContent != null) {
+			try {
+				attachmentStreamConnector.uploadAttachment(attachmentContent, fileStream);
+				return CommonUtils.getNewAttachment(sw360User, attachmentContent.getId(),
+						attachmentContent.getFilename());
+			} catch (TException e) {
+				log.error("Error saving attachment part", e);
+			}
+		}
+		return null;
+	}
 
-    public Attachment uploadAttachmentContent(AttachmentContent attachmentContent, InputStream fileStream, User sw360User)
-            throws TException {
-        final AttachmentStreamConnector attachmentStreamConnector = getConnector();
-        if (attachmentContent != null) {
-            try {
-                attachmentStreamConnector.uploadAttachment(attachmentContent, fileStream);
-                return CommonUtils.getNewAttachment(sw360User, attachmentContent.getId(), attachmentContent.getFilename());
-            } catch (TException e) {
-                log.error("Error saving attachment part", e);
-            }
-        }
-        return null;
-    }
-
-    protected AttachmentContent updateAttachmentContent(AttachmentContent attachment) throws TException {
-        try {
-            attchmntClient.get().updateAttachmentContent(attachment);
-        } catch (SW360Exception e) {
-            log.error("Error updating attachment", e);
-            return null;
-        }
-        return attachment;
-    }
+	protected AttachmentContent updateAttachmentContent(AttachmentContent attachment) throws TException {
+		try {
+			attchmntClient.get().updateAttachmentContent(attachment);
+		} catch (SW360Exception e) {
+			log.error("Error updating attachment", e);
+			return null;
+		}
+		return attachment;
+	}
 }

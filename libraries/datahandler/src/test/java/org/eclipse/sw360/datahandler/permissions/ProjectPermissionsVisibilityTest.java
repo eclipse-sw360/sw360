@@ -32,22 +32,22 @@ import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.*;
 @RunWith(DataProviderRunner.class)
 public class ProjectPermissionsVisibilityTest extends ScenarioTest<GivenProject, WhenComputeVisibility, ThenVisible> {
 
-    public static String theBu = "DE PA RT"; // ME NT
-    public static String theDep = "DE PA RT ME NT";
-    public static String theOtherDep = "OT TH ER DE";
-    public static String theUser = "user1";
-    public static String theOtherUser = "anotherUser";
+	public static String theBu = "DE PA RT"; // ME NT
+	public static String theDep = "DE PA RT ME NT";
+	public static String theOtherDep = "OT TH ER DE";
+	public static String theUser = "user1";
+	public static String theOtherUser = "anotherUser";
 
-    /**
-     * The testing strategy for visibility is as follows:
-     * It depends on the UserGroup and Department as well as the user Roles, in the first tests we verify them.
-     * We can override a no from these criteria by being in one of the moderator classes. This is the next test block.
-     */
+	/**
+	 * The testing strategy for visibility is as follows: It depends on the
+	 * UserGroup and Department as well as the user Roles, in the first tests we
+	 * verify them. We can override a no from these criteria by being in one of the
+	 * moderator classes. This is the next test block.
+	 */
 
-
-    @DataProvider
-    public static Object[][] projectVisibilityProvider() {
-        // @formatter:off
+	@DataProvider
+	public static Object[][] projectVisibilityProvider() {
+		// @formatter:off
         if (PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED) {
             return new Object[][] {
                     //test otherDeparment
@@ -120,20 +120,21 @@ public class ProjectPermissionsVisibilityTest extends ScenarioTest<GivenProject,
             };
         }
         // @formatter:on
-    }
+	}
 
-    @Test
-    @UseDataProvider("projectVisibilityProvider")
-    public void testVisibility(Visibility visibility, String businessUnit, String department, UserGroup userGroup, boolean expectedVisibility) {
-        given().a_new_project().with_visibility_$_and_business_unit_$(visibility, businessUnit);
-        when().the_visibility_is_computed_for_department_$_and_user_group_$(department, userGroup);
-        then().the_visibility_should_be(expectedVisibility);
+	@Test
+	@UseDataProvider("projectVisibilityProvider")
+	public void testVisibility(Visibility visibility, String businessUnit, String department, UserGroup userGroup,
+			boolean expectedVisibility) {
+		given().a_new_project().with_visibility_$_and_business_unit_$(visibility, businessUnit);
+		when().the_visibility_is_computed_for_department_$_and_user_group_$(department, userGroup);
+		then().the_visibility_should_be(expectedVisibility);
 
-    }
+	}
 
-    @DataProvider
-    public static Object[][] projectVisibilityByRoleProvider() {
-        // @formatter:off
+	@DataProvider
+	public static Object[][] projectVisibilityByRoleProvider() {
+		// @formatter:off
         return new Object[][] {
                 //test otherDepartment
                 //created by
@@ -197,14 +198,15 @@ public class ProjectPermissionsVisibilityTest extends ScenarioTest<GivenProject,
                 { EVERYONE, theBu, PROJECT_RESPONSIBLE, theUser, theOtherUser, true },
         };
         // @formatter:on
-    }
+	}
 
-    @Test
-    @UseDataProvider("projectVisibilityByRoleProvider")
-    public void testVisibilityForProject(Visibility visibility, String bu, GivenProject.ProjectRole role, String creatingUser, String viewingUser, boolean expectedVisibility) throws Exception {
-        given().a_project_with_$_$(role, creatingUser).with_visibility_$_and_business_unit_$(visibility, bu);
-        when().the_visibility_is_computed_for_the_wrong_department_and_the_user_$(viewingUser);
-        then().the_visibility_should_be(expectedVisibility);
-    }
+	@Test
+	@UseDataProvider("projectVisibilityByRoleProvider")
+	public void testVisibilityForProject(Visibility visibility, String bu, GivenProject.ProjectRole role,
+			String creatingUser, String viewingUser, boolean expectedVisibility) throws Exception {
+		given().a_project_with_$_$(role, creatingUser).with_visibility_$_and_business_unit_$(visibility, bu);
+		when().the_visibility_is_computed_for_the_wrong_department_and_the_user_$(viewingUser);
+		then().the_visibility_should_be(expectedVisibility);
+	}
 
 }

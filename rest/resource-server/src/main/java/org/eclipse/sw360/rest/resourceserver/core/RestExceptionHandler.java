@@ -34,55 +34,57 @@ import java.time.Instant;
 @ControllerAdvice
 public class RestExceptionHandler {
 
-    @ExceptionHandler({Exception.class, TException.class, ResourceClassNotFoundException.class})
-    public ResponseEntity<ErrorMessage> handleException(Exception e) {
-        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+	@ExceptionHandler({Exception.class, TException.class, ResourceClassNotFoundException.class})
+	public ResponseEntity<ErrorMessage> handleException(Exception e) {
+		return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.INTERNAL_SERVER_ERROR),
+				HttpStatus.INTERNAL_SERVER_ERROR);
+	}
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorMessage> handleAccessDeniedException(AccessDeniedException e) {
-        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.FORBIDDEN), HttpStatus.FORBIDDEN);
-    }
+	@ExceptionHandler(AccessDeniedException.class)
+	public ResponseEntity<ErrorMessage> handleAccessDeniedException(AccessDeniedException e) {
+		return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.FORBIDDEN), HttpStatus.FORBIDDEN);
+	}
 
-    @ExceptionHandler({ResourceNotFoundException.class, PaginationParameterException.class})
-    public ResponseEntity<ErrorMessage> handleResourceNotFound(Exception e) {
-        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.NOT_FOUND), HttpStatus.NOT_FOUND);
-    }
+	@ExceptionHandler({ResourceNotFoundException.class, PaginationParameterException.class})
+	public ResponseEntity<ErrorMessage> handleResourceNotFound(Exception e) {
+		return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.NOT_FOUND), HttpStatus.NOT_FOUND);
+	}
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorMessage> handleMessageNotReadableException(HttpMessageNotReadableException e) {
-        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
-    }
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ErrorMessage> handleMessageNotReadableException(HttpMessageNotReadableException e) {
+		return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+	}
 
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ErrorMessage> handleRequestMethodNotSupported(HttpRequestMethodNotSupportedException e) {
-        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.METHOD_NOT_ALLOWED), HttpStatus.METHOD_NOT_ALLOWED);
-    }
+	@ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+	public ResponseEntity<ErrorMessage> handleRequestMethodNotSupported(HttpRequestMethodNotSupportedException e) {
+		return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.METHOD_NOT_ALLOWED), HttpStatus.METHOD_NOT_ALLOWED);
+	}
 
-    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-    public ResponseEntity<ErrorMessage> handleMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {
-        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.UNSUPPORTED_MEDIA_TYPE), HttpStatus.UNSUPPORTED_MEDIA_TYPE);
-    }
+	@ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+	public ResponseEntity<ErrorMessage> handleMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {
+		return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.UNSUPPORTED_MEDIA_TYPE),
+				HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+	}
 
-    @ExceptionHandler({OptimisticLockingFailureException.class, DataIntegrityViolationException.class})
-    public ResponseEntity<ErrorMessage> handleConflict(Exception e) {
-        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.CONFLICT), HttpStatus.CONFLICT);
-    }
+	@ExceptionHandler({OptimisticLockingFailureException.class, DataIntegrityViolationException.class})
+	public ResponseEntity<ErrorMessage> handleConflict(Exception e) {
+		return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.CONFLICT), HttpStatus.CONFLICT);
+	}
 
-    @Data
-    @RequiredArgsConstructor
-    private static class ErrorMessage {
+	@Data
+	@RequiredArgsConstructor
+	private static class ErrorMessage {
 
-        @JsonSerialize(using = JsonInstantSerializer.class)
-        private Instant timestamp = Instant.now();
-        private final int status;
-        private final String error;
-        private final String message;
+		@JsonSerialize(using = JsonInstantSerializer.class)
+		private Instant timestamp = Instant.now();
+		private final int status;
+		private final String error;
+		private final String message;
 
-        public ErrorMessage(Exception e, HttpStatus httpStatus) {
-            this.status = httpStatus.value();
-            this.error = httpStatus.getReasonPhrase();
-            this.message = e.getMessage();
-        }
-    }
+		public ErrorMessage(Exception e, HttpStatus httpStatus) {
+			this.status = httpStatus.value();
+			this.error = httpStatus.getReasonPhrase();
+			this.message = e.getMessage();
+		}
+	}
 }

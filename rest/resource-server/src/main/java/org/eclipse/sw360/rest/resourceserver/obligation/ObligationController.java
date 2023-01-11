@@ -45,84 +45,81 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ObligationController implements RepresentationModelProcessor<RepositoryLinksResource> {
-    public static final String OBLIGATION_URL = "/obligations";
+	public static final String OBLIGATION_URL = "/obligations";
 
-    @NonNull
-    private final Sw360ObligationService obligationService;
+	@NonNull
+	private final Sw360ObligationService obligationService;
 
-    @NonNull
-    private final RestControllerHelper restControllerHelper;
+	@NonNull
+	private final RestControllerHelper restControllerHelper;
 
-    @RequestMapping(value = OBLIGATION_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligations() {
-        List<Obligation> obligations = obligationService.getObligations();
+	@RequestMapping(value = OBLIGATION_URL, method = RequestMethod.GET)
+	public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligations() {
+		List<Obligation> obligations = obligationService.getObligations();
 
-        List<EntityModel<Obligation>> obligationResources = new ArrayList<>();
-        obligations.forEach(o -> {
-            Obligation embeddedObligation = restControllerHelper.convertToEmbeddedObligation(o);
-            obligationResources.add(EntityModel.of(embeddedObligation));
-        });
+		List<EntityModel<Obligation>> obligationResources = new ArrayList<>();
+		obligations.forEach(o -> {
+			Obligation embeddedObligation = restControllerHelper.convertToEmbeddedObligation(o);
+			obligationResources.add(EntityModel.of(embeddedObligation));
+		});
 
-        CollectionModel<EntityModel<Obligation>> resources = CollectionModel.of(obligationResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
-    }
+		CollectionModel<EntityModel<Obligation>> resources = CollectionModel.of(obligationResources);
+		return new ResponseEntity<>(resources, HttpStatus.OK);
+	}
 
-    @RequestMapping(value = OBLIGATION_URL + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<Obligation>> getObligation(
-            @PathVariable("id") String id) {
-        try {
-            Obligation sw360Obligation = obligationService.getObligationById(id);
-            HalResource<Obligation> halResource = createHalObligation(sw360Obligation);
-            return new ResponseEntity<>(halResource, HttpStatus.OK);
-        } catch (Exception e) {
-            throw new ResourceNotFoundException("Obligation does not exists! id=" + id);
-        }
-    }
+	@RequestMapping(value = OBLIGATION_URL + "/{id}", method = RequestMethod.GET)
+	public ResponseEntity<EntityModel<Obligation>> getObligation(@PathVariable("id") String id) {
+		try {
+			Obligation sw360Obligation = obligationService.getObligationById(id);
+			HalResource<Obligation> halResource = createHalObligation(sw360Obligation);
+			return new ResponseEntity<>(halResource, HttpStatus.OK);
+		} catch (Exception e) {
+			throw new ResourceNotFoundException("Obligation does not exists! id=" + id);
+		}
+	}
 
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = OBLIGATION_URL, method = RequestMethod.POST)
-    public ResponseEntity createObligation(
-            @RequestBody Obligation obligation) {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        obligation = obligationService.createObligation(obligation, sw360User);
-        HalResource<Obligation> halResource = createHalObligation(obligation);
+	@PreAuthorize("hasAuthority('WRITE')")
+	@RequestMapping(value = OBLIGATION_URL, method = RequestMethod.POST)
+	public ResponseEntity createObligation(@RequestBody Obligation obligation) {
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		obligation = obligationService.createObligation(obligation, sw360User);
+		HalResource<Obligation> halResource = createHalObligation(obligation);
 
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest().path("/{id}")
-                .buildAndExpand(obligation.getId()).toUri();
+		URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obligation.getId())
+				.toUri();
 
-        return ResponseEntity.created(location).body(halResource);
-    }
+		return ResponseEntity.created(location).body(halResource);
+	}
 
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = OBLIGATION_URL + "/{ids}", method = RequestMethod.DELETE)
-    public ResponseEntity<List<MultiStatus>> deleteObligations(
-            @PathVariable("ids") List<String> idsToDelete) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        List<MultiStatus> results = new ArrayList<>();
-        for(String id : idsToDelete) {
-            try {
-                Obligation obligation = obligationService.getObligationById(id);
-                RequestStatus requestStatus = obligationService.deleteObligation(obligation.getId(), user);
-                if(requestStatus == RequestStatus.SUCCESS) {
-                    results.add(new MultiStatus(id, HttpStatus.OK));
-                } else {
-                    results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
-                }
-            } catch (Exception e) {
-                results.add(new MultiStatus(id, HttpStatus.NOT_FOUND));
-            }
-        }
-        return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
-    }
+	@PreAuthorize("hasAuthority('WRITE')")
+	@RequestMapping(value = OBLIGATION_URL + "/{ids}", method = RequestMethod.DELETE)
+	public ResponseEntity<List<MultiStatus>> deleteObligations(@PathVariable("ids") List<String> idsToDelete)
+			throws TException {
+		User user = restControllerHelper.getSw360UserFromAuthentication();
+		List<MultiStatus> results = new ArrayList<>();
+		for (String id : idsToDelete) {
+			try {
+				Obligation obligation = obligationService.getObligationById(id);
+				RequestStatus requestStatus = obligationService.deleteObligation(obligation.getId(), user);
+				if (requestStatus == RequestStatus.SUCCESS) {
+					results.add(new MultiStatus(id, HttpStatus.OK));
+				} else {
+					results.add(new MultiStatus(id, HttpStatus.INTERNAL_SERVER_ERROR));
+				}
+			} catch (Exception e) {
+				results.add(new MultiStatus(id, HttpStatus.NOT_FOUND));
+			}
+		}
+		return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
+	}
 
-    @Override
-    public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        resource.add(linkTo(ObligationController.class).slash("api" + OBLIGATION_URL).withRel("obligations"));
-        return resource;
-    }
+	@Override
+	public RepositoryLinksResource process(RepositoryLinksResource resource) {
+		resource.add(linkTo(ObligationController.class).slash("api" + OBLIGATION_URL).withRel("obligations"));
+		return resource;
+	}
 
-    private HalResource<Obligation> createHalObligation(Obligation sw360Obligation) {
-        return new HalResource<>(sw360Obligation);
-    }
+	private HalResource<Obligation> createHalObligation(Obligation sw360Obligation) {
+		return new HalResource<>(sw360Obligation);
+	}
 }

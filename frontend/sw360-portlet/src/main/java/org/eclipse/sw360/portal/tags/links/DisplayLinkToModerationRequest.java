@@ -22,34 +22,32 @@ import org.eclipse.sw360.portal.portlets.LinkToPortletConfiguration;
  * @author alex.borodin@evosoft.com
  */
 public class DisplayLinkToModerationRequest extends DisplayLinkAbstract {
-    private ModerationRequest moderationRequest;
-    private Boolean showName = true;
-    private String moderationRequestId;
+	private ModerationRequest moderationRequest;
+	private Boolean showName = true;
+	private String moderationRequestId;
 
-    public void setModerationRequest(ModerationRequest moderationRequest) {
-        this.moderationRequest = moderationRequest;
-        moderationRequestId =moderationRequest.getId();
-    }
+	public void setModerationRequest(ModerationRequest moderationRequest) {
+		this.moderationRequest = moderationRequest;
+		moderationRequestId = moderationRequest.getId();
+	}
 
-    public void setModerationRequestId(String moderationRequestId) {
-        this.moderationRequestId = moderationRequestId;
-        showName=false;
-    }
-    public void setShowName(Boolean showName) {
-        this.showName = showName;
-    }
+	public void setModerationRequestId(String moderationRequestId) {
+		this.moderationRequestId = moderationRequestId;
+		showName = false;
+	}
+	public void setShowName(Boolean showName) {
+		this.showName = showName;
+	}
 
-    @Override
-    protected String getTextDisplay() {
-        return showName ? moderationRequest.getDocumentName() : null;
-    }
+	@Override
+	protected String getTextDisplay() {
+		return showName ? moderationRequest.getDocumentName() : null;
+	}
 
-    @Override
-    protected void writeUrl() throws JspException {
-        renderUrl(pageContext)
-                .toPortlet(LinkToPortletConfiguration.MODERATION, scopeGroupId)
-                .toPage(PortletDefaultPage.EDIT)
-                .withParam(PortalConstants.MODERATION_ID, moderationRequestId)
-                .writeUrlToJspWriter();
-    }
+	@Override
+	protected void writeUrl() throws JspException {
+		renderUrl(pageContext).toPortlet(LinkToPortletConfiguration.MODERATION, scopeGroupId)
+				.toPage(PortletDefaultPage.EDIT).withParam(PortalConstants.MODERATION_ID, moderationRequestId)
+				.writeUrlToJspWriter();
+	}
 }

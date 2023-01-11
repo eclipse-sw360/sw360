@@ -25,36 +25,35 @@ import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.ADMIN;
  */
 public class UserPermissions extends DocumentPermissions<User> {
 
+	protected UserPermissions(User document, User user) {
+		super(document, user);
+	}
 
-    protected UserPermissions(User document, User user) {
-        super(document, user);
-    }
+	@Override
+	public void fillPermissions(User other, Map<RequestedAction, Boolean> permissions) {
+	}
 
-    @Override
-    public void fillPermissions(User other, Map<RequestedAction, Boolean> permissions) {
-    }
+	@Override
+	public boolean isActionAllowed(RequestedAction action) {
+		switch (action) {
+			case READ :
+				return true;
+			case WRITE :
+			case DELETE :
+				return PermissionUtils.isUserAtLeast(ADMIN, user);
+			default :
+				return false;
+		}
+	}
 
-    @Override
-    public boolean isActionAllowed(RequestedAction action) {
-        switch (action) {
-            case READ:
-                return true;
-            case WRITE:
-            case DELETE:
-                return PermissionUtils.isUserAtLeast(ADMIN, user);
-            default:
-                return false;
-        }
-    }
+	@Override
+	protected Set<String> getContributors() {
+		return Collections.emptySet();
+	}
 
-    @Override
-    protected Set<String> getContributors() {
-        return Collections.emptySet();
-    }
-
-    @Override
-    protected Set<String> getModerators() {
-        return Collections.emptySet();
-    }
+	@Override
+	protected Set<String> getModerators() {
+		return Collections.emptySet();
+	}
 
 }

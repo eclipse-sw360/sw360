@@ -15,30 +15,29 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 
 public class AttachmentContentWrapper extends DocumentWrapper<AttachmentContent> {
 
-    @JsonProperty("issetBitfield")
-    private byte __isset_bitfield = 0; //TODO set it
+	@JsonProperty("issetBitfield")
+	private byte __isset_bitfield = 0; // TODO set it
 
-    /**
-     * must have a copy of all fields in @see Attachment
-     */
-    public String id; // optional
-    public String revision; // optional
-    public String type; // optional
-    public boolean onlyRemote; // required
-    public String remoteUrl; // optional
-    public String filename; // required
-    public String contentType; // required
-    public String partsCount; // optional
+	/**
+	 * must have a copy of all fields in @see Attachment
+	 */
+	public String id; // optional
+	public String revision; // optional
+	public String type; // optional
+	public boolean onlyRemote; // required
+	public String remoteUrl; // optional
+	public String filename; // required
+	public String contentType; // required
+	public String partsCount; // optional
 
-
-    @Override
-    public void updateNonMetadata(AttachmentContent source) {
-        filename = source.getFilename();
-        type = source.getType();
-        contentType = source.getContentType();
-        remoteUrl = source.getRemoteUrl();
-        partsCount = source.getPartsCount();
-        remoteUrl = source.getRemoteUrl();
-        onlyRemote = source.isOnlyRemote();
-    }
+	@Override
+	public void updateNonMetadata(AttachmentContent source) {
+		filename = source.getFilename();
+		type = source.getType();
+		contentType = source.getContentType();
+		remoteUrl = source.getRemoteUrl();
+		partsCount = source.getPartsCount();
+		remoteUrl = source.getRemoteUrl();
+		onlyRemote = source.isOnlyRemote();
+	}
 }

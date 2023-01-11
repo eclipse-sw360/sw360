@@ -15,45 +15,47 @@ package org.eclipse.sw360.clients.rest.resource.projects;
 import java.util.Objects;
 
 public final class SW360ProjectReleaseRelationship {
-    private SW360ReleaseRelationship releaseRelation;
-    private SW360MainlineState mainlineState;
+	private SW360ReleaseRelationship releaseRelation;
+	private SW360MainlineState mainlineState;
 
-    public  SW360ProjectReleaseRelationship() {}
+	public SW360ProjectReleaseRelationship() {
+	}
 
-    public SW360ProjectReleaseRelationship(SW360ReleaseRelationship releaseRelation, SW360MainlineState mainlineState) {
-        this.releaseRelation = releaseRelation;
-        this.mainlineState = mainlineState;
-    }
+	public SW360ProjectReleaseRelationship(SW360ReleaseRelationship releaseRelation, SW360MainlineState mainlineState) {
+		this.releaseRelation = releaseRelation;
+		this.mainlineState = mainlineState;
+	}
 
-    public SW360ReleaseRelationship getReleaseRelation() {
-        return this.releaseRelation;
-    }
+	public SW360ReleaseRelationship getReleaseRelation() {
+		return this.releaseRelation;
+	}
 
-    public SW360ProjectReleaseRelationship setReleaseRelation(SW360ReleaseRelationship releaseRelation) {
-        this.releaseRelation = releaseRelation;
-        return this;
-    }
+	public SW360ProjectReleaseRelationship setReleaseRelation(SW360ReleaseRelationship releaseRelation) {
+		this.releaseRelation = releaseRelation;
+		return this;
+	}
 
-    public SW360MainlineState getMainlineState() {
-        return this.mainlineState;
-    }
+	public SW360MainlineState getMainlineState() {
+		return this.mainlineState;
+	}
 
-    public SW360ProjectReleaseRelationship setMainlineState(SW360MainlineState mainlineState) {
-        this.mainlineState = mainlineState;
-        return this;
-    }
+	public SW360ProjectReleaseRelationship setMainlineState(SW360MainlineState mainlineState) {
+		this.mainlineState = mainlineState;
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SW360ProjectReleaseRelationship that = (SW360ProjectReleaseRelationship) o;
-        return releaseRelation == that.releaseRelation &&
-                mainlineState == that.mainlineState;
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		SW360ProjectReleaseRelationship that = (SW360ProjectReleaseRelationship) o;
+		return releaseRelation == that.releaseRelation && mainlineState == that.mainlineState;
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(releaseRelation, mainlineState);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(releaseRelation, mainlineState);
+	}
 }

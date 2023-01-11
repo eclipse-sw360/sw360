@@ -31,32 +31,27 @@ import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseCo
  */
 public class VendorSearchHandler {
 
-    private static final LuceneSearchView luceneSearchView
-            = new LuceneSearchView("lucene", "vendors",
-            "function(doc) {" +
-                    "  if(doc.type == 'vendor') { " +
-                    "      var ret = new Document();" +
-                    "      ret.add(doc.shortname);  " +
-                    "      ret.add(doc.fullname);  " +
-                    "      return ret;" +
-                    "  }" +
-                    "}");
+	private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "vendors",
+			"function(doc) {" + "  if(doc.type == 'vendor') { " + "      var ret = new Document();"
+					+ "      ret.add(doc.shortname);  " + "      ret.add(doc.fullname);  " + "      return ret;" + "  }"
+					+ "}");
 
-    private final LuceneAwareDatabaseConnector connector;
+	private final LuceneAwareDatabaseConnector connector;
 
-    public VendorSearchHandler(DatabaseConnector databaseConnector, Supplier<CloudantClient> cClient) throws IOException {
-        // Creates the database connector and adds the lucene search view
-        connector = new LuceneAwareDatabaseConnector(databaseConnector, cClient);
-        connector.addView(luceneSearchView);
-    }
+	public VendorSearchHandler(DatabaseConnector databaseConnector, Supplier<CloudantClient> cClient)
+			throws IOException {
+		// Creates the database connector and adds the lucene search view
+		connector = new LuceneAwareDatabaseConnector(databaseConnector, cClient);
+		connector.addView(luceneSearchView);
+	}
 
-    public List<Vendor> search(String searchText) {
-        // Query the search view for the provided text
-        return connector.searchView(Vendor.class, luceneSearchView, prepareWildcardQuery(searchText));
-    }
+	public List<Vendor> search(String searchText) {
+		// Query the search view for the provided text
+		return connector.searchView(Vendor.class, luceneSearchView, prepareWildcardQuery(searchText));
+	}
 
-    public List<String> searchIds(String searchText) {
-        // Query the search view for the provided text
-        return connector.searchIds(Vendor.class, luceneSearchView, prepareWildcardQuery(searchText));
-    }
+	public List<String> searchIds(String searchText) {
+		// Query the search view for the provided text
+		return connector.searchIds(Vendor.class, luceneSearchView, prepareWildcardQuery(searchText));
+	}
 }

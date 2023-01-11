@@ -15,34 +15,35 @@ import org.springframework.http.HttpStatus;
 
 public class MultiStatus {
 
-    private String resourceId;
-    private HttpStatus status;
+	private String resourceId;
+	private HttpStatus status;
 
-    public MultiStatus() {}
+	public MultiStatus() {
+	}
 
-    public MultiStatus(String resourceId, HttpStatus status) {
-        this.resourceId = resourceId;
-        this.status = status;
-    }
+	public MultiStatus(String resourceId, HttpStatus status) {
+		this.resourceId = resourceId;
+		this.status = status;
+	}
 
-    public String getResourceId() {
-        return resourceId;
-    }
+	public String getResourceId() {
+		return resourceId;
+	}
 
-    public HttpStatus getStatus() {
-        return status;
-    }
+	public HttpStatus getStatus() {
+		return status;
+	}
 
-    public void setResourceId(String resourceId) {
-        this.resourceId = resourceId;
-    }
+	public void setResourceId(String resourceId) {
+		this.resourceId = resourceId;
+	}
 
-    public void setStatus(HttpStatus status) {
-        this.status = status;
-    }
+	public void setStatus(HttpStatus status) {
+		this.status = status;
+	}
 
-    public int getStatusCode() {
-        return status.value();
-    }
+	public int getStatusCode() {
+		return status.value();
+	}
 
 }

@@ -20,12 +20,12 @@ import java.io.IOException;
  */
 public class GrantTypeClientCredentialsBasicAuthTest extends GrantTypeClientCredentialsTestBase {
 
-    @Before
-    public void before() throws IOException {
-        String url = "http://localhost:" + String.valueOf(port) + "/oauth/token?grant_type=" + PARAMETER_GRANT_TYPE
-                + "&client_id=" + testClient.getClientId();
+	@Before
+	public void before() throws IOException {
+		String url = "http://localhost:" + String.valueOf(port) + "/oauth/token?grant_type=" + PARAMETER_GRANT_TYPE
+				+ "&client_id=" + testClient.getClientId();
 
-        responseEntity = new TestRestTemplate(testClient.getClientId(), testClient.getClientSecret()).postForEntity(url,
-                null, String.class);
-    }
+		responseEntity = new TestRestTemplate(testClient.getClientId(), testClient.getClientSecret()).postForEntity(url,
+				null, String.class);
+	}
 }

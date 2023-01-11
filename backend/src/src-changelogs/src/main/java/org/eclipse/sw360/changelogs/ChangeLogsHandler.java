@@ -35,33 +35,33 @@ import com.cloudant.client.api.CloudantClient;
  */
 public class ChangeLogsHandler implements ChangeLogsService.Iface {
 
-    private final ChangeLogsDatabaseHandler handler;
+	private final ChangeLogsDatabaseHandler handler;
 
-    ChangeLogsHandler() throws IOException {
-        this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_CHANGE_LOGS);
-    }
+	ChangeLogsHandler() throws IOException {
+		this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+	}
 
-    ChangeLogsHandler(Supplier<CloudantClient> client, String dbName) throws IOException {
-        handler = new ChangeLogsDatabaseHandler(client, dbName);
-    }
+	ChangeLogsHandler(Supplier<CloudantClient> client, String dbName) throws IOException {
+		handler = new ChangeLogsDatabaseHandler(client, dbName);
+	}
 
-    @Override
-    public List<ChangeLogs> getChangeLogsByDocumentId(User user, String docId) throws SW360Exception {
-        assertNotEmpty(docId);
-        assertUser(user);
-        return handler.getChangeLogsByDocumentId(user, docId);
-    }
+	@Override
+	public List<ChangeLogs> getChangeLogsByDocumentId(User user, String docId) throws SW360Exception {
+		assertNotEmpty(docId);
+		assertUser(user);
+		return handler.getChangeLogsByDocumentId(user, docId);
+	}
 
-    @Override
-    public ChangeLogs getChangeLogsById(String id) throws SW360Exception {
-        assertNotEmpty(id);
-        return handler.getChangeLogsById(id);
-    }
+	@Override
+	public ChangeLogs getChangeLogsById(String id) throws SW360Exception {
+		assertNotEmpty(id);
+		return handler.getChangeLogsById(id);
+	}
 
-    @Override
-    public RequestStatus deleteChangeLogsByDocumentId(String docId, User user) throws SW360Exception {
-        assertNotEmpty(docId);
-        assertUser(user);
-        return handler.deleteChangeLogsByDocumentId(docId, user);
-    }
+	@Override
+	public RequestStatus deleteChangeLogsByDocumentId(String docId, User user) throws SW360Exception {
+		assertNotEmpty(docId);
+		assertUser(user);
+		return handler.deleteChangeLogsByDocumentId(docId, user);
+	}
 }

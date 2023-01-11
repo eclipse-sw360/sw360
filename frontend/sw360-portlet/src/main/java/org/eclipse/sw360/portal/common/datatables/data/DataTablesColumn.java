@@ -9,7 +9,6 @@
  */
 package org.eclipse.sw360.portal.common.datatables.data;
 
-
 import java.util.Optional;
 
 /**
@@ -17,17 +16,17 @@ import java.util.Optional;
  */
 public class DataTablesColumn {
 
-    private final Optional<DataTablesSearch> search;
+	private final Optional<DataTablesSearch> search;
 
-    public DataTablesColumn(DataTablesSearch search) {
-        this.search = Optional.of(search);
-    }
+	public DataTablesColumn(DataTablesSearch search) {
+		this.search = Optional.of(search);
+	}
 
-    public DataTablesSearch getSearch() {
-        return search.get();
-    }
+	public DataTablesSearch getSearch() {
+		return search.get();
+	}
 
-    public boolean isSearchable() {
-        return search.isPresent();
-    }
+	public boolean isSearchable() {
+		return search.isPresent();
+	}
 }

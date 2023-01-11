@@ -30,139 +30,130 @@ import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isE
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isUrlReachable;
 
 public class CveSearchWrapperTest extends TestWithCveSearchConnection {
-    private CveSearchWrapper cveSearchWrapper;
+	private CveSearchWrapper cveSearchWrapper;
 
-    private String VENDORNAME = "zyxel";
-    private String PRODUCTNAME = "zywall";
-    private String CPE = "cpe:2.3:a:zyxel:zywall:1050";
+	private String VENDORNAME = "zyxel";
+	private String PRODUCTNAME = "zywall";
+	private String CPE = "cpe:2.3:a:zyxel:zywall:1050";
 
-    private class ReleaseBuilder {
-        private String releaseName, releaseVersion, cpe, vendorFullname, vendorShortname;
+	private class ReleaseBuilder {
+		private String releaseName, releaseVersion, cpe, vendorFullname, vendorShortname;
 
-        public ReleaseBuilder setName(String releaseName) {
-            this.releaseName = releaseName;
-            return this;
-        }
+		public ReleaseBuilder setName(String releaseName) {
+			this.releaseName = releaseName;
+			return this;
+		}
 
-        public ReleaseBuilder setVersion(String releaseVersion) {
-            this.releaseVersion = releaseVersion;
-            return this;
-        }
+		public ReleaseBuilder setVersion(String releaseVersion) {
+			this.releaseVersion = releaseVersion;
+			return this;
+		}
 
-        public ReleaseBuilder setCpe(String cpe) {
-            this.cpe = cpe;
-            return this;
-        }
+		public ReleaseBuilder setCpe(String cpe) {
+			this.cpe = cpe;
+			return this;
+		}
 
-        public ReleaseBuilder setVendorFullname(String vendorFullname) {
-            this.vendorFullname = vendorFullname;
-            return this;
-        }
+		public ReleaseBuilder setVendorFullname(String vendorFullname) {
+			this.vendorFullname = vendorFullname;
+			return this;
+		}
 
-        public ReleaseBuilder setVendorShortname(String vendorShortname) {
-            this.vendorShortname = vendorShortname;
-            return this;
-        }
+		public ReleaseBuilder setVendorShortname(String vendorShortname) {
+			this.vendorShortname = vendorShortname;
+			return this;
+		}
 
-        public Release get() {
-            return new Release() {
-                @Override
-                public String getName() {
-                    return releaseName;
-                }
-                @Override
-                public boolean isSetName() {
-                    return name!=null;
-                }
-                @Override
-                public String getVersion() {
-                    return releaseVersion;
-                }
-                @Override
-                public boolean isSetVersion() {
-                    return releaseVersion!=null;
-                }
-                @Override
-                public Vendor getVendor() {
-                    return new Vendor() {
-                        @Override
-                        public String getFullname() {
-                            return vendorFullname;
-                        }
-                        @Override
-                        public boolean isSetFullname() {
-                            return vendorFullname!=null;
-                        }
-                        @Override
-                        public String getShortname() {
-                            return vendorShortname;
-                        }
-                        @Override
-                        public boolean isSetShortname() {
-                            return vendorShortname!=null;
-                        }
-                    };
-                }
-                @Override
-                public String getCpeid() {
-                    return cpe;
-                }
-                @Override
-                public boolean isSetCpeid() {
-                    return cpe!=null;
-                }
-            };
-        }
-    }
+		public Release get() {
+			return new Release() {
+				@Override
+				public String getName() {
+					return releaseName;
+				}
+				@Override
+				public boolean isSetName() {
+					return name != null;
+				}
+				@Override
+				public String getVersion() {
+					return releaseVersion;
+				}
+				@Override
+				public boolean isSetVersion() {
+					return releaseVersion != null;
+				}
+				@Override
+				public Vendor getVendor() {
+					return new Vendor() {
+						@Override
+						public String getFullname() {
+							return vendorFullname;
+						}
+						@Override
+						public boolean isSetFullname() {
+							return vendorFullname != null;
+						}
+						@Override
+						public String getShortname() {
+							return vendorShortname;
+						}
+						@Override
+						public boolean isSetShortname() {
+							return vendorShortname != null;
+						}
+					};
+				}
+				@Override
+				public String getCpeid() {
+					return cpe;
+				}
+				@Override
+				public boolean isSetCpeid() {
+					return cpe != null;
+				}
+			};
+		}
+	}
 
-    @Before
-    public void setUp() {
-        cveSearchWrapper = new CveSearchWrapper(cveSearchApi);
-    }
+	@Before
+	public void setUp() {
+		cveSearchWrapper = new CveSearchWrapper(cveSearchApi);
+	}
 
-    @Ignore
-    @Test
-    public void testLargeData() {
-        Release release = new ReleaseBuilder()
-                .setName("server")
-                .get();
+	@Ignore
+	@Test
+	public void testLargeData() {
+		Release release = new ReleaseBuilder().setName("server").get();
 
-        Optional<List<CveSearchData>> resultWrapped = cveSearchWrapper.searchForRelease(release);
-        assert(resultWrapped.isPresent());
-    }
+		Optional<List<CveSearchData>> resultWrapped = cveSearchWrapper.searchForRelease(release);
+		assert (resultWrapped.isPresent());
+	}
 
-    @Test
-    public void compareToSearchByCPE() throws IOException {
-        Release release = new ReleaseBuilder()
-                .setName("blindstring")
-                .setVendorFullname("blindstring")
-                .setVendorShortname("blindstring")
-                .setCpe(CPE)
-                .get();
+	@Test
+	public void compareToSearchByCPE() throws IOException {
+		Release release = new ReleaseBuilder().setName("blindstring").setVendorFullname("blindstring")
+				.setVendorShortname("blindstring").setCpe(CPE).get();
 
-        List<CveSearchData> resultDirect = cveSearchApi.cvefor(CPE);
+		List<CveSearchData> resultDirect = cveSearchApi.cvefor(CPE);
 
-        Optional<List<CveSearchData>> resultWrapped = cveSearchWrapper.searchForRelease(release);
+		Optional<List<CveSearchData>> resultWrapped = cveSearchWrapper.searchForRelease(release);
 
-        assert(resultWrapped.isPresent());
+		assert (resultWrapped.isPresent());
 
-        assert(isEquivalent(resultDirect,resultWrapped.get()));
-    }
+		assert (isEquivalent(resultDirect, resultWrapped.get()));
+	}
 
-    @Ignore("meanwhile cveSearchWrapper implementation changed, test maybe suitable for later use")
-    @Test
-    public  void compareToWithoutWrapper() throws IOException {
-        Release release = new ReleaseBuilder()
-                .setName(PRODUCTNAME)
-                .setVendorFullname(VENDORNAME)
-                .get();
+	@Ignore("meanwhile cveSearchWrapper implementation changed, test maybe suitable for later use")
+	@Test
+	public void compareToWithoutWrapper() throws IOException {
+		Release release = new ReleaseBuilder().setName(PRODUCTNAME).setVendorFullname(VENDORNAME).get();
 
-        List<CveSearchData> resultDirect = cveSearchApi.search(VENDORNAME, PRODUCTNAME);
+		List<CveSearchData> resultDirect = cveSearchApi.search(VENDORNAME, PRODUCTNAME);
 
-        Optional<List<CveSearchData>> resultWrapped = cveSearchWrapper.searchForRelease(release);
+		Optional<List<CveSearchData>> resultWrapped = cveSearchWrapper.searchForRelease(release);
 
-        assert(resultWrapped.isPresent());
-        assert(resultWrapped.get().size() > 0);
-        assert(isEquivalent(resultDirect,resultWrapped.get()));
-    }
+		assert (resultWrapped.isPresent());
+		assert (resultWrapped.get().size() > 0);
+		assert (isEquivalent(resultDirect, resultWrapped.get()));
+	}
 }

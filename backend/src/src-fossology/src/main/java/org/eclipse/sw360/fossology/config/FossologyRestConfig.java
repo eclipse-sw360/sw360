@@ -29,95 +29,95 @@ import java.util.HashSet;
 @Component
 public class FossologyRestConfig {
 
-    private final Logger log = LogManager.getLogger(this.getClass());
+	private final Logger log = LogManager.getLogger(this.getClass());
 
-    public static final String CONFIG_KEY_URL = "url";
-    public static final String CONFIG_KEY_TOKEN = "token";
-    public static final String CONFIG_KEY_FOLDER_ID = "folderId";
+	public static final String CONFIG_KEY_URL = "url";
+	public static final String CONFIG_KEY_TOKEN = "token";
+	public static final String CONFIG_KEY_FOLDER_ID = "folderId";
 
-    private final ConfigContainerRepository repository;
+	private final ConfigContainerRepository repository;
 
-    private ConfigContainer config;
+	private ConfigContainer config;
 
-    private boolean outdated;
+	private boolean outdated;
 
-    @Autowired
-    public FossologyRestConfig(ConfigContainerRepository repository) {
-        this.repository = repository;
-        // eager loading (or initial insert)
-        get();
-    }
+	@Autowired
+	public FossologyRestConfig(ConfigContainerRepository repository) {
+		this.repository = repository;
+		// eager loading (or initial insert)
+		get();
+	}
 
-    public String getBaseUrlWithSlash() {
-        String url = getFirstValue(CONFIG_KEY_URL);
+	public String getBaseUrlWithSlash() {
+		String url = getFirstValue(CONFIG_KEY_URL);
 
-        if (url != null && !url.endsWith("/")) {
-            url += "/";
-        }
+		if (url != null && !url.endsWith("/")) {
+			url += "/";
+		}
 
-        return url;
-    }
+		return url;
+	}
 
-    public String getAccessToken() {
-        return getFirstValue(CONFIG_KEY_TOKEN);
-    }
+	public String getAccessToken() {
+		return getFirstValue(CONFIG_KEY_TOKEN);
+	}
 
-    public String getFolderId() {
-        return getFirstValue(CONFIG_KEY_FOLDER_ID);
-    }
+	public String getFolderId() {
+		return getFirstValue(CONFIG_KEY_FOLDER_ID);
+	}
 
-    private String getFirstValue(String key) {
-        return get().getConfigKeyToValues().getOrDefault(key, new HashSet<>()).stream().findFirst().orElse(null);
-    }
+	private String getFirstValue(String key) {
+		return get().getConfigKeyToValues().getOrDefault(key, new HashSet<>()).stream().findFirst().orElse(null);
+	}
 
-    public ConfigContainer update(ConfigContainer newConfig) {
-        if (!ConfigFor.FOSSOLOGY_REST.equals(newConfig.getConfigFor())) {
-            throw new IllegalArgumentException(
-                    "A ConfigContainer was given that is not meant to carry FOSSology REST configuration. It is for "
-                            + newConfig.getConfigFor());
-        }
+	public ConfigContainer update(ConfigContainer newConfig) {
+		if (!ConfigFor.FOSSOLOGY_REST.equals(newConfig.getConfigFor())) {
+			throw new IllegalArgumentException(
+					"A ConfigContainer was given that is not meant to carry FOSSology REST configuration. It is for "
+							+ newConfig.getConfigFor());
+		}
 
-        String url = newConfig.getConfigKeyToValues().get(CONFIG_KEY_URL).stream().findFirst().orElseThrow(
-                () -> new IllegalStateException("The new FOSSology REST configuration does not contain a URL."));
-        try {
-            new URL(url);
-        } catch (MalformedURLException e) {
-            throw new IllegalStateException("The new FOSSology REST configuration does not contain a valid URL.");
-        }
+		String url = newConfig.getConfigKeyToValues().get(CONFIG_KEY_URL).stream().findFirst().orElseThrow(
+				() -> new IllegalStateException("The new FOSSology REST configuration does not contain a URL."));
+		try {
+			new URL(url);
+		} catch (MalformedURLException e) {
+			throw new IllegalStateException("The new FOSSology REST configuration does not contain a valid URL.");
+		}
 
-        newConfig.getConfigKeyToValues().get(CONFIG_KEY_TOKEN).stream().findFirst()
-                .orElseThrow(() -> new IllegalStateException(
-                        "The new FOSSology REST configuration does not contain an access token."));
+		newConfig.getConfigKeyToValues().get(CONFIG_KEY_TOKEN).stream().findFirst()
+				.orElseThrow(() -> new IllegalStateException(
+						"The new FOSSology REST configuration does not contain an access token."));
 
-        String folderId = newConfig.getConfigKeyToValues().get(CONFIG_KEY_FOLDER_ID).stream().findFirst().orElseThrow(
-                () -> new IllegalStateException("The new FOSSology REST configuration does not contain a folder id."));
-        try {
-            Long.parseLong(folderId);
-        } catch (NumberFormatException e) {
-            throw new IllegalStateException("The new FOSSology REST configuration does not contain a valid folder id.");
-        }
+		String folderId = newConfig.getConfigKeyToValues().get(CONFIG_KEY_FOLDER_ID).stream().findFirst().orElseThrow(
+				() -> new IllegalStateException("The new FOSSology REST configuration does not contain a folder id."));
+		try {
+			Long.parseLong(folderId);
+		} catch (NumberFormatException e) {
+			throw new IllegalStateException("The new FOSSology REST configuration does not contain a valid folder id.");
+		}
 
-        ConfigContainer current = get();
-        current.setConfigKeyToValues(newConfig.getConfigKeyToValues());
+		ConfigContainer current = get();
+		current.setConfigKeyToValues(newConfig.getConfigKeyToValues());
 
-        repository.update(current);
-        outdated = true;
+		repository.update(current);
+		outdated = true;
 
-        log.info("Successfully updated fossology configuration to: " + current);
+		log.info("Successfully updated fossology configuration to: " + current);
 
-        return current;
-    }
+		return current;
+	}
 
-    public ConfigContainer get() {
-        if (config == null || outdated) {
-            try {
-                config = repository.getByConfigFor(ConfigFor.FOSSOLOGY_REST);
-                outdated = false;
-            } catch (IllegalStateException e) {
-                ConfigContainer newConfig = new ConfigContainer(ConfigFor.FOSSOLOGY_REST, new HashMap<>());
-                repository.add(newConfig);
-            }
-        }
-        return config;
-    }
+	public ConfigContainer get() {
+		if (config == null || outdated) {
+			try {
+				config = repository.getByConfigFor(ConfigFor.FOSSOLOGY_REST);
+				outdated = false;
+			} catch (IllegalStateException e) {
+				ConfigContainer newConfig = new ConfigContainer(ConfigFor.FOSSOLOGY_REST, new HashMap<>());
+				repository.add(newConfig);
+			}
+		}
+		return config;
+	}
 }

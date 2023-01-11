@@ -29,55 +29,55 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class DisplayMapOfExternalUrls extends SimpleTagSupport {
 
-    private Map<String, String> value;
-    private Map<String, String> autoFillValue;
+	private Map<String, String> value;
+	private Map<String, String> autoFillValue;
 
-    public void setValue(Map<String, String> value) {
-        this.value = value;
-    }
+	public void setValue(Map<String, String> value) {
+		this.value = value;
+	}
 
-    public void setAutoFillValue(Map<String, String> autoFillValue) {
-        this.autoFillValue = autoFillValue;
-    }
+	public void setAutoFillValue(Map<String, String> autoFillValue) {
+		this.autoFillValue = autoFillValue;
+	}
 
-    public void doTag() throws JspException, IOException {
-        Map<String, String> fullValue;
+	public void doTag() throws JspException, IOException {
+		Map<String, String> fullValue;
 
-        if (value == null) {
-            fullValue = autoFillValue;
-        } else {
-            fullValue = value;
-        }
+		if (value == null) {
+			fullValue = autoFillValue;
+		} else {
+			fullValue = value;
+		}
 
-        if (null != fullValue && !fullValue.isEmpty()) {
-            String result = getMapAsString(fullValue);
-            getJspContext().getOut().print(result);
-        }
-    }
+		if (null != fullValue && !fullValue.isEmpty()) {
+			String result = getMapAsString(fullValue);
+			getJspContext().getOut().print(result);
+		}
+	}
 
-    public static String getMapAsString(Map<String, String> map) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<ul class=\"mapDisplayRootItem\">");
-        map.forEach((entryKey, entryValue) -> sb.append(getExternalUrls(entryKey, entryValue)));
-        sb.append("</ul>");
-        return sb.toString();
-    }
+	public static String getMapAsString(Map<String, String> map) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("<ul class=\"mapDisplayRootItem\">");
+		map.forEach((entryKey, entryValue) -> sb.append(getExternalUrls(entryKey, entryValue)));
+		sb.append("</ul>");
+		return sb.toString();
+	}
 
-    private static String getExternalUrls(String externalIdKey, String externalUrlsValues) {
-        StringBuilder sb = new StringBuilder();
-        ObjectMapper mapper = new ObjectMapper();
-        Set<String> externalUrlsValueSet = new TreeSet<>();
-        try {
-            externalUrlsValueSet = mapper.readValue(externalUrlsValues, Set.class);
-        } catch (IOException e) {
-            externalUrlsValueSet.add(externalUrlsValues);
-        }
-        nullToEmptySet(externalUrlsValueSet).forEach(e -> sb.append("<li><span class=\"mapDisplayChildItemLeft\">")
-                .append(StringEscapeUtils.escapeXml(externalIdKey))
-                .append("</span><span class=\"mapDisplayChildItemRight\"> ")
-                .append("<a href=" + StringEscapeUtils.escapeXml(e) + " rel=\"external\" target=\"_blank\">"
-                        + StringEscapeUtils.escapeXml(e) + "</a>")
-                .append("</span></li>"));
-        return sb.toString();
-    }
+	private static String getExternalUrls(String externalIdKey, String externalUrlsValues) {
+		StringBuilder sb = new StringBuilder();
+		ObjectMapper mapper = new ObjectMapper();
+		Set<String> externalUrlsValueSet = new TreeSet<>();
+		try {
+			externalUrlsValueSet = mapper.readValue(externalUrlsValues, Set.class);
+		} catch (IOException e) {
+			externalUrlsValueSet.add(externalUrlsValues);
+		}
+		nullToEmptySet(externalUrlsValueSet).forEach(e -> sb.append("<li><span class=\"mapDisplayChildItemLeft\">")
+				.append(StringEscapeUtils.escapeXml(externalIdKey))
+				.append("</span><span class=\"mapDisplayChildItemRight\"> ")
+				.append("<a href=" + StringEscapeUtils.escapeXml(e) + " rel=\"external\" target=\"_blank\">"
+						+ StringEscapeUtils.escapeXml(e) + "</a>")
+				.append("</span></li>"));
+		return sb.toString();
+	}
 }

@@ -44,99 +44,105 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
  */
 public class AttachmentConnector extends AttachmentStreamConnector {
 
-    private static Logger log = LogManager.getLogger(AttachmentConnector.class);
+	private static Logger log = LogManager.getLogger(AttachmentConnector.class);
 
-    public AttachmentConnector(DatabaseConnectorCloudant databaseConnectorCloudant, Duration downloadTimeout) {
-        super(databaseConnectorCloudant, downloadTimeout);
-    }
+	public AttachmentConnector(DatabaseConnectorCloudant databaseConnectorCloudant, Duration downloadTimeout) {
+		super(databaseConnectorCloudant, downloadTimeout);
+	}
 
-    /**
-     * @todo remove this mess of constructors and use dependency injection
-     */
-    public AttachmentConnector(Supplier<CloudantClient> httpClient, String dbName, Duration downloadTimeout) throws MalformedURLException {
-        this(new DatabaseConnectorCloudant(httpClient, dbName), downloadTimeout);
-    }
+	/**
+	 * @todo remove this mess of constructors and use dependency injection
+	 */
+	public AttachmentConnector(Supplier<CloudantClient> httpClient, String dbName, Duration downloadTimeout)
+			throws MalformedURLException {
+		this(new DatabaseConnectorCloudant(httpClient, dbName), downloadTimeout);
+	}
 
-    /**
-     * Update the database with new attachment metadata
-     */
-    public void updateAttachmentContent(AttachmentContent attachment) throws SW360Exception {
-        connector.update(attachment);
-    }
+	/**
+	 * Update the database with new attachment metadata
+	 */
+	public void updateAttachmentContent(AttachmentContent attachment) throws SW360Exception {
+		connector.update(attachment);
+	}
 
-    /**
-     * Get attachment metadata from attachmentId
-     */
-    public AttachmentContent getAttachmentContent(String attachmentContentId) throws SW360Exception {
-        assertNotEmpty(attachmentContentId);
+	/**
+	 * Get attachment metadata from attachmentId
+	 */
+	public AttachmentContent getAttachmentContent(String attachmentContentId) throws SW360Exception {
+		assertNotEmpty(attachmentContentId);
 
-        return connector.get(AttachmentContent.class, attachmentContentId);
-    }
+		return connector.get(AttachmentContent.class, attachmentContentId);
+	}
 
-    public void deleteAttachment(String id) {
-        connector.deleteById(AttachmentContent.class, id);
-    }
+	public void deleteAttachment(String id) {
+		connector.deleteById(AttachmentContent.class, id);
+	}
 
-    public void deleteAttachments(Collection<Attachment> attachments) {
-        Set<String> attachmentContentIds = getAttachmentContentIds(attachments);
-        deleteAttachmentsByIds(attachmentContentIds);
-    }
+	public void deleteAttachments(Collection<Attachment> attachments) {
+		Set<String> attachmentContentIds = getAttachmentContentIds(attachments);
+		deleteAttachmentsByIds(attachmentContentIds);
+	}
 
-    private void deleteAttachmentsByIds(Collection<String> attachmentContentIds) {
-        connector.deleteIds(AttachmentContent.class, attachmentContentIds);
-    }
+	private void deleteAttachmentsByIds(Collection<String> attachmentContentIds) {
+		connector.deleteIds(AttachmentContent.class, attachmentContentIds);
+	}
 
-    public Set<String> getAttachmentContentIds(Collection<Attachment> attachments) {
-        return nullToEmptyCollection(attachments).stream()
-                .map(Attachment::getAttachmentContentId)
-                .collect(Collectors.toSet());
-    }
+	public Set<String> getAttachmentContentIds(Collection<Attachment> attachments) {
+		return nullToEmptyCollection(attachments).stream().map(Attachment::getAttachmentContentId)
+				.collect(Collectors.toSet());
+	}
 
-    public void deleteAttachmentDifference(Set<Attachment> attachmentsBefore, Set<Attachment> attachmentsAfter) {
-        // it is important to take the set difference between sets of ids, not of attachments themselves
-        // otherwise, when `attachmentsAfter` contains the same attachment (with the same id), but with one field changed (e.g. sha1),
-        // then they are considered unequal and the set difference will contain this attachment and therefore
-        // deleteAttachments(Collection<Attachment>) will delete an attachment that is present in `attachmentsAfter`
-        deleteAttachmentsByIds(getAttachentContentIdsToBeDeleted(attachmentsBefore,attachmentsAfter));
-    }
+	public void deleteAttachmentDifference(Set<Attachment> attachmentsBefore, Set<Attachment> attachmentsAfter) {
+		// it is important to take the set difference between sets of ids, not of
+		// attachments themselves
+		// otherwise, when `attachmentsAfter` contains the same attachment (with the
+		// same id), but with one field changed (e.g. sha1),
+		// then they are considered unequal and the set difference will contain this
+		// attachment and therefore
+		// deleteAttachments(Collection<Attachment>) will delete an attachment that is
+		// present in `attachmentsAfter`
+		deleteAttachmentsByIds(getAttachentContentIdsToBeDeleted(attachmentsBefore, attachmentsAfter));
+	}
 
-    public Set<String> getAttachentContentIdsToBeDeleted(Set<Attachment> attachmentsBefore,
-            Set<Attachment> attachmentsAfter) {
-        Set<Attachment> nonAcceptedAttachmentsBefore = nullToEmptySet(attachmentsBefore).stream()
-                .filter(a -> a.getCheckStatus() != CheckStatus.ACCEPTED).collect(Collectors.toSet());
-        return Sets.difference(getAttachmentContentIds(nonAcceptedAttachmentsBefore),
-                getAttachmentContentIds(attachmentsAfter));
-    }
+	public Set<String> getAttachentContentIdsToBeDeleted(Set<Attachment> attachmentsBefore,
+			Set<Attachment> attachmentsAfter) {
+		Set<Attachment> nonAcceptedAttachmentsBefore = nullToEmptySet(attachmentsBefore).stream()
+				.filter(a -> a.getCheckStatus() != CheckStatus.ACCEPTED).collect(Collectors.toSet());
+		return Sets.difference(getAttachmentContentIds(nonAcceptedAttachmentsBefore),
+				getAttachmentContentIds(attachmentsAfter));
+	}
 
-    public String getSha1FromAttachmentContentId(String attachmentContentId) {
-        InputStream attachmentStream = null;
-        try {
-            AttachmentContent attachmentContent = getAttachmentContent(attachmentContentId);
-            attachmentStream = readAttachmentStream(attachmentContent);
-            return sha1Hex(attachmentStream);
-        } catch (SW360Exception e) {
-            log.error("Problem retrieving content of attachment", e);
-            return "";
-        } catch (IOException e) {
-            log.error("Problem computing the sha1 checksum", e);
-            return "";
-        } finally {
-            closeQuietly(attachmentStream, log);
-        }
-    }
+	public String getSha1FromAttachmentContentId(String attachmentContentId) {
+		InputStream attachmentStream = null;
+		try {
+			AttachmentContent attachmentContent = getAttachmentContent(attachmentContentId);
+			attachmentStream = readAttachmentStream(attachmentContent);
+			return sha1Hex(attachmentStream);
+		} catch (SW360Exception e) {
+			log.error("Problem retrieving content of attachment", e);
+			return "";
+		} catch (IOException e) {
+			log.error("Problem computing the sha1 checksum", e);
+			return "";
+		} finally {
+			closeQuietly(attachmentStream, log);
+		}
+	}
 
-    public void setSha1ForAttachments(Set<Attachment> attachments){
-        for(Attachment attachment : attachments){
-            if(isNullOrEmpty(attachment.getSha1())){
-                String sha1 = getSha1FromAttachmentContentId(attachment.getAttachmentContentId());
-                attachment.setSha1(sha1);
-            }
-        }
-    }
+	public void setSha1ForAttachments(Set<Attachment> attachments) {
+		for (Attachment attachment : attachments) {
+			if (isNullOrEmpty(attachment.getSha1())) {
+				String sha1 = getSha1FromAttachmentContentId(attachment.getAttachmentContentId());
+				attachment.setSha1(sha1);
+			}
+		}
+	}
 
-    public static boolean isDuplicateAttachment(Set<Attachment> attachments) {
-        boolean duplicateSha1 = attachments.parallelStream().collect(Collectors.groupingBy(Attachment::getSha1)).size() < attachments.size();
-        boolean duplicateFileName = attachments.parallelStream().collect(Collectors.groupingBy(Attachment::getFilename)).size() < attachments.size();
-        return (duplicateSha1 || duplicateFileName);
-    }
+	public static boolean isDuplicateAttachment(Set<Attachment> attachments) {
+		boolean duplicateSha1 = attachments.parallelStream().collect(Collectors.groupingBy(Attachment::getSha1))
+				.size() < attachments.size();
+		boolean duplicateFileName = attachments.parallelStream().collect(Collectors.groupingBy(Attachment::getFilename))
+				.size() < attachments.size();
+		return (duplicateSha1 || duplicateFileName);
+	}
 }

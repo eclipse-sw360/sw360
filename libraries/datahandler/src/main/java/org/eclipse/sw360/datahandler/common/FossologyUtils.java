@@ -16,13 +16,13 @@ import java.util.stream.Collectors;
 
 public class FossologyUtils {
 
-    public static final String FOSSOLOGY_STEP_NAME_UPLOAD = "01_upload";
-    public static final String FOSSOLOGY_STEP_NAME_SCAN = "02_scan";
-    public static final String FOSSOLOGY_STEP_NAME_REPORT = "03_report";
+	public static final String FOSSOLOGY_STEP_NAME_UPLOAD = "01_upload";
+	public static final String FOSSOLOGY_STEP_NAME_SCAN = "02_scan";
+	public static final String FOSSOLOGY_STEP_NAME_REPORT = "03_report";
 
-    public static void ensureOrderOfProcessSteps(ExternalToolProcess fossologyProcess) {
-        fossologyProcess.setProcessSteps(fossologyProcess.getProcessSteps().stream()
-                .sorted(Comparator.comparing(s -> s.getStepName())).collect(Collectors.toList()));
-    }
+	public static void ensureOrderOfProcessSteps(ExternalToolProcess fossologyProcess) {
+		fossologyProcess.setProcessSteps(fossologyProcess.getProcessSteps().stream()
+				.sorted(Comparator.comparing(s -> s.getStepName())).collect(Collectors.toList()));
+	}
 
 }

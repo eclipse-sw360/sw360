@@ -27,101 +27,101 @@ import static org.eclipse.sw360.portal.users.UserUtils.userGroupFromString;
  */
 public class UserCSV {
 
-    private String givenname;
-    private String lastname;
-    private String email;
-    private String department;
-    private String group;
-    private String gid;
-    private boolean isMale;
-    private String hash;
-    private boolean wantsMailNotification = true;
+	private String givenname;
+	private String lastname;
+	private String email;
+	private String department;
+	private String group;
+	private String gid;
+	private boolean isMale;
+	private String hash;
+	private boolean wantsMailNotification = true;
 
-    public String getGivenname(){
-        return givenname;
-    }
+	public String getGivenname() {
+		return givenname;
+	}
 
-    public String getLastname() {
-        return lastname;
-    }
+	public String getLastname() {
+		return lastname;
+	}
 
-    public String getEmail() {
-        return email;
-    }
+	public String getEmail() {
+		return email;
+	}
 
-    public String getDepartment() {
-        return department;
-    }
+	public String getDepartment() {
+		return department;
+	}
 
-    public String getGroup() {
-        return group;
-    }
+	public String getGroup() {
+		return group;
+	}
 
-    public String getGid() {
-        return gid;
-    }
+	public String getGid() {
+		return gid;
+	}
 
-    public boolean wantsMailNotification() {
-        return wantsMailNotification;
-    }
+	public boolean wantsMailNotification() {
+		return wantsMailNotification;
+	}
 
-    public void setGivenname(String givenname) {
-        this.givenname = givenname;
-    }
+	public void setGivenname(String givenname) {
+		this.givenname = givenname;
+	}
 
-    public void setLastname(String lastname) {
-        this.lastname = lastname;
-    }
+	public void setLastname(String lastname) {
+		this.lastname = lastname;
+	}
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+	public void setEmail(String email) {
+		this.email = email;
+	}
 
-    public void setDepartment(String department) {
-        this.department = department;
-    }
+	public void setDepartment(String department) {
+		this.department = department;
+	}
 
-    public void setGroup(String group) {
-        this.group = group;
-    }
+	public void setGroup(String group) {
+		this.group = group;
+	}
 
-    public void setGid(String gid) {
-        this.gid = gid;
-    }
+	public void setGid(String gid) {
+		this.gid = gid;
+	}
 
-    public void setMale(boolean isMale) {
-        this.isMale = isMale;
-    }
+	public void setMale(boolean isMale) {
+		this.isMale = isMale;
+	}
 
-    public void setHash(String hash) {
-        this.hash = hash;
-    }
+	public void setHash(String hash) {
+		this.hash = hash;
+	}
 
-    public void setWantsMailNotification(boolean wantsMailNotification) {
-        this.wantsMailNotification = wantsMailNotification;
-    }
+	public void setWantsMailNotification(boolean wantsMailNotification) {
+		this.wantsMailNotification = wantsMailNotification;
+	}
 
-    public UserCSV(CSVRecord record) {
-        givenname = record.get(0);
-        lastname = record.get(1);
-        email = record.get(2);
-        department = record.get(3);
-        group = record.get(4);
-        gid = record.get(5);
-        isMale = Boolean.parseBoolean(record.get(6));
-        hash = record.get(7);
-        if (record.size() > 8) {
-            wantsMailNotification = Boolean.parseBoolean((record.get(8)));
-        }
-    }
+	public UserCSV(CSVRecord record) {
+		givenname = record.get(0);
+		lastname = record.get(1);
+		email = record.get(2);
+		department = record.get(3);
+		group = record.get(4);
+		gid = record.get(5);
+		isMale = Boolean.parseBoolean(record.get(6));
+		hash = record.get(7);
+		if (record.size() > 8) {
+			wantsMailNotification = Boolean.parseBoolean((record.get(8)));
+		}
+	}
 
-    public UserCSV() {
-    }
+	public UserCSV() {
+	}
 
-    public User addLifeRayUser(PortletRequest request) throws PortalException, SystemException {
-        return UserPortletUtils.addLiferayUser(request, givenname, lastname, email,
-                department, getRoleConstantFromUserGroup(userGroupFromString(group)), isMale, gid, hash, true, true);
+	public User addLifeRayUser(PortletRequest request) throws PortalException, SystemException {
+		return UserPortletUtils.addLiferayUser(request, givenname, lastname, email, department,
+				getRoleConstantFromUserGroup(userGroupFromString(group)), isMale, gid, hash, true, true);
 
-    }
+	}
 
 }

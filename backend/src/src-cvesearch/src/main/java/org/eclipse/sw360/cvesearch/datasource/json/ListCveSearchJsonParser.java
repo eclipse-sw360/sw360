@@ -17,8 +17,9 @@ import java.lang.reflect.Type;
 import java.util.List;
 
 public class ListCveSearchJsonParser extends CveSearchJsonParser<List<CveSearchData>> {
-    @Override
-    public Type getType() {
-        return new TypeToken<List<CveSearchData>>(){}.getType();
-    }
+	@Override
+	public Type getType() {
+		return new TypeToken<List<CveSearchData>>() {
+		}.getType();
+	}
 }

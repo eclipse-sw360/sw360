@@ -24,37 +24,36 @@ import java.util.Set;
  */
 public class DisplayVendorAdvisories extends SimpleTagSupport {
 
-    private Set<VendorAdvisory> value;
-    private Set<VendorAdvisory> autoFillValue;
+	private Set<VendorAdvisory> value;
+	private Set<VendorAdvisory> autoFillValue;
 
-    public void setValue(Set<VendorAdvisory> value) {
-        this.value = value;
-    }
-    public void setAutoFillValue(Set<VendorAdvisory> autoFillValue) {
-        this.autoFillValue = autoFillValue;
-    }
+	public void setValue(Set<VendorAdvisory> value) {
+		this.value = value;
+	}
+	public void setAutoFillValue(Set<VendorAdvisory> autoFillValue) {
+		this.autoFillValue = autoFillValue;
+	}
 
-    public void doTag() throws JspException, IOException {
-        Set<VendorAdvisory> fullValue;
+	public void doTag() throws JspException, IOException {
+		Set<VendorAdvisory> fullValue;
 
-        if (value == null)
-            fullValue = autoFillValue;
-        else {
-            fullValue = value;
-        }
+		if (value == null)
+			fullValue = autoFillValue;
+		else {
+			fullValue = value;
+		}
 
-        if (null != fullValue && !fullValue.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("<ul>");
-            fullValue.stream().forEach(a -> sb.append("<li>"+toString(a)+"</li>"));
-            sb.append("</ul>");
-            getJspContext().getOut().print(sb.toString());
-        }
-    }
+		if (null != fullValue && !fullValue.isEmpty()) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("<ul>");
+			fullValue.stream().forEach(a -> sb.append("<li>" + toString(a) + "</li>"));
+			sb.append("</ul>");
+			getJspContext().getOut().print(sb.toString());
+		}
+	}
 
-    private String toString(VendorAdvisory advisory){
-        return "<b>vendor: </b>"+ advisory.getVendor()
-                +", <b>name: </b>"+ advisory.getName()
-                +", <b>url: </b>"+ advisory.getUrl()+"<br/>";
-    }
+	private String toString(VendorAdvisory advisory) {
+		return "<b>vendor: </b>" + advisory.getVendor() + ", <b>name: </b>" + advisory.getName() + ", <b>url: </b>"
+				+ advisory.getUrl() + "<br/>";
+	}
 }

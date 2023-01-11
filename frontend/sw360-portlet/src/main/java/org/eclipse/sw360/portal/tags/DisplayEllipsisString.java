@@ -22,14 +22,14 @@ import java.io.IOException;
  */
 public class DisplayEllipsisString extends SimpleTagSupport {
 
-    private String value;
+	private String value;
 
-    public void setValue(String value) {
-        this.value = value;
-    }
+	public void setValue(String value) {
+		this.value = value;
+	}
 
-    public void doTag() throws JspException, IOException {
-        getJspContext().getOut().print("<span class='text-truncate' title='" + TagUtils.escapeAttributeValue(value) + "'>"
-                + TagUtils.escapeAttributeValue(value) + "</span>");
-    }
+	public void doTag() throws JspException, IOException {
+		getJspContext().getOut().print("<span class='text-truncate' title='" + TagUtils.escapeAttributeValue(value)
+				+ "'>" + TagUtils.escapeAttributeValue(value) + "</span>");
+	}
 }

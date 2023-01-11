@@ -30,43 +30,35 @@ import org.eclipse.sw360.portal.portlets.moderation.ModerationPortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-@org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-        "/org/eclipse/sw360/portal/portlets/base.properties",
-        "/org/eclipse/sw360/portal/portlets/user.properties"
-    },
-    property = {
-        "javax.portlet.name=" + MY_TASK_ASSIGNMENTS_PORTLET_NAME,
-        "javax.portlet.display-name=My Task Assignments",
-        "javax.portlet.info.short-title=My Task Assignments",
-        "javax.portlet.info.title=My Task Assignments",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/homepage/mytaskassignments/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+@org.osgi.service.component.annotations.Component(immediate = true, properties = {
+		"/org/eclipse/sw360/portal/portlets/base.properties",
+		"/org/eclipse/sw360/portal/portlets/user.properties"}, property = {
+				"javax.portlet.name=" + MY_TASK_ASSIGNMENTS_PORTLET_NAME,
+				"javax.portlet.display-name=My Task Assignments", "javax.portlet.info.short-title=My Task Assignments",
+				"javax.portlet.info.title=My Task Assignments", "javax.portlet.resource-bundle=content.Language",
+				"javax.portlet.init-param.view-template=/html/homepage/mytaskassignments/view.jsp",}, service = Portlet.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class MyTaskAssignmentsPortlet extends AbstractTasksPortlet {
-    public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
-        String action = request.getParameter(PortalConstants.ACTION);
+	public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+		String action = request.getParameter(PortalConstants.ACTION);
 
-        if (PortalConstants.LOAD_TASK_ASSIGNMENT_LIST.equals(action)) {
-            serveTaskList(request, response);
-        }
-    }
+		if (PortalConstants.LOAD_TASK_ASSIGNMENT_LIST.equals(action)) {
+			serveTaskList(request, response);
+		}
+	}
 
-    private void serveTaskList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
-        List<ModerationRequest> openModerations = Lists.newArrayList();
+	private void serveTaskList(ResourceRequest request, ResourceResponse response)
+			throws IOException, PortletException {
+		List<ModerationRequest> openModerations = Lists.newArrayList();
 
-        try {
-            User user = UserCacheHolder.getUserFromRequest(request);
-            List<ModerationRequest> moderations = thriftClients.makeModerationClient().getRequestsByModerator(user);
-            openModerations = moderations.stream().filter(ModerationPortletUtils::isOpenModerationRequest).collect(Collectors.toList());
-        } catch (TException e) {
-            log.error("Could not fetch your moderations from backend", e);
-        }
+		try {
+			User user = UserCacheHolder.getUserFromRequest(request);
+			List<ModerationRequest> moderations = thriftClients.makeModerationClient().getRequestsByModerator(user);
+			openModerations = moderations.stream().filter(ModerationPortletUtils::isOpenModerationRequest)
+					.collect(Collectors.toList());
+		} catch (TException e) {
+			log.error("Could not fetch your moderations from backend", e);
+		}
 
-        sendModerations(request, response, openModerations);
-    }
+		sendModerations(request, response, openModerations);
+	}
 }

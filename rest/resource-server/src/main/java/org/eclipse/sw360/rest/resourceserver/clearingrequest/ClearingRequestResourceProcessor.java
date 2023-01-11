@@ -23,12 +23,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 class ClearingRequestResourceProcessor implements RepresentationModelProcessor<EntityModel<ClearingRequest>> {
 
-    @Override
-    public EntityModel<ClearingRequest> process(EntityModel<ClearingRequest> clearingRequest) {
-        ClearingRequest request = clearingRequest.getContent();
-        Link selfLink = linkTo(ClearingRequestController.class)
-                .slash("api" + ClearingRequestController.CLEARING_REQUEST_URL + "/" + request.getId()).withSelfRel();
-        clearingRequest.add(selfLink);
-        return clearingRequest;
-    }
+	@Override
+	public EntityModel<ClearingRequest> process(EntityModel<ClearingRequest> clearingRequest) {
+		ClearingRequest request = clearingRequest.getContent();
+		Link selfLink = linkTo(ClearingRequestController.class)
+				.slash("api" + ClearingRequestController.CLEARING_REQUEST_URL + "/" + request.getId()).withSelfRel();
+		clearingRequest.add(selfLink);
+		return clearingRequest;
+	}
 }

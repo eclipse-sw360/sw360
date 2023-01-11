@@ -14,58 +14,58 @@ package org.eclipse.sw360.wsimport.domain;
  */
 public class WsProjectVitalInformation {
 
-    private int id;
-    private String name;
-    private String token;
-    private String creationDate;
-    private String lastUpdatedDate;
-    private String pluginName;
+	private int id;
+	private String name;
+	private String token;
+	private String creationDate;
+	private String lastUpdatedDate;
+	private String pluginName;
 
-    public int getId() {
-        return id;
-    }
+	public int getId() {
+		return id;
+	}
 
-    public void setId(int id) {
-        this.id = id;
-    }
+	public void setId(int id) {
+		this.id = id;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public String getToken() {
-        return token;
-    }
+	public String getToken() {
+		return token;
+	}
 
-    public void setToken(String token) {
-        this.token = token;
-    }
+	public void setToken(String token) {
+		this.token = token;
+	}
 
-    public String getCreationDate() {
-        return creationDate;
-    }
+	public String getCreationDate() {
+		return creationDate;
+	}
 
-    public void setCreationDate(String creationDate) {
-        this.creationDate = creationDate;
-    }
+	public void setCreationDate(String creationDate) {
+		this.creationDate = creationDate;
+	}
 
-    public String getLastUpdatedDate() {
-        return lastUpdatedDate;
-    }
+	public String getLastUpdatedDate() {
+		return lastUpdatedDate;
+	}
 
-    public void setLastUpdatedDate(String lastUpdatedDate) {
-        this.lastUpdatedDate = lastUpdatedDate;
-    }
+	public void setLastUpdatedDate(String lastUpdatedDate) {
+		this.lastUpdatedDate = lastUpdatedDate;
+	}
 
-    public String getPluginName() {
-        return pluginName;
-    }
+	public String getPluginName() {
+		return pluginName;
+	}
 
-    public void setPluginName(String pluginName) {
-        this.pluginName = pluginName;
-    }
+	public void setPluginName(String pluginName) {
+		this.pluginName = pluginName;
+	}
 }

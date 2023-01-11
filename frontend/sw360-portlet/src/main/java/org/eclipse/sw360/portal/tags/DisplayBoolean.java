@@ -29,39 +29,42 @@ import java.util.ResourceBundle;
  */
 public class DisplayBoolean extends SimpleTagSupport {
 
-    private boolean value;
-    private boolean defined = true;
-    private String name = null;
+	private boolean value;
+	private boolean defined = true;
+	private String name = null;
 
-    public void setValue(boolean value) {
-        this.value = value;
-    }
+	public void setValue(boolean value) {
+		this.value = value;
+	}
 
-    public void setDefined(boolean defined) {
-        this.defined = defined;
-    }
+	public void setDefined(boolean defined) {
+		this.defined = defined;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public void doTag() throws JspException, IOException {
-        PageContext pageContext = (PageContext) getJspContext();
-        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-        JspWriter out = getJspContext().getOut();
+	public void doTag() throws JspException, IOException {
+		PageContext pageContext = (PageContext) getJspContext();
+		HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+				getClass());
+		JspWriter out = getJspContext().getOut();
 
-        if (defined && value) {
-            out.print("<span class=\"text-success\">");
-            out.print("<svg class=\"lexicon-icon\"><title>"+LanguageUtil.get(resourceBundle,"yes")+"</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle\"/></svg>");
-            out.print("&nbsp;"+LanguageUtil.get(resourceBundle,"yes"));
-            out.print("</span>");
-        } else {
-            String text = "Quadratic".equalsIgnoreCase(name) ? "(n/a)" : "no";
-            out.print("<span class=\"text-danger\">");
-            out.print("<svg class=\"lexicon-icon\"><title>"+LanguageUtil.get(resourceBundle,"no")+"</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times-circle\"/></svg>");
-            out.print("&nbsp;"+LanguageUtil.get(resourceBundle, text));
-            out.print("</span>");
-        }
-    }
+		if (defined && value) {
+			out.print("<span class=\"text-success\">");
+			out.print("<svg class=\"lexicon-icon\"><title>" + LanguageUtil.get(resourceBundle, "yes")
+					+ "</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#check-circle\"/></svg>");
+			out.print("&nbsp;" + LanguageUtil.get(resourceBundle, "yes"));
+			out.print("</span>");
+		} else {
+			String text = "Quadratic".equalsIgnoreCase(name) ? "(n/a)" : "no";
+			out.print("<span class=\"text-danger\">");
+			out.print("<svg class=\"lexicon-icon\"><title>" + LanguageUtil.get(resourceBundle, "no")
+					+ "</title><use href=\"/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#times-circle\"/></svg>");
+			out.print("&nbsp;" + LanguageUtil.get(resourceBundle, text));
+			out.print("</span>");
+		}
+	}
 }

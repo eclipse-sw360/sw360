@@ -23,42 +23,37 @@ import java.util.Properties;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Class to inject custom variables into the Velocity context to be used in the sw360-theme template
+ * Class to inject custom variables into the Velocity context to be used in the
+ * sw360-theme template
  *
  * @author: alex.borodin@evosoft.com
  */
-@Component(
-    immediate = true,
-    property = {
-        "type=" + TemplateContextContributor.TYPE_THEME
-    },
-    service = TemplateContextContributor.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE,
-    enabled = false
-)
+@Component(immediate = true, property = {"type="
+		+ TemplateContextContributor.TYPE_THEME}, service = TemplateContextContributor.class, configurationPolicy = ConfigurationPolicy.REQUIRE, enabled = false)
 public class BuildInfoTemplateContextContributor extends LoggingComponent implements TemplateContextContributor {
-    private static final String BUILD_INFO_PROPERTIES_FILE = "/buildInfo.properties";
-    private static Map<Object, Object> buildInfo;
+	private static final String BUILD_INFO_PROPERTIES_FILE = "/buildInfo.properties";
+	private static Map<Object, Object> buildInfo;
 
-    @Override
-    public void prepare(Map<String, Object> contextObjects, HttpServletRequest request) {
-        contextObjects.put("sw360_build_info", getBuildInfo());
-    }
+	@Override
+	public void prepare(Map<String, Object> contextObjects, HttpServletRequest request) {
+		contextObjects.put("sw360_build_info", getBuildInfo());
+	}
 
-    private Map<Object, Object> getBuildInfo() {
-        if (buildInfo == null) {
-            loadBuildInfo();
-        }
+	private Map<Object, Object> getBuildInfo() {
+		if (buildInfo == null) {
+			loadBuildInfo();
+		}
 
-        return buildInfo;
-    }
+		return buildInfo;
+	}
 
-    private synchronized void loadBuildInfo() {
-        buildInfo = new HashMap<>();
-        Properties properties = CommonUtils.loadProperties(BuildInfoTemplateContextContributor.class, BUILD_INFO_PROPERTIES_FILE, false);
-        properties.forEach((s, value)-> {
-            log.info(String.format("Build Info Context Contributor: attribute %s=%s", s, value));
-            buildInfo.put(s, value);
-        });
-    }
+	private synchronized void loadBuildInfo() {
+		buildInfo = new HashMap<>();
+		Properties properties = CommonUtils.loadProperties(BuildInfoTemplateContextContributor.class,
+				BUILD_INFO_PROPERTIES_FILE, false);
+		properties.forEach((s, value) -> {
+			log.info(String.format("Build Info Context Contributor: attribute %s=%s", s, value));
+			buildInfo.put(s, value);
+		});
+	}
 }

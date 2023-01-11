@@ -26,50 +26,43 @@ import static org.eclipse.sw360.portal.tags.urlutils.UrlWriterImpl.renderUrl;
  * @author daniele.fognini@tngtech.com
  */
 public class DisplayLinkToSearchResult extends DisplayLinkAbstract {
-    private SearchResult searchResult;
+	private SearchResult searchResult;
 
-    public void setSearchResult(SearchResult searchResult) {
-        this.searchResult = searchResult;
-    }
+	public void setSearchResult(SearchResult searchResult) {
+		this.searchResult = searchResult;
+	}
 
-    @Override
-    protected String getTextDisplay() {
-        return searchResult.getName();
-    }
+	@Override
+	protected String getTextDisplay() {
+		return searchResult.getName();
+	}
 
-    @Override
-    protected void writeUrl() throws JspException {
-        String searchResultType = searchResult.getType();
-        String searchResultId = searchResult.getId();
-        UrlWriter writer;
-        switch (searchResultType) {
-            case SW360Constants.TYPE_RELEASE:
-                writer = renderUrl(pageContext)
-                        .toPortlet(LinkToPortletConfiguration.COMPONENTS, scopeGroupId)
-                        .toPage(PortletDefaultPage.RELEASE_DETAIL)
-                        .withParam(PortalConstants.RELEASE_ID, searchResultId);
-                break;
-            case SW360Constants.TYPE_PROJECT:
-                writer =renderUrl(pageContext)
-                    .toPortlet(LinkToPortletConfiguration.PROJECTS, scopeGroupId)
-                    .toPage(PortletDefaultPage.DETAIL)
-                    .withParam(PortalConstants.PROJECT_ID, searchResultId);
-                break;
-            case SW360Constants.TYPE_COMPONENT:
-                writer =renderUrl(pageContext)
-                    .toPortlet(LinkToPortletConfiguration.COMPONENTS, scopeGroupId)
-                    .toPage(PortletDefaultPage.DETAIL)
-                    .withParam(PortalConstants.COMPONENT_ID, searchResultId);
-                break;
-            case SW360Constants.TYPE_LICENSE:
-                writer =renderUrl(pageContext)
-                    .toPortlet(LinkToPortletConfiguration.LICENSES, scopeGroupId)
-                    .toPage(PortletDefaultPage.DETAIL)
-                    .withParam(PortalConstants.LICENSE_ID, searchResultId);
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected searchResultType " + searchResultType);
-        }
-        writer.writeUrlToJspWriter();
-    }
+	@Override
+	protected void writeUrl() throws JspException {
+		String searchResultType = searchResult.getType();
+		String searchResultId = searchResult.getId();
+		UrlWriter writer;
+		switch (searchResultType) {
+			case SW360Constants.TYPE_RELEASE :
+				writer = renderUrl(pageContext).toPortlet(LinkToPortletConfiguration.COMPONENTS, scopeGroupId)
+						.toPage(PortletDefaultPage.RELEASE_DETAIL)
+						.withParam(PortalConstants.RELEASE_ID, searchResultId);
+				break;
+			case SW360Constants.TYPE_PROJECT :
+				writer = renderUrl(pageContext).toPortlet(LinkToPortletConfiguration.PROJECTS, scopeGroupId)
+						.toPage(PortletDefaultPage.DETAIL).withParam(PortalConstants.PROJECT_ID, searchResultId);
+				break;
+			case SW360Constants.TYPE_COMPONENT :
+				writer = renderUrl(pageContext).toPortlet(LinkToPortletConfiguration.COMPONENTS, scopeGroupId)
+						.toPage(PortletDefaultPage.DETAIL).withParam(PortalConstants.COMPONENT_ID, searchResultId);
+				break;
+			case SW360Constants.TYPE_LICENSE :
+				writer = renderUrl(pageContext).toPortlet(LinkToPortletConfiguration.LICENSES, scopeGroupId)
+						.toPage(PortletDefaultPage.DETAIL).withParam(PortalConstants.LICENSE_ID, searchResultId);
+				break;
+			default :
+				throw new IllegalArgumentException("Unexpected searchResultType " + searchResultType);
+		}
+		writer.writeUrlToJspWriter();
+	}
 }

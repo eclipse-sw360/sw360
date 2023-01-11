@@ -21,24 +21,25 @@ import javax.portlet.PortletRequest;
  * @author cedric.bodet@tngtech.com
  */
 public class LifeRayUserSession {
-    /**
-     * Get the email of the currently logged-in user
-     *
-     * @param request Java portlet render request
-     */
-    public static String getEmailFromRequest(PortletRequest request) {
-        String email = null;
+	/**
+	 * Get the email of the currently logged-in user
+	 *
+	 * @param request
+	 *            Java portlet render request
+	 */
+	public static String getEmailFromRequest(PortletRequest request) {
+		String email = null;
 
-        // Logged-in user can be fetched from Liferay's ThemeDisplay
-        ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
-        if (themeDisplay.isSignedIn()) {
-            User user = themeDisplay.getUser();
+		// Logged-in user can be fetched from Liferay's ThemeDisplay
+		ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
+		if (themeDisplay.isSignedIn()) {
+			User user = themeDisplay.getUser();
 
-            // Get email address from user
-            if (user != null) {
-                email = user.getEmailAddress();
-            }
-        }
-        return email;
-    }
+			// Get email address from user
+			if (user != null) {
+				email = user.getEmailAddress();
+			}
+		}
+		return email;
+	}
 }

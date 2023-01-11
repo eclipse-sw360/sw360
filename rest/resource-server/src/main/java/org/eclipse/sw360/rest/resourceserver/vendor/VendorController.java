@@ -38,57 +38,54 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class VendorController implements RepresentationModelProcessor<RepositoryLinksResource> {
-    public static final String VENDORS_URL = "/vendors";
+	public static final String VENDORS_URL = "/vendors";
 
-    @NonNull
-    private final Sw360VendorService vendorService;
+	@NonNull
+	private final Sw360VendorService vendorService;
 
-    @NonNull
-    private final RestControllerHelper<?> restControllerHelper;
+	@NonNull
+	private final RestControllerHelper<?> restControllerHelper;
 
-    @RequestMapping(value = VENDORS_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<Vendor>>> getVendors() {
-        List<Vendor> vendors = vendorService.getVendors();
+	@RequestMapping(value = VENDORS_URL, method = RequestMethod.GET)
+	public ResponseEntity<CollectionModel<EntityModel<Vendor>>> getVendors() {
+		List<Vendor> vendors = vendorService.getVendors();
 
-        List<EntityModel<Vendor>> vendorResources = new ArrayList<>();
-        vendors.forEach(v -> {
-            Vendor embeddedVendor = restControllerHelper.convertToEmbeddedVendor(v);
-            vendorResources.add(EntityModel.of(embeddedVendor));
-        });
+		List<EntityModel<Vendor>> vendorResources = new ArrayList<>();
+		vendors.forEach(v -> {
+			Vendor embeddedVendor = restControllerHelper.convertToEmbeddedVendor(v);
+			vendorResources.add(EntityModel.of(embeddedVendor));
+		});
 
-        CollectionModel<EntityModel<Vendor>> resources = CollectionModel.of(vendorResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
-    }
+		CollectionModel<EntityModel<Vendor>> resources = CollectionModel.of(vendorResources);
+		return new ResponseEntity<>(resources, HttpStatus.OK);
+	}
 
-    @RequestMapping(value = VENDORS_URL + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<Vendor>> getVendor(
-            @PathVariable("id") String id) {
-        Vendor sw360Vendor = vendorService.getVendorById(id);
-        HalResource<Vendor> halResource = createHalVendor(sw360Vendor);
-        return new ResponseEntity<>(halResource, HttpStatus.OK);
-    }
+	@RequestMapping(value = VENDORS_URL + "/{id}", method = RequestMethod.GET)
+	public ResponseEntity<EntityModel<Vendor>> getVendor(@PathVariable("id") String id) {
+		Vendor sw360Vendor = vendorService.getVendorById(id);
+		HalResource<Vendor> halResource = createHalVendor(sw360Vendor);
+		return new ResponseEntity<>(halResource, HttpStatus.OK);
+	}
 
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = VENDORS_URL, method = RequestMethod.POST)
-    public ResponseEntity<?> createVendor(
-            @RequestBody Vendor vendor) {
-        vendor = vendorService.createVendor(vendor);
-        HalResource<Vendor> halResource = createHalVendor(vendor);
+	@PreAuthorize("hasAuthority('WRITE')")
+	@RequestMapping(value = VENDORS_URL, method = RequestMethod.POST)
+	public ResponseEntity<?> createVendor(@RequestBody Vendor vendor) {
+		vendor = vendorService.createVendor(vendor);
+		HalResource<Vendor> halResource = createHalVendor(vendor);
 
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest().path("/{id}")
-                .buildAndExpand(vendor.getId()).toUri();
+		URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(vendor.getId())
+				.toUri();
 
-        return ResponseEntity.created(location).body(halResource);
-    }
+		return ResponseEntity.created(location).body(halResource);
+	}
 
-    @Override
-    public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        resource.add(linkTo(VendorController.class).slash("api" + VENDORS_URL).withRel("vendors"));
-        return resource;
-    }
+	@Override
+	public RepositoryLinksResource process(RepositoryLinksResource resource) {
+		resource.add(linkTo(VendorController.class).slash("api" + VENDORS_URL).withRel("vendors"));
+		return resource;
+	}
 
-    private HalResource<Vendor> createHalVendor(Vendor sw360Vendor) {
-        return new HalResource<>(sw360Vendor);
-    }
+	private HalResource<Vendor> createHalVendor(Vendor sw360Vendor) {
+		return new HalResource<>(sw360Vendor);
+	}
 }

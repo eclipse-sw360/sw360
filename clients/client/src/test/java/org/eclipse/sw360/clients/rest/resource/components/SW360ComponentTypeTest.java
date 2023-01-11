@@ -15,48 +15,48 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SW360ComponentTypeTest {
-    private void checkFindByValue(SW360ComponentType componentType, int value) {
-        SW360ComponentType result = SW360ComponentType.findByValue(value);
+	private void checkFindByValue(SW360ComponentType componentType, int value) {
+		SW360ComponentType result = SW360ComponentType.findByValue(value);
 
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(componentType);
-        assertThat(result.getValue()).isEqualTo(value);
-    }
+		assertThat(result).isNotNull();
+		assertThat(result).isEqualTo(componentType);
+		assertThat(result.getValue()).isEqualTo(value);
+	}
 
-    @Test
-    public void testFindByValueInternal() {
-        checkFindByValue(SW360ComponentType.INTERNAL, 0);
-    }
+	@Test
+	public void testFindByValueInternal() {
+		checkFindByValue(SW360ComponentType.INTERNAL, 0);
+	}
 
-    @Test
-    public void testFindByValueOSS() {
-        checkFindByValue(SW360ComponentType.OSS, 1);
-    }
+	@Test
+	public void testFindByValueOSS() {
+		checkFindByValue(SW360ComponentType.OSS, 1);
+	}
 
-    @Test
-    public void testFindByValueCOTS() {
-        checkFindByValue(SW360ComponentType.COTS, 2);
-    }
+	@Test
+	public void testFindByValueCOTS() {
+		checkFindByValue(SW360ComponentType.COTS, 2);
+	}
 
-    @Test
-    public void testFindByValueFreeSoftware() {
-        checkFindByValue(SW360ComponentType.FREESOFTWARE, 3);
-    }
+	@Test
+	public void testFindByValueFreeSoftware() {
+		checkFindByValue(SW360ComponentType.FREESOFTWARE, 3);
+	}
 
-    @Test
-    public void testFindByValueInnerSource() {
-        checkFindByValue(SW360ComponentType.INNER_SOURCE, 4);
-    }
+	@Test
+	public void testFindByValueInnerSource() {
+		checkFindByValue(SW360ComponentType.INNER_SOURCE, 4);
+	}
 
-    @Test
-    public void testFindByValueService() {
-        checkFindByValue(SW360ComponentType.SERVICE, 5);
-    }
+	@Test
+	public void testFindByValueService() {
+		checkFindByValue(SW360ComponentType.SERVICE, 5);
+	}
 
-    @Test
-    public void testFindByValueUnknown() {
-        SW360ComponentType result = SW360ComponentType.findByValue(815);
+	@Test
+	public void testFindByValueUnknown() {
+		SW360ComponentType result = SW360ComponentType.findByValue(815);
 
-        assertThat(result).isNull();
-    }
+		assertThat(result).isNull();
+	}
 }

@@ -27,19 +27,20 @@ import java.util.List;
  * @author johannes.najjar@tngtech.com
  * @author alex.borodin@evosoft.com
  */
-public class WhenComputePermissions  extends Stage<WhenComputePermissions> {
-    @ExpectedScenarioState
-    Project project;
+public class WhenComputePermissions extends Stage<WhenComputePermissions> {
+	@ExpectedScenarioState
+	Project project;
 
-    @ProvidedScenarioState
-    List<RequestedAction> allowedActions;
+	@ProvidedScenarioState
+	List<RequestedAction> allowedActions;
 
-    public WhenComputePermissions the_highest_allowed_action_is_computed_for_user_$_with_user_group_$_and_department_$(@Quoted String userEmail, @TEnumToString UserGroup userGroup, @Quoted String userDept) {
-        final User user = new User(userEmail, userDept).setUserGroup(userGroup);
+	public WhenComputePermissions the_highest_allowed_action_is_computed_for_user_$_with_user_group_$_and_department_$(
+			@Quoted String userEmail, @TEnumToString UserGroup userGroup, @Quoted String userDept) {
+		final User user = new User(userEmail, userDept).setUserGroup(userGroup);
 
-        final DocumentPermissions<Project> projectDocumentPermissions = PermissionUtils.makePermission(project, user);
+		final DocumentPermissions<Project> projectDocumentPermissions = PermissionUtils.makePermission(project, user);
 
-        allowedActions = projectDocumentPermissions.getAllAllowedActions();
-        return self();
-    }
+		allowedActions = projectDocumentPermissions.getAllAllowedActions();
+		return self();
+	}
 }

@@ -40,65 +40,69 @@ import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
  * @author daniele.fognini@tngtech.com
  */
 public class RemoteAttachmentDownloader {
-    private static final Logger log = getLogger(RemoteAttachmentDownloader.class);
+	private static final Logger log = getLogger(RemoteAttachmentDownloader.class);
 
-    public static void main(String[] args) throws MalformedURLException {
-        Duration downloadTimeout = durationOf(30, TimeUnit.SECONDS);
-        retrieveRemoteAttachments(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS, downloadTimeout);
-    }
+	public static void main(String[] args) throws MalformedURLException {
+		Duration downloadTimeout = durationOf(30, TimeUnit.SECONDS);
+		retrieveRemoteAttachments(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS,
+				downloadTimeout);
+	}
 
-    public static int retrieveRemoteAttachments(Supplier<CloudantClient> httpClient, String dbAttachments, Duration downloadTimeout) throws MalformedURLException {
-        AttachmentConnector attachmentConnector = new AttachmentConnector(httpClient, dbAttachments, downloadTimeout);
-        AttachmentContentRepository attachmentContentRepository = new AttachmentContentRepository(new DatabaseConnectorCloudant(httpClient, dbAttachments));
+	public static int retrieveRemoteAttachments(Supplier<CloudantClient> httpClient, String dbAttachments,
+			Duration downloadTimeout) throws MalformedURLException {
+		AttachmentConnector attachmentConnector = new AttachmentConnector(httpClient, dbAttachments, downloadTimeout);
+		AttachmentContentRepository attachmentContentRepository = new AttachmentContentRepository(
+				new DatabaseConnectorCloudant(httpClient, dbAttachments));
 
-        List<AttachmentContent> remoteAttachments = attachmentContentRepository.getOnlyRemoteAttachments();
-        log.info("we have {} remote attachments to retrieve", remoteAttachments.size());
+		List<AttachmentContent> remoteAttachments = attachmentContentRepository.getOnlyRemoteAttachments();
+		log.info("we have {} remote attachments to retrieve", remoteAttachments.size());
 
-        int count = 0;
+		int count = 0;
 
-        for (AttachmentContent attachmentContent : remoteAttachments) {
-            if (!attachmentContent.isOnlyRemote()) {
-                log.info("skipping attachment ({}), which should already be available", attachmentContent.getId());
-                continue;
-            }
+		for (AttachmentContent attachmentContent : remoteAttachments) {
+			if (!attachmentContent.isOnlyRemote()) {
+				log.info("skipping attachment ({}), which should already be available", attachmentContent.getId());
+				continue;
+			}
 
-            String attachmentContentId = attachmentContent.getId();
-            log.info("retrieving attachment ({}, filename={})", attachmentContentId, attachmentContent.getFilename());
-            log.debug("url is {}", attachmentContent.getRemoteUrl());
+			String attachmentContentId = attachmentContent.getId();
+			log.info("retrieving attachment ({}, filename={})", attachmentContentId, attachmentContent.getFilename());
+			log.debug("url is {}", attachmentContent.getRemoteUrl());
 
-            InputStream content = null;
-            try {
-                content = attachmentConnector.unsafeGetAttachmentStream(attachmentContent);
-                if (content == null) {
-                    log.error("null content retrieving attachment {}", attachmentContentId);
-                    continue;
-                }
-                try {
-                    long length = length(content);
-                    log.info("retrieved attachment ({}), it was {} bytes long", attachmentContentId, length);
-                    count++;
-                } catch (IOException e) {
-                    log.error("attachment was downloaded but somehow not available in database {}", attachmentContentId, e);
-                }
-            } catch (SW360Exception e) {
-                log.error("cannot retrieve attachment {}", attachmentContentId, e);
-            } finally {
-                closeQuietly(content, log);
-            }
-        }
+			InputStream content = null;
+			try {
+				content = attachmentConnector.unsafeGetAttachmentStream(attachmentContent);
+				if (content == null) {
+					log.error("null content retrieving attachment {}", attachmentContentId);
+					continue;
+				}
+				try {
+					long length = length(content);
+					log.info("retrieved attachment ({}), it was {} bytes long", attachmentContentId, length);
+					count++;
+				} catch (IOException e) {
+					log.error("attachment was downloaded but somehow not available in database {}", attachmentContentId,
+							e);
+				}
+			} catch (SW360Exception e) {
+				log.error("cannot retrieve attachment {}", attachmentContentId, e);
+			} finally {
+				closeQuietly(content, log);
+			}
+		}
 
-        return count;
-    }
+		return count;
+	}
 
-    protected static long length(InputStream stream) throws IOException {
-        long length = 0;
-        try {
-            while (stream.read() >= 0) {
-                ++length;
-            }
-        } finally {
-            stream.close();
-        }
-        return length;
-    }
+	protected static long length(InputStream stream) throws IOException {
+		long length = 0;
+		try {
+			while (stream.read() >= 0) {
+				++length;
+			}
+		} finally {
+			stream.close();
+		}
+		return length;
+	}
 }

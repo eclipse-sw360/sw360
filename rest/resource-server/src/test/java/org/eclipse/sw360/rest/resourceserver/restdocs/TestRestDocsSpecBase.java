@@ -43,60 +43,53 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @ContextConfiguration
 public abstract class TestRestDocsSpecBase {
 
-    @Value("${sw360.test-user-id}")
-    private String testUserId;
+	@Value("${sw360.test-user-id}")
+	private String testUserId;
 
-    @Value("${sw360.test-user-password}")
-    private String testUserPassword;
+	@Value("${sw360.test-user-password}")
+	private String testUserPassword;
 
-    @Autowired
-    protected WebApplicationContext context;
+	@Autowired
+	protected WebApplicationContext context;
 
-    @Autowired
-    protected FilterChainProxy springSecurityFilterChain;
+	@Autowired
+	protected FilterChainProxy springSecurityFilterChain;
 
-    @Autowired
-    protected ObjectMapper objectMapper;
+	@Autowired
+	protected ObjectMapper objectMapper;
 
-    protected MockMvc mockMvc;
+	protected MockMvc mockMvc;
 
-    @Rule
-    public final JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation("target/generated-snippets");
+	@Rule
+	public final JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation("target/generated-snippets");
 
-    protected RestDocumentationResultHandler documentationHandler;
+	protected RestDocumentationResultHandler documentationHandler;
 
-    @Before
-    public void setupRestDocs() {
-        this.documentationHandler = document("{method-name}",
-                preprocessRequest(prettyPrint()),
-                preprocessResponse(prettyPrint()));
+	@Before
+	public void setupRestDocs() {
+		this.documentationHandler = document("{method-name}", preprocessRequest(prettyPrint()),
+				preprocessResponse(prettyPrint()));
 
-        this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-                .addFilter(springSecurityFilterChain)
-                .apply(documentationConfiguration(this.restDocumentation))
-                .apply(documentationConfiguration(this.restDocumentation).uris()
-                        .withScheme("https")
-                        .withHost("sw360.org")
-                        .withPort(443))
-                .alwaysDo(this.documentationHandler)
-                .build();
-    }
+		this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context).addFilter(springSecurityFilterChain)
+				.apply(documentationConfiguration(this.restDocumentation))
+				.apply(documentationConfiguration(this.restDocumentation).uris().withScheme("https")
+						.withHost("sw360.org").withPort(443))
+				.alwaysDo(this.documentationHandler).build();
+	}
 
-    public void testAttachmentUpload(String url, String id) throws Exception {
-        String attachment = "{ \"filename\":\"spring-core-4.3.4.RELEASE.jar\", \"attachmentContentId\":\"2\", \"attachmentType\":\"SOURCE\", \"checkStatus\":\"ACCEPTED\", \"createdComment\":\"Uploading Sources.\" }";
-        /*
-         * TODO Suggestion to use better library in future, instead of MockMultipartFile
-         * to have better document generation feature. below logic is used to generate
-         * the correct restapi end point documentation
-         */
-        MockMultipartFile jsonFile = new MockMultipartFile("attachment", "", "application/json",
-                new ByteArrayInputStream(attachment.getBytes()));
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(url + id + "/attachments")
-                .file("file", "@/spring-core-4.3.4.RELEASE.jar".getBytes())
-                .file(jsonFile)
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .header("Authorization", "Bearer " + accessToken);
-        this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
-    }
+	public void testAttachmentUpload(String url, String id) throws Exception {
+		String attachment = "{ \"filename\":\"spring-core-4.3.4.RELEASE.jar\", \"attachmentContentId\":\"2\", \"attachmentType\":\"SOURCE\", \"checkStatus\":\"ACCEPTED\", \"createdComment\":\"Uploading Sources.\" }";
+		/*
+		 * TODO Suggestion to use better library in future, instead of MockMultipartFile
+		 * to have better document generation feature. below logic is used to generate
+		 * the correct restapi end point documentation
+		 */
+		MockMultipartFile jsonFile = new MockMultipartFile("attachment", "", "application/json",
+				new ByteArrayInputStream(attachment.getBytes()));
+		String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+		MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(url + id + "/attachments")
+				.file("file", "@/spring-core-4.3.4.RELEASE.jar".getBytes()).file(jsonFile)
+				.contentType(MediaType.MULTIPART_FORM_DATA).header("Authorization", "Bearer " + accessToken);
+		this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
+	}
 }

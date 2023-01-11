@@ -26,55 +26,51 @@ import org.eclipse.sw360.portal.portlets.vulnerabilities.VulnerabilitiesPortlet;
 import java.util.Optional;
 
 /**
- * Maps Portlet classes to sw360 internal portlet names and layouts.
- * Portlet names are created internally
- * by concatenating data from the xml configuration file and deployment data.
- * To avoid update efforts (e.g. after increasing the version number of the war file, this is handled here.
- * If scopeGroupId is not null,
- * findPlid searches for a lower case version of the enum instance name to identify a Layout.
+ * Maps Portlet classes to sw360 internal portlet names and layouts. Portlet
+ * names are created internally by concatenating data from the xml configuration
+ * file and deployment data. To avoid update efforts (e.g. after increasing the
+ * version number of the war file, this is handled here. If scopeGroupId is not
+ * null, findPlid searches for a lower case version of the enum instance name to
+ * identify a Layout.
+ * 
  * @author daniele.fognini@tngtech.com
  */
 public enum LinkToPortletConfiguration {
-    COMPONENTS(ComponentPortlet.class),
-    PROJECTS(ProjectPortlet.class),
-    LICENSES(LicensesPortlet.class),
-    MODERATION(ModerationPortlet.class),
-    VULNERABILITIES(VulnerabilitiesPortlet.class),
-    USERS(UserPortlet.class);
+	COMPONENTS(ComponentPortlet.class), PROJECTS(ProjectPortlet.class), LICENSES(LicensesPortlet.class), MODERATION(
+			ModerationPortlet.class), VULNERABILITIES(VulnerabilitiesPortlet.class), USERS(UserPortlet.class);
 
-    private final Class<? extends Sw360Portlet> portletClass;
+	private final Class<? extends Sw360Portlet> portletClass;
 
-    LinkToPortletConfiguration(Class<? extends Sw360Portlet> portletClass) {
-        this.portletClass = portletClass;
-    }
+	LinkToPortletConfiguration(Class<? extends Sw360Portlet> portletClass) {
+		this.portletClass = portletClass;
+	}
 
-    public Portlet findPortlet() {
-        Optional<Portlet> portlet = PortletLocalServiceUtil.getPortlets().stream()
-                .filter(p -> p.getPortletClass().equals(portletClass.getName())).findFirst();
-        if (portlet.isPresent()) {
-            return portlet.get();
-        }
-        throw new IllegalArgumentException("Could not find portlet name for " + this.portletClass);
-    }
+	public Portlet findPortlet() {
+		Optional<Portlet> portlet = PortletLocalServiceUtil.getPortlets().stream()
+				.filter(p -> p.getPortletClass().equals(portletClass.getName())).findFirst();
+		if (portlet.isPresent()) {
+			return portlet.get();
+		}
+		throw new IllegalArgumentException("Could not find portlet name for " + this.portletClass);
+	}
 
-    public String portletName() {
-        return findPortlet().getPortletId();
-    }
+	public String portletName() {
+		return findPortlet().getPortletId();
+	}
 
-    public long findPlid(Long portletGroupId) {
-        if (portletGroupId == null ) {
-            return 0;
-        }
-        try {
-            Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portletGroupId, true).stream()
-            .filter(l -> ("/"+name().toLowerCase()).equals(l.getFriendlyURL()))
-            .findFirst();
-            if (layout.isPresent()) {
-                return layout.get().getPlid();
-            }
-        } catch (SystemException e) {
-            throw new IllegalStateException("Could not get layout for portlet " + portletClass, e);
-        }
-        return 0;
-    }
+	public long findPlid(Long portletGroupId) {
+		if (portletGroupId == null) {
+			return 0;
+		}
+		try {
+			Optional<Layout> layout = LayoutLocalServiceUtil.getLayouts(portletGroupId, true).stream()
+					.filter(l -> ("/" + name().toLowerCase()).equals(l.getFriendlyURL())).findFirst();
+			if (layout.isPresent()) {
+				return layout.get().getPlid();
+			}
+		} catch (SystemException e) {
+			throw new IllegalStateException("Could not get layout for portlet " + portletClass, e);
+		}
+		return 0;
+	}
 }

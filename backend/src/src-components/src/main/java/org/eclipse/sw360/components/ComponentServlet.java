@@ -25,8 +25,8 @@ import java.net.MalformedURLException;
  */
 public class ComponentServlet extends Sw360ThriftServlet {
 
-    public ComponentServlet() throws IOException {
-        // Create a service processor using the provided handler
-        super(new ComponentService.Processor<>(new ComponentHandler()), new TCompactProtocol.Factory());
-    }
+	public ComponentServlet() throws IOException {
+		// Create a service processor using the provided handler
+		super(new ComponentService.Processor<>(new ComponentHandler()), new TCompactProtocol.Factory());
+	}
 }

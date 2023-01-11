@@ -24,42 +24,41 @@ import java.util.Optional;
 
 @JsonDeserialize(as = SW360ComponentEmbedded.class)
 public final class SW360ComponentEmbedded implements Embedded {
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @JsonProperty("sw360:releases")
-    private List<SW360SparseRelease> releases;
-    private SW360User createdBy;
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)
+	@JsonProperty("sw360:releases")
+	private List<SW360SparseRelease> releases;
+	private SW360User createdBy;
 
-    public List<SW360SparseRelease> getReleases() {
-        return Optional.ofNullable(this.releases)
-                .orElse(Collections.emptyList());
-    }
+	public List<SW360SparseRelease> getReleases() {
+		return Optional.ofNullable(this.releases).orElse(Collections.emptyList());
+	}
 
-    public SW360ComponentEmbedded setReleases(List<SW360SparseRelease> releases) {
-        this.releases = releases;
-        return this;
-    }
+	public SW360ComponentEmbedded setReleases(List<SW360SparseRelease> releases) {
+		this.releases = releases;
+		return this;
+	}
 
-    public SW360User getCreatedBy() {
-        return createdBy;
-    }
+	public SW360User getCreatedBy() {
+		return createdBy;
+	}
 
-    public SW360ComponentEmbedded setCreatedBy(SW360User createdBy) {
-        this.createdBy = createdBy;
-        return this;
-    }
+	public SW360ComponentEmbedded setCreatedBy(SW360User createdBy) {
+		this.createdBy = createdBy;
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SW360ComponentEmbedded that = (SW360ComponentEmbedded) o;
-        return Objects.equals(releases, that.releases) &&
-                Objects.equals(createdBy, that.createdBy);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		SW360ComponentEmbedded that = (SW360ComponentEmbedded) o;
+		return Objects.equals(releases, that.releases) && Objects.equals(createdBy, that.createdBy);
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(releases, createdBy);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(releases, createdBy);
+	}
 }
-

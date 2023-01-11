@@ -32,55 +32,56 @@ import com.cloudant.client.api.model.DesignDocument.MapReduce;
  */
 public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
 
-    private static final String ALL = "function(doc) { if (doc.type == 'vendor') emit(null, doc._id) }";
+	private static final String ALL = "function(doc) { if (doc.type == 'vendor') emit(null, doc._id) }";
 
-    private static final String BY_FULL_NAME = "function(doc) { if (doc.type == 'vendor' && doc.fullname != null) emit(doc.fullname.toLowerCase(), doc._id) }";
+	private static final String BY_FULL_NAME = "function(doc) { if (doc.type == 'vendor' && doc.fullname != null) emit(doc.fullname.toLowerCase(), doc._id) }";
 
-    public VendorRepository(DatabaseConnectorCloudant db) {
-        super(db, Vendor.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("all", createMapReduce(ALL, null));
-        views.put("vendorbyfullname", createMapReduce(BY_FULL_NAME, null));
-        initStandardDesignDocument(views, db);
-    }
+	public VendorRepository(DatabaseConnectorCloudant db) {
+		super(db, Vendor.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("all", createMapReduce(ALL, null));
+		views.put("vendorbyfullname", createMapReduce(BY_FULL_NAME, null));
+		initStandardDesignDocument(views, db);
+	}
 
-    public List<Vendor> searchByFullname(String fullname) {
-        List<Vendor> vendorsMatchingFullname =  new ArrayList<Vendor>(get(queryForIdsAsValue("vendorbyfullname", fullname)));
-        return vendorsMatchingFullname;
-    }
+	public List<Vendor> searchByFullname(String fullname) {
+		List<Vendor> vendorsMatchingFullname = new ArrayList<Vendor>(
+				get(queryForIdsAsValue("vendorbyfullname", fullname)));
+		return vendorsMatchingFullname;
+	}
 
-    public void fillVendor(Component component) {
-        if (component.isSetDefaultVendorId()) {
-            final String vendorId = component.getDefaultVendorId();
-            if (!isNullOrEmpty(vendorId)) {
-                final Vendor vendor = get(vendorId);
-                if (vendor != null)
-                    component.setDefaultVendor(vendor);
-            }
-        }
-    }
+	public void fillVendor(Component component) {
+		if (component.isSetDefaultVendorId()) {
+			final String vendorId = component.getDefaultVendorId();
+			if (!isNullOrEmpty(vendorId)) {
+				final Vendor vendor = get(vendorId);
+				if (vendor != null)
+					component.setDefaultVendor(vendor);
+			}
+		}
+	}
 
-    public void fillVendor(Project project) {
-        if (project.isSetVendorId()) {
-            final String vendorId = project.getVendorId();
-            if (!isNullOrEmpty(vendorId)) {
-                final Vendor vendor = get(vendorId);
-                if (vendor != null)
-                    project.setVendor(vendor);
-            }
-            project.unsetVendorId();
-        }
-    }
-    
-    public void fillVendor(Release release) {
-        if (release.isSetVendorId()) {
-            final String vendorId = release.getVendorId();
-            if (!isNullOrEmpty(vendorId)) {
-                final Vendor vendor = get(vendorId);
-                if (vendor != null)
-                    release.setVendor(vendor);
-            }
-            release.unsetVendorId();
-        }
-    }
+	public void fillVendor(Project project) {
+		if (project.isSetVendorId()) {
+			final String vendorId = project.getVendorId();
+			if (!isNullOrEmpty(vendorId)) {
+				final Vendor vendor = get(vendorId);
+				if (vendor != null)
+					project.setVendor(vendor);
+			}
+			project.unsetVendorId();
+		}
+	}
+
+	public void fillVendor(Release release) {
+		if (release.isSetVendorId()) {
+			final String vendorId = release.getVendorId();
+			if (!isNullOrEmpty(vendorId)) {
+				final Vendor vendor = get(vendorId);
+				if (vendor != null)
+					release.setVendor(vendor);
+			}
+			release.unsetVendorId();
+		}
+	}
 }

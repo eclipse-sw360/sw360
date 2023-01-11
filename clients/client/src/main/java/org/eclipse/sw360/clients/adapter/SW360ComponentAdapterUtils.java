@@ -20,42 +20,42 @@ import java.util.Collections;
 
 public class SW360ComponentAdapterUtils {
 
-    private SW360ComponentAdapterUtils() {
-    }
+	private SW360ComponentAdapterUtils() {
+	}
 
-    public static void setComponentType(SW360Component component, boolean isProprietary) {
-        if (isProprietary) {
-            component.setComponentType(SW360ComponentType.INTERNAL);
-        } else {
-            component.setComponentType(SW360ComponentType.OSS);
-        }
-    }
+	public static void setComponentType(SW360Component component, boolean isProprietary) {
+		if (isProprietary) {
+			component.setComponentType(SW360ComponentType.INTERNAL);
+		} else {
+			component.setComponentType(SW360ComponentType.OSS);
+		}
+	}
 
-    static SW360Component createFromRelease(SW360Release release) {
-        SW360Component sw360Component = new SW360Component();
-        sw360Component.setName(release.getName());
-        setComponentType(sw360Component, release.isProprietary());
-        sw360Component.setCategories(Collections.singleton("Antenna"));
-        sw360Component.setHomepage(release.getHomepageUrl());
-        return sw360Component;
-    }
+	static SW360Component createFromRelease(SW360Release release) {
+		SW360Component sw360Component = new SW360Component();
+		sw360Component.setName(release.getName());
+		setComponentType(sw360Component, release.isProprietary());
+		sw360Component.setCategories(Collections.singleton("Antenna"));
+		sw360Component.setHomepage(release.getHomepageUrl());
+		return sw360Component;
+	}
 
-    /**
-     * Validates the passed in component. Checks whether all mandatory fields
-     * are set. If the component is valid, it is returned without changes.
-     * Otherwise, an exception is thrown reporting the concrete validation
-     * failure.
-     *
-     * @param component the component to validate
-     * @return the validated component
-     */
-    static SW360Component validateComponent(SW360Component component) {
-        if (StringUtils.isEmpty(component.getName())) {
-            throw new IllegalArgumentException("Invalid component: missing property 'name'.");
-        }
-        if (component.getCategories() == null || component.getCategories().isEmpty()) {
-            throw new IllegalArgumentException("Invalid component: missing property 'categories'.");
-        }
-        return component;
-    }
+	/**
+	 * Validates the passed in component. Checks whether all mandatory fields are
+	 * set. If the component is valid, it is returned without changes. Otherwise, an
+	 * exception is thrown reporting the concrete validation failure.
+	 *
+	 * @param component
+	 *            the component to validate
+	 * @return the validated component
+	 */
+	static SW360Component validateComponent(SW360Component component) {
+		if (StringUtils.isEmpty(component.getName())) {
+			throw new IllegalArgumentException("Invalid component: missing property 'name'.");
+		}
+		if (component.getCategories() == null || component.getCategories().isEmpty()) {
+			throw new IllegalArgumentException("Invalid component: missing property 'categories'.");
+		}
+		return component;
+	}
 }

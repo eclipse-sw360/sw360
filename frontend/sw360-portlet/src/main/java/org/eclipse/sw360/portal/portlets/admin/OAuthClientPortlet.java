@@ -18,24 +18,14 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-@org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-        "/org/eclipse/sw360/portal/portlets/base.properties",
-        "/org/eclipse/sw360/portal/portlets/admin.properties"
-    },
-    property = {
-        "javax.portlet.name=" + OAUTH_CLIENT_PORTLET_NAME,
+@org.osgi.service.component.annotations.Component(immediate = true, properties = {
+		"/org/eclipse/sw360/portal/portlets/base.properties",
+		"/org/eclipse/sw360/portal/portlets/admin.properties"}, property = {
+				"javax.portlet.name=" + OAUTH_CLIENT_PORTLET_NAME,
 
-        "javax.portlet.display-name=OAuth Clients",
-        "javax.portlet.info.short-title=OAuth Clients",
-        "javax.portlet.info.title=OAuth Clients",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/admin/oauthclient/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+				"javax.portlet.display-name=OAuth Clients", "javax.portlet.info.short-title=OAuth Clients",
+				"javax.portlet.info.title=OAuth Clients", "javax.portlet.resource-bundle=content.Language",
+				"javax.portlet.init-param.view-template=/html/admin/oauthclient/view.jsp",}, service = Portlet.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class OAuthClientPortlet extends Sw360Portlet {
-    private static final Logger log = LogManager.getLogger(OAuthClientPortlet.class);
+	private static final Logger log = LogManager.getLogger(OAuthClientPortlet.class);
 }

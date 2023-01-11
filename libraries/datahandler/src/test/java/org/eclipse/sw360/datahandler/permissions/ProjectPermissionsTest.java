@@ -35,26 +35,29 @@ import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.*;
  */
 
 @RunWith(DataProviderRunner.class)
-public class ProjectPermissionsTest extends ScenarioTest<GivenProject, WhenComputePermissions, ThenHighestAllowedAction> {
+public class ProjectPermissionsTest
+		extends
+			ScenarioTest<GivenProject, WhenComputePermissions, ThenHighestAllowedAction> {
 
-    public static final List<RequestedAction> ALL_ACTIONS = ImmutableList.of(READ, WRITE, WRITE_ECC, ATTACHMENTS, DELETE, USERS, CLEARING);
-    public static final List<RequestedAction> ALL_ACTIONS_EXCEPT_ECC = ImmutableList.of(READ, WRITE, ATTACHMENTS, DELETE, USERS, CLEARING);
-    public static final List<RequestedAction> READ_ACTION = ImmutableList.of(READ);
-    public static final List<RequestedAction> PRIVILEGED_ACTIONS_EXCEPT_ECC = Arrays.asList(READ, WRITE, ATTACHMENTS);
-    public static String theUser = "user1";
-    public static String theOtherUser = "anotherUser";
-    public static final String theDept = "SOME DEPT";
-    public static final String theOtherDept = "OTH ER DEPT";
+	public static final List<RequestedAction> ALL_ACTIONS = ImmutableList.of(READ, WRITE, WRITE_ECC, ATTACHMENTS,
+			DELETE, USERS, CLEARING);
+	public static final List<RequestedAction> ALL_ACTIONS_EXCEPT_ECC = ImmutableList.of(READ, WRITE, ATTACHMENTS,
+			DELETE, USERS, CLEARING);
+	public static final List<RequestedAction> READ_ACTION = ImmutableList.of(READ);
+	public static final List<RequestedAction> PRIVILEGED_ACTIONS_EXCEPT_ECC = Arrays.asList(READ, WRITE, ATTACHMENTS);
+	public static String theUser = "user1";
+	public static String theOtherUser = "anotherUser";
+	public static final String theDept = "SOME DEPT";
+	public static final String theOtherDept = "OTH ER DEPT";
 
-
-    /**
-     * See
-     * org.eclipse.sw360.datahandler.permissions.DocumentPermissions.getAllAllowedActions()
-     * for relevant cases
-     */
-    @DataProvider
-    public static Object[][] highestAllowedActionProvider() {
-        // @formatter:off
+	/**
+	 * See
+	 * org.eclipse.sw360.datahandler.permissions.DocumentPermissions.getAllAllowedActions()
+	 * for relevant cases
+	 */
+	@DataProvider
+	public static Object[][] highestAllowedActionProvider() {
+		// @formatter:off
         return new Object[][] {
                 //own permissions checks
                 //very privileged
@@ -74,19 +77,22 @@ public class ProjectPermissionsTest extends ScenarioTest<GivenProject, WhenCompu
                 {GivenProject.ProjectRole.CREATED_BY, theUser, theOtherUser, ADMIN, theOtherDept, ALL_ACTIONS},
         };
         // @formatter:on
-    }
+	}
 
-    @Test
-    @UseDataProvider("highestAllowedActionProvider")
-    public void testHighestAllowedAction(GivenProject.ProjectRole role, String user, String requestingUser, UserGroup requestingUserGroup, String requestingUserDept, List<RequestedAction> allowedActions) throws Exception {
-        given().a_project_with_$_$(role,user).with_visibility_$_and_business_unit_$(Visibility.EVERYONE, theDept);
-        when().the_highest_allowed_action_is_computed_for_user_$_with_user_group_$_and_department_$(requestingUser, requestingUserGroup, requestingUserDept);
-        then().the_allowed_actions_should_be(allowedActions);
-    }
+	@Test
+	@UseDataProvider("highestAllowedActionProvider")
+	public void testHighestAllowedAction(GivenProject.ProjectRole role, String user, String requestingUser,
+			UserGroup requestingUserGroup, String requestingUserDept, List<RequestedAction> allowedActions)
+			throws Exception {
+		given().a_project_with_$_$(role, user).with_visibility_$_and_business_unit_$(Visibility.EVERYONE, theDept);
+		when().the_highest_allowed_action_is_computed_for_user_$_with_user_group_$_and_department_$(requestingUser,
+				requestingUserGroup, requestingUserDept);
+		then().the_allowed_actions_should_be(allowedActions);
+	}
 
-    @DataProvider
-    public static Object[][] highestAllowedActionForClosedProjectProvider() {
-        // @formatter:off
+	@DataProvider
+	public static Object[][] highestAllowedActionForClosedProjectProvider() {
+		// @formatter:off
         return new Object[][] {
                 //own permissions checks
                 //very privileged
@@ -106,13 +112,17 @@ public class ProjectPermissionsTest extends ScenarioTest<GivenProject, WhenCompu
                 {GivenProject.ProjectRole.CREATED_BY, theUser, theOtherUser, ADMIN, theOtherDept, ALL_ACTIONS},
         };
         // @formatter:on
-    }
+	}
 
-    @Test
-    @UseDataProvider("highestAllowedActionForClosedProjectProvider")
-    public void testHighestAllowedActionForClosedProject(GivenProject.ProjectRole role, String user, String requestingUser, UserGroup requestingUserGroup, String requestingUserDept, List<RequestedAction> allowedActions) throws Exception {
-        given().a_closed_project_with_$_$(role,user).with_visibility_$_and_business_unit_$(Visibility.EVERYONE, theDept);
-        when().the_highest_allowed_action_is_computed_for_user_$_with_user_group_$_and_department_$(requestingUser, requestingUserGroup, requestingUserDept);
-        then().the_allowed_actions_should_be(allowedActions);
-    }
+	@Test
+	@UseDataProvider("highestAllowedActionForClosedProjectProvider")
+	public void testHighestAllowedActionForClosedProject(GivenProject.ProjectRole role, String user,
+			String requestingUser, UserGroup requestingUserGroup, String requestingUserDept,
+			List<RequestedAction> allowedActions) throws Exception {
+		given().a_closed_project_with_$_$(role, user).with_visibility_$_and_business_unit_$(Visibility.EVERYONE,
+				theDept);
+		when().the_highest_allowed_action_is_computed_for_user_$_with_user_group_$_and_department_$(requestingUser,
+				requestingUserGroup, requestingUserDept);
+		then().the_allowed_actions_should_be(allowedActions);
+	}
 }

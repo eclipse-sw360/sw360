@@ -33,217 +33,89 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 public class DatabaseMixInForChangeLog {
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "id",
-        "revision",
-        "dbName",
-        "setChangeTimestamp",
-        "setChanges",
-        "setDbName",
-        "setDocumentId",
-        "setDocumentType",
-        "setId",
-        "setInfo",
-        "setOperation",
-        "setParentDocId",
-        "setReferenceDoc",
-        "setRevision",
-        "setType",
-        "setUserApproved",
-        "setUserEdited",
-        "type",
-        "referenceDocIterator",
-        "referenceDocSize",
-        "infoSize",
-        "changesSize",
-        "changesIterator"
-    })
-    public static abstract class ChangeLogsMixin extends ChangeLogs {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"id", "revision", "dbName", "setChangeTimestamp", "setChanges", "setDbName", "setDocumentId",
+			"setDocumentType", "setId", "setInfo", "setOperation", "setParentDocId", "setReferenceDoc", "setRevision",
+			"setType", "setUserApproved", "setUserEdited", "type", "referenceDocIterator", "referenceDocSize",
+			"infoSize", "changesSize", "changesIterator"})
+	public static abstract class ChangeLogsMixin extends ChangeLogs {
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "setFieldName",
-        "setFieldValueNew",
-        "setFieldValueOld"
-    })
-    public static abstract class ChangedFieldsMixin extends ChangedFields {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"setFieldName", "setFieldValueNew", "setFieldValueOld"})
+	public static abstract class ChangedFieldsMixin extends ChangedFields {
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "setRefDocOperation",
-        "setDbName",
-        "dbName",
-        "setRefDocId",
-        "setRefDocType"
-    })
-    public static abstract class ReferenceDocDataMixin extends ReferenceDocData {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"setRefDocOperation", "setDbName", "dbName", "setRefDocId", "setRefDocType"})
+	public static abstract class ReferenceDocDataMixin extends ReferenceDocData {
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "setCheckStatus",
-        "setUploadHistory",
-        "uploadHistoryIterator",
-        "uploadHistorySize",
-        "setCheckedOn",
-        "setCheckedComment",
-        "setCheckedTeam",
-        "setCheckedBy",
-        "setCreatedTeam",
-        "setSha1",
-        "setFilename",
-        "setCreatedComment",
-        "setAttachmentType",
-        "setCreatedBy",
-        "setCreatedOn",
-        "setAttachmentContentId",
-        "setUserEdited",
-        "type",
-        "referenceDocIterator",
-        "referenceDocSize",
-        "infoSize",
-        "changesSize",
-        "changesIterator"
-    })
-    public static abstract class AttachmentMixin extends Attachment {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"setCheckStatus", "setUploadHistory", "uploadHistoryIterator", "uploadHistorySize",
+			"setCheckedOn", "setCheckedComment", "setCheckedTeam", "setCheckedBy", "setCreatedTeam", "setSha1",
+			"setFilename", "setCreatedComment", "setAttachmentType", "setCreatedBy", "setCreatedOn",
+			"setAttachmentContentId", "setUserEdited", "type", "referenceDocIterator", "referenceDocSize", "infoSize",
+			"changesSize", "changesIterator"})
+	public static abstract class AttachmentMixin extends Attachment {
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "releasesSize",
-        "releasesIterator",
-        "setReleases",
-        "setStatus",
-        "setAction",
-        "setComment",
-        "setText",
-        "setModifiedBy",
-        "licenseIdsSize",
-        "licenseIdsIterator",
-        "setLicenseIds",
-        "setReleaseIdToAcceptedCLI",
-        "releaseIdToAcceptedCLISize",
-        "setModifiedOn",
-        "setObligationLevel",
-        "setObligationType",
-        "setId"
-    })
-    public static abstract class ObligationStatusInfoMixin extends ObligationStatusInfo {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"releasesSize", "releasesIterator", "setReleases", "setStatus", "setAction", "setComment",
+			"setText", "setModifiedBy", "licenseIdsSize", "licenseIdsIterator", "setLicenseIds",
+			"setReleaseIdToAcceptedCLI", "releaseIdToAcceptedCLISize", "setModifiedOn", "setObligationLevel",
+			"setObligationType", "setId"})
+	public static abstract class ObligationStatusInfoMixin extends ObligationStatusInfo {
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "setExternalSupplierID",
-        "setAdditionalRequestInfo",
-        "setEvaluated",
-        "setProcStart",
-        "setRequestID",
-        "setClearingTeam",
-        "setRequestorPerson",
-        "setBinariesOriginalFromCommunity",
-        "setBinariesSelfMade",
-        "setComponentLicenseInformation",
-        "setSourceCodeDelivery",
-        "setSourceCodeOriginalFromCommunity",
-        "setSourceCodeToolMade",
-        "setSourceCodeSelfMade",
-        "setSourceCodeCotsAvailable",
-        "setScreenshotOfWebSite",
-        "setFinalizedLicenseScanReport",
-        "setLicenseScanReportResult",
-        "setLegalEvaluation",
-        "setLicenseAgreement",
-        "setScanned",
-        "setComponentClearingReport",
-        "setClearingStandard",
-        "setReadmeOssAvailable",
-        "setCountOfSecurityVn",
-        "setExternalUrl",
-        "setComment"
-    })
-    public static abstract class ClearingInformationMixin extends ClearingInformation {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"setExternalSupplierID", "setAdditionalRequestInfo", "setEvaluated", "setProcStart",
+			"setRequestID", "setClearingTeam", "setRequestorPerson", "setBinariesOriginalFromCommunity",
+			"setBinariesSelfMade", "setComponentLicenseInformation", "setSourceCodeDelivery",
+			"setSourceCodeOriginalFromCommunity", "setSourceCodeToolMade", "setSourceCodeSelfMade",
+			"setSourceCodeCotsAvailable", "setScreenshotOfWebSite", "setFinalizedLicenseScanReport",
+			"setLicenseScanReportResult", "setLegalEvaluation", "setLicenseAgreement", "setScanned",
+			"setComponentClearingReport", "setClearingStandard", "setReadmeOssAvailable", "setCountOfSecurityVn",
+			"setExternalUrl", "setComment"})
+	public static abstract class ClearingInformationMixin extends ClearingInformation {
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "setUsedLicense",
-        "setLicenseClearingReportURL",
-        "setContainsOSS",
-        "setOssContractSigned",
-        "setOssInformationURL",
-        "setUsageRightAvailable",
-        "setCotsResponsible",
-        "setClearingDeadline",
-        "setSourceCodeAvailable"
-    })
-    public static abstract class COTSDetailsMixin extends COTSDetails {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"setUsedLicense", "setLicenseClearingReportURL", "setContainsOSS", "setOssContractSigned",
+			"setOssInformationURL", "setUsageRightAvailable", "setCotsResponsible", "setClearingDeadline",
+			"setSourceCodeAvailable"})
+	public static abstract class COTSDetailsMixin extends COTSDetails {
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "setAl",
-        "setEccStatus",
-        "setAssessorContactPerson",
-        "setAssessorDepartment",
-        "setEccComment",
-        "setMaterialIndexNumber",
-        "setAssessmentDate",
-        "setEccn"
-    })
-    public static abstract class EccInformationMixin extends EccInformation {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"setAl", "setEccStatus", "setAssessorContactPerson", "setAssessorDepartment",
+			"setEccComment", "setMaterialIndexNumber", "setAssessmentDate", "setEccn"})
+	public static abstract class EccInformationMixin extends EccInformation {
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "setFullname",
-        "setId",
-        "setRevision",
-        "setType",
-        "setUrl",
-        "setShortname",
-        "permissionsSize",
-        "setPermissions"
-    })
-    public static abstract class VendorMixin extends Vendor {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"setFullname", "setId", "setRevision", "setType", "setUrl", "setShortname",
+			"permissionsSize", "setPermissions"})
+	public static abstract class VendorMixin extends Vendor {
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "setUrl",
-        "setRepositorytype"
-    })
-    public static abstract class RepositoryMixin extends Repository {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"setUrl", "setRepositorytype"})
+	public static abstract class RepositoryMixin extends Repository {
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "setComment",
-        "setMainlineState",
-        "setReleaseRelation",
-        "setCreatedOn",
-        "setCreatedBy"
-    })
-    public static abstract class ProjectReleaseRelationshipMixin extends ProjectReleaseRelationship {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"setComment", "setMainlineState", "setReleaseRelation", "setCreatedOn", "setCreatedBy"})
+	public static abstract class ProjectReleaseRelationshipMixin extends ProjectReleaseRelationship {
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "setEnableSvm",
-        "setProjectRelationship"
-    })
-    public static abstract class ProjectProjectRelationshipMixin extends ProjectProjectRelationship {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"setEnableSvm", "setProjectRelationship"})
+	public static abstract class ProjectProjectRelationshipMixin extends ProjectProjectRelationship {
+	}
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonIgnoreProperties({
-        "node",
-        "distribution",
-        "development",
-        "obligationType"
-    })
-    public static abstract class ObligationMixin extends Obligation {
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonIgnoreProperties({"node", "distribution", "development", "obligationType"})
+	public static abstract class ObligationMixin extends Obligation {
+	}
 }

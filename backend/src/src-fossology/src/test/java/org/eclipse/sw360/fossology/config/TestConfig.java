@@ -21,9 +21,9 @@ import static org.mockito.Mockito.mock;
 @ComponentScan({"org.eclipse.sw360.fossology"})
 public class TestConfig {
 
-    @Bean
-    public ThriftClients thriftClients() {
-        return mock(ThriftClients.class);
-    }
+	@Bean
+	public ThriftClients thriftClients() {
+		return mock(ThriftClients.class);
+	}
 
 }

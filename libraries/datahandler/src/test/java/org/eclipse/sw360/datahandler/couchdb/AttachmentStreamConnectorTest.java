@@ -43,174 +43,170 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AttachmentStreamConnectorTest {
-    @Mock
-    public DatabaseConnectorCloudant connector;
-    @Mock
-    private AttachmentContentDownloader attachmentContentDownloader;
+	@Mock
+	public DatabaseConnectorCloudant connector;
+	@Mock
+	private AttachmentContentDownloader attachmentContentDownloader;
 
-    private User dummyUser = new User().setEmail("dummy@some.domain");
+	private User dummyUser = new User().setEmail("dummy@some.domain");
 
-    AttachmentStreamConnector attachmentStreamConnector;
+	AttachmentStreamConnector attachmentStreamConnector;
 
-    @Before
-    public void setUp() throws Exception {
-        attachmentStreamConnector = new AttachmentStreamConnector(connector, attachmentContentDownloader, durationOf(5, TimeUnit.SECONDS));
-    }
+	@Before
+	public void setUp() throws Exception {
+		attachmentStreamConnector = new AttachmentStreamConnector(connector, attachmentContentDownloader,
+				durationOf(5, TimeUnit.SECONDS));
+	}
 
-    @Test
-    public void testTryingToDownloadIfNotAvailable() throws Exception {
-        String id = "11";
-        String filename = "filename";
-        AttachmentContent attachment = mock(AttachmentContent.class);
-        when(attachment.isOnlyRemote()).thenReturn(true);
-        when(attachment.getId()).thenReturn(id);
-        when(attachment.getFilename()).thenReturn(filename);
+	@Test
+	public void testTryingToDownloadIfNotAvailable() throws Exception {
+		String id = "11";
+		String filename = "filename";
+		AttachmentContent attachment = mock(AttachmentContent.class);
+		when(attachment.isOnlyRemote()).thenReturn(true);
+		when(attachment.getId()).thenReturn(id);
+		when(attachment.getFilename()).thenReturn(filename);
 
-        InputStream downloadUrlStream = mock(InputStream.class);
-        InputStream returnedStream = mock(InputStream.class);
+		InputStream downloadUrlStream = mock(InputStream.class);
+		InputStream returnedStream = mock(InputStream.class);
 
-        AttachmentContent rereadAttachment = mock(AttachmentContent.class);
-        lenient().when(rereadAttachment.getId()).thenReturn(id);
-        lenient().when(rereadAttachment.getFilename()).thenReturn(filename);
+		AttachmentContent rereadAttachment = mock(AttachmentContent.class);
+		lenient().when(rereadAttachment.getId()).thenReturn(id);
+		lenient().when(rereadAttachment.getFilename()).thenReturn(filename);
 
-        attachmentStreamConnector = spy(attachmentStreamConnector);
-        doReturn(returnedStream).when(attachmentStreamConnector).readAttachmentStream(rereadAttachment);
-        lenient().doNothing().when(attachmentStreamConnector).uploadAttachmentPart(attachment, 1, downloadUrlStream);
+		attachmentStreamConnector = spy(attachmentStreamConnector);
+		doReturn(returnedStream).when(attachmentStreamConnector).readAttachmentStream(rereadAttachment);
+		lenient().doNothing().when(attachmentStreamConnector).uploadAttachmentPart(attachment, 1, downloadUrlStream);
 
-        when(attachmentContentDownloader.download(eq(attachment), ArgumentMatchers.any(Duration.class))).thenReturn(downloadUrlStream);
+		when(attachmentContentDownloader.download(eq(attachment), ArgumentMatchers.any(Duration.class)))
+				.thenReturn(downloadUrlStream);
 
-        when(connector.get(AttachmentContent.class, id)).thenReturn(rereadAttachment);
-        doReturn(rereadAttachment).when(rereadAttachment).setOnlyRemote(anyBoolean());
+		when(connector.get(AttachmentContent.class, id)).thenReturn(rereadAttachment);
+		doReturn(rereadAttachment).when(rereadAttachment).setOnlyRemote(anyBoolean());
 
-        assertThat(attachmentStreamConnector.getAttachmentStream(attachment, dummyUser,
-                     new Project()
-                             .setVisbility(Visibility.ME_AND_MODERATORS)
-                             .setCreatedBy(dummyUser.getEmail())
-                             .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(id)))),
-                sameInstance(returnedStream));
+		assertThat(
+				attachmentStreamConnector.getAttachmentStream(attachment, dummyUser,
+						new Project().setVisbility(Visibility.ME_AND_MODERATORS).setCreatedBy(dummyUser.getEmail())
+								.setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(id)))),
+				sameInstance(returnedStream));
 
-        verify(attachmentContentDownloader).download(eq(attachment), ArgumentMatchers.any(Duration.class));
-        verify(attachmentStreamConnector).uploadAttachment(attachment, downloadUrlStream);
-        verify(attachmentStreamConnector).readAttachmentStream(rereadAttachment);
+		verify(attachmentContentDownloader).download(eq(attachment), ArgumentMatchers.any(Duration.class));
+		verify(attachmentStreamConnector).uploadAttachment(attachment, downloadUrlStream);
+		verify(attachmentStreamConnector).readAttachmentStream(rereadAttachment);
 
-        verify(rereadAttachment).setOnlyRemote(false);
-        verify(connector).update(rereadAttachment);
-    }
+		verify(rereadAttachment).setOnlyRemote(false);
+		verify(connector).update(rereadAttachment);
+	}
 
-    @Test
-    public void testGetFullStream() throws Exception {
-        AttachmentContent attachment = mock(AttachmentContent.class);
-        when(attachment.isOnlyRemote()).thenReturn(false);
-        when(attachment.isSetPartsCount()).thenReturn(false);
+	@Test
+	public void testGetFullStream() throws Exception {
+		AttachmentContent attachment = mock(AttachmentContent.class);
+		when(attachment.isOnlyRemote()).thenReturn(false);
+		when(attachment.isSetPartsCount()).thenReturn(false);
 
-        when(attachment.getFilename()).thenReturn("fil");
+		when(attachment.getFilename()).thenReturn("fil");
 
-        String attachmentId = "id";
-        when(attachment.getId()).thenReturn(attachmentId);
+		String attachmentId = "id";
+		when(attachment.getId()).thenReturn(attachmentId);
 
-        AttachmentInputStream full = mock(AttachmentInputStream.class);
-        when(connector.getAttachment(attachmentId, "fil")).thenReturn(full);
+		AttachmentInputStream full = mock(AttachmentInputStream.class);
+		when(connector.getAttachment(attachmentId, "fil")).thenReturn(full);
 
-        when(full.read()).thenReturn(1, 2, -1);
-        InputStream attachmentStream = attachmentStreamConnector.getAttachmentStream(attachment, dummyUser,
-                new Project()
-                        .setVisbility(Visibility.ME_AND_MODERATORS)
-                        .setCreatedBy(dummyUser.getEmail())
-                        .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentId))));
+		when(full.read()).thenReturn(1, 2, -1);
+		InputStream attachmentStream = attachmentStreamConnector.getAttachmentStream(attachment, dummyUser,
+				new Project().setVisbility(Visibility.ME_AND_MODERATORS).setCreatedBy(dummyUser.getEmail())
+						.setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentId))));
 
-        assertThat(attachmentStream.read(), is(1));
-        assertThat(attachmentStream.read(), is(2));
-        assertThat(attachmentStream.read(), is(-1));
-    }
+		assertThat(attachmentStream.read(), is(1));
+		assertThat(attachmentStream.read(), is(2));
+		assertThat(attachmentStream.read(), is(-1));
+	}
 
-    @Test
-    public void testGetConcatenatedStream() throws Exception {
-        AttachmentContent attachment = mock(AttachmentContent.class);
-        when(attachment.isOnlyRemote()).thenReturn(false);
+	@Test
+	public void testGetConcatenatedStream() throws Exception {
+		AttachmentContent attachment = mock(AttachmentContent.class);
+		when(attachment.isOnlyRemote()).thenReturn(false);
 
-        when(attachment.isSetPartsCount()).thenReturn(true);
-        when(attachment.getPartsCount()).thenReturn("2");
+		when(attachment.isSetPartsCount()).thenReturn(true);
+		when(attachment.getPartsCount()).thenReturn("2");
 
-        when(attachment.getFilename()).thenReturn("fil");
+		when(attachment.getFilename()).thenReturn("fil");
 
-        String attachmentId = "id";
-        when(attachment.getId()).thenReturn(attachmentId);
+		String attachmentId = "id";
+		when(attachment.getId()).thenReturn(attachmentId);
 
-        AttachmentInputStream part1 = mock(AttachmentInputStream.class);
-        when(connector.getAttachment(attachmentId, "fil_part1")).thenReturn(part1);
+		AttachmentInputStream part1 = mock(AttachmentInputStream.class);
+		when(connector.getAttachment(attachmentId, "fil_part1")).thenReturn(part1);
 
-        AttachmentInputStream part2 = mock(AttachmentInputStream.class);
-        when(connector.getAttachment(attachmentId, "fil_part2")).thenReturn(part2);
+		AttachmentInputStream part2 = mock(AttachmentInputStream.class);
+		when(connector.getAttachment(attachmentId, "fil_part2")).thenReturn(part2);
 
-        when(part1.read()).thenReturn(1, -1);
-        when(part2.read()).thenReturn(2, -1);
-        InputStream attachmentStream = attachmentStreamConnector.getAttachmentStream(attachment, dummyUser,
-                new Project()
-                        .setVisbility(Visibility.ME_AND_MODERATORS)
-                        .setCreatedBy(dummyUser.getEmail())
-                        .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentId))));
+		when(part1.read()).thenReturn(1, -1);
+		when(part2.read()).thenReturn(2, -1);
+		InputStream attachmentStream = attachmentStreamConnector.getAttachmentStream(attachment, dummyUser,
+				new Project().setVisbility(Visibility.ME_AND_MODERATORS).setCreatedBy(dummyUser.getEmail())
+						.setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentId))));
 
-        verifyNoMoreInteractions(part2);
-        assertThat(attachmentStream.read(), is(1));
-        assertThat(attachmentStream.read(), is(2));
-        verify(part1).close();
-        assertThat(attachmentStream.read(), is(-1));
-        verify(part2).close();
-    }
+		verifyNoMoreInteractions(part2);
+		assertThat(attachmentStream.read(), is(1));
+		assertThat(attachmentStream.read(), is(2));
+		verify(part1).close();
+		assertThat(attachmentStream.read(), is(-1));
+		verify(part2).close();
+	}
 
-    @Test
-    public void testGetConcatenatedStreamReadThrowsOnNonExistent() throws Exception {
-        AttachmentContent attachment = mock(AttachmentContent.class);
-        when(attachment.isOnlyRemote()).thenReturn(false);
+	@Test
+	public void testGetConcatenatedStreamReadThrowsOnNonExistent() throws Exception {
+		AttachmentContent attachment = mock(AttachmentContent.class);
+		when(attachment.isOnlyRemote()).thenReturn(false);
 
-        when(attachment.isSetPartsCount()).thenReturn(true);
-        when(attachment.getPartsCount()).thenReturn("2");
+		when(attachment.isSetPartsCount()).thenReturn(true);
+		when(attachment.getPartsCount()).thenReturn("2");
 
-        when(attachment.getFilename()).thenReturn("fil");
+		when(attachment.getFilename()).thenReturn("fil");
 
-        String attachmentId = "id";
-        when(attachment.getId()).thenReturn(attachmentId);
+		String attachmentId = "id";
+		when(attachment.getId()).thenReturn(attachmentId);
 
-        AttachmentInputStream part1 = mock(AttachmentInputStream.class);
-        when(connector.getAttachment(attachmentId, "fil_part1")).thenReturn(part1);
+		AttachmentInputStream part1 = mock(AttachmentInputStream.class);
+		when(connector.getAttachment(attachmentId, "fil_part1")).thenReturn(part1);
 
-        when(connector.getAttachment(attachmentId, "fil_part2")).thenThrow(new NoDocumentException(""));
+		when(connector.getAttachment(attachmentId, "fil_part2")).thenThrow(new NoDocumentException(""));
 
-        when(part1.read()).thenReturn(1, -1);
-        InputStream attachmentStream = attachmentStreamConnector.getAttachmentStream(attachment, dummyUser,
-                new Project()
-                        .setVisbility(Visibility.ME_AND_MODERATORS)
-                        .setCreatedBy(dummyUser.getEmail())
-                        .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentId))));
+		when(part1.read()).thenReturn(1, -1);
+		InputStream attachmentStream = attachmentStreamConnector.getAttachmentStream(attachment, dummyUser,
+				new Project().setVisbility(Visibility.ME_AND_MODERATORS).setCreatedBy(dummyUser.getEmail())
+						.setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachmentId))));
 
-        assertThat(attachmentStream.read(), is(1));
+		assertThat(attachmentStream.read(), is(1));
 
-        try {
-            assertThat(attachmentStream.read(), is(2));
-            fail("expected Exception not thrown");
-        } catch (IOException ignored) {
+		try {
+			assertThat(attachmentStream.read(), is(2));
+			fail("expected Exception not thrown");
+		} catch (IOException ignored) {
 
-        }
+		}
 
-        verify(part1).close();
-    }
+		verify(part1).close();
+	}
 
-    @Test
-    public void testPrintAcceptedZipEntryName() {
-        assertThat(attachmentStreamConnector.printAcceptedZipEntryName("source.zip", 0), is("source (0).zip"));
-        assertThat(attachmentStreamConnector.printAcceptedZipEntryName("source.JPG", 2), is("source (2).JPG"));
-        assertThat(attachmentStreamConnector.printAcceptedZipEntryName("source..v1.001.tar.xz", 3), is("source..v1.001 (3).tar.xz"));
-        assertThat(attachmentStreamConnector.printAcceptedZipEntryName("source", 4), is("source (4)"));
-    }
+	@Test
+	public void testPrintAcceptedZipEntryName() {
+		assertThat(attachmentStreamConnector.printAcceptedZipEntryName("source.zip", 0), is("source (0).zip"));
+		assertThat(attachmentStreamConnector.printAcceptedZipEntryName("source.JPG", 2), is("source (2).JPG"));
+		assertThat(attachmentStreamConnector.printAcceptedZipEntryName("source..v1.001.tar.xz", 3),
+				is("source..v1.001 (3).tar.xz"));
+		assertThat(attachmentStreamConnector.printAcceptedZipEntryName("source", 4), is("source (4)"));
+	}
 
-    @Test
-    public void testGetDeduplicatedZipEntry() {
-        Map<String, Integer> fileNameUsageMap = new HashMap<>();
-        ZipEntry zipEntry =  attachmentStreamConnector.getDeduplicatedZipEntry("source.zip", fileNameUsageMap);
-        assertThat(zipEntry.getName(), is("source.zip"));
-        fileNameUsageMap.put("source.zip", 1);
-        ZipEntry zipEntry2 =  attachmentStreamConnector.getDeduplicatedZipEntry("source.zip", fileNameUsageMap);
-        assertThat(zipEntry2.getName(), is("source (1).zip"));
-    }
+	@Test
+	public void testGetDeduplicatedZipEntry() {
+		Map<String, Integer> fileNameUsageMap = new HashMap<>();
+		ZipEntry zipEntry = attachmentStreamConnector.getDeduplicatedZipEntry("source.zip", fileNameUsageMap);
+		assertThat(zipEntry.getName(), is("source.zip"));
+		fileNameUsageMap.put("source.zip", 1);
+		ZipEntry zipEntry2 = attachmentStreamConnector.getDeduplicatedZipEntry("source.zip", fileNameUsageMap);
+		assertThat(zipEntry2.getName(), is("source (1).zip"));
+	}
 
 }

@@ -27,52 +27,46 @@ import static org.eclipse.sw360.datahandler.thrift.vendors.Vendor._Fields.*;
  *
  * @author Johannes.Najjar@tngtech.com
  */
-public class VendorExporter  extends  ExcelExporter<Vendor, VendorExporter.VendorHelper>{
+public class VendorExporter extends ExcelExporter<Vendor, VendorExporter.VendorHelper> {
 
-    public static final List<Vendor._Fields> RENDERED_FIELDS = ImmutableList.<Vendor._Fields>builder()
-            .add(FULLNAME)
-            .add(SHORTNAME)
-            .add(URL)
-            .build();
+	public static final List<Vendor._Fields> RENDERED_FIELDS = ImmutableList.<Vendor._Fields>builder().add(FULLNAME)
+			.add(SHORTNAME).add(URL).build();
 
-    private static final List<String> HEADERS = ImmutableList.<String>builder()
-            .add("Vendor Fullname")
-            .add("Vendor Shortname")
-            .add("URL")
-            .build();
+	private static final List<String> HEADERS = ImmutableList.<String>builder().add("Vendor Fullname")
+			.add("Vendor Shortname").add("URL").build();
 
-    public VendorExporter() {
-        super(new VendorHelper());
-    }
+	public VendorExporter() {
+		super(new VendorHelper());
+	}
 
-    static class VendorHelper implements ExporterHelper<Vendor> {
+	static class VendorHelper implements ExporterHelper<Vendor> {
 
-        @Override
-        public int getColumns() {
-            return HEADERS.size();
-        }
+		@Override
+		public int getColumns() {
+			return HEADERS.size();
+		}
 
-        @Override
-        public List<String> getHeaders() {
-            return HEADERS;
-        }
+		@Override
+		public List<String> getHeaders() {
+			return HEADERS;
+		}
 
-        @Override
-        public SubTable makeRows(Vendor vendor) {
-            List<String> row = new ArrayList<>(getColumns());
+		@Override
+		public SubTable makeRows(Vendor vendor) {
+			List<String> row = new ArrayList<>(getColumns());
 
-            for (Vendor._Fields renderedField : RENDERED_FIELDS) {
-                Object fieldValue = vendor.getFieldValue(renderedField);
+			for (Vendor._Fields renderedField : RENDERED_FIELDS) {
+				Object fieldValue = vendor.getFieldValue(renderedField);
 
-                if (fieldValue instanceof TEnum) {
-                    row.add(nullToEmpty(ThriftEnumUtils.enumToString((TEnum) fieldValue)));
-                } else if (fieldValue instanceof String) {
-                    row.add(nullToEmpty((String) fieldValue));
-                } else {
-                    row.add("");
-                }
-            }
-            return new SubTable(row);
-        }
-    }
+				if (fieldValue instanceof TEnum) {
+					row.add(nullToEmpty(ThriftEnumUtils.enumToString((TEnum) fieldValue)));
+				} else if (fieldValue instanceof String) {
+					row.add(nullToEmpty((String) fieldValue));
+				} else {
+					row.add("");
+				}
+			}
+			return new SubTable(row);
+		}
+	}
 }

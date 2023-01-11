@@ -16,23 +16,23 @@ import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 
 public class ReleaseRelation {
-    private final String releaseId;
-    private final ReleaseRelationship releaseRelationship;
+	private final String releaseId;
+	private final ReleaseRelationship releaseRelationship;
 
-    public ReleaseRelation(String releaseId, ReleaseRelationship releaseRelationship) {
-        this.releaseId = releaseId;
-        this.releaseRelationship = releaseRelationship;
-    }
+	public ReleaseRelation(String releaseId, ReleaseRelationship releaseRelationship) {
+		this.releaseId = releaseId;
+		this.releaseRelationship = releaseRelationship;
+	}
 
-    public String getReleaseId() {
-        return releaseId;
-    }
+	public String getReleaseId() {
+		return releaseId;
+	}
 
-    public ReleaseRelationship getReleaseRelationship() {
-        return releaseRelationship;
-    }
+	public ReleaseRelationship getReleaseRelationship() {
+		return releaseRelationship;
+	}
 
-    public ProjectReleaseRelationship getProjectReleaseRelationship() {
-        return new ProjectReleaseRelationship(releaseRelationship, MainlineState.OPEN);
-    }
+	public ProjectReleaseRelationship getProjectReleaseRelationship() {
+		return new ProjectReleaseRelationship(releaseRelationship, MainlineState.OPEN);
+	}
 }

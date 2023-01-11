@@ -24,31 +24,31 @@ import java.util.Set;
 
 @JsonDeserialize(as = SW360AttachmentSetEmbedded.class)
 public class SW360AttachmentSetEmbedded implements Embedded {
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @JsonProperty("sw360:attachments")
-    private Set<SW360SparseAttachment> attachments;
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)
+	@JsonProperty("sw360:attachments")
+	private Set<SW360SparseAttachment> attachments;
 
-    public Set<SW360SparseAttachment> getAttachments() {
-        return Optional.ofNullable(attachments)
-                .map(HashSet::new)
-                .orElse(new HashSet<>());
-    }
+	public Set<SW360SparseAttachment> getAttachments() {
+		return Optional.ofNullable(attachments).map(HashSet::new).orElse(new HashSet<>());
+	}
 
-    public SW360AttachmentSetEmbedded setAttachments(Set<SW360SparseAttachment> attachments) {
-        this.attachments = attachments;
-        return this;
-    }
+	public SW360AttachmentSetEmbedded setAttachments(Set<SW360SparseAttachment> attachments) {
+		this.attachments = attachments;
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SW360AttachmentSetEmbedded that = (SW360AttachmentSetEmbedded) o;
-        return Objects.equals(attachments, that.attachments);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		SW360AttachmentSetEmbedded that = (SW360AttachmentSetEmbedded) o;
+		return Objects.equals(attachments, that.attachments);
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(attachments);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(attachments);
+	}
 }

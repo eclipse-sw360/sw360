@@ -24,25 +24,27 @@ import static org.eclipse.sw360.portal.users.UserCacheHolder.getUserFromEmail;
  * @author daniele.fognini@tngtech.com
  */
 public class JsonHelpers {
-    public static JSONObject getProjectResponsible(ThriftJsonSerializer thriftJsonSerializer, Project project) throws JSONException, IOException {
-        JSONObject responsible = JSONFactoryUtil.createJSONObject();
-        if (project.isSetProjectResponsible()) {
-            String projectResponsible = project.getProjectResponsible();
-            if (!isNullOrEmpty(projectResponsible)) {
-                User userFromEmail=null;
-                try {
-                    userFromEmail = getUserFromEmail(projectResponsible);
-                } catch(Exception ignored) {
-                }
-                if(userFromEmail!=null) {
-                    responsible = toJson(userFromEmail, thriftJsonSerializer);
-                }
-            }
-        }
-        return responsible;
-    }
+	public static JSONObject getProjectResponsible(ThriftJsonSerializer thriftJsonSerializer, Project project)
+			throws JSONException, IOException {
+		JSONObject responsible = JSONFactoryUtil.createJSONObject();
+		if (project.isSetProjectResponsible()) {
+			String projectResponsible = project.getProjectResponsible();
+			if (!isNullOrEmpty(projectResponsible)) {
+				User userFromEmail = null;
+				try {
+					userFromEmail = getUserFromEmail(projectResponsible);
+				} catch (Exception ignored) {
+				}
+				if (userFromEmail != null) {
+					responsible = toJson(userFromEmail, thriftJsonSerializer);
+				}
+			}
+		}
+		return responsible;
+	}
 
-    public static JSONObject toJson(Object thriftObject, ThriftJsonSerializer thriftJsonSerializer) throws JSONException, IOException {
-        return JSONFactoryUtil.createJSONObject(thriftJsonSerializer.toJson(thriftObject));
-    }
+	public static JSONObject toJson(Object thriftObject, ThriftJsonSerializer thriftJsonSerializer)
+			throws JSONException, IOException {
+		return JSONFactoryUtil.createJSONObject(thriftJsonSerializer.toJson(thriftObject));
+	}
 }

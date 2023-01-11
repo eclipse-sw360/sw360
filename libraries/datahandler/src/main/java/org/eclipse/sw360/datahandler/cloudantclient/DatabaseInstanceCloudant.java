@@ -19,29 +19,29 @@ import com.cloudant.client.api.Database;
  */
 public class DatabaseInstanceCloudant {
 
-    public DatabaseInstanceCloudant() {
-        DatabaseInstanceTrackerCloudant.track(this);
-    }
+	public DatabaseInstanceCloudant() {
+		DatabaseInstanceTrackerCloudant.track(this);
+	}
 
-    CloudantClient client = null;
+	CloudantClient client = null;
 
-    public DatabaseInstanceCloudant(Supplier<CloudantClient> client) {
-        this.client = client.get();
-    }
+	public DatabaseInstanceCloudant(Supplier<CloudantClient> client) {
+		this.client = client.get();
+	}
 
-    public Database createDB(String dbName) {
-        return checkIfDbExists(dbName) ? client.database(dbName, false) : client.database(dbName, true);
-    }
+	public Database createDB(String dbName) {
+		return checkIfDbExists(dbName) ? client.database(dbName, false) : client.database(dbName, true);
+	}
 
-    public boolean checkIfDbExists(String dbName) {
-        return client.getAllDbs().contains(dbName);
-    }
+	public boolean checkIfDbExists(String dbName) {
+		return client.getAllDbs().contains(dbName);
+	}
 
-    public void destroy() {
-        client.shutdown();
-    }
+	public void destroy() {
+		client.shutdown();
+	}
 
-    public void deleteDatabase(String dbName) {
-        client.deleteDB(dbName);
-    }
+	public void deleteDatabase(String dbName) {
+		client.deleteDB(dbName);
+	}
 }

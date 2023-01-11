@@ -25,21 +25,20 @@ import static org.mockito.Mockito.when;
 
 public class DisplayDownloadAbstractTest {
 
-    @Test
-    public void testThatAllAbstractMethodsAreCalled() throws Exception {
-        HttpServletRequest servletRequest = Mockito.mock(HttpServletRequest.class);
-        JspWriter jspWriter = Mockito.mock(JspWriter.class);
-        PageContext pageContext = Mockito.mock(PageContext.class);
-        when(pageContext.getOut()).thenReturn(jspWriter);
-        when(pageContext.getRequest()).thenReturn(servletRequest);
-        PortalClassLoaderUtil.setClassLoader(this.getClass().getClassLoader());
-        DisplayDownloadAbstract displayDownloadAbstractAttachment = Mockito
-                .spy(DisplayDownloadAbstract.class);
-        displayDownloadAbstractAttachment.setPageContext(pageContext);
-        displayDownloadAbstractAttachment.doStartTag();
+	@Test
+	public void testThatAllAbstractMethodsAreCalled() throws Exception {
+		HttpServletRequest servletRequest = Mockito.mock(HttpServletRequest.class);
+		JspWriter jspWriter = Mockito.mock(JspWriter.class);
+		PageContext pageContext = Mockito.mock(PageContext.class);
+		when(pageContext.getOut()).thenReturn(jspWriter);
+		when(pageContext.getRequest()).thenReturn(servletRequest);
+		PortalClassLoaderUtil.setClassLoader(this.getClass().getClassLoader());
+		DisplayDownloadAbstract displayDownloadAbstractAttachment = Mockito.spy(DisplayDownloadAbstract.class);
+		displayDownloadAbstractAttachment.setPageContext(pageContext);
+		displayDownloadAbstractAttachment.doStartTag();
 
-        verify(displayDownloadAbstractAttachment, times(1)).configureUrlWriter(any());
-        verify(displayDownloadAbstractAttachment, times(1)).getImage();
-        verify(displayDownloadAbstractAttachment, times(1)).getTitleText();
-    }
+		verify(displayDownloadAbstractAttachment, times(1)).configureUrlWriter(any());
+		verify(displayDownloadAbstractAttachment, times(1)).getImage();
+		verify(displayDownloadAbstractAttachment, times(1)).getTitleText();
+	}
 }

@@ -24,21 +24,24 @@ import java.io.IOException;
  */
 public class TestProjectClient {
 
-    public static void main(String[] args) throws TException, IOException {
-        THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/projects/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        ProjectService.Iface client = new ProjectService.Client(protocol);
+	public static void main(String[] args) throws TException, IOException {
+		THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/projects/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		ProjectService.Iface client = new ProjectService.Client(protocol);
 
-//        User cedric = new User().setEmail("cedric.bodet@tngtech.com").setDepartment("CT BE OSS TNG CB");
-//        Project myProject = new Project().setName("First project").setDescription("My first project");
-//        client.addProject(myProject, cedric);
+		// User cedric = new
+		// User().setEmail("cedric.bodet@tngtech.com").setDepartment("CT BE OSS TNG
+		// CB");
+		// Project myProject = new Project().setName("First project").setDescription("My
+		// first project");
+		// client.addProject(myProject, cedric);
 
-    //    List<Project> projects = client.getBUProjectsSummary("CT BE OSS");
+		// List<Project> projects = client.getBUProjectsSummary("CT BE OSS");
 
-//        System.out.println("Fetched " + projects.size() + " from project service");
-//        for (Project project : projects) {
-//            System.out.println(project.toString());
-//        }
-    }
+		// System.out.println("Fetched " + projects.size() + " from project service");
+		// for (Project project : projects) {
+		// System.out.println(project.toString());
+		// }
+	}
 
 }

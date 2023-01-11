@@ -20,17 +20,17 @@ import java.util.Properties;
  */
 public class SearchConstants {
 
-    public static final String PROPERTIES_FILE_PATH = "/search.properties";
-    public static final int NAME_MAX_LENGTH;
+	public static final String PROPERTIES_FILE_PATH = "/search.properties";
+	public static final int NAME_MAX_LENGTH;
 
-    static {
-        Properties props = CommonUtils.loadProperties(SearchConstants.class, PROPERTIES_FILE_PATH);
+	static {
+		Properties props = CommonUtils.loadProperties(SearchConstants.class, PROPERTIES_FILE_PATH);
 
-        NAME_MAX_LENGTH = Integer.parseInt(props.getProperty("search.name.max.length", "64"));
-    }
+		NAME_MAX_LENGTH = Integer.parseInt(props.getProperty("search.name.max.length", "64"));
+	}
 
-    private SearchConstants() {
-        // Utility class with only static functions
-    }
+	private SearchConstants() {
+		// Utility class with only static functions
+	}
 
 }

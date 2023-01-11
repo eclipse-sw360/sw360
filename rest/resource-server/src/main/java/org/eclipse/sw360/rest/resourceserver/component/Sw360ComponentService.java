@@ -47,117 +47,120 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.getSortedMap;
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ComponentService implements AwareOfRestServices<Component> {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
+	@Value("${sw360.thrift-server-url:http://localhost:8080}")
+	private String thriftServerUrl;
 
-    @NonNull
-    private final RestControllerHelper<Component> rch;
+	@NonNull
+	private final RestControllerHelper<Component> rch;
 
-    @NonNull
-    private final Sw360ProjectService projectService;
+	@NonNull
+	private final Sw360ProjectService projectService;
 
-    public List<Component> getComponentsForUser(User sw360User) throws TException {
-        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.getComponentSummary(sw360User);
-    }
+	public List<Component> getComponentsForUser(User sw360User) throws TException {
+		ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+		return sw360ComponentClient.getComponentSummary(sw360User);
+	}
 
-    public Release getReleaseById(String id, User sw360User) {
-        try {
-            ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-            Release release = sw360ComponentClient.getReleaseById(id, sw360User);
-            Map<String, String> sortedAdditionalData = getSortedMap(release.getAdditionalData(), true);
-            release.setAdditionalData(sortedAdditionalData);
-            return release;
-        } catch (TException e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public Release getReleaseById(String id, User sw360User) {
+		try {
+			ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+			Release release = sw360ComponentClient.getReleaseById(id, sw360User);
+			Map<String, String> sortedAdditionalData = getSortedMap(release.getAdditionalData(), true);
+			release.setAdditionalData(sortedAdditionalData);
+			return release;
+		} catch (TException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public Component getComponentForUserById(String componentId, User sw360User) throws TException {
-        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
-        Map<String, String> sortedAdditionalData = getSortedMap(component.getAdditionalData(), true);
-        component.setAdditionalData(sortedAdditionalData);
-        return component;
-    }
+	public Component getComponentForUserById(String componentId, User sw360User) throws TException {
+		ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+		Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
+		Map<String, String> sortedAdditionalData = getSortedMap(component.getAdditionalData(), true);
+		component.setAdditionalData(sortedAdditionalData);
+		return component;
+	}
 
-    public Set<Project> getProjectsByComponentId(String componentId, User sw360User) throws TException {
-        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
-        Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
+	public Set<Project> getProjectsByComponentId(String componentId, User sw360User) throws TException {
+		ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+		Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
+		Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
 
-        return projectService.getProjectsByReleaseIds(releaseIds, sw360User);
-    }
+		return projectService.getProjectsByReleaseIds(releaseIds, sw360User);
+	}
 
-    public Set<Component> getUsingComponentsForComponent(String componentId, User sw360User) throws TException {
-        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
-        Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
-        return sw360ComponentClient.getUsingComponentsForComponent(releaseIds);
-    }
+	public Set<Component> getUsingComponentsForComponent(String componentId, User sw360User) throws TException {
+		ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+		Component component = sw360ComponentClient.getComponentById(componentId, sw360User);
+		Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
+		return sw360ComponentClient.getUsingComponentsForComponent(releaseIds);
+	}
 
-    @Override
-    public Set<Component> searchByExternalIds(Map<String, Set<String>> externalIds, User user) throws TException {
-        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.searchComponentsByExternalIds(externalIds);
-    }
+	@Override
+	public Set<Component> searchByExternalIds(Map<String, Set<String>> externalIds, User user) throws TException {
+		ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+		return sw360ComponentClient.searchComponentsByExternalIds(externalIds);
+	}
 
-    @Override
-    public Component convertToEmbeddedWithExternalIds(Component sw360Object) {
-        return rch.convertToEmbeddedComponent(sw360Object).setExternalIds(sw360Object.getExternalIds());
-    }
+	@Override
+	public Component convertToEmbeddedWithExternalIds(Component sw360Object) {
+		return rch.convertToEmbeddedComponent(sw360Object).setExternalIds(sw360Object.getExternalIds());
+	}
 
-    public Component createComponent(Component component, User sw360User) throws TException {
-        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        AddDocumentRequestSummary documentRequestSummary = sw360ComponentClient.addComponent(component, sw360User);
-        if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
-            component.setId(documentRequestSummary.getId());
-            component.setCreatedBy(sw360User.getEmail());
-            Map<String, String> sortedAdditionalData = getSortedMap(component.getAdditionalData(), true);
-            component.setAdditionalData(sortedAdditionalData);
-            return component;
-        } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
-            throw new DataIntegrityViolationException("sw360 component with name '" + component.getName() + "' already exists.");
-        } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
-        } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException("Component name field cannot be empty or contain only whitespace character");
-        }
-        return null;
-    }
+	public Component createComponent(Component component, User sw360User) throws TException {
+		ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+		AddDocumentRequestSummary documentRequestSummary = sw360ComponentClient.addComponent(component, sw360User);
+		if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
+			component.setId(documentRequestSummary.getId());
+			component.setCreatedBy(sw360User.getEmail());
+			Map<String, String> sortedAdditionalData = getSortedMap(component.getAdditionalData(), true);
+			component.setAdditionalData(sortedAdditionalData);
+			return component;
+		} else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
+			throw new DataIntegrityViolationException(
+					"sw360 component with name '" + component.getName() + "' already exists.");
+		} else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
+			throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+		} else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
+			throw new HttpMessageNotReadableException(
+					"Component name field cannot be empty or contain only whitespace character");
+		}
+		return null;
+	}
 
-    public RequestStatus updateComponent(Component component, User sw360User) throws TException {
-        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        RequestStatus requestStatus = sw360ComponentClient.updateComponent(component, sw360User);
-        if (requestStatus == RequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
-        } else if (requestStatus == RequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException("Component name field cannot be empty or contain only whitespace character");
-        } else if (requestStatus != RequestStatus.SUCCESS && requestStatus != RequestStatus.SENT_TO_MODERATOR) {
-            throw new RuntimeException("sw360 component with name '" + component.getName() + " cannot be updated.");
-        }
-        return requestStatus;
-    }
+	public RequestStatus updateComponent(Component component, User sw360User) throws TException {
+		ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+		RequestStatus requestStatus = sw360ComponentClient.updateComponent(component, sw360User);
+		if (requestStatus == RequestStatus.INVALID_INPUT) {
+			throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+		} else if (requestStatus == RequestStatus.NAMINGERROR) {
+			throw new HttpMessageNotReadableException(
+					"Component name field cannot be empty or contain only whitespace character");
+		} else if (requestStatus != RequestStatus.SUCCESS && requestStatus != RequestStatus.SENT_TO_MODERATOR) {
+			throw new RuntimeException("sw360 component with name '" + component.getName() + " cannot be updated.");
+		}
+		return requestStatus;
+	}
 
-    public RequestStatus deleteComponent(String componentId, User sw360User) throws TException {
-        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.deleteComponent(componentId, sw360User);
-    }
+	public RequestStatus deleteComponent(String componentId, User sw360User) throws TException {
+		ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+		return sw360ComponentClient.deleteComponent(componentId, sw360User);
+	}
 
-    public List<Component> searchComponentByName(String name) throws TException {
-        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        return sw360ComponentClient.searchComponentForExport(name.toLowerCase(), false);
-    }
+	public List<Component> searchComponentByName(String name) throws TException {
+		ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+		return sw360ComponentClient.searchComponentForExport(name.toLowerCase(), false);
+	}
 
-    private ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/components/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new ComponentService.Client(protocol);
-    }
+	private ComponentService.Iface getThriftComponentClient() throws TTransportException {
+		THttpClient thriftClient = new THttpClient(thriftServerUrl + "/components/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		return new ComponentService.Client(protocol);
+	}
 
-    private ProjectService.Iface getThriftProjectClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/projects/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new ProjectService.Client(protocol);
-    }
+	private ProjectService.Iface getThriftProjectClient() throws TTransportException {
+		THttpClient thriftClient = new THttpClient(thriftServerUrl + "/projects/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		return new ProjectService.Client(protocol);
+	}
 }

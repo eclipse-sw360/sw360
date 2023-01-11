@@ -18,7 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
  * @author alex.borodin@evosoft.com
  */
 public class UserName extends OutTag {
-    public void setUser(User user) {
-        this.value = SW360Utils.printName(user);
-    }
+	public void setUser(User user) {
+		this.value = SW360Utils.printName(user);
+	}
 }

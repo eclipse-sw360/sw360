@@ -24,33 +24,36 @@ import java.io.IOException;
  * @author Andreas.Reichel@tngtech.com
  */
 public class Sw360ThriftServlet extends TServlet {
-    private static final Logger log = LogManager.getLogger(Sw360ThriftServlet.class);
+	private static final Logger log = LogManager.getLogger(Sw360ThriftServlet.class);
 
-    public Sw360ThriftServlet(TProcessor processor, TProtocolFactory protocolFactory) {
-        super(processor, protocolFactory);
-    }
+	public Sw360ThriftServlet(TProcessor processor, TProtocolFactory protocolFactory) {
+		super(processor, protocolFactory);
+	}
 
-    public Sw360ThriftServlet(TProcessor processor, TProtocolFactory inProtocolFactory, TProtocolFactory outProtocolFactory) {
-        super(processor, inProtocolFactory, outProtocolFactory);
-    }
+	public Sw360ThriftServlet(TProcessor processor, TProtocolFactory inProtocolFactory,
+			TProtocolFactory outProtocolFactory) {
+		super(processor, inProtocolFactory, outProtocolFactory);
+	}
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        try {
-            super.doPost(request, response);
-        } catch (Exception e) {
-            log.error("uncaught", e);
-            throw e;
-        }
-    }
+	@Override
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		try {
+			super.doPost(request, response);
+		} catch (Exception e) {
+			log.error("uncaught", e);
+			throw e;
+		}
+	}
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        try {
-            super.doGet(request, response);
-        } catch (Exception e) {
-            log.error("uncaught", e);
-            throw e;
-        }
-    }
+	@Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		try {
+			super.doGet(request, response);
+		} catch (Exception e) {
+			log.error("uncaught", e);
+			throw e;
+		}
+	}
 }

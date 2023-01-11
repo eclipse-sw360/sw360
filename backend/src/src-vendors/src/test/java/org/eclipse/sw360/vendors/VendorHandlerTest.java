@@ -28,100 +28,103 @@ import static org.junit.Assert.assertNotNull;
 
 public class VendorHandlerTest {
 
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
+	private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
 
-    private VendorHandler vendorHandler;
-    private List<Vendor> vendorList;
+	private VendorHandler vendorHandler;
+	private List<Vendor> vendorList;
 
-    @Before
-    public void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 
-        // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+		// Create the database
+		TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
-        // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
-        vendorList = new ArrayList<>();
-        vendorList.add(new Vendor().setShortname("Microsoft").setFullname("Microsoft Corporation").setUrl("http://www.microsoft.com"));
-        vendorList.add(new Vendor().setShortname("Apache").setFullname("The Apache Software Foundation").setUrl("http://www.apache.org"));
+		// Prepare the database
+		DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(),
+				dbName);
+		vendorList = new ArrayList<>();
+		vendorList.add(new Vendor().setShortname("Microsoft").setFullname("Microsoft Corporation")
+				.setUrl("http://www.microsoft.com"));
+		vendorList.add(new Vendor().setShortname("Apache").setFullname("The Apache Software Foundation")
+				.setUrl("http://www.apache.org"));
 
+		for (Vendor vendor : vendorList) {
+			databaseConnector.add(vendor);
+		}
 
-        for (Vendor vendor : vendorList) {
-            databaseConnector.add(vendor);
-        }
+		vendorHandler = new VendorHandler(DatabaseSettingsTest.getConfiguredClient(),
+				DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+	}
 
-        vendorHandler = new VendorHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
-    }
+	@After
+	public void tearDown() throws Exception {
+		// Delete the database
+		TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+	}
 
-    @After
-    public void tearDown() throws Exception {
-        // Delete the database
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-    }
+	@Test
+	public void testGetByID() throws Exception {
+		for (Vendor vendor : vendorList) {
+			String id = vendor.getId();
 
+			Vendor actualVendor = vendorHandler.getByID(id);
+			assertVendorEquals(vendor, actualVendor);
+		}
+	}
 
-    @Test
-    public void testGetByID() throws Exception {
-        for (Vendor vendor : vendorList) {
-            String id = vendor.getId();
+	@Test
+	public void testGetAllVendors() throws Exception {
+		List<Vendor> actualList = vendorHandler.getAllVendors();
+		assertEquals(vendorList.size(), actualList.size());
+	}
 
-            Vendor actualVendor = vendorHandler.getByID(id);
-            assertVendorEquals(vendor, actualVendor);
-        }
-    }
+	@Test
+	public void testAddVendor() throws Exception {
+		Vendor oracle = new Vendor().setShortname("Oracle").setFullname("Oracle Corporation Inc")
+				.setUrl("http://www.oracle.com");
+		AddDocumentRequestSummary summary = vendorHandler.addVendor(oracle);
+		assertNotNull(summary.getId());
+		assertEquals(vendorList.size() + 1, vendorHandler.getAllVendors().size());
 
-    @Test
-    public void testGetAllVendors() throws Exception {
-        List<Vendor> actualList = vendorHandler.getAllVendors();
-        assertEquals(vendorList.size(), actualList.size());
-    }
+		Vendor actual = vendorHandler.getByID(summary.getId());
 
-    @Test
-    public void testAddVendor() throws Exception {
-        Vendor oracle = new Vendor().setShortname("Oracle").setFullname("Oracle Corporation Inc").setUrl("http://www.oracle.com");
-        AddDocumentRequestSummary summary = vendorHandler.addVendor(oracle);
-        assertNotNull(summary.getId());
-        assertEquals(vendorList.size() + 1, vendorHandler.getAllVendors().size());
+		assertVendorEquals(oracle, actual);
+	}
 
-        Vendor actual = vendorHandler.getByID(summary.getId());
+	private static void assertVendorEquals(Vendor vendor, Vendor actualVendor) {
+		assertEquals(vendor.getShortname(), actualVendor.getShortname());
+		assertEquals(vendor.getFullname(), actualVendor.getFullname());
+		assertEquals(vendor.getUrl(), actualVendor.getUrl());
+		assertEquals(vendor.getId(), actualVendor.getId());
+	}
 
-        assertVendorEquals(oracle, actual);
-    }
+	@Test
+	@Ignore
+	public void testSearchVendors1() throws Exception {
+		List<Vendor> vendors = vendorHandler.searchVendors("foundation");
+		assertEquals(1, vendors.size());
+		assertEquals(vendorList.get(1), vendors.get(0));
+	}
 
-    private static void assertVendorEquals(Vendor vendor, Vendor actualVendor) {
-        assertEquals(vendor.getShortname(), actualVendor.getShortname());
-        assertEquals(vendor.getFullname(), actualVendor.getFullname());
-        assertEquals(vendor.getUrl(), actualVendor.getUrl());
-        assertEquals(vendor.getId(), actualVendor.getId());
-    }
+	@Test
+	@Ignore
+	public void testSearchVendors2() throws Exception {
+		List<Vendor> vendors = vendorHandler.searchVendors("http");
+		assertEquals(0, vendors.size());
+	}
 
-    @Test
-    @Ignore
-    public void testSearchVendors1() throws Exception {
-        List<Vendor> vendors = vendorHandler.searchVendors("foundation");
-        assertEquals(1, vendors.size());
-        assertEquals(vendorList.get(1), vendors.get(0));
-    }
+	@Test
+	@Ignore
+	public void testSearchVendors3() throws Exception {
+		List<Vendor> vendors = vendorHandler.searchVendors("soft");
+		assertEquals(1, vendors.size()); // Software but not Microsoft
+	}
 
-    @Test
-    @Ignore
-    public void testSearchVendors2() throws Exception {
-        List<Vendor> vendors = vendorHandler.searchVendors("http");
-        assertEquals(0, vendors.size());
-    }
-
-    @Test
-    @Ignore
-    public void testSearchVendors3() throws Exception {
-        List<Vendor> vendors = vendorHandler.searchVendors("soft");
-        assertEquals(1, vendors.size()); // Software but not Microsoft
-    }
-
-    @Test
-    @Ignore
-    public void testSearchVendors4() throws Exception {
-        List<Vendor> vendors = vendorHandler.searchVendors("m");
-        assertEquals(1, vendors.size());
-    }
+	@Test
+	@Ignore
+	public void testSearchVendors4() throws Exception {
+		List<Vendor> vendors = vendorHandler.searchVendors("m");
+		assertEquals(1, vendors.size());
+	}
 
 }

@@ -33,50 +33,43 @@ import org.eclipse.sw360.portal.portlets.moderation.ModerationPortletUtils;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-@org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-        "/org/eclipse/sw360/portal/portlets/base.properties",
-        "/org/eclipse/sw360/portal/portlets/user.properties"
-    },
-    property = {
-        "javax.portlet.name=" + MY_TASK_SUBMISSIONS_PORTLET_NAME,
-        "javax.portlet.display-name=My Task Submissions",
-        "javax.portlet.info.short-title=My Task Submissions",
-        "javax.portlet.info.title=My Task Submissions",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/homepage/mytasksubmissions/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+@org.osgi.service.component.annotations.Component(immediate = true, properties = {
+		"/org/eclipse/sw360/portal/portlets/base.properties",
+		"/org/eclipse/sw360/portal/portlets/user.properties"}, property = {
+				"javax.portlet.name=" + MY_TASK_SUBMISSIONS_PORTLET_NAME,
+				"javax.portlet.display-name=My Task Submissions", "javax.portlet.info.short-title=My Task Submissions",
+				"javax.portlet.info.title=My Task Submissions", "javax.portlet.resource-bundle=content.Language",
+				"javax.portlet.init-param.view-template=/html/homepage/mytasksubmissions/view.jsp",}, service = Portlet.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class MyTaskSubmissionsPortlet extends AbstractTasksPortlet {
-    public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
-        String action = request.getParameter(PortalConstants.ACTION);
+	public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+		String action = request.getParameter(PortalConstants.ACTION);
 
-        if (PortalConstants.DELETE_MODERATION_REQUEST.equals(action)) {
-            serveDeleteModerationRequest(request, response);
-        } else if (PortalConstants.LOAD_TASK_SUBMISSION_LIST.equals(action)) {
-            serveTaskList(request, response);
-        }
-    }
+		if (PortalConstants.DELETE_MODERATION_REQUEST.equals(action)) {
+			serveDeleteModerationRequest(request, response);
+		} else if (PortalConstants.LOAD_TASK_SUBMISSION_LIST.equals(action)) {
+			serveTaskList(request, response);
+		}
+	}
 
-    private void serveDeleteModerationRequest(ResourceRequest request, ResourceResponse response) throws IOException {
-        RequestStatus requestStatus = ModerationPortletUtils.deleteModerationRequest(request, log);
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-        serveRequestStatus(request, response, requestStatus, LanguageUtil.get(resourceBundle,"problem.removing.moderation.request"), log);
-    }
+	private void serveDeleteModerationRequest(ResourceRequest request, ResourceResponse response) throws IOException {
+		RequestStatus requestStatus = ModerationPortletUtils.deleteModerationRequest(request, log);
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+				getClass());
+		serveRequestStatus(request, response, requestStatus,
+				LanguageUtil.get(resourceBundle, "problem.removing.moderation.request"), log);
+	}
 
-    private void serveTaskList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
-        List<ModerationRequest> moderations = Lists.newArrayList();
+	private void serveTaskList(ResourceRequest request, ResourceResponse response)
+			throws IOException, PortletException {
+		List<ModerationRequest> moderations = Lists.newArrayList();
 
-        try {
-            final User user = UserCacheHolder.getUserFromRequest(request);
-            moderations = thriftClients.makeModerationClient().getRequestsByRequestingUser(user);
-        } catch (TException e) {
-            log.error("Could not fetch your moderations from backend", e);
-        }
+		try {
+			final User user = UserCacheHolder.getUserFromRequest(request);
+			moderations = thriftClients.makeModerationClient().getRequestsByRequestingUser(user);
+		} catch (TException e) {
+			log.error("Could not fetch your moderations from backend", e);
+		}
 
-        sendModerations(request, response, moderations);
-    }
+		sendModerations(request, response, moderations);
+	}
 }

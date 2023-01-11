@@ -16,26 +16,26 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 
 @Data
 public class AttachmentInfo {
-    private Attachment attachment;
-    private Source owner;
+	private Attachment attachment;
+	private Source owner;
 
-    public AttachmentInfo(Attachment attachment) {
-        this.attachment = attachment;
-    }
+	public AttachmentInfo(Attachment attachment) {
+		this.attachment = attachment;
+	}
 
-    public Attachment getAttachment() {
-        return attachment;
-    }
+	public Attachment getAttachment() {
+		return attachment;
+	}
 
-    public void setAttachment(Attachment attachment) {
-        this.attachment = attachment;
-    }
+	public void setAttachment(Attachment attachment) {
+		this.attachment = attachment;
+	}
 
-    public Source getOwner() {
-        return owner;
-    }
+	public Source getOwner() {
+		return owner;
+	}
 
-    public void setOwner(Source owner) {
-        this.owner = owner;
-    }
+	public void setOwner(Source owner) {
+		this.owner = owner;
+	}
 }

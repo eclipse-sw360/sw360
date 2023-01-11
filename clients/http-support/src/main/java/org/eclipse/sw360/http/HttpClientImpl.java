@@ -25,92 +25,101 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 class HttpClientImpl implements HttpClient {
-    private static final Logger LOG = LoggerFactory.getLogger(HttpClientImpl.class);
+	private static final Logger LOG = LoggerFactory.getLogger(HttpClientImpl.class);
 
-    /**
-     * The underlying HTTP client.
-     */
-    private final OkHttpClient client;
+	/**
+	 * The underlying HTTP client.
+	 */
+	private final OkHttpClient client;
 
-    /**
-     * The JSON object mapper.
-     */
-    private final ObjectMapper mapper;
+	/**
+	 * The JSON object mapper.
+	 */
+	private final ObjectMapper mapper;
 
-    /**
-     * Creates a new instance of {@code HttpClientImpl} with the dependencies
-     * passed in.
-     * @param client the underlying HTTP client
-     * @param mapper the JSON object mapper
-     */
-    public HttpClientImpl(OkHttpClient client, ObjectMapper mapper) {
-        this.client = client;
-        this.mapper = mapper;
-    }
+	/**
+	 * Creates a new instance of {@code HttpClientImpl} with the dependencies passed
+	 * in.
+	 * 
+	 * @param client
+	 *            the underlying HTTP client
+	 * @param mapper
+	 *            the JSON object mapper
+	 */
+	public HttpClientImpl(OkHttpClient client, ObjectMapper mapper) {
+		this.client = client;
+		this.mapper = mapper;
+	}
 
-    @Override
-    public <T> CompletableFuture<T> execute(Consumer<? super RequestBuilder> producer,
-                                            ResponseProcessor<? extends T> processor) {
-        RequestBuilderImpl builder = new RequestBuilderImpl(getMapper());
-        producer.accept(builder);
-        CompletableFuture<T> resultFuture = new CompletableFuture<>();
-        Request request = builder.build();
-        LOG.debug("HTTP request {} {}", request.method(), request.url());
-        getClient().newCall(request).enqueue(createCallback(processor, resultFuture));
-        return resultFuture;
-    }
+	@Override
+	public <T> CompletableFuture<T> execute(Consumer<? super RequestBuilder> producer,
+			ResponseProcessor<? extends T> processor) {
+		RequestBuilderImpl builder = new RequestBuilderImpl(getMapper());
+		producer.accept(builder);
+		CompletableFuture<T> resultFuture = new CompletableFuture<>();
+		Request request = builder.build();
+		LOG.debug("HTTP request {} {}", request.method(), request.url());
+		getClient().newCall(request).enqueue(createCallback(processor, resultFuture));
+		return resultFuture;
+	}
 
-    /**
-     * Returns a callback to be notified by the underlying HTTP client with the
-     * result of the asynchronous request execution. This callback is
-     * responsible of completing the result future either with the object
-     * created by the {@code ResponseProcessor} or with an exception.
-     *
-     * @param processor    the object to process the response
-     * @param resultFuture the result future
-     * @param <T>          the type of the result object
-     * @return the callback for asynchronous request execution
-     */
-    <T> Callback createCallback(ResponseProcessor<? extends T> processor, CompletableFuture<T> resultFuture) {
-        return new Callback() {
-            @Override
-            public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                resultFuture.completeExceptionally(e);
-                LOG.error("Failed HTTP request {} {}", call.request().method(), call.request().url(), e);
-            }
+	/**
+	 * Returns a callback to be notified by the underlying HTTP client with the
+	 * result of the asynchronous request execution. This callback is responsible of
+	 * completing the result future either with the object created by the
+	 * {@code ResponseProcessor} or with an exception.
+	 *
+	 * @param processor
+	 *            the object to process the response
+	 * @param resultFuture
+	 *            the result future
+	 * @param <T>
+	 *            the type of the result object
+	 * @return the callback for asynchronous request execution
+	 */
+	<T> Callback createCallback(ResponseProcessor<? extends T> processor, CompletableFuture<T> resultFuture) {
+		return new Callback() {
+			@Override
+			public void onFailure(@NotNull Call call, @NotNull IOException e) {
+				resultFuture.completeExceptionally(e);
+				LOG.error("Failed HTTP request {} {}", call.request().method(), call.request().url(), e);
+			}
 
-            @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) {
-                try {
-                    LOG.debug("HTTP response {} - {} {}", response.code(), response.request().method(),
-                            response.request().url());
-                    T result = processor.process(new ResponseImpl(response));
-                    resultFuture.complete(result);
-                } catch (Exception e) {
-                    // we really need to catch all exceptions here; otherwise, a client waiting for the
-                    // future to complete will wait forever
-                    resultFuture.completeExceptionally(e);
-                    LOG.error("Failed HTTP request {} {}", call.request().method(), call.request().url(), e);
-                } finally {
-                    response.close();
-                }
-            }
-        };
-    }
+			@Override
+			public void onResponse(@NotNull Call call, @NotNull Response response) {
+				try {
+					LOG.debug("HTTP response {} - {} {}", response.code(), response.request().method(),
+							response.request().url());
+					T result = processor.process(new ResponseImpl(response));
+					resultFuture.complete(result);
+				} catch (Exception e) {
+					// we really need to catch all exceptions here; otherwise, a client waiting for
+					// the
+					// future to complete will wait forever
+					resultFuture.completeExceptionally(e);
+					LOG.error("Failed HTTP request {} {}", call.request().method(), call.request().url(), e);
+				} finally {
+					response.close();
+				}
+			}
+		};
+	}
 
-    /**
-     * Returns a reference to the underlying {@code OkHttpClient}.
-     * @return the underlying client
-     */
-    OkHttpClient getClient() {
-        return client;
-    }
+	/**
+	 * Returns a reference to the underlying {@code OkHttpClient}.
+	 * 
+	 * @return the underlying client
+	 */
+	OkHttpClient getClient() {
+		return client;
+	}
 
-    /**
-     * Returns a reference to the JSON mapper used by this client.
-     * @return the JSON mapper
-     */
-    ObjectMapper getMapper() {
-        return mapper;
-    }
+	/**
+	 * Returns a reference to the JSON mapper used by this client.
+	 * 
+	 * @return the JSON mapper
+	 */
+	ObjectMapper getMapper() {
+		return mapper;
+	}
 }

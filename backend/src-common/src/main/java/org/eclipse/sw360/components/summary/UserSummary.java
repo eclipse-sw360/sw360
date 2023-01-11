@@ -13,12 +13,13 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 
 /**
  * Created by jn on 16.03.15.
- *  @author johannes.najjar@tngtech.com
+ * 
+ * @author johannes.najjar@tngtech.com
  */
 public class UserSummary extends DocumentSummary<User> {
 
-    @Override
-    protected User summary(SummaryType type, User user) {
-        return user;
-    }
+	@Override
+	protected User summary(SummaryType type, User user) {
+		return user;
+	}
 }

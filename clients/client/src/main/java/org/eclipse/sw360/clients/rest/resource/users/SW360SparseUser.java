@@ -17,32 +17,34 @@ import org.eclipse.sw360.clients.rest.resource.SW360SimpleHalResource;
 import java.util.Objects;
 
 public final class SW360SparseUser extends SW360SimpleHalResource {
-    private String email;
+	private String email;
 
-    public String getEmail() {
-        return this.email;
-    }
+	public String getEmail() {
+		return this.email;
+	}
 
-    public SW360SparseUser setEmail(String email) {
-        this.email = email;
-        return this;
-    }
+	public SW360SparseUser setEmail(String email) {
+		this.email = email;
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SW360SparseUser) || !super.equals(o)) return false;
-        SW360SparseUser that = (SW360SparseUser) o;
-        return Objects.equals(email, that.email);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (!(o instanceof SW360SparseUser) || !super.equals(o))
+			return false;
+		SW360SparseUser that = (SW360SparseUser) o;
+		return Objects.equals(email, that.email);
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), email);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(super.hashCode(), email);
+	}
 
-    @Override
-    public boolean canEqual(Object o) {
-        return o instanceof SW360SparseUser;
-    }
+	@Override
+	public boolean canEqual(Object o) {
+		return o instanceof SW360SparseUser;
+	}
 }

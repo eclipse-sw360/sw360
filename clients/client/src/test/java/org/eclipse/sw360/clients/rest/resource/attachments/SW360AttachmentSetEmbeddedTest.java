@@ -22,52 +22,50 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class SW360AttachmentSetEmbeddedTest {
 
+	private SW360SparseAttachment sparseAttachment;
 
-    private SW360SparseAttachment sparseAttachment;
+	@Before
+	public void setUp() {
+		sparseAttachment = new SW360SparseAttachment().setFilename("test")
+				.setAttachmentType(SW360AttachmentType.SOURCE);
+	}
 
-    @Before
-    public void setUp() {
-        sparseAttachment = new SW360SparseAttachment()
-                .setFilename("test")
-                .setAttachmentType(SW360AttachmentType.SOURCE);
-    }
+	@Test
+	public void testGetAttachmentsWithNoAttachments() {
+		SW360AttachmentSetEmbedded sw360AttachmentSetEmbedded = new SW360AttachmentSetEmbedded();
 
-    @Test
-    public void testGetAttachmentsWithNoAttachments() {
-        SW360AttachmentSetEmbedded sw360AttachmentSetEmbedded = new SW360AttachmentSetEmbedded();
+		final Set<SW360SparseAttachment> attachments = sw360AttachmentSetEmbedded.getAttachments();
+		Assertions.assertThat(attachments).isNotNull();
+		Assertions.assertThat(attachments).isEmpty();
+	}
 
-        final Set<SW360SparseAttachment> attachments = sw360AttachmentSetEmbedded.getAttachments();
-        Assertions.assertThat(attachments).isNotNull();
-        Assertions.assertThat(attachments).isEmpty();
-    }
+	@Test
+	public void testGetAttchmentsWithAttachments() {
+		SW360AttachmentSetEmbedded sw360AttachmentSetEmbedded = new SW360AttachmentSetEmbedded()
+				.setAttachments(Collections.singleton(sparseAttachment));
 
-    @Test
-    public void testGetAttchmentsWithAttachments() {
-        SW360AttachmentSetEmbedded sw360AttachmentSetEmbedded = new SW360AttachmentSetEmbedded()
-                .setAttachments(Collections.singleton(sparseAttachment));
+		final Set<SW360SparseAttachment> attachments = sw360AttachmentSetEmbedded.getAttachments();
+		Assertions.assertThat(attachments).containsExactly(sparseAttachment);
+	}
 
-        final Set<SW360SparseAttachment> attachments = sw360AttachmentSetEmbedded.getAttachments();
-        Assertions.assertThat(attachments).containsExactly(sparseAttachment);
-    }
+	@Test
+	public void testEqualsWithIdentical() {
+		SW360AttachmentSetEmbedded first = new SW360AttachmentSetEmbedded();
+		first.setAttachments(Collections.singleton(sparseAttachment));
 
-    @Test
-    public void testEqualsWithIdentical() {
-        SW360AttachmentSetEmbedded first = new SW360AttachmentSetEmbedded();
-        first.setAttachments(Collections.singleton(sparseAttachment));
+		SW360AttachmentSetEmbedded second = new SW360AttachmentSetEmbedded();
+		second.setAttachments(Collections.singleton(sparseAttachment));
 
-        SW360AttachmentSetEmbedded second = new SW360AttachmentSetEmbedded();
-        second.setAttachments(Collections.singleton(sparseAttachment));
+		assertThat(second.equals(first)).isTrue();
+	}
 
-        assertThat(second.equals(first)).isTrue();
-    }
+	@Test
+	public void testEqualsWithNonIdentical() {
+		SW360AttachmentSetEmbedded first = new SW360AttachmentSetEmbedded();
+		first.setAttachments(Collections.singleton(sparseAttachment));
 
-    @Test
-    public void testEqualsWithNonIdentical() {
-        SW360AttachmentSetEmbedded first = new SW360AttachmentSetEmbedded();
-        first.setAttachments(Collections.singleton(sparseAttachment));
+		SW360AttachmentSetEmbedded second = new SW360AttachmentSetEmbedded();
 
-        SW360AttachmentSetEmbedded second = new SW360AttachmentSetEmbedded();
-
-        assertThat(second.equals(first)).isFalse();
-    }
+		assertThat(second.equals(first)).isFalse();
+	}
 }

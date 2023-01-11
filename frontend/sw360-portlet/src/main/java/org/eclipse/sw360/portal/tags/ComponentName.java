@@ -20,7 +20,7 @@ import org.eclipse.sw360.portal.tags.OutTag;
  * @author thomas.maier@evosoft.com
  */
 public class ComponentName extends OutTag {
-    public void setComponent(Component component) {
-        this.value = SW360Utils.printName(component);
-    }
+	public void setComponent(Component component) {
+		this.value = SW360Utils.printName(component);
+	}
 }

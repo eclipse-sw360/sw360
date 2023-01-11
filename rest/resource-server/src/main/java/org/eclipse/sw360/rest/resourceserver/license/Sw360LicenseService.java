@@ -39,106 +39,108 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360LicenseService {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
+	@Value("${sw360.thrift-server-url:http://localhost:8080}")
+	private String thriftServerUrl;
 
-    public List<License> getLicenses() throws TException {
-        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        return sw360LicenseClient.getLicenseSummary();
-    }
+	public List<License> getLicenses() throws TException {
+		LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+		return sw360LicenseClient.getLicenseSummary();
+	}
 
-    public License getLicenseById(String licenseId) throws TException {
-        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        // TODO Kai Tödter 2017-01-26
-        // What is the semantics of the second parameter (organization)?
-        License license = null;
-        try {
-            license = sw360LicenseClient.getByID(licenseId, "?");
-        } catch (SW360Exception exp) {
-            if (exp.getErrorCode() == 404) {
-                throw new ResourceNotFoundException(exp.getWhy());
-            } else {
-                throw new RuntimeException(exp.getWhy());
-            }
-        }
-        return license;
-    }
+	public License getLicenseById(String licenseId) throws TException {
+		LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+		// TODO Kai Tödter 2017-01-26
+		// What is the semantics of the second parameter (organization)?
+		License license = null;
+		try {
+			license = sw360LicenseClient.getByID(licenseId, "?");
+		} catch (SW360Exception exp) {
+			if (exp.getErrorCode() == 404) {
+				throw new ResourceNotFoundException(exp.getWhy());
+			} else {
+				throw new RuntimeException(exp.getWhy());
+			}
+		}
+		return license;
+	}
 
-    public void deleteLicenseById(String licenseId, User user) throws TException {
-        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        RequestStatus deleteLicenseStatus = sw360LicenseClient.deleteLicense(licenseId, user);
+	public void deleteLicenseById(String licenseId, User user) throws TException {
+		LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+		RequestStatus deleteLicenseStatus = sw360LicenseClient.deleteLicense(licenseId, user);
 
-        if (deleteLicenseStatus == RequestStatus.IN_USE) {
-            throw new HttpMessageNotReadableException("Unable to delete license. License is in Use");
-        } else if (deleteLicenseStatus == RequestStatus.FAILURE) {
-            throw new RuntimeException("Unable to delete License");
-        }
-    }
+		if (deleteLicenseStatus == RequestStatus.IN_USE) {
+			throw new HttpMessageNotReadableException("Unable to delete license. License is in Use");
+		} else if (deleteLicenseStatus == RequestStatus.FAILURE) {
+			throw new RuntimeException("Unable to delete License");
+		}
+	}
 
-    public License createLicense(License license, User sw360User) throws TException {
-        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        license.setId(license.getShortname());
-        List<License> licenses = sw360LicenseClient.addLicenses(Collections.singletonList(license), sw360User);
-        for (License newLicense : licenses) {
-            if (license.getFullname().equals(newLicense.getFullname())) {
-                return newLicense;
-            }
-        }
-        return null;
-    }
+	public License createLicense(License license, User sw360User) throws TException {
+		LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+		license.setId(license.getShortname());
+		List<License> licenses = sw360LicenseClient.addLicenses(Collections.singletonList(license), sw360User);
+		for (License newLicense : licenses) {
+			if (license.getFullname().equals(newLicense.getFullname())) {
+				return newLicense;
+			}
+		}
+		return null;
+	}
 
-    public RequestStatus updateLicenseToDB(License license, Set<String> obligationIds, User sw360User) throws TException {
-        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        if (obligationIds.isEmpty()){
-            license.unsetObligations();
-        } else {
-            List<String> obligationIdList = new ArrayList<>(obligationIds);
-            List<Obligation> obligations = sw360LicenseClient.getObligationsByIds(obligationIdList);
-            checkObligationLevel(obligations, sw360User);
-            license.setObligationDatabaseIds(obligationIds);
-            license.setObligations(obligations);
-        }
-        return sw360LicenseClient.updateLicense(license, sw360User, sw360User);
-    }
+	public RequestStatus updateLicenseToDB(License license, Set<String> obligationIds, User sw360User)
+			throws TException {
+		LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+		if (obligationIds.isEmpty()) {
+			license.unsetObligations();
+		} else {
+			List<String> obligationIdList = new ArrayList<>(obligationIds);
+			List<Obligation> obligations = sw360LicenseClient.getObligationsByIds(obligationIdList);
+			checkObligationLevel(obligations, sw360User);
+			license.setObligationDatabaseIds(obligationIds);
+			license.setObligations(obligations);
+		}
+		return sw360LicenseClient.updateLicense(license, sw360User, sw360User);
+	}
 
-    public void checkObligationIds(Set<String> obligationIds) throws TException {
-        if (obligationIds.isEmpty()) {
-            throw new HttpMessageNotReadableException("Cannot update because no obliagtion id input");
-        }
-        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        ArrayList<String> obligationIdsIncorrect = new ArrayList<>();
-        for (String obligationId : obligationIds) {
-            if (isNullEmptyOrWhitespace(obligationId)) {
-                throw new HttpMessageNotReadableException("Obligation id cannot be empty");
-            }
-            try {
-                sw360LicenseClient.getObligationsById(obligationId);
-            } catch (Exception e) {
-                obligationIdsIncorrect.add(obligationId);
-            }
-        }
-        if (!obligationIdsIncorrect.isEmpty()) {
-            throw new HttpMessageNotReadableException("Obligation ids " + obligationIdsIncorrect + " incorrect");
-        }
-    }
+	public void checkObligationIds(Set<String> obligationIds) throws TException {
+		if (obligationIds.isEmpty()) {
+			throw new HttpMessageNotReadableException("Cannot update because no obliagtion id input");
+		}
+		LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+		ArrayList<String> obligationIdsIncorrect = new ArrayList<>();
+		for (String obligationId : obligationIds) {
+			if (isNullEmptyOrWhitespace(obligationId)) {
+				throw new HttpMessageNotReadableException("Obligation id cannot be empty");
+			}
+			try {
+				sw360LicenseClient.getObligationsById(obligationId);
+			} catch (Exception e) {
+				obligationIdsIncorrect.add(obligationId);
+			}
+		}
+		if (!obligationIdsIncorrect.isEmpty()) {
+			throw new HttpMessageNotReadableException("Obligation ids " + obligationIdsIncorrect + " incorrect");
+		}
+	}
 
-    public void checkObligationLevel(List<Obligation> obligations, User sw360User) {
-        List<String> obligationsLevelIncorrect = new ArrayList<>();
-        for (Obligation oblig : obligations) {
-            if (oblig.getObligationLevel().toString().equals("LICENSE_OBLIGATION")) {
-                oblig.addToWhitelist(sw360User.getDepartment());
-            } else {
-                obligationsLevelIncorrect.add(oblig.getId());
-            }
-        }
-        if (!obligationsLevelIncorrect.isEmpty()) {
-            throw new HttpMessageNotReadableException("Obligation with ids: " + obligationsLevelIncorrect + " level is not License Obligation");
-        }
-    }
+	public void checkObligationLevel(List<Obligation> obligations, User sw360User) {
+		List<String> obligationsLevelIncorrect = new ArrayList<>();
+		for (Obligation oblig : obligations) {
+			if (oblig.getObligationLevel().toString().equals("LICENSE_OBLIGATION")) {
+				oblig.addToWhitelist(sw360User.getDepartment());
+			} else {
+				obligationsLevelIncorrect.add(oblig.getId());
+			}
+		}
+		if (!obligationsLevelIncorrect.isEmpty()) {
+			throw new HttpMessageNotReadableException(
+					"Obligation with ids: " + obligationsLevelIncorrect + " level is not License Obligation");
+		}
+	}
 
-    private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenses/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new LicenseService.Client(protocol);
-    }
+	private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
+		THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenses/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		return new LicenseService.Client(protocol);
+	}
 }

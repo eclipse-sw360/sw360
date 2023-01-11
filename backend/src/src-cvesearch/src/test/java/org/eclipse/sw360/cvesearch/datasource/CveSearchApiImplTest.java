@@ -26,29 +26,29 @@ import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isU
 
 public class CveSearchApiImplTest extends TestWithCveSearchConnection {
 
-    private String VENDOR  = "zyxel";
-    private String PRODUCT = "zywall";
-    private String CPE     = "cpe:2.3:a:zyxel:zywall:1050";
-    private String CVE     = "CVE-2008-1160";
+	private String VENDOR = "zyxel";
+	private String PRODUCT = "zywall";
+	private String CPE = "cpe:2.3:a:zyxel:zywall:1050";
+	private String CVE = "CVE-2008-1160";
 
-    @Test
-    public void exactSearchTest() throws IOException {
-        List<CveSearchData> result;
-        result = cveSearchApi.search(VENDOR,PRODUCT);
-        assert(result != null);
-    }
+	@Test
+	public void exactSearchTest() throws IOException {
+		List<CveSearchData> result;
+		result = cveSearchApi.search(VENDOR, PRODUCT);
+		assert (result != null);
+	}
 
-    @Test
-    public void exactCveforTest() throws IOException {
-        List<CveSearchData> result;
-        result = cveSearchApi.cvefor(CPE);
-        assert(result != null);
-    }
+	@Test
+	public void exactCveforTest() throws IOException {
+		List<CveSearchData> result;
+		result = cveSearchApi.cvefor(CPE);
+		assert (result != null);
+	}
 
-    @Test
-    public void exactCveTest() throws IOException {
-        CveSearchData result;
-        result = cveSearchApi.cve(CVE);
-        assert(result != null);
-    }
+	@Test
+	public void exactCveTest() throws IOException {
+		CveSearchData result;
+		result = cveSearchApi.cve(CVE);
+		assert (result != null);
+	}
 }

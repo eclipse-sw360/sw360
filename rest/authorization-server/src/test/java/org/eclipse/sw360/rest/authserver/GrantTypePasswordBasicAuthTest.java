@@ -20,13 +20,13 @@ import java.io.IOException;
  */
 public class GrantTypePasswordBasicAuthTest extends GrantTypePasswordTestBase {
 
-    @Before
-    public void before() throws IOException {
-        String url = "http://localhost:" + String.valueOf(port) + "/oauth/token?grant_type=" + PARAMETER_GRANT_TYPE
-                + "&username=" + adminTestUser.email + "&password=password-not-checked-in-test-without-liferay";
+	@Before
+	public void before() throws IOException {
+		String url = "http://localhost:" + String.valueOf(port) + "/oauth/token?grant_type=" + PARAMETER_GRANT_TYPE
+				+ "&username=" + adminTestUser.email + "&password=password-not-checked-in-test-without-liferay";
 
-        responseEntity = new TestRestTemplate(testClient.getClientId(), testClient.getClientSecret()).postForEntity(url,
-                null, String.class);
-    }
+		responseEntity = new TestRestTemplate(testClient.getClientId(), testClient.getClientSecret()).postForEntity(url,
+				null, String.class);
+	}
 
 }

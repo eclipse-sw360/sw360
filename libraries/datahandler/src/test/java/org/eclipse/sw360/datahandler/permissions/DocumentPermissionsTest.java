@@ -28,9 +28,9 @@ import static org.hamcrest.core.Is.is;
 @RunWith(DataProviderRunner.class)
 public class DocumentPermissionsTest {
 
-    @DataProvider
-    public static Object[][] areActionsAllowedProvider() {
-        // @formatter:off
+	@DataProvider
+	public static Object[][] areActionsAllowedProvider() {
+		// @formatter:off
         return new Object[][] {
                 { null, Arrays.asList(false), true},
                 { Arrays.asList(), Arrays.asList(false), true},
@@ -42,66 +42,66 @@ public class DocumentPermissionsTest {
                 { Arrays.asList(RequestedAction.READ, RequestedAction.WRITE, RequestedAction.DELETE), Arrays.asList(false, true, true), false},
         };
         // @formatter:on
-    }
+	}
 
-    /**
-     * test uses knowledge about the implementation but at least I like it better
-     * that way than to write the same test for each implementing subclass with
-     * complex mock setups...
-     */
-    @Test
-    @UseDataProvider("areActionsAllowedProvider")
-    public void testAreActionsAllowed(List<RequestedAction> queriedPermissions, List<Boolean> singlePermissionResults,
-            boolean expected) {
-        // given
-        DocumentPermissions<Object> perm = new TestDocumentPermissions<>(singlePermissionResults);
+	/**
+	 * test uses knowledge about the implementation but at least I like it better
+	 * that way than to write the same test for each implementing subclass with
+	 * complex mock setups...
+	 */
+	@Test
+	@UseDataProvider("areActionsAllowedProvider")
+	public void testAreActionsAllowed(List<RequestedAction> queriedPermissions, List<Boolean> singlePermissionResults,
+			boolean expected) {
+		// given
+		DocumentPermissions<Object> perm = new TestDocumentPermissions<>(singlePermissionResults);
 
-        // when
-        boolean actual = perm.areActionsAllowed(queriedPermissions);
+		// when
+		boolean actual = perm.areActionsAllowed(queriedPermissions);
 
-        // then
-        assertThat(actual, is(expected));
-    }
+		// then
+		assertThat(actual, is(expected));
+	}
 
-    /**
-     * We use an internal subclass and not a mock so that we do not have to mock the
-     * unit under test (which we would have to do when we want to test an abstract
-     * class)
-     */
-    private class TestDocumentPermissions<T> extends DocumentPermissions<T> {
+	/**
+	 * We use an internal subclass and not a mock so that we do not have to mock the
+	 * unit under test (which we would have to do when we want to test an abstract
+	 * class)
+	 */
+	private class TestDocumentPermissions<T> extends DocumentPermissions<T> {
 
-        private List<Boolean> actionAllowedReturnValues;
-        private int actionAllowedCallCount;
+		private List<Boolean> actionAllowedReturnValues;
+		private int actionAllowedCallCount;
 
-        protected TestDocumentPermissions(List<Boolean> actionAllowedReturnValues) {
-            super(null, null);
+		protected TestDocumentPermissions(List<Boolean> actionAllowedReturnValues) {
+			super(null, null);
 
-            this.actionAllowedReturnValues = actionAllowedReturnValues;
-            this.actionAllowedCallCount = 0;
-        }
+			this.actionAllowedReturnValues = actionAllowedReturnValues;
+			this.actionAllowedCallCount = 0;
+		}
 
-        @Override
-        public boolean isActionAllowed(RequestedAction action) {
-            if (actionAllowedCallCount < actionAllowedReturnValues.size()) {
-                return actionAllowedReturnValues.get(actionAllowedCallCount++);
-            } else {
-                return actionAllowedReturnValues.get(actionAllowedReturnValues.size() - 1);
-            }
-        }
+		@Override
+		public boolean isActionAllowed(RequestedAction action) {
+			if (actionAllowedCallCount < actionAllowedReturnValues.size()) {
+				return actionAllowedReturnValues.get(actionAllowedCallCount++);
+			} else {
+				return actionAllowedReturnValues.get(actionAllowedReturnValues.size() - 1);
+			}
+		}
 
-        @Override
-        public void fillPermissions(T other, Map<RequestedAction, Boolean> permissions) {
-            throw new NotImplementedException("method not needed in test right now");
-        }
+		@Override
+		public void fillPermissions(T other, Map<RequestedAction, Boolean> permissions) {
+			throw new NotImplementedException("method not needed in test right now");
+		}
 
-        @Override
-        protected Set<String> getContributors() {
-            throw new NotImplementedException("method not needed in test right now");
-        }
+		@Override
+		protected Set<String> getContributors() {
+			throw new NotImplementedException("method not needed in test right now");
+		}
 
-        @Override
-        protected Set<String> getModerators() {
-            throw new NotImplementedException("method not needed in test right now");
-        }
-    }
+		@Override
+		protected Set<String> getModerators() {
+			throw new NotImplementedException("method not needed in test right now");
+		}
+	}
 }

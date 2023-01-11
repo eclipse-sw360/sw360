@@ -32,25 +32,26 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @Component
 public class JsonReleaseRelationSerializer extends JsonSerializer<Map<String, ProjectReleaseRelationship>> {
 
-    @Override
-    public void serialize(Map<String, ProjectReleaseRelationship> releaseRelationMap, JsonGenerator gen, SerializerProvider provider)
-            throws IOException {
+	@Override
+	public void serialize(Map<String, ProjectReleaseRelationship> releaseRelationMap, JsonGenerator gen,
+			SerializerProvider provider) throws IOException {
 
-        List<Map<String, String>> linkedReleases = new ArrayList<>();
-        for (Map.Entry<String, ProjectReleaseRelationship> releaseRelation : releaseRelationMap.entrySet()) {
-            String releaseLink = linkTo(ProjectController.class).slash("api" +
-                    ReleaseController.RELEASES_URL + "/" + releaseRelation.getKey()).withSelfRel().getHref();
+		List<Map<String, String>> linkedReleases = new ArrayList<>();
+		for (Map.Entry<String, ProjectReleaseRelationship> releaseRelation : releaseRelationMap.entrySet()) {
+			String releaseLink = linkTo(ProjectController.class)
+					.slash("api" + ReleaseController.RELEASES_URL + "/" + releaseRelation.getKey()).withSelfRel()
+					.getHref();
 
-            Map<String, String> linkedRelease = new HashMap<>();
-            ProjectReleaseRelationship projectReleaseRelationship = releaseRelation.getValue();
-            linkedRelease.put("relation", projectReleaseRelationship.getReleaseRelation().name());
-            linkedRelease.put("mainlineState", projectReleaseRelationship.getMainlineState().name());
-            linkedRelease.put("comment", CommonUtils.nullToEmptyString(projectReleaseRelationship.getComment()));
-            linkedRelease.put("createdBy", CommonUtils.nullToEmptyString(projectReleaseRelationship.getCreatedBy()));
-            linkedRelease.put("createdOn", CommonUtils.nullToEmptyString(projectReleaseRelationship.getCreatedOn()));
-            linkedRelease.put("release", releaseLink);
-            linkedReleases.add(linkedRelease);
-        }
-        gen.writeObject(linkedReleases);
-    }
+			Map<String, String> linkedRelease = new HashMap<>();
+			ProjectReleaseRelationship projectReleaseRelationship = releaseRelation.getValue();
+			linkedRelease.put("relation", projectReleaseRelationship.getReleaseRelation().name());
+			linkedRelease.put("mainlineState", projectReleaseRelationship.getMainlineState().name());
+			linkedRelease.put("comment", CommonUtils.nullToEmptyString(projectReleaseRelationship.getComment()));
+			linkedRelease.put("createdBy", CommonUtils.nullToEmptyString(projectReleaseRelationship.getCreatedBy()));
+			linkedRelease.put("createdOn", CommonUtils.nullToEmptyString(projectReleaseRelationship.getCreatedOn()));
+			linkedRelease.put("release", releaseLink);
+			linkedReleases.add(linkedRelease);
+		}
+		gen.writeObject(linkedReleases);
+	}
 }

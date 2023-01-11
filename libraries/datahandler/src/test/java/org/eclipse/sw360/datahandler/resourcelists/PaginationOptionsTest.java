@@ -20,16 +20,16 @@ import static org.junit.Assert.assertEquals;
 @RunWith(MockitoJUnitRunner.class)
 public class PaginationOptionsTest {
 
-    @Test
-    public void createPaginationOptionsFirstPage() {
-        PaginationOptions paginationOptions = new PaginationOptions(0, 10, null);
-        assertEquals(paginationOptions.getOffset(), 0);
-    }
+	@Test
+	public void createPaginationOptionsFirstPage() {
+		PaginationOptions paginationOptions = new PaginationOptions(0, 10, null);
+		assertEquals(paginationOptions.getOffset(), 0);
+	}
 
-    @Test
-    public void createPaginationOptionsSecondPage() {
-        PaginationOptions paginationOptions = new PaginationOptions(1, 10, null);
-        assertEquals(paginationOptions.getOffset(), 10);
-    }
+	@Test
+	public void createPaginationOptionsSecondPage() {
+		PaginationOptions paginationOptions = new PaginationOptions(1, 10, null);
+		assertEquals(paginationOptions.getOffset(), 10);
+	}
 
 }

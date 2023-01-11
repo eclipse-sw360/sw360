@@ -36,42 +36,42 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class LicenseInfoHandlerTest {
 
-    private LicenseInfoHandler handler;
+	private LicenseInfoHandler handler;
 
-    @Mock
-    private AttachmentDatabaseHandler attachmentDatabaseHandler;
+	@Mock
+	private AttachmentDatabaseHandler attachmentDatabaseHandler;
 
-    @Mock
-    private AttachmentConnector connector;
+	@Mock
+	private AttachmentConnector connector;
 
-    @Mock
-    private User user;
+	@Mock
+	private User user;
 
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
+	@Rule
+	public final ExpectedException exception = ExpectedException.none();
 
-    @Before
-    public void setUp() throws Exception {
-        when(attachmentDatabaseHandler.getAttachmentConnector()).thenReturn(connector);
-        handler = new LicenseInfoHandler(attachmentDatabaseHandler, null, null);
-    }
+	@Before
+	public void setUp() throws Exception {
+		when(attachmentDatabaseHandler.getAttachmentConnector()).thenReturn(connector);
+		handler = new LicenseInfoHandler(attachmentDatabaseHandler, null, null);
+	}
 
-    @Test(expected = IllegalStateException.class)
-    public void testThatAttachmentMustBePartOfTheRelease() throws TException {
-        Release release = Mockito.mock(Release.class);
-        handler.getLicenseInfoForAttachment(release, "123", true, user);
-    }
+	@Test(expected = IllegalStateException.class)
+	public void testThatAttachmentMustBePartOfTheRelease() throws TException {
+		Release release = Mockito.mock(Release.class);
+		handler.getLicenseInfoForAttachment(release, "123", true, user);
+	}
 
-    @Test
-    public void testThatEmptyLicensesAreFiltered() {
-        LicenseInfoParsingResult emptyResult = new LicenseInfoParsingResult();
+	@Test
+	public void testThatEmptyLicensesAreFiltered() {
+		LicenseInfoParsingResult emptyResult = new LicenseInfoParsingResult();
 
-        LicenseInfoParsingResult emptyLicenseInfo = new LicenseInfoParsingResult();
-        emptyLicenseInfo.setLicenseInfo(new LicenseInfo());
+		LicenseInfoParsingResult emptyLicenseInfo = new LicenseInfoParsingResult();
+		emptyLicenseInfo.setLicenseInfo(new LicenseInfo());
 
-        LicenseInfoParsingResult parsingResults = new LicenseInfoParsingResult();
-        LicenseInfo licenseInfo = new LicenseInfo();
-        // @formatter:off
+		LicenseInfoParsingResult parsingResults = new LicenseInfoParsingResult();
+		LicenseInfo licenseInfo = new LicenseInfo();
+		// @formatter:off
         licenseInfo.setLicenseNamesWithTexts(ImmutableSet.of(
                 createLicense("nameOnly", null, null),
                 createLicense(null, null, null),
@@ -82,11 +82,11 @@ public class LicenseInfoHandlerTest {
                 createLicense("name", "text", "ack")
         ));
         // @formatter:on
-        parsingResults.setLicenseInfo(licenseInfo);
+		parsingResults.setLicenseInfo(licenseInfo);
 
-        handler.filterEmptyLicenses(ImmutableList.of(emptyResult, emptyLicenseInfo, parsingResults));
+		handler.filterEmptyLicenses(ImmutableList.of(emptyResult, emptyLicenseInfo, parsingResults));
 
-        // @formatter:off
+		// @formatter:off
         Assert.assertThat(parsingResults.getLicenseInfo().getLicenseNamesWithTexts(), Matchers.containsInAnyOrder(
                 createLicense("nameOnly", null, null),
                 createLicense(null, "textOnly", null),
@@ -94,13 +94,13 @@ public class LicenseInfoHandlerTest {
                 createLicense("name", "text", "ack")
         ));
         // @formatter:on
-    }
+	}
 
-    @Test
-    public void testThatLicensesAreFilteredAndOriginalObejctIsNotTouched() {
-        LicenseInfoParsingResult parsingResults = new LicenseInfoParsingResult();
-        LicenseInfo licenseInfo = new LicenseInfo();
-        // @formatter:off
+	@Test
+	public void testThatLicensesAreFilteredAndOriginalObejctIsNotTouched() {
+		LicenseInfoParsingResult parsingResults = new LicenseInfoParsingResult();
+		LicenseInfo licenseInfo = new LicenseInfo();
+		// @formatter:off
         licenseInfo.setLicenseNamesWithTexts(ImmutableSet.of(
                 createLicense("l1", null, null),
                 createLicense("l1", "t1", null),
@@ -119,9 +119,9 @@ public class LicenseInfoHandlerTest {
                 createLicense(null, "t9", "a9")
         ));
         // @formatter:on
-        parsingResults.setLicenseInfo(licenseInfo);
+		parsingResults.setLicenseInfo(licenseInfo);
 
-        // @formatter:off
+		// @formatter:off
         LicenseInfoParsingResult filteredResult = handler.filterLicenses(parsingResults, ImmutableSet.of(
                 createLicense("l1", "t1", null),
                 createLicense("l3", "t3", "a3"),
@@ -133,7 +133,7 @@ public class LicenseInfoHandlerTest {
         ));
         // @formatter:on
 
-        // @formatter:off
+		// @formatter:off
         Assert.assertThat(filteredResult.getLicenseInfo().getLicenseNamesWithTexts(), Matchers.containsInAnyOrder(
                 createLicense("l1", null, null),
                 createLicense("l2", "t2", null),
@@ -145,13 +145,13 @@ public class LicenseInfoHandlerTest {
                 createLicense("l9", "t9", "a9")
         ));
         // @formatter:on
-    }
+	}
 
-    private LicenseNameWithText createLicense(String name, String text, String acknowledgements) {
-        LicenseNameWithText licenseNameWithText = new LicenseNameWithText();
-        licenseNameWithText.setLicenseName(name);
-        licenseNameWithText.setLicenseText(text);
-        licenseNameWithText.setAcknowledgements(acknowledgements);
-        return licenseNameWithText;
-    }
+	private LicenseNameWithText createLicense(String name, String text, String acknowledgements) {
+		LicenseNameWithText licenseNameWithText = new LicenseNameWithText();
+		licenseNameWithText.setLicenseName(name);
+		licenseNameWithText.setLicenseText(text);
+		licenseNameWithText.setAcknowledgements(acknowledgements);
+		return licenseNameWithText;
+	}
 }

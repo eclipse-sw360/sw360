@@ -26,7 +26,9 @@ import java.util.function.Consumer;
  * allows for a declarative approach when specifying the properties of requests
  * as shown in the following example:
  * </p>
- * <pre>{@code
+ * 
+ * <pre>
+ * {@code
  * httpClient.execute(builder -> builder.method(RequestBuilder.Method.POST)
  *                                 .uri(endpointUri())
  *                                 .body(body -> body.string(CONTENT, CONTENT_TEXT_PLAIN)),
@@ -44,21 +46,23 @@ import java.util.function.Consumer;
  * </p>
  */
 public interface HttpClient {
-    /**
-     * Executes an HTTP request asynchronously and returns a future object with
-     * the result. The method first invokes the {@code Consumer} to generate
-     * the request to be executed. This request is then sent to the
-     * server. If sending fails, e.g. because no connection could be
-     * established, the resulting future is failed with the corresponding
-     * exception. Otherwise, the {@code ResponseProcessor} is invoked with a
-     * representation of the response; the outcome of this object is then used
-     * to complete the result future.
-     *
-     * @param producer  the object to produce the request
-     * @param processor the object to process the response
-     * @param <T>       the type of the result produced by the {@code ResponseProcessor}
-     * @return a future with the result of the execution
-     */
-    <T> CompletableFuture<T> execute(Consumer<? super RequestBuilder> producer,
-                                     ResponseProcessor<? extends T> processor);
+	/**
+	 * Executes an HTTP request asynchronously and returns a future object with the
+	 * result. The method first invokes the {@code Consumer} to generate the request
+	 * to be executed. This request is then sent to the server. If sending fails,
+	 * e.g. because no connection could be established, the resulting future is
+	 * failed with the corresponding exception. Otherwise, the
+	 * {@code ResponseProcessor} is invoked with a representation of the response;
+	 * the outcome of this object is then used to complete the result future.
+	 *
+	 * @param producer
+	 *            the object to produce the request
+	 * @param processor
+	 *            the object to process the response
+	 * @param <T>
+	 *            the type of the result produced by the {@code ResponseProcessor}
+	 * @return a future with the result of the execution
+	 */
+	<T> CompletableFuture<T> execute(Consumer<? super RequestBuilder> producer,
+			ResponseProcessor<? extends T> processor);
 }

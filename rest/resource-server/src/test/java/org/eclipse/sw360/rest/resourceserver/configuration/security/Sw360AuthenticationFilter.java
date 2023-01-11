@@ -23,18 +23,19 @@ import java.io.IOException;
 @Primary
 public class Sw360AuthenticationFilter implements Filter {
 
-    @Override
-    public void init(FilterConfig filterConfig) {
-    }
+	@Override
+	public void init(FilterConfig filterConfig) {
+	}
 
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-        Authentication auth = new UsernamePasswordAuthenticationToken("admin@sw360.org", "sw360-password", null);
-        SecurityContextHolder.getContext().setAuthentication(auth);
-        filterChain.doFilter(request, response);
-    }
+	@Override
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain)
+			throws IOException, ServletException {
+		Authentication auth = new UsernamePasswordAuthenticationToken("admin@sw360.org", "sw360-password", null);
+		SecurityContextHolder.getContext().setAuthentication(auth);
+		filterChain.doFilter(request, response);
+	}
 
-    @Override
-    public void destroy() {
-    }
+	@Override
+	public void destroy() {
+	}
 }

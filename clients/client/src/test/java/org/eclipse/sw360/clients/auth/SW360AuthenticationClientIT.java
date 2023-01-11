@@ -37,105 +37,100 @@ import static org.eclipse.sw360.http.utils.HttpConstants.STATUS_ERR_SERVER;
 import static org.eclipse.sw360.http.utils.HttpConstants.STATUS_OK;
 
 public class SW360AuthenticationClientIT extends AbstractMockServerTest {
-    private static String ACCESS_TOKEN = "theSecretAccessToken";
-    private static String USER_TOKEN = "123token123";
+	private static String ACCESS_TOKEN = "theSecretAccessToken";
+	private static String USER_TOKEN = "123token123";
 
-    private SW360AuthenticationClient authenticationClient;
-    private SW360AuthenticationClient authenticationClientForUserToken;
+	private SW360AuthenticationClient authenticationClient;
+	private SW360AuthenticationClient authenticationClientForUserToken;
 
-    @Before
-    public void setUp() {
-        SW360ClientConfig clientConfig = createClientConfig();
-        authenticationClient = new SW360AuthenticationClient(clientConfig);
+	@Before
+	public void setUp() {
+		SW360ClientConfig clientConfig = createClientConfig();
+		authenticationClient = new SW360AuthenticationClient(clientConfig);
 
-        if (RUN_REST_INTEGRATION_TEST) {
-            ACCESS_TOKEN = OAUTH_TOKEN;
-            USER_TOKEN = OAUTH_TOKEN;
-            authenticationClientForUserToken = new SW360AuthenticationClient(clientConfig);
-        } else {
-            HttpClientFactory clientFactory = new HttpClientFactoryImpl();
-            HttpClientConfig httpClientConfig = HttpClientConfig.basicConfig();
-            HttpClient httpClient = clientFactory.newHttpClient(httpClientConfig);
-            authenticationClientForUserToken = new SW360AuthenticationClient(
-                    SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT), USER,
-                            PASSWORD, CLIENT_ID, CLIENT_PASSWORD, USER_TOKEN, httpClient, objectMapper));
-        }
-    }
+		if (RUN_REST_INTEGRATION_TEST) {
+			ACCESS_TOKEN = OAUTH_TOKEN;
+			USER_TOKEN = OAUTH_TOKEN;
+			authenticationClientForUserToken = new SW360AuthenticationClient(clientConfig);
+		} else {
+			HttpClientFactory clientFactory = new HttpClientFactoryImpl();
+			HttpClientConfig httpClientConfig = HttpClientConfig.basicConfig();
+			HttpClient httpClient = clientFactory.newHttpClient(httpClientConfig);
+			authenticationClientForUserToken = new SW360AuthenticationClient(
+					SW360ClientConfig.createConfig(wireMockRule.baseUrl(), wireMockRule.url(TOKEN_ENDPOINT), USER,
+							PASSWORD, CLIENT_ID, CLIENT_PASSWORD, USER_TOKEN, httpClient, objectMapper));
+		}
+	}
 
-    @Test
-    public void testGetOAuth2AccessToken() throws IOException {
-        wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
-                .withRequestBody(equalTo("grant_type=password&username=" + USER + "&password=" + PASSWORD))
-                .withHeader(HEADER_CONTENT_TYPE, containing(CONTENT_TYPE_FORM))
-                .withBasicAuth(CLIENT_ID, CLIENT_PASSWORD)
-                .willReturn(aJsonResponse(STATUS_OK)
-                        .withBody("{\"access_token\": \"" + ACCESS_TOKEN + "\"}")));
+	@Test
+	public void testGetOAuth2AccessToken() throws IOException {
+		wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
+				.withRequestBody(equalTo("grant_type=password&username=" + USER + "&password=" + PASSWORD))
+				.withHeader(HEADER_CONTENT_TYPE, containing(CONTENT_TYPE_FORM))
+				.withBasicAuth(CLIENT_ID, CLIENT_PASSWORD)
+				.willReturn(aJsonResponse(STATUS_OK).withBody("{\"access_token\": \"" + ACCESS_TOKEN + "\"}")));
 
-        String accessToken = HttpUtils.waitFor(authenticationClient.getOAuth2AccessToken());
-        assertThat(accessToken).isEqualTo(ACCESS_TOKEN);
-    }
+		String accessToken = HttpUtils.waitFor(authenticationClient.getOAuth2AccessToken());
+		assertThat(accessToken).isEqualTo(ACCESS_TOKEN);
+	}
 
-    @Test
-    public void testGetOAuth2UserToken() throws IOException {
-        wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
-                .withRequestBody(equalTo("grant_type=password&username=" + USER + "&password=" + PASSWORD))
-                .withHeader(HEADER_CONTENT_TYPE, containing(CONTENT_TYPE_FORM))
-                .withBasicAuth(CLIENT_ID, CLIENT_PASSWORD)
-                .willReturn(aJsonResponse(STATUS_OK)
-                        .withBody("{\"access_token\": \"" + USER_TOKEN + "\"}")));
+	@Test
+	public void testGetOAuth2UserToken() throws IOException {
+		wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
+				.withRequestBody(equalTo("grant_type=password&username=" + USER + "&password=" + PASSWORD))
+				.withHeader(HEADER_CONTENT_TYPE, containing(CONTENT_TYPE_FORM))
+				.withBasicAuth(CLIENT_ID, CLIENT_PASSWORD)
+				.willReturn(aJsonResponse(STATUS_OK).withBody("{\"access_token\": \"" + USER_TOKEN + "\"}")));
 
-        String accessToken = HttpUtils.waitFor(authenticationClientForUserToken.getOAuth2AccessToken());
-        assertThat(accessToken).isEqualTo(USER_TOKEN);
-    }
+		String accessToken = HttpUtils.waitFor(authenticationClientForUserToken.getOAuth2AccessToken());
+		assertThat(accessToken).isEqualTo(USER_TOKEN);
+	}
 
-    @Test
-    public void testGetOAuth2AccessTokenFailure() {
-        wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
-                .willReturn(aJsonResponse(STATUS_ERR_SERVER)));
-        CompletableFuture<String> futToken = null;
-        if (RUN_REST_INTEGRATION_TEST) {
-            futToken = CompletableFuture.supplyAsync(() -> {
-                throw new CompletionException(new FailedRequestException("get_access_token", STATUS_ERR_SERVER));
-            });
-        } else {
-            futToken = authenticationClient.getOAuth2AccessToken();
-        }
-        FailedRequestException exception = extractException(futToken, FailedRequestException.class);
-        assertThat(exception.getStatusCode()).isEqualTo(STATUS_ERR_SERVER);
-        assertThat(exception.getTag()).contains("get_access_token");
-    }
+	@Test
+	public void testGetOAuth2AccessTokenFailure() {
+		wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT)).willReturn(aJsonResponse(STATUS_ERR_SERVER)));
+		CompletableFuture<String> futToken = null;
+		if (RUN_REST_INTEGRATION_TEST) {
+			futToken = CompletableFuture.supplyAsync(() -> {
+				throw new CompletionException(new FailedRequestException("get_access_token", STATUS_ERR_SERVER));
+			});
+		} else {
+			futToken = authenticationClient.getOAuth2AccessToken();
+		}
+		FailedRequestException exception = extractException(futToken, FailedRequestException.class);
+		assertThat(exception.getStatusCode()).isEqualTo(STATUS_ERR_SERVER);
+		assertThat(exception.getTag()).contains("get_access_token");
+	}
 
-    @Test
-    public void testGetOAuth2AccessTokenUnexpectedResponse() {
-        wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
-                .willReturn(aJsonResponse(STATUS_OK)
-                        .withBody("{\"unknown_property\": \"" + ACCESS_TOKEN + "\"}")));
-        CompletableFuture<String> futToken = null;
-        if (RUN_REST_INTEGRATION_TEST) {
-            futToken = CompletableFuture.supplyAsync(() -> {
-                throw new CompletionException(new IOException("Json Format Error") {
-                });
-            });
-        } else {
-            futToken = authenticationClient.getOAuth2AccessToken();
-        }
-        extractException(futToken, IOException.class);
-    }
+	@Test
+	public void testGetOAuth2AccessTokenUnexpectedResponse() {
+		wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
+				.willReturn(aJsonResponse(STATUS_OK).withBody("{\"unknown_property\": \"" + ACCESS_TOKEN + "\"}")));
+		CompletableFuture<String> futToken = null;
+		if (RUN_REST_INTEGRATION_TEST) {
+			futToken = CompletableFuture.supplyAsync(() -> {
+				throw new CompletionException(new IOException("Json Format Error") {
+				});
+			});
+		} else {
+			futToken = authenticationClient.getOAuth2AccessToken();
+		}
+		extractException(futToken, IOException.class);
+	}
 
-    @Test
-    public void testGetOAuth2AccessTokenNoJsonResponse() {
-        wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT))
-                .willReturn(aJsonResponse(STATUS_OK)
-                        .withBody("This is no JSON")));
-        CompletableFuture<String> futToken = null;
-        if (RUN_REST_INTEGRATION_TEST) {
-            futToken = CompletableFuture.supplyAsync(() -> {
-                throw new CompletionException(new JsonProcessingException("Json Format Error") {
-                });
-            });
-        } else {
-            futToken = authenticationClient.getOAuth2AccessToken();
-        }
-        extractException(futToken, JsonProcessingException.class);
-    }
+	@Test
+	public void testGetOAuth2AccessTokenNoJsonResponse() {
+		wireMockRule.stubFor(
+				post(urlPathEqualTo(TOKEN_ENDPOINT)).willReturn(aJsonResponse(STATUS_OK).withBody("This is no JSON")));
+		CompletableFuture<String> futToken = null;
+		if (RUN_REST_INTEGRATION_TEST) {
+			futToken = CompletableFuture.supplyAsync(() -> {
+				throw new CompletionException(new JsonProcessingException("Json Format Error") {
+				});
+			});
+		} else {
+			futToken = authenticationClient.getOAuth2AccessToken();
+		}
+		extractException(futToken, JsonProcessingException.class);
+	}
 }

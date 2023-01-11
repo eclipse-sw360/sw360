@@ -26,45 +26,43 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 public class HealthHandlerTest {
-    public static final Set<String> DATABASES_TO_CHECK = ImmutableSet.of(
-            DatabaseSettingsTest.COUCH_DB_ATTACHMENTS,
-            DatabaseSettingsTest.COUCH_DB_DATABASE,
-            DatabaseSettingsTest.COUCH_DB_USERS);
-    @Test
-    public void testGetHealthFailsUponMissingDB() throws MalformedURLException {
-        TestUtils.deleteAllDatabases();
-        HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredHttpClient());
-        final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
-        assertEquals(Status.DOWN, health.status);
-        assertEquals(DATABASES_TO_CHECK.size(), health.getDetails().size());
-    }
+	public static final Set<String> DATABASES_TO_CHECK = ImmutableSet.of(DatabaseSettingsTest.COUCH_DB_ATTACHMENTS,
+			DatabaseSettingsTest.COUCH_DB_DATABASE, DatabaseSettingsTest.COUCH_DB_USERS);
+	@Test
+	public void testGetHealthFailsUponMissingDB() throws MalformedURLException {
+		TestUtils.deleteAllDatabases();
+		HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredHttpClient());
+		final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
+		assertEquals(Status.DOWN, health.status);
+		assertEquals(DATABASES_TO_CHECK.size(), health.getDetails().size());
+	}
 
-    @Test
-    public void testGetHealth() throws MalformedURLException {
-        for (String database : DATABASES_TO_CHECK) {
-            TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), database);
-        }
+	@Test
+	public void testGetHealth() throws MalformedURLException {
+		for (String database : DATABASES_TO_CHECK) {
+			TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), database);
+		}
 
-        HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredHttpClient());
-        final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
-        assertEquals(Status.UP, health.status);
-        assertEquals(new HashMap<>(), health.getDetails());
+		HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredHttpClient());
+		final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
+		assertEquals(Status.UP, health.status);
+		assertEquals(new HashMap<>(), health.getDetails());
 
-        for (String database : DATABASES_TO_CHECK) {
-            TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), database);
-        }
-    }
+		for (String database : DATABASES_TO_CHECK) {
+			TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), database);
+		}
+	}
 
-    @Test
-    public void testGetHealthWithPartialDBMissing() throws MalformedURLException {
-        final String couchDbDatabase = DatabaseSettingsTest.COUCH_DB_DATABASE;
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), couchDbDatabase);
+	@Test
+	public void testGetHealthWithPartialDBMissing() throws MalformedURLException {
+		final String couchDbDatabase = DatabaseSettingsTest.COUCH_DB_DATABASE;
+		TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), couchDbDatabase);
 
-        HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredHttpClient());
-        final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
-        assertEquals(Status.ERROR, health.getStatus());
-        assertEquals(DATABASES_TO_CHECK.size() -1, health.getDetails().size());
+		HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredHttpClient());
+		final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
+		assertEquals(Status.ERROR, health.getStatus());
+		assertEquals(DATABASES_TO_CHECK.size() - 1, health.getDetails().size());
 
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), couchDbDatabase);
-    }
+		TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), couchDbDatabase);
+	}
 }

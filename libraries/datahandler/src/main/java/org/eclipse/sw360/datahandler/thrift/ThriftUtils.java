@@ -48,119 +48,104 @@ import java.util.function.Function;
  * @author cedric.bodet@tngtech.com
  */
 public class ThriftUtils {
-    private static final Logger log = LogManager.getLogger(ThriftUtils.class);
+	private static final Logger log = LogManager.getLogger(ThriftUtils.class);
 
-    public static final List<Class<?>> THRIFT_CLASSES = ImmutableList.<Class<?>>builder()
-            .add(ConfigContainer.class) // general
-            .add(AttachmentContent.class) // Attachment service
-            .add(AttachmentUsage.class) // Attachment service
-            .add(Component.class).add(Release.class) // Component service
-            .add(License.class).add(Obligation.class)
-            .add(ObligationElement.class)
-            .add(ObligationNode.class)
-            .add(LicenseType.class) // License service
-            .add(CustomProperties.class) // License service
-            .add(Project.class).add(ObligationList.class).add(UsedReleaseRelations.class).add(ClearingRequest.class)  // Project service
-            .add(User.class) // User service
-            .add(Vendor.class) // Vendor service
-            .add(ModerationRequest.class) // Moderation service‚
-            .add(ExternalToolProcess.class, ExternalToolProcessStep.class) // external tools like Fossology service
-            .add(Vulnerability.class, ReleaseVulnerabilityRelation.class, ProjectVulnerabilityRating.class)
-            .add(ChangeLogs.class) // Changelog Service
-            .build();
+	public static final List<Class<?>> THRIFT_CLASSES = ImmutableList.<Class<?>>builder().add(ConfigContainer.class) // general
+			.add(AttachmentContent.class) // Attachment service
+			.add(AttachmentUsage.class) // Attachment service
+			.add(Component.class).add(Release.class) // Component service
+			.add(License.class).add(Obligation.class).add(ObligationElement.class).add(ObligationNode.class)
+			.add(LicenseType.class) // License service
+			.add(CustomProperties.class) // License service
+			.add(Project.class).add(ObligationList.class).add(UsedReleaseRelations.class).add(ClearingRequest.class) // Project
+																														// service
+			.add(User.class) // User service
+			.add(Vendor.class) // Vendor service
+			.add(ModerationRequest.class) // Moderation service‚
+			.add(ExternalToolProcess.class, ExternalToolProcessStep.class) // external tools like Fossology service
+			.add(Vulnerability.class, ReleaseVulnerabilityRelation.class, ProjectVulnerabilityRating.class)
+			.add(ChangeLogs.class) // Changelog Service
+			.build();
 
-    public static final List<Class<?>> THRIFT_NESTED_CLASSES = ImmutableList.<Class<?>>builder()
-            .add(Attachment.class) // Attachment service
-            .add(Source.class)
-            .add(UsageData.class)
-            .add(LicenseInfoUsage.class)
-            .add(SourcePackageUsage.class)
-            .add(ManuallySetUsage.class)
-            .add(Repository.class)
-            .add(ClearingInformation.class) // Component service
-            .add(CVEReference.class, VendorAdvisory.class, VulnerabilityCheckStatus.class) // Vulnerability Service
-            .add(VerificationStateInfo.class)
-            .build();
+	public static final List<Class<?>> THRIFT_NESTED_CLASSES = ImmutableList.<Class<?>>builder().add(Attachment.class) // Attachment
+																														// service
+			.add(Source.class).add(UsageData.class).add(LicenseInfoUsage.class).add(SourcePackageUsage.class)
+			.add(ManuallySetUsage.class).add(Repository.class).add(ClearingInformation.class) // Component service
+			.add(CVEReference.class, VendorAdvisory.class, VulnerabilityCheckStatus.class) // Vulnerability Service
+			.add(VerificationStateInfo.class).build();
 
-    public static final Map<Class<?>, JsonDeserializer<?>> CUSTOM_DESERIALIZER = ImmutableMap.of(
-            UsageData.class, new UsageDataDeserializer()
-    );
+	public static final Map<Class<?>, JsonDeserializer<?>> CUSTOM_DESERIALIZER = ImmutableMap.of(UsageData.class,
+			new UsageDataDeserializer());
 
-    private static final Map<Class<?>, Class<? extends DocumentWrapper<?>>> THRIFT_WRAPPED = ImmutableMap.of(
-            AttachmentContent.class, AttachmentContentWrapper.class
-    );
+	private static final Map<Class<?>, Class<? extends DocumentWrapper<?>>> THRIFT_WRAPPED = ImmutableMap
+			.of(AttachmentContent.class, AttachmentContentWrapper.class);
 
-    public static final ImmutableList<Component._Fields> IMMUTABLE_OF_COMPONENT = ImmutableList.of(
-            Component._Fields.CREATED_BY,
-            Component._Fields.CREATED_ON);
+	public static final ImmutableList<Component._Fields> IMMUTABLE_OF_COMPONENT = ImmutableList
+			.of(Component._Fields.CREATED_BY, Component._Fields.CREATED_ON);
 
-    public static final ImmutableList<Release._Fields> IMMUTABLE_OF_RELEASE = ImmutableList.of(
-            Release._Fields.CREATED_BY,
-            Release._Fields.CREATED_ON,
-            Release._Fields.EXTERNAL_TOOL_PROCESSES);
+	public static final ImmutableList<Release._Fields> IMMUTABLE_OF_RELEASE = ImmutableList
+			.of(Release._Fields.CREATED_BY, Release._Fields.CREATED_ON, Release._Fields.EXTERNAL_TOOL_PROCESSES);
 
+	public static final ImmutableList<Release._Fields> IMMUTABLE_OF_RELEASE_FOR_FOSSOLOGY = ImmutableList
+			.of(Release._Fields.CREATED_BY, Release._Fields.CREATED_ON);
 
-    public static final ImmutableList<Release._Fields> IMMUTABLE_OF_RELEASE_FOR_FOSSOLOGY = ImmutableList.of(
-            Release._Fields.CREATED_BY,
-            Release._Fields.CREATED_ON);
+	private ThriftUtils() {
+		// Utility class with only static functions
+	}
 
+	public static boolean isMapped(Class<?> clazz) {
+		return THRIFT_WRAPPED.containsKey(clazz);
+	}
 
-    private ThriftUtils() {
-        // Utility class with only static functions
-    }
+	public static Class<? extends DocumentWrapper<?>> getWrapperClass(Class<?> clazz) {
+		return THRIFT_WRAPPED.get(clazz);
+	}
 
-    public static boolean isMapped(Class<?> clazz) {
-        return THRIFT_WRAPPED.containsKey(clazz);
-    }
+	public static <T extends TBase<T, F>, F extends TFieldIdEnum> void copyField(T src, T dest, F field) {
+		if (src.isSet(field)) {
+			dest.setFieldValue(field, src.getFieldValue(field));
+		} else {
+			dest.setFieldValue(field, null);
+		}
+	}
 
-    public static Class<? extends DocumentWrapper<?>> getWrapperClass(Class<?> clazz) {
-        return THRIFT_WRAPPED.get(clazz);
-    }
+	public static <T extends TBase<T, F>, F extends TFieldIdEnum> void copyFields(T src, T dest, Iterable<F> fields) {
+		for (F field : fields) {
+			copyField(src, dest, field);
+		}
+	}
 
-    public static <T extends TBase<T, F>, F extends TFieldIdEnum> void copyField(T src, T dest, F field) {
-        if (src.isSet(field)) {
-            dest.setFieldValue(field, src.getFieldValue(field));
-        } else {
-            dest.setFieldValue(field, null);
-        }
-    }
+	public static <S extends TBase<S, FS>, FS extends TFieldIdEnum, D extends TBase<D, FD>, FD extends TFieldIdEnum> void copyField2(
+			S src, D dest, FS srcField, FD destField) {
+		if (src.isSet(srcField)) {
+			dest.setFieldValue(destField, src.getFieldValue(srcField));
+		} else {
+			dest.setFieldValue(destField, null);
+		}
+	}
 
+	public static <T> Map<String, T> getIdMap(Collection<T> in) {
+		return Maps.uniqueIndex(in, Documents::getId);
+	}
 
-    public static <T extends TBase<T, F>, F extends TFieldIdEnum> void copyFields(T src, T dest, Iterable<F> fields) {
-        for (F field : fields) {
-            copyField(src, dest, field);
-        }
-    }
+	public static <T extends TBase<T, F>, F extends TFieldIdEnum> Function<T, Object> extractField(final F field) {
+		return extractField(field, Object.class);
+	}
 
-    public static <S extends TBase<S, FS>, FS extends TFieldIdEnum, D extends TBase<D, FD>, FD extends TFieldIdEnum> void copyField2(S src, D dest, FS srcField, FD destField) {
-        if (src.isSet(srcField)) {
-            dest.setFieldValue(destField, src.getFieldValue(srcField));
-        } else {
-            dest.setFieldValue(destField, null);
-        }
-    }
-
-    public static <T> Map<String, T> getIdMap(Collection<T> in) {
-        return Maps.uniqueIndex(in, Documents::getId);
-    }
-
-    public static <T extends TBase<T, F>, F extends TFieldIdEnum> Function<T, Object> extractField(final F field) {
-        return extractField(field, Object.class);
-    }
-
-    public static <T extends TBase<T, F>, F extends TFieldIdEnum, R> Function<T, R> extractField(final F field, final Class<R> clazz) {
-        return input -> {
-            if (input.isSet(field)) {
-                Object fieldValue = input.getFieldValue(field);
-                if (clazz.isInstance(fieldValue)) {
-                    return clazz.cast(fieldValue);
-                } else {
-                    log.error("field {} of {} cannot be cast to {}", field, input, clazz.getSimpleName());
-                    return null;
-                }
-            } else {
-                return null;
-            }
-        };
-    }
+	public static <T extends TBase<T, F>, F extends TFieldIdEnum, R> Function<T, R> extractField(final F field,
+			final Class<R> clazz) {
+		return input -> {
+			if (input.isSet(field)) {
+				Object fieldValue = input.getFieldValue(field);
+				if (clazz.isInstance(fieldValue)) {
+					return clazz.cast(fieldValue);
+				} else {
+					log.error("field {} of {} cannot be cast to {}", field, input, clazz.getSimpleName());
+					return null;
+				}
+			} else {
+				return null;
+			}
+		};
+	}
 }

@@ -23,12 +23,12 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RequiredArgsConstructor
 class ReleaseResourceProcessor implements RepresentationModelProcessor<EntityModel<Release>> {
 
-    @Override
-    public EntityModel<Release> process(EntityModel<Release> resource) {
-        Release release = resource.getContent();
-        Link selfLink = linkTo(ReleaseController.class)
-                .slash("api" + ReleaseController.RELEASES_URL + "/" + release.getId()).withSelfRel();
-        resource.add(selfLink);
-        return resource;
-    }
+	@Override
+	public EntityModel<Release> process(EntityModel<Release> resource) {
+		Release release = resource.getContent();
+		Link selfLink = linkTo(ReleaseController.class)
+				.slash("api" + ReleaseController.RELEASES_URL + "/" + release.getId()).withSelfRel();
+		resource.add(selfLink);
+		return resource;
+	}
 }

@@ -16,23 +16,18 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ProjectSearchParamsTest {
-    @Test
-    public void testEquals() {
-        EqualsVerifier.forClass(ProjectSearchParams.class)
-                .verify();
-    }
+	@Test
+	public void testEquals() {
+		EqualsVerifier.forClass(ProjectSearchParams.class).verify();
+	}
 
-    @Test
-    public void testToString() {
-        ProjectSearchParams params = ProjectSearchParams.builder()
-                .withName("projectName")
-                .withType(SW360ProjectType.INNER_SOURCE)
-                .withTag("projectTag")
-                .withBusinessUnit("projectUnit")
-                .build();
-        String s = params.toString();
+	@Test
+	public void testToString() {
+		ProjectSearchParams params = ProjectSearchParams.builder().withName("projectName")
+				.withType(SW360ProjectType.INNER_SOURCE).withTag("projectTag").withBusinessUnit("projectUnit").build();
+		String s = params.toString();
 
-        assertThat(s).contains(params.getName(), params.getBusinessUnit(), params.getType().toString(),
-                params.getTag());
-    }
+		assertThat(s).contains(params.getName(), params.getBusinessUnit(), params.getType().toString(),
+				params.getTag());
+	}
 }

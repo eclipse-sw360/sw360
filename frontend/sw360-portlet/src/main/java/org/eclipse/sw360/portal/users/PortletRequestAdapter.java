@@ -21,28 +21,28 @@ import javax.portlet.PortletRequest;
 
 class PortletRequestAdapter implements RequestAdapter {
 
-    private PortletRequest request;
+	private PortletRequest request;
 
-    PortletRequestAdapter(PortletRequest request) {
-        this.request = request;
-    }
+	PortletRequestAdapter(PortletRequest request) {
+		this.request = request;
+	}
 
-    @Override
-    public long getCompanyId() {
-        return UserUtils.getCompanyId(request);
-    }
+	@Override
+	public long getCompanyId() {
+		return UserUtils.getCompanyId(request);
+	}
 
-    @Override
-    public Consumer<String> getErrorMessagesConsumer() {
-        return msg -> SessionErrors.add(request, msg);
-    }
+	@Override
+	public Consumer<String> getErrorMessagesConsumer() {
+		return msg -> SessionErrors.add(request, msg);
+	}
 
-    @Override
-    public Optional<ServiceContext> getServiceContext() {
-        try {
-            return Optional.of(ServiceContextFactory.getInstance(request));
-        } catch (PortalException e ) {
-            return Optional.empty();
-        }
-    }
+	@Override
+	public Optional<ServiceContext> getServiceContext() {
+		try {
+			return Optional.of(ServiceContextFactory.getInstance(request));
+		} catch (PortalException e) {
+			return Optional.empty();
+		}
+	}
 }

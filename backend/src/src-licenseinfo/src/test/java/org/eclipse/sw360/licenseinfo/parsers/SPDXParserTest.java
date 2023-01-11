@@ -52,22 +52,22 @@ import static org.junit.Assert.assertThat;
 @RunWith(DataProviderRunner.class)
 public class SPDXParserTest {
 
-    private User dummyUser = new User().setEmail("dummy@some.domain");
+	private User dummyUser = new User().setEmail("dummy@some.domain");
 
-    private SPDXParser parser;
+	private SPDXParser parser;
 
-    private AttachmentContentStore attachmentContentStore;
+	private AttachmentContentStore attachmentContentStore;
 
-    @Mock
-    private AttachmentConnector connector;
+	@Mock
+	private AttachmentConnector connector;
 
-    public static final String spdxExampleFile = "SPDXRdfExample-v2.0.rdf";
-    public static final String spdx11ExampleFile = "SPDXRdfExample-v1.1.rdf";
-    public static final String spdx12ExampleFile = "SPDXRdfExample-v1.2.rdf";
+	public static final String spdxExampleFile = "SPDXRdfExample-v2.0.rdf";
+	public static final String spdx11ExampleFile = "SPDXRdfExample-v1.1.rdf";
+	public static final String spdx12ExampleFile = "SPDXRdfExample-v1.2.rdf";
 
-    @DataProvider
-    public static Object[][] dataProviderAdd() {
-        // @formatter:off
+	@DataProvider
+	public static Object[][] dataProviderAdd() {
+		// @formatter:off
         return new Object[][] {
                 { spdxExampleFile,
                         Arrays.asList("Apache-2.0", "LGPL-2.0", "1", "GPL-2.0", "CyberNeko License", "2"),
@@ -86,86 +86,76 @@ public class SPDXParserTest {
                         Sets.newHashSet("1", "2", "3", "4", "Apache-1.0", "Apache-2.0", "MPL-1.1") },
         };
         // @formatter:on
-    }
+	}
 
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        attachmentContentStore = new AttachmentContentStore(connector);
+	@Before
+	public void setUp() throws Exception {
+		MockitoAnnotations.initMocks(this);
+		attachmentContentStore = new AttachmentContentStore(connector);
 
-        parser = new SPDXParser(connector, attachmentContentStore.getAttachmentContentProvider());
+		parser = new SPDXParser(connector, attachmentContentStore.getAttachmentContentProvider());
 
-        attachmentContentStore.put(spdxExampleFile);
-        attachmentContentStore.put(spdx11ExampleFile);
-        attachmentContentStore.put(spdx12ExampleFile);
-    }
+		attachmentContentStore.put(spdxExampleFile);
+		attachmentContentStore.put(spdx11ExampleFile);
+		attachmentContentStore.put(spdx12ExampleFile);
+	}
 
-    private void assertIsResultOfExample(LicenseInfo result, String exampleFile, List<String> expectedLicenses,
-            int numberOfCoyprights, String exampleCopyright, Set<String> exampleConcludedLicenseIds) {
-        assertLicenseInfo(result);
+	private void assertIsResultOfExample(LicenseInfo result, String exampleFile, List<String> expectedLicenses,
+			int numberOfCoyprights, String exampleCopyright, Set<String> exampleConcludedLicenseIds) {
+		assertLicenseInfo(result);
 
-        assertThat(result.getFilenames().size(), is(1));
-        assertThat(result.getFilenames().get(0), is(exampleFile));
+		assertThat(result.getFilenames().size(), is(1));
+		assertThat(result.getFilenames().get(0), is(exampleFile));
 
-        assertThat(result.getLicenseNamesWithTextsSize(), is(expectedLicenses.size()));
-        expectedLicenses.stream()
-                .forEach(licenseId -> assertThat(result.getLicenseNamesWithTexts().stream()
-                        .map(LicenseNameWithText::getLicenseName)
-                        .anyMatch(licenseId::equals), is(true)));
-        assertThat(result.getLicenseNamesWithTexts().stream()
-                        .map(lt -> lt.getLicenseText())
-                        .anyMatch(t -> t.contains("The CyberNeko Software License, Version 1.0")),
-                is(true));
+		assertThat(result.getLicenseNamesWithTextsSize(), is(expectedLicenses.size()));
+		expectedLicenses.stream().forEach(licenseId -> assertThat(result.getLicenseNamesWithTexts().stream()
+				.map(LicenseNameWithText::getLicenseName).anyMatch(licenseId::equals), is(true)));
+		assertThat(result.getLicenseNamesWithTexts().stream().map(lt -> lt.getLicenseText())
+				.anyMatch(t -> t.contains("The CyberNeko Software License, Version 1.0")), is(true));
 
-        assertThat(result.getCopyrightsSize(), is(numberOfCoyprights));
-        assertThat(result.getCopyrights().stream()
-                        .anyMatch(c -> c.contains(exampleCopyright)),
-                is(true));
+		assertThat(result.getCopyrightsSize(), is(numberOfCoyprights));
+		assertThat(result.getCopyrights().stream().anyMatch(c -> c.contains(exampleCopyright)), is(true));
 
-        assertThat(result.getConcludedLicenseIds(), containsInAnyOrder(exampleConcludedLicenseIds.toArray()));
-    }
+		assertThat(result.getConcludedLicenseIds(), containsInAnyOrder(exampleConcludedLicenseIds.toArray()));
+	}
 
-    @Test
-    @UseDataProvider("dataProviderAdd")
-    public void testAddSPDXContentToCLI(String exampleFile, List<String> expectedLicenses, int numberOfCoyprights,
-            String exampleCopyright, Set<String> exampleConcludedLicenseIds) throws Exception {
-        AttachmentContent attachmentContent = new AttachmentContent()
-                .setFilename(exampleFile);
+	@Test
+	@UseDataProvider("dataProviderAdd")
+	public void testAddSPDXContentToCLI(String exampleFile, List<String> expectedLicenses, int numberOfCoyprights,
+			String exampleCopyright, Set<String> exampleConcludedLicenseIds) throws Exception {
+		AttachmentContent attachmentContent = new AttachmentContent().setFilename(exampleFile);
 
-        InputStream input = makeAttachmentContentStream(exampleFile);
-        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-        dbFactory.setNamespaceAware(true);
-        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-        Document spdxDocument = dBuilder.parse(input);
-        spdxDocument.getDocumentElement().normalize();
+		InputStream input = makeAttachmentContentStream(exampleFile);
+		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		dbFactory.setNamespaceAware(true);
+		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+		Document spdxDocument = dBuilder.parse(input);
+		spdxDocument.getDocumentElement().normalize();
 
-        LicenseInfoParsingResult result = SPDXParserTools.getLicenseInfoFromSpdx(attachmentContent, true, false, spdxDocument);
-        assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
-                exampleCopyright, exampleConcludedLicenseIds);
-    }
+		LicenseInfoParsingResult result = SPDXParserTools.getLicenseInfoFromSpdx(attachmentContent, true, false,
+				spdxDocument);
+		assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
+				exampleCopyright, exampleConcludedLicenseIds);
+	}
 
-    @Test
-    @UseDataProvider("dataProviderAdd")
-    public void testGetLicenseInfo(String exampleFile, List<String> expectedLicenses, int numberOfCoyprights,
-            String exampleCopyright, Set<String> exampleConcludedLicenseIds) throws Exception {
+	@Test
+	@UseDataProvider("dataProviderAdd")
+	public void testGetLicenseInfo(String exampleFile, List<String> expectedLicenses, int numberOfCoyprights,
+			String exampleCopyright, Set<String> exampleConcludedLicenseIds) throws Exception {
 
-        Attachment attachment = makeAttachment(exampleFile,
-                Arrays.stream(AttachmentType.values())
-                        .filter(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES::contains)
-                        .findAny()
-                        .get());
+		Attachment attachment = makeAttachment(exampleFile, Arrays.stream(AttachmentType.values())
+				.filter(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES::contains).findAny().get());
 
-        LicenseInfoParsingResult result = parser.getLicenseInfos(attachment, dummyUser,
-                                            new Project()
-                                                    .setVisbility(Visibility.ME_AND_MODERATORS)
-                                                    .setCreatedBy(dummyUser.getEmail())
-                                                    .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachment.getAttachmentContentId()))))
-                .stream()
-                .findFirst()
-                .orElseThrow(()->new RuntimeException("Parser returned empty LisenceInfoParsingResult list"));
+		LicenseInfoParsingResult result = parser
+				.getLicenseInfos(attachment, dummyUser,
+						new Project().setVisbility(Visibility.ME_AND_MODERATORS).setCreatedBy(dummyUser.getEmail())
+								.setAttachments(Collections.singleton(
+										new Attachment().setAttachmentContentId(attachment.getAttachmentContentId()))))
+				.stream().findFirst()
+				.orElseThrow(() -> new RuntimeException("Parser returned empty LisenceInfoParsingResult list"));
 
-        assertLicenseInfoParsingResult(result);
-        assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
-                exampleCopyright, exampleConcludedLicenseIds);
-    }
+		assertLicenseInfoParsingResult(result);
+		assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
+				exampleCopyright, exampleConcludedLicenseIds);
+	}
 }

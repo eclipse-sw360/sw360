@@ -37,108 +37,116 @@ import java.util.ResourceBundle;
  */
 public class DisplayUserEdit extends NameSpaceAwareTag {
 
-    private List<String> emails;
-    private String email;
-    private String id;
-    private String description;
-    private Boolean multiUsers;
-    private Boolean readonly = false;
-    private Logger log = LogManager.getLogger(DisplayUserEdit.class);
+	private List<String> emails;
+	private String email;
+	private String id;
+	private String description;
+	private Boolean multiUsers;
+	private Boolean readonly = false;
+	private Logger log = LogManager.getLogger(DisplayUserEdit.class);
 
-    public void setMultiUsers(Boolean multiUsers) {
-        this.multiUsers = multiUsers;
-    }
+	public void setMultiUsers(Boolean multiUsers) {
+		this.multiUsers = multiUsers;
+	}
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+	public void setDescription(String description) {
+		this.description = description;
+	}
 
-    public void setId(String id) {
-        this.id = id;
-    }
+	public void setId(String id) {
+		this.id = id;
+	}
 
-    public void setEmails(Collection<String> emails) {
-        this.emails = new ArrayList<>(CommonUtils.nullToEmptyCollection(emails));
-    }
+	public void setEmails(Collection<String> emails) {
+		this.emails = new ArrayList<>(CommonUtils.nullToEmptyCollection(emails));
+	}
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+	public void setEmail(String email) {
+		this.email = email;
+	}
 
-    public void setReadonly(Boolean readonly) {
-        this.readonly = readonly;
-    }
+	public void setReadonly(Boolean readonly) {
+		this.readonly = readonly;
+	}
 
-    public String getString(String input) {
-        if (Strings.isNullOrEmpty(input)) {
-            input = "";
-        }
-        return input;
-    }
+	public String getString(String input) {
+		if (Strings.isNullOrEmpty(input)) {
+			input = "";
+		}
+		return input;
+	}
 
-    public int doStartTag() throws JspException {
+	public int doStartTag() throws JspException {
 
-        JspWriter jspWriter = pageContext.getOut();
-        StringBuilder display = new StringBuilder();
+		JspWriter jspWriter = pageContext.getOut();
+		StringBuilder display = new StringBuilder();
 
-        List<String> userList = new ArrayList<>();
-        List<String> emailList = new ArrayList<>();
+		List<String> userList = new ArrayList<>();
+		List<String> emailList = new ArrayList<>();
 
-        List<String> emailInput;
+		List<String> emailInput;
 
-        if (multiUsers) {
-            emailInput = emails;
-        } else {
-            emailInput = new ArrayList<>();
-            emailInput.add(email);
-        }
+		if (multiUsers) {
+			emailInput = emails;
+		} else {
+			emailInput = new ArrayList<>();
+			emailInput.add(email);
+		}
 
-        String namespace = getNamespace();
+		String namespace = getNamespace();
 
-        try {
-            UserService.Iface client = new ThriftClients().makeUserClient();
+		try {
+			UserService.Iface client = new ThriftClients().makeUserClient();
 
-            for (String email : emailInput) {
-                User user = null;
-                try {
-                    if (!Strings.isNullOrEmpty(email))
-                        user = client.getByEmail(email);
-                } catch (TException e) {
-                    log.info("User with email=" + email + " not found in DB");
-                }
-                emailList.add(email);
-                if (user != null) {
-                    userList.add(user.getFullname());
-                } else {
-                    userList.add(email);
-                }
-            }
-            
-            Joiner commaJoiner = Joiner.on(", ");
-            String mails = getString(commaJoiner.join(emailList));
-            String userNames = getString(commaJoiner.join(userList));
+			for (String email : emailInput) {
+				User user = null;
+				try {
+					if (!Strings.isNullOrEmpty(email))
+						user = client.getByEmail(email);
+				} catch (TException e) {
+					log.info("User with email=" + email + " not found in DB");
+				}
+				emailList.add(email);
+				if (user != null) {
+					userList.add(user.getFullname());
+				} else {
+					userList.add(email);
+				}
+			}
 
-            HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
-            ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-            
-            display.append("<div class=\"form-group\">");
-            display.append(String.format("<label for=\"%sDisplay\">%s</label>", id, LanguageUtil.get(resourceBundle, description)))
-                    .append(String.format("<input type=\"hidden\" readonly=\"\" value=\"%s\"  id=\"%s\" name=\"%s%s\"/>", mails, id, namespace, id))
-                    .append(String.format("<input type=\"text\" readonly value=\"%s\" id=\"%sDisplay\" ", userNames, id));
+			Joiner commaJoiner = Joiner.on(", ");
+			String mails = getString(commaJoiner.join(emailList));
+			String userNames = getString(commaJoiner.join(userList));
 
-            if (!readonly) {
-                display.append(String.format(" placeholder=\"" + LanguageUtil.get(resourceBundle, "click.to.edit") + "\" class=\"form-control clickable userSearchDialogInteractive\" data-id=\"%s\" data-multi-user=\"%s\"", id,  multiUsers ? "true" : "false"));
-            } else {
-                display.append(" placeholder=\"" + LanguageUtil.get(resourceBundle, "will.be.set.automatically") + "\" class=\"form-control\"");
-            }
+			HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+			ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+					getClass());
 
-            display.append("/>");
-            display.append("</div>");
+			display.append("<div class=\"form-group\">");
+			display.append(String.format("<label for=\"%sDisplay\">%s</label>", id,
+					LanguageUtil.get(resourceBundle, description)))
+					.append(String.format(
+							"<input type=\"hidden\" readonly=\"\" value=\"%s\"  id=\"%s\" name=\"%s%s\"/>", mails, id,
+							namespace, id))
+					.append(String.format("<input type=\"text\" readonly value=\"%s\" id=\"%sDisplay\" ", userNames,
+							id));
 
-            jspWriter.print(display.toString());
-        } catch (Exception e) {
-            throw new JspException(e);
-        }
-        return SKIP_BODY;
-    }
+			if (!readonly) {
+				display.append(String.format(" placeholder=\"" + LanguageUtil.get(resourceBundle, "click.to.edit")
+						+ "\" class=\"form-control clickable userSearchDialogInteractive\" data-id=\"%s\" data-multi-user=\"%s\"",
+						id, multiUsers ? "true" : "false"));
+			} else {
+				display.append(" placeholder=\"" + LanguageUtil.get(resourceBundle, "will.be.set.automatically")
+						+ "\" class=\"form-control\"");
+			}
+
+			display.append("/>");
+			display.append("</div>");
+
+			jspWriter.print(display.toString());
+		} catch (Exception e) {
+			throw new JspException(e);
+		}
+		return SKIP_BODY;
+	}
 }

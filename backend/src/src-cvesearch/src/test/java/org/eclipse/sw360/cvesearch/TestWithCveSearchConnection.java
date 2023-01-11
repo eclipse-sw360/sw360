@@ -23,19 +23,21 @@ import java.util.Properties;
 import static org.eclipse.sw360.cvesearch.datasource.CveSearchDataTestHelper.isUrlReachable;
 
 public abstract class TestWithCveSearchConnection {
-    private String PUBLIC_CVE_SEARCH_SERVER = "https://cve.circl.lu";
+	private String PUBLIC_CVE_SEARCH_SERVER = "https://cve.circl.lu";
 
-    protected CveSearchApi cveSearchApi;
+	protected CveSearchApi cveSearchApi;
 
-    @Before
-    public void setUpApi() {
-        Properties props = CommonUtils.loadProperties(TestWithCveSearchConnection.class, "/cvesearch.properties");
-        String host = props.getProperty(CveSearchHandler.CVESEARCH_HOST_PROPERTY, PUBLIC_CVE_SEARCH_SERVER);
+	@Before
+	public void setUpApi() {
+		Properties props = CommonUtils.loadProperties(TestWithCveSearchConnection.class, "/cvesearch.properties");
+		String host = props.getProperty(CveSearchHandler.CVESEARCH_HOST_PROPERTY, PUBLIC_CVE_SEARCH_SERVER);
 
-        Assume.assumeTrue("The public CVE Search server is unreliable and tests are only executed if a different instance is configured.", ! PUBLIC_CVE_SEARCH_SERVER.equals(host));
-        Assume.assumeTrue("CVE Search host is reachable", isUrlReachable(host));
-        System.out.println("The CVE Search host is: " + host);
+		Assume.assumeTrue(
+				"The public CVE Search server is unreliable and tests are only executed if a different instance is configured.",
+				!PUBLIC_CVE_SEARCH_SERVER.equals(host));
+		Assume.assumeTrue("CVE Search host is reachable", isUrlReachable(host));
+		System.out.println("The CVE Search host is: " + host);
 
-        cveSearchApi = new CveSearchApiImpl(host);
-    }
+		cveSearchApi = new CveSearchApiImpl(host);
+	}
 }

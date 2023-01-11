@@ -25,43 +25,36 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Class to validate the fossology connectivity at the server startup time.
  */
-@Component(
-    immediate = true,
-    property = {
-        "key=servlet.service.events.pre"
-    },
-    service = LifecycleAction.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE,
-    enabled = false
-)
+@Component(immediate = true, property = {
+		"key=servlet.service.events.pre"}, service = LifecycleAction.class, configurationPolicy = ConfigurationPolicy.REQUIRE, enabled = false)
 public class FossologyCheckConnectionOnStartupHook extends Action {
-    protected final Logger log = LogManager.getLogger(getClass());
+	protected final Logger log = LogManager.getLogger(getClass());
 
 	private static boolean calledOnServerstartUp;
 
 	@Override
 	public void run(HttpServletRequest request, HttpServletResponse response) throws ActionException {
 		if (!calledOnServerstartUp) {
-            FossologyConnectionHelper.getInstance().checkFossologyConnection();
-            log.info("Fossology connection state: " +
-                (FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled() ? "SUCCESS" : "FAILED"));
+			FossologyConnectionHelper.getInstance().checkFossologyConnection();
+			log.info("Fossology connection state: "
+					+ (FossologyConnectionHelper.getInstance().isFossologyConnectionEnabled() ? "SUCCESS" : "FAILED"));
 
 			calledOnServerstartUp = true;
 		}
 	}
 
-    @Activate
-    protected void activate() {
-        log.info("Component [" + getClass().getCanonicalName() + "] has been ENABLED.");
-    }
+	@Activate
+	protected void activate() {
+		log.info("Component [" + getClass().getCanonicalName() + "] has been ENABLED.");
+	}
 
-    @Modified
-    protected void modified() {
-        log.info("Component [" + getClass().getCanonicalName() + "] has been MODIFIED.");
-    }
+	@Modified
+	protected void modified() {
+		log.info("Component [" + getClass().getCanonicalName() + "] has been MODIFIED.");
+	}
 
-    @Deactivate
-    protected void deactivate() {
-        log.info("Component [" + getClass().getCanonicalName() + "] has been DISABLED.");
-    }
+	@Deactivate
+	protected void deactivate() {
+		log.info("Component [" + getClass().getCanonicalName() + "] has been DISABLED.");
+	}
 }

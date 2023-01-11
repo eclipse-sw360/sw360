@@ -26,38 +26,37 @@ import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMI
  */
 public class LicensePermissions extends DocumentPermissions<License> {
 
+	protected LicensePermissions(License document, User user) {
+		super(document, user);
+	}
 
-    protected LicensePermissions(License document, User user) {
-        super(document, user);
-    }
+	@Override
+	public void fillPermissions(License other, Map<RequestedAction, Boolean> permissions) {
+		other.permissions = permissions;
+	}
 
-    @Override
-    public void fillPermissions(License other, Map<RequestedAction, Boolean> permissions) {
-        other.permissions = permissions;
-    }
+	@Override
+	public boolean isActionAllowed(RequestedAction action) {
+		switch (action) {
+			case READ :
+			case WRITE :
+				return true;
+			case CLEARING :
+			case DELETE :
+				return PermissionUtils.isUserAtLeast(CLEARING_ADMIN, user);
+			default :
+				return false;
+		}
+	}
 
-    @Override
-    public boolean isActionAllowed(RequestedAction action) {
-        switch (action) {
-            case READ:
-            case WRITE:
-                return true;
-            case CLEARING:
-            case DELETE:
-                return PermissionUtils.isUserAtLeast(CLEARING_ADMIN, user);
-            default:
-                return false;
-        }
-    }
+	@Override
+	protected Set<String> getContributors() {
+		return Collections.emptySet();
+	}
 
-    @Override
-    protected Set<String> getContributors() {
-        return Collections.emptySet();
-    }
-
-    @Override
-    protected Set<String> getModerators() {
-        return Collections.emptySet();
-    }
+	@Override
+	protected Set<String> getModerators() {
+		return Collections.emptySet();
+	}
 
 }

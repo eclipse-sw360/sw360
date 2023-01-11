@@ -13,24 +13,24 @@ package org.eclipse.sw360.rest.resourceserver.core;
 
 class PropertyKeyMapping {
 
-    private static final String COMPONENT_VENDOR_KEY_THRIFT = "vendorNames";
-    static final String COMPONENT_VENDOR_KEY_JSON = "vendors";
+	private static final String COMPONENT_VENDOR_KEY_THRIFT = "vendorNames";
+	static final String COMPONENT_VENDOR_KEY_JSON = "vendors";
 
-    private static final String RELEASE_CPEID_KEY_THRIFT = "cpeid";
-    static final String RELEASE_CPEID_KEY_JSON = "cpeId";
+	private static final String RELEASE_CPEID_KEY_THRIFT = "cpeid";
+	static final String RELEASE_CPEID_KEY_JSON = "cpeId";
 
-    static String componentThriftKeyFromJSONKey(String jsonKey) {
-        if (COMPONENT_VENDOR_KEY_JSON.equals(jsonKey)) {
-            return COMPONENT_VENDOR_KEY_THRIFT;
-        }
-        return jsonKey;
-    }
+	static String componentThriftKeyFromJSONKey(String jsonKey) {
+		if (COMPONENT_VENDOR_KEY_JSON.equals(jsonKey)) {
+			return COMPONENT_VENDOR_KEY_THRIFT;
+		}
+		return jsonKey;
+	}
 
-    static String releaseThriftKeyFromJSONKey(String jsonKey) {
-        if (RELEASE_CPEID_KEY_JSON.equals(jsonKey)) {
-            return RELEASE_CPEID_KEY_THRIFT;
-        }
-        return jsonKey;
-    }
+	static String releaseThriftKeyFromJSONKey(String jsonKey) {
+		if (RELEASE_CPEID_KEY_JSON.equals(jsonKey)) {
+			return RELEASE_CPEID_KEY_THRIFT;
+		}
+		return jsonKey;
+	}
 
 }

@@ -51,138 +51,137 @@ import java.util.Optional;
  */
 public class Sw360LiferayAuthenticationProvider implements AuthenticationProvider {
 
-    private final Logger log = LogManager.getLogger(this.getClass());
+	private final Logger log = LogManager.getLogger(this.getClass());
 
-    private static final String SUPPORTED_GRANT_TYPE = "password";
+	private static final String SUPPORTED_GRANT_TYPE = "password";
 
-    @Value("${sw360.sw360-portal-server-url}")
-    private String sw360PortalServerURL;
+	@Value("${sw360.sw360-portal-server-url}")
+	private String sw360PortalServerURL;
 
-    @Value("${sw360.sw360-liferay-company-id}")
-    private String sw360LiferayCompanyId;
+	@Value("${sw360.sw360-liferay-company-id}")
+	private String sw360LiferayCompanyId;
 
-    @Autowired
-    private RestTemplateBuilder restTemplateBuilder;
+	@Autowired
+	private RestTemplateBuilder restTemplateBuilder;
 
-    @Autowired
-    private ClientDetailsService clientDetailsService;
+	@Autowired
+	private ClientDetailsService clientDetailsService;
 
-    @Autowired
-    private Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider;
+	@Autowired
+	private Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider;
 
-    @Autowired
-    private Sw360GrantedAuthoritiesCalculator sw360UserAndClientAuthoritiesCalculator;
+	@Autowired
+	private Sw360GrantedAuthoritiesCalculator sw360UserAndClientAuthoritiesCalculator;
 
-    @Override
-    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        String userIdentifier = authentication.getName();
-        Object possiblePassword = authentication.getCredentials();
-        if (possiblePassword == null) {
-            return null;
-        }
-        String password = possiblePassword.toString();
+	@Override
+	public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+		String userIdentifier = authentication.getName();
+		Object possiblePassword = authentication.getCredentials();
+		if (possiblePassword == null) {
+			return null;
+		}
+		String password = possiblePassword.toString();
 
-        if (isValidString(sw360PortalServerURL) && isValidString(sw360LiferayCompanyId)) {
-            // Verify if the user exists in sw360 and set the corresponding authority (read, write)
-            if (isAuthorized(userIdentifier, password)) {
-                User user = sw360CustomHeaderUserDetailsProvider.provideUserDetails(userIdentifier, userIdentifier);
-                if (!Objects.isNull(user)) {
-                    ClientDetails clientDetails = extractClient(authentication);
-                    return new UsernamePasswordAuthenticationToken(userIdentifier, password,
-                            sw360UserAndClientAuthoritiesCalculator.mergedAuthoritiesOf(user, clientDetails));
-                }
-            }
-        }
+		if (isValidString(sw360PortalServerURL) && isValidString(sw360LiferayCompanyId)) {
+			// Verify if the user exists in sw360 and set the corresponding authority (read,
+			// write)
+			if (isAuthorized(userIdentifier, password)) {
+				User user = sw360CustomHeaderUserDetailsProvider.provideUserDetails(userIdentifier, userIdentifier);
+				if (!Objects.isNull(user)) {
+					ClientDetails clientDetails = extractClient(authentication);
+					return new UsernamePasswordAuthenticationToken(userIdentifier, password,
+							sw360UserAndClientAuthoritiesCalculator.mergedAuthoritiesOf(user, clientDetails));
+				}
+			}
+		}
 
-        return null;
-    }
+		return null;
+	}
 
-    @Override
-    public boolean supports(Class<?> authentication) {
-        return authentication.equals(UsernamePasswordAuthenticationToken.class);
-    }
+	@Override
+	public boolean supports(Class<?> authentication) {
+		return authentication.equals(UsernamePasswordAuthenticationToken.class);
+	}
 
-    private boolean isAuthorized(String user, String password) {
-        return liferayAuthCheckRequest("get-user-id-by-email-address", "emailAddress", user, password) ||
-                liferayAuthCheckRequest("get-user-id-by-screen-name", "screenName", user, password);
-    }
+	private boolean isAuthorized(String user, String password) {
+		return liferayAuthCheckRequest("get-user-id-by-email-address", "emailAddress", user, password)
+				|| liferayAuthCheckRequest("get-user-id-by-screen-name", "screenName", user, password);
+	}
 
-    private boolean liferayAuthCheckRequest(String route, String userParam, String user, String password) {
-        String liferayParameterURL = "/api/jsonws/user/%s?companyId=%s&%s=%s";
-        String companyId = CommonUtils.isNotNullEmptyOrWhitespace(Sw360AuthorizationServer.SW360_LIFERAY_COMPANY_ID)
-                ? Sw360AuthorizationServer.SW360_LIFERAY_COMPANY_ID
-                : sw360LiferayCompanyId;
-        String url = sw360PortalServerURL + String.format(liferayParameterURL, route, companyId, userParam, user);
-        String encodedPassword;
+	private boolean liferayAuthCheckRequest(String route, String userParam, String user, String password) {
+		String liferayParameterURL = "/api/jsonws/user/%s?companyId=%s&%s=%s";
+		String companyId = CommonUtils.isNotNullEmptyOrWhitespace(Sw360AuthorizationServer.SW360_LIFERAY_COMPANY_ID)
+				? Sw360AuthorizationServer.SW360_LIFERAY_COMPANY_ID
+				: sw360LiferayCompanyId;
+		String url = sw360PortalServerURL + String.format(liferayParameterURL, route, companyId, userParam, user);
+		String encodedPassword;
 
-        try {
-            encodedPassword = URLDecoder.decode(password, "US-ASCII");
-        } catch (UnsupportedEncodingException e) {
-            return false;
-        }
+		try {
+			encodedPassword = URLDecoder.decode(password, "US-ASCII");
+		} catch (UnsupportedEncodingException e) {
+			return false;
+		}
 
-        RestTemplate restTemplate = restTemplateBuilder.basicAuthentication(user, encodedPassword).build();
-        ResponseEntity<String> response;
-        try {
-            response = restTemplate.postForEntity(url, null, String.class);
-        } catch (HttpClientErrorException e) {
-            return false;
-        }
+		RestTemplate restTemplate = restTemplateBuilder.basicAuthentication(user, encodedPassword).build();
+		ResponseEntity<String> response;
+		try {
+			response = restTemplate.postForEntity(url, null, String.class);
+		} catch (HttpClientErrorException e) {
+			return false;
+		}
 
-        try {
-            Integer.parseInt(Optional.ofNullable(response.getBody())
-                    .map(s -> s.replace("\"",""))
-                    .orElse(""));
-        } catch (NumberFormatException e) {
-            return false;
-        }
-        return true;
-    }
+		try {
+			Integer.parseInt(Optional.ofNullable(response.getBody()).map(s -> s.replace("\"", "")).orElse(""));
+		} catch (NumberFormatException e) {
+			return false;
+		}
+		return true;
+	}
 
-    private ClientDetails extractClient(Authentication authentication) {
-        ClientDetails clientDetails = null;
+	private ClientDetails extractClient(Authentication authentication) {
+		ClientDetails clientDetails = null;
 
-        // check if the request contained a grant type to be more sure that is has been
-        // an oauth request
-        if (authentication.getDetails() instanceof Map<?, ?>
-                && ((Map<?, ?>) authentication.getDetails()).containsKey(OAuth2Utils.GRANT_TYPE)) {
-            Map<?, ?> authDetails = ((Map<?, ?>) authentication.getDetails());
+		// check if the request contained a grant type to be more sure that is has been
+		// an oauth request
+		if (authentication.getDetails() instanceof Map<?, ?>
+				&& ((Map<?, ?>) authentication.getDetails()).containsKey(OAuth2Utils.GRANT_TYPE)) {
+			Map<?, ?> authDetails = ((Map<?, ?>) authentication.getDetails());
 
-            Object grantTypes = authDetails.get(OAuth2Utils.GRANT_TYPE);
-            String grantType;
-            if (grantTypes != null && grantTypes instanceof String[]) {
-                grantType = ((String[]) grantTypes)[0];
-            } else {
-                grantType = (String) grantTypes;
-            }
+			Object grantTypes = authDetails.get(OAuth2Utils.GRANT_TYPE);
+			String grantType;
+			if (grantTypes != null && grantTypes instanceof String[]) {
+				grantType = ((String[]) grantTypes)[0];
+			} else {
+				grantType = (String) grantTypes;
+			}
 
-            if (StringUtils.isNotEmpty(grantType) && grantType.equalsIgnoreCase(SUPPORTED_GRANT_TYPE)) {
-                // in the spring's oauth password grant flow, the client (whose credentials have
-                // been used as basic auth) is at this location still the current authentication
-                // object. After the authentication manager found an authentication provider
-                // that can authenticate the given authentication of the user, that one will be
-                // put in the context.
-                Authentication clientAuthentication = SecurityContextHolder.getContext().getAuthentication();
-                if (clientAuthentication != null
-                        && clientAuthentication instanceof UsernamePasswordAuthenticationToken) {
-                    String clientId = ((org.springframework.security.core.userdetails.User) clientAuthentication
-                            .getPrincipal()).getUsername();
-                    try {
-                        clientDetails = clientDetailsService.loadClientByClientId(clientId);
-                        log.debug("Found client " + clientDetails + " for id " + clientId
-                                + " in authentication details.");
-                    } catch (ClientRegistrationException e) {
-                        log.warn("No valid client for id " + clientId + " could be found. It is possible that it is "
-                                + "locked, expired, disabled, or invalid for any other reason.");
-                    }
-                }
-            }
-        }
+			if (StringUtils.isNotEmpty(grantType) && grantType.equalsIgnoreCase(SUPPORTED_GRANT_TYPE)) {
+				// in the spring's oauth password grant flow, the client (whose credentials have
+				// been used as basic auth) is at this location still the current authentication
+				// object. After the authentication manager found an authentication provider
+				// that can authenticate the given authentication of the user, that one will be
+				// put in the context.
+				Authentication clientAuthentication = SecurityContextHolder.getContext().getAuthentication();
+				if (clientAuthentication != null
+						&& clientAuthentication instanceof UsernamePasswordAuthenticationToken) {
+					String clientId = ((org.springframework.security.core.userdetails.User) clientAuthentication
+							.getPrincipal()).getUsername();
+					try {
+						clientDetails = clientDetailsService.loadClientByClientId(clientId);
+						log.debug("Found client " + clientDetails + " for id " + clientId
+								+ " in authentication details.");
+					} catch (ClientRegistrationException e) {
+						log.warn("No valid client for id " + clientId + " could be found. It is possible that it is "
+								+ "locked, expired, disabled, or invalid for any other reason.");
+					}
+				}
+			}
+		}
 
-        return clientDetails;
-    }
+		return clientDetails;
+	}
 
-    private boolean isValidString(String string) {
-        return string != null && string.trim().length() != 0;
-    }
+	private boolean isValidString(String string) {
+		return string != null && string.trim().length() != 0;
+	}
 }

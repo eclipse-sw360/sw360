@@ -19,28 +19,30 @@ import java.io.*;
  * @author johannes.najjar@tngtech.com
  */
 public class CSVExport {
-    @NotNull
-    public static ByteArrayInputStream createCSV(Iterable<String> csvHeaderIterable, Iterable<Iterable<String>> inputIterable) throws IOException {
-        final ByteArrayOutputStream outB = getCSVOutputStream(csvHeaderIterable, inputIterable);
+	@NotNull
+	public static ByteArrayInputStream createCSV(Iterable<String> csvHeaderIterable,
+			Iterable<Iterable<String>> inputIterable) throws IOException {
+		final ByteArrayOutputStream outB = getCSVOutputStream(csvHeaderIterable, inputIterable);
 
-        return new ByteArrayInputStream(outB.toByteArray());
-    }
+		return new ByteArrayInputStream(outB.toByteArray());
+	}
 
-    @NotNull
-    private static ByteArrayOutputStream getCSVOutputStream(Iterable<String> csvHeaderIterable, Iterable<Iterable<String>> inputIterable) throws IOException {
-        final ByteArrayOutputStream outB = new ByteArrayOutputStream();
-        try(Writer out = new BufferedWriter(new OutputStreamWriter(outB));) {
-            CSVPrinter csvPrinter = new CSVPrinter(out, CommonUtils.sw360CsvFormat);
-            csvPrinter.printRecord(csvHeaderIterable);
-            csvPrinter.printRecords(inputIterable);
-            csvPrinter.flush();
-            csvPrinter.close();
-        } catch (Exception e) {
-            outB.close();
-            throw e;
-        }
+	@NotNull
+	private static ByteArrayOutputStream getCSVOutputStream(Iterable<String> csvHeaderIterable,
+			Iterable<Iterable<String>> inputIterable) throws IOException {
+		final ByteArrayOutputStream outB = new ByteArrayOutputStream();
+		try (Writer out = new BufferedWriter(new OutputStreamWriter(outB));) {
+			CSVPrinter csvPrinter = new CSVPrinter(out, CommonUtils.sw360CsvFormat);
+			csvPrinter.printRecord(csvHeaderIterable);
+			csvPrinter.printRecords(inputIterable);
+			csvPrinter.flush();
+			csvPrinter.close();
+		} catch (Exception e) {
+			outB.close();
+			throw e;
+		}
 
-            return outB;
+		return outB;
 
-    }
+	}
 }

@@ -37,53 +37,47 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 @EnableGlobalMethodSecurity(prePostEnabled = true, proxyTargetClass = true)
 public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter implements ResourceServerConfigurer {
 
-    @Autowired
-    private ApiTokenAuthenticationFilter filter;
+	@Autowired
+	private ApiTokenAuthenticationFilter filter;
 
-    @Autowired
-    private ApiTokenAuthenticationProvider authProvider;
+	@Autowired
+	private ApiTokenAuthenticationProvider authProvider;
 
-    @Autowired
-    private ResourceServerProperties resourceServerProperties;
+	@Autowired
+	private ResourceServerProperties resourceServerProperties;
 
-    public ResourceServerConfiguration(ResourceServerProperties resourceServerProperties) {
-        this.resourceServerProperties = resourceServerProperties;
-    }
+	public ResourceServerConfiguration(ResourceServerProperties resourceServerProperties) {
+		this.resourceServerProperties = resourceServerProperties;
+	}
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder authenticationManagerBuilder) {
-        authenticationManagerBuilder.authenticationProvider(this.authProvider);
-    }
+	@Override
+	protected void configure(AuthenticationManagerBuilder authenticationManagerBuilder) {
+		authenticationManagerBuilder.authenticationProvider(this.authProvider);
+	}
 
-    @Override
-    public void configure(ResourceServerSecurityConfigurer resources) {
-        resources.resourceId(resourceServerProperties.getResourceId());
-    }
+	@Override
+	public void configure(ResourceServerSecurityConfigurer resources) {
+		resources.resourceId(resourceServerProperties.getResourceId());
+	}
 
-    @Override
-    public void configure(WebSecurity web) {
-        web.ignoring().antMatchers("/", "/**/*.html", "/**/*.css", "/**/*.js", "/**/*.json", "/**/*.png", "/**/*.gif", "/**/*.ico", "/**/*.woff*", "/**/*.ttf");
-    }
+	@Override
+	public void configure(WebSecurity web) {
+		web.ignoring().antMatchers("/", "/**/*.html", "/**/*.css", "/**/*.js", "/**/*.json", "/**/*.png", "/**/*.gif",
+				"/**/*.ico", "/**/*.woff*", "/**/*.ttf");
+	}
 
-    @Override
-    public void configure(HttpSecurity http) throws Exception {
-        // TODO Thomas Maier 15-12-2017
-        // Use Sw360GrantedAuthority from authorization server
-        SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
-        http
-                .addFilterBefore(filter, BasicAuthenticationFilter.class)
-                .authenticationProvider(authProvider)
-                .httpBasic()
-                .and()
-                .authorizeRequests()
-                .antMatchers(HttpMethod.GET, "/health").permitAll()
-                .antMatchers(HttpMethod.GET, "/info").hasAuthority("WRITE")
-                .antMatchers(HttpMethod.GET, "/api").permitAll()
-                .antMatchers(HttpMethod.GET, "/api/**").hasAuthority("READ")
-                .antMatchers(HttpMethod.POST, "/api/**").hasAuthority("WRITE")
-                .antMatchers(HttpMethod.PUT, "/api/**").hasAuthority("WRITE")
-                .antMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE")
-                .antMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE").and()
-                .csrf().disable().exceptionHandling().authenticationEntryPoint(saep);
-    }
+	@Override
+	public void configure(HttpSecurity http) throws Exception {
+		// TODO Thomas Maier 15-12-2017
+		// Use Sw360GrantedAuthority from authorization server
+		SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
+		http.addFilterBefore(filter, BasicAuthenticationFilter.class).authenticationProvider(authProvider).httpBasic()
+				.and().authorizeRequests().antMatchers(HttpMethod.GET, "/health").permitAll()
+				.antMatchers(HttpMethod.GET, "/info").hasAuthority("WRITE").antMatchers(HttpMethod.GET, "/api")
+				.permitAll().antMatchers(HttpMethod.GET, "/api/**").hasAuthority("READ")
+				.antMatchers(HttpMethod.POST, "/api/**").hasAuthority("WRITE").antMatchers(HttpMethod.PUT, "/api/**")
+				.hasAuthority("WRITE").antMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE")
+				.antMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE").and().csrf().disable()
+				.exceptionHandling().authenticationEntryPoint(saep);
+	}
 }

@@ -15,18 +15,18 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SW360AttachmentTypeTest {
-    @Test
-    public void testFindByValue() {
-        for (SW360AttachmentType attachmentType : SW360AttachmentType.values()) {
-            SW360AttachmentType result = SW360AttachmentType.findByValue(attachmentType.getValue());
-            assertThat(result).isEqualTo(attachmentType);
-        }
-    }
+	@Test
+	public void testFindByValue() {
+		for (SW360AttachmentType attachmentType : SW360AttachmentType.values()) {
+			SW360AttachmentType result = SW360AttachmentType.findByValue(attachmentType.getValue());
+			assertThat(result).isEqualTo(attachmentType);
+		}
+	}
 
-    @Test
-    public void testFindByValueUnknown() {
-        SW360AttachmentType result = SW360AttachmentType.findByValue(-1);
+	@Test
+	public void testFindByValueUnknown() {
+		SW360AttachmentType result = SW360AttachmentType.findByValue(-1);
 
-        assertThat(result).isEqualTo(SW360AttachmentType.OTHER);
-    }
+		assertThat(result).isEqualTo(SW360AttachmentType.OTHER);
+	}
 }

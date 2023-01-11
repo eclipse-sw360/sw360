@@ -19,19 +19,20 @@ import static org.hamcrest.Matchers.is;
 
 public class SearchHandlerTest {
 
-    SearchHandler handler;
+	SearchHandler handler;
 
-    @Before
-    public void setUp() throws Exception {
-        handler = new SearchHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
-    }
+	@Before
+	public void setUp() throws Exception {
+		handler = new SearchHandler(DatabaseSettingsTest.getConfiguredHttpClient(),
+				DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
+	}
 
-    @Test(expected = TException.class)
-    public void testSearchNull() throws Exception {
-        handler.search(null, null);
-    }
+	@Test(expected = TException.class)
+	public void testSearchNull() throws Exception {
+		handler.search(null, null);
+	}
 
-    public void testSearchEmpty() throws Exception {
-        assertThat(handler.search("", null).size(), is(0));
-    }
+	public void testSearchEmpty() throws Exception {
+		assertThat(handler.search("", null).size(), is(0));
+	}
 }

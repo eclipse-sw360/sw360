@@ -15,26 +15,26 @@ import java.util.List;
 
 public class SubTable {
 
-    List<List<String>> elements;
+	List<List<String>> elements;
 
-    public int getnRows() {
-        return elements.size();
-    }
+	public int getnRows() {
+		return elements.size();
+	}
 
-    public List<String> getRow(int rowNumber) {
-        return elements.get(rowNumber);
-    }
+	public List<String> getRow(int rowNumber) {
+		return elements.get(rowNumber);
+	}
 
-    public SubTable(List<String> row) {
-        elements = new ArrayList<>();
-        elements.add(row);
-    }
+	public SubTable(List<String> row) {
+		elements = new ArrayList<>();
+		elements.add(row);
+	}
 
-    public SubTable() {
-        elements = new ArrayList<>();
-    }
+	public SubTable() {
+		elements = new ArrayList<>();
+	}
 
-    public void addRow(List<String> row) {
-        elements.add(row);
-    }
+	public void addRow(List<String> row) {
+		elements.add(row);
+	}
 }

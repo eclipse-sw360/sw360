@@ -26,13 +26,13 @@ import com.cloudant.client.api.model.DesignDocument.MapReduce;
  */
 public class TodoRepository extends DatabaseRepositoryCloudantClient<Obligation> {
 
-    private static final String ALL = "function(doc) { if (doc.type == 'obligation') emit(null, doc._id) }";
+	private static final String ALL = "function(doc) { if (doc.type == 'obligation') emit(null, doc._id) }";
 
-    public TodoRepository(DatabaseConnectorCloudant db) {
-        super(db, Obligation.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("all", createMapReduce(ALL, null));
-        initStandardDesignDocument(views, db);
-    }
+	public TodoRepository(DatabaseConnectorCloudant db) {
+		super(db, Obligation.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("all", createMapReduce(ALL, null));
+		initStandardDesignDocument(views, db);
+	}
 
 }

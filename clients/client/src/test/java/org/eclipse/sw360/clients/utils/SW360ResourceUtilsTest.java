@@ -20,15 +20,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test class for {@code SW360ResourceUtils}. The main functionality of this
- * class is tested together with the concrete client implementations. This
- * test class just deals with some corner cases.
+ * class is tested together with the concrete client implementations. This test
+ * class just deals with some corner cases.
  */
 public class SW360ResourceUtilsTest {
-    @Test
-    public void testNonExistingEmbeddedElementsAreHandled() {
-        SW360LicenseList licenseList = new SW360LicenseList();
+	@Test
+	public void testNonExistingEmbeddedElementsAreHandled() {
+		SW360LicenseList licenseList = new SW360LicenseList();
 
-        List<SW360SparseLicense> licenses = SW360ResourceUtils.getSw360SparseLicenses(licenseList);
-        assertThat(licenses).hasSize(0);
-    }
+		List<SW360SparseLicense> licenses = SW360ResourceUtils.getSw360SparseLicenses(licenseList);
+		assertThat(licenses).hasSize(0);
+	}
 }

@@ -17,26 +17,26 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SW360HalResourceUtilityTest {
-    @Test
-    public void testGetLastIndexOfSelfLinkNoLinkObjects() {
-        Optional<String> optId = SW360HalResourceUtility.getLastIndexOfSelfLink((LinkObjects) null);
+	@Test
+	public void testGetLastIndexOfSelfLinkNoLinkObjects() {
+		Optional<String> optId = SW360HalResourceUtility.getLastIndexOfSelfLink((LinkObjects) null);
 
-        assertThat(optId).isNotPresent();
-    }
+		assertThat(optId).isNotPresent();
+	}
 
-    @Test
-    public void testGetLastIndexOfSelfLinkNullHRef() {
-        Self self = new Self();
+	@Test
+	public void testGetLastIndexOfSelfLinkNullHRef() {
+		Self self = new Self();
 
-        Optional<String> optId = SW360HalResourceUtility.getLastIndexOfSelfLink(self);
-        assertThat(optId).isNotPresent();
-    }
+		Optional<String> optId = SW360HalResourceUtility.getLastIndexOfSelfLink(self);
+		assertThat(optId).isNotPresent();
+	}
 
-    @Test
-    public void testGetLastIndexOfSelfLinkEmptyHref() {
-        Self self = new Self("");
+	@Test
+	public void testGetLastIndexOfSelfLinkEmptyHref() {
+		Self self = new Self("");
 
-        Optional<String> optId = SW360HalResourceUtility.getLastIndexOfSelfLink(self);
-        assertThat(optId).isNotPresent();
-    }
+		Optional<String> optId = SW360HalResourceUtility.getLastIndexOfSelfLink(self);
+		assertThat(optId).isNotPresent();
+	}
 }

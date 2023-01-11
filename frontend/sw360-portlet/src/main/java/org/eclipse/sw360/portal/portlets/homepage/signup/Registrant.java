@@ -33,54 +33,56 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  */
 class Registrant extends User {
 
-    private boolean isMale;
-    private String password;
-    private String password2;
+	private boolean isMale;
+	private String password;
+	private String password2;
 
-    public Registrant(ActionRequest request) {
-        super();
-        isMale = false;
-        password = request.getParameter(PortalConstants.PASSWORD);
-        password2 = request.getParameter(PortalConstants.PASSWORD_REPEAT);
-        setWantsMailNotification(true);
-    }
+	public Registrant(ActionRequest request) {
+		super();
+		isMale = false;
+		password = request.getParameter(PortalConstants.PASSWORD);
+		password2 = request.getParameter(PortalConstants.PASSWORD_REPEAT);
+		setWantsMailNotification(true);
+	}
 
-    public com.liferay.portal.kernel.model.User addLifeRayUser(PortletRequest request) throws PortalException, SystemException {
-        return UserPortletUtils.addLiferayUser(request, getGivenname(), getLastname(), getEmail(),
-                getDepartment(), UserUtils.getRoleConstantFromUserGroup(getUserGroup()), isMale, getExternalid(), password, false, false);
+	public com.liferay.portal.kernel.model.User addLifeRayUser(PortletRequest request)
+			throws PortalException, SystemException {
+		return UserPortletUtils.addLiferayUser(request, getGivenname(), getLastname(), getEmail(), getDepartment(),
+				UserUtils.getRoleConstantFromUserGroup(getUserGroup()), isMale, getExternalid(), password, false,
+				false);
 
-    }
+	}
 
-    public boolean validateUserData(ActionRequest request) {
-        if (isNullOrEmpty(getGivenname())) {
-            SessionErrors.add(request, ErrorMessages.FIRST_NAME_CANNOT_BE_EMPTY);
-            return false;
-        }
-        if (isNullOrEmpty(getLastname())) {
-            SessionErrors.add(request, ErrorMessages.LAST_NAME_CANNOT_BE_EMPTY);
-            return false;
-        }
-        if (!Validator.isEmailAddress(getEmail())) {
-            SessionErrors.add(request, ErrorMessages.EMAIL_NOT_VALID);
-            return false;
-        }
-        if (isNullOrEmpty(getDepartment())) {
-            SessionErrors.add(request, ErrorMessages.DEPARTMENT_CANNOT_BE_EMPTY);
-            return false;
-        }
-        if (isNullOrEmpty(getExternalid())) {
-            SessionErrors.add(request, ErrorMessages.EXTERNAL_ID_CANNOT_BE_EMPTY);
-            return false;
-        }
-        if (isNullOrEmpty(password)) {
-            SessionErrors.add(request, ErrorMessages.PASSWORD_CANNOT_BE_EMPTY);
-            return false;
-        }
-        if(!Strings.nullToEmpty(password).equals(password2)) {
-            SessionErrors.add(request, ErrorMessages.PASSWORDS_DONT_MATCH);
-            return false;
-        }
+	public boolean validateUserData(ActionRequest request) {
+		if (isNullOrEmpty(getGivenname())) {
+			SessionErrors.add(request, ErrorMessages.FIRST_NAME_CANNOT_BE_EMPTY);
+			return false;
+		}
+		if (isNullOrEmpty(getLastname())) {
+			SessionErrors.add(request, ErrorMessages.LAST_NAME_CANNOT_BE_EMPTY);
+			return false;
+		}
+		if (!Validator.isEmailAddress(getEmail())) {
+			SessionErrors.add(request, ErrorMessages.EMAIL_NOT_VALID);
+			return false;
+		}
+		if (isNullOrEmpty(getDepartment())) {
+			SessionErrors.add(request, ErrorMessages.DEPARTMENT_CANNOT_BE_EMPTY);
+			return false;
+		}
+		if (isNullOrEmpty(getExternalid())) {
+			SessionErrors.add(request, ErrorMessages.EXTERNAL_ID_CANNOT_BE_EMPTY);
+			return false;
+		}
+		if (isNullOrEmpty(password)) {
+			SessionErrors.add(request, ErrorMessages.PASSWORD_CANNOT_BE_EMPTY);
+			return false;
+		}
+		if (!Strings.nullToEmpty(password).equals(password2)) {
+			SessionErrors.add(request, ErrorMessages.PASSWORDS_DONT_MATCH);
+			return false;
+		}
 
-        return true;
-    }
+		return true;
+	}
 }

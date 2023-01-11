@@ -17,18 +17,18 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  */
 public class LuceneSearchView {
 
-    final String searchView;
-    final String searchFunction;
-    final String searchBody;
+	final String searchView;
+	final String searchFunction;
+	final String searchBody;
 
-    public LuceneSearchView(String searchView, String searchFunction, String searchBody) {
-        if (isNullOrEmpty(searchView) || isNullOrEmpty(searchFunction) || isNullOrEmpty(searchBody)) {
-            throw new IllegalArgumentException("Invalid search functions, provided strings cannot be empty!");
-        }
+	public LuceneSearchView(String searchView, String searchFunction, String searchBody) {
+		if (isNullOrEmpty(searchView) || isNullOrEmpty(searchFunction) || isNullOrEmpty(searchBody)) {
+			throw new IllegalArgumentException("Invalid search functions, provided strings cannot be empty!");
+		}
 
-        this.searchView = searchView;
-        this.searchFunction = searchFunction;
-        this.searchBody = searchBody;
-    }
+		this.searchView = searchView;
+		this.searchFunction = searchFunction;
+		this.searchBody = searchBody;
+	}
 
 }

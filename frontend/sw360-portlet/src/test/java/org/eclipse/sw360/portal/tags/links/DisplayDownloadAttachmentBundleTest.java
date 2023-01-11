@@ -16,17 +16,17 @@ import static org.junit.Assert.assertNotNull;
 
 public class DisplayDownloadAttachmentBundleTest {
 
-    @Test
-    public void testThatAttachmentsIsNotSetToNull() throws Exception {
-        DisplayDownloadAttachmentBundle displayDownloadAttachmentBundle = new DisplayDownloadAttachmentBundle();
-        displayDownloadAttachmentBundle.setAttachments(null);
-        assertNotNull(displayDownloadAttachmentBundle.attachments);
-    }
+	@Test
+	public void testThatAttachmentsIsNotSetToNull() throws Exception {
+		DisplayDownloadAttachmentBundle displayDownloadAttachmentBundle = new DisplayDownloadAttachmentBundle();
+		displayDownloadAttachmentBundle.setAttachments(null);
+		assertNotNull(displayDownloadAttachmentBundle.attachments);
+	}
 
-    @Test
-    public void testThatTextsAreEscaped() throws Exception {
-        DisplayDownloadAttachmentBundle displayDownloadAttachmentBundle = new DisplayDownloadAttachmentBundle();
-        displayDownloadAttachmentBundle.setName("Html <>&' entities");
-        assertEquals("Download Html &lt;&gt;&amp;&#39; entities", displayDownloadAttachmentBundle.getTitleText());
-    }
+	@Test
+	public void testThatTextsAreEscaped() throws Exception {
+		DisplayDownloadAttachmentBundle displayDownloadAttachmentBundle = new DisplayDownloadAttachmentBundle();
+		displayDownloadAttachmentBundle.setName("Html <>&' entities");
+		assertEquals("Download Html &lt;&gt;&amp;&#39; entities", displayDownloadAttachmentBundle.getTitleText());
+	}
 }

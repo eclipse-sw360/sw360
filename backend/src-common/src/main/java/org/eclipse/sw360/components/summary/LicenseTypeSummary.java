@@ -21,19 +21,19 @@ import static org.eclipse.sw360.datahandler.thrift.licenses.LicenseType._Fields;
  */
 public class LicenseTypeSummary extends DocumentSummary<LicenseType> {
 
-    @Override
-    protected LicenseType summary(SummaryType type, LicenseType document) {
-        // Copy required details
-        LicenseType copy = new LicenseType();
+	@Override
+	protected LicenseType summary(SummaryType type, LicenseType document) {
+		// Copy required details
+		LicenseType copy = new LicenseType();
 
-        switch (type) {
-            case EXPORT_SUMMARY:
-                copyField(document, copy, _Fields.LICENSE_TYPE);
-                copyField(document, copy, _Fields.LICENSE_TYPE_ID);
-                copyField(document, copy, _Fields.ID);
-            default:
-        }
+		switch (type) {
+			case EXPORT_SUMMARY :
+				copyField(document, copy, _Fields.LICENSE_TYPE);
+				copyField(document, copy, _Fields.LICENSE_TYPE_ID);
+				copyField(document, copy, _Fields.ID);
+			default :
+		}
 
-        return copy;
-    }
+		return copy;
+	}
 }

@@ -24,9 +24,9 @@ import java.io.IOException;
  */
 public class VendorServlet extends Sw360ThriftServlet {
 
-    public VendorServlet() throws IOException {
-        // Create a service processor using the provided handler
-        super(new VendorService.Processor<>(new VendorHandler()), new TCompactProtocol.Factory());
-    }
+	public VendorServlet() throws IOException {
+		// Create a service processor using the provided handler
+		super(new VendorService.Processor<>(new VendorHandler()), new TCompactProtocol.Factory());
+	}
 
 }

@@ -23,21 +23,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public abstract class GrantTypePasswordTestBase extends IntegrationTestBase {
 
-    protected final String PARAMETER_GRANT_TYPE = "password";
+	protected final String PARAMETER_GRANT_TYPE = "password";
 
-    @Test
-    public void should_connect_to_authorization_server_with_resource_owner_credentials() {
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
-    }
+	@Test
+	public void should_connect_to_authorization_server_with_resource_owner_credentials() {
+		assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+	}
 
-    @Test
-    public void should_get_expected_response_headers() throws IOException {
-        checkResponseBody();
-    }
+	@Test
+	public void should_get_expected_response_headers() throws IOException {
+		checkResponseBody();
+	}
 
-    @Test
-    public void should_get_expected_jwt_attributes() throws IOException {
-        JsonNode jwtClaimsJsonNode = checkJwtClaims(READ.getAuthority());
-        assertThat(jwtClaimsJsonNode.get("user_name").asText(), is(adminTestUser.email));
-    }
+	@Test
+	public void should_get_expected_jwt_attributes() throws IOException {
+		JsonNode jwtClaimsJsonNode = checkJwtClaims(READ.getAuthority());
+		assertThat(jwtClaimsJsonNode.get("user_name").asText(), is(adminTestUser.email));
+	}
 }

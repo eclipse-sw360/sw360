@@ -19,11 +19,11 @@ import javax.servlet.jsp.JspException;
  * @author daniele.fognini@tngtech.com
  */
 public interface UrlWriter {
-    UrlWriter withParam(String name, String value) throws JspException;
+	UrlWriter withParam(String name, String value) throws JspException;
 
-    UrlWriter toPortlet(LinkToPortletConfiguration portlet, Long scopeGroupId) throws JspException;
+	UrlWriter toPortlet(LinkToPortletConfiguration portlet, Long scopeGroupId) throws JspException;
 
-    UrlWriter toPage(PortletPage page) throws JspException;
+	UrlWriter toPage(PortletPage page) throws JspException;
 
-    void writeUrlToJspWriter() throws JspException;
+	void writeUrlToJspWriter() throws JspException;
 }

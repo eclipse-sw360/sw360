@@ -18,28 +18,28 @@ import java.io.IOException;
  * @author daniele.fognini@tngtech.com
  */
 public class DisplayLink extends DisplayLinkAbstract {
-    private String target;
-    private String text;
+	private String target;
+	private String text;
 
-    public void setTarget(String target) {
-        this.target = target;
-    }
+	public void setTarget(String target) {
+		this.target = target;
+	}
 
-    public void setText(String text) {
-        this.text = text;
-    }
+	public void setText(String text) {
+		this.text = text;
+	}
 
-    @Override
-    protected void writeUrl() throws JspException {
-        try {
-            OutSupport.out(pageContext, true, target);
-        } catch (IOException e) {
-            throw new JspException("cannot write", e);
-        }
-    }
+	@Override
+	protected void writeUrl() throws JspException {
+		try {
+			OutSupport.out(pageContext, true, target);
+		} catch (IOException e) {
+			throw new JspException("cannot write", e);
+		}
+	}
 
-    @Override
-    protected String getTextDisplay() {
-        return text != null ? text : target;
-    }
+	@Override
+	protected String getTextDisplay() {
+		return text != null ? text : target;
+	}
 }

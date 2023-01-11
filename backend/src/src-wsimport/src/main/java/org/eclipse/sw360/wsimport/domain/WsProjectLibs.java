@@ -14,13 +14,13 @@ package org.eclipse.sw360.wsimport.domain;
  */
 public class WsProjectLibs {
 
-    private WsLibrary[] libraries;
+	private WsLibrary[] libraries;
 
-    public WsLibrary[] getLibraries() {
-        return libraries;
-    }
+	public WsLibrary[] getLibraries() {
+		return libraries;
+	}
 
-    public void setLibraries(WsLibrary[] libraries) {
-        this.libraries = libraries;
-    }
+	public void setLibraries(WsLibrary[] libraries) {
+		this.libraries = libraries;
+	}
 }

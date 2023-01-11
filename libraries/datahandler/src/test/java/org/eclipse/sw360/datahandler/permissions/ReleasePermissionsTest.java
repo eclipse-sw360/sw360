@@ -23,31 +23,30 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
-
 /**
  * @author: alex.borodin@evosoft.com
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ReleasePermissionsTest {
 
-    @Mock
-    private Release release;
-    @Mock
-    private User user;
+	@Mock
+	private Release release;
+	@Mock
+	private User user;
 
-    @Before
-    public void setUp() throws Exception {
-        when(user.isSetUserGroup()).thenReturn(true);
-    }
+	@Before
+	public void setUp() throws Exception {
+		when(user.isSetUserGroup()).thenReturn(true);
+	}
 
-    @Test
-    public void testEccPermission() {
-        ReleasePermissions permissions = new ReleasePermissions(release, user);
+	@Test
+	public void testEccPermission() {
+		ReleasePermissions permissions = new ReleasePermissions(release, user);
 
-        when(user.getUserGroup()).thenReturn(UserGroup.ECC_ADMIN);
-        assertThat(permissions.isActionAllowed(RequestedAction.WRITE_ECC), is(true));
+		when(user.getUserGroup()).thenReturn(UserGroup.ECC_ADMIN);
+		assertThat(permissions.isActionAllowed(RequestedAction.WRITE_ECC), is(true));
 
-        when(user.getUserGroup()).thenReturn(UserGroup.CLEARING_ADMIN);
-        assertThat(permissions.isActionAllowed(RequestedAction.WRITE_ECC), is(false));
-    }
+		when(user.getUserGroup()).thenReturn(UserGroup.CLEARING_ADMIN);
+		assertThat(permissions.isActionAllowed(RequestedAction.WRITE_ECC), is(false));
+	}
 }

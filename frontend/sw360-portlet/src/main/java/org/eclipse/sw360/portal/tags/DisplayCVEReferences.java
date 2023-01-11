@@ -25,32 +25,32 @@ import java.util.stream.Collectors;
  */
 public class DisplayCVEReferences extends SimpleTagSupport {
 
-    private Set<CVEReference> value;
-    private Set<CVEReference> autoFillValue;
+	private Set<CVEReference> value;
+	private Set<CVEReference> autoFillValue;
 
-    public void setValue(Set<CVEReference> value) {
-        this.value = value;
-    }
-    public void setAutoFillValue(Set<CVEReference> autoFillValue) {
-        this.autoFillValue = autoFillValue;
-    }
+	public void setValue(Set<CVEReference> value) {
+		this.value = value;
+	}
+	public void setAutoFillValue(Set<CVEReference> autoFillValue) {
+		this.autoFillValue = autoFillValue;
+	}
 
-    public void doTag() throws JspException, IOException {
-        Set<CVEReference> fullValue;
+	public void doTag() throws JspException, IOException {
+		Set<CVEReference> fullValue;
 
-        if (value == null) {
-            fullValue = autoFillValue;
-        } else {
-            fullValue = value;
-        }
+		if (value == null) {
+			fullValue = autoFillValue;
+		} else {
+			fullValue = value;
+		}
 
-        if (null != fullValue && !fullValue.isEmpty()) {
-            String result = String.join(",", fullValue.stream().map(this::toString).collect(Collectors.toList()));
-            getJspContext().getOut().print(result);
-        }
-    }
+		if (null != fullValue && !fullValue.isEmpty()) {
+			String result = String.join(",", fullValue.stream().map(this::toString).collect(Collectors.toList()));
+			getJspContext().getOut().print(result);
+		}
+	}
 
-    private String toString(CVEReference reference){
-        return "CVE-" + reference.getYear() + "-" + reference.getNumber();
-    }
+	private String toString(CVEReference reference) {
+		return "CVE-" + reference.getYear() + "-" + reference.getNumber();
+	}
 }

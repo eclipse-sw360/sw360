@@ -15,7 +15,6 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-
 /**
  * Thrift Servlet instantiation
  *
@@ -24,9 +23,9 @@ import java.net.MalformedURLException;
  */
 public class ProjectServlet extends Sw360ThriftServlet {
 
-    public ProjectServlet() throws MalformedURLException, IOException {
-        // Create a service processor using the provided handler
-        super(new ProjectService.Processor<>(new ProjectHandler()), new TCompactProtocol.Factory());
-    }
+	public ProjectServlet() throws MalformedURLException, IOException {
+		// Create a service processor using the provided handler
+		super(new ProjectService.Processor<>(new ProjectHandler()), new TCompactProtocol.Factory());
+	}
 
 }

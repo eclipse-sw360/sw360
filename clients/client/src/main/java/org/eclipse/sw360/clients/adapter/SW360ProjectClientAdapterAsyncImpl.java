@@ -34,81 +34,75 @@ import java.util.stream.Collectors;
  * Adapter implementation for the SW360 projects endpoint.
  */
 class SW360ProjectClientAdapterAsyncImpl implements SW360ProjectClientAdapterAsync {
-    private final SW360ProjectClient projectClient;
+	private final SW360ProjectClient projectClient;
 
-    public SW360ProjectClientAdapterAsyncImpl(SW360ProjectClient client) {
-        projectClient = client;
-    }
+	public SW360ProjectClientAdapterAsyncImpl(SW360ProjectClient client) {
+		projectClient = client;
+	}
 
-    @Override
-    public SW360ProjectClient getProjectClient() {
-        return projectClient;
-    }
+	@Override
+	public SW360ProjectClient getProjectClient() {
+		return projectClient;
+	}
 
-    @Override
-    public CompletableFuture<Optional<SW360Project>> getProjectByNameAndVersion(String projectName, String projectVersion) {
-        ProjectSearchParams nameSearchParams = ProjectSearchParams.builder()
-                .withName(projectName)
-                .build();
-        return getProjectClient().search(nameSearchParams)
-                .thenApply(projects -> projects.stream()
-                        .filter(pr -> SW360ProjectAdapterUtils.hasEqualCoordinates(pr, projectName, projectVersion))
-                        .findAny());
-    }
+	@Override
+	public CompletableFuture<Optional<SW360Project>> getProjectByNameAndVersion(String projectName,
+			String projectVersion) {
+		ProjectSearchParams nameSearchParams = ProjectSearchParams.builder().withName(projectName).build();
+		return getProjectClient().search(nameSearchParams).thenApply(projects -> projects.stream()
+				.filter(pr -> SW360ProjectAdapterUtils.hasEqualCoordinates(pr, projectName, projectVersion)).findAny());
+	}
 
-    @Override
-    public CompletableFuture<List<SW360Project>> search(ProjectSearchParams params) {
-        return getProjectClient().search(params);
-    }
+	@Override
+	public CompletableFuture<List<SW360Project>> search(ProjectSearchParams params) {
+		return getProjectClient().search(params);
+	}
 
-    @Override
-    public CompletableFuture<SW360Project> createProject(SW360Project project) {
-        return validateProjectAndProcess(project, getProjectClient()::createProject);
-    }
+	@Override
+	public CompletableFuture<SW360Project> createProject(SW360Project project) {
+		return validateProjectAndProcess(project, getProjectClient()::createProject);
+	}
 
-    @Override
-    public CompletableFuture<SW360Project> updateProject(SW360Project project) {
-        return validateProjectAndProcess(project, getProjectClient()::updateProject);
-    }
+	@Override
+	public CompletableFuture<SW360Project> updateProject(SW360Project project) {
+		return validateProjectAndProcess(project, getProjectClient()::updateProject);
+	}
 
-    @Override
-    public CompletableFuture<Void> addSW360ReleasesToSW360Project(String id, Collection<SW360Release> releases) {
-        List<String> releaseLinks = releases.stream()
-                .map(SW360Release::getLinks)
-                .filter(Objects::nonNull)
-                .map(LinkObjects::getSelf)
-                .filter(Objects::nonNull)
-                .map(Self::getHref)
-                .collect(Collectors.toList());
-        return getProjectClient().addReleasesToProject(id, releaseLinks);
-    }
+	@Override
+	public CompletableFuture<Void> addSW360ReleasesToSW360Project(String id, Collection<SW360Release> releases) {
+		List<String> releaseLinks = releases.stream().map(SW360Release::getLinks).filter(Objects::nonNull)
+				.map(LinkObjects::getSelf).filter(Objects::nonNull).map(Self::getHref).collect(Collectors.toList());
+		return getProjectClient().addReleasesToProject(id, releaseLinks);
+	}
 
-    @Override
-    public CompletableFuture<List<SW360SparseRelease>> getLinkedReleases(String projectId, boolean transitive) {
-        return getProjectClient().getLinkedReleases(projectId, transitive);
-    }
+	@Override
+	public CompletableFuture<List<SW360SparseRelease>> getLinkedReleases(String projectId, boolean transitive) {
+		return getProjectClient().getLinkedReleases(projectId, transitive);
+	}
 
-    @Override
-    public CompletableFuture<Integer> deleteProject(String projectId) {
-        return getProjectClient().deleteProject(projectId);
-    }
+	@Override
+	public CompletableFuture<Integer> deleteProject(String projectId) {
+		return getProjectClient().deleteProject(projectId);
+	}
 
-    /**
-     * Validates the given project entity and then executes an action on it.
-     * All mandatory properties must have been set. If this is the case, the
-     * given function is invoked on the project.
-     *
-     * @param project the project to be processed
-     * @param func    the processing function
-     * @return the result of the processing function
-     */
-    private static CompletableFuture<SW360Project> validateProjectAndProcess(SW360Project project,
-                                                                             Function<SW360Project, CompletableFuture<SW360Project>> func) {
-        if (!SW360ProjectAdapterUtils.isValidProject(project)) {
-            Throwable exception = new SW360ClientException("Can not create invalid project with name=" +
-                    project.getName() + " and version=" + project.getVersion());
-            return FutureUtils.failedFuture(exception);
-        }
-        return func.apply(project);
-    }
+	/**
+	 * Validates the given project entity and then executes an action on it. All
+	 * mandatory properties must have been set. If this is the case, the given
+	 * function is invoked on the project.
+	 *
+	 * @param project
+	 *            the project to be processed
+	 * @param func
+	 *            the processing function
+	 * @return the result of the processing function
+	 */
+	private static CompletableFuture<SW360Project> validateProjectAndProcess(SW360Project project,
+			Function<SW360Project, CompletableFuture<SW360Project>> func) {
+		if (!SW360ProjectAdapterUtils.isValidProject(project)) {
+			Throwable exception = new SW360ClientException("Can not create invalid project with name="
+					+ project.getName() + " and version=" + project.getVersion());
+			return FutureUtils.failedFuture(exception);
+		}
+		return func.apply(project);
+	}
 }

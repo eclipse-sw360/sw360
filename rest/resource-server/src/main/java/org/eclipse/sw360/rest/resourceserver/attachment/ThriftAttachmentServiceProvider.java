@@ -20,10 +20,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ThriftAttachmentServiceProvider implements ThriftServiceProvider<AttachmentService.Iface> {
-    @Override
-    public AttachmentService.Iface getService(String thriftServerUrl) throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/attachments/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new AttachmentService.Client(protocol);
-    }
+	@Override
+	public AttachmentService.Iface getService(String thriftServerUrl) throws TTransportException {
+		THttpClient thriftClient = new THttpClient(thriftServerUrl + "/attachments/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		return new AttachmentService.Client(protocol);
+	}
 }

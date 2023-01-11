@@ -22,21 +22,21 @@ import java.net.URLConnection;
  * @author daniele.fognini@tngtech.com
  */
 public class AttachmentContentDownloader {
-    /**
-     * download an incomplete AttachmentContent from its URL
-     *
-     * @todo setup DI and move timeout to a member
-     */
-    public InputStream download(AttachmentContent attachmentContent, Duration timeout) throws IOException {
-        int millisTimeout = ((Number) timeout.toMillis()).intValue();
+	/**
+	 * download an incomplete AttachmentContent from its URL
+	 *
+	 * @todo setup DI and move timeout to a member
+	 */
+	public InputStream download(AttachmentContent attachmentContent, Duration timeout) throws IOException {
+		int millisTimeout = ((Number) timeout.toMillis()).intValue();
 
-        URL remoteURL = new URL(attachmentContent.getRemoteUrl());
-        URLConnection urlConnection = remoteURL.openConnection();
+		URL remoteURL = new URL(attachmentContent.getRemoteUrl());
+		URLConnection urlConnection = remoteURL.openConnection();
 
-        urlConnection.setConnectTimeout(millisTimeout);
-        urlConnection.setReadTimeout(millisTimeout);
+		urlConnection.setConnectTimeout(millisTimeout);
+		urlConnection.setReadTimeout(millisTimeout);
 
-        InputStream downloadStream = urlConnection.getInputStream();
-        return new BufferedInputStream(downloadStream);
-    }
+		InputStream downloadStream = urlConnection.getInputStream();
+		return new BufferedInputStream(downloadStream);
+	}
 }

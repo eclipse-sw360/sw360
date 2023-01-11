@@ -33,70 +33,61 @@ import com.liferay.portal.kernel.util.PortalUtil;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
-@org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-        "/org/eclipse/sw360/portal/portlets/base.properties",
-        "/org/eclipse/sw360/portal/portlets/default.properties"
-    },
-    property = {
-        "javax.portlet.name=" + SEARCH_PORTLET_NAME,
+@org.osgi.service.component.annotations.Component(immediate = true, properties = {
+		"/org/eclipse/sw360/portal/portlets/base.properties",
+		"/org/eclipse/sw360/portal/portlets/default.properties"}, property = {
+				"javax.portlet.name=" + SEARCH_PORTLET_NAME,
 
-        "javax.portlet.display-name=Search Results",
-        "javax.portlet.info.short-title=Search Results",
-        "javax.portlet.info.title=Search Results",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/search/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+				"javax.portlet.display-name=Search Results", "javax.portlet.info.short-title=Search Results",
+				"javax.portlet.info.title=Search Results", "javax.portlet.resource-bundle=content.Language",
+				"javax.portlet.init-param.view-template=/html/search/view.jsp",}, service = Portlet.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class SearchPortlet extends Sw360Portlet {
 
-    private static final Logger log = LogManager.getLogger(SearchPortlet.class);
+	private static final Logger log = LogManager.getLogger(SearchPortlet.class);
 
-    @Override
-    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        final User user = UserCacheHolder.getUserFromRequest(request);
-        String searchtext = request.getParameter(KEY_SEARCH_TEXT);
-        String[] typeMaskArray = request.getParameterValues(TYPE_MASK);
-        String searchQuery = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request)).getParameter("q");
-        String submitSearch = request.getParameter(SUBMIT_SEARCH);
+	@Override
+	public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+		final User user = UserCacheHolder.getUserFromRequest(request);
+		String searchtext = request.getParameter(KEY_SEARCH_TEXT);
+		String[] typeMaskArray = request.getParameterValues(TYPE_MASK);
+		String searchQuery = PortalUtil.getOriginalServletRequest(PortalUtil.getHttpServletRequest(request))
+				.getParameter("q");
+		String submitSearch = request.getParameter(SUBMIT_SEARCH);
 
-        List<String> typeMask;
-        if (typeMaskArray != null) { // premature optimization would add && typeMaskArray.length<6
-            typeMask = Arrays.asList(typeMaskArray);
-        } else {
-            typeMask = Collections.emptyList();
-            log.info("typeMask set to emptyList");
-        }
+		List<String> typeMask;
+		if (typeMaskArray != null) { // premature optimization would add && typeMaskArray.length<6
+			typeMask = Arrays.asList(typeMaskArray);
+		} else {
+			typeMask = Collections.emptyList();
+			log.info("typeMask set to emptyList");
+		}
 
-        if (isNullOrEmpty(submitSearch) && !isNullOrEmpty(searchQuery)) {
-        	searchtext = searchQuery;
-        }
-        
-        searchtext = Strings.nullToEmpty(searchtext);
+		if (isNullOrEmpty(submitSearch) && !isNullOrEmpty(searchQuery)) {
+			searchtext = searchQuery;
+		}
 
-        List<SearchResult> searchResults;
-        try {
-            SearchService.Iface client = thriftClients.makeSearchClient();
-            searchResults = client.searchFiltered(searchtext, user, typeMask);
-        } catch (TException e) {
-            log.error("Search could not be performed!", e);
-            searchResults = Collections.emptyList();
-        }
+		searchtext = Strings.nullToEmpty(searchtext);
 
-        if (isNullOrEmpty(request.getParameter(KEY_SEARCH_TEXT))) {
-            searchtext = "";
-        }
+		List<SearchResult> searchResults;
+		try {
+			SearchService.Iface client = thriftClients.makeSearchClient();
+			searchResults = client.searchFiltered(searchtext, user, typeMask);
+		} catch (TException e) {
+			log.error("Search could not be performed!", e);
+			searchResults = Collections.emptyList();
+		}
 
-        // Set the results
-        request.setAttribute(KEY_SEARCH_TEXT, searchtext);
-        request.setAttribute(KEY_SUMMARY, searchResults);
-        request.setAttribute(TYPE_MASK, typeMask);
+		if (isNullOrEmpty(request.getParameter(KEY_SEARCH_TEXT))) {
+			searchtext = "";
+		}
 
-        // Proceed with page rendering
-        super.doView(request, response);
-    }
+		// Set the results
+		request.setAttribute(KEY_SEARCH_TEXT, searchtext);
+		request.setAttribute(KEY_SUMMARY, searchResults);
+		request.setAttribute(TYPE_MASK, typeMask);
+
+		// Proceed with page rendering
+		super.doView(request, response);
+	}
 
 }

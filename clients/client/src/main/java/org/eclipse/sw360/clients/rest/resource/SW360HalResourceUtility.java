@@ -15,25 +15,25 @@ import java.util.Optional;
 
 public class SW360HalResourceUtility {
 
-    private SW360HalResourceUtility() {
-        // Utility
-    }
+	private SW360HalResourceUtility() {
+		// Utility
+	}
 
-    public static Optional<String> getLastIndexOfSelfLink(LinkObjects linkObj) {
-        if (linkObj != null) {
-            return getLastIndexOfSelfLink(linkObj.getSelf());
-        }
-        return Optional.empty();
-    }
+	public static Optional<String> getLastIndexOfSelfLink(LinkObjects linkObj) {
+		if (linkObj != null) {
+			return getLastIndexOfSelfLink(linkObj.getSelf());
+		}
+		return Optional.empty();
+	}
 
-    public static Optional<String> getLastIndexOfSelfLink(Self selfObj) {
-        if (selfObj != null) {
-            String href = selfObj.getHref();
-            if (href != null && !href.isEmpty()) {
-                int lastSlashIndex =  href.lastIndexOf('/');
-                return Optional.of(href.substring(lastSlashIndex + 1));
-            }
-        }
-        return Optional.empty();
-    }
+	public static Optional<String> getLastIndexOfSelfLink(Self selfObj) {
+		if (selfObj != null) {
+			String href = selfObj.getHref();
+			if (href != null && !href.isEmpty()) {
+				int lastSlashIndex = href.lastIndexOf('/');
+				return Optional.of(href.substring(lastSlashIndex + 1));
+			}
+		}
+		return Optional.empty();
+	}
 }

@@ -19,36 +19,35 @@ import java.util.*;
 
 @JsonDeserialize(as = SW360LicenseListEmbedded.class)
 public class SW360LicenseListEmbedded implements Embedded {
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @JsonProperty("sw360:licenses")
-    private Set<SW360SparseLicense> licenses;
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)
+	@JsonProperty("sw360:licenses")
+	private Set<SW360SparseLicense> licenses;
 
-    public Set<SW360SparseLicense> getLicenses() {
-        return Optional.ofNullable(licenses)
-                .map(HashSet::new)
-                .orElse(new HashSet<>());
-    }
+	public Set<SW360SparseLicense> getLicenses() {
+		return Optional.ofNullable(licenses).map(HashSet::new).orElse(new HashSet<>());
+	}
 
-    public SW360LicenseListEmbedded setLicenses(List<SW360SparseLicense> licenses) {
-        this.licenses = new HashSet<>(licenses);
-        return this;
-    }
+	public SW360LicenseListEmbedded setLicenses(List<SW360SparseLicense> licenses) {
+		this.licenses = new HashSet<>(licenses);
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if(!(o instanceof SW360LicenseListEmbedded)) return false;
-        SW360LicenseListEmbedded that = (SW360LicenseListEmbedded) o;
-        return that.canEqual(this) &&
-                Objects.equals(licenses, that.licenses);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (!(o instanceof SW360LicenseListEmbedded))
+			return false;
+		SW360LicenseListEmbedded that = (SW360LicenseListEmbedded) o;
+		return that.canEqual(this) && Objects.equals(licenses, that.licenses);
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(licenses);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(licenses);
+	}
 
-    public boolean canEqual(Object o) {
-        return o instanceof SW360LicenseListEmbedded;
-    }
+	public boolean canEqual(Object o) {
+		return o instanceof SW360LicenseListEmbedded;
+	}
 }

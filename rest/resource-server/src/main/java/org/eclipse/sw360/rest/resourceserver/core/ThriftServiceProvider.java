@@ -24,19 +24,22 @@ import org.apache.thrift.transport.TTransportException;
  * services in tests.
  * </p>
  *
- * @param <T> the type of the Thrift service provided by this interface
+ * @param <T>
+ *            the type of the Thrift service provided by this interface
  */
 @FunctionalInterface
 public interface ThriftServiceProvider<T> {
-    /**
-     * Returns a new instance of the underlying Thrift service that can be
-     * reached under the given base URL. As such Thrift services are typically
-     * not thread-safe, an implementation has to ensure that for each thread a
-     * different service instance is returned.
-     *
-     * @param thriftServerUrl the base URL for all Thrift services
-     * @return the Thrift service instance
-     * @throws TTransportException if an error occurs
-     */
-    T getService(String thriftServerUrl) throws TTransportException;
+	/**
+	 * Returns a new instance of the underlying Thrift service that can be reached
+	 * under the given base URL. As such Thrift services are typically not
+	 * thread-safe, an implementation has to ensure that for each thread a different
+	 * service instance is returned.
+	 *
+	 * @param thriftServerUrl
+	 *            the base URL for all Thrift services
+	 * @return the Thrift service instance
+	 * @throws TTransportException
+	 *             if an error occurs
+	 */
+	T getService(String thriftServerUrl) throws TTransportException;
 }

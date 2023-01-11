@@ -24,39 +24,39 @@ import java.util.concurrent.CompletableFuture;
  * Adapter implementation for the SW360 licenses endpoint.
  */
 class SW360LicenseClientAdapterAsyncImpl implements SW360LicenseClientAdapterAsync {
-    private final SW360LicenseClient licenseClient;
+	private final SW360LicenseClient licenseClient;
 
-    public SW360LicenseClientAdapterAsyncImpl(SW360LicenseClient client) {
-        licenseClient = client;
-    }
+	public SW360LicenseClientAdapterAsyncImpl(SW360LicenseClient client) {
+		licenseClient = client;
+	}
 
-    @Override
-    public SW360LicenseClient getLicenseClient() {
-        return licenseClient;
-    }
+	@Override
+	public SW360LicenseClient getLicenseClient() {
+		return licenseClient;
+	}
 
-    @Override
-    public CompletableFuture<List<SW360SparseLicense>> getLicenses() {
-        return getLicenseClient().getLicenses();
-    }
+	@Override
+	public CompletableFuture<List<SW360SparseLicense>> getLicenses() {
+		return getLicenseClient().getLicenses();
+	}
 
-    @Override
-    public CompletableFuture<Optional<SW360License>> getLicenseByName(String license) {
-        return FutureUtils.optionalFuture(getLicenseClient().getLicenseByName(license));
-    }
+	@Override
+	public CompletableFuture<Optional<SW360License>> getLicenseByName(String license) {
+		return FutureUtils.optionalFuture(getLicenseClient().getLicenseByName(license));
+	}
 
-    @Override
-    public CompletableFuture<SW360License> enrichSparseLicense(SW360SparseLicense sparseLicense) {
-        return getLicenseClient().getLicenseByName(sparseLicense.getShortName());
-    }
+	@Override
+	public CompletableFuture<SW360License> enrichSparseLicense(SW360SparseLicense sparseLicense) {
+		return getLicenseClient().getLicenseByName(sparseLicense.getShortName());
+	}
 
-    @Override
-    public CompletableFuture<SW360License> createLicense(SW360License license) {
-        return getLicenseClient().createLicense(license);
-    }
+	@Override
+	public CompletableFuture<SW360License> createLicense(SW360License license) {
+		return getLicenseClient().createLicense(license);
+	}
 
-    @Override
-    public CompletableFuture<Integer> deleteLicense(String licenseId) {
-        return getLicenseClient().deleteLicense(licenseId);
-    }
+	@Override
+	public CompletableFuture<Integer> deleteLicense(String licenseId) {
+		return getLicenseClient().deleteLicense(licenseId);
+	}
 }

@@ -22,22 +22,20 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Small client for testing a service
- * author: Gerrit.Grenzebach@tngtech.com
+ * Small client for testing a service author: Gerrit.Grenzebach@tngtech.com
  */
 public class TestModerationClient {
 
-    public static void main(String[] args) throws TException, IOException {
-        THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080//moderation/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        ModerationService.Iface client = new ModerationService.Client(protocol);
+	public static void main(String[] args) throws TException, IOException {
+		THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080//moderation/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		ModerationService.Iface client = new ModerationService.Client(protocol);
 
-        List<ModerationRequest> requestsByModerator = client.getRequestsByModerator(new User().setId("58245y9845").setEmail("cedric.bodet@tngtech.com").setDepartment("BB"));
+		List<ModerationRequest> requestsByModerator = client.getRequestsByModerator(
+				new User().setId("58245y9845").setEmail("cedric.bodet@tngtech.com").setDepartment("BB"));
 
+		System.out.println("Fetched " + requestsByModerator.size() + " moderation requests from moderation service");
 
-        System.out.println("Fetched " + requestsByModerator.size() + " moderation requests from moderation service");
-
-
-    }
+	}
 
 }

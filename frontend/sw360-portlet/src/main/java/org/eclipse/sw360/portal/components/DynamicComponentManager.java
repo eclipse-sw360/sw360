@@ -26,64 +26,64 @@ import static org.eclipse.sw360.portal.common.PortalConstants.PROPERTIES_FILE_PA
 
 @Component
 public class DynamicComponentManager extends LoggingComponent {
-    @Reference
-    private ConfigurationAdmin configurationAdmin;
+	@Reference
+	private ConfigurationAdmin configurationAdmin;
 
-    private List<Configuration> activatedConfigurations = Lists.newArrayList();
+	private List<Configuration> activatedConfigurations = Lists.newArrayList();
 
-    @Activate
-    protected synchronized void activate(ComponentContext compContext) {
-        super.activate();
+	@Activate
+	protected synchronized void activate(ComponentContext compContext) {
+		super.activate();
 
-        Properties properties = CommonUtils.loadProperties(DynamicComponentManager.class, PROPERTIES_FILE_PATH);
+		Properties properties = CommonUtils.loadProperties(DynamicComponentManager.class, PROPERTIES_FILE_PATH);
 
-        String components = properties.getProperty("components.activate");
-        activateComponents(components.split("\\s*,\\s*"), compContext);
+		String components = properties.getProperty("components.activate");
+		activateComponents(components.split("\\s*,\\s*"), compContext);
 
-        String portlets = properties.getProperty("portlets.activate");
-        activateComponents(portlets.split("\\s*,\\s*"), compContext);
-    }
+		String portlets = properties.getProperty("portlets.activate");
+		activateComponents(portlets.split("\\s*,\\s*"), compContext);
+	}
 
-    @Deactivate
-    protected synchronized void deactivate() {
-        deactivateComponents();
-        super.deactivate();
-    }
+	@Deactivate
+	protected synchronized void deactivate() {
+		deactivateComponents();
+		super.deactivate();
+	}
 
-    private void activateComponents(String[] components, ComponentContext compContext) {
-        for (String component : components) {
-            if(component.trim().isEmpty()) {
-                continue;
-            }
+	private void activateComponents(String[] components, ComponentContext compContext) {
+		for (String component : components) {
+			if (component.trim().isEmpty()) {
+				continue;
+			}
 
-            log.info("Enable component [" + component + "]");
-            try {
-                Configuration configuration = configurationAdmin.getConfiguration(component);
-                if (configuration != null) {
-                    Hashtable<String, Object> componentProperties = new Hashtable<>();
-                    componentProperties.put("enabled", true);
-                    configuration.update(componentProperties);
-                    compContext.enableComponent(component);
+			log.info("Enable component [" + component + "]");
+			try {
+				Configuration configuration = configurationAdmin.getConfiguration(component);
+				if (configuration != null) {
+					Hashtable<String, Object> componentProperties = new Hashtable<>();
+					componentProperties.put("enabled", true);
+					configuration.update(componentProperties);
+					compContext.enableComponent(component);
 
-                    activatedConfigurations.add(configuration);
-                } else {
-                    log.error("Cannot enable component [" + component + "]. No configuration found!");
-                }
-            } catch (Exception exception) {
-                log.error("Cannot enable component [" + component + "].", exception);
-            }
-        }
-    }
+					activatedConfigurations.add(configuration);
+				} else {
+					log.error("Cannot enable component [" + component + "]. No configuration found!");
+				}
+			} catch (Exception exception) {
+				log.error("Cannot enable component [" + component + "].", exception);
+			}
+		}
+	}
 
-    private void deactivateComponents() {
-        for (Configuration configuration : activatedConfigurations) {
-            log.info("Disable component [" + configuration.getPid() + "]");
+	private void deactivateComponents() {
+		for (Configuration configuration : activatedConfigurations) {
+			log.info("Disable component [" + configuration.getPid() + "]");
 
-            try {
-                configuration.delete();
-            } catch (Exception exception) {
-                log.error("Cannot disable component [" + configuration.getPid() + "].", exception);
-            }
-        }
-    }
+			try {
+				configuration.delete();
+			} catch (Exception exception) {
+				log.error("Cannot disable component [" + configuration.getPid() + "].", exception);
+			}
+		}
+	}
 }

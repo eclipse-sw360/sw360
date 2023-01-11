@@ -24,12 +24,12 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringRunner.class)
 public class SecurityEncryptorTest {
 
-    @Test
-    public void testPasswordEncryptor() throws Exception {
-        String password = "test password for security encryption!";
-        SealedObject encrypted = encrypt(password);
-        assertTrue(!password.equals(encrypted));
-        String decrypted = decrypt(encrypted);
-        assertEquals(password, decrypted);
-    }
+	@Test
+	public void testPasswordEncryptor() throws Exception {
+		String password = "test password for security encryption!";
+		SealedObject encrypted = encrypt(password);
+		assertTrue(!password.equals(encrypted));
+		String decrypted = decrypt(encrypted);
+		assertEquals(password, decrypted);
+	}
 }

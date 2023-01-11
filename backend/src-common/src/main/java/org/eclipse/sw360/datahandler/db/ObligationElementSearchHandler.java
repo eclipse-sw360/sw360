@@ -26,28 +26,23 @@ import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseCo
 
 public class ObligationElementSearchHandler {
 
-    private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "obligationelements",
-        "function(doc) {" +
-        "  if(doc.type == 'obligationElement') { " +
-        "      var ret = new Document();" +
-        "      ret.add(doc.langElement);  " +
-        "      ret.add(doc.action);  " +
-        "      ret.add(doc.object);  " +
-        "      return ret;" +
-        "  }" +
-        "}");
+	private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "obligationelements",
+			"function(doc) {" + "  if(doc.type == 'obligationElement') { " + "      var ret = new Document();"
+					+ "      ret.add(doc.langElement);  " + "      ret.add(doc.action);  "
+					+ "      ret.add(doc.object);  " + "      return ret;" + "  }" + "}");
 
-    private final LuceneAwareDatabaseConnector connector;
+	private final LuceneAwareDatabaseConnector connector;
 
-    public ObligationElementSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cCLient, String dbName) throws IOException {
-        // Creates the database connector and adds the lucene search view
-        connector = new LuceneAwareDatabaseConnector(httpClient, cCLient, dbName);
-        connector.addView(luceneSearchView);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
-    }
+	public ObligationElementSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cCLient,
+			String dbName) throws IOException {
+		// Creates the database connector and adds the lucene search view
+		connector = new LuceneAwareDatabaseConnector(httpClient, cCLient, dbName);
+		connector.addView(luceneSearchView);
+		connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+	}
 
-    public List<ObligationElement> search(String searchText) {
-        return connector.searchView(ObligationElement.class, luceneSearchView, prepareWildcardQuery(searchText));
-    }
+	public List<ObligationElement> search(String searchText) {
+		return connector.searchView(ObligationElement.class, luceneSearchView, prepareWildcardQuery(searchText));
+	}
 
 }

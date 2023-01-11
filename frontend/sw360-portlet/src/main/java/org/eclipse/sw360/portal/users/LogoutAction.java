@@ -28,40 +28,35 @@ import com.liferay.portal.kernel.events.*;
  * @author smruti.sahoo@siemens.com
  *
  */
-@Component(
-    immediate = true,
-    property = {"key=logout.events.post" },
-    service = LifecycleAction.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE,
-    enabled = false
-)
+@Component(immediate = true, property = {
+		"key=logout.events.post"}, service = LifecycleAction.class, configurationPolicy = ConfigurationPolicy.REQUIRE, enabled = false)
 public class LogoutAction extends LoggingComponent implements LifecycleAction {
 
-    private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
-    private static final String LOGOUT_REDIRECT_URL = "logout.redirect.url";
+	private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+	private static final String LOGOUT_REDIRECT_URL = "logout.redirect.url";
 
-    private String LOGOUT_REDIRECT_URL_VALUE;
+	private String LOGOUT_REDIRECT_URL_VALUE;
 
-    @Override
-    @Activate
-    protected void activate() {
-        super.activate();
+	@Override
+	@Activate
+	protected void activate() {
+		super.activate();
 
-        Properties props = CommonUtils.loadProperties(LogoutAction.class, PROPERTIES_FILE_PATH);
-        LOGOUT_REDIRECT_URL_VALUE = props.getProperty(LOGOUT_REDIRECT_URL, "");
-    }
+		Properties props = CommonUtils.loadProperties(LogoutAction.class, PROPERTIES_FILE_PATH);
+		LOGOUT_REDIRECT_URL_VALUE = props.getProperty(LOGOUT_REDIRECT_URL, "");
+	}
 
-    @Override
-    public void processLifecycleEvent(LifecycleEvent lifecycleEvent) throws ActionException {
-        HttpServletResponse response = lifecycleEvent.getResponse();
-        response.setHeader("Clear-Site-Data", "\"cache\", \"storage\", \"cookies\"");
+	@Override
+	public void processLifecycleEvent(LifecycleEvent lifecycleEvent) throws ActionException {
+		HttpServletResponse response = lifecycleEvent.getResponse();
+		response.setHeader("Clear-Site-Data", "\"cache\", \"storage\", \"cookies\"");
 
-        if (CommonUtils.isNotNullEmptyOrWhitespace(LOGOUT_REDIRECT_URL_VALUE)) {
-            try {
-                response.sendRedirect(LOGOUT_REDIRECT_URL_VALUE);
-            } catch (IOException e) {
-                log.error("Error redirecting to custom logout page", e);
-            }
-        }
-    }
+		if (CommonUtils.isNotNullEmptyOrWhitespace(LOGOUT_REDIRECT_URL_VALUE)) {
+			try {
+				response.sendRedirect(LOGOUT_REDIRECT_URL_VALUE);
+			} catch (IOException e) {
+				log.error("Error redirecting to custom logout page", e);
+			}
+		}
+	}
 }

@@ -62,164 +62,165 @@ import static org.mockito.Mockito.when;
 @ActiveProfiles({"dev", "test"})
 public abstract class IntegrationTestBase {
 
-    @Value("${local.server.port}")
-    protected int port;
+	@Value("${local.server.port}")
+	protected int port;
 
-    @Autowired
-    protected FilterChainProxy springSecurityFilterChain;
+	@Autowired
+	protected FilterChainProxy springSecurityFilterChain;
 
-    @MockBean
-    protected ThriftClients thriftClients;
+	@MockBean
+	protected ThriftClients thriftClients;
 
-    @MockBean
-    protected Sw360ClientDetailsService sw360ClientDetailsService;
+	@MockBean
+	protected Sw360ClientDetailsService sw360ClientDetailsService;
 
-    @MockBean
-    protected OAuthClientRepository clientRepo;
+	@MockBean
+	protected OAuthClientRepository clientRepo;
 
-    @SpyBean
-    protected RestTemplateBuilder restTemplateBuilder;
+	@SpyBean
+	protected RestTemplateBuilder restTemplateBuilder;
 
-    @Autowired
-    @InjectMocks
-    protected Sw360LiferayAuthenticationProvider provider;
+	@Autowired
+	@InjectMocks
+	protected Sw360LiferayAuthenticationProvider provider;
 
-    protected User adminTestUser;
+	protected User adminTestUser;
 
-    protected User normalTestUser;
+	protected User normalTestUser;
 
-    protected ClientDetails testClient;
+	protected ClientDetails testClient;
 
-    protected ResponseEntity<String> responseEntity;
+	protected ResponseEntity<String> responseEntity;
 
-    @Before
-    public void setup() throws TException {
-        setupTestUser();
-        UserService.Client mockedUserService = mock(UserService.Client.class);
-        when(mockedUserService.getByEmailOrExternalId(eq(adminTestUser.email), anyString())).thenReturn(adminTestUser);
-        when(mockedUserService.getByEmailOrExternalId(eq(normalTestUser.email), anyString()))
-                .thenReturn(normalTestUser);
-        when(thriftClients.makeUserClient()).thenReturn(mockedUserService);
+	@Before
+	public void setup() throws TException {
+		setupTestUser();
+		UserService.Client mockedUserService = mock(UserService.Client.class);
+		when(mockedUserService.getByEmailOrExternalId(eq(adminTestUser.email), anyString())).thenReturn(adminTestUser);
+		when(mockedUserService.getByEmailOrExternalId(eq(normalTestUser.email), anyString()))
+				.thenReturn(normalTestUser);
+		when(thriftClients.makeUserClient()).thenReturn(mockedUserService);
 
-        setupTestClient();
-        when(sw360ClientDetailsService.loadClientByClientId(anyString())).thenReturn(testClient);
+		setupTestClient();
+		when(sw360ClientDetailsService.loadClientByClientId(anyString())).thenReturn(testClient);
 
-        setupLiferayMocks();
-    }
+		setupLiferayMocks();
+	}
 
-    private void setupTestUser() {
-        adminTestUser = new User("mockedserviceadminuser@sw360.org", "qa-admin");
-        adminTestUser.externalid = "service-mocked-by-mockito-admin";
-        adminTestUser.fullname = "Mocked Service Admin User";
-        adminTestUser.givenname = "Mocked";
-        adminTestUser.lastname = "Service Admin User";
-        adminTestUser.userGroup = UserGroup.SW360_ADMIN;
+	private void setupTestUser() {
+		adminTestUser = new User("mockedserviceadminuser@sw360.org", "qa-admin");
+		adminTestUser.externalid = "service-mocked-by-mockito-admin";
+		adminTestUser.fullname = "Mocked Service Admin User";
+		adminTestUser.givenname = "Mocked";
+		adminTestUser.lastname = "Service Admin User";
+		adminTestUser.userGroup = UserGroup.SW360_ADMIN;
 
-        normalTestUser = new User("mockedservicenormaluser@sw360.org", "qa-normal");
-        normalTestUser.externalid = "service-mocked-by-mockito-normal";
-        normalTestUser.fullname = "Mocked Service Normal User";
-        normalTestUser.givenname = "Mocked";
-        normalTestUser.lastname = "Service Normal User";
-        normalTestUser.userGroup = UserGroup.USER;
-    }
+		normalTestUser = new User("mockedservicenormaluser@sw360.org", "qa-normal");
+		normalTestUser.externalid = "service-mocked-by-mockito-normal";
+		normalTestUser.fullname = "Mocked Service Normal User";
+		normalTestUser.givenname = "Mocked";
+		normalTestUser.lastname = "Service Normal User";
+		normalTestUser.userGroup = UserGroup.USER;
+	}
 
-    private void setupTestClient() {
-        testClient = new BaseClientDetails("trusted-sw360-client", "sw360-REST-API",
-                Sw360GrantedAuthority.READ.getAuthority(), "client_credentials,password",
-                Sw360GrantedAuthority.BASIC.getAuthority());
-        ((BaseClientDetails) testClient).setClientSecret("sw360-secret");
-        ((BaseClientDetails) testClient).setAutoApproveScopes(Sets.newHashSet("true"));
-    }
+	private void setupTestClient() {
+		testClient = new BaseClientDetails("trusted-sw360-client", "sw360-REST-API",
+				Sw360GrantedAuthority.READ.getAuthority(), "client_credentials,password",
+				Sw360GrantedAuthority.BASIC.getAuthority());
+		((BaseClientDetails) testClient).setClientSecret("sw360-secret");
+		((BaseClientDetails) testClient).setAutoApproveScopes(Sets.newHashSet("true"));
+	}
 
-    @SuppressWarnings("unchecked")
-    private void setupLiferayMocks() {
-        // this setup is more complex! Since we can only mock the RestTemplateBuilder,
-        // which is used in other parts of the application and tests as well, we have to
-        // create a mock and inject that one only in the correct class and cannot just
-        // use @MockBean which would exchange it in the application context. In addition
-        // we want two different responses (happy case and error case) which is why we
-        // need to exchange the builder after a call to withBasicAuth() because we only
-        // know at this location if we are in the happy case or in the error case
+	@SuppressWarnings("unchecked")
+	private void setupLiferayMocks() {
+		// this setup is more complex! Since we can only mock the RestTemplateBuilder,
+		// which is used in other parts of the application and tests as well, we have to
+		// create a mock and inject that one only in the correct class and cannot just
+		// use @MockBean which would exchange it in the application context. In addition
+		// we want two different responses (happy case and error case) which is why we
+		// need to exchange the builder after a call to withBasicAuth() because we only
+		// know at this location if we are in the happy case or in the error case
 
-        // preparation for good case
-        ResponseEntity<String> mockedResponseEntity = mock(ResponseEntity.class);
-        when(mockedResponseEntity.getBody()).thenReturn("4711");
+		// preparation for good case
+		ResponseEntity<String> mockedResponseEntity = mock(ResponseEntity.class);
+		when(mockedResponseEntity.getBody()).thenReturn("4711");
 
-        RestTemplate mockedRestTemplate = mock(RestTemplate.class);
-        when(mockedRestTemplate.postForEntity(anyString(), any(), eq(String.class)))
-                .thenReturn(mockedResponseEntity);
+		RestTemplate mockedRestTemplate = mock(RestTemplate.class);
+		when(mockedRestTemplate.postForEntity(anyString(), any(), eq(String.class))).thenReturn(mockedResponseEntity);
 
-        RestTemplateBuilder mockedRTB = mock(RestTemplateBuilder.class);
-        when(restTemplateBuilder.basicAuthentication(adminTestUser.email, "password-not-checked-in-test-without-liferay")).thenReturn(mockedRTB);
-        when(restTemplateBuilder.basicAuthentication(normalTestUser.email, "password-not-checked-in-test-without-liferay")).thenReturn(mockedRTB);
-        when(mockedRTB.build()).thenReturn(mockedRestTemplate);
+		RestTemplateBuilder mockedRTB = mock(RestTemplateBuilder.class);
+		when(restTemplateBuilder.basicAuthentication(adminTestUser.email,
+				"password-not-checked-in-test-without-liferay")).thenReturn(mockedRTB);
+		when(restTemplateBuilder.basicAuthentication(normalTestUser.email,
+				"password-not-checked-in-test-without-liferay")).thenReturn(mockedRTB);
+		when(mockedRTB.build()).thenReturn(mockedRestTemplate);
 
-        // preparation for bad case
-        ResponseEntity<String> mockedResponseEntityFail = mock(ResponseEntity.class);
-        when(mockedResponseEntityFail.getBody()).thenReturn("Some auth exception");
+		// preparation for bad case
+		ResponseEntity<String> mockedResponseEntityFail = mock(ResponseEntity.class);
+		when(mockedResponseEntityFail.getBody()).thenReturn("Some auth exception");
 
-        RestTemplate mockedRestTemplateFail = mock(RestTemplate.class);
-        when(mockedRestTemplateFail.postForEntity(anyString(), any(), eq(String.class)))
-                .thenReturn(mockedResponseEntityFail);
+		RestTemplate mockedRestTemplateFail = mock(RestTemplate.class);
+		when(mockedRestTemplateFail.postForEntity(anyString(), any(), eq(String.class)))
+				.thenReturn(mockedResponseEntityFail);
 
-        RestTemplateBuilder mockedRTBFail = mock(RestTemplateBuilder.class);
-        when(restTemplateBuilder.basicAuthentication("my-unknown-user", "pwd")).thenReturn(mockedRTBFail);
-        when(mockedRTBFail.build()).thenReturn(mockedRestTemplateFail);
-    }
+		RestTemplateBuilder mockedRTBFail = mock(RestTemplateBuilder.class);
+		when(restTemplateBuilder.basicAuthentication("my-unknown-user", "pwd")).thenReturn(mockedRTBFail);
+		when(mockedRTBFail.build()).thenReturn(mockedRestTemplateFail);
+	}
 
-    protected void checkResponseBody() throws IOException {
-        String responseBody = responseEntity.getBody();
+	protected void checkResponseBody() throws IOException {
+		String responseBody = responseEntity.getBody();
 
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+		assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
 
-        JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
+		JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
 
-        assertThat(responseBodyJsonNode.get("token_type").asText(), is("bearer"));
-        assertThat(responseBodyJsonNode.get("scope").asText(), is(Sw360GrantedAuthority.READ.toString()));
-        assertThat(responseBodyJsonNode.has("access_token"), is(true));
-        assertThat(responseBodyJsonNode.has("expires_in"), is(true));
-        assertThat(responseBodyJsonNode.has("jti"), is(true));
-    }
+		assertThat(responseBodyJsonNode.get("token_type").asText(), is("bearer"));
+		assertThat(responseBodyJsonNode.get("scope").asText(), is(Sw360GrantedAuthority.READ.toString()));
+		assertThat(responseBodyJsonNode.has("access_token"), is(true));
+		assertThat(responseBodyJsonNode.has("expires_in"), is(true));
+		assertThat(responseBodyJsonNode.has("jti"), is(true));
+	}
 
-    protected JsonNode checkJwtClaims(String... expectedAuthority) throws IOException {
-        String responseBody = responseEntity.getBody();
+	protected JsonNode checkJwtClaims(String... expectedAuthority) throws IOException {
+		String responseBody = responseEntity.getBody();
 
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+		assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
 
-        JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
-        assertThat(responseBodyJsonNode.has("access_token"), is(true));
+		JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
+		assertThat(responseBodyJsonNode.has("access_token"), is(true));
 
-        String accessToken = responseBodyJsonNode.get("access_token").asText();
-        Jwt jwt = JwtHelper.decode(accessToken);
-        String jwtClaims = jwt.getClaims();
-        JsonNode jwtClaimsJsonNode = new ObjectMapper().readTree(jwtClaims);
-        assertThat(jwtClaimsJsonNode.get("aud").get(0).asText(), is("sw360-REST-API"));
-        assertThat(jwtClaimsJsonNode.get("client_id").asText(), is("trusted-sw360-client"));
+		String accessToken = responseBodyJsonNode.get("access_token").asText();
+		Jwt jwt = JwtHelper.decode(accessToken);
+		String jwtClaims = jwt.getClaims();
+		JsonNode jwtClaimsJsonNode = new ObjectMapper().readTree(jwtClaims);
+		assertThat(jwtClaimsJsonNode.get("aud").get(0).asText(), is("sw360-REST-API"));
+		assertThat(jwtClaimsJsonNode.get("client_id").asText(), is("trusted-sw360-client"));
 
-        JsonNode scopesNode = jwtClaimsJsonNode.get("scope");
-        List<String> actualScopes = new ArrayList<>();
-        if (scopesNode.isArray()) {
-            for (final JsonNode scopeNode : scopesNode) {
-                actualScopes.add(scopeNode.asText());
-            }
-        } else {
-            actualScopes.add(scopesNode.asText());
-        }
-        assertThat(actualScopes, containsInAnyOrder(Sw360GrantedAuthority.READ.toString()));
+		JsonNode scopesNode = jwtClaimsJsonNode.get("scope");
+		List<String> actualScopes = new ArrayList<>();
+		if (scopesNode.isArray()) {
+			for (final JsonNode scopeNode : scopesNode) {
+				actualScopes.add(scopeNode.asText());
+			}
+		} else {
+			actualScopes.add(scopesNode.asText());
+		}
+		assertThat(actualScopes, containsInAnyOrder(Sw360GrantedAuthority.READ.toString()));
 
-        JsonNode authoritiesJsonNode = jwtClaimsJsonNode.get("authorities");
-        List<String> actualAuthorities = new ArrayList<>();
-        if (authoritiesJsonNode.isArray()) {
-            for (final JsonNode authorityTextNode : authoritiesJsonNode) {
-                actualAuthorities.add(authorityTextNode.asText());
-            }
-        } else {
-            actualAuthorities.add(authoritiesJsonNode.asText());
-        }
-        System.out.println("ACTUAL: " + actualAuthorities);
-        System.out.println("EXPECTED: " + StringUtils.join(expectedAuthority, ", "));
-        assertThat(actualAuthorities, containsInAnyOrder(expectedAuthority));
+		JsonNode authoritiesJsonNode = jwtClaimsJsonNode.get("authorities");
+		List<String> actualAuthorities = new ArrayList<>();
+		if (authoritiesJsonNode.isArray()) {
+			for (final JsonNode authorityTextNode : authoritiesJsonNode) {
+				actualAuthorities.add(authorityTextNode.asText());
+			}
+		} else {
+			actualAuthorities.add(authoritiesJsonNode.asText());
+		}
+		System.out.println("ACTUAL: " + actualAuthorities);
+		System.out.println("EXPECTED: " + StringUtils.join(expectedAuthority, ", "));
+		assertThat(actualAuthorities, containsInAnyOrder(expectedAuthority));
 
-        return jwtClaimsJsonNode;
-    }
+		return jwtClaimsJsonNode;
+	}
 }

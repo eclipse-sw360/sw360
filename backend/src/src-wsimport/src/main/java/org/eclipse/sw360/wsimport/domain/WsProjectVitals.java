@@ -14,13 +14,13 @@ package org.eclipse.sw360.wsimport.domain;
  */
 public class WsProjectVitals {
 
-    private WsProjectVitalInformation[] projectVitals;
+	private WsProjectVitalInformation[] projectVitals;
 
-    public WsProjectVitalInformation[] getProjectVitals() {
-        return projectVitals;
-    }
+	public WsProjectVitalInformation[] getProjectVitals() {
+		return projectVitals;
+	}
 
-    public void setProjectVitals(WsProjectVitalInformation[] projectVitals) {
-        this.projectVitals = projectVitals;
-    }
+	public void setProjectVitals(WsProjectVitalInformation[] projectVitals) {
+		this.projectVitals = projectVitals;
+	}
 }

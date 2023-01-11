@@ -27,74 +27,67 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 class SW360ComponentClientAdapterAsyncImpl implements SW360ComponentClientAdapterAsync {
-    private final SW360ComponentClient componentClient;
+	private final SW360ComponentClient componentClient;
 
-    public SW360ComponentClientAdapterAsyncImpl(SW360ComponentClient client) {
-        componentClient = client;
-    }
+	public SW360ComponentClientAdapterAsyncImpl(SW360ComponentClient client) {
+		componentClient = client;
+	}
 
-    @Override
-    public SW360ComponentClient getComponentClient() {
-        return componentClient;
-    }
+	@Override
+	public SW360ComponentClient getComponentClient() {
+		return componentClient;
+	}
 
-    @Override
-    public CompletableFuture<SW360Component> createComponent(SW360Component component) {
-        if (component.getComponentType() == null) {
-            component.setComponentType(SW360ComponentType.OSS);
-        }
-        return FutureUtils.wrapInFuture(() -> SW360ComponentAdapterUtils.validateComponent(component),
-                "Cannot create invalid component for " + component.getName())
-                .thenCompose(getComponentClient()::createComponent);
-    }
+	@Override
+	public CompletableFuture<SW360Component> createComponent(SW360Component component) {
+		if (component.getComponentType() == null) {
+			component.setComponentType(SW360ComponentType.OSS);
+		}
+		return FutureUtils
+				.wrapInFuture(() -> SW360ComponentAdapterUtils.validateComponent(component),
+						"Cannot create invalid component for " + component.getName())
+				.thenCompose(getComponentClient()::createComponent);
+	}
 
-    @Override
-    public CompletableFuture<Optional<SW360Component>> getComponentById(String componentId) {
-        return FutureUtils.optionalFuture(getComponentClient().getComponent(componentId));
-    }
+	@Override
+	public CompletableFuture<Optional<SW360Component>> getComponentById(String componentId) {
+		return FutureUtils.optionalFuture(getComponentClient().getComponent(componentId));
+	}
 
-    @Override
-    public CompletableFuture<Optional<SW360Component>> getComponentByName(String componentName) {
-        ComponentSearchParams searchParams = ComponentSearchParams.builder()
-                .withName(componentName)
-                .build();
-        return getComponentClient().search(searchParams)
-                .thenCompose(components ->
-                        components.getResult().stream()
-                                .filter(c -> c.getName().equalsIgnoreCase(componentName))
-                                .map(c -> SW360HalResourceUtility.getLastIndexOfSelfLink(c.getLinks()).orElse(""))
-                                .map(this::getComponentById)
-                                .findFirst()
-                                .orElse(CompletableFuture.completedFuture(Optional.empty()))
-                );
-    }
+	@Override
+	public CompletableFuture<Optional<SW360Component>> getComponentByName(String componentName) {
+		ComponentSearchParams searchParams = ComponentSearchParams.builder().withName(componentName).build();
+		return getComponentClient().search(searchParams).thenCompose(components -> components.getResult().stream()
+				.filter(c -> c.getName().equalsIgnoreCase(componentName))
+				.map(c -> SW360HalResourceUtility.getLastIndexOfSelfLink(c.getLinks()).orElse(""))
+				.map(this::getComponentById).findFirst().orElse(CompletableFuture.completedFuture(Optional.empty())));
+	}
 
-    @Override
-    public CompletableFuture<List<SW360SparseComponent>> search(ComponentSearchParams searchParams) {
-        return searchWithPaging(searchParams)
-                .thenApply(PagingResult::getResult);
-    }
+	@Override
+	public CompletableFuture<List<SW360SparseComponent>> search(ComponentSearchParams searchParams) {
+		return searchWithPaging(searchParams).thenApply(PagingResult::getResult);
+	}
 
-    @Override
-    public CompletableFuture<PagingResult<SW360SparseComponent>> searchWithPaging(ComponentSearchParams searchParams) {
-        return getComponentClient().search(searchParams);
-    }
+	@Override
+	public CompletableFuture<PagingResult<SW360SparseComponent>> searchWithPaging(ComponentSearchParams searchParams) {
+		return getComponentClient().search(searchParams);
+	}
 
-    @Override
-    public CompletableFuture<SW360Component> updateComponent(SW360Component component) {
-        return FutureUtils.wrapInFuture(() -> SW360ComponentAdapterUtils.validateComponent(component),
-                "Cannot update invalid component for " + component.getName())
-                .thenCompose(getComponentClient()::patchComponent);
-    }
+	@Override
+	public CompletableFuture<SW360Component> updateComponent(SW360Component component) {
+		return FutureUtils
+				.wrapInFuture(() -> SW360ComponentAdapterUtils.validateComponent(component),
+						"Cannot update invalid component for " + component.getName())
+				.thenCompose(getComponentClient()::patchComponent);
+	}
 
-    @Override
-    public CompletableFuture<MultiStatusResponse> deleteComponents(Collection<String> idsToDelete) {
-        return SW360DeleteUtils.deleteEntities(getComponentClient()::deleteComponents, idsToDelete);
-    }
+	@Override
+	public CompletableFuture<MultiStatusResponse> deleteComponents(Collection<String> idsToDelete) {
+		return SW360DeleteUtils.deleteEntities(getComponentClient()::deleteComponents, idsToDelete);
+	}
 
-    @Override
-    public CompletableFuture<Void> deleteComponent(String componentId) {
-        return SW360DeleteUtils.deleteEntity(getComponentClient()::deleteComponents,
-                componentId, "component");
-    }
+	@Override
+	public CompletableFuture<Void> deleteComponent(String componentId) {
+		return SW360DeleteUtils.deleteEntity(getComponentClient()::deleteComponents, componentId, "component");
+	}
 }

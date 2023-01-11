@@ -41,133 +41,128 @@ import javax.portlet.*;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
-@org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-            "/org/eclipse/sw360/portal/portlets/base.properties",
-            "/org/eclipse/sw360/portal/portlets/admin.properties"
-    },
-    property = {
-        "javax.portlet.name=" + BULK_RELEASE_EDIT_PORTLET_NAME,
+@org.osgi.service.component.annotations.Component(immediate = true, properties = {
+		"/org/eclipse/sw360/portal/portlets/base.properties",
+		"/org/eclipse/sw360/portal/portlets/admin.properties"}, property = {
+				"javax.portlet.name=" + BULK_RELEASE_EDIT_PORTLET_NAME,
 
-        "javax.portlet.display-name=Bulk Release Edit",
-        "javax.portlet.info.short-title=Bulk Release Edit",
-        "javax.portlet.info.title=Bulk Release Edit",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/admin/bulkReleaseEdit/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+				"javax.portlet.display-name=Bulk Release Edit", "javax.portlet.info.short-title=Bulk Release Edit",
+				"javax.portlet.info.title=Bulk Release Edit", "javax.portlet.resource-bundle=content.Language",
+				"javax.portlet.init-param.view-template=/html/admin/bulkReleaseEdit/view.jsp",}, service = Portlet.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class BulkReleaseEditPortlet extends Sw360Portlet {
-    private static final Logger log = LogManager.getLogger(BulkReleaseEditPortlet.class);
+	private static final Logger log = LogManager.getLogger(BulkReleaseEditPortlet.class);
 
-    @Override
-    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        final User user = UserCacheHolder.getUserFromRequest(request);
-        ComponentService.Iface client = thriftClients.makeComponentClient();
+	@Override
+	public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+		final User user = UserCacheHolder.getUserFromRequest(request);
+		ComponentService.Iface client = thriftClients.makeComponentClient();
 
-        try {
-            final List<Release> releaseSummary = client.getReleaseSummary(user);
+		try {
+			final List<Release> releaseSummary = client.getReleaseSummary(user);
 
-            request.setAttribute(RELEASE_LIST, releaseSummary);
+			request.setAttribute(RELEASE_LIST, releaseSummary);
 
-        } catch (TException e) {
-            log.error("Could not fetch releases from backend", e);
-            request.setAttribute(RELEASE_LIST, Collections.emptyList());
-        }
+		} catch (TException e) {
+			log.error("Could not fetch releases from backend", e);
+			request.setAttribute(RELEASE_LIST, Collections.emptyList());
+		}
 
-        // Proceed with page rendering
-        super.doView(request, response);
-    }
+		// Proceed with page rendering
+		super.doView(request, response);
+	}
 
-    @Override
-    public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
-        String action = request.getParameter(PortalConstants.ACTION);
-        if (PortalConstants.RELEASE.equals(action)) {
-            updateRelease(request, response);
-        } else if (VIEW_VENDOR.equals(action)) {
-            serveViewVendor(request, response);
-        } else if (ADD_VENDOR.equals(action)) {
-            serveAddVendor(request, response);
-        } else {
-            renderRequestStatus(request, response, RequestStatus.FAILURE);
-        }
-    }
+	@Override
+	public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+		String action = request.getParameter(PortalConstants.ACTION);
+		if (PortalConstants.RELEASE.equals(action)) {
+			updateRelease(request, response);
+		} else if (VIEW_VENDOR.equals(action)) {
+			serveViewVendor(request, response);
+		} else if (ADD_VENDOR.equals(action)) {
+			serveAddVendor(request, response);
+		} else {
+			renderRequestStatus(request, response, RequestStatus.FAILURE);
+		}
+	}
 
-    private void updateRelease(ResourceRequest request, ResourceResponse response) {
-        final User user = UserCacheHolder.getUserFromRequest(request);
+	private void updateRelease(ResourceRequest request, ResourceResponse response) {
+		final User user = UserCacheHolder.getUserFromRequest(request);
 
-        RequestStatus requestStatus = RequestStatus.FAILURE;
+		RequestStatus requestStatus = RequestStatus.FAILURE;
 
-        String releaseId = request.getParameter(RELEASE_ID);
-        if (releaseId != null) {
-            try {
-                ComponentService.Iface client = thriftClients.makeComponentClient();
-                Release release = client.getReleaseById(releaseId, user);
-                ComponentPortletUtils.updateReleaseFromRequest(request, release);
-                requestStatus = client.updateRelease(release, user);
+		String releaseId = request.getParameter(RELEASE_ID);
+		if (releaseId != null) {
+			try {
+				ComponentService.Iface client = thriftClients.makeComponentClient();
+				Release release = client.getReleaseById(releaseId, user);
+				ComponentPortletUtils.updateReleaseFromRequest(request, release);
+				requestStatus = client.updateRelease(release, user);
 
-            } catch (TException e) {
-                log.error("Release update failed", e);
-                requestStatus = RequestStatus.FAILURE;
-            }
-        }
-        renderRequestStatus(request, response, requestStatus);
-    }
+			} catch (TException e) {
+				log.error("Release update failed", e);
+				requestStatus = RequestStatus.FAILURE;
+			}
+		}
+		renderRequestStatus(request, response, requestStatus);
+	}
 
-    //** Copy paste of private portlet methods of ComponentPortlet... inheritance is not straight forward as we do not have attachments ... maybe if there is more time it can be done **/
-    // TODO reduce code doubling here and in ComponentPortlet
-    private void serveViewVendor(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
-        String what = request.getParameter(PortalConstants.WHAT);
-        String where = request.getParameter(PortalConstants.WHERE);
+	// ** Copy paste of private portlet methods of ComponentPortlet... inheritance
+	// is not straight forward as we do not have attachments ... maybe if there is
+	// more time it can be done **/
+	// TODO reduce code doubling here and in ComponentPortlet
+	private void serveViewVendor(ResourceRequest request, ResourceResponse response)
+			throws IOException, PortletException {
+		String what = request.getParameter(PortalConstants.WHAT);
+		String where = request.getParameter(PortalConstants.WHERE);
 
-        if ("vendorSearch".equals(what)) {
-            renderVendorSearch(request, response, where);
-        }
-    }
+		if ("vendorSearch".equals(what)) {
+			renderVendorSearch(request, response, where);
+		}
+	}
 
-    private void renderVendorSearch(ResourceRequest request, ResourceResponse response, String searchText) throws IOException, PortletException {
-        List<Vendor> vendors = null;
-        try {
-            VendorService.Iface client = thriftClients.makeVendorClient();
-            if (isNullOrEmpty(searchText)) {
-                vendors = client.getAllVendors();
-            } else {
-                vendors = client.searchVendors(searchText);
-            }
-        } catch (TException e) {
-            log.error("Error searching vendors", e);
-        }
+	private void renderVendorSearch(ResourceRequest request, ResourceResponse response, String searchText)
+			throws IOException, PortletException {
+		List<Vendor> vendors = null;
+		try {
+			VendorService.Iface client = thriftClients.makeVendorClient();
+			if (isNullOrEmpty(searchText)) {
+				vendors = client.getAllVendors();
+			} else {
+				vendors = client.searchVendors(searchText);
+			}
+		} catch (TException e) {
+			log.error("Error searching vendors", e);
+		}
 
-        request.setAttribute("vendorsSearch", CommonUtils.nullToEmptyList(vendors));
-        include("/html/components/ajax/vendorSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
-    }
+		request.setAttribute("vendorsSearch", CommonUtils.nullToEmptyList(vendors));
+		include("/html/components/ajax/vendorSearch.jsp", request, response, PortletRequest.RESOURCE_PHASE);
+	}
 
-    private void serveAddVendor(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
-        final Vendor vendor = new Vendor();
-        ComponentPortletUtils.updateVendorFromRequest(request, vendor);
+	private void serveAddVendor(ResourceRequest request, ResourceResponse response)
+			throws IOException, PortletException {
+		final Vendor vendor = new Vendor();
+		ComponentPortletUtils.updateVendorFromRequest(request, vendor);
 
-        try {
-            VendorService.Iface client = thriftClients.makeVendorClient();
-            AddDocumentRequestSummary summary = client.addVendor(vendor);
-            AddDocumentRequestStatus status = summary.getRequestStatus();
-            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+		try {
+			VendorService.Iface client = thriftClients.makeVendorClient();
+			AddDocumentRequestSummary summary = client.addVendor(vendor);
+			AddDocumentRequestStatus status = summary.getRequestStatus();
+			JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-            if (AddDocumentRequestStatus.SUCCESS.equals(status)) {
-                jsonObject.put("id", summary.getId());
-            } else if (AddDocumentRequestStatus.DUPLICATE.equals(status)) {
-                jsonObject.put("error", ErrorMessages.VENDOR_DUPLICATE);
-            } else if (AddDocumentRequestStatus.FAILURE.equals(status)) {
-                jsonObject.put("error", summary.getMessage());
-            }
-            try {
-                writeJSON(request, response, jsonObject);
-            } catch (IOException e) {
-                log.error("Problem rendering VendorId", e);
-            }
-        } catch (TException e) {
-            log.error("Error adding vendor", e);
-        }
-    }
+			if (AddDocumentRequestStatus.SUCCESS.equals(status)) {
+				jsonObject.put("id", summary.getId());
+			} else if (AddDocumentRequestStatus.DUPLICATE.equals(status)) {
+				jsonObject.put("error", ErrorMessages.VENDOR_DUPLICATE);
+			} else if (AddDocumentRequestStatus.FAILURE.equals(status)) {
+				jsonObject.put("error", summary.getMessage());
+			}
+			try {
+				writeJSON(request, response, jsonObject);
+			} catch (IOException e) {
+				log.error("Problem rendering VendorId", e);
+			}
+		} catch (TException e) {
+			log.error("Error adding vendor", e);
+		}
+	}
 }

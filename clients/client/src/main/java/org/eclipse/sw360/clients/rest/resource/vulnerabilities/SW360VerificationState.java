@@ -10,17 +10,15 @@
 package org.eclipse.sw360.clients.rest.resource.vulnerabilities;
 
 public enum SW360VerificationState {
-    NOT_CHECKED(0),
-    CHECKED(1),
-    INCORRECT(2);
+	NOT_CHECKED(0), CHECKED(1), INCORRECT(2);
 
-    private final int value;
+	private final int value;
 
-    private SW360VerificationState(int value) {
-      this.value = value;
-    }
+	private SW360VerificationState(int value) {
+		this.value = value;
+	}
 
-    public int getValue() {
-      return value;
-    }
+	public int getValue() {
+		return value;
+	}
 }

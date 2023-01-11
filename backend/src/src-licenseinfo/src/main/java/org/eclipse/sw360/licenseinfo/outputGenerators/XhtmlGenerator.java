@@ -27,43 +27,50 @@ import java.util.Collection;
 import java.util.Map;
 
 public class XhtmlGenerator extends OutputGenerator<String> {
-    private static final Logger LOGGER = LogManager.getLogger(XhtmlGenerator.class);
+	private static final Logger LOGGER = LogManager.getLogger(XhtmlGenerator.class);
 
-    private static final String XHTML_TEMPLATE_FILE = "xhtmlLicenseInfoFile.vm";
-    private static final String XHTML_MIME_TYPE = "application/xhtml+xml";
-    private static final String XHTML_OUTPUT_TYPE = "html";
+	private static final String XHTML_TEMPLATE_FILE = "xhtmlLicenseInfoFile.vm";
+	private static final String XHTML_MIME_TYPE = "application/xhtml+xml";
+	private static final String XHTML_OUTPUT_TYPE = "html";
 
-    public XhtmlGenerator(OutputFormatVariant outputFormatVariant, String description) {
-        super(XHTML_OUTPUT_TYPE, description, false, XHTML_MIME_TYPE, outputFormatVariant);
-    }
+	public XhtmlGenerator(OutputFormatVariant outputFormatVariant, String description) {
+		super(XHTML_OUTPUT_TYPE, description, false, XHTML_MIME_TYPE, outputFormatVariant);
+	}
 
-    @Override
-    public String generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String,String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception {
-        String projectName = project.getName();
-        String projectVersion = project.getVersion();
-        String licenseInfoHeaderText = project.getLicenseInfoHeaderText();
-        String obligationsText = project.getObligationsText();
+	@Override
+	public String generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project,
+			Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds,
+			Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception {
+		String projectName = project.getName();
+		String projectVersion = project.getVersion();
+		String licenseInfoHeaderText = project.getLicenseInfoHeaderText();
+		String obligationsText = project.getObligationsText();
 
-        switch (getOutputVariant()) {
-            case DISCLOSURE:
-                return generateDisclosure(projectLicenseInfoResults, projectName + " " + projectVersion, licenseInfoHeaderText, obligationsText, externalIds);
-            default:
-                throw new IllegalArgumentException("Unknown generator variant type: " + getOutputVariant());
-        }
-    }
+		switch (getOutputVariant()) {
+			case DISCLOSURE :
+				return generateDisclosure(projectLicenseInfoResults, projectName + " " + projectVersion,
+						licenseInfoHeaderText, obligationsText, externalIds);
+			default :
+				throw new IllegalArgumentException("Unknown generator variant type: " + getOutputVariant());
+		}
+	}
 
-    private String generateDisclosure(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, String projectTitle, String licenseInfoHeaderText, String obligationsText, Map<String, String> externalIds) {
-        try {
-            return renderTemplateWithDefaultValues(projectLicenseInfoResults, XHTML_TEMPLATE_FILE, projectTitle, convertHeaderTextToHTML(licenseInfoHeaderText), convertHeaderTextToHTML(obligationsText), externalIds);
-        } catch (Exception e) {
-            LOGGER.error("Could not generate xhtml license info file for project " + projectTitle, e);
-            return "License information could not be generated.\nAn exception occured: " + e.toString();
-        }
-    }
+	private String generateDisclosure(Collection<LicenseInfoParsingResult> projectLicenseInfoResults,
+			String projectTitle, String licenseInfoHeaderText, String obligationsText,
+			Map<String, String> externalIds) {
+		try {
+			return renderTemplateWithDefaultValues(projectLicenseInfoResults, XHTML_TEMPLATE_FILE, projectTitle,
+					convertHeaderTextToHTML(licenseInfoHeaderText), convertHeaderTextToHTML(obligationsText),
+					externalIds);
+		} catch (Exception e) {
+			LOGGER.error("Could not generate xhtml license info file for project " + projectTitle, e);
+			return "License information could not be generated.\nAn exception occured: " + e.toString();
+		}
+	}
 
-    private String convertHeaderTextToHTML(String headerText) {
-        String html = StringEscapeUtils.escapeHtml(headerText);
-        html = html.replace("\n", "<br>");
-        return html;
-    }
+	private String convertHeaderTextToHTML(String headerText) {
+		String html = StringEscapeUtils.escapeHtml(headerText);
+		html = html.replace("\n", "<br>");
+		return html;
+	}
 }

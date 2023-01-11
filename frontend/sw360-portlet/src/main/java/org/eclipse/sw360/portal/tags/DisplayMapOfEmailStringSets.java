@@ -25,55 +25,48 @@ import java.util.stream.Collectors;
  */
 public class DisplayMapOfEmailStringSets extends SimpleTagSupport {
 
-    private Map<String, Set<String>> value;
-    private Map<String, Set<String>> autoFillValue;
+	private Map<String, Set<String>> value;
+	private Map<String, Set<String>> autoFillValue;
 
-    public void setValue(Map<String,Set<String>> value) {
-        this.value = value;
-    }
-    public void setAutoFillValue(Map<String, Set<String>> autoFillValue) {
-        this.autoFillValue = autoFillValue;
-    }
+	public void setValue(Map<String, Set<String>> value) {
+		this.value = value;
+	}
+	public void setAutoFillValue(Map<String, Set<String>> autoFillValue) {
+		this.autoFillValue = autoFillValue;
+	}
 
-    public void doTag() throws JspException, IOException {
-        Map<String, Set<String>> fullValue;
+	public void doTag() throws JspException, IOException {
+		Map<String, Set<String>> fullValue;
 
-        if (value == null) {
-            fullValue = autoFillValue;
-        } else {
-            fullValue = value;
-        }
+		if (value == null) {
+			fullValue = autoFillValue;
+		} else {
+			fullValue = value;
+		}
 
-        if (null != fullValue && ! fullValue.isEmpty()) {
-            getJspContext().getOut().print(getMapOfEmailSetsAsString(fullValue));
-        }
-    }
+		if (null != fullValue && !fullValue.isEmpty()) {
+			getJspContext().getOut().print(getMapOfEmailSetsAsString(fullValue));
+		}
+	}
 
-    private static String getMapOfEmailSetsAsString(Map<String, Set<String>> mapOfSets){
-        if (mapOfSets == null || mapOfSets.size() == 0){
-            return "";
-        }
+	private static String getMapOfEmailSetsAsString(Map<String, Set<String>> mapOfSets) {
+		if (mapOfSets == null || mapOfSets.size() == 0) {
+			return "";
+		}
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("<ul class=\"mapDisplayRootItem\">");
-        mapOfSets.entrySet().stream()
-                .filter(e -> ! CommonUtils.allAreEmptyOrNull(e.getValue()))
-                .forEach(e -> sb.append(
-                "<li><span class=\"mapDisplayChildItemLeft\">"
-                        + e.getKey()
-                        + ":"
-                        + "</span> <span class=\"mapDisplayChildItemRight\">"
-                        + getEmailSetAsString(e.getValue())
-                        + "</span></li>"
-        ));
-        sb.append("</ul>");
-        return sb.toString();
-    }
+		StringBuilder sb = new StringBuilder();
+		sb.append("<ul class=\"mapDisplayRootItem\">");
+		mapOfSets.entrySet().stream().filter(e -> !CommonUtils.allAreEmptyOrNull(e.getValue()))
+				.forEach(e -> sb.append("<li><span class=\"mapDisplayChildItemLeft\">" + e.getKey() + ":"
+						+ "</span> <span class=\"mapDisplayChildItemRight\">" + getEmailSetAsString(e.getValue())
+						+ "</span></li>"));
+		sb.append("</ul>");
+		return sb.toString();
+	}
 
-    private static String getEmailSetAsString(Set<String> emailStrings){
-        Set<String> mailtToLinks = emailStrings.stream()
-                .map(s-> "<a href=\"mailto:"+s+"\">"+s+"</a>")
-                .collect(Collectors.toSet());
-        return CommonUtils.COMMA_JOINER.join(mailtToLinks);
-    }
+	private static String getEmailSetAsString(Set<String> emailStrings) {
+		Set<String> mailtToLinks = emailStrings.stream().map(s -> "<a href=\"mailto:" + s + "\">" + s + "</a>")
+				.collect(Collectors.toSet());
+		return CommonUtils.COMMA_JOINER.join(mailtToLinks);
+	}
 }

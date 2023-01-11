@@ -19,28 +19,28 @@ import static org.junit.Assert.assertNull;
 
 public class TestServiceHandlerTest {
 
-    private static final String TEST_ID = "abcdef";
-    private static final String TEST_REV = "123456";
-    private static final String TEST_NAME = "Super License 3.2";
+	private static final String TEST_ID = "abcdef";
+	private static final String TEST_REV = "123456";
+	private static final String TEST_NAME = "Super License 3.2";
 
-    TestObject object;
-    TestServiceHandler handler;
+	TestObject object;
+	TestServiceHandler handler;
 
-    @Before
-    public void setUp() throws Exception {
-        // Prepare object
-        object = new TestObject();
-        object.setId(TEST_ID);
-        object.setRevision(TEST_REV);
-        object.setName(TEST_NAME);
-        // Prepare handler
-        handler = new TestServiceHandler();
-    }
+	@Before
+	public void setUp() throws Exception {
+		// Prepare object
+		object = new TestObject();
+		object.setId(TEST_ID);
+		object.setRevision(TEST_REV);
+		object.setName(TEST_NAME);
+		// Prepare handler
+		handler = new TestServiceHandler();
+	}
 
-    @Test
-    public void testTest() throws Exception {
-        TestObject returnValue = handler.test(object);
-        assertNull(object.getText());
-        assertEquals(returnValue.getText(), TestServiceHandler.testText);
-    }
+	@Test
+	public void testTest() throws Exception {
+		TestObject returnValue = handler.test(object);
+		assertNull(object.getText());
+		assertEquals(returnValue.getText(), TestServiceHandler.testText);
+	}
 }

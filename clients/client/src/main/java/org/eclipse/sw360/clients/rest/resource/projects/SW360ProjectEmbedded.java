@@ -19,27 +19,29 @@ import java.util.Objects;
 
 @JsonDeserialize(as = SW360ProjectEmbedded.class)
 public final class SW360ProjectEmbedded implements Embedded {
-    private SW360SparseUser createdBy;
+	private SW360SparseUser createdBy;
 
-    public SW360SparseUser getCreatedBy() {
-        return createdBy;
-    }
+	public SW360SparseUser getCreatedBy() {
+		return createdBy;
+	}
 
-    public SW360ProjectEmbedded setCreatedBy(SW360SparseUser createdBy) {
-        this.createdBy = createdBy;
-        return this;
-    }
+	public SW360ProjectEmbedded setCreatedBy(SW360SparseUser createdBy) {
+		this.createdBy = createdBy;
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SW360ProjectEmbedded that = (SW360ProjectEmbedded) o;
-        return Objects.equals(createdBy, that.createdBy);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		SW360ProjectEmbedded that = (SW360ProjectEmbedded) o;
+		return Objects.equals(createdBy, that.createdBy);
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(createdBy);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(createdBy);
+	}
 }

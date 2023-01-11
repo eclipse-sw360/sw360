@@ -48,200 +48,190 @@ import static org.eclipse.sw360.wsimport.utility.TranslationConstants.UNKNOWN;
  */
 public class ThriftUploader {
 
-    private static final Logger LOGGER = LogManager.getLogger(ThriftUploader.class);
-    private final WsLibraryToSw360ComponentTranslator libraryToComponentTranslator = new WsLibraryToSw360ComponentTranslator();
-    private final WsLibraryToSw360ReleaseTranslator libraryToReleaseTranslator = new WsLibraryToSw360ReleaseTranslator();
-    private final WsLicenseToSw360LicenseTranslator licenseToLicenseTranslator = new WsLicenseToSw360LicenseTranslator();
-    private final WsProjectToSw360ProjectTranslator projectToProjectTranslator = new WsProjectToSw360ProjectTranslator();
+	private static final Logger LOGGER = LogManager.getLogger(ThriftUploader.class);
+	private final WsLibraryToSw360ComponentTranslator libraryToComponentTranslator = new WsLibraryToSw360ComponentTranslator();
+	private final WsLibraryToSw360ReleaseTranslator libraryToReleaseTranslator = new WsLibraryToSw360ReleaseTranslator();
+	private final WsLicenseToSw360LicenseTranslator licenseToLicenseTranslator = new WsLicenseToSw360LicenseTranslator();
+	private final WsProjectToSw360ProjectTranslator projectToProjectTranslator = new WsProjectToSw360ProjectTranslator();
 
-    private ThriftExchange thriftExchange;
+	private ThriftExchange thriftExchange;
 
-    public ThriftUploader() {
-        this.thriftExchange = new ThriftExchange();
-    }
+	public ThriftUploader() {
+		this.thriftExchange = new ThriftExchange();
+	}
 
-    private <T> Optional<String> searchExistingEntityId(Optional<List<T>> nomineesOpt, Function<T, String> idExtractor, String wsName, String sw360name) {
-        return nomineesOpt.flatMap(
-                nominees -> {
-                    Optional<String> nomineeId = nominees.stream()
-                            .findFirst()
-                            .map(idExtractor);
-                    if (nomineeId.isPresent()) {
-                        LOGGER.info(wsName + " to import matches a " + sw360name + " with id: " + nomineeId.get());
-                        nominees.stream()
-                                .skip(1)
-                                .forEach(n -> LOGGER.error(wsName + " to import would also match a " + sw360name + " with id: " + idExtractor.apply(n)));
-                    }
-                    return nomineeId;
-                }
-        );
-    }
+	private <T> Optional<String> searchExistingEntityId(Optional<List<T>> nomineesOpt, Function<T, String> idExtractor,
+			String wsName, String sw360name) {
+		return nomineesOpt.flatMap(nominees -> {
+			Optional<String> nomineeId = nominees.stream().findFirst().map(idExtractor);
+			if (nomineeId.isPresent()) {
+				LOGGER.info(wsName + " to import matches a " + sw360name + " with id: " + nomineeId.get());
+				nominees.stream().skip(1).forEach(n -> LOGGER.error(
+						wsName + " to import would also match a " + sw360name + " with id: " + idExtractor.apply(n)));
+			}
+			return nomineeId;
+		});
+	}
 
-    protected ProjectImportResult createProject(WsProject wsProject, User sw360User, TokenCredentials tokenCredentials) throws TException, JsonSyntaxException {
-        LOGGER.info("Try to import whitesource project: " + wsProject.getProjectName());
-        LOGGER.info("Sw360-User: " + sw360User.email);
+	protected ProjectImportResult createProject(WsProject wsProject, User sw360User, TokenCredentials tokenCredentials)
+			throws TException, JsonSyntaxException {
+		LOGGER.info("Try to import whitesource project: " + wsProject.getProjectName());
+		LOGGER.info("Sw360-User: " + sw360User.email);
 
-        LOGGER.info("projectName and token and id: " + wsProject.getProjectName() + " " + wsProject.getProjectToken() + " " + wsProject.getId());
-        if (wsProject.getProjectName() == null || wsProject.getProjectToken() == null) {
-            LOGGER.error("Unable to get project: " + wsProject.getProjectName() + " with token: " + wsProject.getProjectToken() + " from whitesource!");
-            return new ProjectImportResult(ProjectImportError.PROJECT_NOT_FOUND);
-        }
+		LOGGER.info("projectName and token and id: " + wsProject.getProjectName() + " " + wsProject.getProjectToken()
+				+ " " + wsProject.getId());
+		if (wsProject.getProjectName() == null || wsProject.getProjectToken() == null) {
+			LOGGER.error("Unable to get project: " + wsProject.getProjectName() + " with token: "
+					+ wsProject.getProjectToken() + " from whitesource!");
+			return new ProjectImportResult(ProjectImportError.PROJECT_NOT_FOUND);
+		}
 
-        if (thriftExchange.projectExists(wsProject.getId(), wsProject.getProjectName(), sw360User)) {
-            LOGGER.error("Project already in database: " + wsProject.getProjectName());
-            return new ProjectImportResult(ProjectImportError.PROJECT_ALREADY_EXISTS);
-        }
+		if (thriftExchange.projectExists(wsProject.getId(), wsProject.getProjectName(), sw360User)) {
+			LOGGER.error("Project already in database: " + wsProject.getProjectName());
+			return new ProjectImportResult(ProjectImportError.PROJECT_ALREADY_EXISTS);
+		}
 
-        Project sw360Project = projectToProjectTranslator.apply(wsProject);
-        Set<ReleaseRelation> releases = createReleases(wsProject, sw360User, tokenCredentials);
-        sw360Project.setProjectResponsible(sw360User.getEmail());
+		Project sw360Project = projectToProjectTranslator.apply(wsProject);
+		Set<ReleaseRelation> releases = createReleases(wsProject, sw360User, tokenCredentials);
+		sw360Project.setProjectResponsible(sw360User.getEmail());
 
-        /*
-         * TODO: Improve duplicate handling
-         */
-        Map<String, ProjectReleaseRelationship> releaseIdToUsage =
-                releases.stream()
-                    .collect(Collectors.toMap(
-                            ReleaseRelation::getReleaseId,
-                            ReleaseRelation::getProjectReleaseRelationship,
-                            (projectReleaseRelationship1, projectReleaseRelationship2) -> {
-                                LOGGER.info("--- Duplicate key found!");
-                                LOGGER.info("--- 1: " + projectReleaseRelationship1.getReleaseRelation());
-                                LOGGER.info("--- 2: " + projectReleaseRelationship2.getReleaseRelation());
-                                return projectReleaseRelationship1;
-                            }
-                    ));
-        sw360Project.setReleaseIdToUsage(releaseIdToUsage);
-        String projectId = thriftExchange.addProject(sw360Project, sw360User);
+		/*
+		 * TODO: Improve duplicate handling
+		 */
+		Map<String, ProjectReleaseRelationship> releaseIdToUsage = releases.stream()
+				.collect(Collectors.toMap(ReleaseRelation::getReleaseId, ReleaseRelation::getProjectReleaseRelationship,
+						(projectReleaseRelationship1, projectReleaseRelationship2) -> {
+							LOGGER.info("--- Duplicate key found!");
+							LOGGER.info("--- 1: " + projectReleaseRelationship1.getReleaseRelation());
+							LOGGER.info("--- 2: " + projectReleaseRelationship2.getReleaseRelation());
+							return projectReleaseRelationship1;
+						}));
+		sw360Project.setReleaseIdToUsage(releaseIdToUsage);
+		String projectId = thriftExchange.addProject(sw360Project, sw360User);
 
-        if(isNullOrEmpty(projectId)) {
-            return new ProjectImportResult(ProjectImportError.OTHER);
-        } else {
-            return new ProjectImportResult(projectId);
-        }
-    }
+		if (isNullOrEmpty(projectId)) {
+			return new ProjectImportResult(ProjectImportError.OTHER);
+		} else {
+			return new ProjectImportResult(projectId);
+		}
+	}
 
-    public ImportStatus importWsProjects(Collection<WsProject> wsProjects, User sw360User, TokenCredentials tokenCredentials) {
-        List<String> successfulIds = new ArrayList<>();
-        Map<String, String> failedIds = new HashMap<>();
-        ImportStatus wsImportStatus = new ImportStatus().setRequestStatus(RequestStatus.SUCCESS);
+	public ImportStatus importWsProjects(Collection<WsProject> wsProjects, User sw360User,
+			TokenCredentials tokenCredentials) {
+		List<String> successfulIds = new ArrayList<>();
+		Map<String, String> failedIds = new HashMap<>();
+		ImportStatus wsImportStatus = new ImportStatus().setRequestStatus(RequestStatus.SUCCESS);
 
-        for (WsProject wsProject : wsProjects) {
-            ProjectImportResult projectImportResult;
-            try{
-                projectImportResult = createProject(wsProject, sw360User, tokenCredentials);
-            } catch (TException e){
-                LOGGER.error("Error when creating the project", e);
-                wsImportStatus.setRequestStatus(RequestStatus.FAILURE);
-                return wsImportStatus;
-            }
-            if (projectImportResult.isSuccess()) {
-                successfulIds.add(wsProject.getProjectName());
-            } else {
-                LOGGER.error("Could not import project with whitesource name: " + wsProject.getProjectName());
-                failedIds.put(wsProject.getProjectName(), projectImportResult.getError().getText());
-            }
-        }
-        return wsImportStatus
-                .setFailedIds(failedIds)
-                .setSuccessfulIds(successfulIds);
-    }
+		for (WsProject wsProject : wsProjects) {
+			ProjectImportResult projectImportResult;
+			try {
+				projectImportResult = createProject(wsProject, sw360User, tokenCredentials);
+			} catch (TException e) {
+				LOGGER.error("Error when creating the project", e);
+				wsImportStatus.setRequestStatus(RequestStatus.FAILURE);
+				return wsImportStatus;
+			}
+			if (projectImportResult.isSuccess()) {
+				successfulIds.add(wsProject.getProjectName());
+			} else {
+				LOGGER.error("Could not import project with whitesource name: " + wsProject.getProjectName());
+				failedIds.put(wsProject.getProjectName(), projectImportResult.getError().getText());
+			}
+		}
+		return wsImportStatus.setFailedIds(failedIds).setSuccessfulIds(successfulIds);
+	}
 
-    protected String getOrCreateLicenseId(WsLicense wsLicense, User sw360User) {
-        LOGGER.info("Try to import whitesource License: " + wsLicense.getName());
+	protected String getOrCreateLicenseId(WsLicense wsLicense, User sw360User) {
+		LOGGER.info("Try to import whitesource License: " + wsLicense.getName());
 
-        Optional<String> potentialLicenseId = searchExistingEntityId(thriftExchange.searchLicenseByWsName(wsLicense.getName()),
-                License::getId,
-                "License",
-                "Licence");
+		Optional<String> potentialLicenseId = searchExistingEntityId(
+				thriftExchange.searchLicenseByWsName(wsLicense.getName()), License::getId, "License", "Licence");
 
-        if (potentialLicenseId.isPresent()) {
-            return potentialLicenseId.get();
-        } else {
-            License sw360License = licenseToLicenseTranslator.apply(wsLicense);
-            String licenseId = thriftExchange.addLicense(sw360License, sw360User);
-            LOGGER.info("Imported license: " + licenseId);
-            return licenseId;
-        }
-    }
+		if (potentialLicenseId.isPresent()) {
+			return potentialLicenseId.get();
+		} else {
+			License sw360License = licenseToLicenseTranslator.apply(wsLicense);
+			String licenseId = thriftExchange.addLicense(sw360License, sw360User);
+			LOGGER.info("Imported license: " + licenseId);
+			return licenseId;
+		}
+	}
 
-    private String getOrCreateComponent(WsLibrary wsLibrary, User sw360User) {
-        LOGGER.info("Try to import whitesource Library: " + wsLibrary.getName() + ", version: " + wsLibrary.getVersion());
+	private String getOrCreateComponent(WsLibrary wsLibrary, User sw360User) {
+		LOGGER.info(
+				"Try to import whitesource Library: " + wsLibrary.getName() + ", version: " + wsLibrary.getVersion());
 
-        String componentVersion = isNullOrEmpty(wsLibrary.getVersion()) ? UNKNOWN : wsLibrary.getVersion();
-        Optional<String> potentialReleaseId = searchExistingEntityId(thriftExchange.searchReleaseByNameAndVersion(wsLibrary.getName(), componentVersion),
-                Release::getId,
-                "Library",
-                "Release");
-        if (potentialReleaseId.isPresent()) {
-            return potentialReleaseId.get();
-        }
+		String componentVersion = isNullOrEmpty(wsLibrary.getVersion()) ? UNKNOWN : wsLibrary.getVersion();
+		Optional<String> potentialReleaseId = searchExistingEntityId(
+				thriftExchange.searchReleaseByNameAndVersion(wsLibrary.getName(), componentVersion), Release::getId,
+				"Library", "Release");
+		if (potentialReleaseId.isPresent()) {
+			return potentialReleaseId.get();
+		}
 
-        Release sw360Release = libraryToReleaseTranslator.apply(wsLibrary);
-        sw360Release.setModerators(new HashSet<>());
-        sw360Release.getModerators().add(sw360User.getEmail());
-        Optional<String> potentialComponentId = searchExistingEntityId(thriftExchange.searchComponentByName(wsLibrary.getName()),
-                Component::getId,
-                "Library",
-                "Component");
+		Release sw360Release = libraryToReleaseTranslator.apply(wsLibrary);
+		sw360Release.setModerators(new HashSet<>());
+		sw360Release.getModerators().add(sw360User.getEmail());
+		Optional<String> potentialComponentId = searchExistingEntityId(
+				thriftExchange.searchComponentByName(wsLibrary.getName()), Component::getId, "Library", "Component");
 
-        String componentId;
-        if (potentialComponentId.isPresent()) {
-            componentId = potentialComponentId.get();
-        } else {
-            Component sw360Component = libraryToComponentTranslator.apply(wsLibrary);
-            componentId = thriftExchange.addComponent(sw360Component, sw360User);
-        }
-        sw360Release.setComponentId(componentId);
+		String componentId;
+		if (potentialComponentId.isPresent()) {
+			componentId = potentialComponentId.get();
+		} else {
+			Component sw360Component = libraryToComponentTranslator.apply(wsLibrary);
+			componentId = thriftExchange.addComponent(sw360Component, sw360User);
+		}
+		sw360Release.setComponentId(componentId);
 
-        if (wsLibrary.getLicenses() == null) {
-            sw360Release.setMainLicenseIds(Collections.singleton(UNKNOWN));
-        } else {
-            Set<String> mainLicenses = new HashSet<>();
-            for (WsLicense wsLicense : wsLibrary.getLicenses()) {
-                mainLicenses.add(getOrCreateLicenseId(wsLicense, sw360User));
-            }
-            sw360Release.setMainLicenseIds(mainLicenses);
-        }
+		if (wsLibrary.getLicenses() == null) {
+			sw360Release.setMainLicenseIds(Collections.singleton(UNKNOWN));
+		} else {
+			Set<String> mainLicenses = new HashSet<>();
+			for (WsLicense wsLicense : wsLibrary.getLicenses()) {
+				mainLicenses.add(getOrCreateLicenseId(wsLicense, sw360User));
+			}
+			sw360Release.setMainLicenseIds(mainLicenses);
+		}
 
-        return thriftExchange.addRelease(sw360Release, sw360User);
-    }
+		return thriftExchange.addRelease(sw360Release, sw360User);
+	}
 
-    private ReleaseRelation createReleaseRelation(WsLibrary wsLibrary, User sw360User) {
-        String releaseId = getOrCreateComponent(wsLibrary, sw360User);
-        if (releaseId == null) {
-            return null;
-        } else {
-            ReleaseRelationship releaseRelationship = ReleaseRelationship.UNKNOWN;
-            return new ReleaseRelation(releaseId, releaseRelationship);
-        }
-    }
+	private ReleaseRelation createReleaseRelation(WsLibrary wsLibrary, User sw360User) {
+		String releaseId = getOrCreateComponent(wsLibrary, sw360User);
+		if (releaseId == null) {
+			return null;
+		} else {
+			ReleaseRelationship releaseRelationship = ReleaseRelationship.UNKNOWN;
+			return new ReleaseRelation(releaseId, releaseRelationship);
+		}
+	}
 
-    private Set<ReleaseRelation> createReleases(WsProject wsProject, User sw360User, TokenCredentials tokenCredentials) {
-        WsLibrary[] libraries = null;
-        try {
-            libraries =  new WsImportService().getProjectLicenses(wsProject.getProjectToken(), tokenCredentials);
-        } catch (JsonSyntaxException jse) {
-            LOGGER.error(jse);
-        }
-        List<WsLibrary> libraryList;
-        if (libraries == null) {
-            return ImmutableSet.of();
-        } else {
-            libraryList = new ArrayList<>(Arrays.asList(libraries));
-        }
-        Set<ReleaseRelation> releases = libraryList.stream()
-                .map(c -> createReleaseRelation(c, sw360User))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+	private Set<ReleaseRelation> createReleases(WsProject wsProject, User sw360User,
+			TokenCredentials tokenCredentials) {
+		WsLibrary[] libraries = null;
+		try {
+			libraries = new WsImportService().getProjectLicenses(wsProject.getProjectToken(), tokenCredentials);
+		} catch (JsonSyntaxException jse) {
+			LOGGER.error(jse);
+		}
+		List<WsLibrary> libraryList;
+		if (libraries == null) {
+			return ImmutableSet.of();
+		} else {
+			libraryList = new ArrayList<>(Arrays.asList(libraries));
+		}
+		Set<ReleaseRelation> releases = libraryList.stream().map(c -> createReleaseRelation(c, sw360User))
+				.filter(Objects::nonNull).collect(Collectors.toSet());
 
-        if (releases.size() != libraryList .size()) {
-            LOGGER.warn("expected to get " + libraryList.size() + " different ids of releases but got " + releases.size());
-        } else {
-            LOGGER.info("The expected number of releases was imported or already found in database.");
-        }
+		if (releases.size() != libraryList.size()) {
+			LOGGER.warn(
+					"expected to get " + libraryList.size() + " different ids of releases but got " + releases.size());
+		} else {
+			LOGGER.info("The expected number of releases was imported or already found in database.");
+		}
 
-        return releases;
-    }
+		return releases;
+	}
 
 }

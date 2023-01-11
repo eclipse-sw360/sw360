@@ -9,36 +9,33 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
   -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.eclipse.sw360</groupId>
+    <artifactId>sw360</artifactId>
+    <version>${revision}</version>
+  </parent>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>sw360</artifactId>
-        <groupId>org.eclipse.sw360</groupId>
-        <version>${revision}</version>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+  <artifactId>libraries</artifactId>
+  <packaging>pom</packaging>
 
-    <artifactId>libraries</artifactId>
-    <packaging>pom</packaging>
+  <modules>
+    <module>datahandler</module>
+    <module>commonIO</module>
+    <module>importers</module>
+    <module>exporters</module>
+    <module>log4j-osgi-support</module>
+  </modules>
 
-    <modules>
-        <module>datahandler</module>
-        <module>commonIO</module>
-        <module>importers</module>
-        <module>exporters</module>
-        <module>log4j-osgi-support</module>
-    </modules>
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 </project>

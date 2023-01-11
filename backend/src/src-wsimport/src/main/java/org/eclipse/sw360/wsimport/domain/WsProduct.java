@@ -14,22 +14,22 @@ package org.eclipse.sw360.wsimport.domain;
  */
 public class WsProduct {
 
-    private String productName;
-    private String productToken;
+	private String productName;
+	private String productToken;
 
-    public String getProductName() {
-        return productName;
-    }
+	public String getProductName() {
+		return productName;
+	}
 
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
+	public void setProductName(String productName) {
+		this.productName = productName;
+	}
 
-    public String getProductToken() {
-        return productToken;
-    }
+	public String getProductToken() {
+		return productToken;
+	}
 
-    public void setProductToken(String productToken) {
-        this.productToken = productToken;
-    }
+	public void setProductToken(String productToken) {
+		this.productToken = productToken;
+	}
 }

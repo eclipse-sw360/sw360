@@ -46,184 +46,177 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 public class SW360ProjectClientAdapterAsyncImplTest {
-    private static final String PROJECT_VERSION = "1.0-projectVersion";
-    private static final String PROJECT_NAME = "projectName";
-    private final String PROJECT_LAST_INDEX = "12345";
-    private static final String PROJECT_ID = "projectId";
+	private static final String PROJECT_VERSION = "1.0-projectVersion";
+	private static final String PROJECT_NAME = "projectName";
+	private final String PROJECT_LAST_INDEX = "12345";
+	private static final String PROJECT_ID = "projectId";
 
-    private SW360ProjectClientAdapterAsync projectClientAdapter;
+	private SW360ProjectClientAdapterAsync projectClientAdapter;
 
-    private SW360ProjectClient projectClient;
+	private SW360ProjectClient projectClient;
 
-    private SW360Project projectWithLink;
-    private LinkObjects linkObjects;
+	private SW360Project projectWithLink;
+	private LinkObjects linkObjects;
 
-    @Before
-    public void setUp() {
-        projectClient = mock(SW360ProjectClient.class);
-        projectClientAdapter = new SW360ProjectClientAdapterAsyncImpl(projectClient);
+	@Before
+	public void setUp() {
+		projectClient = mock(SW360ProjectClient.class);
+		projectClientAdapter = new SW360ProjectClientAdapterAsyncImpl(projectClient);
 
-        String projectHref = "url/" + PROJECT_LAST_INDEX;
-        Self projectSelf = new Self().setHref(projectHref);
-        linkObjects = new LinkObjects()
-                .setSelf(projectSelf);
+		String projectHref = "url/" + PROJECT_LAST_INDEX;
+		Self projectSelf = new Self().setHref(projectHref);
+		linkObjects = new LinkObjects().setSelf(projectSelf);
 
-        projectWithLink = new SW360Project();
-        projectWithLink.setName(PROJECT_NAME);
-        projectWithLink.setVersion(PROJECT_VERSION);
-        projectWithLink.setDescription(PROJECT_NAME + " " + PROJECT_VERSION);
-        projectWithLink.setProjectType(SW360ProjectType.PRODUCT);
-        projectWithLink.setVisibility(SW360Visibility.BUISNESSUNIT_AND_MODERATORS);
-        projectWithLink.setLinks(linkObjects);
-    }
+		projectWithLink = new SW360Project();
+		projectWithLink.setName(PROJECT_NAME);
+		projectWithLink.setVersion(PROJECT_VERSION);
+		projectWithLink.setDescription(PROJECT_NAME + " " + PROJECT_VERSION);
+		projectWithLink.setProjectType(SW360ProjectType.PRODUCT);
+		projectWithLink.setVisibility(SW360Visibility.BUISNESSUNIT_AND_MODERATORS);
+		projectWithLink.setLinks(linkObjects);
+	}
 
-    @Test
-    public void testGetProjectByNameAndVersion() {
-        ProjectSearchParams searchParams = ProjectSearchParams.builder()
-                .withName(PROJECT_NAME)
-                .build();
-        when(projectClient.search(searchParams))
-                .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(projectWithLink)));
+	@Test
+	public void testGetProjectByNameAndVersion() {
+		ProjectSearchParams searchParams = ProjectSearchParams.builder().withName(PROJECT_NAME).build();
+		when(projectClient.search(searchParams))
+				.thenReturn(CompletableFuture.completedFuture(Collections.singletonList(projectWithLink)));
 
-        Optional<SW360Project> projectIdByNameAndVersion =
-                block(projectClientAdapter.getProjectByNameAndVersion(PROJECT_NAME, PROJECT_VERSION));
+		Optional<SW360Project> projectIdByNameAndVersion = block(
+				projectClientAdapter.getProjectByNameAndVersion(PROJECT_NAME, PROJECT_VERSION));
 
-        assertThat(projectIdByNameAndVersion).isPresent();
-        assertThat(projectIdByNameAndVersion).contains(projectWithLink);
-    }
+		assertThat(projectIdByNameAndVersion).isPresent();
+		assertThat(projectIdByNameAndVersion).contains(projectWithLink);
+	}
 
-    @Test
-    public void testGetProjectByNameAndVersionNotFound() {
-        when(projectClient.search(any())).thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
+	@Test
+	public void testGetProjectByNameAndVersionNotFound() {
+		when(projectClient.search(any())).thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
 
-        Optional<SW360Project> optProject =
-                block(projectClientAdapter.getProjectByNameAndVersion(PROJECT_NAME, PROJECT_VERSION));
-        assertThat(optProject).isEmpty();
-    }
+		Optional<SW360Project> optProject = block(
+				projectClientAdapter.getProjectByNameAndVersion(PROJECT_NAME, PROJECT_VERSION));
+		assertThat(optProject).isEmpty();
+	}
 
-    @Test
-    public void testSearch() {
-        ProjectSearchParams searchParams = ProjectSearchParams.builder()
-                .withTag("testTag")
-                .withBusinessUnit("testUnit")
-                .build();
-        when(projectClient.search(searchParams))
-                .thenReturn(CompletableFuture.completedFuture(Collections.singletonList(projectWithLink)));
+	@Test
+	public void testSearch() {
+		ProjectSearchParams searchParams = ProjectSearchParams.builder().withTag("testTag").withBusinessUnit("testUnit")
+				.build();
+		when(projectClient.search(searchParams))
+				.thenReturn(CompletableFuture.completedFuture(Collections.singletonList(projectWithLink)));
 
-        List<SW360Project> projects = block(projectClientAdapter.search(searchParams));
-        assertThat(projects).containsOnly(projectWithLink);
-    }
+		List<SW360Project> projects = block(projectClientAdapter.search(searchParams));
+		assertThat(projects).containsOnly(projectWithLink);
+	}
 
-    @Test
-    public void testCreateProject() {
-        SW360Project projectCreated = new SW360Project();
-        projectCreated.setName(PROJECT_NAME);
-        projectCreated.setVersion(PROJECT_VERSION);
-        projectCreated.setDescription("a newly created project");
-        when(projectClient.createProject(projectWithLink))
-                .thenReturn(CompletableFuture.completedFuture(projectCreated));
+	@Test
+	public void testCreateProject() {
+		SW360Project projectCreated = new SW360Project();
+		projectCreated.setName(PROJECT_NAME);
+		projectCreated.setVersion(PROJECT_VERSION);
+		projectCreated.setDescription("a newly created project");
+		when(projectClient.createProject(projectWithLink))
+				.thenReturn(CompletableFuture.completedFuture(projectCreated));
 
-        SW360Project result = block(projectClientAdapter.createProject(projectWithLink));
+		SW360Project result = block(projectClientAdapter.createProject(projectWithLink));
 
-        assertThat(result).isEqualTo(projectCreated);
-    }
+		assertThat(result).isEqualTo(projectCreated);
+	}
 
-    @Test
-    public void testCreateProjectInvalidName() throws InterruptedException {
-        SW360Project newProject = new SW360Project();
-        newProject.setVersion(PROJECT_VERSION);
-        CompletableFuture<SW360Project> future = projectClientAdapter.createProject(newProject);
+	@Test
+	public void testCreateProjectInvalidName() throws InterruptedException {
+		SW360Project newProject = new SW360Project();
+		newProject.setVersion(PROJECT_VERSION);
+		CompletableFuture<SW360Project> future = projectClientAdapter.createProject(newProject);
 
-        try {
-            future.get();
-            fail("Invalid project not detected!");
-        } catch (ExecutionException e) {
-            assertThat(e.getCause()).isInstanceOf(SW360ClientException.class);
-            assertThat(e.getCause().getMessage()).contains("invalid project");
-        }
-    }
+		try {
+			future.get();
+			fail("Invalid project not detected!");
+		} catch (ExecutionException e) {
+			assertThat(e.getCause()).isInstanceOf(SW360ClientException.class);
+			assertThat(e.getCause().getMessage()).contains("invalid project");
+		}
+	}
 
-    @Test
-    public void testUpdateProject() {
-        SW360Project projectUpdated = new SW360Project();
-        projectUpdated.setName(PROJECT_NAME);
-        projectUpdated.setVersion(PROJECT_VERSION);
-        projectUpdated.setDescription("project that was updated");
-        when(projectClient.updateProject(projectWithLink))
-                .thenReturn(CompletableFuture.completedFuture(projectUpdated));
+	@Test
+	public void testUpdateProject() {
+		SW360Project projectUpdated = new SW360Project();
+		projectUpdated.setName(PROJECT_NAME);
+		projectUpdated.setVersion(PROJECT_VERSION);
+		projectUpdated.setDescription("project that was updated");
+		when(projectClient.updateProject(projectWithLink))
+				.thenReturn(CompletableFuture.completedFuture(projectUpdated));
 
-        SW360Project result = block(projectClientAdapter.updateProject(projectWithLink));
+		SW360Project result = block(projectClientAdapter.updateProject(projectWithLink));
 
-        assertThat(result).isEqualTo(projectUpdated);
-    }
+		assertThat(result).isEqualTo(projectUpdated);
+	}
 
-    @Test
-    public void testUpdateProjectInvalidNoVersion() throws InterruptedException {
-        SW360Project project = new SW360Project();
-        project.setName(PROJECT_NAME);
-        CompletableFuture<SW360Project> future = projectClientAdapter.updateProject(project);
+	@Test
+	public void testUpdateProjectInvalidNoVersion() throws InterruptedException {
+		SW360Project project = new SW360Project();
+		project.setName(PROJECT_NAME);
+		CompletableFuture<SW360Project> future = projectClientAdapter.updateProject(project);
 
-        try {
-            future.get();
-            fail("Invalid project not detected!");
-        } catch (ExecutionException e) {
-            assertThat(e.getCause()).isInstanceOf(SW360ClientException.class);
-            assertThat(e.getCause().getMessage()).contains("invalid project");
-        }
-    }
+		try {
+			future.get();
+			fail("Invalid project not detected!");
+		} catch (ExecutionException e) {
+			assertThat(e.getCause()).isInstanceOf(SW360ClientException.class);
+			assertThat(e.getCause().getMessage()).contains("invalid project");
+		}
+	}
 
-    @Test
-    public void testAddSW360ReleasesToSW360Project() {
-        SW360ReleaseLinkObjects releaseLinkObjects = new SW360ReleaseLinkObjects();
-        releaseLinkObjects.setSelf(linkObjects.getSelf());
-        SW360Release release = new SW360Release();
-        release.setLinks(releaseLinkObjects);
-        when(projectClient.addReleasesToProject(eq(PROJECT_LAST_INDEX), any()))
-                .thenReturn(CompletableFuture.completedFuture(null));
+	@Test
+	public void testAddSW360ReleasesToSW360Project() {
+		SW360ReleaseLinkObjects releaseLinkObjects = new SW360ReleaseLinkObjects();
+		releaseLinkObjects.setSelf(linkObjects.getSelf());
+		SW360Release release = new SW360Release();
+		release.setLinks(releaseLinkObjects);
+		when(projectClient.addReleasesToProject(eq(PROJECT_LAST_INDEX), any()))
+				.thenReturn(CompletableFuture.completedFuture(null));
 
-        Collection<SW360Release> releases = Collections.singletonList(release);
+		Collection<SW360Release> releases = Collections.singletonList(release);
 
-        block(projectClientAdapter.addSW360ReleasesToSW360Project(PROJECT_LAST_INDEX, releases));
+		block(projectClientAdapter.addSW360ReleasesToSW360Project(PROJECT_LAST_INDEX, releases));
 
-        verify(projectClient, atLeastOnce()).addReleasesToProject(eq(PROJECT_LAST_INDEX), any());
-    }
+		verify(projectClient, atLeastOnce()).addReleasesToProject(eq(PROJECT_LAST_INDEX), any());
+	}
 
-    @Test
-    public void testDeleteProject() {
-        Map<String, Integer> responses = new HashMap<String, Integer>();
-        responses.put(PROJECT_ID, 200);
-        when(projectClient.deleteProject(Mockito.any()))
-                .thenReturn(CompletableFuture.completedFuture(200));
+	@Test
+	public void testDeleteProject() {
+		Map<String, Integer> responses = new HashMap<String, Integer>();
+		responses.put(PROJECT_ID, 200);
+		when(projectClient.deleteProject(Mockito.any())).thenReturn(CompletableFuture.completedFuture(200));
 
-        Integer responseCode = block(projectClientAdapter.deleteProject(PROJECT_ID));
+		Integer responseCode = block(projectClientAdapter.deleteProject(PROJECT_ID));
 
-        assertThat(responseCode).isEqualTo(200);
-        verify(projectClient).deleteProject(PROJECT_ID);
-    }
+		assertThat(responseCode).isEqualTo(200);
+		verify(projectClient).deleteProject(PROJECT_ID);
+	}
 
-    private void checkGetLinkedReleases(boolean transitive) {
-        SW360SparseRelease rel1 = new SW360SparseRelease();
-        rel1.setName("rel1");
-        rel1.setVersion("1.0");
-        SW360SparseRelease rel2 = new SW360SparseRelease();
-        rel2.setName("rel2");
-        rel2.setVersion("2.0");
-        List<SW360SparseRelease> releases = Arrays.asList(rel1, rel2);
-        when(projectClient.getLinkedReleases(PROJECT_LAST_INDEX, transitive))
-                .thenReturn(CompletableFuture.completedFuture(releases));
+	private void checkGetLinkedReleases(boolean transitive) {
+		SW360SparseRelease rel1 = new SW360SparseRelease();
+		rel1.setName("rel1");
+		rel1.setVersion("1.0");
+		SW360SparseRelease rel2 = new SW360SparseRelease();
+		rel2.setName("rel2");
+		rel2.setVersion("2.0");
+		List<SW360SparseRelease> releases = Arrays.asList(rel1, rel2);
+		when(projectClient.getLinkedReleases(PROJECT_LAST_INDEX, transitive))
+				.thenReturn(CompletableFuture.completedFuture(releases));
 
-        List<SW360SparseRelease> result =
-                block(projectClientAdapter.getLinkedReleases(PROJECT_LAST_INDEX, transitive));
-        assertThat(result).isEqualTo(releases);
-    }
+		List<SW360SparseRelease> result = block(projectClientAdapter.getLinkedReleases(PROJECT_LAST_INDEX, transitive));
+		assertThat(result).isEqualTo(releases);
+	}
 
-    @Test
-    public void testGetLinkedReleasesNonTransitive() {
-        checkGetLinkedReleases(false);
-    }
+	@Test
+	public void testGetLinkedReleasesNonTransitive() {
+		checkGetLinkedReleases(false);
+	}
 
-    @Test
-    public void testGetLinkedReleasesTransitive() {
-        checkGetLinkedReleases(true);
-    }
+	@Test
+	public void testGetLinkedReleasesTransitive() {
+		checkGetLinkedReleases(true);
+	}
 }

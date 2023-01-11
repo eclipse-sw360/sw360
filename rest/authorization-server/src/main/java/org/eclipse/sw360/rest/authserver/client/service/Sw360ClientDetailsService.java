@@ -22,17 +22,17 @@ import org.springframework.security.oauth2.provider.ClientRegistrationException;
  */
 public class Sw360ClientDetailsService implements ClientDetailsService {
 
-    @Autowired
-    private OAuthClientRepository clientRepo;
+	@Autowired
+	private OAuthClientRepository clientRepo;
 
-    @Override
-    public ClientDetails loadClientByClientId(String clientId) throws ClientRegistrationException {
-        ClientDetails client = clientRepo.getByClientId(clientId);
-        if (client == null) {
-            throw new ClientRegistrationException("No client found for clientId " + clientId);
-        }
+	@Override
+	public ClientDetails loadClientByClientId(String clientId) throws ClientRegistrationException {
+		ClientDetails client = clientRepo.getByClientId(clientId);
+		if (client == null) {
+			throw new ClientRegistrationException("No client found for clientId " + clientId);
+		}
 
-        return client;
-    }
+		return client;
+	}
 
 }

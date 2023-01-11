@@ -22,25 +22,22 @@ import static org.eclipse.sw360.portal.tags.urlutils.UrlWriterImpl.renderUrl;
  * @author daniele.fognini@tngtech.com
  */
 public class DisplayLinkToLicense extends DisplayLinkAbstract {
-    private String licenseId;
-    private PortletDefaultPage page = PortletDefaultPage.DETAIL;
-    private Boolean showName = true;
+	private String licenseId;
+	private PortletDefaultPage page = PortletDefaultPage.DETAIL;
+	private Boolean showName = true;
 
-    public void setLicenseId(String licenseId) {
-        this.licenseId = licenseId;
-    }
+	public void setLicenseId(String licenseId) {
+		this.licenseId = licenseId;
+	}
 
-    @Override
-    protected String getTextDisplay() {
-        return licenseId;
-    }
+	@Override
+	protected String getTextDisplay() {
+		return licenseId;
+	}
 
-    @Override
-    protected void writeUrl() throws JspException {
-        renderUrl(pageContext)
-                .toPortlet(LinkToPortletConfiguration.LICENSES, scopeGroupId)
-                .toPage(page)
-                .withParam(PortalConstants.LICENSE_ID, licenseId)
-                .writeUrlToJspWriter();
-    }
+	@Override
+	protected void writeUrl() throws JspException {
+		renderUrl(pageContext).toPortlet(LinkToPortletConfiguration.LICENSES, scopeGroupId).toPage(page)
+				.withParam(PortalConstants.LICENSE_ID, licenseId).writeUrlToJspWriter();
+	}
 }

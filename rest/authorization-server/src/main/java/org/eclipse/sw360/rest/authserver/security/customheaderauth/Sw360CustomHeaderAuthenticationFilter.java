@@ -68,197 +68,200 @@ import java.io.IOException;
  */
 public class Sw360CustomHeaderAuthenticationFilter extends GenericFilterBean {
 
-    private final Logger log = LogManager.getLogger(this.getClass());
+	private final Logger log = LogManager.getLogger(this.getClass());
 
-    /**
-     * Has to match username extraction in
-     * {@link ResourceOwnerPasswordTokenGranter#getOAuth2Authentication(ClientDetails, TokenRequest)}
-     */
-    private static final String PARAMETER_NAME_USERNAME = "username";
+	/**
+	 * Has to match username extraction in
+	 * {@link ResourceOwnerPasswordTokenGranter#getOAuth2Authentication(ClientDetails, TokenRequest)}
+	 */
+	private static final String PARAMETER_NAME_USERNAME = "username";
 
-    /**
-     * Not available as constant in {@link OAuth2Utils}...
-     */
-    private static final String PARAMETER_NAME_CLIENT_SECRET = "client_secret";
+	/**
+	 * Not available as constant in {@link OAuth2Utils}...
+	 */
+	private static final String PARAMETER_NAME_CLIENT_SECRET = "client_secret";
 
-    @Value("${security.customheader.headername.email:#{null}}")
-    private String customHeaderHeadernameEmail;
+	@Value("${security.customheader.headername.email:#{null}}")
+	private String customHeaderHeadernameEmail;
 
-    @Value("${security.customheader.headername.extid:#{null}}")
-    private String customHeaderHeadernameExtid;
+	@Value("${security.customheader.headername.extid:#{null}}")
+	private String customHeaderHeadernameExtid;
 
-    @Value("${security.customheader.headername.intermediateauthstore:#{null}}")
-    private String customHeaderHeadernameIntermediateAuthStore;
+	@Value("${security.customheader.headername.intermediateauthstore:#{null}}")
+	private String customHeaderHeadernameIntermediateAuthStore;
 
-    @Value("${security.customheader.headername.enabled:#{false}}")
-    private boolean customHeaderEnabled;
+	@Value("${security.customheader.headername.enabled:#{false}}")
+	private boolean customHeaderEnabled;
 
-    private boolean active;
+	private boolean active;
 
-    @Autowired
-    private Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider;
+	@Autowired
+	private Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider;
 
-    @PostConstruct
-    public void postSw360CustomHeaderAuthenticationFilterConstruction() {
-        if(!customHeaderEnabled) {
-            active = false;
-            log.info("AuthenticationFilter is NOT active!");
-            return;
-        }
+	@PostConstruct
+	public void postSw360CustomHeaderAuthenticationFilterConstruction() {
+		if (!customHeaderEnabled) {
+			active = false;
+			log.info("AuthenticationFilter is NOT active!");
+			return;
+		}
 
-        log.info("NOTE: Custom Header Authentication is enabled with the following configuration: \n" +
-            "  - email header      : " + customHeaderHeadernameEmail + "\n" +
-            "  - external id header: " + customHeaderHeadernameExtid + "\n" +
-            "  - internal header   : " + customHeaderHeadernameIntermediateAuthStore + "\n" +
-            "!!! BE SURE THAT THESE HEADRES ARE FILTERED BY YOUR PROXY! EACH CLIENT THAT IS ABLE TO SEND THESE HEADERS CAN LOG IN AS ANY PRINCIPAL !!!"
-        );
+		log.info("NOTE: Custom Header Authentication is enabled with the following configuration: \n"
+				+ "  - email header      : " + customHeaderHeadernameEmail + "\n" + "  - external id header: "
+				+ customHeaderHeadernameExtid + "\n" + "  - internal header   : "
+				+ customHeaderHeadernameIntermediateAuthStore + "\n"
+				+ "!!! BE SURE THAT THESE HEADRES ARE FILTERED BY YOUR PROXY! EACH CLIENT THAT IS ABLE TO SEND THESE HEADERS CAN LOG IN AS ANY PRINCIPAL !!!");
 
-        if (StringUtils.isEmpty(customHeaderHeadernameEmail) || StringUtils.isEmpty(customHeaderHeadernameExtid)
-                || StringUtils.isEmpty(customHeaderHeadernameIntermediateAuthStore)) {
-            log.info("AuthenticationFilter is NOT active due to incomplete configuration. "
-                    + "Needed config keys:\n"
-                    + "- security.customheader.headername.email\n"
-                    + "- security.customheader.headername.extid\n"
-                    + "- security.customheader.headername.intermediateauthstore");
-            active = false;
-        } else {
-            log.info("AuthenticationFilter is active!");
-            active = true;
-        }
-    }
+		if (StringUtils.isEmpty(customHeaderHeadernameEmail) || StringUtils.isEmpty(customHeaderHeadernameExtid)
+				|| StringUtils.isEmpty(customHeaderHeadernameIntermediateAuthStore)) {
+			log.info("AuthenticationFilter is NOT active due to incomplete configuration. " + "Needed config keys:\n"
+					+ "- security.customheader.headername.email\n" + "- security.customheader.headername.extid\n"
+					+ "- security.customheader.headername.intermediateauthstore");
+			active = false;
+		} else {
+			log.info("AuthenticationFilter is active!");
+			active = true;
+		}
+	}
 
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+	@Override
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
 
-        if (active) {
-            CustomHeaderAuthRequestDetails requestDetails = extractRequestDetails((HttpServletRequest) request);
-            if (canAuthenticate(requestDetails)) {
+		if (active) {
+			CustomHeaderAuthRequestDetails requestDetails = extractRequestDetails((HttpServletRequest) request);
+			if (canAuthenticate(requestDetails)) {
 
-                ServletRequest wrappedRequest = doAuthenticate((HttpServletRequest) request, requestDetails);
-                if (wrappedRequest != null) {
-                    chain.doFilter(wrappedRequest, response);
-                    return;
-                }
-            }
-        }
+				ServletRequest wrappedRequest = doAuthenticate((HttpServletRequest) request, requestDetails);
+				if (wrappedRequest != null) {
+					chain.doFilter(wrappedRequest, response);
+					return;
+				}
+			}
+		}
 
-        chain.doFilter(request, response);
-    }
+		chain.doFilter(request, response);
+	}
 
-    private CustomHeaderAuthRequestDetails extractRequestDetails(HttpServletRequest request) {
-        CustomHeaderAuthRequestDetails result;
+	private CustomHeaderAuthRequestDetails extractRequestDetails(HttpServletRequest request) {
+		CustomHeaderAuthRequestDetails result;
 
-        if (request.getParameterMap().containsKey(OAuth2Utils.GRANT_TYPE)) {
-            result = new CustomHeaderOAuthRequestDetails();
+		if (request.getParameterMap().containsKey(OAuth2Utils.GRANT_TYPE)) {
+			result = new CustomHeaderOAuthRequestDetails();
 
-            ((CustomHeaderOAuthRequestDetails) result).customParamClientId = request.getParameter(OAuth2Utils.CLIENT_ID);
-            ((CustomHeaderOAuthRequestDetails) result).customParamClientSecret = request.getParameter(PARAMETER_NAME_CLIENT_SECRET);
-            ((CustomHeaderOAuthRequestDetails) result).grantType = request.getParameter(OAuth2Utils.GRANT_TYPE);
-        } else {
-            result = new CustomHeaderRestRequestDetails();
-        }
+			((CustomHeaderOAuthRequestDetails) result).customParamClientId = request
+					.getParameter(OAuth2Utils.CLIENT_ID);
+			((CustomHeaderOAuthRequestDetails) result).customParamClientSecret = request
+					.getParameter(PARAMETER_NAME_CLIENT_SECRET);
+			((CustomHeaderOAuthRequestDetails) result).grantType = request.getParameter(OAuth2Utils.GRANT_TYPE);
+		} else {
+			result = new CustomHeaderRestRequestDetails();
+		}
 
-        result.currentUser = SecurityContextHolder.getContext().getAuthentication();
-        result.customHeaderEmail = StringUtils.defaultIfEmpty(request.getHeader(customHeaderHeadernameEmail), "");
-        result.customHeaderExtId = StringUtils.defaultIfEmpty(request.getHeader(customHeaderHeadernameExtid), "");
+		result.currentUser = SecurityContextHolder.getContext().getAuthentication();
+		result.customHeaderEmail = StringUtils.defaultIfEmpty(request.getHeader(customHeaderHeadernameEmail), "");
+		result.customHeaderExtId = StringUtils.defaultIfEmpty(request.getHeader(customHeaderHeadernameExtid), "");
 
-        return result;
-    }
+		return result;
+	}
 
-    private boolean canAuthenticate(CustomHeaderAuthRequestDetails requestDetails) {
-        // if there is already authentication information available, do nothing
-        if (requestDetails.currentUser != null) {
-            log.debug("Cannot create authentication object because there is already one!");
-            return false;
-        }
+	private boolean canAuthenticate(CustomHeaderAuthRequestDetails requestDetails) {
+		// if there is already authentication information available, do nothing
+		if (requestDetails.currentUser != null) {
+			log.debug("Cannot create authentication object because there is already one!");
+			return false;
+		}
 
-        // without any auth header, this authentication makes no sense
-        if (StringUtils.isEmpty(requestDetails.customHeaderEmail)
-                && StringUtils.isEmpty(requestDetails.customHeaderExtId)) {
-            log.debug("Cannot create authentication object because user identifying headers from proxy are missing!");
-            return false;
-        }
+		// without any auth header, this authentication makes no sense
+		if (StringUtils.isEmpty(requestDetails.customHeaderEmail)
+				&& StringUtils.isEmpty(requestDetails.customHeaderExtId)) {
+			log.debug("Cannot create authentication object because user identifying headers from proxy are missing!");
+			return false;
+		}
 
-        if (requestDetails instanceof CustomHeaderOAuthRequestDetails) {
-            CustomHeaderOAuthRequestDetails oauthRequestDetails = (CustomHeaderOAuthRequestDetails) requestDetails;
-            log.debug("Request is OAuth request so checking further conditions!");
+		if (requestDetails instanceof CustomHeaderOAuthRequestDetails) {
+			CustomHeaderOAuthRequestDetails oauthRequestDetails = (CustomHeaderOAuthRequestDetails) requestDetails;
+			log.debug("Request is OAuth request so checking further conditions!");
 
-            // we want to be active only for grant type 'password' requests
-            if (StringUtils.isEmpty(oauthRequestDetails.grantType) || !oauthRequestDetails.grantType.equals("password")) {
-                log.debug("Cannot create authentication object because grant type is not password!");
-                return false;
-            }
+			// we want to be active only for grant type 'password' requests
+			if (StringUtils.isEmpty(oauthRequestDetails.grantType)
+					|| !oauthRequestDetails.grantType.equals("password")) {
+				log.debug("Cannot create authentication object because grant type is not password!");
+				return false;
+			}
 
-            // without client info, this authentication makes no sense
-            if (StringUtils.isEmpty(oauthRequestDetails.customParamClientId)
-                    || StringUtils.isEmpty(oauthRequestDetails.customParamClientSecret)) {
-                log.debug("Cannot create authentication object because client identifying request parameters are missing!");
-                return false;
-            }
-        }
+			// without client info, this authentication makes no sense
+			if (StringUtils.isEmpty(oauthRequestDetails.customParamClientId)
+					|| StringUtils.isEmpty(oauthRequestDetails.customParamClientSecret)) {
+				log.debug(
+						"Cannot create authentication object because client identifying request parameters are missing!");
+				return false;
+			}
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    private ServletRequest doAuthenticate(HttpServletRequest request, CustomHeaderAuthRequestDetails requestDetails) {
-        Sw360CustomHeaderServletRequestWrapper requestResult = null;
-        Authentication authResult = null;
+	private ServletRequest doAuthenticate(HttpServletRequest request, CustomHeaderAuthRequestDetails requestDetails) {
+		Sw360CustomHeaderServletRequestWrapper requestResult = null;
+		Authentication authResult = null;
 
-        User userDetails = sw360CustomHeaderUserDetailsProvider.provideUserDetails(requestDetails.customHeaderEmail, requestDetails.customHeaderExtId);
-        if (userDetails != null) {
+		User userDetails = sw360CustomHeaderUserDetailsProvider.provideUserDetails(requestDetails.customHeaderEmail,
+				requestDetails.customHeaderExtId);
+		if (userDetails != null) {
 
-            // first create our request wrapper to be able to add params
-            requestResult = new Sw360CustomHeaderServletRequestWrapper(request);
-            requestResult.addParameter(PARAMETER_NAME_USERNAME, new String[] { userDetails.getEmail() });
-            requestResult.addParameter(customHeaderHeadernameIntermediateAuthStore,
-                    new String[] { userDetails.getExternalid() });
+			// first create our request wrapper to be able to add params
+			requestResult = new Sw360CustomHeaderServletRequestWrapper(request);
+			requestResult.addParameter(PARAMETER_NAME_USERNAME, new String[]{userDetails.getEmail()});
+			requestResult.addParameter(customHeaderHeadernameIntermediateAuthStore,
+					new String[]{userDetails.getExternalid()});
 
-            // then we need to distinguish if we have a plain REST request or an oauth request
-            if (requestDetails instanceof CustomHeaderOAuthRequestDetails) {
-                CustomHeaderOAuthRequestDetails oauthRequestDetails = (CustomHeaderOAuthRequestDetails) requestDetails;
+			// then we need to distinguish if we have a plain REST request or an oauth
+			// request
+			if (requestDetails instanceof CustomHeaderOAuthRequestDetails) {
+				CustomHeaderOAuthRequestDetails oauthRequestDetails = (CustomHeaderOAuthRequestDetails) requestDetails;
 
-                // in case of an oauth request we have to stick to the described spring workflow
-                // (see class description)
-                authResult = new UsernamePasswordAuthenticationToken(oauthRequestDetails.customParamClientId,
-                        oauthRequestDetails.customParamClientSecret);
+				// in case of an oauth request we have to stick to the described spring workflow
+				// (see class description)
+				authResult = new UsernamePasswordAuthenticationToken(oauthRequestDetails.customParamClientId,
+						oauthRequestDetails.customParamClientSecret);
 
-                log.debug("Created username-password-authentication object for client "
-                        + oauthRequestDetails.customParamClientId + " and added username " + userDetails.getEmail()
-                        + " as pre authenticated user to the request parameters.");
-            } else {
-                // in case of a normal REST request we can generate the "correct" authentication
-                // token, a pre authenticated one
-                authResult = new PreAuthenticatedAuthenticationToken(userDetails.getEmail(), "N/A");
+				log.debug("Created username-password-authentication object for client "
+						+ oauthRequestDetails.customParamClientId + " and added username " + userDetails.getEmail()
+						+ " as pre authenticated user to the request parameters.");
+			} else {
+				// in case of a normal REST request we can generate the "correct" authentication
+				// token, a pre authenticated one
+				authResult = new PreAuthenticatedAuthenticationToken(userDetails.getEmail(), "N/A");
 
-                // in addition we use the same pattern as the spring oauth workflow does to make
-                // the AuthenticationProvider easier, i.e. add the request params as
-                // authentication details
-                ((PreAuthenticatedAuthenticationToken) authResult).setDetails(requestResult.getParameterMap());
+				// in addition we use the same pattern as the spring oauth workflow does to make
+				// the AuthenticationProvider easier, i.e. add the request params as
+				// authentication details
+				((PreAuthenticatedAuthenticationToken) authResult).setDetails(requestResult.getParameterMap());
 
-                log.debug("Created pre-authentication object for username " + userDetails.getEmail()
-                        + " with parameter map as details.");
-            }
+				log.debug("Created pre-authentication object for username " + userDetails.getEmail()
+						+ " with parameter map as details.");
+			}
 
-            // then add authentication to security context
-            SecurityContextHolder.getContext().setAuthentication(authResult);
-        }
+			// then add authentication to security context
+			SecurityContextHolder.getContext().setAuthentication(authResult);
+		}
 
-        return requestResult;
-    }
+		return requestResult;
+	}
 
-    private abstract static class CustomHeaderAuthRequestDetails {
-        public Authentication currentUser;
-        public String customHeaderEmail;
-        public String customHeaderExtId;
-    }
+	private abstract static class CustomHeaderAuthRequestDetails {
+		public Authentication currentUser;
+		public String customHeaderEmail;
+		public String customHeaderExtId;
+	}
 
-    private static class CustomHeaderRestRequestDetails extends CustomHeaderAuthRequestDetails {
-    }
+	private static class CustomHeaderRestRequestDetails extends CustomHeaderAuthRequestDetails {
+	}
 
-    private static class CustomHeaderOAuthRequestDetails extends CustomHeaderAuthRequestDetails {
-        public String customParamClientId;
-        public String customParamClientSecret;
-        public String grantType;
-    }
+	private static class CustomHeaderOAuthRequestDetails extends CustomHeaderAuthRequestDetails {
+		public String customParamClientId;
+		public String customParamClientSecret;
+		public String grantType;
+	}
 }

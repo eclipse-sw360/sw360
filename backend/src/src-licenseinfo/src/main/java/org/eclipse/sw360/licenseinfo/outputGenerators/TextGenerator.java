@@ -26,36 +26,42 @@ import java.util.Collection;
 import java.util.Map;
 
 public class TextGenerator extends OutputGenerator<String> {
-    private static final Logger LOGGER = LogManager.getLogger(TextGenerator.class);
+	private static final Logger LOGGER = LogManager.getLogger(TextGenerator.class);
 
-    private static final String TXT_TEMPLATE_FILE = "textLicenseInfoFile.vm";
-    private static final String TXT_MIME_TYPE = "text/plain";
-    private static final String TXT_OUTPUT_TYPE = "txt";
+	private static final String TXT_TEMPLATE_FILE = "textLicenseInfoFile.vm";
+	private static final String TXT_MIME_TYPE = "text/plain";
+	private static final String TXT_OUTPUT_TYPE = "txt";
 
-    public TextGenerator(OutputFormatVariant outputFormatVariant, String outputDescription) {
-        super(TXT_OUTPUT_TYPE, outputDescription, false, TXT_MIME_TYPE, outputFormatVariant);
-    }
+	public TextGenerator(OutputFormatVariant outputFormatVariant, String outputDescription) {
+		super(TXT_OUTPUT_TYPE, outputDescription, false, TXT_MIME_TYPE, outputFormatVariant);
+	}
 
-    @Override
-    public String generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String,String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception {
-        String projectName = project.getName();
-        String projectVersion = project.getVersion();
-        String licenseInfoHeaderText = project.getLicenseInfoHeaderText();
-        String obligationsText = project.getObligationsText();
+	@Override
+	public String generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project,
+			Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds,
+			Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception {
+		String projectName = project.getName();
+		String projectVersion = project.getVersion();
+		String licenseInfoHeaderText = project.getLicenseInfoHeaderText();
+		String obligationsText = project.getObligationsText();
 
-        switch (getOutputVariant()) {
-            case DISCLOSURE:
-                return generateDisclosure(projectLicenseInfoResults, projectName + " " + projectVersion, licenseInfoHeaderText, obligationsText, externalIds);
-            default:
-                throw new IllegalArgumentException("Unknown generator variant type: " + getOutputVariant());
-        }
-    }
-    private String generateDisclosure(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, String projectTitle, String licenseInfoHeaderText, String obligationsText, Map<String, String> externalIds) {
-        try {
-            return renderTemplateWithDefaultValues(projectLicenseInfoResults, TXT_TEMPLATE_FILE, projectTitle, licenseInfoHeaderText, obligationsText, externalIds);
-        } catch (Exception e) {
-            LOGGER.error("Could not generate text licenseinfo file for project " + projectTitle, e);
-            return "License information could not be generated.\nAn exception occurred: " + e.toString();
-        }
-    }
+		switch (getOutputVariant()) {
+			case DISCLOSURE :
+				return generateDisclosure(projectLicenseInfoResults, projectName + " " + projectVersion,
+						licenseInfoHeaderText, obligationsText, externalIds);
+			default :
+				throw new IllegalArgumentException("Unknown generator variant type: " + getOutputVariant());
+		}
+	}
+	private String generateDisclosure(Collection<LicenseInfoParsingResult> projectLicenseInfoResults,
+			String projectTitle, String licenseInfoHeaderText, String obligationsText,
+			Map<String, String> externalIds) {
+		try {
+			return renderTemplateWithDefaultValues(projectLicenseInfoResults, TXT_TEMPLATE_FILE, projectTitle,
+					licenseInfoHeaderText, obligationsText, externalIds);
+		} catch (Exception e) {
+			LOGGER.error("Could not generate text licenseinfo file for project " + projectTitle, e);
+			return "License information could not be generated.\nAn exception occurred: " + e.toString();
+		}
+	}
 }

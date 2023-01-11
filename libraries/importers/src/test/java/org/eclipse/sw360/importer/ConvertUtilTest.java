@@ -17,9 +17,9 @@ import static org.junit.Assert.assertEquals;
 
 public class ConvertUtilTest {
 
-    @Test
-    public void testParseDate() throws Exception {
-        String parsedDate = ConvertUtil.parseDate("CAST(0xC9370B00 AS Date)");
-        assertEquals("2013-11-05", parsedDate);
-    }
+	@Test
+	public void testParseDate() throws Exception {
+		String parsedDate = ConvertUtil.parseDate("CAST(0xC9370B00 AS Date)");
+		assertEquals("2013-11-05", parsedDate);
+	}
 }

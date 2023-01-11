@@ -18,21 +18,22 @@ import java.io.IOException;
 
 public class DisplayLicenseInfoHeader extends SimpleTagSupport {
 
-    private Project project;
-    private String defaultText = "";
+	private Project project;
+	private String defaultText = "";
 
-    public void setProject(Project project) {
-        this.project = project;
-    }
+	public void setProject(Project project) {
+		this.project = project;
+	}
 
-    public void setDefaultText(String defaultText) {
-        this.defaultText = defaultText;
-    }
+	public void setDefaultText(String defaultText) {
+		this.defaultText = defaultText;
+	}
 
+	public void doTag() throws JspException, IOException {
+		String output = project.isSetLicenseInfoHeaderText()
+				? StringEscapeUtils.escapeHtml(project.licenseInfoHeaderText)
+				: StringEscapeUtils.escapeHtml(defaultText);
 
-    public void doTag() throws JspException, IOException {
-        String output = project.isSetLicenseInfoHeaderText() ? StringEscapeUtils.escapeHtml(project.licenseInfoHeaderText) : StringEscapeUtils.escapeHtml(defaultText);
-
-        getJspContext().getOut().print(output);
-    }
+		getJspContext().getOut().print(output);
+	}
 }

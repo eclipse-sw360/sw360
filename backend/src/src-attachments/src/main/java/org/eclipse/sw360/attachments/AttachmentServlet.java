@@ -24,9 +24,9 @@ import java.net.MalformedURLException;
  */
 public class AttachmentServlet extends Sw360ThriftServlet {
 
-    public AttachmentServlet() throws MalformedURLException {
-        // Create a service processor using the provided handler
-        super(new AttachmentService.Processor<>(new AttachmentHandler()), new TCompactProtocol.Factory());
-    }
+	public AttachmentServlet() throws MalformedURLException {
+		// Create a service processor using the provided handler
+		super(new AttachmentService.Processor<>(new AttachmentHandler()), new TCompactProtocol.Factory());
+	}
 
 }

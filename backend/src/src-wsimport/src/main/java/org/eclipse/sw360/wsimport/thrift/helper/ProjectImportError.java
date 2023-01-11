@@ -15,17 +15,16 @@ package org.eclipse.sw360.wsimport.thrift.helper;
  * @author: ksoranko@verifa.io
  */
 public enum ProjectImportError {
-    PROJECT_NOT_FOUND("Unable to get project from server"),
-    PROJECT_ALREADY_EXISTS("Project already in database"),
-    OTHER("Other error");
+	PROJECT_NOT_FOUND("Unable to get project from server"), PROJECT_ALREADY_EXISTS(
+			"Project already in database"), OTHER("Other error");
 
-    private final String text;
+	private final String text;
 
-    ProjectImportError(String text) {
-        this.text = text;
-    }
+	ProjectImportError(String text) {
+		this.text = text;
+	}
 
-    public String getText() {
-        return text;
-    }
+	public String getText() {
+		return text;
+	}
 }

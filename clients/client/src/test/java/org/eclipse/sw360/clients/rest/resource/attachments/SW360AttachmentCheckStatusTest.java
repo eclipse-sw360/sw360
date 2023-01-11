@@ -15,28 +15,28 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SW360AttachmentCheckStatusTest {
-    private static void checkFindByValue(SW360AttachmentCheckStatus status, int value) {
-        SW360AttachmentCheckStatus result = SW360AttachmentCheckStatus.findByValue(value);
+	private static void checkFindByValue(SW360AttachmentCheckStatus status, int value) {
+		SW360AttachmentCheckStatus result = SW360AttachmentCheckStatus.findByValue(value);
 
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(status);
-        assertThat(result.getValue()).isEqualTo(value);
-    }
+		assertThat(result).isNotNull();
+		assertThat(result).isEqualTo(status);
+		assertThat(result.getValue()).isEqualTo(value);
+	}
 
-    @Test
-    public void testFindByValueRejected() {
-        checkFindByValue(SW360AttachmentCheckStatus.REJECTED, 2);
-    }
+	@Test
+	public void testFindByValueRejected() {
+		checkFindByValue(SW360AttachmentCheckStatus.REJECTED, 2);
+	}
 
-    @Test
-    public void testFindByValueAccepted() {
-        checkFindByValue(SW360AttachmentCheckStatus.ACCEPTED, 1);
-    }
+	@Test
+	public void testFindByValueAccepted() {
+		checkFindByValue(SW360AttachmentCheckStatus.ACCEPTED, 1);
+	}
 
-    @Test
-    public void testFindByValueNotChecked() {
-        SW360AttachmentCheckStatus result = SW360AttachmentCheckStatus.findByValue(333);
+	@Test
+	public void testFindByValueNotChecked() {
+		SW360AttachmentCheckStatus result = SW360AttachmentCheckStatus.findByValue(333);
 
-        assertThat(result).isEqualTo(SW360AttachmentCheckStatus.NOTCHECKED);
-    }
+		assertThat(result).isEqualTo(SW360AttachmentCheckStatus.NOTCHECKED);
+	}
 }

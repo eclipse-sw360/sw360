@@ -36,56 +36,59 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ClearingRequestService {
-    private static final Logger log = LogManager.getLogger(Sw360ClearingRequestService.class);
+	private static final Logger log = LogManager.getLogger(Sw360ClearingRequestService.class);
 
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
+	@Value("${sw360.thrift-server-url:http://localhost:8080}")
+	private String thriftServerUrl;
 
-    private ModerationService.Iface getThriftModerationClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/moderation/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new ModerationService.Client(protocol);
-    }
+	private ModerationService.Iface getThriftModerationClient() throws TTransportException {
+		THttpClient thriftClient = new THttpClient(thriftServerUrl + "/moderation/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		return new ModerationService.Client(protocol);
+	}
 
-    public ClearingRequest getClearingRequestByProjectId(String projectId, User sw360User) throws TException {
-        try {
-            return getThriftModerationClient().getClearingRequestByProjectId(projectId, sw360User);
-        } catch (SW360Exception sw360Exp) {
-            if (sw360Exp.getErrorCode() == 404) {
-                throw new ResourceNotFoundException("Requested ClearingRequest not found");
-            } else if (sw360Exp.getErrorCode() == 403) {
-                throw new AccessDeniedException(
-                        "ClearingRequest or its Linked Project are restricted and / or not accessible");
-            } else {
-                log.error("Error fetching clearing request by project id: " + sw360Exp.getMessage());
-                throw sw360Exp;
-            }
-        }
-    }
+	public ClearingRequest getClearingRequestByProjectId(String projectId, User sw360User) throws TException {
+		try {
+			return getThriftModerationClient().getClearingRequestByProjectId(projectId, sw360User);
+		} catch (SW360Exception sw360Exp) {
+			if (sw360Exp.getErrorCode() == 404) {
+				throw new ResourceNotFoundException("Requested ClearingRequest not found");
+			} else if (sw360Exp.getErrorCode() == 403) {
+				throw new AccessDeniedException(
+						"ClearingRequest or its Linked Project are restricted and / or not accessible");
+			} else {
+				log.error("Error fetching clearing request by project id: " + sw360Exp.getMessage());
+				throw sw360Exp;
+			}
+		}
+	}
 
-    public ClearingRequest getClearingRequestById(String id, User sw360User) throws TException {
-        try {
-            return getThriftModerationClient().getClearingRequestById(id, sw360User);
-        } catch (SW360Exception sw360Exp) {
-            if (sw360Exp.getErrorCode() == 404) {
-                throw new ResourceNotFoundException("Requested ClearingRequest not found");
-            } else if (sw360Exp.getErrorCode() == 403) {
-                throw new AccessDeniedException(
-                        "ClearingRequest or its Linked Project are restricted and / or not accessible");
-            } else {
-                log.error("Error fetching clearing request by id: " + sw360Exp.getMessage());
-                throw sw360Exp;
-            }
-        }
-    }
+	public ClearingRequest getClearingRequestById(String id, User sw360User) throws TException {
+		try {
+			return getThriftModerationClient().getClearingRequestById(id, sw360User);
+		} catch (SW360Exception sw360Exp) {
+			if (sw360Exp.getErrorCode() == 404) {
+				throw new ResourceNotFoundException("Requested ClearingRequest not found");
+			} else if (sw360Exp.getErrorCode() == 403) {
+				throw new AccessDeniedException(
+						"ClearingRequest or its Linked Project are restricted and / or not accessible");
+			} else {
+				log.error("Error fetching clearing request by id: " + sw360Exp.getMessage());
+				throw sw360Exp;
+			}
+		}
+	}
 
-    public Set<ClearingRequest> getMyClearingRequests(User sw360User, ClearingRequestState state) throws TException {
-        Set<ClearingRequest> clearingrequests = new HashSet<>(getThriftModerationClient().getMyClearingRequests(sw360User));
-        clearingrequests.addAll(getThriftModerationClient().getClearingRequestsByBU(sw360User.getDepartment()));
-        if (state!= null) {
-            clearingrequests = clearingrequests.parallelStream().filter(cr -> { return cr.getClearingState() == state; }).collect(Collectors.toSet());
-        }
-        return clearingrequests;
-    }
+	public Set<ClearingRequest> getMyClearingRequests(User sw360User, ClearingRequestState state) throws TException {
+		Set<ClearingRequest> clearingrequests = new HashSet<>(
+				getThriftModerationClient().getMyClearingRequests(sw360User));
+		clearingrequests.addAll(getThriftModerationClient().getClearingRequestsByBU(sw360User.getDepartment()));
+		if (state != null) {
+			clearingrequests = clearingrequests.parallelStream().filter(cr -> {
+				return cr.getClearingState() == state;
+			}).collect(Collectors.toSet());
+		}
+		return clearingrequests;
+	}
 
 }

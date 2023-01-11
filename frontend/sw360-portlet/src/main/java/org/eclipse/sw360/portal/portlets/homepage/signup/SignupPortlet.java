@@ -42,99 +42,91 @@ import javax.portlet.*;
 
 import static org.eclipse.sw360.portal.common.PortalConstants.SIGNUP_PORTLET_NAME;
 
+@org.osgi.service.component.annotations.Component(immediate = true, properties = {
+		"/org/eclipse/sw360/portal/portlets/base.properties",
+		"/org/eclipse/sw360/portal/portlets/welcome.properties"}, property = {
+				"javax.portlet.name=" + SIGNUP_PORTLET_NAME,
 
-@org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-        "/org/eclipse/sw360/portal/portlets/base.properties",
-        "/org/eclipse/sw360/portal/portlets/welcome.properties"
-    },
-    property = {
-        "javax.portlet.name=" + SIGNUP_PORTLET_NAME,
-
-        "javax.portlet.display-name=Signup",
-        "javax.portlet.info.short-title=Signup",
-        "javax.portlet.info.title=Signup",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/homepage/signup/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+				"javax.portlet.display-name=Signup", "javax.portlet.info.short-title=Signup",
+				"javax.portlet.info.title=Signup", "javax.portlet.resource-bundle=content.Language",
+				"javax.portlet.init-param.view-template=/html/homepage/signup/view.jsp",}, service = Portlet.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class SignupPortlet extends Sw360Portlet {
 
-    private static final Logger log = LogManager.getLogger(SignupPortlet.class);
+	private static final Logger log = LogManager.getLogger(SignupPortlet.class);
 
-    @Override
-    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        String pageName = request.getParameter(PortalConstants.PAGENAME);
-        PortletUtils.setWelcomePageGuideLine(request);
-        if (PortalConstants.PAGENAME_SUCCESS.equals(pageName)) {
-            include("/html/homepage/signup/success.jsp", request, response);
-        } else {
-            prepareStandardView(request);
-            super.doView(request, response);
-        }
-    }
+	@Override
+	public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+		String pageName = request.getParameter(PortalConstants.PAGENAME);
+		PortletUtils.setWelcomePageGuideLine(request);
+		if (PortalConstants.PAGENAME_SUCCESS.equals(pageName)) {
+			include("/html/homepage/signup/success.jsp", request, response);
+		} else {
+			prepareStandardView(request);
+			super.doView(request, response);
+		}
+	}
 
-    private void prepareStandardView(RenderRequest request) {
-        List<UserGroup> userGroups = Arrays.asList(UserGroup.values());
-        request.setAttribute(PortalConstants.USER_GROUPS, userGroups);
-        List<Organization> organizations = UserUtils.getOrganizations(request);
-        request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
-    }
+	private void prepareStandardView(RenderRequest request) {
+		List<UserGroup> userGroups = Arrays.asList(UserGroup.values());
+		request.setAttribute(PortalConstants.USER_GROUPS, userGroups);
+		List<Organization> organizations = UserUtils.getOrganizations(request);
+		request.setAttribute(PortalConstants.ORGANIZATIONS, organizations);
+	}
 
-    @UsedAsLiferayAction
-    public void createAccount(ActionRequest request, ActionResponse response) throws PortletException, IOException {
-        Registrant registrant = new Registrant(request);
-        SignupPortletUtils.updateUserFromRequest(request, registrant);
+	@UsedAsLiferayAction
+	public void createAccount(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+		Registrant registrant = new Registrant(request);
+		SignupPortletUtils.updateUserFromRequest(request, registrant);
 
-        User newUser = null;
-        if (registrant.validateUserData(request)) {
-            newUser = createUser(registrant, request);
-        }
-        if (newUser != null) {
-            if (createUserModerationRequest(newUser, request)) {
-                response.setRenderParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_SUCCESS);
-            }
-        } else {
-            if (SessionErrors.isEmpty(request)) {
-                SessionErrors.add(request, ErrorMessages.DEFAULT_ERROR_MESSAGE);
-            }
-            SessionMessages.add(request,
-                    PortalUtil.getPortletId(request) + SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_ERROR_MESSAGE);
-            request.setAttribute(PortalConstants.USER, registrant);
-            log.error("Could not create user [" + registrant + "].");
-        }
-    }
+		User newUser = null;
+		if (registrant.validateUserData(request)) {
+			newUser = createUser(registrant, request);
+		}
+		if (newUser != null) {
+			if (createUserModerationRequest(newUser, request)) {
+				response.setRenderParameter(PortalConstants.PAGENAME, PortalConstants.PAGENAME_SUCCESS);
+			}
+		} else {
+			if (SessionErrors.isEmpty(request)) {
+				SessionErrors.add(request, ErrorMessages.DEFAULT_ERROR_MESSAGE);
+			}
+			SessionMessages.add(request,
+					PortalUtil.getPortletId(request) + SessionMessages.KEY_SUFFIX_HIDE_DEFAULT_ERROR_MESSAGE);
+			request.setAttribute(PortalConstants.USER, registrant);
+			log.error("Could not create user [" + registrant + "].");
+		}
+	}
 
-    private boolean createUserModerationRequest(User user, ActionRequest request) {
-        ModerationService.Iface client = thriftClients.makeModerationClient();
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-        try {
-            client.createUserRequest(user);
-            log.info("Created moderation request for a new user account");
-            SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"moderation.request.has.been.sent"));
+	private boolean createUserModerationRequest(User user, ActionRequest request) {
+		ModerationService.Iface client = thriftClients.makeModerationClient();
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+				getClass());
+		try {
+			client.createUserRequest(user);
+			log.info("Created moderation request for a new user account");
+			SessionMessages.add(request, "request_processed",
+					LanguageUtil.get(resourceBundle, "moderation.request.has.been.sent"));
 
-        } catch (TException e) {
-            log.error("Could not create user moderation request.", e);
-            setSW360SessionError(request, ErrorMessages.COULD_NOT_CREATE_USER_MODERATION_REQUEST);
-            return false;
-        }
-        return true;
-    }
+		} catch (TException e) {
+			log.error("Could not create user moderation request.", e);
+			setSW360SessionError(request, ErrorMessages.COULD_NOT_CREATE_USER_MODERATION_REQUEST);
+			return false;
+		}
+		return true;
+	}
 
-    private User createUser(Registrant registrant, PortletRequest request) {
-        User user = null;
-        try {
-            com.liferay.portal.kernel.model.User liferayUser = registrant.addLifeRayUser(request);
-            if (liferayUser != null) {
-                user = UserUtils.synchronizeUserWithDatabase(registrant, thriftClients, registrant::getEmail, registrant::getExternalid, UserUtils::fillThriftUserFromThriftUser);
-            }
-        } catch (PortalException | SystemException e) {
-            log.error(e);
-        }
-        return user;
-    }
+	private User createUser(Registrant registrant, PortletRequest request) {
+		User user = null;
+		try {
+			com.liferay.portal.kernel.model.User liferayUser = registrant.addLifeRayUser(request);
+			if (liferayUser != null) {
+				user = UserUtils.synchronizeUserWithDatabase(registrant, thriftClients, registrant::getEmail,
+						registrant::getExternalid, UserUtils::fillThriftUserFromThriftUser);
+			}
+		} catch (PortalException | SystemException e) {
+			log.error(e);
+		}
+		return user;
+	}
 
 }

@@ -49,113 +49,109 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class LicenseController implements RepresentationModelProcessor<RepositoryLinksResource> {
-    public static final String LICENSES_URL = "/licenses";
+	public static final String LICENSES_URL = "/licenses";
 
-    @NonNull
-    private final Sw360LicenseService licenseService;
+	@NonNull
+	private final Sw360LicenseService licenseService;
 
-    @NonNull
-    private final RestControllerHelper restControllerHelper;
+	@NonNull
+	private final RestControllerHelper restControllerHelper;
 
-    @RequestMapping(value = LICENSES_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<License>>> getLicenses() throws TException {
-        List<License> sw360Licenses = licenseService.getLicenses();
+	@RequestMapping(value = LICENSES_URL, method = RequestMethod.GET)
+	public ResponseEntity<CollectionModel<EntityModel<License>>> getLicenses() throws TException {
+		List<License> sw360Licenses = licenseService.getLicenses();
 
-        List<EntityModel<License>> licenseResources = new ArrayList<>();
-        for (License sw360License : sw360Licenses) {
-            License embeddedLicense = restControllerHelper.convertToEmbeddedLicense(sw360License);
-            EntityModel<License> licenseResource = EntityModel.of(embeddedLicense);
-            licenseResources.add(licenseResource);
-        }
+		List<EntityModel<License>> licenseResources = new ArrayList<>();
+		for (License sw360License : sw360Licenses) {
+			License embeddedLicense = restControllerHelper.convertToEmbeddedLicense(sw360License);
+			EntityModel<License> licenseResource = EntityModel.of(embeddedLicense);
+			licenseResources.add(licenseResource);
+		}
 
-        CollectionModel<EntityModel<License>> resources = CollectionModel.of(licenseResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
-    }
+		CollectionModel<EntityModel<License>> resources = CollectionModel.of(licenseResources);
+		return new ResponseEntity<>(resources, HttpStatus.OK);
+	}
 
-    @RequestMapping(value = LICENSES_URL + "/{id:.+}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<License>> getLicense(
-            @PathVariable("id") String id) throws TException {
-        License sw360License = licenseService.getLicenseById(id);
-        HalResource<License> licenseHalResource = createHalLicense(sw360License);
-        return new ResponseEntity<>(licenseHalResource, HttpStatus.OK);
-    }
-    
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = LICENSES_URL + "/{id:.+}", method = RequestMethod.DELETE)
-    public ResponseEntity deleteLicense(
-            @PathVariable("id") String id) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        licenseService.deleteLicenseById(id, sw360User);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-    
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = LICENSES_URL, method = RequestMethod.POST)
-    public ResponseEntity<EntityModel<License>> createLicense(
-            @RequestBody License license) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        license = licenseService.createLicense(license, sw360User);
-        HalResource<License> halResource = createHalLicense(license);
+	@RequestMapping(value = LICENSES_URL + "/{id:.+}", method = RequestMethod.GET)
+	public ResponseEntity<EntityModel<License>> getLicense(@PathVariable("id") String id) throws TException {
+		License sw360License = licenseService.getLicenseById(id);
+		HalResource<License> licenseHalResource = createHalLicense(sw360License);
+		return new ResponseEntity<>(licenseHalResource, HttpStatus.OK);
+	}
 
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest().path("/{id}")
-                .buildAndExpand(license.getId()).toUri();
+	@PreAuthorize("hasAuthority('WRITE')")
+	@RequestMapping(value = LICENSES_URL + "/{id:.+}", method = RequestMethod.DELETE)
+	public ResponseEntity deleteLicense(@PathVariable("id") String id) throws TException {
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		licenseService.deleteLicenseById(id, sw360User);
+		return new ResponseEntity<>(HttpStatus.OK);
+	}
 
-        return ResponseEntity.created(location).body(halResource);
-    }
+	@PreAuthorize("hasAuthority('WRITE')")
+	@RequestMapping(value = LICENSES_URL, method = RequestMethod.POST)
+	public ResponseEntity<EntityModel<License>> createLicense(@RequestBody License license) throws TException {
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		license = licenseService.createLicense(license, sw360User);
+		HalResource<License> halResource = createHalLicense(license);
 
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.POST)
-    public ResponseEntity linkObligation(
-            @PathVariable("id") String id,
-            @RequestBody Set<String> obligationIds) throws TException {
-        updateLicenseObligations(obligationIds, id, false);
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
+		URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(license.getId())
+				.toUri();
 
-    @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.PATCH)
-    public ResponseEntity unlinkObligation(
-            @PathVariable("id") String id,
-            @RequestBody Set<String> obligationIds) throws TException {
-        updateLicenseObligations(obligationIds, id, true);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
+		return ResponseEntity.created(location).body(halResource);
+	}
 
-    private void updateLicenseObligations(Set<String> obligationIds, String licenseId, boolean unLink) throws TException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        License license = licenseService.getLicenseById(licenseId);
-        licenseService.checkObligationIds(obligationIds);
-        Set<String> obligationIdsLink = obligationIds;
-        if (unLink) {
-            Set<String> licenseObligationIds = license.getObligationDatabaseIds();
-            List<String> obligationIdsIncorrect = new ArrayList<>();
-            for (String obligationId : obligationIds) {
-                if (!licenseObligationIds.contains(obligationId)) {
-                    obligationIdsIncorrect.add(obligationId);
-                }
-            }
-            if (!obligationIdsIncorrect.isEmpty()) {
-                throw new HttpMessageNotReadableException("Obligation ids: " + obligationIdsIncorrect + " are not linked to license");
-            }
-            licenseObligationIds.removeAll(obligationIds);
-            obligationIdsLink = licenseObligationIds;
-        }
-        licenseService.updateLicenseToDB(license, obligationIdsLink, sw360User);
-    }
+	@PreAuthorize("hasAuthority('WRITE')")
+	@RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.POST)
+	public ResponseEntity linkObligation(@PathVariable("id") String id, @RequestBody Set<String> obligationIds)
+			throws TException {
+		updateLicenseObligations(obligationIds, id, false);
+		return new ResponseEntity<>(HttpStatus.CREATED);
+	}
 
-    @Override
-    public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        resource.add(linkTo(LicenseController.class).slash("api/licenses").withRel("licenses"));
-        return resource;
-    }
+	@PreAuthorize("hasAuthority('WRITE')")
+	@RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.PATCH)
+	public ResponseEntity unlinkObligation(@PathVariable("id") String id, @RequestBody Set<String> obligationIds)
+			throws TException {
+		updateLicenseObligations(obligationIds, id, true);
+		return new ResponseEntity<>(HttpStatus.OK);
+	}
 
-    private HalResource<License> createHalLicense(License sw360License) {
-        HalResource<License> halLicense = new HalResource<>(sw360License);
-        if (sw360License.getObligations() != null) {
-            List<Obligation> obligations = sw360License.getObligations();
-            restControllerHelper.addEmbeddedObligations(halLicense, obligations);
-        }
-        return halLicense;
-    }
+	private void updateLicenseObligations(Set<String> obligationIds, String licenseId, boolean unLink)
+			throws TException {
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		License license = licenseService.getLicenseById(licenseId);
+		licenseService.checkObligationIds(obligationIds);
+		Set<String> obligationIdsLink = obligationIds;
+		if (unLink) {
+			Set<String> licenseObligationIds = license.getObligationDatabaseIds();
+			List<String> obligationIdsIncorrect = new ArrayList<>();
+			for (String obligationId : obligationIds) {
+				if (!licenseObligationIds.contains(obligationId)) {
+					obligationIdsIncorrect.add(obligationId);
+				}
+			}
+			if (!obligationIdsIncorrect.isEmpty()) {
+				throw new HttpMessageNotReadableException(
+						"Obligation ids: " + obligationIdsIncorrect + " are not linked to license");
+			}
+			licenseObligationIds.removeAll(obligationIds);
+			obligationIdsLink = licenseObligationIds;
+		}
+		licenseService.updateLicenseToDB(license, obligationIdsLink, sw360User);
+	}
+
+	@Override
+	public RepositoryLinksResource process(RepositoryLinksResource resource) {
+		resource.add(linkTo(LicenseController.class).slash("api/licenses").withRel("licenses"));
+		return resource;
+	}
+
+	private HalResource<License> createHalLicense(License sw360License) {
+		HalResource<License> halLicense = new HalResource<>(sw360License);
+		if (sw360License.getObligations() != null) {
+			List<Obligation> obligations = sw360License.getObligations();
+			restControllerHelper.addEmbeddedObligations(halLicense, obligations);
+		}
+		return halLicense;
+	}
 }

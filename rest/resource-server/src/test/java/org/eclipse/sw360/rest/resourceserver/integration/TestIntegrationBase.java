@@ -30,43 +30,43 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ContextConfiguration
 abstract public class TestIntegrationBase {
 
-    public HttpHeaders getHeaders(int port) throws IOException {
-        ResponseEntity<String> response =
-                new TestRestTemplate("trusted-sw360-client", "sw360-secret")
-                        .postForEntity("http://localhost:" + port + "/oauth/token?grant_type=password&username=admin@sw360.org&password=sw360-password",
-                                null,
-                                String.class);
+	public HttpHeaders getHeaders(int port) throws IOException {
+		ResponseEntity<String> response = new TestRestTemplate("trusted-sw360-client", "sw360-secret").postForEntity(
+				"http://localhost:" + port
+						+ "/oauth/token?grant_type=password&username=admin@sw360.org&password=sw360-password",
+				null, String.class);
 
-        String responseText = response.getBody();
-        HashMap<?, ?> jwtMap = new ObjectMapper().readValue(responseText, HashMap.class);
-        String accessToken = (String) jwtMap.get("access_token");
+		String responseText = response.getBody();
+		HashMap<?, ?> jwtMap = new ObjectMapper().readValue(responseText, HashMap.class);
+		String accessToken = (String) jwtMap.get("access_token");
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + accessToken);
-        return headers;
-    }
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Authorization", "Bearer " + accessToken);
+		return headers;
+	}
 
-    protected void checkResponse(ResponseEntity<String> response, String linkRelation, int embeddedArraySize) throws IOException {
-        String responseBody = response.getBody();
-        JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
+	protected void checkResponse(ResponseEntity<String> response, String linkRelation, int embeddedArraySize)
+			throws IOException {
+		String responseBody = response.getBody();
+		JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
 
-        assertThat(responseBodyJsonNode.has("_embedded"), is(true));
+		assertThat(responseBodyJsonNode.has("_embedded"), is(true));
 
-        JsonNode embeddedNode = responseBodyJsonNode.get("_embedded");
-        assertThat(embeddedNode.has("sw360:" + linkRelation), is(true));
+		JsonNode embeddedNode = responseBodyJsonNode.get("_embedded");
+		assertThat(embeddedNode.has("sw360:" + linkRelation), is(true));
 
-        JsonNode sw360UsersNode = embeddedNode.get("sw360:" + linkRelation);
-        assertThat(sw360UsersNode.isArray(),is(true));
-        assertThat(sw360UsersNode.size(),is(embeddedArraySize));
+		JsonNode sw360UsersNode = embeddedNode.get("sw360:" + linkRelation);
+		assertThat(sw360UsersNode.isArray(), is(true));
+		assertThat(sw360UsersNode.size(), is(embeddedArraySize));
 
-        assertThat(responseBodyJsonNode.has("_links"), is(true));
+		assertThat(responseBodyJsonNode.has("_links"), is(true));
 
-        JsonNode linksNode = responseBodyJsonNode.get("_links");
-        assertThat(linksNode.has("curies"), is(true));
+		JsonNode linksNode = responseBodyJsonNode.get("_links");
+		assertThat(linksNode.has("curies"), is(true));
 
-        JsonNode curiesNode = linksNode.get("curies").get(0);
-        assertThat(curiesNode.get("href").asText(), endsWith("docs/{rel}.html"));
-        assertThat(curiesNode.get("name").asText(), is("sw360"));
-        assertThat(curiesNode.get("templated").asBoolean(), is(true));
-    }
+		JsonNode curiesNode = linksNode.get("curies").get(0);
+		assertThat(curiesNode.get("href").asText(), endsWith("docs/{rel}.html"));
+		assertThat(curiesNode.get("name").asText(), is("sw360"));
+		assertThat(curiesNode.get("templated").asBoolean(), is(true));
+	}
 }

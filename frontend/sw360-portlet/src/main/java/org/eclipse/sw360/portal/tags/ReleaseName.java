@@ -18,8 +18,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
  * @author Johannes.Najjar@tngtech.com
  */
 public class ReleaseName extends OutTag {
-    public void setRelease(Release release) {
-        this.value = SW360Utils.printName(release);
-    }
+	public void setRelease(Release release) {
+		this.value = SW360Utils.printName(release);
+	}
 
 }

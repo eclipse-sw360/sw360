@@ -21,29 +21,28 @@ import static org.eclipse.sw360.datahandler.thrift.licenses.License._Fields;
  */
 public class LicenseSummary extends DocumentSummary<License> {
 
-    @Override
-    protected License summary(SummaryType type, License document) {
-        // Copy required details
-        License copy = new License();
+	@Override
+	protected License summary(SummaryType type, License document) {
+		// Copy required details
+		License copy = new License();
 
-        switch (type) {
-            case EXPORT_SUMMARY:
-                copyField(document, copy, _Fields.OSIAPPROVED);
-                copyField(document, copy, _Fields.FSFLIBRE);
-                copyField(document, copy, _Fields.REVIEWDATE);
-            case SUMMARY:
-                copyField(document, copy, _Fields.LICENSE_TYPE);
-            default:
-                copyField(document, copy, _Fields.ID);
-                copy.setShortname(document.getId());
-                copyField(document, copy, _Fields.FULLNAME);
-                copyField(document, copy, _Fields.LICENSE_TYPE_DATABASE_ID);
-                copyField(document, copy, _Fields.CHECKED);
-                copyField(document, copy, _Fields.TEXT);
-        }
+		switch (type) {
+			case EXPORT_SUMMARY :
+				copyField(document, copy, _Fields.OSIAPPROVED);
+				copyField(document, copy, _Fields.FSFLIBRE);
+				copyField(document, copy, _Fields.REVIEWDATE);
+			case SUMMARY :
+				copyField(document, copy, _Fields.LICENSE_TYPE);
+			default :
+				copyField(document, copy, _Fields.ID);
+				copy.setShortname(document.getId());
+				copyField(document, copy, _Fields.FULLNAME);
+				copyField(document, copy, _Fields.LICENSE_TYPE_DATABASE_ID);
+				copyField(document, copy, _Fields.CHECKED);
+				copyField(document, copy, _Fields.TEXT);
+		}
 
-        return copy;
-    }
-
+		return copy;
+	}
 
 }

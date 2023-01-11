@@ -21,50 +21,50 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.startsWith;
 
 public class DataTablesUtils {
 
-    protected static List<Map<String, String[]>> vectorize(Map<String, String[]> parametersMap) {
-        int i = 0;
-        ImmutableList.Builder<Map<String, String[]>> builder = ImmutableList.builder();
-        Set<String> parametersName = parametersMap.keySet();
+	protected static List<Map<String, String[]>> vectorize(Map<String, String[]> parametersMap) {
+		int i = 0;
+		ImmutableList.Builder<Map<String, String[]>> builder = ImmutableList.builder();
+		Set<String> parametersName = parametersMap.keySet();
 
-        while (Iterables.any(parametersName, startsWith("[" + i + "]"))) {
-            builder.add(unprefix(parametersMap, "[" + i + "]"));
-            i++;
-        }
+		while (Iterables.any(parametersName, startsWith("[" + i + "]"))) {
+			builder.add(unprefix(parametersMap, "[" + i + "]"));
+			i++;
+		}
 
-        return builder.build();
-    }
+		return builder.build();
+	}
 
-    protected static Map<String, String[]> unprefix(Map<String, String[]> parametersMap, String prefix) {
-        ImmutableMap.Builder<String, String[]> builder = ImmutableMap.builder();
-        for (Map.Entry<String, String[]> entry : parametersMap.entrySet()) {
-            String key = entry.getKey();
-            if (key.startsWith(prefix)) {
-                builder.put(key.substring(prefix.length()), entry.getValue());
-            }
-        }
+	protected static Map<String, String[]> unprefix(Map<String, String[]> parametersMap, String prefix) {
+		ImmutableMap.Builder<String, String[]> builder = ImmutableMap.builder();
+		for (Map.Entry<String, String[]> entry : parametersMap.entrySet()) {
+			String key = entry.getKey();
+			if (key.startsWith(prefix)) {
+				builder.put(key.substring(prefix.length()), entry.getValue());
+			}
+		}
 
-        return builder.build();
-    }
+		return builder.build();
+	}
 
-    protected static String getSimple(Map<String, String[]> parameterMap, String parameterName) {
-        String[] parameterValues = parameterMap.get(parameterName);
+	protected static String getSimple(Map<String, String[]> parameterMap, String parameterName) {
+		String[] parameterValues = parameterMap.get(parameterName);
 
-        if (parameterValues == null || parameterValues.length != 1) {
-            throw new IllegalArgumentException("bad value for parameter " + parameterName);
-        }
+		if (parameterValues == null || parameterValues.length != 1) {
+			throw new IllegalArgumentException("bad value for parameter " + parameterName);
+		}
 
-        return parameterValues[0];
-    }
+		return parameterValues[0];
+	}
 
-    protected static int getSimpleInt(Map<String, String[]> parameterMap, String parameterName) {
-        try {
-            return Integer.valueOf(getSimple(parameterMap, parameterName));
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("not integer value for parameter " + parameterName, e);
-        }
-    }
+	protected static int getSimpleInt(Map<String, String[]> parameterMap, String parameterName) {
+		try {
+			return Integer.valueOf(getSimple(parameterMap, parameterName));
+		} catch (NumberFormatException e) {
+			throw new IllegalArgumentException("not integer value for parameter " + parameterName, e);
+		}
+	}
 
-    protected static boolean getSimpleBoolean(Map<String, String[]> parameterMap, String parameterName) {
-        return Boolean.valueOf(getSimple(parameterMap, parameterName));
-    }
+	protected static boolean getSimpleBoolean(Map<String, String[]> parameterMap, String parameterName) {
+		return Boolean.valueOf(getSimple(parameterMap, parameterName));
+	}
 }

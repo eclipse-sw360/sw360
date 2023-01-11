@@ -25,47 +25,38 @@ import java.util.stream.Stream;
 
 public class Heuristic {
 
-    private final SearchLevels searchLevels;
-    private final CveSearchApi cveSearchApi;
-    private final int maxDepth;
-    private Logger log = LogManager.getLogger(Heuristic.class);
+	private final SearchLevels searchLevels;
+	private final CveSearchApi cveSearchApi;
+	private final int maxDepth;
+	private Logger log = LogManager.getLogger(Heuristic.class);
 
-    public Heuristic(SearchLevels searchLevels, CveSearchApi cveSearchApi) {
-        this.searchLevels = searchLevels;
-        this.cveSearchApi = cveSearchApi;
-        this.maxDepth = 0;
-    }
+	public Heuristic(SearchLevels searchLevels, CveSearchApi cveSearchApi) {
+		this.searchLevels = searchLevels;
+		this.cveSearchApi = cveSearchApi;
+		this.maxDepth = 0;
+	}
 
-    public Heuristic(SearchLevels searchLevels, CveSearchApi cveSearchApi, int maxDepth) {
-        this.searchLevels = searchLevels;
-        this.cveSearchApi = cveSearchApi;
-        this.maxDepth = maxDepth;
-    }
+	public Heuristic(SearchLevels searchLevels, CveSearchApi cveSearchApi, int maxDepth) {
+		this.searchLevels = searchLevels;
+		this.cveSearchApi = cveSearchApi;
+		this.maxDepth = maxDepth;
+	}
 
-    protected Stream<CveSearchData> runForNeedleWithMeta(SearchLevels.NeedleWithMeta needleWithMeta){
-        try {
-            return cveSearchApi.cvefor(needleWithMeta.needle)
-                    .stream()
-                    .map(cveSearchData -> cveSearchData
-                            .setUsedNeedle(needleWithMeta.needle)
-                            .setMatchedBy(needleWithMeta.description));
-        } catch (IOException e) {
-            log.error("IOException in searchlevel" +
-                    "\n\twith description=" + needleWithMeta.description +
-                    "\n\twith needle=" + needleWithMeta.needle +
-                    "\n\twith exception message=" + e.getMessage(), e);
-            return Stream.empty();
-        }
-    }
+	protected Stream<CveSearchData> runForNeedleWithMeta(SearchLevels.NeedleWithMeta needleWithMeta) {
+		try {
+			return cveSearchApi.cvefor(needleWithMeta.needle).stream().map(cveSearchData -> cveSearchData
+					.setUsedNeedle(needleWithMeta.needle).setMatchedBy(needleWithMeta.description));
+		} catch (IOException e) {
+			log.error("IOException in searchlevel" + "\n\twith description=" + needleWithMeta.description
+					+ "\n\twith needle=" + needleWithMeta.needle + "\n\twith exception message=" + e.getMessage(), e);
+			return Stream.empty();
+		}
+	}
 
-    public List<CveSearchData> run(Release release) throws IOException {
-        return searchLevels.apply(release)
-                .limit(maxDepth == 0 ? Integer.MAX_VALUE : maxDepth)
-                .map(evaluatedSearchLevel -> evaluatedSearchLevel.stream()
-                        .flatMap(this::runForNeedleWithMeta))
-                .map(stream -> stream.collect(Collectors.toList()))
-                .filter(list -> list.size() > 0)
-                .findFirst()
-                .orElse(new ArrayList<>());
-    }
+	public List<CveSearchData> run(Release release) throws IOException {
+		return searchLevels.apply(release).limit(maxDepth == 0 ? Integer.MAX_VALUE : maxDepth)
+				.map(evaluatedSearchLevel -> evaluatedSearchLevel.stream().flatMap(this::runForNeedleWithMeta))
+				.map(stream -> stream.collect(Collectors.toList())).filter(list -> list.size() > 0).findFirst()
+				.orElse(new ArrayList<>());
+	}
 }

@@ -87,351 +87,359 @@ curl -k -s -S -X GET \
 @Component
 public class FossologyRestClient {
 
-    private static final String PARAMETER_VALUE_REPORT_FORMAT_SPDX2 = "spdx2";
+	private static final String PARAMETER_VALUE_REPORT_FORMAT_SPDX2 = "spdx2";
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+	private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private final FossologyRestConfig restConfig;
+	private final FossologyRestConfig restConfig;
 
-    private final ObjectMapper objectMapper;
+	private final ObjectMapper objectMapper;
 
-    private final RestTemplate restTemplate;
+	private final RestTemplate restTemplate;
 
-    @Autowired
-    public FossologyRestClient(ObjectMapper objectMapper, FossologyRestConfig restConfig, RestTemplate restTemplate) {
-        this.objectMapper = objectMapper;
-        this.restConfig = restConfig;
+	@Autowired
+	public FossologyRestClient(ObjectMapper objectMapper, FossologyRestConfig restConfig, RestTemplate restTemplate) {
+		this.objectMapper = objectMapper;
+		this.restConfig = restConfig;
 
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setBufferRequestBody(false);
-        restTemplate.setRequestFactory(requestFactory);
-        this.restTemplate = restTemplate;
-    }
+		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+		requestFactory.setBufferRequestBody(false);
+		restTemplate.setRequestFactory(requestFactory);
+		this.restTemplate = restTemplate;
+	}
 
-    /**
-     * Tries to query the folders of the configured FOSSology REST API. If this
-     * succeeds, a connection is possible.
-     *
-     * @return true if a connection is possible, false otherwise.
-     */
-    public boolean checkConnection() {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
+	/**
+	 * Tries to query the folders of the configured FOSSology REST API. If this
+	 * succeeds, a connection is possible.
+	 *
+	 * @return true if a connection is possible, false otherwise.
+	 */
+	public boolean checkConnection() {
+		String baseUrl = restConfig.getBaseUrlWithSlash();
+		String token = restConfig.getAccessToken();
 
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
-            return false;
-        }
+		if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
+			return false;
+		}
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Authorization", "Bearer " + token);
 
-        ResponseEntity<String> response = restTemplate.exchange(baseUrl + "folders",
-                HttpMethod.GET, new HttpEntity<>(headers), String.class);
+		ResponseEntity<String> response = restTemplate.exchange(baseUrl + "folders", HttpMethod.GET,
+				new HttpEntity<>(headers), String.class);
 
-        return response.getStatusCode() == HttpStatus.OK;
-    }
+		return response.getStatusCode() == HttpStatus.OK;
+	}
 
-    /**
-     * Uploads the file provided in an {@link InputStream} under the given filename
-     * to FOSSology.
-     *
-     * @param filename   the name of the file
-     * @param fileStream the content of the file
-     * @return the uploadId provided by FOSSology in case of an successful upload,
-     *         -1 otherwise
-     */
-    public int uploadFile(String filename, InputStream fileStream, String uploadDescription) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
-        String folderId = restConfig.getFolderId();
+	/**
+	 * Uploads the file provided in an {@link InputStream} under the given filename
+	 * to FOSSology.
+	 *
+	 * @param filename
+	 *            the name of the file
+	 * @param fileStream
+	 *            the content of the file
+	 * @return the uploadId provided by FOSSology in case of an successful upload,
+	 *         -1 otherwise
+	 */
+	public int uploadFile(String filename, InputStream fileStream, String uploadDescription) {
+		String baseUrl = restConfig.getBaseUrlWithSlash();
+		String token = restConfig.getAccessToken();
+		String folderId = restConfig.getFolderId();
 
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token) || StringUtils.isEmpty(folderId)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>, Folder: <{}>", baseUrl, token,
-                    folderId);
-            return -1;
-        }
+		if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token) || StringUtils.isEmpty(folderId)) {
+			log.error("Configuration is missing values! Url: <{}>, Token: <{}>, Folder: <{}>", baseUrl, token,
+					folderId);
+			return -1;
+		}
 
-        if (StringUtils.isEmpty(filename) || fileStream == null) {
-            log.error("Invalid arguments, filename must not be empty and input stream must not be null!");
-            return -1;
-        }
+		if (StringUtils.isEmpty(filename) || fileStream == null) {
+			log.error("Invalid arguments, filename must not be empty and input stream must not be null!");
+			return -1;
+		}
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        headers.set("Authorization", "Bearer " + token);
-        headers.set("folderId", folderId);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+		headers.set("Authorization", "Bearer " + token);
+		headers.set("folderId", folderId);
 
-        if (CommonUtils.isNotNullEmptyOrWhitespace(uploadDescription)) {
-            headers.set("uploadDescription", uploadDescription);
-        }
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("fileInput", new FossologyInputStreamResource(filename, fileStream));
+		if (CommonUtils.isNotNullEmptyOrWhitespace(uploadDescription)) {
+			headers.set("uploadDescription", uploadDescription);
+		}
+		MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+		body.add("fileInput", new FossologyInputStreamResource(filename, fileStream));
 
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+		HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-        FossologyResponse response = null;
-        try {
-            response = restTemplate.postForObject(baseUrl + "uploads", requestEntity, FossologyResponse.class);
-            log.debug(filename + "uploaded: " + response.getCode() + " - " + response.getMessage() + " - " + response.getType());
-        } catch (RestClientException e) {
-            log.error("Error while trying to upload file {}.", e, filename);
-            return -1;
-        }
+		FossologyResponse response = null;
+		try {
+			response = restTemplate.postForObject(baseUrl + "uploads", requestEntity, FossologyResponse.class);
+			log.debug(filename + "uploaded: " + response.getCode() + " - " + response.getMessage() + " - "
+					+ response.getType());
+		} catch (RestClientException e) {
+			log.error("Error while trying to upload file {}.", e, filename);
+			return -1;
+		}
 
-        HttpStatus responseCode = HttpStatus.valueOf(response.getCode());
-        if (responseCode.is2xxSuccessful()) {
-            try {
-                return Integer.valueOf(response.getMessage());
-            } catch (NumberFormatException e) {
-                log.error("Fossology REST returned non integer uploadId: {}", e, response.getMessage());
-            }
-        }
+		HttpStatus responseCode = HttpStatus.valueOf(response.getCode());
+		if (responseCode.is2xxSuccessful()) {
+			try {
+				return Integer.valueOf(response.getMessage());
+			} catch (NumberFormatException e) {
+				log.error("Fossology REST returned non integer uploadId: {}", e, response.getMessage());
+			}
+		}
 
-        return -1;
-    }
+		return -1;
+	}
 
-    /**
-     * Triggers a scan of a former upload whose uploadId must be given. The
-     * configuration, which scanners to use, is currently hardcoded and cannot be
-     * configured.
-     *
-     * @param uploadId the upload whose sources should be scanned.
-     * @return the jobId provided by FOSSology in case of an successful start, -1
-     *         otherwise
-     */
-    public int startScanning(int uploadId) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
-        String folderId = restConfig.getFolderId();
+	/**
+	 * Triggers a scan of a former upload whose uploadId must be given. The
+	 * configuration, which scanners to use, is currently hardcoded and cannot be
+	 * configured.
+	 *
+	 * @param uploadId
+	 *            the upload whose sources should be scanned.
+	 * @return the jobId provided by FOSSology in case of an successful start, -1
+	 *         otherwise
+	 */
+	public int startScanning(int uploadId) {
+		String baseUrl = restConfig.getBaseUrlWithSlash();
+		String token = restConfig.getAccessToken();
+		String folderId = restConfig.getFolderId();
 
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token) || StringUtils.isEmpty(folderId)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>, Folder: <{}>", baseUrl, token,
-                    folderId);
-            return -1;
-        }
+		if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token) || StringUtils.isEmpty(folderId)) {
+			log.error("Configuration is missing values! Url: <{}>, Token: <{}>, Folder: <{}>", baseUrl, token,
+					folderId);
+			return -1;
+		}
 
-        if (uploadId < 0) {
-            log.error("Invalid arguments, uploadId must not be less thann 0!");
-            return -1;
-        }
+		if (uploadId < 0) {
+			log.error("Invalid arguments, uploadId must not be less thann 0!");
+			return -1;
+		}
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
-        headers.set("folderId", folderId);
-        headers.set("uploadId", uploadId + "");
-        headers.set("Content-Type", "application/json");
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Authorization", "Bearer " + token);
+		headers.set("folderId", folderId);
+		headers.set("uploadId", uploadId + "");
+		headers.set("Content-Type", "application/json");
 
-        ObjectNode analysis = objectMapper.createObjectNode();
-        analysis.put("bucket", true);
-        analysis.put("copyright_email_author", true);
-        analysis.put("ecc", true);
-        analysis.put("keyword", true);
-        analysis.put("mime", true);
-        analysis.put("monk", true);
-        analysis.put("nomos", true);
-        analysis.put("ojo", true);
-        analysis.put("package", true);
+		ObjectNode analysis = objectMapper.createObjectNode();
+		analysis.put("bucket", true);
+		analysis.put("copyright_email_author", true);
+		analysis.put("ecc", true);
+		analysis.put("keyword", true);
+		analysis.put("mime", true);
+		analysis.put("monk", true);
+		analysis.put("nomos", true);
+		analysis.put("ojo", true);
+		analysis.put("package", true);
 
-        ObjectNode decider = objectMapper.createObjectNode();
-        decider.put("nomos_monk", true);
-        decider.put("bulk_reused", true);
-        decider.put("new_scanner", true);
+		ObjectNode decider = objectMapper.createObjectNode();
+		decider.put("nomos_monk", true);
+		decider.put("bulk_reused", true);
+		decider.put("new_scanner", true);
 
-        ObjectNode reuse = objectMapper.createObjectNode();
-        reuse.put("reuse_upload", 0);
-        reuse.put("reuse_group", 0);
-        reuse.put("reuse_main", true);
-        reuse.put("reuse_enhanced", true);
+		ObjectNode reuse = objectMapper.createObjectNode();
+		reuse.put("reuse_upload", 0);
+		reuse.put("reuse_group", 0);
+		reuse.put("reuse_main", true);
+		reuse.put("reuse_enhanced", true);
 
-        ObjectNode requestBody = objectMapper.createObjectNode();
-        requestBody.set("analysis", analysis);
-        requestBody.set("decider", decider);
-        requestBody.set("reuse", reuse);
+		ObjectNode requestBody = objectMapper.createObjectNode();
+		requestBody.set("analysis", analysis);
+		requestBody.set("decider", decider);
+		requestBody.set("reuse", reuse);
 
-        FossologyResponse response;
-        try {
-            response = restTemplate.postForObject(baseUrl + "jobs", new HttpEntity<>(requestBody, headers),
-                    FossologyResponse.class);
-        } catch (RestClientException e) {
-            log.error("Error while trying to start scanning of upload {}.", e, uploadId);
-            return -1;
-        }
+		FossologyResponse response;
+		try {
+			response = restTemplate.postForObject(baseUrl + "jobs", new HttpEntity<>(requestBody, headers),
+					FossologyResponse.class);
+		} catch (RestClientException e) {
+			log.error("Error while trying to start scanning of upload {}.", e, uploadId);
+			return -1;
+		}
 
-        return HttpStatus.valueOf(response.getCode()).is2xxSuccessful() ? Integer.valueOf(response.getMessage()) : -1;
-    }
+		return HttpStatus.valueOf(response.getCode()).is2xxSuccessful() ? Integer.valueOf(response.getMessage()) : -1;
+	}
 
-    /**
-     * Checks the status of a former started scan job, identified by the given
-     * jobId.
-     *
-     * @param jobId the id of the scan jobId whose status should be queried.
-     * @return the Map object containing details like status, eta.
-     */
-    public Map<String ,String> checkScanStatus(int jobId) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
-        Map<String ,String> responseMap=new HashMap<>();
+	/**
+	 * Checks the status of a former started scan job, identified by the given
+	 * jobId.
+	 *
+	 * @param jobId
+	 *            the id of the scan jobId whose status should be queried.
+	 * @return the Map object containing details like status, eta.
+	 */
+	public Map<String, String> checkScanStatus(int jobId) {
+		String baseUrl = restConfig.getBaseUrlWithSlash();
+		String token = restConfig.getAccessToken();
+		Map<String, String> responseMap = new HashMap<>();
 
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
-            return responseMap;
-        }
+		if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
+			log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+			return responseMap;
+		}
 
-        if (jobId < 0) {
-            log.error("Invalid arguments, jobId must not be less thann 0!");
-            return responseMap;
-        }
+		if (jobId < 0) {
+			log.error("Invalid arguments, jobId must not be less thann 0!");
+			return responseMap;
+		}
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Authorization", "Bearer " + token);
 
-        ResponseEntity<JsonNode> response;
-        try {
-            response = restTemplate.exchange(baseUrl + "jobs/" + jobId, HttpMethod.GET, new HttpEntity<>(headers),
-                    JsonNode.class);
-        } catch (RestClientException e) {
-            log.error("Error while trying to query status of scanning process with job id {}.", e, jobId);
-            return responseMap;
-        }
+		ResponseEntity<JsonNode> response;
+		try {
+			response = restTemplate.exchange(baseUrl + "jobs/" + jobId, HttpMethod.GET, new HttpEntity<>(headers),
+					JsonNode.class);
+		} catch (RestClientException e) {
+			log.error("Error while trying to query status of scanning process with job id {}.", e, jobId);
+			return responseMap;
+		}
 
-        String status = response.getBody().findValuesAsText("status").get(0);
-        int eta = response.getBody().get("eta").intValue();
-        responseMap.put("eta", eta+"");
-        responseMap.put("status", status);
-        return responseMap;
-    }
+		String status = response.getBody().findValuesAsText("status").get(0);
+		int eta = response.getBody().get("eta").intValue();
+		responseMap.put("eta", eta + "");
+		responseMap.put("status", status);
+		return responseMap;
+	}
 
-    /**
-     * Triggers a report generatoin of a former upload whose uploadId must be given.
-     * The report will have the format
-     * {@link FossologyRestClient#PARAMETER_VALUE_REPORT_FORMAT_SPDX2}. Be aware
-     * that the report can be generated even though a scan of the upload did not
-     * finish. But it will contain more information once the scanning is finished.
-     *
-     * @param uploadId the upload to generate a report for.
-     * @return the reportId provided by FOSSology in case of an successful start, -1
-     *         otherwise
-     */
-    public int startReport(int uploadId) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
+	/**
+	 * Triggers a report generatoin of a former upload whose uploadId must be given.
+	 * The report will have the format
+	 * {@link FossologyRestClient#PARAMETER_VALUE_REPORT_FORMAT_SPDX2}. Be aware
+	 * that the report can be generated even though a scan of the upload did not
+	 * finish. But it will contain more information once the scanning is finished.
+	 *
+	 * @param uploadId
+	 *            the upload to generate a report for.
+	 * @return the reportId provided by FOSSology in case of an successful start, -1
+	 *         otherwise
+	 */
+	public int startReport(int uploadId) {
+		String baseUrl = restConfig.getBaseUrlWithSlash();
+		String token = restConfig.getAccessToken();
 
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
-            return -1;
-        }
+		if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
+			log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+			return -1;
+		}
 
-        if (uploadId < 0) {
-            log.error("Invalid arguments, uploadId must not be less thann 0!");
-            return -1;
-        }
+		if (uploadId < 0) {
+			log.error("Invalid arguments, uploadId must not be less thann 0!");
+			return -1;
+		}
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
-        headers.set("uploadId", uploadId + "");
-        headers.set("reportFormat", PARAMETER_VALUE_REPORT_FORMAT_SPDX2);
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Authorization", "Bearer " + token);
+		headers.set("uploadId", uploadId + "");
+		headers.set("reportFormat", PARAMETER_VALUE_REPORT_FORMAT_SPDX2);
 
-        FossologyResponse response;
-        try {
-            ResponseEntity<FossologyResponse> responseEntity = restTemplate.exchange(baseUrl + "report", HttpMethod.GET,
-                    new HttpEntity<>(headers), FossologyResponse.class);
-            response = responseEntity.getBody();
-        } catch (RestClientException e) {
-            log.error("Error while trying to start report generation of upload {}.", e, uploadId);
-            return -1;
-        }
+		FossologyResponse response;
+		try {
+			ResponseEntity<FossologyResponse> responseEntity = restTemplate.exchange(baseUrl + "report", HttpMethod.GET,
+					new HttpEntity<>(headers), FossologyResponse.class);
+			response = responseEntity.getBody();
+		} catch (RestClientException e) {
+			log.error("Error while trying to start report generation of upload {}.", e, uploadId);
+			return -1;
+		}
 
-        return HttpStatus.valueOf(response.getCode()).is2xxSuccessful()
-                ? Integer.valueOf(response.getMessage().substring(response.getMessage().lastIndexOf("/") + 1))
-                : -1;
-    }
+		return HttpStatus.valueOf(response.getCode()).is2xxSuccessful()
+				? Integer.valueOf(response.getMessage().substring(response.getMessage().lastIndexOf("/") + 1))
+				: -1;
+	}
 
-    /**
-     * Tries to get the report identified by the given reportId as an
-     * {@link InputStream}. This one will not be streamed through as
-     * {@link RestTemplate} persists the response first and then offers an
-     * {@link InputStream} of the persisted version. This method will also return
-     * null while the report is still generated. So you might want to retry after a
-     * certain period of time.
-     *
-     * @param reportId the id of the report to download
-     * @return an InputStream containing the report content or null in case of
-     *         errors or if the generation just didn't finish yet.
-     */
-    public InputStream getReport(int reportId) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
+	/**
+	 * Tries to get the report identified by the given reportId as an
+	 * {@link InputStream}. This one will not be streamed through as
+	 * {@link RestTemplate} persists the response first and then offers an
+	 * {@link InputStream} of the persisted version. This method will also return
+	 * null while the report is still generated. So you might want to retry after a
+	 * certain period of time.
+	 *
+	 * @param reportId
+	 *            the id of the report to download
+	 * @return an InputStream containing the report content or null in case of
+	 *         errors or if the generation just didn't finish yet.
+	 */
+	public InputStream getReport(int reportId) {
+		String baseUrl = restConfig.getBaseUrlWithSlash();
+		String token = restConfig.getAccessToken();
 
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
-            return null;
-        }
+		if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
+			log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+			return null;
+		}
 
-        if (reportId < 0) {
-            log.error("Invalid arguments, reportId must not be less thann 0!");
-            return null;
-        }
+		if (reportId < 0) {
+			log.error("Invalid arguments, reportId must not be less thann 0!");
+			return null;
+		}
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Authorization", "Bearer " + token);
 
-        try {
-            ResponseEntity<Resource> responseEntity = restTemplate.exchange(baseUrl + "report/" + reportId,
-                    HttpMethod.GET, new HttpEntity<>(headers), Resource.class);
+		try {
+			ResponseEntity<Resource> responseEntity = restTemplate.exchange(baseUrl + "report/" + reportId,
+					HttpMethod.GET, new HttpEntity<>(headers), Resource.class);
 
-            return responseEntity.getBody().getInputStream();
-        } catch (RestClientException | IOException e) {
-            // we could distinguish further since fossology would send a 503 with
-            // Retry-After header in seconds if the report isn't ready yet. But since our
-            // workflow is currently completely pull based there would not be a huge
-            // advantage to use this and it would just complicate things right now.
-            log.error("Error while trying to download report with id {}.", e, reportId);
-            return null;
-        }
-    }
+			return responseEntity.getBody().getInputStream();
+		} catch (RestClientException | IOException e) {
+			// we could distinguish further since fossology would send a 503 with
+			// Retry-After header in seconds if the report isn't ready yet. But since our
+			// workflow is currently completely pull based there would not be a huge
+			// advantage to use this and it would just complicate things right now.
+			log.error("Error while trying to download report with id {}.", e, reportId);
+			return null;
+		}
+	}
 
-    /**
-     * Checks the package unpack status of a former uploaded package, identified by
-     * the given uploadId.
-     *
-     * @param uploadId the upload whose sources should be unpacked.
-     * @return the Map object containing details like status.
-     */
-    public Map<String, String> checkUnpackStatus(int uploadId) {
-        String baseUrl = restConfig.getBaseUrlWithSlash();
-        String token = restConfig.getAccessToken();
-        Map<String, String> responseMap = new HashMap<>();
-        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
-            return responseMap;
-        }
+	/**
+	 * Checks the package unpack status of a former uploaded package, identified by
+	 * the given uploadId.
+	 *
+	 * @param uploadId
+	 *            the upload whose sources should be unpacked.
+	 * @return the Map object containing details like status.
+	 */
+	public Map<String, String> checkUnpackStatus(int uploadId) {
+		String baseUrl = restConfig.getBaseUrlWithSlash();
+		String token = restConfig.getAccessToken();
+		Map<String, String> responseMap = new HashMap<>();
+		if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
+			log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+			return responseMap;
+		}
 
-        if (uploadId < 0) {
-            log.error("Invalid arguments, uploadId must not be less thann 0!");
-            return responseMap;
-        }
+		if (uploadId < 0) {
+			log.error("Invalid arguments, uploadId must not be less thann 0!");
+			return responseMap;
+		}
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + token);
-        JsonNode response;
-        try {
-            JsonNode[] responseArr = restTemplate.exchange(baseUrl + "jobs?upload=" + uploadId, HttpMethod.GET,
-                    new HttpEntity<>(headers), JsonNode[].class).getBody();
-            String uploadIdStr = "" + uploadId;
-            List<JsonNode> uploadStatus = Arrays.stream(responseArr)
-                    .filter(node -> uploadIdStr.equals(node.findValuesAsText("uploadId").get(0)))
-                    .collect(Collectors.toList());
-            if (!uploadStatus.isEmpty()) {
-                response = uploadStatus.get(0);
-            } else
-                return responseMap;
-        } catch (RestClientException e) {
-            log.error("Error: {} while trying to query status of scanning process with jobId: {}.", e, uploadId);
-            return responseMap;
-        }
+		HttpHeaders headers = new HttpHeaders();
+		headers.set("Authorization", "Bearer " + token);
+		JsonNode response;
+		try {
+			JsonNode[] responseArr = restTemplate.exchange(baseUrl + "jobs?upload=" + uploadId, HttpMethod.GET,
+					new HttpEntity<>(headers), JsonNode[].class).getBody();
+			String uploadIdStr = "" + uploadId;
+			List<JsonNode> uploadStatus = Arrays.stream(responseArr)
+					.filter(node -> uploadIdStr.equals(node.findValuesAsText("uploadId").get(0)))
+					.collect(Collectors.toList());
+			if (!uploadStatus.isEmpty()) {
+				response = uploadStatus.get(0);
+			} else
+				return responseMap;
+		} catch (RestClientException e) {
+			log.error("Error: {} while trying to query status of scanning process with jobId: {}.", e, uploadId);
+			return responseMap;
+		}
 
-        String status = response.findValuesAsText("status").get(0);
-        responseMap.put("status", status);
-        return responseMap;
-    }
+		String status = response.findValuesAsText("status").get(0);
+		responseMap.put("status", status);
+		return responseMap;
+	}
 }

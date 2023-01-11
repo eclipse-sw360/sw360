@@ -20,28 +20,31 @@ import java.util.Objects;
 
 @JsonDeserialize(as = SW360ComponentListEmbedded.class)
 public final class SW360ComponentListEmbedded implements Embedded {
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @JsonProperty("sw360:components")
-    private List<SW360SparseComponent> components;
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)
+	@JsonProperty("sw360:components")
+	private List<SW360SparseComponent> components;
 
-    public List<SW360SparseComponent> getComponents() { return this.components; }
+	public List<SW360SparseComponent> getComponents() {
+		return this.components;
+	}
 
-    public SW360ComponentListEmbedded setComponents(List<SW360SparseComponent> components) {
-        this.components = components;
-        return this;
-    }
+	public SW360ComponentListEmbedded setComponents(List<SW360SparseComponent> components) {
+		this.components = components;
+		return this;
+	}
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SW360ComponentListEmbedded that = (SW360ComponentListEmbedded) o;
-        return Objects.equals(components, that.components);
-    }
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		SW360ComponentListEmbedded that = (SW360ComponentListEmbedded) o;
+		return Objects.equals(components, that.components);
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(components);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(components);
+	}
 }
-

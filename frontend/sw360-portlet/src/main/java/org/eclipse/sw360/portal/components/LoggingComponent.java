@@ -16,20 +16,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LoggingComponent {
-    protected final Logger log = LoggerFactory.getLogger(getClass());
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-    @Activate
-    protected void activate() {
-        log.info("Component [" + getClass().getCanonicalName() + "] has been ENABLED.");
-    }
+	@Activate
+	protected void activate() {
+		log.info("Component [" + getClass().getCanonicalName() + "] has been ENABLED.");
+	}
 
-    @Modified
-    protected void modified() {
-        log.info("Component [" + getClass().getCanonicalName() + "] has been MODIFIED.");
-    }
+	@Modified
+	protected void modified() {
+		log.info("Component [" + getClass().getCanonicalName() + "] has been MODIFIED.");
+	}
 
-    @Deactivate
-    protected void deactivate() {
-        log.info("Component [" + getClass().getCanonicalName() + "] has been DISABLED.");
-    }
+	@Deactivate
+	protected void deactivate() {
+		log.info("Component [" + getClass().getCanonicalName() + "] has been DISABLED.");
+	}
 }

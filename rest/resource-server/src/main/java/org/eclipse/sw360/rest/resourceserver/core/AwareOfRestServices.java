@@ -17,8 +17,8 @@ import java.util.Set;
 
 public interface AwareOfRestServices<T> {
 
-    Set<T> searchByExternalIds(Map<String, Set<String>> externalIds, User user) throws TException;
+	Set<T> searchByExternalIds(Map<String, Set<String>> externalIds, User user) throws TException;
 
-    T convertToEmbeddedWithExternalIds(T sw360Object);
+	T convertToEmbeddedWithExternalIds(T sw360Object);
 
 }

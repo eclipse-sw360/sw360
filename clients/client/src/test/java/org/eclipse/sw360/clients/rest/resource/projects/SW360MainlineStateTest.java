@@ -15,43 +15,43 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SW360MainlineStateTest {
-    private static void checkFindByValue(SW360MainlineState state, int value) {
-        SW360MainlineState result = SW360MainlineState.findByValue(value);
+	private static void checkFindByValue(SW360MainlineState state, int value) {
+		SW360MainlineState result = SW360MainlineState.findByValue(value);
 
-        assertThat(result).isNotNull();
-        assertThat(result).isEqualTo(state);
-        assertThat(result.getValue()).isEqualTo(value);
-    }
+		assertThat(result).isNotNull();
+		assertThat(result).isEqualTo(state);
+		assertThat(result.getValue()).isEqualTo(value);
+	}
 
-    @Test
-    public void testFindByValueOpen() {
-        checkFindByValue(SW360MainlineState.OPEN, 0);
-    }
+	@Test
+	public void testFindByValueOpen() {
+		checkFindByValue(SW360MainlineState.OPEN, 0);
+	}
 
-    @Test
-    public void testFindByValueMainline() {
-        checkFindByValue(SW360MainlineState.MAINLINE, 1);
-    }
+	@Test
+	public void testFindByValueMainline() {
+		checkFindByValue(SW360MainlineState.MAINLINE, 1);
+	}
 
-    @Test
-    public void testFindByValueSpecific() {
-        checkFindByValue(SW360MainlineState.SPECIFIC, 2);
-    }
+	@Test
+	public void testFindByValueSpecific() {
+		checkFindByValue(SW360MainlineState.SPECIFIC, 2);
+	}
 
-    @Test
-    public void testFindByValuePhaseOut() {
-        checkFindByValue(SW360MainlineState.PHASEOUT, 3);
-    }
+	@Test
+	public void testFindByValuePhaseOut() {
+		checkFindByValue(SW360MainlineState.PHASEOUT, 3);
+	}
 
-    @Test
-    public void testFindByValueDenied() {
-        checkFindByValue(SW360MainlineState.DENIED, 4);
-    }
+	@Test
+	public void testFindByValueDenied() {
+		checkFindByValue(SW360MainlineState.DENIED, 4);
+	}
 
-    @Test
-    public void testFindByValueUnknown() {
-        SW360MainlineState result = SW360MainlineState.findByValue(77);
+	@Test
+	public void testFindByValueUnknown() {
+		SW360MainlineState result = SW360MainlineState.findByValue(77);
 
-        assertThat(result).isNull();
-    }
+		assertThat(result).isNull();
+	}
 }

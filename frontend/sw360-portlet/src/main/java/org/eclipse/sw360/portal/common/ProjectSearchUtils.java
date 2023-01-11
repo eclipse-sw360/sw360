@@ -24,29 +24,29 @@ import org.apache.thrift.TException;
 import java.util.List;
 
 public class ProjectSearchUtils {
-    protected final Logger logger = LogManager.getLogger(this.getClass());
+	protected final Logger logger = LogManager.getLogger(this.getClass());
 
-    private final ThriftClients thriftClients;
+	private final ThriftClients thriftClients;
 
-    public ProjectSearchUtils(ThriftClients thriftClients) {
-        this.thriftClients = thriftClients;
-    }
+	public ProjectSearchUtils(ThriftClients thriftClients) {
+		this.thriftClients = thriftClients;
+	}
 
-    public List<Project> searchProjects(User user, String searchTerm) {
-        List<Project> searchResults;
+	public List<Project> searchProjects(User user, String searchTerm) {
+		List<Project> searchResults;
 
-        try {
-            ProjectService.Iface client = thriftClients.makeProjectClient();
-            if (!Strings.isNullOrEmpty(searchTerm)) {
-                searchResults = client.search(searchTerm);
-            } else {
-                searchResults = client.getAccessibleProjectsSummary(user);
-            }
-        } catch (TException exception) {
-            logger.error("Cannot search for projects", exception);
-            searchResults = Lists.newArrayList();
-        }
+		try {
+			ProjectService.Iface client = thriftClients.makeProjectClient();
+			if (!Strings.isNullOrEmpty(searchTerm)) {
+				searchResults = client.search(searchTerm);
+			} else {
+				searchResults = client.getAccessibleProjectsSummary(user);
+			}
+		} catch (TException exception) {
+			logger.error("Cannot search for projects", exception);
+			searchResults = Lists.newArrayList();
+		}
 
-        return searchResults;
-    }
+		return searchResults;
+	}
 }

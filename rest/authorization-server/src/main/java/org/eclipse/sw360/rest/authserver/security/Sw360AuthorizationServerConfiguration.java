@@ -47,74 +47,70 @@ import java.io.File;
 @EnableAuthorizationServer
 public class Sw360AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+	@Autowired
+	private AuthenticationManager authenticationManager;
 
-    @Autowired
-    private Sw360CustomHeaderAuthenticationFilter sw360CustomHeaderAuthenticationFilter;
+	@Autowired
+	private Sw360CustomHeaderAuthenticationFilter sw360CustomHeaderAuthenticationFilter;
 
-    @Autowired
-    private Sw360UserDetailsProvider sw360UserDetailsProvider;
+	@Autowired
+	private Sw360UserDetailsProvider sw360UserDetailsProvider;
 
-    @Value("${jwt.secretkey:sw360SecretKey}")
-    private String secretKey;
+	@Value("${jwt.secretkey:sw360SecretKey}")
+	private String secretKey;
 
-    @Override
-    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-        endpoints
-                .allowedTokenEndpointRequestMethods(HttpMethod.GET, HttpMethod.POST)
-                .tokenStore(tokenStore())
-                .tokenEnhancer(jwtAccessTokenConverter())
-                .authenticationManager(authenticationManager)
-                .userDetailsService(userDetailsService());
-    }
+	@Override
+	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+		endpoints.allowedTokenEndpointRequestMethods(HttpMethod.GET, HttpMethod.POST).tokenStore(tokenStore())
+				.tokenEnhancer(jwtAccessTokenConverter()).authenticationManager(authenticationManager)
+				.userDetailsService(userDetailsService());
+	}
 
-    @Override
-    public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
-        String serverAuthority = BASIC.getAuthority();
-        oauthServer.tokenKeyAccess("isAnonymous() || hasAuthority('" + serverAuthority + "')")
-                .checkTokenAccess("hasAuthority('" + serverAuthority + "')")
-                .addTokenEndpointAuthenticationFilter(sw360CustomHeaderAuthenticationFilter);
-    }
+	@Override
+	public void configure(AuthorizationServerSecurityConfigurer oauthServer) throws Exception {
+		String serverAuthority = BASIC.getAuthority();
+		oauthServer.tokenKeyAccess("isAnonymous() || hasAuthority('" + serverAuthority + "')")
+				.checkTokenAccess("hasAuthority('" + serverAuthority + "')")
+				.addTokenEndpointAuthenticationFilter(sw360CustomHeaderAuthenticationFilter);
+	}
 
-    @Override
-    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-        clients.withClientDetails(sw360ClientDetailsService());
-    }
+	@Override
+	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+		clients.withClientDetails(sw360ClientDetailsService());
+	}
 
-    @Bean
-    public Sw360ClientDetailsService sw360ClientDetailsService() {
-        return new Sw360ClientDetailsService();
-    }
+	@Bean
+	public Sw360ClientDetailsService sw360ClientDetailsService() {
+		return new Sw360ClientDetailsService();
+	}
 
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return new Sw360UserDetailsService(sw360UserDetailsProvider, sw360ClientDetailsService(),
-                sw360UserAndClientAuthoritiesCalculator());
-    }
+	@Bean
+	public UserDetailsService userDetailsService() {
+		return new Sw360UserDetailsService(sw360UserDetailsProvider, sw360ClientDetailsService(),
+				sw360UserAndClientAuthoritiesCalculator());
+	}
 
-    @Bean
-    public Sw360GrantedAuthoritiesCalculator sw360UserAndClientAuthoritiesCalculator() {
-        return new Sw360GrantedAuthoritiesCalculator();
-    }
+	@Bean
+	public Sw360GrantedAuthoritiesCalculator sw360UserAndClientAuthoritiesCalculator() {
+		return new Sw360GrantedAuthoritiesCalculator();
+	}
 
-    @Bean
-    public TokenStore tokenStore() {
-        return new JwtTokenStore(jwtAccessTokenConverter());
-    }
+	@Bean
+	public TokenStore tokenStore() {
+		return new JwtTokenStore(jwtAccessTokenConverter());
+	}
 
-    @Bean
-    protected JwtAccessTokenConverter jwtAccessTokenConverter() {
-        String keystore = "/jwt-keystore.jks";
-        Resource resource = new FileSystemResource(new File(CommonUtils.SYSTEM_CONFIGURATION_PATH + keystore));
-        if (!resource.exists()) {
-            resource = new ClassPathResource(keystore);
-        }
-        KeyStoreKeyFactory keyStoreKeyFactory =
-                new KeyStoreKeyFactory(resource, secretKey.toCharArray());
-        JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
-        jwtAccessTokenConverter.setKeyPair(keyStoreKeyFactory.getKeyPair("jwt"));
-        return jwtAccessTokenConverter;
-    }
+	@Bean
+	protected JwtAccessTokenConverter jwtAccessTokenConverter() {
+		String keystore = "/jwt-keystore.jks";
+		Resource resource = new FileSystemResource(new File(CommonUtils.SYSTEM_CONFIGURATION_PATH + keystore));
+		if (!resource.exists()) {
+			resource = new ClassPathResource(keystore);
+		}
+		KeyStoreKeyFactory keyStoreKeyFactory = new KeyStoreKeyFactory(resource, secretKey.toCharArray());
+		JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
+		jwtAccessTokenConverter.setKeyPair(keyStoreKeyFactory.getKeyPair("jwt"));
+		return jwtAccessTokenConverter;
+	}
 
 }

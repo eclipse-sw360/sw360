@@ -32,92 +32,95 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.core.Is.is;
 
 public class ComponentSearchHandlerTest {
-    private static final String url = DatabaseSettingsTest.COUCH_DB_URL;
-    private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
+	private static final String url = DatabaseSettingsTest.COUCH_DB_URL;
+	private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
 
-    private static final String email1 = "cedric.bodet@tngtech.com";
-    private static final String email2 = "johannes.najjar@tngtech.com";
+	private static final String email1 = "cedric.bodet@tngtech.com";
+	private static final String email2 = "johannes.najjar@tngtech.com";
 
-    private List<Component> components;
+	private List<Component> components;
 
-    private ComponentSearchHandler searchHandler;
+	private ComponentSearchHandler searchHandler;
 
+	@Before
+	public void setUp() throws Exception {
+		assumeCanConnectTo(ThriftClients.BACKEND_URL + "/couchdblucene/");
 
-    @Before
-    public void setUp() throws Exception {
-        assumeCanConnectTo(ThriftClients.BACKEND_URL + "/couchdblucene/");
+		components = new ArrayList<>();
+		Component component1 = new Component().setId("C1").setName("component1").setDescription("d1")
+				.setCreatedBy(email1);
+		component1.addToLanguages("C");
+		component1.addToCategories("library");
+		component1.addToOperatingSystems("linux");
+		component1.addToSoftwarePlatforms("boost");
+		component1.addToReleaseIds("R1A");
+		component1.addToReleaseIds("R1B");
+		component1.addToVendorNames("V1");
+		components.add(component1);
+		Component component2 = new Component().setId("C2").setName("component2").setDescription("d2")
+				.setCreatedBy(email2);
+		component2.addToLanguages("D");
+		component2.addToLanguages("C");
+		component2.addToCategories("test");
+		component2.addToOperatingSystems("test");
+		component2.addToSoftwarePlatforms("test");
+		component2.addToReleaseIds("R2A");
+		component2.addToReleaseIds("R2B");
+		component2.addToReleaseIds("R2C");
+		component1.addToVendorNames("V2");
+		components.add(component2);
+		Component component3 = new Component().setId("C3").setName("component3").setDescription("d3")
+				.setCreatedBy(email1);
+		component3.addToSubscribers(email1);
+		component3.addToLanguages("E");
+		components.add(component3);
 
-        components = new ArrayList<>();
-        Component component1 = new Component().setId("C1").setName("component1").setDescription("d1").setCreatedBy(email1);
-        component1.addToLanguages("C");
-        component1.addToCategories("library");
-        component1.addToOperatingSystems("linux");
-        component1.addToSoftwarePlatforms("boost");
-        component1.addToReleaseIds("R1A");
-        component1.addToReleaseIds("R1B");
-        component1.addToVendorNames("V1");
-        components.add(component1);
-        Component component2 = new Component().setId("C2").setName("component2").setDescription("d2").setCreatedBy(email2);
-        component2.addToLanguages("D");
-        component2.addToLanguages("C");
-        component2.addToCategories("test");
-        component2.addToOperatingSystems("test");
-        component2.addToSoftwarePlatforms("test");
-        component2.addToReleaseIds("R2A");
-        component2.addToReleaseIds("R2B");
-        component2.addToReleaseIds("R2C");
-        component1.addToVendorNames("V2");
-        components.add(component2);
-        Component component3 = new Component().setId("C3").setName("component3").setDescription("d3").setCreatedBy(email1);
-        component3.addToSubscribers(email1);
-        component3.addToLanguages("E");
-        components.add(component3);
+		// Create the database
+		TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
-        // Create the database
-        TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+		// Prepare the database
+		DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(),
+				dbName);
 
-        // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+		for (Component component : components) {
+			databaseConnector.add(component);
+		}
 
-        for (Component component : components) {
-            databaseConnector.add(component);
-        }
+		// Prepare the handler
+		searchHandler = new ComponentSearchHandler(DatabaseSettingsTest.getConfiguredHttpClient(),
+				DatabaseSettingsTest.getConfiguredClient(), dbName);
+	}
 
-        // Prepare the handler
-        searchHandler = new ComponentSearchHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.getConfiguredClient(), dbName);
-    }
+	@After
+	public void tearDown() throws Exception {
+		TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+	}
 
-    @After
-    public void tearDown() throws Exception {
-        TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
-    }
+	@Test
+	public void testSearch() throws Exception {
 
-    @Test
-    public void testSearch() throws Exception {
+		Map<String, Set<String>> searchRestrictions = new HashMap<>();
 
-        Map<String, Set<String>> searchRestrictions = new HashMap<>();
-
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), is(getComponentIds(components)));
-        searchRestrictions.put("languages", ImmutableSet.of("C"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1", "C2"));
-        searchRestrictions.put("languages", ImmutableSet.of("D"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C2"));
-        searchRestrictions.put("languages", ImmutableSet.of("C"));
-        searchRestrictions.put("categories", ImmutableSet.of("library"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1"));
-        searchRestrictions.remove("categories");
-        searchRestrictions.put("softwarePlatforms", ImmutableSet.of("boost"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1"));
-        searchRestrictions.remove("softwarePlatforms");
-        searchRestrictions.put("operatingSystems", ImmutableSet.of("linux"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1"));
-        searchRestrictions.remove("operatingSystems");
-        searchRestrictions.put("vendorNames", ImmutableSet.of("V1"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1"));
-        searchRestrictions.remove("vendorNmaes");
-        searchRestrictions.put("vendorNames", ImmutableSet.of("V3"));
-        assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), is(empty()));
-    }
-
+		assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), is(getComponentIds(components)));
+		searchRestrictions.put("languages", ImmutableSet.of("C"));
+		assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1", "C2"));
+		searchRestrictions.put("languages", ImmutableSet.of("D"));
+		assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C2"));
+		searchRestrictions.put("languages", ImmutableSet.of("C"));
+		searchRestrictions.put("categories", ImmutableSet.of("library"));
+		assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1"));
+		searchRestrictions.remove("categories");
+		searchRestrictions.put("softwarePlatforms", ImmutableSet.of("boost"));
+		assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1"));
+		searchRestrictions.remove("softwarePlatforms");
+		searchRestrictions.put("operatingSystems", ImmutableSet.of("linux"));
+		assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1"));
+		searchRestrictions.remove("operatingSystems");
+		searchRestrictions.put("vendorNames", ImmutableSet.of("V1"));
+		assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), containsInAnyOrder("C1"));
+		searchRestrictions.remove("vendorNmaes");
+		searchRestrictions.put("vendorNames", ImmutableSet.of("V3"));
+		assertThat(getComponentIds(searchHandler.search("comp", searchRestrictions)), is(empty()));
+	}
 
 }

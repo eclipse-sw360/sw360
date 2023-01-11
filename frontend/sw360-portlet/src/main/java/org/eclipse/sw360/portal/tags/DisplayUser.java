@@ -23,13 +23,13 @@ import java.io.IOException;
  */
 public class DisplayUser extends SimpleTagSupport {
 
-    private User user;
+	private User user;
 
-    public void setUser(User value) {
-        this.user = value;
-    }
+	public void setUser(User value) {
+		this.user = value;
+	}
 
-    public void doTag() throws JspException, IOException {
-        getJspContext().getOut().print(UserUtils.displayUser("-unknown User-", user));
-    }
+	public void doTag() throws JspException, IOException {
+		getJspContext().getOut().print(UserUtils.displayUser("-unknown User-", user));
+	}
 }

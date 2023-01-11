@@ -49,77 +49,76 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ProjectPortletTest {
-    @Mock
-    PortletRequest request;
+	@Mock
+	PortletRequest request;
 
-    @Mock
-    ThriftClients thriftClients;
+	@Mock
+	ThriftClients thriftClients;
 
-    @Mock
-    AttachmentService.Iface attachmentClient;
+	@Mock
+	AttachmentService.Iface attachmentClient;
 
-    private ProjectPortlet portlet;
+	private ProjectPortlet portlet;
 
-    @Before
-    public void setUp() {
-        when(thriftClients.makeAttachmentClient()).thenReturn(attachmentClient);
-        portlet = new ProjectPortlet(thriftClients);
-    }
+	@Before
+	public void setUp() {
+		when(thriftClients.makeAttachmentClient()).thenReturn(attachmentClient);
+		portlet = new ProjectPortlet(thriftClients);
+	}
 
-    @Test
-    public void testJsonOfClearing() throws Exception {
-        ReleaseClearingStateSummary releaseClearingStateSummary = new ReleaseClearingStateSummary().setNewRelease(1)
-                .setSentToClearingTool(17).setUnderClearing(6).setReportAvailable(5).setApproved(4);
+	@Test
+	public void testJsonOfClearing() throws Exception {
+		ReleaseClearingStateSummary releaseClearingStateSummary = new ReleaseClearingStateSummary().setNewRelease(1)
+				.setSentToClearingTool(17).setUnderClearing(6).setReportAvailable(5).setApproved(4);
 
-        ThriftJsonSerializer thriftJsonSerializer = new ThriftJsonSerializer();
-        String json = thriftJsonSerializer.toJson(releaseClearingStateSummary);
+		ThriftJsonSerializer thriftJsonSerializer = new ThriftJsonSerializer();
+		String json = thriftJsonSerializer.toJson(releaseClearingStateSummary);
 
-        // assertThat(json, containsString(
-        // "{\"newRelease\":1,\"underClearing\":6,\"sentToClearingTool\":17,\"reportAvailable\":5,\"approved\":4}"));
+		// assertThat(json, containsString(
+		// "{\"newRelease\":1,\"underClearing\":6,\"sentToClearingTool\":17,\"reportAvailable\":5,\"approved\":4}"));
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = objectMapper.readValue(json, Map.class);
+		ObjectMapper objectMapper = new ObjectMapper();
+		@SuppressWarnings("unchecked")
+		Map<String, Object> map = objectMapper.readValue(json, Map.class);
 
-        assertThat(map, hasEntry("newRelease", (int) 1));
-        assertThat(map, hasEntry("sentToClearingTool", (int) 17));
-        assertThat(map, hasEntry("underClearing", (int) 6));
-        assertThat(map, hasEntry("reportAvailable", (int) 5));
-        assertThat(map, hasEntry("approved", (int) 4));
-    }
+		assertThat(map, hasEntry("newRelease", (int) 1));
+		assertThat(map, hasEntry("sentToClearingTool", (int) 17));
+		assertThat(map, hasEntry("underClearing", (int) 6));
+		assertThat(map, hasEntry("reportAvailable", (int) 5));
+		assertThat(map, hasEntry("approved", (int) 4));
+	}
 
-    @Test
-    public void testPutAttachmentUsagesToRequest() throws PortletException, TException {
-        AttachmentUsage licInfoUsage1 = new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
-                .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(ImmutableSet.of("lic1"))));
-        AttachmentUsage licInfoUsage2 = new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
-                .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(ImmutableSet.of("lic2"))));
-        AttachmentUsage srcPackageUsage1 = new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
-                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
-        AttachmentUsage srcPackageUsage2 = new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
-                .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
-        AttachmentUsage manualUsage1 = new AttachmentUsage(Source.releaseId("r3"), "att3", Source.projectId("p1"))
-                .setUsageData(UsageData.manuallySet(new ManuallySetUsage()));
-        when(attachmentClient.getUsedAttachments(Source.projectId("p1"), null)).thenReturn(
-                ImmutableList.of(licInfoUsage1, licInfoUsage2, srcPackageUsage1, srcPackageUsage2, manualUsage1)
-        );
+	@Test
+	public void testPutAttachmentUsagesToRequest() throws PortletException, TException {
+		AttachmentUsage licInfoUsage1 = new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
+				.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(ImmutableSet.of("lic1"))));
+		AttachmentUsage licInfoUsage2 = new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
+				.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(ImmutableSet.of("lic2"))));
+		AttachmentUsage srcPackageUsage1 = new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
+				.setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+		AttachmentUsage srcPackageUsage2 = new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
+				.setUsageData(UsageData.sourcePackage(new SourcePackageUsage()));
+		AttachmentUsage manualUsage1 = new AttachmentUsage(Source.releaseId("r3"), "att3", Source.projectId("p1"))
+				.setUsageData(UsageData.manuallySet(new ManuallySetUsage()));
+		when(attachmentClient.getUsedAttachments(Source.projectId("p1"), null)).thenReturn(
+				ImmutableList.of(licInfoUsage1, licInfoUsage2, srcPackageUsage1, srcPackageUsage2, manualUsage1));
 
-        AttachmentUsage mergedLicInfoUsage = new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
-                .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(ImmutableSet.of("lic1", "lic2"))));
-        Map<String, AttachmentUsage> licInfoUsages = ImmutableMap.of("att1", mergedLicInfoUsage);
-        Map<String, AttachmentUsage> srcCodeUsages = ImmutableMap.of("att2", srcPackageUsage1);
-        Map<String, AttachmentUsage> manualUsages = ImmutableMap.of("att3", manualUsage1);
+		AttachmentUsage mergedLicInfoUsage = new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
+				.setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(ImmutableSet.of("lic1", "lic2"))));
+		Map<String, AttachmentUsage> licInfoUsages = ImmutableMap.of("att1", mergedLicInfoUsage);
+		Map<String, AttachmentUsage> srcCodeUsages = ImmutableMap.of("att2", srcPackageUsage1);
+		Map<String, AttachmentUsage> manualUsages = ImmutableMap.of("att3", manualUsage1);
 
-        Map<String, Map<String, AttachmentUsage>> maps = new HashMap<>();
-        Mockito.doAnswer(invocation -> {
-            maps.put((String) invocation.getArguments()[0], (Map<String, AttachmentUsage>) invocation.getArguments()[1]);
-            return null;
-        }).when(request).setAttribute(anyString(), any());
+		Map<String, Map<String, AttachmentUsage>> maps = new HashMap<>();
+		Mockito.doAnswer(invocation -> {
+			maps.put((String) invocation.getArguments()[0],
+					(Map<String, AttachmentUsage>) invocation.getArguments()[1]);
+			return null;
+		}).when(request).setAttribute(anyString(), any());
 
-        portlet.putAttachmentUsagesInRequest(request, "p1");
+		portlet.putAttachmentUsagesInRequest(request, "p1");
 
-        assertThat(maps, equalTo(ImmutableMap.of(LICENSE_INFO_ATTACHMENT_USAGES, licInfoUsages,
-                SOURCE_CODE_ATTACHMENT_USAGES, srcCodeUsages,
-                MANUAL_ATTACHMENT_USAGES, manualUsages)));
-    }
+		assertThat(maps, equalTo(ImmutableMap.of(LICENSE_INFO_ATTACHMENT_USAGES, licInfoUsages,
+				SOURCE_CODE_ATTACHMENT_USAGES, srcCodeUsages, MANUAL_ATTACHMENT_USAGES, manualUsages)));
+	}
 }

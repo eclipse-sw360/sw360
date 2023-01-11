@@ -13,24 +13,24 @@ package org.eclipse.sw360.clients.rest.resource.licenses;
 import org.eclipse.sw360.clients.rest.resource.SW360ResourcesTestUtils;
 
 public class SW360LicenseTest extends SW360ResourcesTestUtils<SW360License> {
-    @Override
-    public SW360License prepareItem() {
-        SW360License sw360License = new SW360License();
-        sw360License.setShortName("Test-2.0");
-        sw360License.setFullName("Test License 2.0");
-        sw360License.setText("Full License Text");
-        return sw360License;
-    }
+	@Override
+	public SW360License prepareItem() {
+		SW360License sw360License = new SW360License();
+		sw360License.setShortName("Test-2.0");
+		sw360License.setFullName("Test License 2.0");
+		sw360License.setText("Full License Text");
+		return sw360License;
+	}
 
-    @Override
-    public SW360License prepareItemWithoutOptionalInput() {
-        SW360License sw360License = new SW360License();
-        sw360License.setFullName("Test License 2.0");
-        return sw360License;
-    }
+	@Override
+	public SW360License prepareItemWithoutOptionalInput() {
+		SW360License sw360License = new SW360License();
+		sw360License.setFullName("Test License 2.0");
+		return sw360License;
+	}
 
-    @Override
-    public Class<SW360License> getHandledClassType() {
-        return SW360License.class;
-    }
+	@Override
+	public Class<SW360License> getHandledClassType() {
+		return SW360License.class;
+	}
 }

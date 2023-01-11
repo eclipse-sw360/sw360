@@ -32,122 +32,112 @@ import java.util.List;
 
 import static org.eclipse.sw360.portal.common.PortalConstants.*;
 
-@org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-        "/org/eclipse/sw360/portal/portlets/base.properties",
-        "/org/eclipse/sw360/portal/portlets/admin.properties"
-    },
-    property = {
-        "javax.portlet.name=" + LICENSE_TYPE_PORTLET_NAME,
+@org.osgi.service.component.annotations.Component(immediate = true, properties = {
+		"/org/eclipse/sw360/portal/portlets/base.properties",
+		"/org/eclipse/sw360/portal/portlets/admin.properties"}, property = {
+				"javax.portlet.name=" + LICENSE_TYPE_PORTLET_NAME,
 
-        "javax.portlet.display-name=License Types",
-        "javax.portlet.info.short-title=License Types",
-        "javax.portlet.info.title=License Types",
-        "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/admin/licenseTypes/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+				"javax.portlet.display-name=License Types", "javax.portlet.info.short-title=License Types",
+				"javax.portlet.info.title=License Types", "javax.portlet.resource-bundle=content.Language",
+				"javax.portlet.init-param.view-template=/html/admin/licenseTypes/view.jsp",}, service = Portlet.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class LicenseTypePortlet extends Sw360Portlet {
-    private static final Logger log = LogManager.getLogger(LicenseTypePortlet.class);
-    //! Serve resource and helpers
-    @Override
-    public void serveResource(ResourceRequest request, ResourceResponse response) {
-        String action = request.getParameter(PortalConstants.ACTION);
+	private static final Logger log = LogManager.getLogger(LicenseTypePortlet.class);
+	// ! Serve resource and helpers
+	@Override
+	public void serveResource(ResourceRequest request, ResourceResponse response) {
+		String action = request.getParameter(PortalConstants.ACTION);
 
-        if(REMOVE_LICENSE_TYPE.equals(action)) {
-            serveDeleteLicenseType(request, response);
-        } else if (CHECK_LICENSE_TYPE_IN_USE.equals(action)) {
-            serveCheckLicenseTypeInUse(request, response);
-        }
-    }
+		if (REMOVE_LICENSE_TYPE.equals(action)) {
+			serveDeleteLicenseType(request, response);
+		} else if (CHECK_LICENSE_TYPE_IN_USE.equals(action)) {
+			serveCheckLicenseTypeInUse(request, response);
+		}
+	}
 
-    private void serveDeleteLicenseType(ResourceRequest request, ResourceResponse response) {
-        final String id = request.getParameter("id");
-        final User user = UserCacheHolder.getUserFromRequest(request);
-        LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+	private void serveDeleteLicenseType(ResourceRequest request, ResourceResponse response) {
+		final String id = request.getParameter("id");
+		final User user = UserCacheHolder.getUserFromRequest(request);
+		LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
 
-        try {
-            RequestStatus status = licenseClient.deleteLicenseType(id, user);
-            renderRequestStatus(request, response, status);
-        } catch (TException e) {
-            log.error("Error deleting license type", e);
-            renderRequestStatus(request, response, RequestStatus.FAILURE);
-        }
-    }
+		try {
+			RequestStatus status = licenseClient.deleteLicenseType(id, user);
+			renderRequestStatus(request, response, status);
+		} catch (TException e) {
+			log.error("Error deleting license type", e);
+			renderRequestStatus(request, response, RequestStatus.FAILURE);
+		}
+	}
 
-    private void serveCheckLicenseTypeInUse(ResourceRequest request, ResourceResponse response) {
-        final String id = request.getParameter("id");
-        LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+	private void serveCheckLicenseTypeInUse(ResourceRequest request, ResourceResponse response) {
+		final String id = request.getParameter("id");
+		LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
 
-        try {
-            int licenseCount = licenseClient.checkLicenseTypeInUse(id);
-            renderRequest(request, response, licenseCount);
-        } catch (TException e) {
-            log.error("Error check license type in use", e);
-            renderRequest(request, response, -1);
-        }
-    }
+		try {
+			int licenseCount = licenseClient.checkLicenseTypeInUse(id);
+			renderRequest(request, response, licenseCount);
+		} catch (TException e) {
+			log.error("Error check license type in use", e);
+			renderRequest(request, response, -1);
+		}
+	}
 
-    private void renderRequest(PortletRequest request, MimeResponse response, int nLicenses) {
-        JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
-        jsonObject.put(PortalConstants.RESULT, nLicenses);
-        try {
-            writeJSON(request, response, jsonObject);
-        } catch (IOException e) {
-            log.error("Problem rendering Request", e);
-        }
-    }
+	private void renderRequest(PortletRequest request, MimeResponse response, int nLicenses) {
+		JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+		jsonObject.put(PortalConstants.RESULT, nLicenses);
+		try {
+			writeJSON(request, response, jsonObject);
+		} catch (IOException e) {
+			log.error("Problem rendering Request", e);
+		}
+	}
 
-    //! VIEW and helpers
-    @Override
-    public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
-        String pageName = request.getParameter(PAGENAME);
-        if (PAGENAME_ADD.equals(pageName)) {
-            include("/html/admin/licenseTypes/add.jsp", request, response);
-        } else {
-            prepareStandardView(request);
-            super.doView(request, response);
-        }
-    }
+	// ! VIEW and helpers
+	@Override
+	public void doView(RenderRequest request, RenderResponse response) throws IOException, PortletException {
+		String pageName = request.getParameter(PAGENAME);
+		if (PAGENAME_ADD.equals(pageName)) {
+			include("/html/admin/licenseTypes/add.jsp", request, response);
+		} else {
+			prepareStandardView(request);
+			super.doView(request, response);
+		}
+	}
 
-    private void prepareStandardView(RenderRequest request) {
-        List<LicenseType> licenseTypeList;
-        try {
-            LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+	private void prepareStandardView(RenderRequest request) {
+		List<LicenseType> licenseTypeList;
+		try {
+			LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
 
-            licenseTypeList = licenseClient.getLicenseTypes();
+			licenseTypeList = licenseClient.getLicenseTypes();
 
-        } catch (TException e) {
-            log.error("Could not get License Type from backend ", e);
-            licenseTypeList = Collections.emptyList();
-        }
+		} catch (TException e) {
+			log.error("Could not get License Type from backend ", e);
+			licenseTypeList = Collections.emptyList();
+		}
 
-        request.setAttribute(LICENSE_TYPE_LIST, licenseTypeList);
-    }
+		request.setAttribute(LICENSE_TYPE_LIST, licenseTypeList);
+	}
 
-    @UsedAsLiferayAction
-    public void addLicenseType(ActionRequest request, ActionResponse response) throws PortletException, IOException{
-        final LicenseType licenseType = new LicenseType();
-        ComponentPortletUtils.updateLicenseTypeFromRequest(request, licenseType);
+	@UsedAsLiferayAction
+	public void addLicenseType(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+		final LicenseType licenseType = new LicenseType();
+		ComponentPortletUtils.updateLicenseTypeFromRequest(request, licenseType);
 
-        try {
-            LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
-            final User user = UserCacheHolder.getUserFromRequest(request);
+		try {
+			LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+			final User user = UserCacheHolder.getUserFromRequest(request);
 
-            RequestStatus requestStatus = licenseClient.addLicenseType(licenseType, user);
+			RequestStatus requestStatus = licenseClient.addLicenseType(licenseType, user);
 
-            if(RequestStatus.DUPLICATE.equals(requestStatus)) {
-                setSW360SessionError(request, ErrorMessages.LICENSE_TYPE_DUPLICATE);
-                response.setRenderParameter(PAGENAME, PAGENAME_ADD);
-            } else if(RequestStatus.ACCESS_DENIED.equals(requestStatus)) {
-                setSW360SessionError(request, ErrorMessages.LICENSE_TYPE_ACCESS_DENIED);
-            }
-        } catch (TException e) {
-            log.error("Error adding license type in backend!", e);
-            setSW360SessionError(request, ErrorMessages.DEFAULT_ERROR_MESSAGE);
-        }
-    }
+			if (RequestStatus.DUPLICATE.equals(requestStatus)) {
+				setSW360SessionError(request, ErrorMessages.LICENSE_TYPE_DUPLICATE);
+				response.setRenderParameter(PAGENAME, PAGENAME_ADD);
+			} else if (RequestStatus.ACCESS_DENIED.equals(requestStatus)) {
+				setSW360SessionError(request, ErrorMessages.LICENSE_TYPE_ACCESS_DENIED);
+			}
+		} catch (TException e) {
+			log.error("Error adding license type in backend!", e);
+			setSW360SessionError(request, ErrorMessages.DEFAULT_ERROR_MESSAGE);
+		}
+	}
 }

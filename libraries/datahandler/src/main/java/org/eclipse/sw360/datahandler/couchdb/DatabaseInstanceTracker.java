@@ -16,16 +16,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @author daniele.fognini@tngtech.com
  */
 public class DatabaseInstanceTracker {
-    private static ConcurrentLinkedQueue<DatabaseInstance> trackedInstances = new ConcurrentLinkedQueue<>();
+	private static ConcurrentLinkedQueue<DatabaseInstance> trackedInstances = new ConcurrentLinkedQueue<>();
 
-    public static void track(DatabaseInstance databaseInstance) {
-        trackedInstances.add(databaseInstance);
-    }
+	public static void track(DatabaseInstance databaseInstance) {
+		trackedInstances.add(databaseInstance);
+	}
 
-    public static void destroy() {
-        DatabaseInstance trackedInstance;
-        while ((trackedInstance = trackedInstances.poll()) != null) {
-            trackedInstance.destroy();
-        }
-    }
+	public static void destroy() {
+		DatabaseInstance trackedInstance;
+		while ((trackedInstance = trackedInstances.poll()) != null) {
+			trackedInstance.destroy();
+		}
+	}
 }

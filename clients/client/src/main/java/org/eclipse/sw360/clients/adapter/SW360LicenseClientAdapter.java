@@ -25,62 +25,71 @@ import java.util.Optional;
  * </p>
  */
 public interface SW360LicenseClientAdapter {
-    /**
-     * Returns the {@code SW360LicenseClient} used for the interaction with
-     * the SW360 server.
-     *
-     * @return the underlying {@code SW360LicenseClient}
-     */
-    SW360LicenseClient getLicenseClient();
+	/**
+	 * Returns the {@code SW360LicenseClient} used for the interaction with the
+	 * SW360 server.
+	 *
+	 * @return the underlying {@code SW360LicenseClient}
+	 */
+	SW360LicenseClient getLicenseClient();
 
-    /**
-     * Returns a list with all licenses known to the system.
-     *
-     * @return a list with all the licenses known
-     * @throws SW360ClientException if an error occurs
-     */
-    List<SW360SparseLicense> getLicenses();
+	/**
+	 * Returns a list with all licenses known to the system.
+	 *
+	 * @return a list with all the licenses known
+	 * @throws SW360ClientException
+	 *             if an error occurs
+	 */
+	List<SW360SparseLicense> getLicenses();
 
-    /**
-     * Queries a license from SW360 by its (short) name. If the server
-     * responds with a 404 status indicating that the license is unknown,
-     * result is an empty {@code Optional}.
-     *
-     * @param license the ID of the desired license
-     * @return an {@code Optional} with the license fetched from the server
-     * @throws SW360ClientException if an error occurs
-     */
-    Optional<SW360License> getLicenseByName(String license);
+	/**
+	 * Queries a license from SW360 by its (short) name. If the server responds with
+	 * a 404 status indicating that the license is unknown, result is an empty
+	 * {@code Optional}.
+	 *
+	 * @param license
+	 *            the ID of the desired license
+	 * @return an {@code Optional} with the license fetched from the server
+	 * @throws SW360ClientException
+	 *             if an error occurs
+	 */
+	Optional<SW360License> getLicenseByName(String license);
 
-    /**
-     * Transforms the given sparse license to an entity with full properties.
-     * This method looks up the license on the server by its name. It expects
-     * the license to be present. If the lookup fails, an exception is thrown.
-     *
-     * @param sparseLicense the entity object for the sparse license
-     * @return the resolved license
-     * @throws SW360ClientException if an error occurs
-     */
-    SW360License enrichSparseLicense(SW360SparseLicense sparseLicense);
+	/**
+	 * Transforms the given sparse license to an entity with full properties. This
+	 * method looks up the license on the server by its name. It expects the license
+	 * to be present. If the lookup fails, an exception is thrown.
+	 *
+	 * @param sparseLicense
+	 *            the entity object for the sparse license
+	 * @return the resolved license
+	 * @throws SW360ClientException
+	 *             if an error occurs
+	 */
+	SW360License enrichSparseLicense(SW360SparseLicense sparseLicense);
 
-    /**
-     * Creates a new license in SW360 based on the properties of the data
-     * object passed in.
-     *
-     * @param license the data object for the new license
-     * @return the newly created license
-     * @throws SW360ClientException if an error occurs
-     */
-    SW360License createLicense(SW360License license);
+	/**
+	 * Creates a new license in SW360 based on the properties of the data object
+	 * passed in.
+	 *
+	 * @param license
+	 *            the data object for the new license
+	 * @return the newly created license
+	 * @throws SW360ClientException
+	 *             if an error occurs
+	 */
+	SW360License createLicense(SW360License license);
 
-    /**
-     * Deletes the License with the given ID. It
-     * inspects the {@link StatusCode} returned by SW360 and throws an
-     * exception if the operation was not successful.
-     *
-     * @param licenseId of the License to delete
-     * @return status code of request
-     * @throws SW360ClientException if the vulnerability could not be deleted
-     */
-    Integer deleteLicense(String licenseId);
+	/**
+	 * Deletes the License with the given ID. It inspects the {@link StatusCode}
+	 * returned by SW360 and throws an exception if the operation was not
+	 * successful.
+	 *
+	 * @param licenseId
+	 *            of the License to delete
+	 * @return status code of request
+	 * @throws SW360ClientException
+	 *             if the vulnerability could not be deleted
+	 */
+	Integer deleteLicense(String licenseId);
 }

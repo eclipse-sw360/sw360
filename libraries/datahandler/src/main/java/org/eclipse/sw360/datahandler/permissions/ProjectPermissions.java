@@ -42,153 +42,157 @@ import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMI
  */
 public class ProjectPermissions extends DocumentPermissions<Project> {
 
-    private final Set<String> moderators;
-    private final Set<String> contributors;
-    private final Set<String> attachmentContentIds;
+	private final Set<String> moderators;
+	private final Set<String> contributors;
+	private final Set<String> attachmentContentIds;
 
-    protected ProjectPermissions(Project document, User user) {
-        super(document, user);
+	protected ProjectPermissions(Project document, User user) {
+		super(document, user);
 
-        moderators = new ImmutableSet.Builder<String>()
-                .addAll(toSingletonSet(document.getCreatedBy()))
-                .addAll(toSingletonSet(document.getProjectResponsible()))
-                .addAll(nullToEmptySet(document.getModerators()))
-                .build();
-        contributors = new ImmutableSet.Builder<String>()
-                .addAll(moderators)
-                .addAll(nullToEmptySet(document.getContributors()))
-                .addAll(toSingletonSet(document.getLeadArchitect()))
-                .build();
-        attachmentContentIds = nullToEmptySet(document.getAttachments()).stream()
-                .map(a -> a.getAttachmentContentId())
-                .collect(Collectors.toSet());
-    }
+		moderators = new ImmutableSet.Builder<String>().addAll(toSingletonSet(document.getCreatedBy()))
+				.addAll(toSingletonSet(document.getProjectResponsible()))
+				.addAll(nullToEmptySet(document.getModerators())).build();
+		contributors = new ImmutableSet.Builder<String>().addAll(moderators)
+				.addAll(nullToEmptySet(document.getContributors())).addAll(toSingletonSet(document.getLeadArchitect()))
+				.build();
+		attachmentContentIds = nullToEmptySet(document.getAttachments()).stream().map(a -> a.getAttachmentContentId())
+				.collect(Collectors.toSet());
+	}
 
-    public static boolean isUserInBU(Project document, String bu) {
-        final String buFromOrganisation = getBUFromOrganisation(bu);
-        return !isNullOrEmpty(bu) && !isNullOrEmpty(buFromOrganisation) && !isNullOrEmpty(document.getBusinessUnit())
-                && document.getBusinessUnit().equals(buFromOrganisation);
-    }
+	public static boolean isUserInBU(Project document, String bu) {
+		final String buFromOrganisation = getBUFromOrganisation(bu);
+		return !isNullOrEmpty(bu) && !isNullOrEmpty(buFromOrganisation) && !isNullOrEmpty(document.getBusinessUnit())
+				&& document.getBusinessUnit().equals(buFromOrganisation);
+	}
 
-    public static boolean userIsEquivalentToModeratorInProject(Project input, String user) {
-        final HashSet<String> allowedUsers = new HashSet<>();
-        if (input.isSetCreatedBy()) allowedUsers.add(input.getCreatedBy());
-        if (input.isSetLeadArchitect()) allowedUsers.add(input.getLeadArchitect());
-        if (input.isSetProjectResponsible()) allowedUsers.add(input.getProjectResponsible());
-        if (input.isSetModerators()) allowedUsers.addAll(input.getModerators());
-        if (input.isSetContributors()) allowedUsers.addAll(input.getContributors());
+	public static boolean userIsEquivalentToModeratorInProject(Project input, String user) {
+		final HashSet<String> allowedUsers = new HashSet<>();
+		if (input.isSetCreatedBy())
+			allowedUsers.add(input.getCreatedBy());
+		if (input.isSetLeadArchitect())
+			allowedUsers.add(input.getLeadArchitect());
+		if (input.isSetProjectResponsible())
+			allowedUsers.add(input.getProjectResponsible());
+		if (input.isSetModerators())
+			allowedUsers.addAll(input.getModerators());
+		if (input.isSetContributors())
+			allowedUsers.addAll(input.getContributors());
 
-        return allowedUsers.contains(user);
-    }
+		return allowedUsers.contains(user);
+	}
 
-    @NotNull
-    public static Predicate<Project> isVisible(final User user) {
-        return input -> {
-            Visibility visibility = input.getVisbility();
-            if (visibility == null) {
-                visibility = Visibility.BUISNESSUNIT_AND_MODERATORS; // the current default
-            }
+	@NotNull
+	public static Predicate<Project> isVisible(final User user) {
+		return input -> {
+			Visibility visibility = input.getVisbility();
+			if (visibility == null) {
+				visibility = Visibility.BUISNESSUNIT_AND_MODERATORS; // the current default
+			}
 
-            boolean isPrivateAccessAllowed = PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isUserAtLeast(ADMIN, user);
+			boolean isPrivateAccessAllowed = PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED
+					&& isUserAtLeast(ADMIN, user);
 
-            switch (visibility) {
-                case PRIVATE:
-                    return user.getEmail().equals(input.getCreatedBy()) || isPrivateAccessAllowed;
-                case ME_AND_MODERATORS: {
-                    return userIsEquivalentToModeratorInProject(input, user.getEmail()) || isPrivateAccessAllowed;
-                }
-            case BUISNESSUNIT_AND_MODERATORS: {
-                boolean isVisibleBasedOnPrimaryCondition = isUserInBU(input, user.getDepartment())
-                        || userIsEquivalentToModeratorInProject(input, user.getEmail())
-                        || isUserAtLeast(CLEARING_ADMIN, user);
-                boolean isVisibleBasedOnSecondaryCondition = false;
-                if (!isVisibleBasedOnPrimaryCondition) {
-                    Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = user.getSecondaryDepartmentsAndRoles();
-                    if (!CommonUtils.isNullOrEmptyMap(secondaryDepartmentsAndRoles)) {
-                        if (getDepartmentIfUserInBU(input, secondaryDepartmentsAndRoles.keySet()) != null) {
-                            isVisibleBasedOnSecondaryCondition = true;
-                        }
-                    }
-                }
+			switch (visibility) {
+				case PRIVATE :
+					return user.getEmail().equals(input.getCreatedBy()) || isPrivateAccessAllowed;
+				case ME_AND_MODERATORS : {
+					return userIsEquivalentToModeratorInProject(input, user.getEmail()) || isPrivateAccessAllowed;
+				}
+				case BUISNESSUNIT_AND_MODERATORS : {
+					boolean isVisibleBasedOnPrimaryCondition = isUserInBU(input, user.getDepartment())
+							|| userIsEquivalentToModeratorInProject(input, user.getEmail())
+							|| isUserAtLeast(CLEARING_ADMIN, user);
+					boolean isVisibleBasedOnSecondaryCondition = false;
+					if (!isVisibleBasedOnPrimaryCondition) {
+						Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = user
+								.getSecondaryDepartmentsAndRoles();
+						if (!CommonUtils.isNullOrEmptyMap(secondaryDepartmentsAndRoles)) {
+							if (getDepartmentIfUserInBU(input, secondaryDepartmentsAndRoles.keySet()) != null) {
+								isVisibleBasedOnSecondaryCondition = true;
+							}
+						}
+					}
 
-                return isVisibleBasedOnPrimaryCondition || isVisibleBasedOnSecondaryCondition;
-            }
-                case EVERYONE:
-                    return true;
-            }
+					return isVisibleBasedOnPrimaryCondition || isVisibleBasedOnSecondaryCondition;
+				}
+				case EVERYONE :
+					return true;
+			}
 
-            return false;
-        };
-    }
+			return false;
+		};
+	}
 
-    @Override
-    public void fillPermissions(Project other, Map<RequestedAction, Boolean> permissions) {
-        other.permissions=permissions;
-    }
+	@Override
+	public void fillPermissions(Project other, Map<RequestedAction, Boolean> permissions) {
+		other.permissions = permissions;
+	}
 
-    @Override
-    public boolean isActionAllowed(RequestedAction action) {
-        ImmutableSet<UserGroup> clearingAdminRoles=ImmutableSet.of(UserGroup.CLEARING_ADMIN,
-                UserGroup.CLEARING_EXPERT);
-        ImmutableSet<UserGroup> adminRoles=ImmutableSet.of(UserGroup.ADMIN,
-                UserGroup.SW360_ADMIN);
-        if (action == RequestedAction.READ) {
-            return isVisible(user).test(document);
-        } else if (document.getClearingState() == ProjectClearingState.CLOSED) {
-            switch (action) {
-                case WRITE:
-                case ATTACHMENTS:
-                    return PermissionUtils.isUserAtLeast(ADMIN, user) || isContributor() || isUserOfOwnGroupHasRole(clearingAdminRoles, UserGroup.CLEARING_ADMIN) || isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN);
-                case DELETE:
-                case USERS:
-                case CLEARING:
-                case WRITE_ECC:
-                    return PermissionUtils.isAdmin(user) || isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN);
-                default:
-                    throw new IllegalArgumentException("Unknown action: " + action);
-            }
-        } else {
-            return getStandardPermissions(action);
-        }
-    }
+	@Override
+	public boolean isActionAllowed(RequestedAction action) {
+		ImmutableSet<UserGroup> clearingAdminRoles = ImmutableSet.of(UserGroup.CLEARING_ADMIN,
+				UserGroup.CLEARING_EXPERT);
+		ImmutableSet<UserGroup> adminRoles = ImmutableSet.of(UserGroup.ADMIN, UserGroup.SW360_ADMIN);
+		if (action == RequestedAction.READ) {
+			return isVisible(user).test(document);
+		} else if (document.getClearingState() == ProjectClearingState.CLOSED) {
+			switch (action) {
+				case WRITE :
+				case ATTACHMENTS :
+					return PermissionUtils.isUserAtLeast(ADMIN, user) || isContributor()
+							|| isUserOfOwnGroupHasRole(clearingAdminRoles, UserGroup.CLEARING_ADMIN)
+							|| isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN);
+				case DELETE :
+				case USERS :
+				case CLEARING :
+				case WRITE_ECC :
+					return PermissionUtils.isAdmin(user) || isUserOfOwnGroupHasRole(adminRoles, UserGroup.ADMIN);
+				default :
+					throw new IllegalArgumentException("Unknown action: " + action);
+			}
+		} else {
+			return getStandardPermissions(action);
+		}
+	}
 
-    @Override
-    protected Set<String> getContributors() {
-        return contributors;
-    }
+	@Override
+	protected Set<String> getContributors() {
+		return contributors;
+	}
 
-    @Override
-    protected Set<String> getModerators() {
-        return moderators;
-    }
+	@Override
+	protected Set<String> getModerators() {
+		return moderators;
+	}
 
-    @Override
-    protected Set<String> getAttachmentContentIds() {
-        return attachmentContentIds;
-    }
+	@Override
+	protected Set<String> getAttachmentContentIds() {
+		return attachmentContentIds;
+	}
 
-    protected Set<String> getUserEquivalentOwnerGroup() {
-        Set<String> departments = new HashSet<String>();
-        if (!CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
-            departments.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
-        }
-        departments.add(user.getDepartment());
-        Set<String> finalDepartments = new HashSet<String>();
-        String departmentIfUserInBU = getDepartmentIfUserInBU(document, departments);
-        finalDepartments.add(departmentIfUserInBU);
-        return departmentIfUserInBU == null ? null : finalDepartments;
-    }
+	protected Set<String> getUserEquivalentOwnerGroup() {
+		Set<String> departments = new HashSet<String>();
+		if (!CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
+			departments.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
+		}
+		departments.add(user.getDepartment());
+		Set<String> finalDepartments = new HashSet<String>();
+		String departmentIfUserInBU = getDepartmentIfUserInBU(document, departments);
+		finalDepartments.add(departmentIfUserInBU);
+		return departmentIfUserInBU == null ? null : finalDepartments;
+	}
 
-    private static String getDepartmentIfUserInBU(Project document, Set<String> BUs) {
-        for(String bu:BUs) {
-            String buFromOrganisation = getBUFromOrganisation(bu);
-            boolean isUserInBU = !isNullOrEmpty(bu) && !isNullOrEmpty(buFromOrganisation)
-            && !isNullOrEmpty(document.getBusinessUnit()) && document.getBusinessUnit().equals(buFromOrganisation);
-            if(isUserInBU) {
-                return bu;
-            }
-        }
+	private static String getDepartmentIfUserInBU(Project document, Set<String> BUs) {
+		for (String bu : BUs) {
+			String buFromOrganisation = getBUFromOrganisation(bu);
+			boolean isUserInBU = !isNullOrEmpty(bu) && !isNullOrEmpty(buFromOrganisation)
+					&& !isNullOrEmpty(document.getBusinessUnit())
+					&& document.getBusinessUnit().equals(buFromOrganisation);
+			if (isUserInBU) {
+				return bu;
+			}
+		}
 
-        return null;
-    }
+		return null;
+	}
 }

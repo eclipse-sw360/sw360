@@ -18,5 +18,5 @@ import org.apache.thrift.TException;
  */
 @FunctionalInterface
 public interface AttachmentContentProvider {
-    AttachmentContent getAttachmentContent(Attachment attachment) throws TException;
+	AttachmentContent getAttachmentContent(Attachment attachment) throws TException;
 }

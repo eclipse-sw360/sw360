@@ -28,30 +28,29 @@ import static org.hamcrest.Matchers.is;
 
 public class DocxGeneratorTest {
 
-    private static List<ObligationParsingResult> obligationParsingResults;
+	private static List<ObligationParsingResult> obligationParsingResults;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
-        obligationParsingResults = new ArrayList<>();
-        ObligationParsingResult opr = new ObligationParsingResult();
-        opr.setStatus(ObligationInfoRequestStatus.SUCCESS);
+	@BeforeClass
+	public static void setUp() throws Exception {
+		obligationParsingResults = new ArrayList<>();
+		ObligationParsingResult opr = new ObligationParsingResult();
+		opr.setStatus(ObligationInfoRequestStatus.SUCCESS);
 
-        opr.setObligationsAtProject(IntStream.rangeClosed(1, 100).mapToObj(i ->
-                    new ObligationAtProject("Topic" + i, "Text" + i,
-                            IntStream.rangeClosed(1, i).mapToObj(j -> "License"+j).collect(Collectors.toList()))
-                ).collect(Collectors.toList()));
-        obligationParsingResults.add(opr);
+		opr.setObligationsAtProject(IntStream.rangeClosed(1, 100)
+				.mapToObj(i -> new ObligationAtProject("Topic" + i, "Text" + i,
+						IntStream.rangeClosed(1, i).mapToObj(j -> "License" + j).collect(Collectors.toList())))
+				.collect(Collectors.toList()));
+		obligationParsingResults.add(opr);
 
-    }
+	}
 
+	@Test
+	public void testExtractingMostCommonLicense() throws Exception {
+		Set<String> mostCommonLicenses = DocxGenerator.extractMostCommonLicenses(obligationParsingResults, 100);
+		assertThat(mostCommonLicenses.size(), is(1));
+		assertThat(mostCommonLicenses.toArray(new String[1])[0], is("License1"));
 
-    @Test
-    public void testExtractingMostCommonLicense() throws Exception {
-        Set<String> mostCommonLicenses = DocxGenerator.extractMostCommonLicenses(obligationParsingResults, 100);
-        assertThat(mostCommonLicenses.size(), is(1));
-        assertThat(mostCommonLicenses.toArray(new String[1])[0], is("License1"));
-
-        mostCommonLicenses = DocxGenerator.extractMostCommonLicenses(obligationParsingResults, 3);
-        assertThat(mostCommonLicenses.size(), is(98));
-    }
+		mostCommonLicenses = DocxGenerator.extractMostCommonLicenses(obligationParsingResults, 3);
+		assertThat(mostCommonLicenses.size(), is(98));
+	}
 }

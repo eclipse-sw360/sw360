@@ -8,25 +8,23 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>org.eclipse.sw360</groupId>
-        <artifactId>backend-src</artifactId>
-        <version>${revision}</version>
-    </parent>
+  <parent>
+    <groupId>org.eclipse.sw360</groupId>
+    <artifactId>backend-src</artifactId>
+    <version>${revision}</version>
+  </parent>
 
-    <artifactId>src-vulnerabilities</artifactId>
-    <packaging>jar</packaging>
-    <name>src-vulnerabilities</name>
+  <artifactId>src-vulnerabilities</artifactId>
+  <packaging>jar</packaging>
+  <name>src-vulnerabilities</name>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.github.cliftonlabs</groupId>
-            <artifactId>json-simple</artifactId>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>com.github.cliftonlabs</groupId>
+      <artifactId>json-simple</artifactId>
+    </dependency>
+  </dependencies>
 </project>

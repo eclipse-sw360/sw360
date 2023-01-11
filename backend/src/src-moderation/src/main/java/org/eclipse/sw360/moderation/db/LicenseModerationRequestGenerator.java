@@ -24,55 +24,61 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 
 /**
- * Class for comparing a document with its counterpart in the database
- * Writes the difference (= additions and deletions) to the moderation request
+ * Class for comparing a document with its counterpart in the database Writes
+ * the difference (= additions and deletions) to the moderation request
  *
  * @author birgit.heydenreicht@tngtech.com
  */
 public class LicenseModerationRequestGenerator extends ModerationRequestGenerator<License._Fields, License> {
 
-    @Override
-    public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, License updateLicense, License actualLicense){
-        updateDocument = updateLicense;
-        actualDocument = actualLicense;
+	@Override
+	public ModerationRequest setAdditionsAndDeletions(ModerationRequest request, License updateLicense,
+			License actualLicense) {
+		updateDocument = updateLicense;
+		actualDocument = actualLicense;
 
-        documentAdditions = new License();
-        documentDeletions = new License();
-        //required fields:
-        documentAdditions.setFullname(updateLicense.getFullname());
-        documentAdditions.setId(actualLicense.getId());
-        documentDeletions.setFullname(actualLicense.getFullname());
-        documentDeletions.setId(actualLicense.getId());
+		documentAdditions = new License();
+		documentDeletions = new License();
+		// required fields:
+		documentAdditions.setFullname(updateLicense.getFullname());
+		documentAdditions.setId(actualLicense.getId());
+		documentDeletions.setFullname(actualLicense.getFullname());
+		documentDeletions.setId(actualLicense.getId());
 
-        Map<String, Obligation> actualTodos = Maps.uniqueIndex(nullToEmptyList(actualLicense.getObligations()), Obligation::getId);
+		Map<String, Obligation> actualTodos = Maps.uniqueIndex(nullToEmptyList(actualLicense.getObligations()),
+				Obligation::getId);
 
-        for (Obligation updateTodo : updateLicense.getObligations()) {
-            if(!actualTodos.containsKey(updateTodo.getId())){
-                if(!documentAdditions.isSetObligations()) {
-                    documentAdditions.setObligations(new ArrayList<>());
-                }
-                documentAdditions.getObligations().add(updateTodo);
-            } else {
-                Obligation actualTodo = actualTodos.get(updateTodo.getId());
-                Set<String> actualWhitelist = actualTodo.whitelist != null ? actualTodo.whitelist : new HashSet<String>();
-                Set<String> updateWhitelist = updateTodo.whitelist != null ? updateTodo.whitelist : new HashSet<String>();
-                String departement = request.getRequestingUserDepartment();
-                if(updateWhitelist.contains(departement) && !actualWhitelist.contains(departement)){
-                    if(!documentAdditions.isSetObligations()) {
-                        documentAdditions.setObligations(new ArrayList<>());
-                    }
-                    documentAdditions.getObligations().add(updateTodo);
-                } else if (!updateWhitelist.contains(departement) && actualWhitelist.contains(departement)) {
-                    if(!documentDeletions.isSetObligations()) {
-                        documentDeletions.setObligations(new ArrayList<>());
-                    }
-                    documentDeletions.getObligations().add(actualTodo);
-                }
-            }
-        }
+		for (Obligation updateTodo : updateLicense.getObligations()) {
+			if (!actualTodos.containsKey(updateTodo.getId())) {
+				if (!documentAdditions.isSetObligations()) {
+					documentAdditions.setObligations(new ArrayList<>());
+				}
+				documentAdditions.getObligations().add(updateTodo);
+			} else {
+				Obligation actualTodo = actualTodos.get(updateTodo.getId());
+				Set<String> actualWhitelist = actualTodo.whitelist != null
+						? actualTodo.whitelist
+						: new HashSet<String>();
+				Set<String> updateWhitelist = updateTodo.whitelist != null
+						? updateTodo.whitelist
+						: new HashSet<String>();
+				String departement = request.getRequestingUserDepartment();
+				if (updateWhitelist.contains(departement) && !actualWhitelist.contains(departement)) {
+					if (!documentAdditions.isSetObligations()) {
+						documentAdditions.setObligations(new ArrayList<>());
+					}
+					documentAdditions.getObligations().add(updateTodo);
+				} else if (!updateWhitelist.contains(departement) && actualWhitelist.contains(departement)) {
+					if (!documentDeletions.isSetObligations()) {
+						documentDeletions.setObligations(new ArrayList<>());
+					}
+					documentDeletions.getObligations().add(actualTodo);
+				}
+			}
+		}
 
-        request.setLicenseAdditions(documentAdditions);
-        request.setLicenseDeletions(documentDeletions);
-        return request;
-    }
+		request.setLicenseAdditions(documentAdditions);
+		request.setLicenseDeletions(documentDeletions);
+		return request;
+	}
 }

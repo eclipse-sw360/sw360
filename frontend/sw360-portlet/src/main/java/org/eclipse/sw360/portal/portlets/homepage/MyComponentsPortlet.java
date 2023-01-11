@@ -35,67 +35,58 @@ import org.eclipse.sw360.portal.portlets.Sw360Portlet;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-@org.osgi.service.component.annotations.Component(
-    immediate = true,
-    properties = {
-        "/org/eclipse/sw360/portal/portlets/base.properties",
-        "/org/eclipse/sw360/portal/portlets/user.properties"
-    },
-    property = {
-        "javax.portlet.name=" + MY_COMPONENTS_PORTLET_NAME,
+@org.osgi.service.component.annotations.Component(immediate = true, properties = {
+		"/org/eclipse/sw360/portal/portlets/base.properties",
+		"/org/eclipse/sw360/portal/portlets/user.properties"}, property = {
+				"javax.portlet.name=" + MY_COMPONENTS_PORTLET_NAME,
 
-        "javax.portlet.display-name=My Components",
-        "javax.portlet.info.short-title=My Components",
-        "javax.portlet.info.title=My Components",
-	    "javax.portlet.resource-bundle=content.Language",
-        "javax.portlet.init-param.view-template=/html/homepage/mycomponents/view.jsp",
-    },
-    service = Portlet.class,
-    configurationPolicy = ConfigurationPolicy.REQUIRE
-)
+				"javax.portlet.display-name=My Components", "javax.portlet.info.short-title=My Components",
+				"javax.portlet.info.title=My Components", "javax.portlet.resource-bundle=content.Language",
+				"javax.portlet.init-param.view-template=/html/homepage/mycomponents/view.jsp",}, service = Portlet.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class MyComponentsPortlet extends Sw360Portlet {
-    public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
-        String action = request.getParameter(PortalConstants.ACTION);
+	public void serveResource(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
+		String action = request.getParameter(PortalConstants.ACTION);
 
-        if (PortalConstants.LOAD_COMPONENT_LIST.equals(action)) {
-            serveComponentList(request, response);
-        }
-    }
+		if (PortalConstants.LOAD_COMPONENT_LIST.equals(action)) {
+			serveComponentList(request, response);
+		}
+	}
 
-    private void serveComponentList(ResourceRequest request, ResourceResponse response) throws IOException, PortletException {
-        List<Component> components;
-        try {
-            final User user = UserCacheHolder.getUserFromRequest(request);
-            components = thriftClients.makeComponentClient().getMyComponents(user);
-        } catch (TException e) {
-            log.error("Could not fetch your components from backend", e);
-            components = new ArrayList<>();
-        }
+	private void serveComponentList(ResourceRequest request, ResourceResponse response)
+			throws IOException, PortletException {
+		List<Component> components;
+		try {
+			final User user = UserCacheHolder.getUserFromRequest(request);
+			components = thriftClients.makeComponentClient().getMyComponents(user);
+		} catch (TException e) {
+			log.error("Could not fetch your components from backend", e);
+			components = new ArrayList<>();
+		}
 
-        JSONArray jsonComponents = getComponentData(components);
-        JSONObject jsonResult = JSONFactoryUtil.createJSONObject();
-        jsonResult.put("aaData", jsonComponents);
+		JSONArray jsonComponents = getComponentData(components);
+		JSONObject jsonResult = JSONFactoryUtil.createJSONObject();
+		jsonResult.put("aaData", jsonComponents);
 
-        try {
-            writeJSON(request, response, jsonResult);
-        } catch (IOException e) {
-            log.error("Problem generating component list", e);
-        }
-    }
+		try {
+			writeJSON(request, response, jsonResult);
+		} catch (IOException e) {
+			log.error("Problem generating component list", e);
+		}
+	}
 
-    public JSONArray getComponentData(List<Component> componentList) {
-        JSONArray projectData = JSONFactoryUtil.createJSONArray();
-        for(Component component : componentList) {
-            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+	public JSONArray getComponentData(List<Component> componentList) {
+		JSONArray projectData = JSONFactoryUtil.createJSONArray();
+		for (Component component : componentList) {
+			JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
 
-            jsonObject.put("DT_RowId", component.getId());
-            jsonObject.put("id", component.getId());
-            jsonObject.put("name", SW360Utils.printName(component));
-            jsonObject.put("description", Strings.nullToEmpty(component.getDescription()));
+			jsonObject.put("DT_RowId", component.getId());
+			jsonObject.put("id", component.getId());
+			jsonObject.put("name", SW360Utils.printName(component));
+			jsonObject.put("description", Strings.nullToEmpty(component.getDescription()));
 
-            projectData.put(jsonObject);
-        }
+			projectData.put(jsonObject);
+		}
 
-        return projectData;
-    }
+		return projectData;
+	}
 }

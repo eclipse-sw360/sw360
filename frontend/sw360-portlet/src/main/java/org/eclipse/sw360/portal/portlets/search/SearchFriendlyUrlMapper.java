@@ -16,16 +16,12 @@ import org.osgi.service.component.annotations.Component;
 
 import static org.eclipse.sw360.portal.common.PortalConstants.SEARCH_PORTLET_NAME;
 
-@Component(
-        property = {
-            "com.liferay.portlet.friendly-url-routes=org/eclipse/sw360/portal/mapper/search-friendly-url-routes.xml",
-            "javax.portlet.name=" + SEARCH_PORTLET_NAME,
-        },
-        service = FriendlyURLMapper.class
-    )
+@Component(property = {
+		"com.liferay.portlet.friendly-url-routes=org/eclipse/sw360/portal/mapper/search-friendly-url-routes.xml",
+		"javax.portlet.name=" + SEARCH_PORTLET_NAME,}, service = FriendlyURLMapper.class)
 public class SearchFriendlyUrlMapper extends DefaultFriendlyURLMapper {
-    @Override
-    public String getMapping() {
-        return "search";
-    }
+	@Override
+	public String getMapping() {
+		return "search";
+	}
 }

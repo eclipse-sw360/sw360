@@ -19,53 +19,53 @@ import java.net.MalformedURLException;
  */
 public class UtilsEntryPoint {
 
-    private static final String OPTION_HELP = "h";
-    private static final String OPTION_DOWNLOAD = "d";
+	private static final String OPTION_HELP = "h";
+	private static final String OPTION_DOWNLOAD = "d";
 
-    public static void main(String[] args) throws MalformedURLException {
-        CommandLine cmd;
+	public static void main(String[] args) throws MalformedURLException {
+		CommandLine cmd;
 
-        try {
-            cmd = parseArgs(args);
-        } catch (ParseException e) {
-            System.out.println(e.getMessage());
-            printHelp();
-            return;
-        }
+		try {
+			cmd = parseArgs(args);
+		} catch (ParseException e) {
+			System.out.println(e.getMessage());
+			printHelp();
+			return;
+		}
 
-        String[] leftArgs = cmd.getArgs();
+		String[] leftArgs = cmd.getArgs();
 
-        if (cmd.hasOption(OPTION_HELP)) {
-            printHelp();
-            return;
-        }
+		if (cmd.hasOption(OPTION_HELP)) {
+			printHelp();
+			return;
+		}
 
-        if (cmd.hasOption(OPTION_DOWNLOAD)) {
-            runRemoteAttachmentDownloader(leftArgs);
-        } else {
-            printHelp();
-        }
-    }
+		if (cmd.hasOption(OPTION_DOWNLOAD)) {
+			runRemoteAttachmentDownloader(leftArgs);
+		} else {
+			printHelp();
+		}
+	}
 
-    private static void runRemoteAttachmentDownloader(String[] args) throws MalformedURLException {
-        RemoteAttachmentDownloader.main(args);
-    }
+	private static void runRemoteAttachmentDownloader(String[] args) throws MalformedURLException {
+		RemoteAttachmentDownloader.main(args);
+	}
 
-    private static CommandLine parseArgs(String[] args) throws ParseException {
-        Options options = getOptions();
+	private static CommandLine parseArgs(String[] args) throws ParseException {
+		Options options = getOptions();
 
-        return new BasicParser().parse(options, args, true);
-    }
+		return new BasicParser().parse(options, args, true);
+	}
 
-    private static void printHelp() {
-        HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp(UtilsEntryPoint.class.getCanonicalName(), getOptions());
-    }
+	private static void printHelp() {
+		HelpFormatter formatter = new HelpFormatter();
+		formatter.printHelp(UtilsEntryPoint.class.getCanonicalName(), getOptions());
+	}
 
-    private static Options getOptions() {
-        Options options = new Options();
-        options.addOption(OPTION_DOWNLOAD, false, "download remote attachments");
-        options.addOption(OPTION_HELP, false, "show this help");
-        return options;
-    }
+	private static Options getOptions() {
+		Options options = new Options();
+		options.addOption(OPTION_DOWNLOAD, false, "download remote attachments");
+		options.addOption(OPTION_HELP, false, "show this help");
+		return options;
+	}
 }

@@ -16,7 +16,7 @@ import org.eclipse.sw360.projects.Sw360ThriftServlet;
 import java.net.MalformedURLException;
 
 public class HealthServlet extends Sw360ThriftServlet {
-    public HealthServlet() throws MalformedURLException {
-        super(new HealthService.Processor<>(new HealthHandler()), new TCompactProtocol.Factory());
-    }
+	public HealthServlet() throws MalformedURLException {
+		super(new HealthService.Processor<>(new HealthHandler()), new TCompactProtocol.Factory());
+	}
 }

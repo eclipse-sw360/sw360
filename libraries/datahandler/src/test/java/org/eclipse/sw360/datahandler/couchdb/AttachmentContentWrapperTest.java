@@ -12,20 +12,23 @@ package org.eclipse.sw360.datahandler.couchdb;
 
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 
-public class AttachmentContentWrapperTest extends DocumentWrapperTest<AttachmentContentWrapper, AttachmentContent, AttachmentContent._Fields> {
+public class AttachmentContentWrapperTest
+		extends
+			DocumentWrapperTest<AttachmentContentWrapper, AttachmentContent, AttachmentContent._Fields> {
 
-    public void testUpdateNonMetadataTouchesAllFields() throws Exception {
-        AttachmentContent source;
-        source = new AttachmentContent();
-        source.setFilename("a");
-        source.setType("b");
-        source.setContentType("v");
-        source.setPartsCount("1");
-        source.setRemoteUrl("uskt"); //TODO this is not required !
+	public void testUpdateNonMetadataTouchesAllFields() throws Exception {
+		AttachmentContent source;
+		source = new AttachmentContent();
+		source.setFilename("a");
+		source.setType("b");
+		source.setContentType("v");
+		source.setPartsCount("1");
+		source.setRemoteUrl("uskt"); // TODO this is not required !
 
-        AttachmentContentWrapper attachmentContentWrapper = new AttachmentContentWrapper();
-        attachmentContentWrapper.updateNonMetadata(source);
+		AttachmentContentWrapper attachmentContentWrapper = new AttachmentContentWrapper();
+		attachmentContentWrapper.updateNonMetadata(source);
 
-        assertTFields(source, attachmentContentWrapper, AttachmentContentWrapper.class, AttachmentContent._Fields.class);
-    }
+		assertTFields(source, attachmentContentWrapper, AttachmentContentWrapper.class,
+				AttachmentContent._Fields.class);
+	}
 }

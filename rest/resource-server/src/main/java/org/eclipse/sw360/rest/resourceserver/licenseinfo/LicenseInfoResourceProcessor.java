@@ -23,13 +23,13 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 @RequiredArgsConstructor
 public class LicenseInfoResourceProcessor implements RepresentationModelProcessor<EntityModel<LicenseInfo>> {
 
-    @Override
-    public EntityModel<LicenseInfo> process(EntityModel<LicenseInfo> resource) {
-        LicenseInfo licenseInfo = resource.getContent();
-        Link selfLink = linkTo(LicenseInfoController.class)
-                .slash("api" + LicenseInfoController.LICENSE_INFO_URL /*+ "/" + licenseInfo.getId()*/).withSelfRel();
-        resource.add(selfLink);
-        return resource;
-    }
+	@Override
+	public EntityModel<LicenseInfo> process(EntityModel<LicenseInfo> resource) {
+		LicenseInfo licenseInfo = resource.getContent();
+		Link selfLink = linkTo(LicenseInfoController.class)
+				.slash("api" + LicenseInfoController.LICENSE_INFO_URL /* + "/" + licenseInfo.getId() */).withSelfRel();
+		resource.add(selfLink);
+		return resource;
+	}
 
 }

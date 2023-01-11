@@ -20,23 +20,23 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyField;
  */
 public class ModerationRequestSummary extends DocumentSummary<ModerationRequest> {
 
-    @Override
-    protected ModerationRequest summary(SummaryType type, ModerationRequest document) {
-        ModerationRequest copy = new ModerationRequest();
+	@Override
+	protected ModerationRequest summary(SummaryType type, ModerationRequest document) {
+		ModerationRequest copy = new ModerationRequest();
 
-        copyField(document, copy, ModerationRequest._Fields.ID);
-        copyField(document, copy, ModerationRequest._Fields.DOCUMENT_ID);
-        copyField(document, copy, ModerationRequest._Fields.DOCUMENT_TYPE);
-        copyField(document, copy, ModerationRequest._Fields.DOCUMENT_NAME);
-        copyField(document, copy, ModerationRequest._Fields.MODERATION_STATE);
-        copyField(document, copy, ModerationRequest._Fields.REQUESTING_USER);
-        copyField(document, copy, ModerationRequest._Fields.MODERATORS);
-        copyField(document, copy, ModerationRequest._Fields.TIMESTAMP);
-        copyField(document, copy, ModerationRequest._Fields.TIMESTAMP_OF_DECISION);
-        copyField(document, copy, ModerationRequest._Fields.REQUESTING_USER_DEPARTMENT);
-        copyField(document, copy, ModerationRequest._Fields.COMPONENT_TYPE);
+		copyField(document, copy, ModerationRequest._Fields.ID);
+		copyField(document, copy, ModerationRequest._Fields.DOCUMENT_ID);
+		copyField(document, copy, ModerationRequest._Fields.DOCUMENT_TYPE);
+		copyField(document, copy, ModerationRequest._Fields.DOCUMENT_NAME);
+		copyField(document, copy, ModerationRequest._Fields.MODERATION_STATE);
+		copyField(document, copy, ModerationRequest._Fields.REQUESTING_USER);
+		copyField(document, copy, ModerationRequest._Fields.MODERATORS);
+		copyField(document, copy, ModerationRequest._Fields.TIMESTAMP);
+		copyField(document, copy, ModerationRequest._Fields.TIMESTAMP_OF_DECISION);
+		copyField(document, copy, ModerationRequest._Fields.REQUESTING_USER_DEPARTMENT);
+		copyField(document, copy, ModerationRequest._Fields.COMPONENT_TYPE);
 
-        return copy;
-    }
+		return copy;
+	}
 
 }

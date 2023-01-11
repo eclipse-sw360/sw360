@@ -17,66 +17,65 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SW360VendorAdvisory {
-    private String id;
-    private String vendor;
-    private String name;
-    private String url;
+	private String id;
+	private String vendor;
+	private String name;
+	private String url;
 
-    public String getId() {
-        return id;
-    }
+	public String getId() {
+		return id;
+	}
 
-    public SW360VendorAdvisory setId(String id) {
-        this.id = id;
-        return this;
-    }
+	public SW360VendorAdvisory setId(String id) {
+		this.id = id;
+		return this;
+	}
 
-    public String getVendor() {
-        return vendor;
-    }
+	public String getVendor() {
+		return vendor;
+	}
 
-    public SW360VendorAdvisory setVendor(String vendor) {
-        this.vendor = vendor;
-        return this;
-    }
+	public SW360VendorAdvisory setVendor(String vendor) {
+		this.vendor = vendor;
+		return this;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public SW360VendorAdvisory setName(String name) {
-        this.name = name;
-        return this;
-    }
+	public SW360VendorAdvisory setName(String name) {
+		this.name = name;
+		return this;
+	}
 
-    public String getUrl() {
-        return url;
-    }
+	public String getUrl() {
+		return url;
+	}
 
-    public SW360VendorAdvisory setUrl(String url) {
-        this.url = url;
-        return this;
-    }
+	public SW360VendorAdvisory setUrl(String url) {
+		this.url = url;
+		return this;
+	}
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, vendor, name, url);
-    }
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, vendor, name, url);
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        SW360VendorAdvisory sw360VendorAdvisory = null;
-        if (this == obj)
-            return true;
-        if ((obj instanceof SW360VendorAdvisory) || super.equals(obj)) {
-            sw360VendorAdvisory = (SW360VendorAdvisory) obj;
-        } else {
-            return false;
-        }
+	@Override
+	public boolean equals(Object obj) {
+		SW360VendorAdvisory sw360VendorAdvisory = null;
+		if (this == obj)
+			return true;
+		if ((obj instanceof SW360VendorAdvisory) || super.equals(obj)) {
+			sw360VendorAdvisory = (SW360VendorAdvisory) obj;
+		} else {
+			return false;
+		}
 
-        return Objects.equals(vendor, sw360VendorAdvisory.getVendor())
-                && Objects.equals(name, sw360VendorAdvisory.getName())
-                && Objects.equals(id, sw360VendorAdvisory.getId())
-                && Objects.equals(url, sw360VendorAdvisory.getUrl());
-    }
+		return Objects.equals(vendor, sw360VendorAdvisory.getVendor())
+				&& Objects.equals(name, sw360VendorAdvisory.getName())
+				&& Objects.equals(id, sw360VendorAdvisory.getId()) && Objects.equals(url, sw360VendorAdvisory.getUrl());
+	}
 }

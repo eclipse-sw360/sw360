@@ -26,39 +26,43 @@ import java.util.ResourceBundle;
 /**
  * This displays a list
  *
- * @author Cedric.Bodet@tngtech.com Johannes.Najjar@tngtech.com Thomas.Maier@evosoft.com
+ * @author Cedric.Bodet@tngtech.com Johannes.Najjar@tngtech.com
+ *         Thomas.Maier@evosoft.com
  */
 public class DisplayEnum extends SimpleTagSupport {
 
-    private TEnum value;
-    private Boolean bare = false;
+	private TEnum value;
+	private Boolean bare = false;
 
-    public void setValue(TEnum value) {
-        this.value = value;
-    }
+	public void setValue(TEnum value) {
+		this.value = value;
+	}
 
-    public void setBare(Boolean bare) {
-        this.bare = bare;
-    }
+	public void setBare(Boolean bare) {
+		this.bare = bare;
+	}
 
-    public void doTag() throws JspException, IOException {
-        String enumValue;
+	public void doTag() throws JspException, IOException {
+		String enumValue;
 
-        if (bare || value == null) {
-            enumValue = ThriftEnumUtils.enumToString(value);
-        } else {
-            enumValue = printEnumValueWithTooltip();
-        }
+		if (bare || value == null) {
+			enumValue = ThriftEnumUtils.enumToString(value);
+		} else {
+			enumValue = printEnumValueWithTooltip();
+		}
 
-        getJspContext().getOut().print(enumValue);
-    }
+		getJspContext().getOut().print(enumValue);
+	}
 
-    private String printEnumValueWithTooltip() {
-        PageContext pageContext = (PageContext) getJspContext();
-        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-        return "<span class='" + PortalConstants.TOOLTIP_CLASS__CSS + " "
-                + PortalConstants.TOOLTIP_CLASS__CSS + "-" + value.getClass().getSimpleName() + "-" + value.toString() + "' data-content='"+LanguageUtil.get(resourceBundle,value.getClass().getSimpleName() + "-" + value.toString())+"'>"
-                + LanguageUtil.get(resourceBundle, ThriftEnumUtils.enumToString(value).replace(' ','.').toLowerCase()) + "</span>";
-    }
+	private String printEnumValueWithTooltip() {
+		PageContext pageContext = (PageContext) getJspContext();
+		HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+				getClass());
+		return "<span class='" + PortalConstants.TOOLTIP_CLASS__CSS + " " + PortalConstants.TOOLTIP_CLASS__CSS + "-"
+				+ value.getClass().getSimpleName() + "-" + value.toString() + "' data-content='"
+				+ LanguageUtil.get(resourceBundle, value.getClass().getSimpleName() + "-" + value.toString()) + "'>"
+				+ LanguageUtil.get(resourceBundle, ThriftEnumUtils.enumToString(value).replace(' ', '.').toLowerCase())
+				+ "</span>";
+	}
 }

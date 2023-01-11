@@ -17,7 +17,9 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.METHOD;
 
 /**
- * The intent of this annotation is to suppress the unused warning for actions and nothing else. Configure your IDE to suppress it.
+ * The intent of this annotation is to suppress the unused warning for actions
+ * and nothing else. Configure your IDE to suppress it.
+ * 
  * @author daniele.fognini@tngtech.com
  */
 @Target({METHOD})

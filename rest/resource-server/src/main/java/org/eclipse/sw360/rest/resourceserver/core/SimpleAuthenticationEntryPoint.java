@@ -27,21 +27,21 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SimpleAuthenticationEntryPoint implements AuthenticationEntryPoint {
-    @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationException authException) throws IOException, ServletException {
-        HashMap<String, Object> map = new LinkedHashMap<>();
-        map.put("status", HttpServletResponse.SC_UNAUTHORIZED);
-        map.put("message", authException.getMessage());
-        map.put("timestamp", Calendar.getInstance().getTime().toGMTString());
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setCharacterEncoding("utf-8");
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        ObjectMapper objectMapper = new ObjectMapper();
-        String resBody = objectMapper.writeValueAsString(map);
-        PrintWriter printWriter = response.getWriter();
-        printWriter.print(resBody);
-        printWriter.flush();
-        printWriter.close();
-    }
+	@Override
+	public void commence(HttpServletRequest request, HttpServletResponse response,
+			AuthenticationException authException) throws IOException, ServletException {
+		HashMap<String, Object> map = new LinkedHashMap<>();
+		map.put("status", HttpServletResponse.SC_UNAUTHORIZED);
+		map.put("message", authException.getMessage());
+		map.put("timestamp", Calendar.getInstance().getTime().toGMTString());
+		response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		response.setCharacterEncoding("utf-8");
+		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+		ObjectMapper objectMapper = new ObjectMapper();
+		String resBody = objectMapper.writeValueAsString(map);
+		PrintWriter printWriter = response.getWriter();
+		printWriter.print(resBody);
+		printWriter.flush();
+		printWriter.close();
+	}
 }

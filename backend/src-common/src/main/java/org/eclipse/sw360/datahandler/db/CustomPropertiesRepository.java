@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * CRUD access for the CustomProperties class
  *
@@ -30,28 +29,24 @@ import java.util.Map;
  */
 public class CustomPropertiesRepository extends DatabaseRepositoryCloudantClient<CustomProperties> {
 
-    private static final Logger log = LogManager.getLogger(CustomPropertiesRepository.class);
-    private static final String CUSTOM_PROPERTIES_BY_DOCTYPE =
-            "function(doc) {" +
-                    "  if (doc.type == 'customproperties') {" +
-                    "    emit(doc.documentType, null);" +
-                    "  }" +
-                    "}";
-    private static final String ALL = "function(doc) { if (doc.type == 'customproperties') emit(null, doc._id) }";
+	private static final Logger log = LogManager.getLogger(CustomPropertiesRepository.class);
+	private static final String CUSTOM_PROPERTIES_BY_DOCTYPE = "function(doc) {"
+			+ "  if (doc.type == 'customproperties') {" + "    emit(doc.documentType, null);" + "  }" + "}";
+	private static final String ALL = "function(doc) { if (doc.type == 'customproperties') emit(null, doc._id) }";
 
-    public CustomPropertiesRepository(DatabaseConnectorCloudant db) {
-        super(db, CustomProperties.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("customPropertiesByDocType", createMapReduce(CUSTOM_PROPERTIES_BY_DOCTYPE, null));
-        views.put("all", createMapReduce(ALL, null));
-        initStandardDesignDocument(views, db);
-    }
+	public CustomPropertiesRepository(DatabaseConnectorCloudant db) {
+		super(db, CustomProperties.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("customPropertiesByDocType", createMapReduce(CUSTOM_PROPERTIES_BY_DOCTYPE, null));
+		views.put("all", createMapReduce(ALL, null));
+		initStandardDesignDocument(views, db);
+	}
 
-    public List<CustomProperties> getCustomProperties(String documentType) {
-        List<CustomProperties> queryResults = queryByPrefix("customPropertiesByDocType", documentType);
-        if (queryResults.size() > 1) {
-            log.error("More than one customProperties object found for document type " + documentType);
-        }
-        return queryResults;
-    }
+	public List<CustomProperties> getCustomProperties(String documentType) {
+		List<CustomProperties> queryResults = queryByPrefix("customPropertiesByDocType", documentType);
+		if (queryResults.size() > 1) {
+			log.error("More than one customProperties object found for document type " + documentType);
+		}
+		return queryResults;
+	}
 }

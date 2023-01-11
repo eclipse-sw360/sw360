@@ -19,14 +19,13 @@ import javax.servlet.jsp.JspException;
  */
 public class ContextAwareTag extends TagSupport {
 
-    protected String getContext() throws JspException {
-        try {
-            HttpServletRequest request =
-                    (HttpServletRequest) pageContext.getRequest();
+	protected String getContext() throws JspException {
+		try {
+			HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
 
-            return request.getContextPath();
-        } catch (Exception e) {
-            throw new JspException(e);
-        }
-    }
+			return request.getContextPath();
+		} catch (Exception e) {
+			throw new JspException(e);
+		}
+	}
 }

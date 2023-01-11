@@ -36,44 +36,41 @@ import static org.mockito.ArgumentMatchers.any;
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ProjectTest extends TestIntegrationBase {
 
-    @Value("${local.server.port}")
-    private int port;
+	@Value("${local.server.port}")
+	private int port;
 
-    @MockBean
-    private Sw360UserService userServiceMock;
+	@MockBean
+	private Sw360UserService userServiceMock;
 
-    @MockBean
-    private Sw360ProjectService projectServiceMock;
+	@MockBean
+	private Sw360ProjectService projectServiceMock;
 
-    @Before
-    public void before() throws TException {
-        Set<Project> projectList = new HashSet<>();
-        Project project = new Project();
-        project.setName("Project name");
-        project.setDescription("Project description");
-        projectList.add(project);
+	@Before
+	public void before() throws TException {
+		Set<Project> projectList = new HashSet<>();
+		Project project = new Project();
+		project.setName("Project name");
+		project.setDescription("Project description");
+		projectList.add(project);
 
-        given(this.projectServiceMock.getProjectsForUser(any())).willReturn(projectList);
+		given(this.projectServiceMock.getProjectsForUser(any())).willReturn(projectList);
 
-        User user = new User();
-        user.setId("123456789");
-        user.setEmail("admin@sw360.org");
-        user.setFullname("John Doe");
+		User user = new User();
+		user.setId("123456789");
+		user.setEmail("admin@sw360.org");
+		user.setFullname("John Doe");
 
-        given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
-    }
+		given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+	}
 
-    @Test
-    public void should_get_all_projects() throws IOException {
-        HttpHeaders headers = getHeaders(port);
-        ResponseEntity<String> response =
-                new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects",
-                        HttpMethod.GET,
-                        new HttpEntity<>(null, headers),
-                        String.class);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+	@Test
+	public void should_get_all_projects() throws IOException {
+		HttpHeaders headers = getHeaders(port);
+		ResponseEntity<String> response = new TestRestTemplate().exchange("http://localhost:" + port + "/api/projects",
+				HttpMethod.GET, new HttpEntity<>(null, headers), String.class);
+		assertEquals(HttpStatus.OK, response.getStatusCode());
 
-        TestHelper.checkResponse(response.getBody(), "projects", 1);
-    }
+		TestHelper.checkResponse(response.getBody(), "projects", 1);
+	}
 
 }

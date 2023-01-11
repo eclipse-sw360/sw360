@@ -25,92 +25,93 @@ import static org.eclipse.sw360.exporter.ComponentExporter.HEADERS_EXTENDED_BY_R
 
 public class ComponentHelper implements ExporterHelper<Component> {
 
-    private ReleaseHelper releaseHelper;
-    private boolean extendedByReleases;
+	private ReleaseHelper releaseHelper;
+	private boolean extendedByReleases;
 
-    public ComponentHelper(boolean extendedByReleases, ReleaseHelper releaseHelper) {
-        this.extendedByReleases = extendedByReleases;
-        this.releaseHelper = releaseHelper;
-    }
+	public ComponentHelper(boolean extendedByReleases, ReleaseHelper releaseHelper) {
+		this.extendedByReleases = extendedByReleases;
+		this.releaseHelper = releaseHelper;
+	}
 
-    @Override
-    public int getColumns() {
-        return getHeaders().size();
-    }
+	@Override
+	public int getColumns() {
+		return getHeaders().size();
+	}
 
-    @Override
-    public List<String> getHeaders() {
-        return extendedByReleases ? HEADERS_EXTENDED_BY_RELEASES : HEADERS;
-    }
+	@Override
+	public List<String> getHeaders() {
+		return extendedByReleases ? HEADERS_EXTENDED_BY_RELEASES : HEADERS;
+	}
 
-    @Override
-    public SubTable makeRows(Component component) throws SW360Exception {
-        return extendedByReleases ? makeRowsWithReleases(component) : makeRowForComponentOnly(component);
-    }
+	@Override
+	public SubTable makeRows(Component component) throws SW360Exception {
+		return extendedByReleases ? makeRowsWithReleases(component) : makeRowForComponentOnly(component);
+	}
 
-    private SubTable makeRowsWithReleases(Component component) throws SW360Exception {
-        List<Release> releases = getReleases(component);
-        SubTable table = new SubTable();
+	private SubTable makeRowsWithReleases(Component component) throws SW360Exception {
+		List<Release> releases = getReleases(component);
+		SubTable table = new SubTable();
 
-        if (releases.size() > 0) {
-            for (Release release : releases) {
-                List<String> currentRow = makeRowForComponent(component);
-                currentRow.addAll(releaseHelper.makeRows(release).getRow(0));
-                table.addRow(currentRow);
-            }
-        } else {
-            List<String> componentRowWithEmptyReleaseFields = makeRowForComponent(component);
-            for (int i = 0; i < releaseHelper.getColumns(); i++) {
-                componentRowWithEmptyReleaseFields.add("");
-            }
-            table.addRow(componentRowWithEmptyReleaseFields);
-        }
-        return table;
-    }
+		if (releases.size() > 0) {
+			for (Release release : releases) {
+				List<String> currentRow = makeRowForComponent(component);
+				currentRow.addAll(releaseHelper.makeRows(release).getRow(0));
+				table.addRow(currentRow);
+			}
+		} else {
+			List<String> componentRowWithEmptyReleaseFields = makeRowForComponent(component);
+			for (int i = 0; i < releaseHelper.getColumns(); i++) {
+				componentRowWithEmptyReleaseFields.add("");
+			}
+			table.addRow(componentRowWithEmptyReleaseFields);
+		}
+		return table;
+	}
 
-    private List<String> makeRowForComponent(Component component) throws SW360Exception {
-        if (!component.isSetAttachments()) {
-            component.setAttachments(Collections.emptySet());
-        }
-        List<String> row = new ArrayList<>(getColumns());
-        for (Component._Fields renderedField : COMPONENT_RENDERED_FIELDS) {
-            addFieldValueToRow(row, renderedField, component);
-        }
-        return row;
-    }
+	private List<String> makeRowForComponent(Component component) throws SW360Exception {
+		if (!component.isSetAttachments()) {
+			component.setAttachments(Collections.emptySet());
+		}
+		List<String> row = new ArrayList<>(getColumns());
+		for (Component._Fields renderedField : COMPONENT_RENDERED_FIELDS) {
+			addFieldValueToRow(row, renderedField, component);
+		}
+		return row;
+	}
 
-    private void addFieldValueToRow(List<String> row, Component._Fields field, Component component) throws SW360Exception {
-        if (component.isSet(field)) {
-            Object fieldValue = component.getFieldValue(field);
-            switch (field) {
-                case RELEASE_IDS:
-                    row.add(fieldValueAsString(getReleaseNames(getReleases(component))));
-                    break;
-                case ATTACHMENTS:
-                    row.add(component.attachments.size() + "");
-                    break;
-                default:
-                    row.add(fieldValueAsString(fieldValue));
-            }
-        } else {
-            row.add("");
-        }
-    }
+	private void addFieldValueToRow(List<String> row, Component._Fields field, Component component)
+			throws SW360Exception {
+		if (component.isSet(field)) {
+			Object fieldValue = component.getFieldValue(field);
+			switch (field) {
+				case RELEASE_IDS :
+					row.add(fieldValueAsString(getReleaseNames(getReleases(component))));
+					break;
+				case ATTACHMENTS :
+					row.add(component.attachments.size() + "");
+					break;
+				default :
+					row.add(fieldValueAsString(fieldValue));
+			}
+		} else {
+			row.add("");
+		}
+	}
 
-    private SubTable makeRowForComponentOnly(Component component) throws SW360Exception {
-        return new SubTable(makeRowForComponent(component));
-    }
+	private SubTable makeRowForComponentOnly(Component component) throws SW360Exception {
+		return new SubTable(makeRowForComponent(component));
+	}
 
-    private List<Release> getReleases(Component component) throws SW360Exception {
-        return getReleases(nullToEmptySet(component.releaseIds));
-    }
+	private List<Release> getReleases(Component component) throws SW360Exception {
+		return getReleases(nullToEmptySet(component.releaseIds));
+	}
 
-    public List<Release> getReleases(Set<String> ids) throws SW360Exception {
-        return releaseHelper.getReleases(ids);
-    }
+	public List<Release> getReleases(Set<String> ids) throws SW360Exception {
+		return releaseHelper.getReleases(ids);
+	}
 
-    public void setPreloadedLinkedReleases(Map<String, Release> preloadedLinkedReleases, boolean componentsNeeded)
-            throws SW360Exception {
-        releaseHelper.setPreloadedLinkedReleases(preloadedLinkedReleases, componentsNeeded);
-    }
+	public void setPreloadedLinkedReleases(Map<String, Release> preloadedLinkedReleases, boolean componentsNeeded)
+			throws SW360Exception {
+		releaseHelper.setPreloadedLinkedReleases(preloadedLinkedReleases, componentsNeeded);
+	}
 }

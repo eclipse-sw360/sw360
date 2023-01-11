@@ -51,89 +51,96 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ClearingRequestController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
-    public static final String CLEARING_REQUEST_URL = "/clearingrequest";
+	public static final String CLEARING_REQUEST_URL = "/clearingrequest";
 
-    public static final String CLEARING_REQUESTS_URL = "/clearingrequests";
+	public static final String CLEARING_REQUESTS_URL = "/clearingrequests";
 
-    @Autowired
-    private Sw360ClearingRequestService sw360ClearingRequestService;
+	@Autowired
+	private Sw360ClearingRequestService sw360ClearingRequestService;
 
-    @NonNull
-    private final RestControllerHelper restControllerHelper;
+	@NonNull
+	private final RestControllerHelper restControllerHelper;
 
-    @NonNull
-    private final Sw360ProjectService projectService;
+	@NonNull
+	private final Sw360ProjectService projectService;
 
-    @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
+	@NonNull
+	private final com.fasterxml.jackson.databind.Module sw360Module;
 
+	@RequestMapping(value = CLEARING_REQUEST_URL + "/{id}", method = RequestMethod.GET)
+	public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestById(Pageable pageable,
+			@PathVariable("id") String docId, HttpServletRequest request) throws TException, URISyntaxException {
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestById(docId, sw360User);
+		HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest,
+				sw360User);
+		HttpStatus status = halClearingRequest == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+		return new ResponseEntity<>(halClearingRequest, status);
+	}
 
-    @RequestMapping(value = CLEARING_REQUEST_URL + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestById(Pageable pageable, @PathVariable("id") String docId,
-            HttpServletRequest request) throws TException, URISyntaxException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestById(docId, sw360User);
-        HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User);
-        HttpStatus status = halClearingRequest == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(halClearingRequest, status);
-    }
+	@RequestMapping(value = CLEARING_REQUEST_URL + "/project/{id}", method = RequestMethod.GET)
+	public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestByProjectId(Pageable pageable,
+			@PathVariable("id") String projectId, HttpServletRequest request) throws TException, URISyntaxException {
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestByProjectId(projectId,
+				sw360User);
+		HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest,
+				sw360User);
+		HttpStatus status = halClearingRequest == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+		return new ResponseEntity<>(halClearingRequest, status);
+	}
 
-    @RequestMapping(value = CLEARING_REQUEST_URL + "/project/{id}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestByProjectId(Pageable pageable, @PathVariable("id") String projectId,
-            HttpServletRequest request) throws TException, URISyntaxException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestByProjectId(projectId, sw360User);
-        HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User);
-        HttpStatus status = halClearingRequest == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(halClearingRequest, status);
-    }
+	private HalResource<ClearingRequest> createHalClearingRequestWithAllDetails(ClearingRequest clearingRequest,
+			User sw360User) throws TException {
+		HalResource<ClearingRequest> halClearingRequest = new HalResource<>(clearingRequest);
+		if (StringUtils.hasText(clearingRequest.projectId)) {
+			Project project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
+			restControllerHelper.addEmbeddedProject(halClearingRequest, project, true);
+		}
+		User requestingUser = restControllerHelper.getUserByEmail(clearingRequest.getRequestingUser());
+		restControllerHelper.addEmbeddedUser(halClearingRequest, requestingUser, "requestingUser");
+		User clearingTeam = restControllerHelper.getUserByEmail(clearingRequest.getClearingTeam());
+		restControllerHelper.addEmbeddedUser(halClearingRequest, clearingTeam, "clearingTeam");
 
-    private HalResource<ClearingRequest> createHalClearingRequestWithAllDetails(ClearingRequest clearingRequest, User sw360User) throws TException {
-        HalResource<ClearingRequest> halClearingRequest = new HalResource<>(clearingRequest);
-        if (StringUtils.hasText(clearingRequest.projectId)) {
-            Project project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
-            restControllerHelper.addEmbeddedProject(halClearingRequest, project, true);
-        }
-        User requestingUser = restControllerHelper.getUserByEmail(clearingRequest.getRequestingUser());
-        restControllerHelper.addEmbeddedUser(halClearingRequest, requestingUser, "requestingUser");
-        User clearingTeam = restControllerHelper.getUserByEmail(clearingRequest.getClearingTeam());
-        restControllerHelper.addEmbeddedUser(halClearingRequest, clearingTeam, "clearingTeam");
+		return halClearingRequest;
+	}
 
-        return halClearingRequest;
-    }
+	@RequestMapping(value = CLEARING_REQUESTS_URL, method = RequestMethod.GET)
+	public ResponseEntity<CollectionModel<EntityModel<ClearingRequest>>> getMyClearingRequests(Pageable pageable,
+			@RequestParam(value = "state", required = false) String state, HttpServletRequest request)
+			throws TException {
 
-    @RequestMapping(value = CLEARING_REQUESTS_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<ClearingRequest>>> getMyClearingRequests(Pageable pageable,
-            @RequestParam(value = "state", required = false) String state, HttpServletRequest request) throws TException {
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		Set<ClearingRequest> clearingRequestSet = new TreeSet<>();
+		ClearingRequestState crState = null;
+		if (StringUtils.hasText(state)) {
+			try {
+				crState = ClearingRequestState.valueOf(state.toUpperCase());
+			} catch (IllegalArgumentException exp) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						String.format("Invalid ClearingRequest state '%s', possible values are: %s", state,
+								Arrays.asList(ClearingRequestState.values())));
+			}
+		}
+		clearingRequestSet.addAll(sw360ClearingRequestService.getMyClearingRequests(sw360User, crState));
 
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Set<ClearingRequest> clearingRequestSet = new TreeSet<>();
-        ClearingRequestState crState = null;
-        if (StringUtils.hasText(state)) {
-            try {
-                crState = ClearingRequestState.valueOf(state.toUpperCase());
-            } catch (IllegalArgumentException exp) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.format("Invalid ClearingRequest state '%s', possible values are: %s", state, Arrays.asList(ClearingRequestState.values())));
-            }
-        }
-            clearingRequestSet.addAll(sw360ClearingRequestService.getMyClearingRequests(sw360User,crState));
+		List<EntityModel<ClearingRequest>> clearingRequestList = new ArrayList<>();
+		for (ClearingRequest cr : clearingRequestSet) {
+			EntityModel<ClearingRequest> embeddedCRresource = null;
+			ClearingRequest embeddedCR = restControllerHelper.convertToEmbeddedClearingRequest(cr);
+			embeddedCRresource = EntityModel.of(embeddedCR);
+			clearingRequestList.add(embeddedCRresource);
+		}
 
-        List<EntityModel<ClearingRequest>> clearingRequestList = new ArrayList<>();
-        for (ClearingRequest cr : clearingRequestSet) {
-            EntityModel<ClearingRequest> embeddedCRresource = null;
-            ClearingRequest embeddedCR = restControllerHelper.convertToEmbeddedClearingRequest(cr);
-            embeddedCRresource = EntityModel.of(embeddedCR);
-            clearingRequestList.add(embeddedCRresource);
-        }
+		CollectionModel<EntityModel<ClearingRequest>> resources = CollectionModel.of(clearingRequestList);
+		HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+		return new ResponseEntity<>(resources, status);
+	}
 
-        CollectionModel<EntityModel<ClearingRequest>> resources = CollectionModel.of(clearingRequestList);
-        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(resources, status);
-    }
-
-    @Override
-    public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        resource.add(linkTo(ClearingRequestController.class).slash("api" + CLEARING_REQUEST_URL).withRel("clearingRequests"));
-        return resource;
-    }
+	@Override
+	public RepositoryLinksResource process(RepositoryLinksResource resource) {
+		resource.add(linkTo(ClearingRequestController.class).slash("api" + CLEARING_REQUEST_URL)
+				.withRel("clearingRequests"));
+		return resource;
+	}
 }

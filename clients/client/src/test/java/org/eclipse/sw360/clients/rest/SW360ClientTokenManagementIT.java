@@ -44,88 +44,84 @@ import static org.eclipse.sw360.http.utils.HttpUtils.waitFor;
  */
 public class SW360ClientTokenManagementIT extends AbstractMockServerTest {
 
-    /**
-     * The endpoint queried by the test client.
-     */
-    private static final String ENDPOINT = "/projects";
+	/**
+	 * The endpoint queried by the test client.
+	 */
+	private static final String ENDPOINT = "/projects";
 
-    /**
-     * The client to be tested.
-     */
-    private SW360ProjectClient client;
+	/**
+	 * The client to be tested.
+	 */
+	private SW360ProjectClient client;
 
-    @Before
-    public void setUp() {
-        SW360ClientConfig clientConfig = createClientConfig();
-        SW360AuthenticationClient authClient = new SW360AuthenticationClient(clientConfig);
-        AccessTokenProvider provider = new AccessTokenProvider(authClient);
-        client = new SW360ProjectClient(clientConfig, provider);
-    }
+	@Before
+	public void setUp() {
+		SW360ClientConfig clientConfig = createClientConfig();
+		SW360AuthenticationClient authClient = new SW360AuthenticationClient(clientConfig);
+		AccessTokenProvider provider = new AccessTokenProvider(authClient);
+		client = new SW360ProjectClient(clientConfig, provider);
+	}
 
-    /**
-     * Generates the body of a response that returns the given token.
-     *
-     * @param token the access token
-     * @return the body of this response
-     */
-    private static String accessTokenBody(String token) {
-        return "{\"access_token\": \"" + token + "\"}";
-    }
+	/**
+	 * Generates the body of a response that returns the given token.
+	 *
+	 * @param token
+	 *            the access token
+	 * @return the body of this response
+	 */
+	private static String accessTokenBody(String token) {
+		return "{\"access_token\": \"" + token + "\"}";
+	}
 
-    /**
-     * Tests the automatic refresh of access tokens if there are multiple
-     * concurrent requests. Multiple threads are started that send a request.
-     * The first access token is treated as expired, so it needs to be
-     * refreshed. It is checked that only a single request for a refreshed
-     * token is made.
-     */
-    @Test
-    public void testAccessTokenManagementWithConcurrentRequests() throws InterruptedException {
-        final int concurrentRequestCount = 4;
-        final String expiredToken = "expired_access_token:-(";
-        final String scenario = "multipleAccessTokens";
-        final String stateRefreshed = "tokenRefreshed";
-        wireMockRule.stubFor(authorized(get(urlPathEqualTo(ENDPOINT)), expiredToken)
-                .willReturn(aResponse().withStatus(HttpConstants.STATUS_ERR_UNAUTHORIZED)));
-        wireMockRule.stubFor(authorized(get(urlPathEqualTo(ENDPOINT)))
-                .willReturn(aJsonResponse(HttpConstants.STATUS_ACCEPTED)
-                        .withBodyFile("all_projects.json")));
+	/**
+	 * Tests the automatic refresh of access tokens if there are multiple concurrent
+	 * requests. Multiple threads are started that send a request. The first access
+	 * token is treated as expired, so it needs to be refreshed. It is checked that
+	 * only a single request for a refreshed token is made.
+	 */
+	@Test
+	public void testAccessTokenManagementWithConcurrentRequests() throws InterruptedException {
+		final int concurrentRequestCount = 4;
+		final String expiredToken = "expired_access_token:-(";
+		final String scenario = "multipleAccessTokens";
+		final String stateRefreshed = "tokenRefreshed";
+		wireMockRule.stubFor(authorized(get(urlPathEqualTo(ENDPOINT)), expiredToken)
+				.willReturn(aResponse().withStatus(HttpConstants.STATUS_ERR_UNAUTHORIZED)));
+		wireMockRule.stubFor(authorized(get(urlPathEqualTo(ENDPOINT)))
+				.willReturn(aJsonResponse(HttpConstants.STATUS_ACCEPTED).withBodyFile("all_projects.json")));
 
-        // first token request returns the expired token
-        wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT)).inScenario(scenario)
-                .whenScenarioStateIs(STARTED)
-                .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
-                        .withBody(accessTokenBody(expiredToken)))
-                .willSetStateTo(stateRefreshed));
-        // second token request returns the valid token
-        wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT)).inScenario(scenario)
-                .whenScenarioStateIs(stateRefreshed)
-                .willReturn(aJsonResponse(HttpConstants.STATUS_OK)
-                        .withBody(accessTokenBody(ACCESS_TOKEN.getToken()))));
+		// first token request returns the expired token
+		wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT)).inScenario(scenario).whenScenarioStateIs(STARTED)
+				.willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBody(accessTokenBody(expiredToken)))
+				.willSetStateTo(stateRefreshed));
+		// second token request returns the valid token
+		wireMockRule.stubFor(post(urlPathEqualTo(TOKEN_ENDPOINT)).inScenario(scenario)
+				.whenScenarioStateIs(stateRefreshed)
+				.willReturn(aJsonResponse(HttpConstants.STATUS_OK).withBody(accessTokenBody(ACCESS_TOKEN.getToken()))));
 
-        CyclicBarrier barrierStart = new CyclicBarrier(concurrentRequestCount);
-        CountDownLatch latchCompletion = new CountDownLatch(concurrentRequestCount);
-        for (int i = 0; i < concurrentRequestCount; i++) {
-            new Thread(() -> {
-                List<SW360Project> projects = null;
-                try {
-                    // for maximum parallelism, wait for all threads to be started
-                    barrierStart.await();
-                    projects = waitFor(client.search(ProjectSearchParams.ALL_PROJECTS));
-                    // thread completed successfully
-                    latchCompletion.countDown();
-                } catch (InterruptedException | IOException | BrokenBarrierException e) {
-                    // in this case the test will fail as the latch is not triggered
-                    e.printStackTrace();
-                }
-                assertThat(projects).isNotNull();
-            }).start();
-        }
+		CyclicBarrier barrierStart = new CyclicBarrier(concurrentRequestCount);
+		CountDownLatch latchCompletion = new CountDownLatch(concurrentRequestCount);
+		for (int i = 0; i < concurrentRequestCount; i++) {
+			new Thread(() -> {
+				List<SW360Project> projects = null;
+				try {
+					// for maximum parallelism, wait for all threads to be started
+					barrierStart.await();
+					projects = waitFor(client.search(ProjectSearchParams.ALL_PROJECTS));
+					// thread completed successfully
+					latchCompletion.countDown();
+				} catch (InterruptedException | IOException | BrokenBarrierException e) {
+					// in this case the test will fail as the latch is not triggered
+					e.printStackTrace();
+				}
+				assertThat(projects).isNotNull();
+			}).start();
+		}
 
-        boolean success = latchCompletion.await(10, TimeUnit.SECONDS);
-        assertThat(success).isTrue();
-        if (!RUN_REST_INTEGRATION_TEST) {
-            WireMock.verify(2, postRequestedFor(urlEqualTo(TOKEN_ENDPOINT)));
-        }
-    }
+		boolean success = latchCompletion.await(10, TimeUnit.SECONDS);
+		assertThat(success).isTrue();
+		if (!RUN_REST_INTEGRATION_TEST) {
+			WireMock.verify(2, postRequestedFor(urlEqualTo(TOKEN_ENDPOINT)));
+		}
+	}
 }

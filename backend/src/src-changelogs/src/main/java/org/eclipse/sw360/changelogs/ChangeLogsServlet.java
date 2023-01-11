@@ -23,9 +23,9 @@ import org.eclipse.sw360.projects.Sw360ThriftServlet;
  */
 public class ChangeLogsServlet extends Sw360ThriftServlet {
 
-    public ChangeLogsServlet() throws MalformedURLException, IOException {
-        // Create a service processor using the provided handler
-        super(new ChangeLogsService.Processor<>(new ChangeLogsHandler()), new TCompactProtocol.Factory());
-    }
+	public ChangeLogsServlet() throws MalformedURLException, IOException {
+		// Create a service processor using the provided handler
+		super(new ChangeLogsService.Processor<>(new ChangeLogsHandler()), new TCompactProtocol.Factory());
+	}
 
 }

@@ -25,23 +25,21 @@ import javax.servlet.jsp.JspException;
  */
 public class NameSpaceAwareTag extends TagSupport {
 
-    protected String getNamespace() throws JspException {
-        try {
-            HttpServletRequest request =
-                    (HttpServletRequest) pageContext.getRequest();
+	protected String getNamespace() throws JspException {
+		try {
+			HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
 
-            PortletResponse portletResponse =
-                    (PortletResponse) request.getAttribute(
-                            JavaConstants.JAVAX_PORTLET_RESPONSE);
+			PortletResponse portletResponse = (PortletResponse) request
+					.getAttribute(JavaConstants.JAVAX_PORTLET_RESPONSE);
 
-            if (portletResponse != null) {
-                return  portletResponse.getNamespace();
-            } else {
-                throw new JspException("Not in a portlet?");
-            }
-        } catch (Exception e) {
-            throw new JspException(e);
-        }
-    }
+			if (portletResponse != null) {
+				return portletResponse.getNamespace();
+			} else {
+				throw new JspException("Not in a portlet?");
+			}
+		} catch (Exception e) {
+			throw new JspException(e);
+		}
+	}
 
 }

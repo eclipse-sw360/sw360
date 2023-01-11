@@ -17,70 +17,65 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class SW360ProjectAdapterUtilsTest {
 
-    private static final String PROJECT_VERSION = "1.0-projectVersion";
-    private static final String PROJECT_NAME = "projectName";
+	private static final String PROJECT_VERSION = "1.0-projectVersion";
+	private static final String PROJECT_NAME = "projectName";
 
-    @Test
-    public void testIsValidProjectWithValidProject() {
-        SW360Project project = new SW360Project()
-                .setName(PROJECT_NAME)
-                .setVersion(PROJECT_VERSION);
+	@Test
+	public void testIsValidProjectWithValidProject() {
+		SW360Project project = new SW360Project().setName(PROJECT_NAME).setVersion(PROJECT_VERSION);
 
-        boolean validComponent = SW360ProjectAdapterUtils.isValidProject(project);
+		boolean validComponent = SW360ProjectAdapterUtils.isValidProject(project);
 
-        assertThat(validComponent).isTrue();
-    }
+		assertThat(validComponent).isTrue();
+	}
 
-    @Test
-    public void testIsValidProjectWithNoVersion() {
-        SW360Project project = new SW360Project();
-        project.setName(PROJECT_NAME);
+	@Test
+	public void testIsValidProjectWithNoVersion() {
+		SW360Project project = new SW360Project();
+		project.setName(PROJECT_NAME);
 
-        boolean validComponent = SW360ProjectAdapterUtils.isValidProject(project);
+		boolean validComponent = SW360ProjectAdapterUtils.isValidProject(project);
 
-        assertThat(validComponent).isFalse();
-    }
+		assertThat(validComponent).isFalse();
+	}
 
-    @Test
-    public void testIsValidProjectWithNoName() {
-        SW360Project project = new SW360Project();
-        project.setVersion(PROJECT_VERSION);
+	@Test
+	public void testIsValidProjectWithNoName() {
+		SW360Project project = new SW360Project();
+		project.setVersion(PROJECT_VERSION);
 
-        boolean validComponent = SW360ProjectAdapterUtils.isValidProject(project);
+		boolean validComponent = SW360ProjectAdapterUtils.isValidProject(project);
 
-        assertThat(validComponent).isFalse();
-    }
+		assertThat(validComponent).isFalse();
+	}
 
-    @Test
-    public void testHasEqualCoordinatesTrue() {
-        SW360Project project = new SW360Project()
-                .setName(PROJECT_NAME)
-                .setVersion(PROJECT_VERSION);
+	@Test
+	public void testHasEqualCoordinatesTrue() {
+		SW360Project project = new SW360Project().setName(PROJECT_NAME).setVersion(PROJECT_VERSION);
 
-        boolean hasEqualCoordinates = SW360ProjectAdapterUtils.hasEqualCoordinates(project, PROJECT_NAME, PROJECT_VERSION);
+		boolean hasEqualCoordinates = SW360ProjectAdapterUtils.hasEqualCoordinates(project, PROJECT_NAME,
+				PROJECT_VERSION);
 
-        assertThat(hasEqualCoordinates).isTrue();
-    }
+		assertThat(hasEqualCoordinates).isTrue();
+	}
 
-    @Test
-    public void testHasEqualCoordinatesFalseByVersion() {
-        SW360Project project = new SW360Project()
-                .setName(PROJECT_NAME)
-                .setVersion(PROJECT_VERSION);
+	@Test
+	public void testHasEqualCoordinatesFalseByVersion() {
+		SW360Project project = new SW360Project().setName(PROJECT_NAME).setVersion(PROJECT_VERSION);
 
-        boolean hasEqualCoordinates = SW360ProjectAdapterUtils.hasEqualCoordinates(project, PROJECT_NAME, PROJECT_VERSION + "-no");
+		boolean hasEqualCoordinates = SW360ProjectAdapterUtils.hasEqualCoordinates(project, PROJECT_NAME,
+				PROJECT_VERSION + "-no");
 
-        assertThat(hasEqualCoordinates).isFalse();
-    }
+		assertThat(hasEqualCoordinates).isFalse();
+	}
 
-    @Test
-    public void testHasEqualCoordinatesFalseByName() {
-        SW360Project project = new SW360Project()
-                .setName(PROJECT_NAME)
-                .setVersion(PROJECT_VERSION);
+	@Test
+	public void testHasEqualCoordinatesFalseByName() {
+		SW360Project project = new SW360Project().setName(PROJECT_NAME).setVersion(PROJECT_VERSION);
 
-        boolean hasEqualCoordinates = SW360ProjectAdapterUtils.hasEqualCoordinates(project, PROJECT_NAME + "-no", PROJECT_VERSION);
+		boolean hasEqualCoordinates = SW360ProjectAdapterUtils.hasEqualCoordinates(project, PROJECT_NAME + "-no",
+				PROJECT_VERSION);
 
-        assertThat(hasEqualCoordinates).isFalse();
-    }
+		assertThat(hasEqualCoordinates).isFalse();
+	}
 }

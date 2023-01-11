@@ -9,62 +9,59 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
   -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.eclipse.sw360</groupId>
+    <artifactId>backend-svc</artifactId>
+    <version>${revision}</version>
+  </parent>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>backend-svc</artifactId>
-        <groupId>org.eclipse.sw360</groupId>
-        <version>${revision}</version>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+  <artifactId>svc-schedule</artifactId>
+  <packaging>war</packaging>
 
-    <artifactId>svc-schedule</artifactId>
-    <packaging>war</packaging>
+  <properties>
+    <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+  </properties>
 
-    <properties>
-        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
-    </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.eclipse.sw360</groupId>
+      <artifactId>src-${project.build.finalName}</artifactId>
+      <version>${project.version}</version>
+      <type>jar</type>
+    </dependency>
+  </dependencies>
 
-    <build>
-        <finalName>schedule</finalName>
+  <build>
+    <finalName>schedule</finalName>
 
-        <plugins>
-            <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-build-configuration-resources</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.eclipse.sw360</groupId>
-                                    <artifactId>src-${project.build.finalName}</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                    <excludes>**/*.java,**/*.class</excludes>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
-    <dependencies>
-        <dependency>
-            <artifactId>src-${project.build.finalName}</artifactId>
-            <groupId>org.eclipse.sw360</groupId>
-            <version>${project.version}</version>
-            <type>jar</type>
-        </dependency>
-    </dependencies>
+    <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>add-build-configuration-resources</id>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <phase>generate-resources</phase>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.eclipse.sw360</groupId>
+                  <artifactId>src-${project.build.finalName}</artifactId>
+                  <version>${project.version}</version>
+                  <type>jar</type>
+                  <overWrite>true</overWrite>
+                  <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                  <excludes>**/*.java,**/*.class</excludes>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

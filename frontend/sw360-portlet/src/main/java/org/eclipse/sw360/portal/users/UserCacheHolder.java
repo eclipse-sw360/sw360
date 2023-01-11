@@ -30,75 +30,76 @@ import java.util.concurrent.ExecutionException;
  * @author alex.borodin@evosoft.com
  */
 public class UserCacheHolder {
-    private static final Logger LOGGER = LogManager.getLogger(UserCacheHolder.class);
+	private static final Logger LOGGER = LogManager.getLogger(UserCacheHolder.class);
 
-    public static final User EMPTY_USER = new User().setId("").setEmail("").setExternalid("").setDepartment("").setLastname("").setGivenname("");
+	public static final User EMPTY_USER = new User().setId("").setEmail("").setExternalid("").setDepartment("")
+			.setLastname("").setGivenname("");
 
-    protected static UserCacheHolder instance = null;
+	protected static UserCacheHolder instance = null;
 
-    protected UserCache cache;
+	protected UserCache cache;
 
-    protected UserCacheHolder() {
-        cache = new UserCache();
-    }
+	protected UserCacheHolder() {
+		cache = new UserCache();
+	}
 
-    protected static synchronized UserCacheHolder getInstance() {
-        if (instance == null) {
-            instance = new UserCacheHolder();
-        }
-        return instance;
-    }
+	protected static synchronized UserCacheHolder getInstance() {
+		if (instance == null) {
+			instance = new UserCacheHolder();
+		}
+		return instance;
+	}
 
-    protected User getCurrentUser(PortletRequest request) {
-        String email = LifeRayUserSession.getEmailFromRequest(request);
-        return loadUserFromEmail(email);
-    }
+	protected User getCurrentUser(PortletRequest request) {
+		String email = LifeRayUserSession.getEmailFromRequest(request);
+		return loadUserFromEmail(email);
+	}
 
-    protected Optional<String> getCurrentUserEmail(ServletRequest request) {
-        ThemeDisplay themeDisplay = (ThemeDisplay)request.getAttribute(WebKeys.THEME_DISPLAY);
+	protected Optional<String> getCurrentUserEmail(ServletRequest request) {
+		ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
 
-        com.liferay.portal.kernel.model.User liferayUser = themeDisplay.getUser();
-        return Optional.ofNullable(liferayUser).map(com.liferay.portal.kernel.model.User::getEmailAddress);
-    }
+		com.liferay.portal.kernel.model.User liferayUser = themeDisplay.getUser();
+		return Optional.ofNullable(liferayUser).map(com.liferay.portal.kernel.model.User::getEmailAddress);
+	}
 
-    protected User loadUserFromEmail(String email, boolean refresh) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Fetching user with email: " + email);
-        }
+	protected User loadUserFromEmail(String email, boolean refresh) {
+		if (LOGGER.isTraceEnabled()) {
+			LOGGER.trace("Fetching user with email: " + email);
+		}
 
-        // Get user from cache
-        try {
-            if (refresh) {
-                return cache.getRefreshed(email);
-            }
-            return cache.get(email);
-        } catch (ExecutionException e) {
-            LOGGER.error("Unable to fetch user...", e);
-            return EMPTY_USER;
-        }
-    }
+		// Get user from cache
+		try {
+			if (refresh) {
+				return cache.getRefreshed(email);
+			}
+			return cache.get(email);
+		} catch (ExecutionException e) {
+			LOGGER.error("Unable to fetch user...", e);
+			return EMPTY_USER;
+		}
+	}
 
-    protected User loadUserFromEmail(String email) {
-        return  loadUserFromEmail(email, false);
-    }
+	protected User loadUserFromEmail(String email) {
+		return loadUserFromEmail(email, false);
+	}
 
-    protected User loadRefreshedUserFromEmail(String email) {
-        return  loadUserFromEmail(email, true);
-    }
+	protected User loadRefreshedUserFromEmail(String email) {
+		return loadUserFromEmail(email, true);
+	}
 
-    public static User getUserFromRequest(PortletRequest request) {
-        return getInstance().getCurrentUser(request);
-    }
+	public static User getUserFromRequest(PortletRequest request) {
+		return getInstance().getCurrentUser(request);
+	}
 
-    public static Optional<String> getUserEmailFromRequest(ServletRequest request) {
-        return getInstance().getCurrentUserEmail(request);
-    }
+	public static Optional<String> getUserEmailFromRequest(ServletRequest request) {
+		return getInstance().getCurrentUserEmail(request);
+	}
 
-    public static User getUserFromEmail(String email) {
-        return getInstance().loadUserFromEmail(email);
-    }
+	public static User getUserFromEmail(String email) {
+		return getInstance().loadUserFromEmail(email);
+	}
 
-    public static User getRefreshedUserFromEmail(String email) {
-        return getInstance().loadRefreshedUserFromEmail(email);
-    }
+	public static User getRefreshedUserFromEmail(String email) {
+		return getInstance().loadRefreshedUserFromEmail(email);
+	}
 }

@@ -19,12 +19,12 @@ import org.apache.thrift.TException;
  */
 public class TestServiceHandler implements TestService.Iface {
 
-    public static final String testText = "This is some nice text!";
+	public static final String testText = "This is some nice text!";
 
-    @Override
-    public TestObject test(TestObject user) throws TException {
-        TestObject copy = new TestObject(user);
-        copy.setText(testText);
-        return copy;
-    }
+	@Override
+	public TestObject test(TestObject user) throws TException {
+		TestObject copy = new TestObject(user);
+		copy.setText(testText);
+		return copy;
+	}
 }

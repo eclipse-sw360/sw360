@@ -32,46 +32,50 @@ import java.util.Set;
  */
 public class DisplaySubscribeButton extends SimpleTagSupport {
 
-    private Object object;
-    private String email;
-    private String id = "SubscribeButtonID";
+	private Object object;
+	private String email;
+	private String id = "SubscribeButtonID";
 
-    public void setId(String id) {
-        this.id = id;
-    }
+	public void setId(String id) {
+		this.id = id;
+	}
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+	public void setEmail(String email) {
+		this.email = email;
+	}
 
-    public void setObject(Object object) {
-        this.object = object;
-    }
+	public void setObject(Object object) {
+		this.object = object;
+	}
 
-    public void doTag() throws JspException, IOException {
+	public void doTag() throws JspException, IOException {
 
-        PageContext pageContext = (PageContext) getJspContext();
-        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
+		PageContext pageContext = (PageContext) getJspContext();
+		HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+				getClass());
 
-        StringBuilder builder = new StringBuilder();
+		StringBuilder builder = new StringBuilder();
 
-        Set<String> subscribers = null;
+		Set<String> subscribers = null;
 
-        if(object instanceof Release) {
-            subscribers = ((Release) object).getSubscribers();
-        } else if ( object instanceof Component) {
-            subscribers = ((Component) object).getSubscribers();
-        }
+		if (object instanceof Release) {
+			subscribers = ((Release) object).getSubscribers();
+		} else if (object instanceof Component) {
+			subscribers = ((Component) object).getSubscribers();
+		}
 
-        subscribers= CommonUtils.nullToEmptySet(subscribers);
+		subscribers = CommonUtils.nullToEmptySet(subscribers);
 
-        if (subscribers.contains(email)) {
-            builder.append(String.format("<button type=\"button\" id=\"%s\" class=\"btn btn-outline-danger subscribed\">"+LanguageUtil.get(resourceBundle, "unsubscribe")+"</button>", id));
-        } else {
-            builder.append(String.format("<button type=\"button\" id=\"%s\" class=\"btn btn-outline-success\">"+LanguageUtil.get(resourceBundle, "subscribe")+"</button>", id));
-        }
+		if (subscribers.contains(email)) {
+			builder.append(
+					String.format("<button type=\"button\" id=\"%s\" class=\"btn btn-outline-danger subscribed\">"
+							+ LanguageUtil.get(resourceBundle, "unsubscribe") + "</button>", id));
+		} else {
+			builder.append(String.format("<button type=\"button\" id=\"%s\" class=\"btn btn-outline-success\">"
+					+ LanguageUtil.get(resourceBundle, "subscribe") + "</button>", id));
+		}
 
-        getJspContext().getOut().print(builder.toString());
-    }
+		getJspContext().getOut().print(builder.toString());
+	}
 }

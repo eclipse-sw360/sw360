@@ -24,24 +24,24 @@ import static org.junit.Assert.assertThat;
  * @author daniele.fognini@tngtech.com
  */
 public class SW360ConstantsTest {
-    @Test
-    public void testProjectsCanHaveAllAttachmentTypes() throws Exception {
-        Collection<AttachmentType> types = SW360Constants.allowedAttachmentTypes(SW360Constants.TYPE_PROJECT);
+	@Test
+	public void testProjectsCanHaveAllAttachmentTypes() throws Exception {
+		Collection<AttachmentType> types = SW360Constants.allowedAttachmentTypes(SW360Constants.TYPE_PROJECT);
 
-        assertThat(types, containsInAnyOrder(AttachmentType.values()));
-    }
+		assertThat(types, containsInAnyOrder(AttachmentType.values()));
+	}
 
-    @Test
-    public void testComponentsCanNotHaveReports() throws Exception {
-        Collection<AttachmentType> types = SW360Constants.allowedAttachmentTypes(SW360Constants.TYPE_COMPONENT);
+	@Test
+	public void testComponentsCanNotHaveReports() throws Exception {
+		Collection<AttachmentType> types = SW360Constants.allowedAttachmentTypes(SW360Constants.TYPE_COMPONENT);
 
-        for (AttachmentType attachmentType : AttachmentType.values()) {
-            if (attachmentType == AttachmentType.CLEARING_REPORT) {
-                assertThat(types, not(hasItem(equalTo(attachmentType))));
-            } else {
-                assertThat(types, hasItem(equalTo(attachmentType)));
-            }
-        }
+		for (AttachmentType attachmentType : AttachmentType.values()) {
+			if (attachmentType == AttachmentType.CLEARING_REPORT) {
+				assertThat(types, not(hasItem(equalTo(attachmentType))));
+			} else {
+				assertThat(types, hasItem(equalTo(attachmentType)));
+			}
+		}
 
-    }
+	}
 }

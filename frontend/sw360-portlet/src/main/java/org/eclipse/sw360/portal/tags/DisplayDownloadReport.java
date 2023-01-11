@@ -36,63 +36,64 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
  */
 public class DisplayDownloadReport extends LoopTagSupport {
 
-    protected Predicate<AttachmentType> attachmentTypePredicate;
-    protected Set<Attachment> unfilteredAttachments = Collections.emptySet();
-    protected Iterator<Attachment> attachmentIterator = unfilteredAttachments.iterator();
+	protected Predicate<AttachmentType> attachmentTypePredicate;
+	protected Set<Attachment> unfilteredAttachments = Collections.emptySet();
+	protected Iterator<Attachment> attachmentIterator = unfilteredAttachments.iterator();
 
-    @Override
-    protected void prepare() throws JspTagException {
-        this.attachmentIterator = unfilteredAttachments.stream().filter((attachment) -> {
-            return attachmentTypePredicate.test(attachment.getAttachmentType());
-        }).iterator();
-    }
+	@Override
+	protected void prepare() throws JspTagException {
+		this.attachmentIterator = unfilteredAttachments.stream().filter((attachment) -> {
+			return attachmentTypePredicate.test(attachment.getAttachmentType());
+		}).iterator();
+	}
 
-    @Override
-    protected Object next() throws JspTagException {
-        return attachmentIterator.next();
-    }
+	@Override
+	protected Object next() throws JspTagException {
+		return attachmentIterator.next();
+	}
 
-    @Override
-    protected boolean hasNext() throws JspTagException {
-        return attachmentIterator.hasNext();
-    }
+	@Override
+	protected boolean hasNext() throws JspTagException {
+		return attachmentIterator.hasNext();
+	}
 
-    @Override
-    public int doStartTag() throws JspException {
-        try {
-            JspWriter jspWriter = pageContext.getOut();
-            jspWriter.write("<span>");
-        } catch (IOException e) {
-            throw new JspException(e);
-        }
+	@Override
+	public int doStartTag() throws JspException {
+		try {
+			JspWriter jspWriter = pageContext.getOut();
+			jspWriter.write("<span>");
+		} catch (IOException e) {
+			throw new JspException(e);
+		}
 
-        return super.doStartTag();
-    }
+		return super.doStartTag();
+	}
 
-    @Override
-    public int doEndTag() throws JspException {
-        HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
-        ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
-        JspWriter jspWriter = pageContext.getOut();
-        try {
-            LoopTagStatus status = getLoopStatus();
-            if (status.getCount() <= 1) {
-                jspWriter.print(LanguageUtil.get(resourceBundle,"no.report"));
-            }
+	@Override
+	public int doEndTag() throws JspException {
+		HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
+		ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(),
+				getClass());
+		JspWriter jspWriter = pageContext.getOut();
+		try {
+			LoopTagStatus status = getLoopStatus();
+			if (status.getCount() <= 1) {
+				jspWriter.print(LanguageUtil.get(resourceBundle, "no.report"));
+			}
 
-            jspWriter.write("</span>");
-        } catch (IOException e) {
-            throw new JspException(e);
-        }
+			jspWriter.write("</span>");
+		} catch (IOException e) {
+			throw new JspException(e);
+		}
 
-        return super.doEndTag();
-    }
+		return super.doEndTag();
+	}
 
-    public void setAttachments(Set<Attachment> attachments) {
-        this.unfilteredAttachments = Collections.unmodifiableSet(nullToEmptySet(attachments));
-    }
+	public void setAttachments(Set<Attachment> attachments) {
+		this.unfilteredAttachments = Collections.unmodifiableSet(nullToEmptySet(attachments));
+	}
 
-    public void setAttachmentTypePredicate(Predicate<AttachmentType> attachmentTypePredicate) {
-        this.attachmentTypePredicate = attachmentTypePredicate;
-    }
+	public void setAttachmentTypePredicate(Predicate<AttachmentType> attachmentTypePredicate) {
+		this.attachmentTypePredicate = attachmentTypePredicate;
+	}
 }

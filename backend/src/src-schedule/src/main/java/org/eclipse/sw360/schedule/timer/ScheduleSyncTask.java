@@ -17,27 +17,28 @@ import org.apache.logging.log4j.Logger;
 import java.util.function.Supplier;
 
 /**
- * creates new {@link java.util.TimerTask} which will be executed on the next scheduled time
+ * creates new {@link java.util.TimerTask} which will be executed on the next
+ * scheduled time
  *
  * @author stefan.jaeger@evosoft.com
  * @author birgit.heydenreich@tngtech.com
  */
 public class ScheduleSyncTask extends SW360Task {
-    private static final Logger log = LogManager.getLogger(ScheduleSyncTask.class);
-    private final Supplier<RequestStatus> body;
+	private static final Logger log = LogManager.getLogger(ScheduleSyncTask.class);
+	private final Supplier<RequestStatus> body;
 
-    public ScheduleSyncTask(Supplier<RequestStatus> body, String name) {
-        super(name);
-        this.body = body;
-    }
+	public ScheduleSyncTask(Supplier<RequestStatus> body, String name) {
+		super(name);
+		this.body = body;
+	}
 
-    @Override
-    public void run() {
-        RequestStatus requestStatus = body.get();
-        if (RequestStatus.SUCCESS.equals(requestStatus)) {
-            log.info("Successfully finished ScheduleSyncTask name=" + getName() + " id=" + getId() + ".");
-        } else {
-            log.error("ScheduleSyncTask " + getId() + " failed.");
-        }
-    }
+	@Override
+	public void run() {
+		RequestStatus requestStatus = body.get();
+		if (RequestStatus.SUCCESS.equals(requestStatus)) {
+			log.info("Successfully finished ScheduleSyncTask name=" + getName() + " id=" + getId() + ".");
+		} else {
+			log.error("ScheduleSyncTask " + getId() + " failed.");
+		}
+	}
 }

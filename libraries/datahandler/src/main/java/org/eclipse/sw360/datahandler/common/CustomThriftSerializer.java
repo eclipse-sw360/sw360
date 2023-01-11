@@ -21,29 +21,29 @@ import com.google.gson.JsonSerializer;
 
 public class CustomThriftSerializer implements JsonSerializer<TBase> {
 
-    @Override
-    public JsonElement serialize(TBase src, Type typeOfSrc, JsonSerializationContext context) {
-        Gson gson = new Gson();
-        JsonElement json = gson.toJsonTree(src, typeOfSrc);
-        JsonObject jObject = json.getAsJsonObject();
-        JsonElement str = jObject.get("__isset_bitfield");
-        JsonElement idElement = jObject.get("id");
-        JsonElement revElement = jObject.get("revision");
-        String id = null, rev = null;
-        if (idElement != null) {
-            id = idElement.getAsString();
-            jObject.addProperty("_id", id);
-            jObject.remove("id");
-        }
-        if (revElement != null) {
-            rev = revElement.getAsString();
-            jObject.addProperty("_rev", rev);
-            jObject.remove("revision");
-        }
-        if (str != null) {
-            jObject.addProperty("issetBitfield", str.getAsString());
-            jObject.remove("__isset_bitfield");
-        }
-        return jObject.getAsJsonObject();
-    }
+	@Override
+	public JsonElement serialize(TBase src, Type typeOfSrc, JsonSerializationContext context) {
+		Gson gson = new Gson();
+		JsonElement json = gson.toJsonTree(src, typeOfSrc);
+		JsonObject jObject = json.getAsJsonObject();
+		JsonElement str = jObject.get("__isset_bitfield");
+		JsonElement idElement = jObject.get("id");
+		JsonElement revElement = jObject.get("revision");
+		String id = null, rev = null;
+		if (idElement != null) {
+			id = idElement.getAsString();
+			jObject.addProperty("_id", id);
+			jObject.remove("id");
+		}
+		if (revElement != null) {
+			rev = revElement.getAsString();
+			jObject.addProperty("_rev", rev);
+			jObject.remove("revision");
+		}
+		if (str != null) {
+			jObject.addProperty("issetBitfield", str.getAsString());
+			jObject.remove("__isset_bitfield");
+		}
+		return jObject.getAsJsonObject();
+	}
 }

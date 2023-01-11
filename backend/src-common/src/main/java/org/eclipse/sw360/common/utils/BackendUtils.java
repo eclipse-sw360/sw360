@@ -15,16 +15,17 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 
 public class BackendUtils {
 
-    private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
-    protected static final Properties loadedProperties;
-    public static final Boolean MAINLINE_STATE_ENABLED_FOR_USER;
+	private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+	protected static final Properties loadedProperties;
+	public static final Boolean MAINLINE_STATE_ENABLED_FOR_USER;
 
-    static {
-        loadedProperties = CommonUtils.loadProperties(BackendUtils.class, PROPERTIES_FILE_PATH);
-        MAINLINE_STATE_ENABLED_FOR_USER = Boolean.parseBoolean(loadedProperties.getProperty("mainline.state.enabled.for.user", "false"));
-    }
+	static {
+		loadedProperties = CommonUtils.loadProperties(BackendUtils.class, PROPERTIES_FILE_PATH);
+		MAINLINE_STATE_ENABLED_FOR_USER = Boolean
+				.parseBoolean(loadedProperties.getProperty("mainline.state.enabled.for.user", "false"));
+	}
 
-    protected BackendUtils() {
-        // Utility class with only static functions
-    }
+	protected BackendUtils() {
+		// Utility class with only static functions
+	}
 }

@@ -26,40 +26,39 @@ import com.tngtech.jgiven.annotation.ScenarioState;
  * @author kouki1.hama@toshiba.co.jp
  */
 public class GivenComponent extends Stage<GivenComponent> {
-    @ScenarioState
-    private Component component;
+	@ScenarioState
+	private Component component;
 
-    public enum ComponentRole {
-        CREATED_BY,
-        MODERATOR,
-    }
+	public enum ComponentRole {
+		CREATED_BY, MODERATOR,
+	}
 
-    public GivenComponent a_new_component() {
-        component = mock(Component.class);
-        Mockito.when(component.getVisbility()).thenReturn(Visibility.EVERYONE);
-        return self();
-    }
+	public GivenComponent a_new_component() {
+		component = mock(Component.class);
+		Mockito.when(component.getVisbility()).thenReturn(Visibility.EVERYONE);
+		return self();
+	}
 
-    public GivenComponent a_component_with_$_$(ComponentRole role, @Quoted String m1){
-        a_new_component();
+	public GivenComponent a_component_with_$_$(ComponentRole role, @Quoted String m1) {
+		a_new_component();
 
-        switch (role) {
-            case CREATED_BY:
-                Mockito.when(component.isSetCreatedBy()).thenReturn(true);
-                Mockito.when(component.getCreatedBy()).thenReturn(m1);
-                break;
-            case MODERATOR:
-                Mockito.when(component.isSetModerators()).thenReturn(true);
-                Mockito.when(component.getModerators()).thenReturn(ImmutableSet.of(m1));
-                break;
-        }
+		switch (role) {
+			case CREATED_BY :
+				Mockito.when(component.isSetCreatedBy()).thenReturn(true);
+				Mockito.when(component.getCreatedBy()).thenReturn(m1);
+				break;
+			case MODERATOR :
+				Mockito.when(component.isSetModerators()).thenReturn(true);
+				Mockito.when(component.getModerators()).thenReturn(ImmutableSet.of(m1));
+				break;
+		}
 
-        return self();
-    }
+		return self();
+	}
 
-    public GivenComponent with_visibility_$_and_business_unit_$(@TEnumToString Visibility v1, @Quoted String b1) {
-        Mockito.when(component.getVisbility()).thenReturn(v1);
-        Mockito.when(component.getBusinessUnit()).thenReturn(b1);
-        return self();
-    }
+	public GivenComponent with_visibility_$_and_business_unit_$(@TEnumToString Visibility v1, @Quoted String b1) {
+		Mockito.when(component.getVisbility()).thenReturn(v1);
+		Mockito.when(component.getBusinessUnit()).thenReturn(b1);
+		return self();
+	}
 }

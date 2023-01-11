@@ -24,9 +24,9 @@ import java.net.MalformedURLException;
  */
 public class UserServlet extends Sw360ThriftServlet {
 
-    public UserServlet() throws IOException {
-        // Create a service processor using the provided handler
-        super(new UserService.Processor<>(new UserHandler()), new TCompactProtocol.Factory());
-    }
+	public UserServlet() throws IOException {
+		// Create a service processor using the provided handler
+		super(new UserService.Processor<>(new UserHandler()), new TCompactProtocol.Factory());
+	}
 
 }

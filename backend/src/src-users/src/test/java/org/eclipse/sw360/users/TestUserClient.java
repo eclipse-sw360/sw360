@@ -24,11 +24,11 @@ import java.io.IOException;
  */
 public class TestUserClient {
 
-    public static void main(String[] args) throws TException, IOException {
-        THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/users/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        UserService.Iface client = new UserService.Client(protocol);
+	public static void main(String[] args) throws TException, IOException {
+		THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/users/thrift");
+		TProtocol protocol = new TCompactProtocol(thriftClient);
+		UserService.Iface client = new UserService.Client(protocol);
 
-        System.out.println(client.getByEmail("cedric.bodet@tngtech.com"));
-    }
+		System.out.println(client.getByEmail("cedric.bodet@tngtech.com"));
+	}
 }

@@ -28,113 +28,113 @@ import static org.mockito.Mockito.when;
 
 public class OAuthClientControllerTest extends IntegrationTestBase {
 
-    @Autowired
-    private TestRestTemplate template;
+	@Autowired
+	private TestRestTemplate template;
 
-    @Test
-    public void testGetAll_basicAuth_unknownUser_fail() throws RestClientException, URISyntaxException {
-        // given:
-        when(clientRepo.getAll()).thenReturn(null);
+	@Test
+	public void testGetAll_basicAuth_unknownUser_fail() throws RestClientException, URISyntaxException {
+		// given:
+		when(clientRepo.getAll()).thenReturn(null);
 
-        // when:
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
+		// when:
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
 
-        responseEntity = template.withBasicAuth("my-unknown-user", "my-unknown-password").exchange(
-                new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
+		responseEntity = template.withBasicAuth("my-unknown-user", "my-unknown-password").exchange(
+				new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
 
-        // then:
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
-    }
+		// then:
+		assertThat(responseEntity.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
+	}
 
-    @Test
-    public void testGetAll_basicAuth_admin_success() throws RestClientException, URISyntaxException {
-        // given:
-        when(clientRepo.getAll()).thenReturn(null);
+	@Test
+	public void testGetAll_basicAuth_admin_success() throws RestClientException, URISyntaxException {
+		// given:
+		when(clientRepo.getAll()).thenReturn(null);
 
-        // when:
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
+		// when:
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
 
-        responseEntity = template.withBasicAuth(adminTestUser.email, "password-not-checked-in-test-without-liferay")
-                .exchange(new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")),
-                        String.class);
+		responseEntity = template.withBasicAuth(adminTestUser.email, "password-not-checked-in-test-without-liferay")
+				.exchange(new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")),
+						String.class);
 
-        // then:
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
-    }
+		// then:
+		assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+	}
 
-    @Test
-    public void testGetAll_basicAuth_normal_fail() throws RestClientException, URISyntaxException {
-        // given:
-        when(clientRepo.getAll()).thenReturn(null);
+	@Test
+	public void testGetAll_basicAuth_normal_fail() throws RestClientException, URISyntaxException {
+		// given:
+		when(clientRepo.getAll()).thenReturn(null);
 
-        // when:
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
+		// when:
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
 
-        responseEntity = template.withBasicAuth(normalTestUser.email, "password-not-checked-in-test-without-liferay")
-                .exchange(new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")),
-                        String.class);
+		responseEntity = template.withBasicAuth(normalTestUser.email, "password-not-checked-in-test-without-liferay")
+				.exchange(new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")),
+						String.class);
 
-        // then:
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.FORBIDDEN));
-    }
+		// then:
+		assertThat(responseEntity.getStatusCode(), is(HttpStatus.FORBIDDEN));
+	}
 
-    @Test
-    public void testGetAll_headerAuth_unknownUser_fail() throws RestClientException, URISyntaxException {
-        // given:
-        when(clientRepo.getAll()).thenReturn(null);
+	@Test
+	public void testGetAll_headerAuth_unknownUser_fail() throws RestClientException, URISyntaxException {
+		// given:
+		when(clientRepo.getAll()).thenReturn(null);
 
-        // when:
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
-        headers.set("authenticated-email", "my-unknown-user");
+		// when:
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
+		headers.set("authenticated-email", "my-unknown-user");
 
-        responseEntity = template.exchange(
-                new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
+		responseEntity = template.exchange(
+				new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
 
-        // then:
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
-    }
+		// then:
+		assertThat(responseEntity.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
+	}
 
-    @Test
-    public void testGetAll_headerAuth_admin_success() throws RestClientException, URISyntaxException {
-        // given:
-        when(clientRepo.getAll()).thenReturn(null);
+	@Test
+	public void testGetAll_headerAuth_admin_success() throws RestClientException, URISyntaxException {
+		// given:
+		when(clientRepo.getAll()).thenReturn(null);
 
-        // when:
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
-        headers.set("authenticated-email", adminTestUser.email);
+		// when:
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
+		headers.set("authenticated-email", adminTestUser.email);
 
-        responseEntity = template.exchange(
-                new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
+		responseEntity = template.exchange(
+				new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
 
-        // then:
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
-    }
+		// then:
+		assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+	}
 
-    @Test
-    public void testGetAll_headerAuth_normal_fail() throws RestClientException, URISyntaxException {
-        // given:
-        when(clientRepo.getAll()).thenReturn(null);
+	@Test
+	public void testGetAll_headerAuth_normal_fail() throws RestClientException, URISyntaxException {
+		// given:
+		when(clientRepo.getAll()).thenReturn(null);
 
-        // when:
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
-        headers.set("authenticated-email", normalTestUser.email);
+		// when:
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.setAccept(Lists.newArrayList(MediaType.APPLICATION_JSON));
+		headers.set("authenticated-email", normalTestUser.email);
 
-        responseEntity = template.exchange(
-                new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
+		responseEntity = template.exchange(
+				new RequestEntity<String>(headers, HttpMethod.GET, new URI("/client-management")), String.class);
 
-        // then:
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.FORBIDDEN));
-    }
+		// then:
+		assertThat(responseEntity.getStatusCode(), is(HttpStatus.FORBIDDEN));
+	}
 }

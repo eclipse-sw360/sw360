@@ -19,37 +19,37 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantCl
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationNode;
 
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
- /**
+/**
  * CRUD access for the Obligation Node class
  */
 
 public class ObligationNodeRepository extends DatabaseRepositoryCloudantClient<ObligationNode> {
 
-    private static final String ALL = "function(doc) { if (doc.type == 'obligationNode') emit(null, doc._id) }";
-    private static final String BYNODETYPE = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.nodeType, null) } }";
-    private static final String BYNODETEXT = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.nodeText, null) } }";
-    private static final String BYOBLIGATIONID = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.oblElementId, null) } }";
+	private static final String ALL = "function(doc) { if (doc.type == 'obligationNode') emit(null, doc._id) }";
+	private static final String BYNODETYPE = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.nodeType, null) } }";
+	private static final String BYNODETEXT = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.nodeText, null) } }";
+	private static final String BYOBLIGATIONID = "function(doc) { if(doc.type == 'obligationNode') { emit(doc.oblElementId, null) } }";
 
-    public ObligationNodeRepository(DatabaseConnectorCloudant db) {
-        super(db, ObligationNode.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
-        views.put("all", createMapReduce(ALL, null));
-        views.put("byobligationnodetype", createMapReduce(BYNODETYPE, null));
-        views.put("byobligationnodetext", createMapReduce(BYNODETEXT, null));
-        views.put("byobligationid", createMapReduce(BYOBLIGATIONID, null));
-        initStandardDesignDocument(views, db);
-    }
+	public ObligationNodeRepository(DatabaseConnectorCloudant db) {
+		super(db, ObligationNode.class);
+		Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+		views.put("all", createMapReduce(ALL, null));
+		views.put("byobligationnodetype", createMapReduce(BYNODETYPE, null));
+		views.put("byobligationnodetext", createMapReduce(BYNODETEXT, null));
+		views.put("byobligationid", createMapReduce(BYOBLIGATIONID, null));
+		initStandardDesignDocument(views, db);
+	}
 
-    public List<ObligationNode> searchByObligationNodeType(String type) {
-        return queryByPrefix("byobligationnodetype", type);
-    }
+	public List<ObligationNode> searchByObligationNodeType(String type) {
+		return queryByPrefix("byobligationnodetype", type);
+	}
 
-    public List<ObligationNode> searchByObligationNodeText(String text) {
-        return queryByPrefix("byobligationnodetext", text);
-    }
+	public List<ObligationNode> searchByObligationNodeText(String text) {
+		return queryByPrefix("byobligationnodetext", text);
+	}
 
-    public List<ObligationNode> searchByObligationNodeOblElementId(String oblElementId) {
-        return queryByPrefix("byobligationid", oblElementId);
-    }
+	public List<ObligationNode> searchByObligationNodeOblElementId(String oblElementId) {
+		return queryByPrefix("byobligationid", oblElementId);
+	}
 
 }

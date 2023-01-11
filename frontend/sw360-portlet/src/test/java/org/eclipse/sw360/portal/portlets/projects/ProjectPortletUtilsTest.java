@@ -37,27 +37,29 @@ import static org.eclipse.sw360.portal.common.PortalConstants.PROJECT_SELECTED_A
 @RunWith(MockitoJUnitRunner.class)
 public class ProjectPortletUtilsTest {
 
-    @Mock
-    private ResourceRequest request;
+	@Mock
+	private ResourceRequest request;
 
-    @Mock
-    private PortletSession portletSession;
+	@Mock
+	private PortletSession portletSession;
 
-    @Test
-    public void testGetExcludedLicensesPerAttachmantIdFromRequest() {
-        // checkboxes (note: checked boxes mark licenses NOT to be excluded :-))
-        Mockito.when(request.getParameterValues("a1:checkstatus")).thenReturn(new String[] { "1", "2" });
-        Mockito.when(request.getParameterValues("a2:checkstatus")).thenReturn(new String[] {});
-        Mockito.when(request.getParameterValues("a3:checkstatus")).thenReturn(new String[] { "0", "1", "2", "3", "4" });
-        // temporary keys (the key are always completely transmitted, the selection is
-        // done by the checkboxes
+	@Test
+	public void testGetExcludedLicensesPerAttachmantIdFromRequest() {
+		// checkboxes (note: checked boxes mark licenses NOT to be excluded :-))
+		Mockito.when(request.getParameterValues("a1:checkstatus")).thenReturn(new String[]{"1", "2"});
+		Mockito.when(request.getParameterValues("a2:checkstatus")).thenReturn(new String[]{});
+		Mockito.when(request.getParameterValues("a3:checkstatus")).thenReturn(new String[]{"0", "1", "2", "3", "4"});
+		// temporary keys (the key are always completely transmitted, the selection is
+		// done by the checkboxes
 
-        // which attachment id has which keys
-        Mockito.when(request.getParameterValues("a1:checkstatus_key")).thenReturn(new String[] { "a1l1", "a1l2", "a1l3", "a1l4" });
-        Mockito.when(request.getParameterValues("a2:checkstatus_key")).thenReturn(new String[] { "a2l1", "a2l2", "a2l3" });
-        Mockito.when(request.getParameterValues("a3:checkstatus_key")).thenReturn(new String[] { "a3l1", "a3l2", "a3l3", "a3l4", "a3l5" });
+		// which attachment id has which keys
+		Mockito.when(request.getParameterValues("a1:checkstatus_key"))
+				.thenReturn(new String[]{"a1l1", "a1l2", "a1l3", "a1l4"});
+		Mockito.when(request.getParameterValues("a2:checkstatus_key")).thenReturn(new String[]{"a2l1", "a2l2", "a2l3"});
+		Mockito.when(request.getParameterValues("a3:checkstatus_key"))
+				.thenReturn(new String[]{"a3l1", "a3l2", "a3l3", "a3l4", "a3l5"});
 
-        // @formatter:off
+		// @formatter:off
         // example of the temporary mapping to keys
         Mockito.when(request.getPortletSession()).thenReturn(portletSession);
         Mockito.when(portletSession.getAttribute("license-store-a1")).thenReturn(ImmutableMap.of(
@@ -80,54 +82,55 @@ public class ProjectPortletUtilsTest {
         ));
         // @formatter:on
 
-        Map<String, Set<LicenseNameWithText>> excludedLicenses = ProjectPortletUtils
-                .getExcludedLicensesPerAttachmentIdFromRequest(ImmutableSet.of("a1:checkstatus", "a2:checkstatus", "a3:checkstatus"), request);
+		Map<String, Set<LicenseNameWithText>> excludedLicenses = ProjectPortletUtils
+				.getExcludedLicensesPerAttachmentIdFromRequest(
+						ImmutableSet.of("a1:checkstatus", "a2:checkstatus", "a3:checkstatus"), request);
 
-        // Every license not checked is excluded now
-        Assert.assertThat(excludedLicenses.keySet(), Matchers.containsInAnyOrder("a1:checkstatus", "a2:checkstatus", "a3:checkstatus"));
-        Assert.assertThat(excludedLicenses.get("a1:checkstatus"),
-                Matchers.containsInAnyOrder(createLicense("a1l1", "a1l1_t"), createLicense("a1l4", "a1l4_t")));
-        Assert.assertThat(excludedLicenses.get("a2:checkstatus"), Matchers.containsInAnyOrder(createLicense("a2l1", "a2l1_t"),
-                createLicense("a2l2", "a2l2_t"), createLicense("a2l3", "a2l3_t")));
-        Assert.assertTrue(excludedLicenses.get("a3:checkstatus").isEmpty());
-    }
+		// Every license not checked is excluded now
+		Assert.assertThat(excludedLicenses.keySet(),
+				Matchers.containsInAnyOrder("a1:checkstatus", "a2:checkstatus", "a3:checkstatus"));
+		Assert.assertThat(excludedLicenses.get("a1:checkstatus"),
+				Matchers.containsInAnyOrder(createLicense("a1l1", "a1l1_t"), createLicense("a1l4", "a1l4_t")));
+		Assert.assertThat(excludedLicenses.get("a2:checkstatus"), Matchers.containsInAnyOrder(
+				createLicense("a2l1", "a2l1_t"), createLicense("a2l2", "a2l2_t"), createLicense("a2l3", "a2l3_t")));
+		Assert.assertTrue(excludedLicenses.get("a3:checkstatus").isEmpty());
+	}
 
-    private LicenseNameWithText createLicense(String name, String text) {
-        LicenseNameWithText licenseNameWithText = new LicenseNameWithText();
-        licenseNameWithText.setLicenseName(name);
-        licenseNameWithText.setLicenseText(text);
-        return licenseNameWithText;
-    }
+	private LicenseNameWithText createLicense(String name, String text) {
+		LicenseNameWithText licenseNameWithText = new LicenseNameWithText();
+		licenseNameWithText.setLicenseName(name);
+		licenseNameWithText.setLicenseText(text);
+		return licenseNameWithText;
+	}
 
-    @Test
-    public void testMakeAttachmentUsagesToDeleteFromRequest() {
-        Mockito.when(request.getParameter(PROJECT_ID)).thenReturn("p1");
-        Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES))
-                .thenReturn(new String[]{"r1_licenseInfo_att1", "r4_licenseInfo_att4"});
-        Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS))
-                .thenReturn(new String[]{"r1_licenseInfo_att1", "r2_sourcePackage_att2", "r3_manuallySet_att3"});
-        List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.deselectedAttachmentUsagesFromRequest(request);
-        Assert.assertThat(attachmentUsages, Matchers.containsInAnyOrder(
-                new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
-                        .setUsageData(UsageData.sourcePackage(new SourcePackageUsage())),
-                new AttachmentUsage(Source.releaseId("r3"), "att3", Source.projectId("p1"))
-                        .setUsageData(UsageData.manuallySet(new ManuallySetUsage()))
-        ));
-    }
+	@Test
+	public void testMakeAttachmentUsagesToDeleteFromRequest() {
+		Mockito.when(request.getParameter(PROJECT_ID)).thenReturn("p1");
+		Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES))
+				.thenReturn(new String[]{"r1_licenseInfo_att1", "r4_licenseInfo_att4"});
+		Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS))
+				.thenReturn(new String[]{"r1_licenseInfo_att1", "r2_sourcePackage_att2", "r3_manuallySet_att3"});
+		List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.deselectedAttachmentUsagesFromRequest(request);
+		Assert.assertThat(attachmentUsages,
+				Matchers.containsInAnyOrder(
+						new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
+								.setUsageData(UsageData.sourcePackage(new SourcePackageUsage())),
+						new AttachmentUsage(Source.releaseId("r3"), "att3", Source.projectId("p1"))
+								.setUsageData(UsageData.manuallySet(new ManuallySetUsage()))));
+	}
 
-    @Test
-    public void testMakeAttachmentUsagesToCreateFromRequest() {
-        Mockito.when(request.getParameter(PROJECT_ID)).thenReturn("p1");
-        Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES))
-                .thenReturn(new String[]{"r1_licenseInfo_att1", "r2_sourcePackage_att2", "r3_manuallySet_att3"});
-        Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS))
-                .thenReturn(new String[]{"r1_licenseInfo_att1", "r2_sourcePackage_att2", "r4_sourcePackage_att4"});
-        List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.selectedAttachmentUsagesFromRequest(request);
-        Assert.assertThat(attachmentUsages, Matchers.containsInAnyOrder(
-                new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1"))
-                        .setUsageData(UsageData.licenseInfo(new LicenseInfoUsage(Collections.emptySet()).setIncludeConcludedLicense(false))),
-                new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
-                        .setUsageData(UsageData.sourcePackage(new SourcePackageUsage()))
-        ));
-    }
+	@Test
+	public void testMakeAttachmentUsagesToCreateFromRequest() {
+		Mockito.when(request.getParameter(PROJECT_ID)).thenReturn("p1");
+		Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES))
+				.thenReturn(new String[]{"r1_licenseInfo_att1", "r2_sourcePackage_att2", "r3_manuallySet_att3"});
+		Mockito.when(request.getParameterValues(PROJECT_SELECTED_ATTACHMENT_USAGES_SHADOWS))
+				.thenReturn(new String[]{"r1_licenseInfo_att1", "r2_sourcePackage_att2", "r4_sourcePackage_att4"});
+		List<AttachmentUsage> attachmentUsages = ProjectPortletUtils.selectedAttachmentUsagesFromRequest(request);
+		Assert.assertThat(attachmentUsages, Matchers.containsInAnyOrder(
+				new AttachmentUsage(Source.releaseId("r1"), "att1", Source.projectId("p1")).setUsageData(UsageData
+						.licenseInfo(new LicenseInfoUsage(Collections.emptySet()).setIncludeConcludedLicense(false))),
+				new AttachmentUsage(Source.releaseId("r2"), "att2", Source.projectId("p1"))
+						.setUsageData(UsageData.sourcePackage(new SourcePackageUsage()))));
+	}
 }

@@ -31,46 +31,49 @@ import java.util.Map;
 import static org.eclipse.sw360.exporter.utils.ConvertRecord.*;
 
 public class LicsExporter {
-    final LicenseService.Iface licenseClient;
+	final LicenseService.Iface licenseClient;
 
-    public LicsExporter(LicenseService.Iface licenseClient) {
-        this.licenseClient = licenseClient;
-    }
+	public LicsExporter(LicenseService.Iface licenseClient) {
+		this.licenseClient = licenseClient;
+	}
 
-    private ByteArrayInputStream getCsvStream(List<List<String>> listList) throws TException, IOException {
-        return new ByteArrayInputStream(writeCsvStream(listList).toByteArray());
-    }
+	private ByteArrayInputStream getCsvStream(List<List<String>> listList) throws TException, IOException {
+		return new ByteArrayInputStream(writeCsvStream(listList).toByteArray());
+	}
 
-    @NotNull
-    private ByteArrayOutputStream writeCsvStream(List<List<String>> listList) throws TException, IOException {
-        final ByteArrayOutputStream riskCategoryCsvStream = new ByteArrayOutputStream();
-        Writer out = new BufferedWriter(new OutputStreamWriter(riskCategoryCsvStream));
-        CSVPrinter csvPrinter = new CSVPrinter(out, CommonUtils.sw360CsvFormat);
-        csvPrinter.printRecords(listList);
-        csvPrinter.flush();
-        csvPrinter.close();
-        return riskCategoryCsvStream;
-    }
+	@NotNull
+	private ByteArrayOutputStream writeCsvStream(List<List<String>> listList) throws TException, IOException {
+		final ByteArrayOutputStream riskCategoryCsvStream = new ByteArrayOutputStream();
+		Writer out = new BufferedWriter(new OutputStreamWriter(riskCategoryCsvStream));
+		CSVPrinter csvPrinter = new CSVPrinter(out, CommonUtils.sw360CsvFormat);
+		csvPrinter.printRecords(listList);
+		csvPrinter.flush();
+		csvPrinter.close();
+		return riskCategoryCsvStream;
+	}
 
-    @NotNull
-    public Map<String, InputStream> getFilenameToCSVStreams() throws TException, IOException {
-        Map<String, InputStream> fileNameToStreams = new HashMap<>();
+	@NotNull
+	public Map<String, InputStream> getFilenameToCSVStreams() throws TException, IOException {
+		Map<String, InputStream> fileNameToStreams = new HashMap<>();
 
-        final List<Obligation> obligations = licenseClient.getObligations();
-        List<ConvertRecord.PropertyWithValueAndId> customProperties = new ArrayList<>();
-        SetMultimap<String, Integer> obligCustomPropertyMap = HashMultimap.create();
-        ConvertRecord.fillTodoCustomPropertyInfo(obligations, customProperties, obligCustomPropertyMap);
-        fileNameToStreams.put(LicsArchive.TODO_CUSTOM_PROPERTIES_FILE, getCsvStream(serialize(obligCustomPropertyMap, ImmutableList.of("T_ID", "P_ID"))));
-        fileNameToStreams.put(LicsArchive.CUSTOM_PROPERTIES_FILE, getCsvStream(serialize(customProperties, customPropertiesSerializer())));
-        fileNameToStreams.put(LicsArchive.TODO_FILE, getCsvStream(serialize(obligations, obligSerializer())));
+		final List<Obligation> obligations = licenseClient.getObligations();
+		List<ConvertRecord.PropertyWithValueAndId> customProperties = new ArrayList<>();
+		SetMultimap<String, Integer> obligCustomPropertyMap = HashMultimap.create();
+		ConvertRecord.fillTodoCustomPropertyInfo(obligations, customProperties, obligCustomPropertyMap);
+		fileNameToStreams.put(LicsArchive.TODO_CUSTOM_PROPERTIES_FILE,
+				getCsvStream(serialize(obligCustomPropertyMap, ImmutableList.of("T_ID", "P_ID"))));
+		fileNameToStreams.put(LicsArchive.CUSTOM_PROPERTIES_FILE,
+				getCsvStream(serialize(customProperties, customPropertiesSerializer())));
+		fileNameToStreams.put(LicsArchive.TODO_FILE, getCsvStream(serialize(obligations, obligSerializer())));
 
-        fileNameToStreams.put(LicsArchive.LICENSETYPE_FILE, getCsvStream(serialize(licenseClient.getLicenseTypes(), licenseTypeSerializer())));
+		fileNameToStreams.put(LicsArchive.LICENSETYPE_FILE,
+				getCsvStream(serialize(licenseClient.getLicenseTypes(), licenseTypeSerializer())));
 
-        final List<License> licenses = licenseClient.getLicenses();
-        fileNameToStreams.put(LicsArchive.LICENSE_TODO_FILE, getCsvStream(serialize(getLicenseToTodoMap(licenses), ImmutableList.of("Identifier", "ID"))));
-        fileNameToStreams.put(LicsArchive.LICENSE_FILE, getCsvStream(serialize(licenses, licenseSerializer())));
-        return fileNameToStreams;
-    }
-
+		final List<License> licenses = licenseClient.getLicenses();
+		fileNameToStreams.put(LicsArchive.LICENSE_TODO_FILE,
+				getCsvStream(serialize(getLicenseToTodoMap(licenses), ImmutableList.of("Identifier", "ID"))));
+		fileNameToStreams.put(LicsArchive.LICENSE_FILE, getCsvStream(serialize(licenses, licenseSerializer())));
+		return fileNameToStreams;
+	}
 
 }

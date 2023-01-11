@@ -24,8 +24,8 @@ import java.io.IOException;
  */
 public class SearchServlet extends Sw360ThriftServlet {
 
-    public SearchServlet() throws IOException {
-        // Create a service processor using the provided handler
-        super(new SearchService.Processor<SearchHandler>(new SearchHandler()), new TCompactProtocol.Factory());
-    }
+	public SearchServlet() throws IOException {
+		// Create a service processor using the provided handler
+		super(new SearchService.Processor<SearchHandler>(new SearchHandler()), new TCompactProtocol.Factory());
+	}
 }

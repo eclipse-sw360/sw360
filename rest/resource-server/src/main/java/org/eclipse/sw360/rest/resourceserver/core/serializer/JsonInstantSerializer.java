@@ -20,11 +20,10 @@ import java.time.Instant;
 
 @Component
 public class JsonInstantSerializer extends JsonSerializer<Instant> {
-    @Override
-    public void serialize(Instant instant, JsonGenerator gen, SerializerProvider provider)
-            throws IOException {
-        String timeStamp = instant.toString();
-        gen.writeString(timeStamp);
-    }
+	@Override
+	public void serialize(Instant instant, JsonGenerator gen, SerializerProvider provider) throws IOException {
+		String timeStamp = instant.toString();
+		gen.writeString(timeStamp);
+	}
 
 }

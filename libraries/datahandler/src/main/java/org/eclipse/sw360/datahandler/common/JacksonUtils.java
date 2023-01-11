@@ -23,39 +23,39 @@ import java.util.Set;
  */
 public class JacksonUtils {
 
-    private JacksonUtils() {
-        // Utility class with only static functions
-    }
+	private JacksonUtils() {
+		// Utility class with only static functions
+	}
 
-    public static boolean arrayContains(ArrayNode array, String needle) {
-        for (JsonNode jsonNode : array) {
-            if (jsonNode.isTextual() && needle.equals(jsonNode.textValue())) {
-                return true;
-            }
-        }
-        return false;
-    }
+	public static boolean arrayContains(ArrayNode array, String needle) {
+		for (JsonNode jsonNode : array) {
+			if (jsonNode.isTextual() && needle.equals(jsonNode.textValue())) {
+				return true;
+			}
+		}
+		return false;
+	}
 
-    public static int arrayPosition(ArrayNode array, String needle) {
-        for (int i = 0; i < array.size(); i++) {
-            JsonNode jsonNode = array.get(i);
-            if (jsonNode.isTextual() && needle.equals(jsonNode.textValue())) {
-                return i;
-            }
-        }
-        return -1;
-    }
+	public static int arrayPosition(ArrayNode array, String needle) {
+		for (int i = 0; i < array.size(); i++) {
+			JsonNode jsonNode = array.get(i);
+			if (jsonNode.isTextual() && needle.equals(jsonNode.textValue())) {
+				return i;
+			}
+		}
+		return -1;
+	}
 
-    public static Set<String> extractSet(ArrayNode array) throws SW360Exception {
-        Set<String> result = new HashSet<>();
+	public static Set<String> extractSet(ArrayNode array) throws SW360Exception {
+		Set<String> result = new HashSet<>();
 
-        for (JsonNode jsonNode : array) {
-            if (jsonNode.isTextual())
-                result.add(jsonNode.textValue());
-            else
-                throw new SW360Exception("Non textual string ?!");
-        }
-        return result;
-    }
+		for (JsonNode jsonNode : array) {
+			if (jsonNode.isTextual())
+				result.add(jsonNode.textValue());
+			else
+				throw new SW360Exception("Non textual string ?!");
+		}
+		return result;
+	}
 
 }

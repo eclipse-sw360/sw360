@@ -13,24 +13,25 @@
 package org.eclipse.sw360.clients.rest.resource;
 
 public class SW360Attributes {
-    private SW360Attributes() {}
+	private SW360Attributes() {
+	}
 
-    // Project Controller Attributes
-    public static final String PROJECT_SEARCH_BY_NAME = "name";
-    public static final String PROJECT_SEARCH_BY_TYPE = "type";
-    public static final String PROJECT_SEARCH_BY_UNIT = "group";
-    public static final String PROJECT_SEARCH_BY_TAG = "tag";
-    public static final String PROJECT_RELEASES = "releases";
-    public static final String PROJECT_RELEASES_TRANSITIVE ="transitive";
-    public static final String COMPONENT_SEARCH_BY_NAME = "name";
+	// Project Controller Attributes
+	public static final String PROJECT_SEARCH_BY_NAME = "name";
+	public static final String PROJECT_SEARCH_BY_TYPE = "type";
+	public static final String PROJECT_SEARCH_BY_UNIT = "group";
+	public static final String PROJECT_SEARCH_BY_TAG = "tag";
+	public static final String PROJECT_RELEASES = "releases";
+	public static final String PROJECT_RELEASES_TRANSITIVE = "transitive";
+	public static final String COMPONENT_SEARCH_BY_NAME = "name";
 
-    // Attributes of Sw360License
-    public static final String LICENSE_TEXT = "text";
-    public static final String LICENSE_SHORT_NAME = "shortName";
-    public static final String LICENSE_FULL_NAME = "fullName";
+	// Attributes of Sw360License
+	public static final String LICENSE_TEXT = "text";
+	public static final String LICENSE_SHORT_NAME = "shortName";
+	public static final String LICENSE_FULL_NAME = "fullName";
 
-    // Attributes of Sw360Authenticator
-    public static final String AUTHENTICATOR_GRANT_TYPE = "grant_type";
-    public static final String AUTHENTICATOR_USERNAME = "username";
-    public static final String AUTHENTICATOR_PASSWORD = "password";
+	// Attributes of Sw360Authenticator
+	public static final String AUTHENTICATOR_GRANT_TYPE = "grant_type";
+	public static final String AUTHENTICATOR_USERNAME = "username";
+	public static final String AUTHENTICATOR_PASSWORD = "password";
 }

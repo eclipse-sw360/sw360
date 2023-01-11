@@ -26,68 +26,67 @@ import static org.eclipse.sw360.portal.tags.urlutils.UrlWriterImpl.resourceUrl;
  * link.
  */
 abstract class DisplayDownloadAbstract extends ContextAwareTag {
-    protected final static String DOWNLOAD_IMAGE_ENABLED = "download";
+	protected final static String DOWNLOAD_IMAGE_ENABLED = "download";
 
-    protected String contextType;
-    protected String contextId;
+	protected String contextType;
+	protected String contextId;
 
-    /**
-     * @return the title text for the image of the download link. Displayed in a
-     *         tooltip. MUST be html escaped.
-     */
-    protected abstract String getTitleText();
+	/**
+	 * @return the title text for the image of the download link. Displayed in a
+	 *         tooltip. MUST be html escaped.
+	 */
+	protected abstract String getTitleText();
 
-    /**
-     * Used to configure the url writer for the download url. This method is called
-     * at the end therefore all values may be overridden.
-     * 
-     * Derived classes MUST set {@link PortalConstants#ATTACHMENT_ID} value for the
-     * url writer.
-     * 
-     * @param urlWriter
-     *            the url writer to configure
-     * 
-     * @throws JspException
-     */
-    protected abstract void configureUrlWriter(UrlWriter urlWriter) throws JspException;
+	/**
+	 * Used to configure the url writer for the download url. This method is called
+	 * at the end therefore all values may be overridden.
+	 * 
+	 * Derived classes MUST set {@link PortalConstants#ATTACHMENT_ID} value for the
+	 * url writer.
+	 * 
+	 * @param urlWriter
+	 *            the url writer to configure
+	 * 
+	 * @throws JspException
+	 */
+	protected abstract void configureUrlWriter(UrlWriter urlWriter) throws JspException;
 
-    /**
-     * @return the filename of the image to display. You may use the constant
-     *         {@link #DOWNLOAD_IMAGE_ENABLED}.
-     */
-    protected String getImage() {
-        return DOWNLOAD_IMAGE_ENABLED;
-    }
+	/**
+	 * @return the filename of the image to display. You may use the constant
+	 *         {@link #DOWNLOAD_IMAGE_ENABLED}.
+	 */
+	protected String getImage() {
+		return DOWNLOAD_IMAGE_ENABLED;
+	}
 
-    @Override
-    public int doStartTag() throws JspException {
-        try {
-            JspWriter jspWriter = pageContext.getOut();
-            
-            jspWriter.write("<a href='");
-            UrlWriter urlWriter = resourceUrl(pageContext)
-                    .withParam(PortalConstants.ACTION, PortalConstants.ATTACHMENT_DOWNLOAD)
-                    .withParam(PortalConstants.CONTEXT_TYPE, contextType)
-                    .withParam(PortalConstants.CONTEXT_ID, contextId);
-            configureUrlWriter(urlWriter);
-            urlWriter.writeUrlToJspWriter();
-            jspWriter.write(format(
-                    "'><svg class='lexicon-icon'><title>%s</title><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#%s'/></svg>",
-                    getTitleText(),
-                    getImage()));
-            jspWriter.write("</a>");
-        } catch (Exception e) {
-            throw new JspException(e);
-        }
+	@Override
+	public int doStartTag() throws JspException {
+		try {
+			JspWriter jspWriter = pageContext.getOut();
 
-        return SKIP_BODY;
-    }
+			jspWriter.write("<a href='");
+			UrlWriter urlWriter = resourceUrl(pageContext)
+					.withParam(PortalConstants.ACTION, PortalConstants.ATTACHMENT_DOWNLOAD)
+					.withParam(PortalConstants.CONTEXT_TYPE, contextType)
+					.withParam(PortalConstants.CONTEXT_ID, contextId);
+			configureUrlWriter(urlWriter);
+			urlWriter.writeUrlToJspWriter();
+			jspWriter.write(format(
+					"'><svg class='lexicon-icon'><title>%s</title><use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#%s'/></svg>",
+					getTitleText(), getImage()));
+			jspWriter.write("</a>");
+		} catch (Exception e) {
+			throw new JspException(e);
+		}
 
-    public void setContextType(String contextType) {
-        this.contextType = contextType;
-    }
+		return SKIP_BODY;
+	}
 
-    public void setContextId(String contextId) {
-        this.contextId = contextId;
-    }
+	public void setContextType(String contextType) {
+		this.contextType = contextType;
+	}
+
+	public void setContextId(String contextId) {
+		this.contextId = contextId;
+	}
 }

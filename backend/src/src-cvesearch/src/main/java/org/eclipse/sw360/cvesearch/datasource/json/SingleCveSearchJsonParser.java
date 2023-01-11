@@ -17,8 +17,9 @@ import java.lang.reflect.Type;
 
 public class SingleCveSearchJsonParser extends CveSearchJsonParser<CveSearchData> {
 
-    @Override
-    public Type getType() {
-        return new TypeToken<CveSearchData>(){}.getType();
-    }
+	@Override
+	public Type getType() {
+		return new TypeToken<CveSearchData>() {
+		}.getType();
+	}
 }

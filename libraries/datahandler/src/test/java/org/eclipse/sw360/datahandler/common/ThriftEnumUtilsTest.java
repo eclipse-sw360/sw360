@@ -23,24 +23,27 @@ import static org.junit.Assert.assertThat;
 
 public class ThriftEnumUtilsTest {
 
-    @Test
-    public void testToString() {
-        assertThat(ThriftEnumUtils.enumToString(AttachmentType.DESIGN), is("Design document"));
-        assertThat(ThriftEnumUtils.enumToString(RepositoryType.GIT), is("Git"));
-    }
+	@Test
+	public void testToString() {
+		assertThat(ThriftEnumUtils.enumToString(AttachmentType.DESIGN), is("Design document"));
+		assertThat(ThriftEnumUtils.enumToString(RepositoryType.GIT), is("Git"));
+	}
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testAllMaps() throws Exception {
-        for (Map.Entry<Class<? extends TEnum>, Map<? extends TEnum, String>> mapEntry : ThriftEnumUtils.MAP_ENUMTYPE_MAP.entrySet()) {
-            Map<TEnum, String> value = (Map<TEnum, String>) mapEntry.getValue();
-            testGenericMap((Class<TEnum>) mapEntry.getKey(), value);
-        }
-    }
+	@SuppressWarnings("unchecked")
+	@Test
+	public void testAllMaps() throws Exception {
+		for (Map.Entry<Class<? extends TEnum>, Map<? extends TEnum, String>> mapEntry : ThriftEnumUtils.MAP_ENUMTYPE_MAP
+				.entrySet()) {
+			Map<TEnum, String> value = (Map<TEnum, String>) mapEntry.getValue();
+			testGenericMap((Class<TEnum>) mapEntry.getKey(), value);
+		}
+	}
 
-    private <T extends TEnum> void testGenericMap(Class<T> type, Map<T, String> input) {
-        for (T val : type.getEnumConstants()) {
-            assertNotNull(type.getSimpleName() + "." + val.toString() + " [" + val.getValue() + "] has no string associated", input.get(val));
-        }
-    }
+	private <T extends TEnum> void testGenericMap(Class<T> type, Map<T, String> input) {
+		for (T val : type.getEnumConstants()) {
+			assertNotNull(
+					type.getSimpleName() + "." + val.toString() + " [" + val.getValue() + "] has no string associated",
+					input.get(val));
+		}
+	}
 }

@@ -23,23 +23,23 @@ import java.net.MalformedURLException;
  */
 public class DatabaseTestSetup {
 
+	public static void main(String[] args) throws MalformedURLException {
 
-    public static void main(String[] args) throws MalformedURLException {
+		DatabaseConnector db = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(),
+				DatabaseSettingsTest.COUCH_DB_DATABASE);
 
-        DatabaseConnector db = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
+		Project project = new Project().setName("Test Project");
+		project.addToModerators("user1");
 
-        Project project = new Project().setName("Test Project");
-        project.addToModerators("user1");
+		db.add(project);
 
-        db.add(project);
+		ModerationRequest moderationRequest = new ModerationRequest();
+		moderationRequest.setDocumentId(project.id).setDocumentType(DocumentType.PROJECT);
+		moderationRequest.setRequestingUser("cedric.bodet@tngtech.com");
+		moderationRequest.addToModerators("cedric.bodet@tngtech.com");
 
-        ModerationRequest moderationRequest = new ModerationRequest();
-        moderationRequest.setDocumentId(project.id).setDocumentType(DocumentType.PROJECT);
-        moderationRequest.setRequestingUser("cedric.bodet@tngtech.com");
-        moderationRequest.addToModerators("cedric.bodet@tngtech.com");
+		db.add(moderationRequest);
 
-        db.add(moderationRequest);
-
-    }
+	}
 
 }

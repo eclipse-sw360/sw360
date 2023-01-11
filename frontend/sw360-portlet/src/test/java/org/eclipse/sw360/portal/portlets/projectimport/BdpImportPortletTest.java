@@ -22,70 +22,58 @@ import javax.portlet.PortletSession;
 
 import static org.mockito.Mockito.verify;
 
-
 @RunWith(MockitoJUnitRunner.class)
 public class BdpImportPortletTest extends TestCase {
-    private final String name = "name";
-    private final String password = "password";
-    private final String newURL = "newURL";
+	private final String name = "name";
+	private final String password = "password";
+	private final String newURL = "newURL";
 
-    @Mock
-    private PortletSession session;
+	@Mock
+	private PortletSession session;
 
-    @Mock
-    private JSONObject responseData;
+	@Mock
+	private JSONObject responseData;
 
-    @Test
-    public void testUpdateInputSourceWithoutUrl() throws Exception {
+	@Test
+	public void testUpdateInputSourceWithoutUrl() throws Exception {
 
-        BdpImportPortlet.LoginState loginState = new BdpImportPortlet.LoginState();
-        RemoteCredentials remoteCredentials = new RemoteCredentials();
+		BdpImportPortlet.LoginState loginState = new BdpImportPortlet.LoginState();
+		RemoteCredentials remoteCredentials = new RemoteCredentials();
 
-        new BdpImportPortlet().setNewImportSource(
-                remoteCredentials,
-                session,
-                responseData,
-                loginState);
-        verify(responseData).put(ProjectImportConstants.RESPONSE__STATUS, ProjectImportConstants.RESPONSE__DB_URL_NOT_SET);
-    }
+		new BdpImportPortlet().setNewImportSource(remoteCredentials, session, responseData, loginState);
+		verify(responseData).put(ProjectImportConstants.RESPONSE__STATUS,
+				ProjectImportConstants.RESPONSE__DB_URL_NOT_SET);
+	}
 
-    @Test
-    public void testUpdateInputSourceWithUrlUpdatesResponse() throws Exception {
+	@Test
+	public void testUpdateInputSourceWithUrlUpdatesResponse() throws Exception {
 
-        BdpImportPortlet.LoginState loginState = new BdpImportPortlet.LoginState();
-        RemoteCredentials remoteCredentials = new RemoteCredentials();
-        remoteCredentials.setUsername(name);
-        remoteCredentials.setPassword(password);
-        remoteCredentials.setServerUrl(newURL);
+		BdpImportPortlet.LoginState loginState = new BdpImportPortlet.LoginState();
+		RemoteCredentials remoteCredentials = new RemoteCredentials();
+		remoteCredentials.setUsername(name);
+		remoteCredentials.setPassword(password);
+		remoteCredentials.setServerUrl(newURL);
 
-        new BdpImportPortlet().setNewImportSource(
-                remoteCredentials,
-                session,
-                responseData,
-                loginState);
+		new BdpImportPortlet().setNewImportSource(remoteCredentials, session, responseData, loginState);
 
-        verify(responseData).put(ProjectImportConstants.RESPONSE__STATUS, ProjectImportConstants.RESPONSE__DB_CHANGED);
-        verify(responseData).put(ProjectImportConstants.RESPONSE__DB_URL, newURL);
-    }
+		verify(responseData).put(ProjectImportConstants.RESPONSE__STATUS, ProjectImportConstants.RESPONSE__DB_CHANGED);
+		verify(responseData).put(ProjectImportConstants.RESPONSE__DB_URL, newURL);
+	}
 
-    @Test
-    public void testUpdateInputSourceWithUrlUpdatesSession() throws Exception {
+	@Test
+	public void testUpdateInputSourceWithUrlUpdatesSession() throws Exception {
 
-        BdpImportPortlet.LoginState loginState = new BdpImportPortlet.LoginState();
-        RemoteCredentials remoteCredentials = new RemoteCredentials();
-        remoteCredentials.setUsername(name);
-        remoteCredentials.setPassword(password);
-        remoteCredentials.setServerUrl(newURL);
+		BdpImportPortlet.LoginState loginState = new BdpImportPortlet.LoginState();
+		RemoteCredentials remoteCredentials = new RemoteCredentials();
+		remoteCredentials.setUsername(name);
+		remoteCredentials.setPassword(password);
+		remoteCredentials.setServerUrl(newURL);
 
-        new BdpImportPortlet().setNewImportSource(
-                remoteCredentials,
-                session,
-                responseData,
-                loginState);
+		new BdpImportPortlet().setNewImportSource(remoteCredentials, session, responseData, loginState);
 
-        verify(session).setAttribute(ProjectImportConstants.USERNAME, name);
-        verify(session).setAttribute(ProjectImportConstants.PASSWORD, password);
-        verify(session).setAttribute(ProjectImportConstants.SERVER_URL, newURL);
-    }
+		verify(session).setAttribute(ProjectImportConstants.USERNAME, name);
+		verify(session).setAttribute(ProjectImportConstants.PASSWORD, password);
+		verify(session).setAttribute(ProjectImportConstants.SERVER_URL, newURL);
+	}
 
 }

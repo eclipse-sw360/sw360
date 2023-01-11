@@ -16,20 +16,20 @@ import java.util.Locale;
 
 public class DisplayCountryCodeName extends SimpleTagSupport {
 
-    private String value;
+	private String value;
 
-    public void setValue(String value) {
-        this.value = value;
-    }
+	public void setValue(String value) {
+		this.value = value;
+	}
 
-    public void doTag() throws JspException, IOException {
-        String output = "";
+	public void doTag() throws JspException, IOException {
+		String output = "";
 
-        Locale locale = new Locale("", value);
-        if (locale != null) {
-            output = locale.getDisplayCountry();
-        }
+		Locale locale = new Locale("", value);
+		if (locale != null) {
+			output = locale.getDisplayCountry();
+		}
 
-        getJspContext().getOut().print(output);
-    }
+		getJspContext().getOut().print(output);
+	}
 }

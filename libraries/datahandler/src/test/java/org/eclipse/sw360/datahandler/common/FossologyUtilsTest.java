@@ -22,23 +22,23 @@ import static org.junit.Assert.assertThat;
 
 public class FossologyUtilsTest {
 
-    @Test
-    public void testEnsureOrderOfProcessSteps() {
-        // given:
-        ExternalToolProcessStep stepReport = new ExternalToolProcessStep();
-        stepReport.setStepName(FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT);
-        ExternalToolProcessStep stepScan = new ExternalToolProcessStep();
-        stepScan.setStepName(FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN);
-        ExternalToolProcessStep stepUpload = new ExternalToolProcessStep();
-        stepUpload.setStepName(FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD);
+	@Test
+	public void testEnsureOrderOfProcessSteps() {
+		// given:
+		ExternalToolProcessStep stepReport = new ExternalToolProcessStep();
+		stepReport.setStepName(FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT);
+		ExternalToolProcessStep stepScan = new ExternalToolProcessStep();
+		stepScan.setStepName(FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN);
+		ExternalToolProcessStep stepUpload = new ExternalToolProcessStep();
+		stepUpload.setStepName(FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD);
 
-        ExternalToolProcess fossologyProcess = new ExternalToolProcess();
-        fossologyProcess.setProcessSteps(Stream.of(stepScan, stepReport, stepUpload).collect(Collectors.toList()));
+		ExternalToolProcess fossologyProcess = new ExternalToolProcess();
+		fossologyProcess.setProcessSteps(Stream.of(stepScan, stepReport, stepUpload).collect(Collectors.toList()));
 
-        // when:
-        FossologyUtils.ensureOrderOfProcessSteps(fossologyProcess);
+		// when:
+		FossologyUtils.ensureOrderOfProcessSteps(fossologyProcess);
 
-        // then:
-        assertThat(fossologyProcess.getProcessSteps(), Matchers.contains(stepUpload, stepScan, stepReport));
-    }
+		// then:
+		assertThat(fossologyProcess.getProcessSteps(), Matchers.contains(stepUpload, stepScan, stepReport));
+	}
 }

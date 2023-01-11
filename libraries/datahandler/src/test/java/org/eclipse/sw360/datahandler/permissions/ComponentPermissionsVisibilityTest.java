@@ -33,25 +33,27 @@ import com.tngtech.jgiven.junit.ScenarioTest;
  * @author kouki1.hama@toshiba.co.jp
  */
 @RunWith(DataProviderRunner.class)
-public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenComponent, WhenComputeComponentVisibility, ThenVisible> {
+public class ComponentPermissionsVisibilityTest
+		extends
+			ScenarioTest<GivenComponent, WhenComputeComponentVisibility, ThenVisible> {
 
-    public static String theBu = "DE PA RT"; // ME NT
-    public static String theDep = "DE PA RT ME NT";
-    public static String theOtherDep = "OT TH ER DE";
-    public static String theUser = "user1";
-    public static String theOtherUser = "anotherUser";
+	public static String theBu = "DE PA RT"; // ME NT
+	public static String theDep = "DE PA RT ME NT";
+	public static String theOtherDep = "OT TH ER DE";
+	public static String theUser = "user1";
+	public static String theOtherUser = "anotherUser";
 
-    /**
-     * The testing strategy for visibility is as follows:
-     * It depends on the UserGroup and Department as well as the user Roles, in the first tests we verify them.
-     * We can override a no from these criteria by being in one of the moderator classes. This is the next test block.
-     */
+	/**
+	 * The testing strategy for visibility is as follows: It depends on the
+	 * UserGroup and Department as well as the user Roles, in the first tests we
+	 * verify them. We can override a no from these criteria by being in one of the
+	 * moderator classes. This is the next test block.
+	 */
 
-
-    @DataProvider
-    public static Object[][] componentVisibilityProvider() {
-        if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
-            // @formatter:off
+	@DataProvider
+	public static Object[][] componentVisibilityProvider() {
+		if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+			// @formatter:off
             return new Object[][] {
     
                     //test otherDeparment
@@ -89,8 +91,8 @@ public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenCompon
                     { EVERYONE, theBu, theDep, ADMIN, true },
             };
             // @formatter:on
-        } else {
-            // @formatter:off
+		} else {
+			// @formatter:off
             return new Object[][] {
 
                     //test otherDeparment
@@ -128,22 +130,23 @@ public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenCompon
                     { EVERYONE, theBu, theDep, ADMIN, true },
                 };
                 // @formatter:on
-        }
-    }
+		}
+	}
 
-    @Test
-    @UseDataProvider("componentVisibilityProvider")
-    public void testVisibility(Visibility visibility, String businessUnit, String department, UserGroup userGroup, boolean expectedVisibility) {
-        given().a_new_component().with_visibility_$_and_business_unit_$(visibility, businessUnit);
-        when().the_visibility_is_computed_for_department_$_and_user_group_$(department, userGroup);
-        then().the_visibility_should_be(expectedVisibility);
+	@Test
+	@UseDataProvider("componentVisibilityProvider")
+	public void testVisibility(Visibility visibility, String businessUnit, String department, UserGroup userGroup,
+			boolean expectedVisibility) {
+		given().a_new_component().with_visibility_$_and_business_unit_$(visibility, businessUnit);
+		when().the_visibility_is_computed_for_department_$_and_user_group_$(department, userGroup);
+		then().the_visibility_should_be(expectedVisibility);
 
-    }
+	}
 
-    @DataProvider
-    public static Object[][] componentVisibilityByRoleProvider() {
-        if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
-            // @formatter:off
+	@DataProvider
+	public static Object[][] componentVisibilityByRoleProvider() {
+		if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+			// @formatter:off
             return new Object[][] {
                     //test otherDepartment
                     //created by
@@ -165,8 +168,8 @@ public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenCompon
                     { EVERYONE, theBu, MODERATOR, theOtherUser, theUser, theOtherUser, true },
             };
             // @formatter:on
-        } else {
-            // @formatter:off
+		} else {
+			// @formatter:off
             return new Object[][] {
                     //test otherDepartment
                     //created by
@@ -188,19 +191,20 @@ public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenCompon
                     { EVERYONE, theBu, MODERATOR, theOtherUser, theUser, theOtherUser, true },
             };
             // @formatter:on
-        }
-    }
+		}
+	}
 
-    @Test
-    @UseDataProvider("componentVisibilityByRoleProvider")
-    public void testVisibilityForComponent(Visibility visibility, String bu, ComponentRole role, String moderatingUser, String creatingUser, String viewingUser, boolean expectedVisibility) throws Exception {
-        if (role==MODERATOR) {
-            given().a_component_with_$_$(role, moderatingUser).with_visibility_$_and_business_unit_$(visibility, bu);
-        } else {
-            given().a_component_with_$_$(role, creatingUser).with_visibility_$_and_business_unit_$(visibility, bu);
-        }
-        when().the_visibility_is_computed_for_the_wrong_department_and_the_user_$(viewingUser);
-        then().the_visibility_should_be(expectedVisibility);
-    }
+	@Test
+	@UseDataProvider("componentVisibilityByRoleProvider")
+	public void testVisibilityForComponent(Visibility visibility, String bu, ComponentRole role, String moderatingUser,
+			String creatingUser, String viewingUser, boolean expectedVisibility) throws Exception {
+		if (role == MODERATOR) {
+			given().a_component_with_$_$(role, moderatingUser).with_visibility_$_and_business_unit_$(visibility, bu);
+		} else {
+			given().a_component_with_$_$(role, creatingUser).with_visibility_$_and_business_unit_$(visibility, bu);
+		}
+		when().the_visibility_is_computed_for_the_wrong_department_and_the_user_$(viewingUser);
+		then().the_visibility_should_be(expectedVisibility);
+	}
 
 }

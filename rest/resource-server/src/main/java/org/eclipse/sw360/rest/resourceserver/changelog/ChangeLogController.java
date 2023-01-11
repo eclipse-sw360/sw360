@@ -59,80 +59,80 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ChangeLogController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
-    private static final Logger log = LogManager.getLogger(ChangeLogController.class);
+	private static final Logger log = LogManager.getLogger(ChangeLogController.class);
 
-    public static final String CHANGE_LOG_URL = "/changelog";
-    @Autowired
-    private Sw360ChangeLogService sw360ChangeLogService;
+	public static final String CHANGE_LOG_URL = "/changelog";
+	@Autowired
+	private Sw360ChangeLogService sw360ChangeLogService;
 
-    @NonNull
-    private final RestControllerHelper restControllerHelper;
+	@NonNull
+	private final RestControllerHelper restControllerHelper;
 
-    @NonNull
-    private final com.fasterxml.jackson.databind.Module sw360Module;
+	@NonNull
+	private final com.fasterxml.jackson.databind.Module sw360Module;
 
-    @RequestMapping(value = CHANGE_LOG_URL + "/document/{id}", method = RequestMethod.GET)
-    public ResponseEntity getChangeLogForDocument(Pageable pageable, @PathVariable("id") String docId,
-            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException,
-            ResourceClassNotFoundException {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        List<ChangeLogs> changelogs = sw360ChangeLogService.getChangeLogsByDocumentId(docId, sw360User);
-        PaginationResult<ChangeLogs> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                changelogs, SW360Constants.TYPE_CHANGELOG);
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.registerModule(sw360Module);
+	@RequestMapping(value = CHANGE_LOG_URL + "/document/{id}", method = RequestMethod.GET)
+	public ResponseEntity getChangeLogForDocument(Pageable pageable, @PathVariable("id") String docId,
+			HttpServletRequest request)
+			throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		List<ChangeLogs> changelogs = sw360ChangeLogService.getChangeLogsByDocumentId(docId, sw360User);
+		PaginationResult<ChangeLogs> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+				changelogs, SW360Constants.TYPE_CHANGELOG);
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		mapper.registerModule(sw360Module);
 
-        List<EmbeddedChangeLogs> embeddedChangeLogs = paginationResult.getResources().stream()
-                .map(ch -> mapper.convertValue(ch, EmbeddedChangeLogs.class)).collect(Collectors.toList());
-        embeddedChangeLogs.forEach(ch -> {
-            Object changes = ch.get("changes");
-            if (changes != null && !((List) changes).isEmpty()) {
-                List<Map<String, Object>> changesAsList = (List<Map<String, Object>>) changes;
-                changesAsList.stream().filter(Objects::nonNull).forEach(changesAsMap -> {
-                    Object fieldValueOld = changesAsMap.get("fieldValueOld");
-                    Object fieldValueNew = changesAsMap.get("fieldValueNew");
+		List<EmbeddedChangeLogs> embeddedChangeLogs = paginationResult.getResources().stream()
+				.map(ch -> mapper.convertValue(ch, EmbeddedChangeLogs.class)).collect(Collectors.toList());
+		embeddedChangeLogs.forEach(ch -> {
+			Object changes = ch.get("changes");
+			if (changes != null && !((List) changes).isEmpty()) {
+				List<Map<String, Object>> changesAsList = (List<Map<String, Object>>) changes;
+				changesAsList.stream().filter(Objects::nonNull).forEach(changesAsMap -> {
+					Object fieldValueOld = changesAsMap.get("fieldValueOld");
+					Object fieldValueNew = changesAsMap.get("fieldValueNew");
 
-                    try {
-                        if (fieldValueOld != null && CommonUtils.isNotNullEmptyOrWhitespace(fieldValueOld.toString())) {
-                            Object fieldValueOldAsMap = mapper.readValue(fieldValueOld.toString(), Object.class);
-                            changesAsMap.put("fieldValueOld", fieldValueOldAsMap);
-                        }
+					try {
+						if (fieldValueOld != null && CommonUtils.isNotNullEmptyOrWhitespace(fieldValueOld.toString())) {
+							Object fieldValueOldAsMap = mapper.readValue(fieldValueOld.toString(), Object.class);
+							changesAsMap.put("fieldValueOld", fieldValueOldAsMap);
+						}
 
-                        if (fieldValueNew != null && CommonUtils.isNotNullEmptyOrWhitespace(fieldValueNew.toString())) {
+						if (fieldValueNew != null && CommonUtils.isNotNullEmptyOrWhitespace(fieldValueNew.toString())) {
 
-                            Object fieldValueNewAsMap = mapper.readValue(fieldValueNew.toString(), Object.class);
-                            changesAsMap.put("fieldValueNew", fieldValueNewAsMap);
-                        }
-                    } catch (JsonProcessingException e) {
-                        log.error("Error while parsing changes", e);
-                    }
-                });
-            }
-        });
+							Object fieldValueNewAsMap = mapper.readValue(fieldValueNew.toString(), Object.class);
+							changesAsMap.put("fieldValueNew", fieldValueNewAsMap);
+						}
+					} catch (JsonProcessingException e) {
+						log.error("Error while parsing changes", e);
+					}
+				});
+			}
+		});
 
-        CollectionModel resources = null;
-        if (CommonUtils.isNotEmpty(embeddedChangeLogs)) {
-            resources = restControllerHelper.generatePagesResource(paginationResult, embeddedChangeLogs);
-        }
+		CollectionModel resources = null;
+		if (CommonUtils.isNotEmpty(embeddedChangeLogs)) {
+			resources = restControllerHelper.generatePagesResource(paginationResult, embeddedChangeLogs);
+		}
 
-        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity(resources, HttpStatus.OK);
-    }
+		HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+		return new ResponseEntity(resources, HttpStatus.OK);
+	}
 
-    @Override
-    public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        final WebMvcLinkBuilder controllerLinkBuilder = linkTo(ChangeLogController.class);
-        final Link changelogLink = Link.of(
-                UriTemplate.of(controllerLinkBuilder.toUri().toString() + "/api" + CHANGE_LOG_URL + "/document/{id}"),
-                "changeLogs");
-        resource.add(changelogLink);
-        return resource;
-    }
+	@Override
+	public RepositoryLinksResource process(RepositoryLinksResource resource) {
+		final WebMvcLinkBuilder controllerLinkBuilder = linkTo(ChangeLogController.class);
+		final Link changelogLink = Link.of(
+				UriTemplate.of(controllerLinkBuilder.toUri().toString() + "/api" + CHANGE_LOG_URL + "/document/{id}"),
+				"changeLogs");
+		resource.add(changelogLink);
+		return resource;
+	}
 
-    @Relation(collectionRelation = "sw360:changeLogs")
-    private static class EmbeddedChangeLogs extends LinkedHashMap {
-        public EmbeddedChangeLogs() {
-        }
-    }
+	@Relation(collectionRelation = "sw360:changeLogs")
+	private static class EmbeddedChangeLogs extends LinkedHashMap {
+		public EmbeddedChangeLogs() {
+		}
+	}
 }

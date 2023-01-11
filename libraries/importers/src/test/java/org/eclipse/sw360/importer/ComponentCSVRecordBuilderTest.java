@@ -26,102 +26,92 @@ import static org.hamcrest.core.Is.is;
  */
 public class ComponentCSVRecordBuilderTest {
 
-    @Test
-    public void testFillComponent() throws Exception {
-        final Component component = new Component();
-        component.setName("Name").setBlog("BLog").setCategories(ImmutableSet.of("cat2", "cat3"))
-                .setComponentType(ComponentType.COTS).setCreatedBy("theCreator")
-                .setCreatedOn("the4thDay").setDescription("desc").setHomepage("homePage")
-                .setBlog("blog also").setMailinglist("Mighty Mails")
-                .setSoftwarePlatforms(ImmutableSet.of("Firefox", "Python"));
+	@Test
+	public void testFillComponent() throws Exception {
+		final Component component = new Component();
+		component.setName("Name").setBlog("BLog").setCategories(ImmutableSet.of("cat2", "cat3"))
+				.setComponentType(ComponentType.COTS).setCreatedBy("theCreator").setCreatedOn("the4thDay")
+				.setDescription("desc").setHomepage("homePage").setBlog("blog also").setMailinglist("Mighty Mails")
+				.setSoftwarePlatforms(ImmutableSet.of("Firefox", "Python"));
 
-        final ComponentCSVRecordBuilder componentCSVRecordBuilder = new ComponentCSVRecordBuilder().fill(component);
-        final ComponentCSVRecord build = componentCSVRecordBuilder.build();
+		final ComponentCSVRecordBuilder componentCSVRecordBuilder = new ComponentCSVRecordBuilder().fill(component);
+		final ComponentCSVRecord build = componentCSVRecordBuilder.build();
 
-        assertThat(build.getComponent(), is(component));
+		assertThat(build.getComponent(), is(component));
 
+	}
 
-    }
+	@Test
+	public void testFillRelease() throws Exception {
 
-    @Test
-    public void testFillRelease() throws Exception {
+		Release release = new Release();
 
-        Release release = new Release();
+		release.setName("Name").setCreatedBy("theCreator").setCreatedOn("the5thDay").setVersion("6")
+				.setCpeid("cpe2.3://///***").setReleaseDate("theDayOfTheRelease")
+				.setSourceCodeDownloadurl("http://www.siemens.com").setMainlineState(MainlineState.MAINLINE)
+				.setClearingState(ClearingState.NEW_CLEARING)
+				.setContributors(ImmutableSet.of("me", "myself", "and", "I", "are", "singing"))
+				.setModerators(ImmutableSet.of("and", "dancing")).setSubscribers(ImmutableSet.of("to", "a"))
+				.setLanguages(ImmutableSet.of("silent", "tune"))
+				.setOperatingSystems(ImmutableSet.of("which", "is", "licensed"))
+				.setMainLicenseIds(ImmutableSet.of("under", "GPL"));
 
-        release.setName("Name").setCreatedBy("theCreator").setCreatedOn("the5thDay")
-                .setVersion("6").setCpeid("cpe2.3://///***").setReleaseDate("theDayOfTheRelease")
-                .setSourceCodeDownloadurl("http://www.siemens.com").setMainlineState(MainlineState.MAINLINE)
-                .setClearingState(ClearingState.NEW_CLEARING)
-                .setContributors(ImmutableSet.of("me", "myself", "and", "I", "are", "singing"))
-                .setModerators(ImmutableSet.of("and", "dancing")).setSubscribers(ImmutableSet.of("to", "a"))
-                .setLanguages(ImmutableSet.of("silent", "tune")).setOperatingSystems(ImmutableSet.of("which", "is", "licensed"))
-                .setMainLicenseIds(ImmutableSet.of("under", "GPL"));
+		final ComponentCSVRecordBuilder componentCSVRecordBuilder = new ComponentCSVRecordBuilder().fill(release);
+		final ComponentCSVRecord build = componentCSVRecordBuilder.build();
+		assertThat(build.getRelease(null, null, null), is(release));
 
+	}
 
-        final ComponentCSVRecordBuilder componentCSVRecordBuilder = new ComponentCSVRecordBuilder().fill(release);
-        final ComponentCSVRecord build = componentCSVRecordBuilder.build();
-        assertThat(build.getRelease(null, null, null), is(release));
+	@Test
+	public void testFillVendor() throws Exception {
+		Vendor vendor = new Vendor();
+		vendor.setFullname("VendorName").setShortname("Ven").setUrl("http://www.siemens.com");
+		final ComponentCSVRecordBuilder componentCSVRecordBuilder = new ComponentCSVRecordBuilder().fill(vendor);
+		final ComponentCSVRecord build = componentCSVRecordBuilder.build();
+		assertThat(build.getVendor(), is(vendor));
+	}
 
-    }
+	@Test
+	public void testFillClearingInfo() throws Exception {
+		final ClearingInformation clearingInformation = new ClearingInformation();
 
-    @Test
-    public void testFillVendor() throws Exception {
-        Vendor vendor = new Vendor();
-        vendor.setFullname("VendorName").setShortname("Ven").setUrl("http://www.siemens.com");
-        final ComponentCSVRecordBuilder componentCSVRecordBuilder = new ComponentCSVRecordBuilder().fill(vendor);
-        final ComponentCSVRecord build = componentCSVRecordBuilder.build();
-        assertThat(build.getVendor(), is(vendor));
-    }
+		clearingInformation.setExternalSupplierID("C4S").setAdditionalRequestInfo("NG").setEvaluated("eval")
+				.setProcStart("proc").setRequestID("req").setScanned("e").setClearingStandard("CL")
+				.setComment("wittyh comment").setExternalUrl("share me").setBinariesOriginalFromCommunity(true)
+				.setBinariesSelfMade(false).setComponentLicenseInformation(true).setSourceCodeDelivery(true)
+				.setSourceCodeOriginalFromCommunity(false).setSourceCodeToolMade(false).setSourceCodeSelfMade(false)
+				.setScreenshotOfWebSite(true).setFinalizedLicenseScanReport(false).setLicenseScanReportResult(true)
+				.setLegalEvaluation(true).setLicenseAgreement(false).setComponentClearingReport(false)
+				.setCountOfSecurityVn(2323);
 
-    @Test
-    public void testFillClearingInfo() throws Exception {
-        final ClearingInformation clearingInformation = new ClearingInformation();
+		final ComponentCSVRecordBuilder componentCSVRecordBuilder = new ComponentCSVRecordBuilder()
+				.fill(clearingInformation);
 
+		final ComponentCSVRecord build = componentCSVRecordBuilder.build();
+		assertThat(build.getClearingInformation(), is(clearingInformation));
+	}
 
-        clearingInformation.setExternalSupplierID("C4S")
-                .setAdditionalRequestInfo("NG").setEvaluated("eval").setProcStart("proc")
-                .setRequestID("req").setScanned("e").setClearingStandard("CL").setComment("wittyh comment")
-                .setExternalUrl("share me").setBinariesOriginalFromCommunity(true).setBinariesSelfMade(false)
-                .setComponentLicenseInformation(true).setSourceCodeDelivery(true)
-                .setSourceCodeOriginalFromCommunity(false).setSourceCodeToolMade(false)
-                .setSourceCodeSelfMade(false).setScreenshotOfWebSite(true)
-                .setFinalizedLicenseScanReport(false).setLicenseScanReportResult(true)
-                .setLegalEvaluation(true).setLicenseAgreement(false)
-                .setComponentClearingReport(false).setCountOfSecurityVn(2323);
+	@Test
+	public void testFillEccInfo() throws Exception {
+		final EccInformation eccInformation = newDefaultEccInformation();
 
-        final ComponentCSVRecordBuilder componentCSVRecordBuilder = new ComponentCSVRecordBuilder().fill(clearingInformation);
+		eccInformation.setEccStatus(ECCStatus.APPROVED).setAl("AL").setEccn("ECCN").setMaterialIndexNumber("MIN")
+				.setEccComment("Comment").setAssessorContactPerson("JN").setAssessorDepartment("T")
+				.setAssessmentDate("date");
 
-        final ComponentCSVRecord build = componentCSVRecordBuilder.build();
-        assertThat(build.getClearingInformation(), is(clearingInformation));
-    }
+		final ComponentCSVRecordBuilder componentCSVRecordBuilder = new ComponentCSVRecordBuilder()
+				.fill(eccInformation);
 
-    @Test
-    public void testFillEccInfo() throws Exception {
-        final EccInformation eccInformation = newDefaultEccInformation();
+		final ComponentCSVRecord build = componentCSVRecordBuilder.build();
+		assertThat(build.getEccInformation(), is(eccInformation));
+	}
 
-
-        eccInformation
-                .setEccStatus(ECCStatus.APPROVED)
-                .setAl("AL")
-                .setEccn("ECCN")
-                .setMaterialIndexNumber("MIN")
-                .setEccComment("Comment")
-                .setAssessorContactPerson("JN")
-                .setAssessorDepartment("T")
-                .setAssessmentDate("date");
-
-        final ComponentCSVRecordBuilder componentCSVRecordBuilder = new ComponentCSVRecordBuilder().fill(eccInformation);
-
-        final ComponentCSVRecord build = componentCSVRecordBuilder.build();
-        assertThat(build.getEccInformation(), is(eccInformation));
-    }
-
-    @Test
-    public void testFillRepository() throws Exception {
-        final Repository repository = new Repository();
-        repository.setRepositorytype(RepositoryType.ALIENBRAIN).setUrl("http://www.siemens.com");
-        final ComponentCSVRecordBuilder componentCSVRecordBuilder = ComponentCSVRecord.builder().fill(repository);
-        final ComponentCSVRecord build = componentCSVRecordBuilder.build();
-        assertThat(build.getRepository(), is(repository));
-    }
+	@Test
+	public void testFillRepository() throws Exception {
+		final Repository repository = new Repository();
+		repository.setRepositorytype(RepositoryType.ALIENBRAIN).setUrl("http://www.siemens.com");
+		final ComponentCSVRecordBuilder componentCSVRecordBuilder = ComponentCSVRecord.builder().fill(repository);
+		final ComponentCSVRecord build = componentCSVRecordBuilder.build();
+		assertThat(build.getRepository(), is(repository));
+	}
 }

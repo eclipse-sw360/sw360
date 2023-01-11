@@ -55,267 +55,270 @@ import static java.net.URLConnection.guessContentTypeFromStream;
  * @author birgit.heydenreich@tngtech.com
  */
 public class AttachmentPortletUtils extends AttachmentFrontendUtils {
-    private static final String EMPTY_ATTACHMENT_BUNDLE_NAME = "Empty.zip";
+	private static final String EMPTY_ATTACHMENT_BUNDLE_NAME = "Empty.zip";
 
-    public static final String DEFAULT_ATTACHMENT_BUNDLE_NAME = "AttachmentBundle.zip";
+	public static final String DEFAULT_ATTACHMENT_BUNDLE_NAME = "AttachmentBundle.zip";
 
-    private static final Logger log = LogManager.getLogger(AttachmentPortletUtils.class);
-    private final ProjectService.Iface projectClient;
-    private final ComponentService.Iface componentClient;
+	private static final Logger log = LogManager.getLogger(AttachmentPortletUtils.class);
+	private final ProjectService.Iface projectClient;
+	private final ComponentService.Iface componentClient;
 
-    public AttachmentPortletUtils() {
-        this(new ThriftClients());
-    }
+	public AttachmentPortletUtils() {
+		this(new ThriftClients());
+	}
 
-    public AttachmentPortletUtils(ThriftClients thriftClients) {
-        projectClient = thriftClients.makeProjectClient();
-        componentClient = thriftClients.makeComponentClient();
-    }
+	public AttachmentPortletUtils(ThriftClients thriftClients) {
+		projectClient = thriftClients.makeProjectClient();
+		componentClient = thriftClients.makeComponentClient();
+	}
 
-    public void serveFile(ResourceRequest request, ResourceResponse response) {
-        serveFile(request, response, Optional.empty());
-    }
+	public void serveFile(ResourceRequest request, ResourceResponse response) {
+		serveFile(request, response, Optional.empty());
+	}
 
-    public void serveFile(ResourceRequest request, ResourceResponse response, Optional<String> downloadFileName) {
-        String[] ids = request.getParameterValues(PortalConstants.ATTACHMENT_ID);
+	public void serveFile(ResourceRequest request, ResourceResponse response, Optional<String> downloadFileName) {
+		String[] ids = request.getParameterValues(PortalConstants.ATTACHMENT_ID);
 
-        if(ids != null && ids.length >= 1){
-            serveAttachmentBundle(new HashSet<>(Arrays.asList(ids)), request, response, downloadFileName);
-        }else{
-            log.warn("no attachmentId was found in the request passed to serveFile");
-            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "404");
-        }
-    }
+		if (ids != null && ids.length >= 1) {
+			serveAttachmentBundle(new HashSet<>(Arrays.asList(ids)), request, response, downloadFileName);
+		} else {
+			log.warn("no attachmentId was found in the request passed to serveFile");
+			response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "404");
+		}
+	}
 
-    public void serveAttachmentBundle(Collection<String> ids, ResourceRequest request, ResourceResponse response){
-        serveAttachmentBundle(ids, request, response, Optional.empty());
-    }
+	public void serveAttachmentBundle(Collection<String> ids, ResourceRequest request, ResourceResponse response) {
+		serveAttachmentBundle(ids, request, response, Optional.empty());
+	}
 
-    private Optional<Object> getContextFromRequest(ResourceRequest request, User user) {
-        String contextType = request.getParameter(PortalConstants.CONTEXT_TYPE);
-        String contextId = request.getParameter(PortalConstants.CONTEXT_ID);
+	private Optional<Object> getContextFromRequest(ResourceRequest request, User user) {
+		String contextType = request.getParameter(PortalConstants.CONTEXT_TYPE);
+		String contextId = request.getParameter(PortalConstants.CONTEXT_ID);
 
-        try {
-            switch (contextType){
-                case "project":
-                    return Optional.ofNullable(projectClient.getProjectById(contextId, user));
-                case "release":
-                    return Optional.ofNullable(componentClient.getReleaseById(contextId, user));
-                case "component":
-                    return Optional.ofNullable(componentClient.getComponentById(contextId, user));
-            }
-        } catch (TException e) {
-            // was not allowed to see the attachment due to missing read privileges
-        }
-        return Optional.empty();
-    }
+		try {
+			switch (contextType) {
+				case "project" :
+					return Optional.ofNullable(projectClient.getProjectById(contextId, user));
+				case "release" :
+					return Optional.ofNullable(componentClient.getReleaseById(contextId, user));
+				case "component" :
+					return Optional.ofNullable(componentClient.getComponentById(contextId, user));
+			}
+		} catch (TException e) {
+			// was not allowed to see the attachment due to missing read privileges
+		}
+		return Optional.empty();
+	}
 
-    public void serveAttachmentBundle(Collection<String> ids, ResourceRequest request, ResourceResponse response, Optional<String> downloadFileName){
-        List<AttachmentContent> attachments = new ArrayList<>();
-        try {
-            for(String id : ids){
-                attachments.add(attchmntClient.get().getAttachmentContent(id));
-            }
+	public void serveAttachmentBundle(Collection<String> ids, ResourceRequest request, ResourceResponse response,
+			Optional<String> downloadFileName) {
+		List<AttachmentContent> attachments = new ArrayList<>();
+		try {
+			for (String id : ids) {
+				attachments.add(attchmntClient.get().getAttachmentContent(id));
+			}
 
-            serveAttachmentBundle(attachments, request, response, downloadFileName);
-        } catch (TException e) {
-            log.error("Problem getting the AttachmentContents from the backend", e);
-            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "404");
-        }
-    }
+			serveAttachmentBundle(attachments, request, response, downloadFileName);
+		} catch (TException e) {
+			log.error("Problem getting the AttachmentContents from the backend", e);
+			response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "404");
+		}
+	}
 
-    public void serveAttachmentBundle(List<AttachmentContent> attachments, ResourceRequest request, ResourceResponse response){
-        serveAttachmentBundle(attachments, request, response, Optional.empty());
-    }
+	public void serveAttachmentBundle(List<AttachmentContent> attachments, ResourceRequest request,
+			ResourceResponse response) {
+		serveAttachmentBundle(attachments, request, response, Optional.empty());
+	}
 
-    private void serveAttachmentBundle(List<AttachmentContent> attachments, ResourceRequest request, ResourceResponse response, Optional<String> downloadFileName){
-        String filename;
-        String contentType;
-        String isAllAttachment = request.getParameter(PortalConstants.ALL_ATTACHMENTS);
-        boolean downloadAllAttachmentSelected = StringUtils.isNotEmpty(isAllAttachment)
-                && isAllAttachment.equalsIgnoreCase("true");
-        if (attachments.size() == 1 && !downloadAllAttachmentSelected) {
-            filename = attachments.get(0).getFilename();
-            contentType = attachments.get(0).getContentType();
-            if (contentType.equalsIgnoreCase("application/gzip")) {
-                // In case of downloads with gzip file extension (e.g. *.tar.gz)
-                // the client should receive the origin file.
-                // Set http header 'Content-Encoding' to 'identity'
-                // to prevent auto encoding content (chrome).
-                response.setProperty(HttpHeaders.CONTENT_ENCODING, "identity");
-            }
-        } else if (!CommonUtils.isNotEmpty(attachments)) {
-            filename = EMPTY_ATTACHMENT_BUNDLE_NAME;
-            contentType = "application/zip";
-        } else {
-            filename = downloadFileName.orElse(DEFAULT_ATTACHMENT_BUNDLE_NAME);
-            contentType = "application/zip";
-        }
+	private void serveAttachmentBundle(List<AttachmentContent> attachments, ResourceRequest request,
+			ResourceResponse response, Optional<String> downloadFileName) {
+		String filename;
+		String contentType;
+		String isAllAttachment = request.getParameter(PortalConstants.ALL_ATTACHMENTS);
+		boolean downloadAllAttachmentSelected = StringUtils.isNotEmpty(isAllAttachment)
+				&& isAllAttachment.equalsIgnoreCase("true");
+		if (attachments.size() == 1 && !downloadAllAttachmentSelected) {
+			filename = attachments.get(0).getFilename();
+			contentType = attachments.get(0).getContentType();
+			if (contentType.equalsIgnoreCase("application/gzip")) {
+				// In case of downloads with gzip file extension (e.g. *.tar.gz)
+				// the client should receive the origin file.
+				// Set http header 'Content-Encoding' to 'identity'
+				// to prevent auto encoding content (chrome).
+				response.setProperty(HttpHeaders.CONTENT_ENCODING, "identity");
+			}
+		} else if (!CommonUtils.isNotEmpty(attachments)) {
+			filename = EMPTY_ATTACHMENT_BUNDLE_NAME;
+			contentType = "application/zip";
+		} else {
+			filename = downloadFileName.orElse(DEFAULT_ATTACHMENT_BUNDLE_NAME);
+			contentType = "application/zip";
+		}
 
-        User user = UserCacheHolder.getUserFromRequest(request);
-        try {
-            Optional<Object> context = getContextFromRequest(request, user);
+		User user = UserCacheHolder.getUserFromRequest(request);
+		try {
+			Optional<Object> context = getContextFromRequest(request, user);
 
-            if(context.isPresent()){
-                try (InputStream attachmentStream = (downloadAllAttachmentSelected
-                        ? getStreamToServeBundle(attachments, user, context.get())
-                        : getStreamToServeAFile(attachments, user, context.get()))) {
-                    PortletResponseUtil.sendFile(request, response, filename, attachmentStream, contentType);
-                } catch (IOException e) {
-                    log.error("cannot finish writing response", e);
-                    response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
-                }
-            }else{
-                log.warn("The user=["+user.getEmail()+"] tried to download attachment=["+
-                        CommonUtils.joinStrings(attachments.stream()
-                                .map(AttachmentContent::getId)
-                                .collect(Collectors.toList()))+
-                        "] in context=["+request.getParameter(PortalConstants.CONTEXT_ID)+"] without read permissions");
-                response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "404");
-            }
-        } catch (SW360Exception e) {
-            log.error("Context was not set properly.", e);
-            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "400");
-        } catch (TException e) {
-            log.error("Problem getting the attachment content from the backend", e);
-            response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
-        }
-    }
+			if (context.isPresent()) {
+				try (InputStream attachmentStream = (downloadAllAttachmentSelected
+						? getStreamToServeBundle(attachments, user, context.get())
+						: getStreamToServeAFile(attachments, user, context.get()))) {
+					PortletResponseUtil.sendFile(request, response, filename, attachmentStream, contentType);
+				} catch (IOException e) {
+					log.error("cannot finish writing response", e);
+					response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+				}
+			} else {
+				log.warn("The user=[" + user.getEmail() + "] tried to download attachment=["
+						+ CommonUtils.joinStrings(
+								attachments.stream().map(AttachmentContent::getId).collect(Collectors.toList()))
+						+ "] in context=[" + request.getParameter(PortalConstants.CONTEXT_ID)
+						+ "] without read permissions");
+				response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "404");
+			}
+		} catch (SW360Exception e) {
+			log.error("Context was not set properly.", e);
+			response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "400");
+		} catch (TException e) {
+			log.error("Problem getting the attachment content from the backend", e);
+			response.setProperty(ResourceResponse.HTTP_STATUS_CODE, "500");
+		}
+	}
 
-    private boolean uploadAttachmentPartFromRequest(PortletRequest request, String fileUploadName) throws IOException, TException {
-        final UploadPortletRequest uploadPortletRequest = PortalUtil.getUploadPortletRequest(request);
-        final InputStream stream = uploadPortletRequest.getFileAsStream(fileUploadName);
+	private boolean uploadAttachmentPartFromRequest(PortletRequest request, String fileUploadName)
+			throws IOException, TException {
+		final UploadPortletRequest uploadPortletRequest = PortalUtil.getUploadPortletRequest(request);
+		final InputStream stream = uploadPortletRequest.getFileAsStream(fileUploadName);
 
-        final ResumableUpload resumableUpload = ResumableUpload.from(uploadPortletRequest);
-        AttachmentContent attachment = null;
+		final ResumableUpload resumableUpload = ResumableUpload.from(uploadPortletRequest);
+		AttachmentContent attachment = null;
 
-        if (resumableUpload.isValid()) {
-            final AttachmentStreamConnector attachmentStreamConnector = getConnector();
-            attachment = getAttachmentContent(resumableUpload, stream);
+		if (resumableUpload.isValid()) {
+			final AttachmentStreamConnector attachmentStreamConnector = getConnector();
+			attachment = getAttachmentContent(resumableUpload, stream);
 
-            if (attachment != null) {
-                try {
-                    attachmentStreamConnector.uploadAttachmentPart(attachment, resumableUpload.getChunkNumber(), stream);
-                } catch (TException e) {
-                    log.error("Error saving attachment part", e);
-                    return false;
-                }
-            }
-        }
+			if (attachment != null) {
+				try {
+					attachmentStreamConnector.uploadAttachmentPart(attachment, resumableUpload.getChunkNumber(),
+							stream);
+				} catch (TException e) {
+					log.error("Error saving attachment part", e);
+					return false;
+				}
+			}
+		}
 
-        return attachment != null;
-    }
+		return attachment != null;
+	}
 
-    private AttachmentContent getAttachmentContent(ResumableUpload resumableUpload, InputStream stream) throws IOException, TException {
-        if (!resumableUpload.isValid()) {
-            return null;
-        }
+	private AttachmentContent getAttachmentContent(ResumableUpload resumableUpload, InputStream stream)
+			throws IOException, TException {
+		if (!resumableUpload.isValid()) {
+			return null;
+		}
 
-        final AttachmentContent attachment = getAttachmentContent(resumableUpload);
-        if (resumableUpload.getChunkNumber() == 1) {
-            String fileName = resumableUpload.getFilename();
+		final AttachmentContent attachment = getAttachmentContent(resumableUpload);
+		if (resumableUpload.getChunkNumber() == 1) {
+			String fileName = resumableUpload.getFilename();
 
-            String contentType = resumableUpload.getFileType();
+			String contentType = resumableUpload.getFileType();
 
-            if (isNullOrEmpty(contentType)) {
-                contentType = guessContentTypeFromStream(stream);
-            }
-            if (isNullOrEmpty(contentType)) {
-                contentType = guessContentTypeFromName(fileName);
-            }
-            if (isNullOrEmpty(contentType)) {
-                contentType = "text";
-            }
+			if (isNullOrEmpty(contentType)) {
+				contentType = guessContentTypeFromStream(stream);
+			}
+			if (isNullOrEmpty(contentType)) {
+				contentType = guessContentTypeFromName(fileName);
+			}
+			if (isNullOrEmpty(contentType)) {
+				contentType = "text";
+			}
 
-            int partsCount = resumableUpload.getTotalChunks();
+			int partsCount = resumableUpload.getTotalChunks();
 
-            attachment.setContentType(contentType)
-                    .setFilename(fileName)
-                    .setOnlyRemote(false)
-                    .setPartsCount(Integer.toString(partsCount));
+			attachment.setContentType(contentType).setFilename(fileName).setOnlyRemote(false)
+					.setPartsCount(Integer.toString(partsCount));
 
-            return updateAttachmentContent(attachment);
-        } else {
-            return attachment;
-        }
-    }
+			return updateAttachmentContent(attachment);
+		} else {
+			return attachment;
+		}
+	}
 
-    private AttachmentContent getAttachmentContent(ResumableUpload resumableUpload) {
-        AttachmentContent attachment = null;
-        if (resumableUpload.hasAttachmentId()) {
-            try {
-                attachment = attchmntClient.get().getAttachmentContent(resumableUpload.getAttachmentId());
-            } catch (TException e) {
-                log.error("Error retrieving attachment", e);
-            }
-        }
-        return attachment;
-    }
+	private AttachmentContent getAttachmentContent(ResumableUpload resumableUpload) {
+		AttachmentContent attachment = null;
+		if (resumableUpload.hasAttachmentId()) {
+			try {
+				attachment = attchmntClient.get().getAttachmentContent(resumableUpload.getAttachmentId());
+			} catch (TException e) {
+				log.error("Error retrieving attachment", e);
+			}
+		}
+		return attachment;
+	}
 
-    public AttachmentContent createAttachmentContent(ResourceRequest request) throws IOException {
-        String filename = request.getParameter("fileName");
-        AttachmentContent attachmentContent = new AttachmentContent()
-                .setContentType("application/octet-stream")
-                .setFilename(filename);
+	public AttachmentContent createAttachmentContent(ResourceRequest request) throws IOException {
+		String filename = request.getParameter("fileName");
+		AttachmentContent attachmentContent = new AttachmentContent().setContentType("application/octet-stream")
+				.setFilename(filename);
 
-        try {
-            attachmentContent = attchmntClient.get().makeAttachmentContent(attachmentContent);
-        } catch (TException e) {
-            log.error("Error creating attachment", e);
-            attachmentContent = null;
-        }
+		try {
+			attachmentContent = attchmntClient.get().makeAttachmentContent(attachmentContent);
+		} catch (TException e) {
+			log.error("Error creating attachment", e);
+			attachmentContent = null;
+		}
 
-        return attachmentContent;
-    }
+		return attachmentContent;
+	}
 
-    public boolean uploadAttachmentPart(PortletRequest request, String fileUploadName) throws IOException {
-        try {
-            return uploadAttachmentPartFromRequest(request, fileUploadName);
-        } catch (TException e) {
-            log.error("Error getting attachment and saving it", e);
-            return false;
-        }
-    }
+	public boolean uploadAttachmentPart(PortletRequest request, String fileUploadName) throws IOException {
+		try {
+			return uploadAttachmentPartFromRequest(request, fileUploadName);
+		} catch (TException e) {
+			log.error("Error getting attachment and saving it", e);
+			return false;
+		}
+	}
 
-    public RequestStatus cancelUpload(ResourceRequest request) {
-        String attachmentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
-        try {
-            return attchmntClient.get().deleteAttachmentContent(attachmentId);
-        } catch (TException e) {
-            log.error("Error deleting attachment from backend", e);
-            return RequestStatus.FAILURE;
-        }
-    }
+	public RequestStatus cancelUpload(ResourceRequest request) {
+		String attachmentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
+		try {
+			return attchmntClient.get().deleteAttachmentContent(attachmentId);
+		} catch (TException e) {
+			log.error("Error deleting attachment from backend", e);
+			return RequestStatus.FAILURE;
+		}
+	}
 
-    public boolean checkAttachmentExistsFromRequest(ResourceRequest request) {
-        ResumableUpload resumableUpload = ResumableUpload.from(request);
+	public boolean checkAttachmentExistsFromRequest(ResourceRequest request) {
+		ResumableUpload resumableUpload = ResumableUpload.from(request);
 
-        final AttachmentContent attachment = getAttachmentContent(resumableUpload);
+		final AttachmentContent attachment = getAttachmentContent(resumableUpload);
 
-        return alreadyHavePart(attachment, resumableUpload);
-    }
+		return alreadyHavePart(attachment, resumableUpload);
+	}
 
-    private boolean alreadyHavePart(AttachmentContent attachment, ResumableUpload resumableUpload) {
-        if (attachment == null || !resumableUpload.isValid()) {
-            return false;
-        }
+	private boolean alreadyHavePart(AttachmentContent attachment, ResumableUpload resumableUpload) {
+		if (attachment == null || !resumableUpload.isValid()) {
+			return false;
+		}
 
-        AttachmentStreamConnector attachmentStreamConnector;
-        try {
-            attachmentStreamConnector = getConnector();
-        } catch (TException e) {
-            log.error("no connector", e);
-            return false;
-        }
+		AttachmentStreamConnector attachmentStreamConnector;
+		try {
+			attachmentStreamConnector = getConnector();
+		} catch (TException e) {
+			log.error("no connector", e);
+			return false;
+		}
 
-        try {
-            attachmentStreamConnector.getAttachmentPartStream(attachment, resumableUpload.getChunkNumber()).close();
-            return true;
-        } catch (SW360Exception e) {
-            log.error("cannot check if part already exists", e);
-            return false;
-        } catch (IOException | NoDocumentException ignored) {
-            return false;
-        }
-    }
+		try {
+			attachmentStreamConnector.getAttachmentPartStream(attachment, resumableUpload.getChunkNumber()).close();
+			return true;
+		} catch (SW360Exception e) {
+			log.error("cannot check if part already exists", e);
+			return false;
+		} catch (IOException | NoDocumentException ignored) {
+			return false;
+		}
+	}
 }
