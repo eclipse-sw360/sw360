@@ -171,7 +171,7 @@ define('utils/includes/attachmentsUpload', ['jquery', 'resumable', 'modules/dial
                 });
 
                 $progressContainer = $('<div class="row"></div>').appendTo($fileControllers);
-                $progressContainer.append('<div class="col"><div class="progress"></div></div>');
+                $progressContainer.append('<div class="col"><div class="progress d-none"></div></div>');
                 var $progress = $('<div style="width: 0%;" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>');
                 $fileControllers.find('.progress').append($progress);
 
@@ -190,6 +190,7 @@ define('utils/includes/attachmentsUpload', ['jquery', 'resumable', 'modules/dial
                 var controller = fileControllers[fileToId(file)],
                     progress = file.progress() * 100;
 
+                $('.progress').removeClass('d-none');
                 controller.$progress.width(progress + '%');
                 controller.$progress.attr('aria-valuenow', progress);
             };
