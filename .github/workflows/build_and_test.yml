@@ -35,6 +35,10 @@ jobs:
         chmod +x .github/testForLicenseHeaders.sh
         bash .github/testForLicenseHeaders.sh
 
+    - name: Set environment variables
+      run: |
+        cat .versions >> $GITHUB_ENV
+
     - name: Setup CouchDB
       run: scripts/startCouchdbForTests.sh
 
@@ -57,7 +61,17 @@ jobs:
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git temurin-11-jdk maven cmake
         pip install mkdocs mkdocs-material
 
+    - name: Cache Thrift
+      id: cache-thrift
+      uses: actions/cache@v3
+      with:
+        path: |
+          /usr/local/bin/thrift
+          /usr/share/thrift/${{ env.THRIFT_VERSION }}
+        key: ${{ runner.os }}-thriftbin
+
     - name: Install Thrift
+      if: steps.cache-thrift.outputs.cache-hit != 'true'
       run: |
         chmod +x scripts/install-thrift.sh
         bash scripts/install-thrift.sh

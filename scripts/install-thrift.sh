@@ -26,7 +26,6 @@ UNINSTALL=false
 has() { type "$1" &> /dev/null; }
 
 processThrift() {
-  set -x
   VERSION=$3
 
   echo "-[shell provisioning] Extracting thrift"
@@ -47,7 +46,6 @@ processThrift() {
     -DBUILD_C_GLIB=OFF \
     -DBUILD_JAVASCRIPT=OFF \
     -DBUILD_NODEJS=OFF \
-    -DBUILD_TESTS=OFF \
     -DWITH_OPENSSL=OFF \
     -DBUILD_PYTHON=OFF \
     -DBUILD_TESTING=OFF \
@@ -60,6 +58,8 @@ processThrift() {
 
   echo "-[shell provisioning] Executing make $2 on thrift"
   $SUDO_CMD make "$2"
+  $SUDO_CMD mkdir -p /usr/share/thrift
+  $SUDO_CMD touch "/usr/share/thrift/${THRIFT_VERSION}"
 }
 
 installThrift() {
