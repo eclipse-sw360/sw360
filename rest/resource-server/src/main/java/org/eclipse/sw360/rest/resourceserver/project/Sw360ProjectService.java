@@ -304,9 +304,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     }
 
     public ProjectService.Iface getThriftProjectClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/projects/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new ProjectService.Client(protocol);
+        ProjectService.Iface projectClient = new ThriftClients().makeProjectClient();
+        return projectClient;
     }
 
     public Function<ProjectLink, ProjectLink> filterAndSortAttachments(Collection<AttachmentType> attachmentTypes) {
