@@ -346,6 +346,7 @@ public class PortalConstants {
     public static final String VULNERABILITIES_PORTLET_NAME = PORTLET_NAME_PREFIX + "vulnerabilitites";
     public static final String VULNERABILITY = "vulnerability";
     public static final String VULNERABILITY_LIST = "vulnerabilityList";
+    public static final String TOTAL_VULNERABILITY_COUNT = "totalVulnerabilityCount";
     public static final String VULNERABILITY_RATINGS = "vulnerabilityRatings";
     public static final String VULNERABILITY_ACTIONS = "vulnerabilityActions";
     public static final String VULNERABILITY_ID = "vulnerabilityId";

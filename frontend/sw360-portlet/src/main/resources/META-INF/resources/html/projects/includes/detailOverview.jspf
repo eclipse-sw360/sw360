@@ -217,6 +217,7 @@
 		                    <core_rt:set var="tableId" value="usingProjectsTableSummary"/>
 		                    <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
 		                    <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
+		                    <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 		                </div>
 		                <div id="tab-Administration" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Administration'}">active show</core_rt:if>">
 		                    <%@include file="/html/projects/includes/projects/administration.jspf" %>
@@ -244,6 +245,11 @@
                             <div id="tab-Vulnerabilities" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active show</core_rt:if>">
                                 <%@include file="/html/utils/includes/vulnerabilityModal.jspf" %>
                                 <ul class="nav nav-tabs font-weight-bold border-bottom" role="tablist">
+                                    <core_rt:if test="${fn:length(allSubProjectLink) > 1}">
+                                        <li class="nav-item border rounded border-bottom-0"><a class="nav-link" id="allProject-tab" data-toggle="tab" href="#allProject" role="tab"
+                                            aria-controls="allProject" aria-selected="false"><liferay-ui:message key="summary"/></a>
+                                        </li>
+                                    </core_rt:if>
                                     <li class="nav-item border rounded border-bottom-0"><a class="nav-link active" id="parentProject-tab" data-toggle="tab" href="#parentProject" role="tab"
                                         aria-controls="parentProject" aria-selected="true"><sw360:ProjectName project="${project}" /></a></li>
                                     <core_rt:forEach var="subprojectLink" items="${allSubProjectLink}">
@@ -265,6 +271,9 @@
                                         </div>
                                         </core_rt:if>
                                     </core_rt:forEach>
+                                    <div class="tab-pane fade show" id="allProject" role="tabpanel" aria-labelledby="allProject-tab">
+                                        <%@include file="/html/projects/includes/projects/totalVulnerabilities.jsp"%>
+                                    </div>
                                 </div>
                             </div>
                         </core_rt:if>

@@ -1603,6 +1603,17 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 Collection<ProjectLink> links = allSubProjectLinks.stream().collect(
                         Collectors.toMap(ProjectLink::getId, Function.identity(), (oldValue, newValue) -> oldValue)).values();
                 request.setAttribute(ALL_SUB_PROJECT_LINK, links);
+                List<String> projIds = links.stream().map(proj->proj.id).collect(Collectors.toList());
+                VulnerabilityService.Iface vulClient = thriftClients.makeVulnerabilityClient();
+                List<VulnerabilityDTO> total_vuls = new ArrayList<VulnerabilityDTO>();
+                for (int pos = 0; pos < projIds.size(); pos++) {
+                    List<VulnerabilityDTO> vuls = vulClient.getVulnerabilitiesByProjectIdWithoutIncorrect(projIds.get(pos), user);
+                    Project proj = client.getProjectById(projIds.get(pos), user);
+                    if (proj.enableVulnerabilitiesDisplay) {
+                        total_vuls.addAll(vuls);
+                    }
+                }
+                request.setAttribute(PortalConstants.TOTAL_VULNERABILITY_COUNT, total_vuls.size());
                 putDirectlyLinkedReleasesInRequest(request, project);
                 Set<Project> usingProjects = client.searchLinkingProjects(id, user);
                 request.setAttribute(USING_PROJECTS, usingProjects);
