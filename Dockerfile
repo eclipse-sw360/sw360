@@ -231,6 +231,8 @@ COPY --chown=$USERNAME:$USERNAME --from=sw360 /etc/sw360 /etc/sw360
 #RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
 #    && sed -i "s,shared.loader=,shared.loader=/app/sw360/tomcat/shared/*.jar,g" /app/sw360/tomcat/conf/catalina.properties
 
+COPY ./scripts/docker-config/setenv.sh /app/sw360/tomcat/bin/
+COPY ./scripts/docker-config/context.xml /app/sw360/tomcat/conf/
 # Copy liferay/sw360 config files
 COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/portal-ext.properties /app/sw360/portal-ext.properties
 COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/entry_point.sh /app/entry_point.sh

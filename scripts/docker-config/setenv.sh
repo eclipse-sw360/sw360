@@ -1,0 +1,1 @@
+CATALINA_OPTS="$CATALINA_OPTS -Dfile.encoding=UTF-8 -Djava.locale.providers=JRE,COMPAT,CLDR -Djava.net.preferIPv4Stack=true -Duser.timezone=GMT -Xms5120m -Xmx5120m -XX:MaxNewSize=2048m -XX:MaxMetaspaceSize=1536m -XX:MetaspaceSize=1636m -XX:NewSize=2048m -XX:SurvivorRatio=7"
