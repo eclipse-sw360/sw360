@@ -198,9 +198,9 @@ RUN --mount=type=bind,target=/build/sw360,rw \
 # # Generate slim war files
 WORKDIR /sw360_tomcat_webapps/
 
-COPY scripts/create-slim-war-files.sh /bin/slim.sh
+#COPY scripts/create-slim-war-files.sh /bin/slim.sh
 COPY --from=sw360clucene /couchdb-lucene.war /sw360_tomcat_webapps
-RUN bash /bin/slim.sh
+#RUN bash /bin/slim.sh
 
 FROM scratch AS sw360
 COPY --from=sw360build /sw360_deploy /sw360_deploy
@@ -218,17 +218,18 @@ USER $USERNAME
 # Downloaded jar dependencies
 COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_deploy/* /app/sw360/deploy
 # Streamlined wars
-COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/slim-wars/*.war /app/sw360/tomcat/webapps/
+#COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/slim-wars/*.war /app/sw360/tomcat/webapps/
+COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/*.war /app/sw360/tomcat/webapps/
 # org.eclipse.sw360 jar artifacts
-COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/*.jar /app/sw360/tomcat/webapps/
+#COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/*.jar /app/sw360/tomcat/webapps/
 # Shared streamlined jar libs
-COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
+#COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
 # Modified etc
 COPY --chown=$USERNAME:$USERNAME --from=sw360 /etc/sw360 /etc/sw360
 
 # Make catalina understand shared directory
-RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
-    && sed -i "s,shared.loader=,shared.loader=/app/sw360/tomcat/shared/*.jar,g" /app/sw360/tomcat/conf/catalina.properties
+#RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
+#    && sed -i "s,shared.loader=,shared.loader=/app/sw360/tomcat/shared/*.jar,g" /app/sw360/tomcat/conf/catalina.properties
 
 # Copy liferay/sw360 config files
 COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/portal-ext.properties /app/sw360/portal-ext.properties
