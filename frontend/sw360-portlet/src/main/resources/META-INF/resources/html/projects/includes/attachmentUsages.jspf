@@ -145,7 +145,7 @@
             });
         });
 
-        $('a[href="#"]').click(function(e) {
+        $('#AttachmentUsagesInfo a[href="#"]').click(function(e) {
             e.preventDefault();
             $('#AttachmentUsagesInfo').treetable(e.target.id);
             return false;
