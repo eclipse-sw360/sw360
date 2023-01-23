@@ -33,6 +33,7 @@
 <jsp:useBean id="tag" class="java.lang.String" scope="request"/>
 <jsp:useBean id="name" class="java.lang.String" scope="request"/>
 <jsp:useBean id="state" class="java.lang.String" scope="request"/>
+<jsp:useBean id="exactMatchCheckBox" class="java.lang.String" scope="request"/>
 
 <core_rt:set var="stateAutoC" value='<%=PortalConstants.STATE%>'/>
 <core_rt:set var="projectTypeAutoC" value='<%=PortalConstants.PROJECT_TYPE%>'/>
@@ -143,6 +144,14 @@
                                 <label for="additional_data"><liferay-ui:message key="additional.data" /></label>
                                 <input type="text" class="form-control form-control-sm" name="<portlet:namespace/><%=Project._Fields.ADDITIONAL_DATA%>"
                                         value="<sw360:out value="${additionalData}"/>" id="additional_data">
+                            </div>
+                            <div class="form-group">
+                                <input class="form-check-input" type="checkbox" value="On" <core_rt:if test="${exactMatchCheckBox != ''}"> checked="checked"</core_rt:if>
+                                       name="<portlet:namespace/><%=PortalConstants.EXACT_MATCH_CHECKBOX%>">
+                                <label class="form-check-label" for="exactMatch"><liferay-ui:message key="exact.match" /></label>
+                                <sup title="<liferay-ui:message key="the.search.result.will.display.elements.exactly.matching.the.input.equivalent.to.using.x.around.the.search.keyword" /> <liferay-ui:message key="applied.on.project.name.and.version" />">
+                                    <liferay-ui:icon icon="info-sign" />
+                                </sup>
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm btn-block"><liferay-ui:message key="search" /></button>
                         </form>

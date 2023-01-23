@@ -66,6 +66,8 @@ public class PortalConstants {
     public static final String ROLENAME_SECURITY_ADMIN = "Security Admin";
     public static final String ROLENAME_SW360_ADMIN = "SW360 Admin";
 
+    //! Key for Exact Match CheckBox
+    public static final String EXACT_MATCH_CHECKBOX = "exactMatchCheckBox";
 
     //! Standard keys for Lists and their size
     public static final String KEY_SUMMARY = "documents";
@@ -248,7 +250,7 @@ public class PortalConstants {
     // ! Specialized keys for changelog
     public static final String LOAD_CHANGE_LOGS = "load_change_logs";
     public static final String VIEW_CHANGE_LOGS = "view_change_logs";
-    
+
     //! Specialized keys for projects
     public static final String PROJECTS = "projects";
     public static final String PROJECT_PORTLET_NAME = PORTLET_NAME_PREFIX + PROJECTS;

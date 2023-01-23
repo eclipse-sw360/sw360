@@ -32,6 +32,13 @@
                             <div class="col">
                                 <input type="text" name="searchproject" id="searchproject" placeholder="<liferay-ui:message key="enter.search.text" />" class="form-control"/>
                             </div>
+                            <div class="form-check pt-2">
+                                <input class="form-check-input" type="checkbox" value="On" id="exactMatch">
+                                <label class="form-check-label" for="exactMatch"><liferay-ui:message key="exact.match" /></label>
+                                <sup title="<liferay-ui:message key="the.search.result.will.display.elements.exactly.matching.the.input.equivalent.to.using.x.around.the.search.keyword" />" >
+                                    <liferay-ui:icon icon="info-sign"/>
+                                </sup>
+                            </div>
                             <div class="col">
                                 <button type="button" class="btn btn-secondary" id="searchbuttonproject"><liferay-ui:message key="search" /></button>
                             </div>
@@ -114,7 +121,11 @@
         $('#addLinkedProjectButton').on('click', showProjectDialog);
         $('#linkToProjectButton').on('click', showProjectDialogForLinkToProj);
         $('#searchbuttonproject').on('click', function() {
-            projectContentFromAjax('<%=PortalConstants.PROJECT_SEARCH%>', $('#searchproject').val(), function(data) {
+            var searchProject = $('#searchproject').val();
+            if ($('#exactMatch').is(':checked') && !(searchProject.startsWith("\"") && searchProject.endsWith("\""))) {
+                searchProject = '"' + searchProject + '"';
+            }
+            projectContentFromAjax('<%=PortalConstants.PROJECT_SEARCH%>', searchProject , function(data) {
                 if($dataTable) {
                     $dataTable.destroy();
                 }

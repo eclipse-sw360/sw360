@@ -36,6 +36,7 @@
 <jsp:useBean id="totalRows" type="java.lang.Integer" scope="request"/>
 <jsp:useBean id="businessUnit" class="java.lang.String" scope="request"/>
 <jsp:useBean id="componentVisibilityRestriction" class="java.lang.Boolean" scope="request"/>
+<jsp:useBean id="exactMatchCheckBox" class="java.lang.String" scope="request"/>
 
 <core_rt:set var="programmingLanguages" value='<%=PortalConstants.PROGRAMMING_LANGUAGES%>'/>
 <core_rt:set var="operatingSystemsAutoC" value='<%=PortalConstants.OPERATING_SYSTEMS%>'/>
@@ -162,6 +163,14 @@
                                 <input type="text" id="endDate" class="datepicker form-control form-control-sm ml-0" autocomplete="off"
                                     name="<portlet:namespace/><%=PortalConstants.END_DATE%>" <core_rt:if test="${empty endDate}"> style="display: none;" </core_rt:if>
                                     value="<sw360:out value="${endDate}"/>" pattern="\d{4}-\d{2}-\d{2}" />
+                            </div>
+                            <div class="form-group">
+                                <input class="form-check-input" type="checkbox" value="On" name="<portlet:namespace/><%=PortalConstants.EXACT_MATCH_CHECKBOX%>"
+                                      <core_rt:if test="${exactMatchCheckBox != ''}"> checked="checked"</core_rt:if> />
+                                <label class="form-check-label" for="exactMatch"><liferay-ui:message key="exact.match" /></label>
+                                <sup title="<liferay-ui:message key="the.search.result.will.display.elements.exactly.matching.the.input.equivalent.to.using.x.around.the.search.keyword" /> <liferay-ui:message key="applied.on.component.name" />">
+                                    <liferay-ui:icon icon="info-sign" />
+                                </sup>
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm btn-block"><liferay-ui:message key="search" /></button>
                 </form>

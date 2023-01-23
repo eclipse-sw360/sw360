@@ -41,6 +41,14 @@
                             </div>
                         </div>
 
+                        <div class="form-check pt-2">
+                            <input class="form-check-input" type="checkbox" value="On" id="exactMatchRelease">
+                            <label class="form-check-label" for="exactMatchRelease"><liferay-ui:message key="exact.match" /></label>
+                            <sup title="<liferay-ui:message key="the.search.result.will.display.elements.exactly.matching.the.input.equivalent.to.using.x.around.the.search.keyword" />" >
+                                        <liferay-ui:icon icon="info-sign"/>
+                            </sup>
+                        </div>
+
                         <div id="search-release-form">
                             <div class="spinner text-center" style="display: none;">
                                 <div class="spinner-border" role="status">
@@ -84,8 +92,12 @@
         var homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
 
         $('#addLinkedReleasesToReleaseButton').on('click', showReleaseDialog);
-        $('#searchbuttonrelease').on('click', function() {
-            releaseContentFromAjax('<%=PortalConstants.RELEASE_SEARCH%>', $('#searchrelease').val(), function(data) {
+        $('#searchbuttonrelease').on('click', function(){
+            var searchRelease = $('#searchrelease').val();
+            if ($('#exactMatchRelease').is(':checked') && !(searchRelease.startsWith("\"") && searchRelease.endsWith("\""))) {
+               searchRelease = '"' + searchRelease + '"';
+            }
+            releaseContentFromAjax('<%=PortalConstants.RELEASE_SEARCH%>', searchRelease, function(data) {
                 if($dataTable) {
                     $dataTable.destroy();
                 }
