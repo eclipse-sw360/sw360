@@ -35,6 +35,7 @@
         <module>svc-moderation</module>
         <module>svc-fossology</module>
         <module>svc-vulnerabilities</module>
+        <module>svc-vmcomponents</module>
         <module>svc-cvesearch</module>
         <module>svc-licenseinfo</module>
         <module>svc-schedule</module>

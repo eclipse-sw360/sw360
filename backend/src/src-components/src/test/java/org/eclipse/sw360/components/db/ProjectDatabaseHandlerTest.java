@@ -101,19 +101,20 @@ public class ProjectDatabaseHandlerTest {
         components.add(component2);
 
         projects = new ArrayList<>();
-        Project project1 = new Project().setId("P1").setName("project1").setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE);
+        Project project1 = new Project().setId("P1").setName("project1").setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project1);
-        Project project2 = new Project().setId("P2").setName("project2").setLinkedProjects(ImmutableMap.of("P3", new ProjectProjectRelationship(ProjectRelationship.REFERRED), "P4", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setReleaseIdToUsage(ImmutableMap.of("R1A", newDefaultProjectReleaseRelationship(), "R1B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE);
+        Project project2 = new Project().setId("P2").setName("project2").setLinkedProjects(ImmutableMap.of("P3", new ProjectProjectRelationship(ProjectRelationship.REFERRED), "P4", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setReleaseIdToUsage(ImmutableMap.of("R1A", newDefaultProjectReleaseRelationship(), "R1B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project2);
-        Project project3 = new Project().setId("P3").setName("project3").setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.UNKNOWN))).setReleaseIdToUsage(ImmutableMap.of("R2A", newDefaultProjectReleaseRelationship(), "R2B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE);
+        Project project3 = new Project().setId("P3").setName("project3").setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.UNKNOWN))).setReleaseIdToUsage(ImmutableMap.of("R2A", newDefaultProjectReleaseRelationship(), "R2B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project3);
-        Project project4 = new Project().setId("P4").setName("project4").setLinkedProjects(ImmutableMap.of("P1", new ProjectProjectRelationship(ProjectRelationship.UNKNOWN))).setVisbility(Visibility.EVERYONE);
+        Project project4 = new Project().setId("P4").setName("project4").setLinkedProjects(ImmutableMap.of("P1", new ProjectProjectRelationship(ProjectRelationship.UNKNOWN))).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project4);
-        Project project5 = new Project().setId("P5").setName("project5").setLinkedProjects(ImmutableMap.of("P6", new ProjectProjectRelationship(ProjectRelationship.CONTAINED), "P7", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE);
+        Project project5 = new Project().setId("P5").setName("project5").setLinkedProjects(ImmutableMap.of("P6", new ProjectProjectRelationship(ProjectRelationship.CONTAINED), "P7", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project5);
-        Project project6 = new Project().setId("P6").setName("project6").setLinkedProjects(ImmutableMap.of("P7", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE);
+        Project project6 = new Project().setId("P6").setName("project6").setLinkedProjects(ImmutableMap.of("P7", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
+
         projects.add(project6);
-        Project project7 = new Project().setId("P7").setName("project7").setVisbility(Visibility.EVERYONE);
+        Project project7 = new Project().setId("P7").setName("project7").setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project7);
 
         // Create the database

@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 
+import java.util.Set;
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
 
 /**
@@ -32,15 +33,28 @@ import com.cloudant.client.api.model.DesignDocument.MapReduce;
  */
 public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
 
-    private static final String ALL = "function(doc) { if (doc.type == 'vendor') emit(null, doc._id) }";
+    private static final String BY_LOWERCASE_VENDOR_SHORTNAME_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'vendor' && doc.shortname != null) {" +
+                    "    emit(doc.shortname.toLowerCase(), doc._id);" +
+                    "  } " +
+                    "}";
 
-    private static final String BY_FULL_NAME = "function(doc) { if (doc.type == 'vendor' && doc.fullname != null) emit(doc.fullname.toLowerCase(), doc._id) }";
+    private static final String BY_LOWERCASE_VENDOR_FULLNAME_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'vendor' && doc.fullname != null) {" +
+                    "    emit(doc.fullname.toLowerCase(), doc._id);" +
+                    "  } " +
+                    "}";
+
+    private static final String ALL = "function(doc) { if (doc.type == 'vendor') emit(null, doc._id) }";
 
     public VendorRepository(DatabaseConnectorCloudant db) {
         super(db, Vendor.class);
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
         views.put("all", createMapReduce(ALL, null));
-        views.put("vendorbyfullname", createMapReduce(BY_FULL_NAME, null));
+        views.put("vendorbyshortname", createMapReduce(BY_LOWERCASE_VENDOR_SHORTNAME_VIEW, null));
+        views.put("vendorbyfullname", createMapReduce(BY_LOWERCASE_VENDOR_FULLNAME_VIEW, null));
         initStandardDesignDocument(views, db);
     }
 
@@ -73,14 +87,27 @@ public class VendorRepository extends DatabaseRepositoryCloudantClient<Vendor> {
     }
     
     public void fillVendor(Release release) {
+        fillVendor(release, null);
+    }
+
+    public void fillVendor(Release release, Map<String, Vendor> vendorCache) {
         if (release.isSetVendorId()) {
             final String vendorId = release.getVendorId();
             if (!isNullOrEmpty(vendorId)) {
-                final Vendor vendor = get(vendorId);
-                if (vendor != null)
+                final Vendor vendor = vendorCache == null ? get(vendorId) : vendorCache.computeIfAbsent(vendorId, this::get);
+                if (vendor != null) {
                     release.setVendor(vendor);
+                }
             }
             release.unsetVendorId();
         }
+    }
+
+    public Set<String> getVendorByLowercaseShortnamePrefix(String shortnamePrefix) {
+        return queryForIdsByPrefix("vendorbyshortname", shortnamePrefix != null ? shortnamePrefix.toLowerCase() : shortnamePrefix);
+    }
+
+    public Set<String> getVendorByLowercaseFullnamePrefix(String fullnamePrefix) {
+        return queryForIdsByPrefix("vendorbyfullname", fullnamePrefix != null ? fullnamePrefix.toLowerCase() : fullnamePrefix);
     }
 }

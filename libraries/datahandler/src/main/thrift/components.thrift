@@ -794,6 +794,11 @@ service ComponentService {
     set<string> getUsedAttachmentContentIds();
 
     /**
+     * loads component mappings from SVM and stores the SVM ids in the external ids of the respective releases
+     **/
+    RequestStatus updateReleasesWithSvmTrackingFeedback();
+
+    /**
      * Method to ensure uniqueness of identifiers, used by database sanitation portlet,
      * return map of name to ids
      **/

@@ -36,6 +36,7 @@
         <module>src-moderation</module>
         <module>src-fossology</module>
         <module>src-vulnerabilities</module>
+        <module>src-vmcomponents</module>
         <module>src-licenseinfo</module>
         <module>src-cvesearch</module>
         <module>src-schedule</module>

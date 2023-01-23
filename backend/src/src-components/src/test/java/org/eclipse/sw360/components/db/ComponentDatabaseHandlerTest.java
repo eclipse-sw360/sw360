@@ -14,9 +14,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.SvmConnector;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
@@ -84,6 +86,9 @@ public class ComponentDatabaseHandlerTest {
     @Mock
     ProjectModerator projectModerator;
 
+    @Mock
+    SvmConnector svmConnector;
+
     @Before
     public void setUp() throws Exception {
         assertTestString(dbName);
@@ -149,11 +154,26 @@ public class ComponentDatabaseHandlerTest {
 
         // Prepare the handler
         handler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogsDbName, attachmentsDbName, moderator, releaseModerator, projectModerator);
+        handler.setSvmConnector(svmConnector);
     }
 
     @After
     public void tearDown() throws Exception {
         TestUtils.deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
+    }
+
+    @Test
+    public void testUpdateReleasesWithSvmTrackingFeedback() throws Exception {
+        when(svmConnector.fetchComponentMappings())
+                .thenReturn(ImmutableMap.of("R1A", ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 123),
+                        "R2B", ImmutableMap.of(SW360Constants.SVM_COMPONENT_ID_KEY, 456)));
+        RequestStatus requestStatus = handler.updateReleasesWithSvmTrackingFeedback();
+
+        assertThat(requestStatus, is(RequestStatus.SUCCESS));
+        Release r1A = handler.getRelease("R1A", user1);
+        assertThat(r1A.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID), is("123"));
+        Release r2B = handler.getRelease("R2B", user1);
+        assertThat(r2B.getExternalIds().get(SW360Constants.SVM_COMPONENT_ID), is("456"));
     }
 
     @Test

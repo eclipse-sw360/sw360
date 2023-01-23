@@ -10,6 +10,8 @@
  */
 package org.eclipse.sw360.projects;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -37,10 +39,7 @@ import org.ektorp.http.HttpClient;
 import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
@@ -56,6 +55,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
  */
 public class ProjectHandler implements ProjectService.Iface {
 
+    private static final Logger log = LogManager.getLogger(ProjectHandler.class);
     private final ProjectDatabaseHandler handler;
     private final ProjectSearchHandler searchHandler;
 
@@ -329,6 +329,17 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
+    public RequestStatus exportForMonitoringList() throws TException {
+        RequestStatus status = RequestStatus.FAILURE;
+        try {
+            status = handler.exportForMonitoringList();
+        } catch (TException exp) {
+            log.error(exp);
+            throw exp;
+        }
+        return status;
+    }
+
     public List<ReleaseClearingStatusData> getReleaseClearingStatusesWithAccessibility(String projectId, User user) throws SW360Exception {
         return handler.getReleaseClearingStatusesWithAccessibility(projectId, user);
     }
