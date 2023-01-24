@@ -241,6 +241,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             component.setVendorNames(vendors);
         }
 
+        component.setBusinessUnit(user.getDepartment());
         Component sw360Component = componentService.createComponent(component, user);
         HalResource<Component> halResource = createHalComponent(sw360Component, user);
 
