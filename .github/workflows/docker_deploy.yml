@@ -14,8 +14,8 @@ name: Docker Build
 
 on:
   push:
-    branches:
-      - 'main'
+    schedule:
+      - cron: '0 0 * * *' # Midnight
     tags:
       - 'sw360-*'
     paths-ignore:
