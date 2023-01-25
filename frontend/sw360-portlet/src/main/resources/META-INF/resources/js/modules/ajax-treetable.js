@@ -17,13 +17,21 @@ define('modules/ajax-treetable', [ 'jquery', 'utils/cssloader', /* jquery-plugin
     return {
         setup: function(tableId, ajaxUrl, dataCallback, renderCallback) {
             var table = $("#" + tableId);
+            var nodeCount = 0;
             table.treetable({
                 expandable: true,
                 onNodeExpand: function () {
+                    var resultCount = 0;
+                    var areAllNodesExpanded = false;
                     var node = this,
                         data = dataCallback(table, node);
 
-                    if (node.children.length === 0 && node.row.data("children-loaded") !== true) {
+                    if (nodeCount == Object.keys(node.tree).length && $('#LinkedProjectsInfo #expandAll').is(':visible')
+                        && !$('#LinkedProjectsInfo tr').hasClass('branch collapsed')) {
+                        $('#LinkedProjectsInfo #expandAllWarning').show();
+                    }
+
+                    if (node.children.length === 0 && node.row.data("children-loaded") !== true ) {
                         jQuery.ajax({
                             type: 'POST',
                             url: ajaxUrl,
@@ -31,8 +39,27 @@ define('modules/ajax-treetable', [ 'jquery', 'utils/cssloader', /* jquery-plugin
                             data: data
                         }).done(function (result) {
                             node.row.data("children-loaded", true);
+                            
+                            if (/[a-z]/i.test(result)) {
+                               resultCount++;
+                            }
+                            nodeCount++;
+
+                            if ( nodeCount == Object.keys(node.tree).length) {
+                                areAllNodesExpanded = true;
+                            }
+
+                            if (resultCount == 0 && areAllNodesExpanded && $('#LinkedProjectsInfo #expandAll').is(':visible')) {
+                                $('#LinkedProjectsInfo #expandAllWarning').show();
+                            }
                             renderCallback(table, node, result);
                         });
+
+                    }
+                },
+                onNodeCollapse: function () {
+                    if ($('#LinkedProjectsInfo #expandAll').is(':visible')) {
+                        $('#LinkedProjectsInfo #expandAllWarning').hide();
                     }
                 }
             });
