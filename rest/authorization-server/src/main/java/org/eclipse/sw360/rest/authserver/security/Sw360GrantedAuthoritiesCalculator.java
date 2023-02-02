@@ -38,7 +38,7 @@ public class Sw360GrantedAuthoritiesCalculator {
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
         
         grantedAuthorities.add(new SimpleGrantedAuthority(READ.getAuthority()));
-        if(user != null) {
+        if (user != null) {
             if (PermissionUtils.isUserAtLeast(Sw360AuthorizationServer.CONFIG_WRITE_ACCESS_USERGROUP, user)) {
                 grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()));
             }

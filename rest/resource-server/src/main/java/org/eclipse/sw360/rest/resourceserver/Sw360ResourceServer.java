@@ -14,6 +14,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.common.PropertyUtils;
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -55,6 +56,10 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public static final String JWKS_ENDPOINT_URL;
     public static final Boolean IS_JWKS_VALIDATION_ENABLED;
     public static final Boolean IS_FORCE_UPDATE_ENABLED;
+    public static final UserGroup CONFIG_WRITE_ACCESS_USERGROUP;
+    public static final UserGroup CONFIG_ADMIN_ACCESS_USERGROUP;
+    private static final String DEFAULT_WRITE_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
+    private static final String DEFAULT_ADMIN_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
 
     static {
         Properties props = CommonUtils.loadProperties(Sw360ResourceServer.class, SW360_PROPERTIES_FILE_PATH);
@@ -69,6 +74,8 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         IS_JWKS_VALIDATION_ENABLED = Boolean.parseBoolean(props.getProperty("jwks.validation.enabled", "false"));
         IS_FORCE_UPDATE_ENABLED = Boolean.parseBoolean(
                 System.getProperty("RunRestForceUpdateTest", props.getProperty("rest.force.update.enabled", "false")));
+        CONFIG_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", DEFAULT_WRITE_ACCESS_USERGROUP));
+        CONFIG_ADMIN_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.admin.access.usergroup", DEFAULT_ADMIN_ACCESS_USERGROUP));
     }
 
     @Bean
