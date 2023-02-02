@@ -10,11 +10,15 @@
 
 package org.eclipse.sw360.rest.resourceserver.security;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
@@ -24,10 +28,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
-import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @Profile("!SECURITY_MOCK")
@@ -37,11 +43,16 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 @EnableGlobalMethodSecurity(prePostEnabled = true, proxyTargetClass = true)
 public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter implements ResourceServerConfigurer {
 
+    private final Logger log = LogManager.getLogger(this.getClass());
+
     @Autowired
     private ApiTokenAuthenticationFilter filter;
 
     @Autowired
     private ApiTokenAuthenticationProvider authProvider;
+
+    @Autowired
+    private Sw360CustomUserDetailsService userDetailsService;
 
     @Autowired
     private ResourceServerProperties resourceServerProperties;
@@ -53,6 +64,11 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
     @Override
     protected void configure(AuthenticationManagerBuilder authenticationManagerBuilder) {
         authenticationManagerBuilder.authenticationProvider(this.authProvider);
+        try {
+            authenticationManagerBuilder.userDetailsService(userDetailsService);
+        } catch (Exception e) {
+            log.error("Error in Authentication", e);
+        }
     }
 
     @Override
@@ -73,6 +89,7 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
         http
                 .addFilterBefore(filter, BasicAuthenticationFilter.class)
                 .authenticationProvider(authProvider)
+                .userDetailsService(userDetailsService)
                 .httpBasic()
                 .and()
                 .authorizeRequests()
@@ -85,5 +102,10 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
                 .antMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE")
                 .antMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE").and()
                 .csrf().disable().exceptionHandling().authenticationEntryPoint(saep);
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

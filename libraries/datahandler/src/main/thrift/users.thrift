@@ -12,6 +12,7 @@ include "sw360.thrift"
 namespace java org.eclipse.sw360.datahandler.thrift.users
 namespace php sw360.thrift.users
 
+typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.PaginationData PaginationData
 
@@ -68,6 +69,7 @@ struct User {
     23: optional list<string> primaryRoles,
     24: optional bool deactivated
     25: optional map<string, ClientMetadata> oidcClientInfos,
+    26: optional string password
 }
 
 struct ClientMetadata {
@@ -123,7 +125,7 @@ service UserService {
     /**
      * add SW360-user to database, user.email is used as id
      **/
-    RequestStatus addUser(1: User user);
+    AddDocumentRequestSummary addUser(1: User user);
 
     /**
      * update SW360-user in database

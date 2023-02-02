@@ -10,6 +10,8 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import com.google.common.collect.Sets;
+
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
@@ -30,13 +32,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -54,7 +57,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
     private User user;
 
     @Before
-    public void before() {
+    public void before() throws TException {
         List<User> userList = new ArrayList<>();
 
         Map<String,Set<UserGroup>> secondaryDepartmentsAndRoles = new HashMap<String, Set<UserGroup>>();
@@ -81,6 +84,10 @@ public class UserSpecTest extends TestRestDocsSpecBase {
 
         given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
         given(this.userServiceMock.getUser("4784587578e87989")).willReturn(user);
+        given(this.userServiceMock.getUser("4784587578e87989")).willReturn(user);
+        when(this.userServiceMock.addUser(any())).then(
+                invocation -> new User("test@sw360.org", "DEPARTMENT").setId("1234567890").setFullname("FTest lTest")
+                        .setGivenname("FTest").setLastname("lTest").setUserGroup(UserGroup.ADMIN));
 
         User user2 = new User();
         user2.setEmail("jane@sw360.org");
@@ -112,6 +119,45 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:users[]email").description("The user's email"),
                                 subsectionWithPath("_embedded.sw360:users").description("An array of <<resources-users, User resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_create_user() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        Map<String, String> user = new HashMap<>();
+        user.put("fullName", "FTest lTest");
+        user.put("givenName", "FTest");
+        user.put("lastName", "lTest");
+        user.put("email", "test@sw360.org");
+        user.put("department", "DEPARTMENT");
+        user.put("userGroup", "ADMIN");
+        user.put("password", "12345");
+        System.out.println(this.objectMapper.writeValueAsString(user));
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(user))
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isCreated())
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("email").description("The email of the user"),
+                                fieldWithPath("fullName").description("The full name of the user"),
+                                fieldWithPath("givenName").description("The given name of the user"),
+                                fieldWithPath("lastName").description("The last name of the user"),
+                                fieldWithPath("department").description("The department of the user"),
+                                fieldWithPath("userGroup").description("The user group of the user"),
+                                fieldWithPath("password").description("The password of the user")
+                                ),
+                        responseFields(
+                                subsectionWithPath("email").description("The email of the user"),
+                                subsectionWithPath("userGroup").description("The user group of the user"),
+                                subsectionWithPath("department").description("The department of the user"),
+                                subsectionWithPath("fullName").description("The full name of the user"),
+                                subsectionWithPath("givenName").description("The given name of the user"),
+                                subsectionWithPath("lastName").description("The last name of the user"),
+                                subsectionWithPath("deactivated").description("Is user deactivated"),
+                                subsectionWithPath("_links").description("<<resources-user-get,User>> to user resource")
                         )));
     }
 

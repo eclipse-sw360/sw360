@@ -53,7 +53,16 @@ include::{snippets}/should_document_get_user/links.adoc[]
 [[resources-users-create]]
 ==== Creating a user
 
-Creating a user is currently not supported by the REST API.
-A `POST` request will result in an error.
+A `POST` request will create a user(not in Liferay).
 
+===== Request structure
+include::{snippets}/should_document_create_user/request-fields.adoc[]
 
+===== Response structure
+include::{snippets}/should_document_create_user/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_user/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_user/http-response.adoc[]

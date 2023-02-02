@@ -15,9 +15,15 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -79,6 +85,28 @@ public class Sw360UserService {
         } catch (TException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public User addUser(User user) throws TException{
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            user.setUserGroup(UserGroup.USER);
+            AddDocumentRequestSummary documentRequestSummary = sw360UserClient.addUser(user);
+            if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
+                user.setId(documentRequestSummary.getId());
+                return user;
+            } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
+                throw new DataIntegrityViolationException("sw360 user with name '" + user.getEmail()
+                        + "' already exists, having database identifier " + documentRequestSummary.getId());
+            } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
+                throw new HttpMessageNotReadableException(documentRequestSummary.getMessage());
+            }
+        } catch (SW360Exception sw360Exp) {
+            throw new HttpMessageNotReadableException(sw360Exp.getMessage());
+        } catch (TException e) {
+            throw new HttpMessageNotReadableException(e.getMessage());
+        }
+        return null;
     }
 
     private UserService.Iface getThriftUserClient() throws TTransportException {

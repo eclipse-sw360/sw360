@@ -254,7 +254,7 @@ public class JacksonCustomizations {
         @JsonIgnoreProperties({
                 "id",
                 "revision",
-                "externalid",
+                "setPassword",
                 "wantsMailNotification",
                 "setWantsMailNotification",
                 "setId",
@@ -301,6 +301,10 @@ public class JacksonCustomizations {
             @Override
             @JsonProperty("lastName")
             abstract public String getLastname();
+
+            @Override
+            @JsonProperty(access = Access.WRITE_ONLY)
+            abstract public String getPassword();
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
