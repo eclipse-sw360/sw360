@@ -176,6 +176,27 @@ include::{snippets}/should_document_get_projects_by_external-ids/curl-request.ad
 include::{snippets}/should_document_get_projects_by_external-ids/http-response.adoc[]
 
 
+[[resources-projects-myprojects]]
+==== Listing my projects
+
+A `GET` request will list all projects associated to the user.
+
+===== Request parameter
+include::{snippets}/should_document_get_my_projects/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_my_projects/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_my_projects/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_my_projects/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_my_projects/links.adoc[]
+
+
 [[resources-project-attachment-info-get]]
 ==== Listing attachment info
 
