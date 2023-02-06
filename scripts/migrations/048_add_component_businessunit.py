@@ -95,13 +95,13 @@ def run():
 
         # set the creator organization.
         if not 'businessUnit' in component:
-            creator = component['createdBy']
+            creator = component.get('createdBy')
             if creator in user_departments:
                 department = user_departments[creator]
                 component['businessUnit'] = department
             else:
                 component['businessUnit'] = DEFAULT_BUSINESS_UNIT
-                addFieldsList['warn'] = 'Failed to get ' + creator + ' department.'
+                addFieldsList['warn'] = 'Failed to get ' + str(creator) + ' department.'
 
             addFieldsList['businessUnit'] = component['businessUnit']
 
