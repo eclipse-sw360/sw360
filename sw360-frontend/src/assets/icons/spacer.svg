@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline spacer-border" d="M448,64v384H64V64H448 M448,0H64C28.7,0,0,28.7,0,64v384c0,35.3,28.7,64,64,64h384c35.3,0,64-28.7,64-64V64C512,28.7,483.3,0,448,0L448,0z"></path>
+	<rect class="lexicon-icon-outline spacer-indicator-start" x="96" y="224" width="64" height="64"></rect>
+	<rect class="lexicon-icon-outline spacer-indicator-end" x="352" y="224" width="64" height="64"></rect>
+	<rect class="lexicon-icon-outline spacer-indicator-top" x="224" y="96" width="64" height="64"></rect>
+	<rect class="lexicon-icon-outline spacer-indicator-bottom" x="224" y="352" width="64" height="64"></rect>
+</svg>

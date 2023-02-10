@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline change-list-box-outline" d="M128,64v160H64V64H128 M160,0H32C14.3,0,0,14.3,0,32v224c0,17.7,14.3,32,32,32h128c17.7,0,32-14.3,32-32V32C192,14.3,177.7,0,160,0L160,0z"></path>
+	<path class="lexicon-icon-outline change-list-box" d="M480,512H352c-17.7,0-32-14.3-32-32V256c0-17.7,14.3-32,32-32h128c17.7,0,32,14.3,32,32v224C512,497.7,497.7,512,480,512z"></path>
+	<path class="lexicon-icon-outline change-list-arrow-left" d="M234.1,73.2c-13.5,14.9-12.8,32.6,0,45.8l62.5,62.5c26.6,28.8,77.1-10.8,45.8-45.8l-7.7-7.7h145.6c42.3,0,42-64,0-64H334.7l8.2-8.2c29.1-28-13.6-76.5-45.8-45.8L234.1,73.2z"></path>
+	<path class="lexicon-icon-outline change-list-arrow-right" d="M278.5,438.8c13.5-14.9,12.8-32.6,0-45.8l-62.5-62.5c-26.6-28.8-77.1,10.8-45.8,45.8l7.7,7.7H32.3c-42.3,0-42,64,0,64h145.6l-8.2,8.2c-29.1,28,13.6,76.5,45.8,45.8L278.5,438.8z"></path>
+</svg>

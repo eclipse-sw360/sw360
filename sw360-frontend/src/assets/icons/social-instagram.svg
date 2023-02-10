@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline lx-social-instagram-body" d="M352,64c52.9,0,96,43.1,96,96v192c0,52.9-43.1,96-96,96H160c-52.9,0-96-43.1-96-96V160c0-52.9,43.1-96,96-96H352 M352,0H160C72,0,0,72,0,160v192c0,88,72,160,160,160h192c88,0,160-72,160-160V160C512,72,440,0,352,0L352,0z"/>
+	<path class="lexicon-icon-outline lx-social-instagram-viewfinder" d="M384,96c-17.7,0-32,14.3-32,32s14.3,32,32,32s32-14.3,32-32S401.7,96,384,96L384,96z"/>
+	<path class="lexicon-icon-outline lx-social-instagram-shutter" d="M320,256c0,86.2-128,88.1-128,0C192,173.6,320,169.8,320,256z M128,256c4.4,167.7,252.5,168.6,256,0C377.7,83.5,134.3,88.3,128,256z"/>
+</svg>

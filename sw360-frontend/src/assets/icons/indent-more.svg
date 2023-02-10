@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline indent-more-line-1" d="M64,96h384c17.7,0,32-14.3,32-32s-14.3-32-32-32H64c-17.7,0-32,14.3-32,32S46.3,96,64,96z"></path>
+	<path class="lexicon-icon-outline indent-more-line-4" d="M448,416H64c-17.7,0-32,14.3-32,32s14.3,32,32,32h384c17.7,0,32-14.3,32-32S465.7,416,448,416z"></path>
+	<path class="lexicon-icon-outline indent-more-line-3" d="M448,288H320c-17.7,0-32,14.3-32,32s14.3,32,32,32h128c17.7,0,32-14.3,32-32S465.7,288,448,288z"></path>
+	<path class="lexicon-icon-outline indent-more-line-2" d="M448,160H320c-17.7,0-32,14.3-32,32s14.3,32,32,32h128c17.7,0,32-14.3,32-32S465.7,160,448,160z"></path>
+	<path class="lexicon-icon-outline indent-more-arrow" d="M113.1,350.5c12.7,12.7,33.2,12.7,45.8,0c6.3-6.3,9.5-14.6,9.5-22.9s-3.2-16.6-9.5-22.9L142.2,288H224c17.7,0,32-14.3,32-32s-14.3-32-32-32h-81.8l16.7-16.7c12.7-12.7,12.7-33.2,0-45.8c-12.7-12.7-33.2-12.7-45.8,0l-71.6,71.6c-6.1,6.1-9.5,14.3-9.5,22.9s3.4,16.8,9.5,22.9L113.1,350.5z"></path>
+</svg>

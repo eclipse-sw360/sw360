@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline change-list-disabled-arrow-right" d="M264.56,379.24L160.59,483.22c3.84,22.48,31.97,40.83,54.91,18.96l63-63.2C303.82,409.06,273.41,389.44,264.56,379.24z"></path>
+	<path class="lexicon-icon-outline change-list-disabled-box" d="M480,224h-60.38L320,323.62V480c0,17.7,14.3,32,32,32h128c17.7,0,32-14.3,32-32V256C512,238.3,497.7,224,480,224z"></path>
+	<path class="lexicon-icon-outline change-list-disabled-arrow-left" d="M440.64,22.31L398.95,64h-64.3c44.07-35.02-5.4-84.7-37.6-54l-63,63.2c-13.5,14.9-12.8,32.6,0,45.8L289,173.95L78.96,384H32.3c-37.26,0-41.38,49.55-13.14,61.38c-23.04,40.16,24.93,63.68,48.38,40.55c0,0,419.89-420.49,419.79-420.51C511.25,37.44,475.11-6.96,440.64,22.31z M334.8,128.15l-0.15-0.15h0.3L334.8,128.15z"></path>
+	<path class="lexicon-icon-outline change-list-disabled-box-outline" d="M32,0h128c17.7,0,32,14.3,32,32v224c0,17.7-14.3,32-32,32H32c-17.7,0-32-14.3-32-32V32C0,14.3,14.3,0,32,0z M128,224V64H64v160H128z"></path>
+</svg>

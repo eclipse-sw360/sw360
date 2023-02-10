@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-body" fill="none" d="M464,512H144c-26.5,0-48-21.5-48-48v-416c0-26.4,21.5-48,48-48h320c26.5,0,48,21.5,48,48v416C512,490.4,490.4,512,464,512L464,512z"></path>
+	<path class="lexicon-icon-outline lx-product-menu-closed-right" d="M464,512H144c-26.5,0-48-21.5-48-48v-416c0-26.4,21.5-48,48-48h320c26.5,0,48,21.5,48,48v416C512,490.4,490.4,512,464,512L464,512z M160,448h288V64H160V448z"></path>
+	<path class="lexicon-icon-outline lx-product-menu-closed-left" d="M31,0C13.9,0,0,13.9,0,31V481c0,17.1,13.9,31,31,31s31-13.9,31-31V31C62.1,13.9,48.2,0,31,0C31,0,31,0,31,0z"></path>
+</svg>

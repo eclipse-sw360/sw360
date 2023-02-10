@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline lx-transform-center" d="M352,96H160V0H96v352c0,35.3,28.7,64,64,64h192v96h64V160C416,124.7,387.3,96,352,96z M160,352V160h192v192H160z"></path>
+	<rect class="lexicon-icon-outline lx-transform-right" x="448" y="352" width="64" height="64"></rect>
+	<rect class="lexicon-icon-outline lx-transform-left" y="96" width="64" height="64"></rect>
+</svg>

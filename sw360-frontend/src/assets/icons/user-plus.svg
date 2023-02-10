@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<polygon class="lexicon-icon-outline user-plus-plus-sign" points="512,156.9 448,156.9 448,92.9 416,92.9 416,156.9 352,156.9 352,188.9 416,188.9 416,252.9 448,252.9 448,188.9 512,188.9 "></polygon>
+	<ellipse class="lexicon-icon-outline user-plus-head" cx="192" cy="127.3" rx="96" ry="95.2"></ellipse>
+	<path class="lexicon-icon-outline user-plus-body" d="M384,396.8c0,111-384,111-384,0C0,200.6,384,202.6,384,396.8z"></path>
+</svg>

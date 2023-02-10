@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline lx-document-pending-border" d="M416,287.9V416c0,17.7-14.3,32-32,32H128c-17.7,0-32-14.3-32-32V159.8c0-17.7,14.3-32,32-32h249.2l-13,13c-27.5,29.3,13.7,69.5,42.2,42.2l65.9-65.9c9.9-11,10.3-30.3,0-42.2l-65.9-66c-30.9-27.4-68.9,14.6-42.2,42.2l12.7,12.7H128c-53,0-96,43-96,96V416c0,53,43,96,96,96h256c53,0,96-43,96-96V287.9C480,245.2,416,245.9,416,287.9z"/>
+	<path class="lexicon-icon-outline lx-document-pending-line-bottom" d="M273.3,384.2H175c-20.7,0-21.3-32,0-32h98.3C294.7,352.2,293.3,384.2,273.3,384.2z"/>
+	<path class="lexicon-icon-outline lx-document-pending-line-middle" d="M339,319.9H175c-20.7,0-21.3-32,0-32h164C360.3,287.9,359,319.9,339,319.9z"/>
+	<path class="lexicon-icon-outline lx-document-pending-line-top" d="M339,255.9H175c-20.7,0-21.3-32,0-32h164C360.3,223.9,359,255.9,339,255.9z"/>
+</svg>

@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline lx-credit-card-border" d="M448,32.1L64,32C32,32,0,64.1,0,96v320.1c0,32,32,64,64,64h384c32,0,64-32,64-64V96C512,64.1,480,32.1,448,32.1z M448,416.1H64v-224h384V416.1z M448,128.1H64V96h384V128.1z"/>
+	<path class="lexicon-icon-outline lx-credit-card-text" d="M304,288.1h64c62.7,0,63.3,96,0,96h-64C240.7,384.1,239.7,288.1,304,288.1z"/>
+</svg>

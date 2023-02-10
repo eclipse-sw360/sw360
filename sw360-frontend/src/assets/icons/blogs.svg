@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-body" fill="none" d="M448,0H64C28.7,0,0,28.7,0,64v384c0,35.3,28.7,64,64,64h384c35.3,0,64-28.7,64-64V64C512,28.7,483.3,0,448,0z"></path>
+	<path class="lexicon-icon-outline blogs-border" d="M448,0H64C28.7,0,0,28.7,0,64v384c0,35.3,28.7,64,64,64h384c35.3,0,64-28.7,64-64V64C512,28.7,483.3,0,448,0z M448,448H64V64h384V448C448,448,448,448,448,448z"></path>
+	<path class="lexicon-icon-outline blogs-line-middle" d="M384,256H128c-17.7,0-32,14.3-32,32s14.3,32,32,32h256c17.7,0,32-14.3,32-32S401.7,256,384,256z"></path>
+	<path class="lexicon-icon-outline blogs-line-bottom" d="M288,352H128c-17.7,0-32,14.3-32,32s14.3,32,32,32h160c17.7,0,32-14.3,32-32S305.7,352,288,352z"></path>
+	<path class="lexicon-icon-outline blogs-line-top" d="M384,96H128c-17.6,0-32,14.4-32,32v64c0,17.6,14.4,32,32,32h256c17.6,0,32-14.4,32-32v-64C416,110.4,401.6,96,384,96z"></path>
+</svg>

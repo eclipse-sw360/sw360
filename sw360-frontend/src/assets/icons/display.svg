@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline lx-display-stand" d="M320,448H192c-44.8,0-41.6,64,0,64h128C361.6,512,361.6,448,320,448z"/>
+	<path class="lexicon-icon-outline lx-display-monitor" d="M448,0H64C28.8,0,0,28.8,0,64v288c0,35.2,28.8,64,64,64h384c35.2,0,64-28.8,64-64V64C512,28.8,483.2,0,448,0z M432,384c-19.2,0-22.4-32,0-32S454.4,384,432,384z M448,320H64V64h384V320z"/>
+</svg>

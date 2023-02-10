@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline lx-import-list-border-bottom" d="M448,160v288H64V160c0-42.4-64-41.4-64,0v288c0,35.3,28.7,64,64,64h384c35.3,0,64-28.7,64-64V160C512,117.3,448,117.8,448,160z"/>
+	<path class="lexicon-icon-outline lx-import-list-bar" d="M352,64H160c-43.5,0-43-64,0-64l192,0C395,0,395.5,64,352,64z"/>
+	<path class="lexicon-icon-outline lx-import-list-arrow-down" d="M352,96H160c-42,0-43,64,0,64h64.2l0.1,121.4l-16.6-16.6c-27.3-23.8-65.2,18-38.6,44.8l64.3,65.2c6.1,6.1,25.5,17.2,45.5,0l64.3-65.2c27.1-29.4-14.1-67.2-38.6-44.8l-16.6,16.6L287.8,160H352C394.5,160,394.5,96,352,96z"/>
+</svg>

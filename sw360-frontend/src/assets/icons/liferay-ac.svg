@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline lx-liferay-ac-bar-1" d="M128,512H32c-17.7,0-32-14.3-32-32V288c0-17.7,14.3-32,32-32h96V512z"/>
+	<path class="lexicon-icon-outline lx-liferay-ac-bar-2" d="M320,512H192c-17.7,0-32-14.3-32-32V32c0-17.7,14.3-32,32-32h128c17.7,0,32,14.3,32,32v448C352,497.7,337.7,512,320,512z"/>
+	<path class="lexicon-icon-outline lx-liferay-ac-bar-3" d="M480,512h-96V160h96c17.7,0,32,14.3,32,32v288C512,497.7,497.7,512,480,512z"/>
+</svg>

@@ -1,0 +1,72 @@
+.btn-primary {
+    background-color: #F7941E;
+    border-color: #F7941E;
+    color: #272833;
+}
+
+.btn-outline-primary {
+    border-color: #F7941E;
+    color: #F7941E;
+}
+
+.buttons a {
+    margin-top: 1.75rem;
+    font-weight: bold;
+}
+
+#footer {
+    padding-bottom: 2rem;
+    padding-top: 2rem;
+    background-color: #30313F;
+    color: #FFF;
+    text-align: center;
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+}
+
+.btn-lg {
+    border-radius: 0.25rem;
+    font-size: 1.125rem;
+    line-height: 1.5;
+    padding-bottom: 0.59375rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    padding-top: 0.59375rem;
+}
+
+.btn-primary:hover {
+    background-color: #f28809;
+    border-color: transparent;
+    color: #fff;
+}
+
+.btn-outline-primary:hover {
+    background-color: #fffdfb;
+    border-color: #F7941E;
+    color: #F7941E;
+}
+
+#portlet_sw360_portlet_welcome {
+    margin: 2rem;
+    overflow: hidden;
+    border: none;
+}
+
+#portlet_sw360_portlet_welcome .display-4 {
+    font-size: 2.75rem;
+    font-weight: 400;
+}
+
+.login-modal {
+    font-weight: 600;
+}
+
+.login-btn {
+    font-weight: 600;
+}
+
+.modal-width {
+    width: 70%;
+  }
+  

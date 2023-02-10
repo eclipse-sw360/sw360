@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<rect class="cards-full-top lexicon-icon-outline" width="512" height="224" rx="32" ry="32"></rect>
+	<rect class="cards-full-bottom lexicon-icon-outline" y="288" width="512" height="224" rx="32" ry="32"></rect>
+</svg>

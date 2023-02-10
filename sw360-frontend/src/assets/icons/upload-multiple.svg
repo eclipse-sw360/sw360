@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline upload-multiple-arrow-up" d="M278.9,9.9c-14.9-13.5-32.6-12.8-45.8,0l-71.5,71.5c-28.8,26.6,10.8,77.1,45.8,45.8l16.7-16.7v113.6c0,42.3,64,42,64,0V110.5l16.7,16.7c28,29.1,76.5-13.6,45.8-45.8L278.9,9.9z"></path>
+	<path class="lexicon-icon-outline upload-multiple-bracket" d="M383.9,256.1v64H128.1v-64c0-43-64-41.7-64,0V384h383.7V256.1C447.9,214.1,383.9,213.8,383.9,256.1z"></path>
+	<rect class="lexicon-icon-outline upload-multiple-line" x="64" y="448" width="384" height="64"></rect>
+</svg>

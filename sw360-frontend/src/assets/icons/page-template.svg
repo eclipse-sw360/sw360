@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline page-template-border" d="M416,0v0.0001L63.375,0C28.3739,0,0,28.3741,0,63.375v384.6252c0,35.0009,28.3739,63.375,63.375,63.375h380.25c35.0011,0,68.375-28.3741,68.375-63.375V128.0001V96.0002L416,0z M448,445.3696c-1.1612,0.9965-3.1295,2.0057-4.375,2.0057L64,447.3748L64.0004,64H288h32v96v32.0001h32h96V445.3696z M384,128.0001v-64l64,64H384z"></path>
+	<rect class="lexicon-icon-outline page-template-box-1" x="96" y="96.0001" width="192" height="96"></rect>
+	<rect class="lexicon-icon-outline page-template-box-2" x="96" y="224.0001" width="192" height="192"></rect>
+	<rect class="lexicon-icon-outline page-template-box-3" x="320" y="224.0001" width="96" height="192"></rect>
+</svg>

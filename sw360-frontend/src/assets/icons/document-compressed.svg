@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-outline document-compressed-document" d="M332.8,0H102.4C74.1,0,51.2,22.9,51.2,51.2v409.6c0,28.3,22.9,51.2,51.2,51.2h307.2c28.3,0,51.2-22.9,51.2-51.2V128L332.8,0z M332.8,409.6H179.2v51.2h-25.6v-51.2h25.6v-51.2h-25.6v-51.2h25.6V256h-25.6v-51.2h25.6v-51.2h-25.6v-51.2h25.6V51.2h25.6v51.2h-25.6v51.2h25.6v51.2h-25.6V256h25.6v51.2h128V409.6z"></path>
+	<rect class="lexicon-icon-outline document-compressed-zipper-hole" x="256" y="332.8" width="51.2" height="51.2"></rect>
+</svg>

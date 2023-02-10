@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<path class="lexicon-icon-body" fill="none" d="M448,0H64C28.7,0,0,28.7,0,64v384c0,35.3,28.7,64,64,64h384c35.3,0,64-28.7,64-64V64C512,28.7,483.3,0,448,0z"></path>
+	<path class="lexicon-icon-outline forms-border" d="M448,0H64C28.7,0,0,28.7,0,64v384c0,35.3,28.7,64,64,64h384c35.3,0,64-28.7,64-64V64C512,28.7,483.3,0,448,0z M448,448H64V64h384V448C448,448,448,448,448,448z"></path>
+	<path class="lexicon-icon-outline forms-li-item-1" d="M384,128H224c-17.7,0-32,14.3-32,32s14.3,32,32,32h160c17.7,0,32-14.3,32-32S401.7,128,384,128z"></path>
+	<circle class="lexicon-icon-outline forms-li-bullet-1" cx="128" cy="160" r="32"></circle>
+	<path class="lexicon-icon-outline forms-li-item-2" d="M384,224H224c-17.7,0-32,14.3-32,32s14.3,32,32,32h160c17.7,0,32-14.3,32-32S401.7,224,384,224z"></path>
+	<circle class="lexicon-icon-outline forms-li-bullet-2" cx="128" cy="256" r="32"></circle>
+	<path class="lexicon-icon-outline forms-li-item-3" d="M384,320H224c-17.7,0-32,14.3-32,32s14.3,32,32,32h160c17.7,0,32-14.3,32-32S401.7,320,384,320z"></path>
+	<circle class="lexicon-icon-outline forms-li-bullet-3" cx="128" cy="352" r="32"></circle>
+</svg>

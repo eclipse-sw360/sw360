@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<rect class="lexicon-icon-outline document-table-box-1" x="153.6" y="256" width="76.8" height="128"></rect>
+	<rect class="lexicon-icon-outline document-table-box-3" x="256" y="332.8" width="102.4" height="51.2"></rect>
+	<rect class="lexicon-icon-outline document-table-box-2" x="256" y="256" width="102.4" height="51.2"></rect>
+	<path class="lexicon-icon-outline document-table-document" d="M332.8,0H102.4C74.1,0,51.2,22.9,51.2,51.2v409.6c0,28.3,22.9,51.2,51.2,51.2h307.2c28.3,0,51.2-22.9,51.2-51.2V128L332.8,0z M384,409.6H128V204.8h256V409.6z"></path>
+</svg>
