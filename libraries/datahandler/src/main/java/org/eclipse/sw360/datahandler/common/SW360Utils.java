@@ -231,6 +231,14 @@ public class SW360Utils {
         return release.getAttachments().stream().filter(isApprovedCLI).collect(Collectors.toList());
     }
 
+    public static List<Attachment> getClxAttachmentForRelease(Release release) {
+        Predicate<Attachment> isCLI = attachment -> AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType());
+        if (release.getAttachments() == null) {
+            return new ArrayList<Attachment>();
+        }
+        return release.getAttachments().stream().filter(isCLI).collect(Collectors.toList());
+    }
+
     public static Map<String, String> getReleaseIdtoAcceptedCLIMappings(Map<String, ObligationStatusInfo> obligationStatusMap) {
         if (null == obligationStatusMap) {
             return Maps.newHashMap();
