@@ -38,6 +38,8 @@
 
 <#assign preferences = freeMarkerPortletPreferences.getPreferences({"portletSetupPortletDecoratorId": "sw360", "destination": "/search"}) />
 <#assign login_css = is_signed_in?then("signed-in", "not-signed-in") />
+<#assign liferay_user = themeDisplay.getUser() />
+
 <html class="${root_css_class}" dir="<@liferay.language key="lang.dir" />" lang="${w3c_language_id}">
 
 <head>
@@ -59,6 +61,25 @@
 <div id="wrapper" class="${hide_portlet_edit_decorators_css} ${login_css}">
 	<header id="banner" role="banner">
 		<div id="heading" class="container">
+            <#if is_signed_in>
+                <#assign expandoAttribute = liferay_user.getExpandoBridge().getAttribute("BannerMessage") />
+                <#if expandoAttribute?has_content>
+                    <div id="updateMessage" class="alert alert-warning">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        <strong>${expandoAttribute}</strong>
+                    </div>
+                    <script>
+                    sessionStorage.setItem('isBannerEnabled',true);
+                </script>
+                <#else>
+                    <script>
+                        if (sessionStorage.getItem('isBannerEnabled')) {
+                            sessionStorage.removeItem('isBannerEnabled');
+                            sessionStorage.removeItem('isBannerClosed');
+                        }
+                    </script>
+                </#if>
+            </#if>
 			<div class="row">
 				<div class="col-3">
 					<a class="${logo_css_class}" href="${site_default_url}" title="<@liferay.language_format arguments="${site_name}" key="go-to-x" />">
@@ -136,6 +157,26 @@
 <@liferay_util["include"] page=body_bottom_include />
 
 <@liferay_util["include"] page=bottom_include />
+
+<script>
+
+$('#updateMessage').on('close.bs.alert', function (event) {
+    event.preventDefault();
+    $(this).addClass('hide');
+    sessionStorage.setItem('isBannerClosed', true);
+    document.getElementById('updateMessage').style.display = 'none';
+});
+
+if (sessionStorage.getItem('isBannerEnabled')) {
+    if (sessionStorage.getItem('isBannerClosed') == 'true') {
+        document.getElementById('updateMessage').style.display = 'none';
+    } else {
+        document.getElementById('updateMessage').style.display = 'block';
+    }
+}
+
+
+</script>
 
 </body>
 
