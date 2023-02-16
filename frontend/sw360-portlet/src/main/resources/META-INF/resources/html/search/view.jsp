@@ -69,6 +69,10 @@
                                 <input id="keyword-search-vendors" type="checkbox" class="form-check-input" value="<%=SW360Constants.TYPE_VENDOR%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_VENDOR)%>"> checked="" </core_rt:if> >
                                 <label for="keyword-search-vendors" class="form-check-label"><sw360:icon title="vendors" icon="vendor" className="type-icon type-icon-vendor"/> <liferay-ui:message key="vendors" /></label>
                             </div>
+                            <div class="form-check">
+                                <input id="keyword-search-document" type="checkbox"  class="form-check-input" value="<%=SW360Constants.TYPE_DOCUMENT%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"  <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_DOCUMENT)%>"> checked="" </core_rt:if>  <core_rt:if test="${(empty typeMask) and (empty searchtext)}"> checked="" </core_rt:if>>
+                                <label for="keyword-search-document" class="form-check-label"><liferay-ui:message key="entire.document" /></label>
+                            </div>
                             <div class="form-group">
                                 <div class="btn-group btn-group-sm" role="group">
                                     <button class="btn btn-secondary" type="button" data-action="toggle"><liferay-ui:message key="toggle" /></button>
@@ -97,6 +101,23 @@
                             <col />
                         </colgroup>
                     </table>
+                    <core_rt:if test="${(empty documents)}">
+                       <div class="alert alert-warning mt-7 w-50 alert-dismissible">
+                          <button type="button" class="close" data-dismiss="alert">&times;</button>
+                          <liferay-ui:message key="note.if.unchecked.entire.document.then.search.will.be.restricted.to" />
+                          <ul class="mb-0">
+                             <li>
+                                <liferay-ui:message key="name.for.project.component.and.release" />
+                             </li>
+                             <li>
+                                <liferay-ui:message key="fullname.for.license.user.and.vendor" />
+                             </li>
+                             <li>
+                                <liferay-ui:message key="title.for.obligation" />
+                             </li>
+                          </ul>
+                       </div>
+                    </core_rt:if>
                 </div>
             </div>
 
