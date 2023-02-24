@@ -288,6 +288,13 @@ service VulnerabilityService {
     RequestStatus updateProjectVulnerabilityRating(1: ProjectVulnerabilityRating link, 2: User user);
 
    /**
+     * updates the link in the database if user is allowed to edit corresponding project and returns SUCCESS
+     * if user is not allowed to edit project - FAILURE is returned
+     * If forceUpdate is true, this function can update regardless of write permissions.
+     **/
+    RequestStatus updateProjectVulnerabilityRatingWithForceFlag(1: ProjectVulnerabilityRating link, 2: User user, 3: bool forceUpdate);
+
+   /**
      * updates the relation in the database if user is ADMIN, returns SUCCESS
      * if user is not ADMIN - FAILURE is returned
      **/

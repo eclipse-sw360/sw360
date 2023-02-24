@@ -44,6 +44,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -203,7 +204,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             project.setVendorId(project.getVendor().getId());
         }
 
-        RequestStatus requestStatus = sw360ProjectClient.updateProject(project, sw360User);
+        RequestStatus requestStatus;
+        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+            requestStatus = sw360ProjectClient.updateProjectWithForceFlag(project, sw360User, true);
+        } else {
+            requestStatus = sw360ProjectClient.updateProject(project, sw360User);
+        }
         if (requestStatus == RequestStatus.NAMINGERROR) {
             throw new HttpMessageNotReadableException("Project name field cannot be empty or contain only whitespace character");
         }
@@ -220,7 +226,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public void deleteProject(String projectId, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        RequestStatus requestStatus = sw360ProjectClient.deleteProject(projectId, sw360User);
+        RequestStatus requestStatus;
+        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+            requestStatus = sw360ProjectClient.deleteProjectWithForceFlag(projectId, sw360User, true);
+        } else {
+            requestStatus = sw360ProjectClient.deleteProject(projectId, sw360User);
+        }
         if (requestStatus == RequestStatus.IN_USE) {
             throw new HttpMessageNotReadableException("Unable to delete project. Project is in Use");
         } else if (requestStatus != RequestStatus.SUCCESS) {
@@ -232,7 +243,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         List<Project> projects = sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
         for (Project project : projects) {
-            sw360ProjectClient.deleteProject(project.getId(), sw360User);
+            if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+                sw360ProjectClient.deleteProjectWithForceFlag(project.getId(), sw360User, true);
+            } else {
+                sw360ProjectClient.deleteProject(project.getId(), sw360User);
+            }
         }
     }
 
