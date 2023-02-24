@@ -49,6 +49,11 @@
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="generateExcelReport">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EMAIL_EXPORTED_EXCEL%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
+</portlet:resourceURL>
+
 <c:set var="pageName" value="<%= request.getParameter("pagename") %>" />
 
 <core_rt:if test='${not isCrDisabledForProjectBU}'>
@@ -868,12 +873,25 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function exportSpreadsheet(type) {
-            var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+            var isEMailEnabled = <%=PortalConstants.SEND_PROJECT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED%>;
+            if(isEMailEnabled){
+                var isWithReleases = (type === 'projectWithReleases' ? 'true' : 'false');
+                $.ajax({
+                    type: 'POST',
+                    url: '<%=generateExcelReport%>',
+                    cache: false,
+                    data: {
+                        "<portlet:namespace/><%=PortalConstants.EXTENDED_EXCEL_EXPORT%>": isWithReleases,
+                    }
+                });
+            }else {
+                var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
                     .setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_TO_EXCEL%>');
-            portletURL.setParameter('<%=Project._Fields.ID%>','${project.id}');
-            portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
+                portletURL.setParameter('<%=Project._Fields.ID%>','${project.id}');
+                portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
 
-            window.location.href = portletURL.toString() + window.location.hash;
+                window.location.href = portletURL.toString() + window.location.hash;
+            }
         }
 
         $("button#addLicenseToRelease").on("click", function(event) {
