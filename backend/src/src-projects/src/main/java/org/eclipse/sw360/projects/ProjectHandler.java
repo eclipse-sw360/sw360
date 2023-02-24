@@ -155,7 +155,6 @@ public class ProjectHandler implements ProjectService.Iface {
 
     @Override
     public Set<Project> searchByReleaseIds(Set<String> ids, User user) throws TException {
-        assertNotEmpty(ids);
         return handler.searchByReleaseId(ids, user);
     }
 
