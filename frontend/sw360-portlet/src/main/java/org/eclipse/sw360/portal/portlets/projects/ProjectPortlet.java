@@ -1104,7 +1104,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
     private void exportExcelWithEmail(ResourceRequest request, ResourceResponse response) {
         final User user = UserCacheHolder.getUserFromRequest(request);
-        final String projectId = request.getParameter(Project._Fields.ID.toString());
+        final String projectId = request.getParameter(PROJECT_ID);
         ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         String token = null;
 
@@ -1498,7 +1498,8 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         final User user = UserCacheHolder.getUserFromRequest(request);
         Map<String, Set<String>> filterMap = loadFilterMapFromRequest(request);
         loadAndStoreStickyProjectGroup(request, user, filterMap);
-        String id = request.getParameter(Project._Fields.ID.toString());
+        String id = request.getParameter(Project._Fields.ID.toString()) == null ? request.getParameter(PROJECT_ID)
+                : request.getParameter(Project._Fields.ID.toString());
         return findProjectsByFiltersOrId(filterMap, id, user, pageData);
     }
 
