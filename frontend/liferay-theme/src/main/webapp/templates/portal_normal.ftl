@@ -62,8 +62,8 @@
 	<header id="banner" role="banner">
 		<div id="heading" class="container">
             <#if is_signed_in>
-                <#assign expandoAttribute = liferay_user.getExpandoBridge().getAttribute("BannerMessage") />
-                <#if expandoAttribute?has_content>
+                <#if liferay_user.getExpandoBridge().getAttribute("BannerMessage")?has_content>
+                    <#assign expandoAttribute = liferay_user.getExpandoBridge().getAttribute("BannerMessage") />
                     <div id="updateMessage" class="alert alert-warning">
                         <button type="button" class="close" data-dismiss="alert">&times;</button>
                         <strong>${expandoAttribute}</strong>
