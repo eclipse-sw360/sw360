@@ -73,6 +73,7 @@
 <c:set var="WRITE" value="<%=RequestedAction.WRITE%>"/>
 <c:set var="DELETE" value="<%=RequestedAction.DELETE%>"/>
 <c:set var="hasWritePermissions" value="${project.permissions[WRITE]}"/>
+<core_rt:set var="isErrorInUpdateOrCreate"  value="<%= request.getParameter("isErrorInUpdateOrCreate") %>" />
 
 <core_rt:if test="${empty attributeNotFoundException}">
 

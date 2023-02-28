@@ -2243,7 +2243,9 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
         User user = UserCacheHolder.getUserFromRequest(request);
         String id = request.getParameter(PROJECT_ID);
-        Project project;
+        boolean isUpdateOrCreateProjectFailed = false;
+        id = CommonUtils.isNullEmptyOrWhitespace(id) && Objects.nonNull(request.getAttribute(PROJECT_ID)) ? request.getAttribute(PROJECT_ID).toString(): id;
+        Project project = (Project) request.getAttribute(PROJECT);
         Set<Project> usingProjects;
         int allUsingProjectCount = 0;
         request.setAttribute(IS_USER_AT_LEAST_CLEARING_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
@@ -2251,12 +2253,16 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         List<Organization> organizations = UserUtils.getOrganizations(request);
         request.setAttribute(ORGANIZATIONS, organizations);
         request.setAttribute(SVM_MONITORINGLIST_ID, SW360Constants.SVM_MONITORINGLIST_ID);
+        ProjectService.Iface client = thriftClients.makeProjectClient();
+        List<ProjectLink> projectlink = new ArrayList<>();
 
         if (id != null) {
-
             try {
-                ProjectService.Iface client = thriftClients.makeProjectClient();
-                project = client.getProjectByIdForEdit(id, user);
+                if (project == null) {
+                    project = client.getProjectByIdForEdit(id, user);
+                } else {
+                    isUpdateOrCreateProjectFailed = true;
+                }
                 setDefaultRequestAttributes(request, project.getBusinessUnit());
                 Map<String, String> sortedAdditionalData = getSortedMap(project.getAdditionalData(), true);
                 project.setAdditionalData(sortedAdditionalData);
@@ -2276,7 +2282,12 @@ public class ProjectPortlet extends FossologyAwarePortlet {
 
             setAttachmentsInRequest(request, project);
             try {
-                putDirectlyLinkedProjectsInRequest(request, project, user);
+                if (isUpdateOrCreateProjectFailed && project.isSetLinkedProjects()) {
+                    projectlink = client.getLinkedProjects(project.getLinkedProjects(), false, user);
+                    request.setAttribute(PROJECT_LIST, projectlink);
+                } else {
+                    putDirectlyLinkedProjectsInRequest(request, project, user);
+                }
                 putDirectlyLinkedReleasesWithAccessibilityInRequest(request, project, user);
             } catch (TException e) {
                 log.error("Could not fetch linked projects or linked releases in projects view.", e);
@@ -2293,21 +2304,24 @@ public class ProjectPortlet extends FossologyAwarePortlet {
             if(request.getAttribute(PROJECT) == null) {
                 project = new Project();
                 project.setBusinessUnit(user.getDepartment());
-                request.setAttribute(PROJECT, project);
-                setDefaultRequestAttributes(request, user.getDepartment());
-                PortletUtils.setCustomFieldsEdit(request, user, project);
-                setAttachmentsInRequest(request, project);
-                try {
-                    putDirectlyLinkedProjectsInRequest(request, project, user);
-                    putDirectlyLinkedReleasesWithAccessibilityInRequest(request, project, user);
-                } catch(TException e) {
-                    log.error("Could not put empty linked projects or linked releases in projects view.", e);
-                }
-                request.setAttribute(USING_PROJECTS, Collections.emptySet());
-                request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
-
-                SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.project"));
             }
+            request.setAttribute(PROJECT, project);
+            setDefaultRequestAttributes(request, user.getDepartment());
+            PortletUtils.setCustomFieldsEdit(request, user, project);
+            setAttachmentsInRequest(request, project);
+            try {
+                if (project.isSetLinkedProjects()) {
+                    projectlink = client.getLinkedProjects(project.getLinkedProjects(), false, user);
+                }
+                request.setAttribute(PROJECT_LIST, projectlink);
+                putDirectlyLinkedReleasesWithAccessibilityInRequest(request, project, user);
+            } catch(TException e) {
+                log.error("Could not put empty linked projects or linked releases in projects view.", e);
+            }
+            request.setAttribute(USING_PROJECTS, Collections.emptySet());
+            request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
+
+            SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.project"));
         }
 
     }
@@ -2380,6 +2394,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     FossologyAwarePortlet.addCustomErrorMessage(CYCLIC_LINKED_PROJECT + cyclicLinkedProjectPath,
                             PAGENAME_EDIT, request, response);
                     response.setRenderParameter(PROJECT_ID, id);
+                    prepareRequestForEditAfterDuplicateError(request, project, user);
                     return;
                 }
                 requestStatus = client.updateProject(project, user);
@@ -2389,6 +2404,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                 }
                 if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus) ||
                         RequestStatus.NAMINGERROR.equals(requestStatus)) {
+                    request.setAttribute(PROJECT_ID, id);
                     if(RequestStatus.DUPLICATE.equals(requestStatus))
                         setSW360SessionError(request, ErrorMessages.PROJECT_DUPLICATE);
                     else if (RequestStatus.NAMINGERROR.equals(requestStatus))
@@ -2543,6 +2559,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
         setAttachmentsInRequest(request, project);
         request.setAttribute(USING_PROJECTS, Collections.emptySet());
         request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
+        request.setAttribute(IS_ERROR_IN_UPDATE_OR_CREATE, true);
         putDirectlyLinkedProjectsInRequest(request, project, user);
         putDirectlyLinkedReleasesWithAccessibilityInRequest(request, project, user);
     }
