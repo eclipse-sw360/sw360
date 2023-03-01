@@ -58,13 +58,44 @@ public abstract class AbstractDatabaseSearchHandler {
                     "    ret.add(doc.type, {\"field\": \"type\"} );" +
                     "    return ret;" +
                     "}");
-
+    private static final LuceneSearchView luceneFilteredSearchView = new LuceneSearchView("lucene", "restrictedSearch",
+            "function(doc) {" +
+                    "    var ret = new Document();" +
+                    "    if(!doc.type) return ret;" +
+                    "    function idx(obj) {" +
+                    "        for (var key in obj) {" +
+                    "            switch (typeof obj[key]) {" +
+                    "                case 'object':" +
+                    "                    idx(obj[key]);" +
+                    "                    break;" +
+                    "                case 'function':" +
+                    "                    break;" +
+                    "                default:" +
+                    "                    ret.add(obj[key]);" +
+                    "                    break;" +
+                    "            }" +
+                    "        }" +
+                    "    };" +
+                    "    idx(doc);" +
+                    "    ret.add(doc.type, {\"field\": \"type\"} );" +
+                    "    if(doc.name && doc.name.length > 0) {  "+
+                    "      ret.add(doc.name, {\"field\": \"name\"} );" +
+                    "    }" +
+                    "    if (doc.fullname && doc.fullname.length > 0) {  "+
+                    "      ret.add(doc.fullname, {\"field\": \"fullname\"} );" +
+                    "    }" +
+                    "    if (doc.title && doc.title.length > 0) {  "+
+                    "      ret.add(doc.title, {\"field\": \"title\"} );" +
+                    "    }" +
+                    "    return ret;" +
+                    "}");
     private final LuceneAwareDatabaseConnector connector;
 
     public AbstractDatabaseSearchHandler(String dbName) throws IOException {
         // Create the database connector and add the search view to couchDB
         connector = new LuceneAwareDatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), dbName);
         connector.addView(luceneSearchView);
+        connector.addView(luceneFilteredSearchView);
         connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
     }
 
@@ -72,6 +103,7 @@ public abstract class AbstractDatabaseSearchHandler {
         // Create the database connector and add the search view to couchDB
         connector = new LuceneAwareDatabaseConnector(client, cclient, dbName);
         connector.addView(luceneSearchView);
+        connector.addView(luceneFilteredSearchView);
         connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
     }
 
@@ -88,30 +120,70 @@ public abstract class AbstractDatabaseSearchHandler {
      */
     public List<SearchResult> searchWithoutWildcard(String text, User user, final List<String> typeMask) {
         String query = text;
-        if (typeMask == null || typeMask.isEmpty()) {
+        if (typeMask != null && !typeMask.isEmpty() && typeMask.get(typeMask.size() - 1).equals("document")) {
+            if (typeMask.size() == 1) {
+                return getSearchResults(query, user);
+            }
+            typeMask.remove(typeMask.size() - 1);
+            final Function<String, String> addType = input -> "type:" + input;
+            query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND "
+                    + prepareWildcardQuery(text);
             return getSearchResults(query, user);
         }
-        final Function<String, String> addType = input -> "type:" + input;
-        query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND " + text;
-        return getSearchResults(query, user);
+        return restrictedSearch(text, typeMask, user);
     }
 
     /**
      * Search the database for a given string and types
      */
     public List<SearchResult> search(String text, final List<String> typeMask, User user) {
-
-        if (typeMask == null || typeMask.isEmpty()) {
-            return search(text, user);
+        String query = text;
+        if (typeMask != null && !typeMask.isEmpty() && typeMask.get(typeMask.size() - 1).equals("document")) {
+            if (typeMask.size() == 1) {
+                return search(query, user);
+            }
+            typeMask.remove(typeMask.size() - 1);
+            final Function<String, String> addType = input -> "type:" + input;
+            query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND "
+                    + prepareWildcardQuery(text);
+            return getSearchResults(query, user);
         }
+        return restrictedSearch(text, typeMask, user);
+    }
 
+    public List<SearchResult> restrictedSearch(String text, List<String> typeMask, User user) {
+        String query = text;
         final Function<String, String> addType = input -> "type:" + input;
-        String query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND " + prepareWildcardQuery(text);
-        return getSearchResults(query, user);
+        final Function<String, String> addField = input -> input + ": (" + prepareWildcardQuery(text) + " )";
+        List<String> typeField = new ArrayList<String>();
+        if (typeMask == null || typeMask.isEmpty()) {
+            typeField.add("name");
+            typeField.add("fullname");
+            typeField.add("title");
+            query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeField).transform(addField)) + " ) ";
+        } else {
+            if (typeMask.contains("project") || typeMask.contains("component") || typeMask.contains("release")) {
+                typeField.add("name");
+            }
+            if (typeMask.contains("license") || typeMask.contains("user") || typeMask.contains("vendor")) {
+                typeField.add("fullname");
+            }
+            if (typeMask.contains("obligations")) {
+                typeField.add("title");
+            }
+            query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeMask).transform(addType)) + " ) AND " + "( "
+                    + Joiner.on(" OR ").join(FluentIterable.from(typeField).transform(addField)) + " ) ";
+        }
+        return getFilteredSearchResults(query, user);
     }
 
     private List<SearchResult> getSearchResults(String queryString, User user) {
         LuceneResult queryLucene = connector.searchView(luceneSearchView, queryString);
+        return convertLuceneResultAndFilterForVisibility(queryLucene, user);
+    }
+    
+    private List<SearchResult> getFilteredSearchResults(String queryString, User user) {
+        LuceneResult queryLucene = connector.searchView(luceneFilteredSearchView, queryString);
         return convertLuceneResultAndFilterForVisibility(queryLucene, user);
     }
 

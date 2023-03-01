@@ -387,9 +387,9 @@ service ProjectService {
     /**
      * get a list of project links from keys of map `relations`
      * IMPORTANT:
-     * this method is very inefficient as it loads whole DB repositories into memory; its use is dicouraged
+     * this method is very inefficient as it loads whole DB repositories into memory; its use is discouraged
      */
-    list<ProjectLink> getLinkedProjects(1:  map<string, ProjectProjectRelationship> relations, 2: User user);
+    list<ProjectLink> getLinkedProjects(1:  map<string, ProjectProjectRelationship> relations, 2: bool depth, 3: User user);
 
     /**
      * get a list of duplicated projects matched by `.printName()`

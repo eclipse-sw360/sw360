@@ -49,6 +49,11 @@
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="generateExcelReport">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EMAIL_EXPORTED_EXCEL%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
+</portlet:resourceURL>
+
 <c:set var="pageName" value="<%= request.getParameter("pagename") %>" />
 
 <core_rt:if test='${not isCrDisabledForProjectBU}'>
@@ -868,12 +873,25 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function exportSpreadsheet(type) {
-            var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
+            var isEMailEnabled = <%=PortalConstants.SEND_PROJECT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED%>;
+            if(isEMailEnabled){
+                var isWithReleases = (type === 'projectWithReleases' ? 'true' : 'false');
+                $.ajax({
+                    type: 'POST',
+                    url: '<%=generateExcelReport%>',
+                    cache: false,
+                    data: {
+                        "<portlet:namespace/><%=PortalConstants.EXTENDED_EXCEL_EXPORT%>": isWithReleases,
+                    }
+                });
+            }else {
+                var portletURL = Liferay.PortletURL.createURL('<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RESOURCE_PHASE) %>')
                     .setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.EXPORT_TO_EXCEL%>');
-            portletURL.setParameter('<%=Project._Fields.ID%>','${project.id}');
-            portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
+                portletURL.setParameter('<%=Project._Fields.ID%>','${project.id}');
+                portletURL.setParameter('<%=PortalConstants.EXTENDED_EXCEL_EXPORT%>', type === 'projectWithReleases' ? 'true' : 'false');
 
-            window.location.href = portletURL.toString() + window.location.hash;
+                window.location.href = portletURL.toString() + window.location.hash;
+            }
         }
 
         $("button#addLicenseToRelease").on("click", function(event) {
@@ -901,33 +919,23 @@ AUI().use('liferay-portlet-url', function () {
                         if (response && response.status) {
                             oneList = $('<ul/>');
                             multipleList = $('<ul/>');
-                            nilList = $('<ul/>');
                             if (response.one.length) {
                                 response.one.forEach(function(rel, index) {
                                     let url = makeReleaseViewUrl(rel.id),
-                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
+                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + " (" + rel.version + ")");
                                     oneList.append('<li>' + viewUrl[0].outerHTML + '</li>');
                                 });
                             }
                             if (response.mul.length) {
                                 response.mul.forEach(function(rel, index) {
                                     let url = makeReleaseViewUrl(rel.id),
-                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
+                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + " (" + rel.version + ")");
                                     multipleList.append('<li>' + viewUrl[0].outerHTML + '</li>');
                                 });
                             }
-                            if (response.nil.length) {
-                                response.nil.forEach(function(rel, index) {
-                                    let url = makeReleaseViewUrl(rel.id),
-                                        viewUrl = $("<a/>").attr({href: url, target: "_blank"}).css("word-break", "break-word").text(rel.name + rel.version);
-                                    nilList.append('<li>' + viewUrl[0].outerHTML + '</li>');
-                                });
-                            }
+
                             if ($(multipleList).find('li').length) {
-                                $dialog.warning('<liferay-ui:message key="multiple.approved.cli.are.found.in.the.release" />: <b>' + $(multipleList).find('li').length + '</b>' + multipleList[0].outerHTML);
-                            }
-                            if ($(nilList).find('li').length) {
-                                $dialog.warning('<liferay-ui:message key="approved.cli.not.found.in.the.release" />: <b>' + $(nilList).find('li').length + '</b>' + nilList[0].outerHTML);
+                                $dialog.warning('<liferay-ui:message key="multiple.cli.are.found.in.the.release" />: <b>' + $(multipleList).find('li').length + '</b>' + multipleList[0].outerHTML);
                             }
                             if ($(oneList).find('li').length) {
                                 $dialog.success('<liferay-ui:message key="success.please.reload.page.to.see.the.changes" />: <b>' + $(oneList).find('li').length + '</b>');

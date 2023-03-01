@@ -73,6 +73,7 @@ public class SW360Constants {
     public static final String TYPE_VULNERABILITYDTO = "vulDTO";
     public static final String TYPE_OBLIGATIONELEMENT = "obligationElement";
     public static final String TYPE_OBLIGATIONNODE = "obligationNode";
+    public static final String TYPE_DOCUMENT = "document";
 
     public static final String SVM_COMPONENT_ID;
     public static final String SVM_MONITORINGLIST_ID;
@@ -90,7 +91,7 @@ public class SW360Constants {
             ImmutableMap.<String, String>builder()
                     .put(TYPE_LICENSE, "fullname")
                     .put(TYPE_OBLIGATIONS, "text")
-                    .put(TYPE_OBLIGATION, "name")
+                    .put(TYPE_OBLIGATION, "title")
                     .put(TYPE_USER, "email")
                     .put(TYPE_VENDOR, "fullname")
                     .put(TYPE_COMPONENT, "name")

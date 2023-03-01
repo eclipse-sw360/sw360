@@ -105,6 +105,7 @@ public class PortalConstants {
     public static final String IS_USER_ADMIN = "isUserAdmin";
     public static final String IS_CLEARING_EXPERT = "isClearingExpert";
     public static final String IS_PROJECT_MEMBER = "isProjectMember";
+    public static final String IS_ERROR_IN_UPDATE_OR_CREATE = "isErrorInUpdateOrCreate";
 
     //! Specialized keys for licenses
     public static final String LICENSES_PORTLET_NAME = PORTLET_NAME_PREFIX + "licenses";
@@ -348,6 +349,7 @@ public class PortalConstants {
     public static final String VULNERABILITIES_PORTLET_NAME = PORTLET_NAME_PREFIX + "vulnerabilitites";
     public static final String VULNERABILITY = "vulnerability";
     public static final String VULNERABILITY_LIST = "vulnerabilityList";
+    public static final String TOTAL_VULNERABILITY_COUNT = "totalVulnerabilityCount";
     public static final String VULNERABILITY_RATINGS = "vulnerabilityRatings";
     public static final String VULNERABILITY_ACTIONS = "vulnerabilityActions";
     public static final String VULNERABILITY_ID = "vulnerabilityId";
@@ -406,6 +408,7 @@ public class PortalConstants {
     public static final String CUSTOM_FIELD_COMPONENTS_VIEW_SIZE = "ComponentsViewSize";
     public static final String CUSTOM_FIELD_VULNERABILITIES_VIEW_SIZE = "VulnerabilitiesViewSize";
     public static final String CUSTOM_FIELD_PREFERRED_CLEARING_DATE_LIMIT = "PreferredClearingDateLimit";
+    public static final String CUSTOM_FIELD_BANNER_MESSAGE = "BannerMessage";
 
     //! Specialized keys for scheduling
     public static final String CVESEARCH_IS_SCHEDULED = "cveSearchIsScheduled";

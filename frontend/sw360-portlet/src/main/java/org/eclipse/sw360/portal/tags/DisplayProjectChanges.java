@@ -212,7 +212,7 @@ public class DisplayProjectChanges extends UserAwareTag {
         StringBuilder candidate = new StringBuilder();
         try {
             ProjectService.Iface client = new ThriftClients().makeProjectClient();
-            for (ProjectLink projectLink : client.getLinkedProjects(filteredMap, user)) {
+            for (ProjectLink projectLink : client.getLinkedProjects(filteredMap, true, user)) {
                 candidate.append(
                         String.format("<tr><td>%s</td><td>%s</td><td>%s</td></tr>", projectLink.getName(), projectLink.getRelation(), projectLink.isEnableSvm()));
             }
@@ -261,7 +261,7 @@ public class DisplayProjectChanges extends UserAwareTag {
                 }
             }
             //! This code doubling is done to reduce the database queries. I.e. one big query instead of multiple small ones
-            for (ProjectLink projectLink : client.getLinkedProjects(changeMap, user)) {
+            for (ProjectLink projectLink : client.getLinkedProjects(changeMap, true, user)) {
                 ProjectRelationship updateProjectRelationship = updateProjectRelationshipMap.get(projectLink.getId()).getProjectRelationship();
                 ProjectRelationship deleteProjectRelationship = deleteProjectRelationshipMap.get(projectLink.getId()).getProjectRelationship();
                 ProjectRelationship oldProjectRelationship = oldProjectRelationshipMap.get(projectLink.getId()).getProjectRelationship();

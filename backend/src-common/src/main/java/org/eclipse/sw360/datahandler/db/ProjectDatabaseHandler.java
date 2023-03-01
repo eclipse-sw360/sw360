@@ -825,11 +825,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return out;
     }
 
-    public List<ProjectLink> getLinkedProjects(Map<String, ProjectProjectRelationship> relations, User user) {
+    public List<ProjectLink> getLinkedProjects(Map<String, ProjectProjectRelationship> relations, boolean depth, User user) {
         List<ProjectLink> out;
 
         Deque<String> visitedIds = new ArrayDeque<>();
-        out = iterateProjectRelationShips(relations, null, visitedIds, -1, user);
+        out = iterateProjectRelationShips(relations, null, visitedIds, depth ? -1 : 1, user);
 
         return out;
     }
