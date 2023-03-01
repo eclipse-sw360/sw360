@@ -189,6 +189,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
 
         given(this.componentServiceMock.getComponentsForUser(any())).willReturn(componentList);
+        given(this.componentServiceMock.getRecentComponents(any())).willReturn(componentList);
         given(this.componentServiceMock.getComponentForUserById(eq("17653524"), any())).willReturn(angularComponent);
         given(this.componentServiceMock.getComponentForUserById(eq("98745"), any())).willReturn(testComponent);
         given(this.componentServiceMock.getProjectsByComponentId(eq("17653524"), any())).willReturn(projectList);
@@ -275,6 +276,25 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.totalElements").description("Total number of all existing components"),
                                 fieldWithPath("page.totalPages").description("Total number of pages"),
                                 fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_recent_components() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/components/recentComponents")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:components.[]name").description("The name of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
 
