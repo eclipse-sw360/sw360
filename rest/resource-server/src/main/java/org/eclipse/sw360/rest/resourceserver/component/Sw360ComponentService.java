@@ -179,4 +179,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new ProjectService.Client(protocol);
     }
+
+    public List<Component> getMyComponentsForUser(User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.getMyComponents(sw360User);
+    }
 }
