@@ -9,6 +9,9 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
@@ -33,8 +36,9 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
@@ -59,20 +63,24 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.hateoas.MediaTypes;
-import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.OPEN;
@@ -84,14 +92,17 @@ import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
-import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ProjectSpecTest extends TestRestDocsSpecBase {
@@ -314,6 +325,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         .setState(ProjectState.ACTIVE)
                         .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date()))
                         .setVendor((new  Vendor("Test", "Test short", "http://testvendoraddress.com").setId("987567468"))));
+        given(this.projectServiceMock.getMyProjects(any(), any())).willReturn(new ArrayList<>(projectList));
+        given(this.projectServiceMock.getWithFilledClearingStatus(
+                eq(new ArrayList<>(projectList)), eq(ImmutableMap.<String, Boolean>builder()
+                        .put(ProjectClearingState.OPEN.toString(), true)
+                        .put(ProjectClearingState.CLOSED.toString(), true)
+                        .put(ProjectClearingState.IN_PROGRESS.toString(), true)
+                        .build()))).willReturn(new ArrayList<>(projectList));
 
         Release release = new Release();
         release.setId("3765276512");
@@ -1532,4 +1550,47 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
     }
 
+    @Test
+    public void should_document_get_my_projects() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/myprojects")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("createdBy", "true")
+                        .param("moderator", "true")
+                        .param("contributor", "true")
+                        .param("projectOwner", "true")
+                        .param("leadArchitect", "true")
+                        .param("projectResponsible", "true")
+                        .param("securityResponsible", "true")
+                        .param("stateOpen", "true")
+                        .param("stateClosed", "true")
+                        .param("stateInProgress", "true")
+                        .param("allDetails", "true")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("createdBy").description("Projects with current user as creator. Possible values are `<true|false>`"),
+                                parameterWithName("moderator").description("Projects with current user as moderator. Possible values are `<true|false>`"),
+                                parameterWithName("contributor").description("Projects with current user as contributor. Possible values are `<true|false>`"),
+                                parameterWithName("projectOwner").description("Projects with current user as owner. Possible values are `<true|false>`"),
+                                parameterWithName("leadArchitect").description("Projects with current user as lead architect. Possible values are `<true|false>`"),
+                                parameterWithName("projectResponsible").description("Projects with current user as project responsible. Possible values are `<true|false>`"),
+                                parameterWithName("securityResponsible").description("Projects with current user as security responsible. Possible values are `<true|false>`"),
+                                parameterWithName("stateOpen").description("Projects with state as open. Possible values are `<true|false>`"),
+                                parameterWithName("stateClosed").description("Projects with state as closed. Possible values are `<true|false>`"),
+                                parameterWithName("stateInProgress").description("Projects with state as in progress. Possible values are `<true|false>`"),
+                                parameterWithName("allDetails").description("Flag to get projects with all details. Possible values are `<true|false>`")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:projects.[]name").description("The name of the project"),
+                                subsectionWithPath("_embedded.sw360:projects.[]version").description("The project version"),
+                                subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
 }

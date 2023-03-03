@@ -14,13 +14,9 @@ package org.eclipse.sw360.rest.resourceserver.project;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -34,12 +30,11 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
-import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
@@ -50,10 +45,7 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.Link;
@@ -61,20 +53,11 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.google.common.collect.ImmutableMap;
-
-import static com.google.common.base.Strings.nullToEmpty;
-import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
-
+import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -90,10 +73,12 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import javax.annotation.PreDestroy;
-
-import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
+import static com.google.common.base.Strings.nullToEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.getSortedMap;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -445,5 +430,44 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         }
         return listOfProjects;
+    }
+
+    /**
+     * From list of projects, filter projects based on their clearing state.
+     * @param projects      List of projects to filter
+     * @param clearingState Map of clearing states to filter projects for
+     * @return List of filtered projects.
+     */
+    public List<Project> getWithFilledClearingStatus(List<Project> projects, Map<String, Boolean> clearingState) {
+        if (!CommonUtils.isNullOrEmptyMap(clearingState)) {
+            Boolean open = clearingState.getOrDefault(ProjectClearingState.OPEN.toString(), true);
+            Boolean closed = clearingState.getOrDefault(ProjectClearingState.CLOSED.toString(), true);
+            Boolean inProgress = clearingState.getOrDefault(ProjectClearingState.IN_PROGRESS.toString(), true);
+
+            projects = projects.stream().filter(project -> {
+                if (open != null && open && ProjectClearingState.OPEN.equals(project.getClearingState())) {
+                    return true;
+                } else if (closed != null && closed && ProjectClearingState.CLOSED.equals(project.getClearingState())) {
+                    return true;
+                } else if (inProgress != null && inProgress
+                        && ProjectClearingState.IN_PROGRESS.equals(project.getClearingState())) {
+                    return true;
+                }
+                return false;
+            }).collect(Collectors.toList());
+        }
+        return projects;
+    }
+
+    /**
+     * Get my projects from the thrift client.
+     * @param user      User to get projects for
+     * @param userRoles User roles to filter projects
+     * @return List of projects
+     * @throws TException
+     */
+    public List<Project> getMyProjects(User user, Map<String, Boolean> userRoles) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.getMyProjects(user, userRoles);
     }
 }

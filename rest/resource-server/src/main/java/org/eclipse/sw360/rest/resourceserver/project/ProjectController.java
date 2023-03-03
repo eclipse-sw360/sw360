@@ -11,6 +11,12 @@
  */
 package org.eclipse.sw360.rest.resourceserver.project;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang.StringUtils;
@@ -18,25 +24,25 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
-import org.springframework.data.domain.Pageable;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
+import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
-import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -47,12 +53,10 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
@@ -60,7 +64,6 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckSt
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
-import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -69,62 +72,58 @@ import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.GsonJsonParser;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
-import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.wrapThriftOptionalReplacement;
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapException;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
+import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.*;
-
-import org.apache.thrift.transport.TTransportException;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -228,8 +227,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 sw360Projects.addAll(projectService.getProjectsForUser(sw360User));
             }
         }
+        return getProjectResponse(pageable, projectType, group, tag, allDetails, luceneSearch, request, sw360User,
+                mapOfProjects, isSearchByName, sw360Projects);
+    }
+
+    @NotNull
+    private ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectResponse(Pageable pageable,
+            String projectType, String group, String tag, boolean allDetails, boolean luceneSearch,
+            HttpServletRequest request, User sw360User, Map<String, Project> mapOfProjects, boolean isSearchByName,
+            List<Project> sw360Projects) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         sw360Projects.stream().forEach(prj -> mapOfProjects.put(prj.getId(), prj));
-        PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Projects, SW360Constants.TYPE_PROJECT);
+        PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                sw360Projects, SW360Constants.TYPE_PROJECT);
 
         List<EntityModel<Project>> projectResources = new ArrayList<>();
         Consumer<Project> consumer = p -> {
@@ -264,6 +273,47 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
+    }
+
+    @RequestMapping(value = PROJECTS_URL + "/myprojects", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectsFilteredForUser(
+            Pageable pageable,
+            @RequestParam(value = "createdBy", required = false, defaultValue = "true") boolean createdBy,
+            @RequestParam(value = "moderator", required = false, defaultValue = "true") boolean moderator,
+            @RequestParam(value = "contributor", required = false, defaultValue = "true") boolean contributor,
+            @RequestParam(value = "projectOwner", required = false, defaultValue = "true") boolean projectOwner,
+            @RequestParam(value = "leadArchitect", required = false, defaultValue = "true") boolean leadArchitect,
+            @RequestParam(value = "projectResponsible", required = false, defaultValue = "true") boolean projectResponsible,
+            @RequestParam(value = "securityResponsible", required = false, defaultValue = "true") boolean securityResponsible,
+            @RequestParam(value = "stateOpen", required = false, defaultValue = "true") boolean stateOpen,
+            @RequestParam(value = "stateClosed", required = false, defaultValue = "true") boolean stateClosed,
+            @RequestParam(value = "stateInProgress", required = false, defaultValue = "true") boolean stateInProgress,
+            @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Map<String, Project> mapOfProjects = new HashMap<>();
+
+        ImmutableMap<String, Boolean> userRoles = ImmutableMap.<String, Boolean>builder()
+                .put(Project._Fields.CREATED_BY.toString(), createdBy)
+                .put(Project._Fields.MODERATORS.toString(), moderator)
+                .put(Project._Fields.CONTRIBUTORS.toString(), contributor)
+                .put(Project._Fields.PROJECT_OWNER.toString(), projectOwner)
+                .put(Project._Fields.LEAD_ARCHITECT.toString(), leadArchitect)
+                .put(Project._Fields.PROJECT_RESPONSIBLE.toString(), projectResponsible)
+                .put(Project._Fields.SECURITY_RESPONSIBLES.toString(), securityResponsible)
+                .build();
+
+        ImmutableMap<String, Boolean> clearingState = ImmutableMap.<String, Boolean>builder()
+                .put(ProjectClearingState.OPEN.toString(), stateOpen)
+                .put(ProjectClearingState.CLOSED.toString(), stateClosed)
+                .put(ProjectClearingState.IN_PROGRESS.toString(), stateInProgress)
+                .build();
+
+        List<Project> sw360Projects = projectService.getMyProjects(sw360User, userRoles);
+        sw360Projects = projectService.getWithFilledClearingStatus(sw360Projects, clearingState);
+
+        return getProjectResponse(pageable, null, null, null, allDetails, true, request, sw360User,
+                mapOfProjects, true, sw360Projects);
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.GET)
@@ -1028,16 +1078,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         HalResource<Project> halProject = new HalResource<>(sw360Project);
         halProject.addEmbeddedResource("createdBy", sw360Project.getCreatedBy());
 
-        List<String> obsolateFields = List.of("homepage", "wiki");
+        List<String> obsoleteFields = List.of("homepage", "wiki");
         for (Entry<Project._Fields, String> field : mapOfFieldsTobeEmbedded.entrySet()) {
             if (Project._Fields.EXTERNAL_URLS.equals(field.getKey())) {
                 Map<String, String> externalUrls = CommonUtils
                         .nullToEmptyMap((Map<String, String>) sw360Project.getFieldValue(field.getKey()));
-                restControllerHelper.addEmbeddedFields(obsolateFields.get(0),
-                        externalUrls.get(obsolateFields.get(0)) == null ? "" : externalUrls.get(obsolateFields.get(0)),
+                restControllerHelper.addEmbeddedFields(obsoleteFields.get(0),
+                        externalUrls.get(obsoleteFields.get(0)) == null ? "" : externalUrls.get(obsoleteFields.get(0)),
                         halProject);
-                restControllerHelper.addEmbeddedFields(obsolateFields.get(1),
-                        externalUrls.get(obsolateFields.get(1)) == null ? "" : externalUrls.get(obsolateFields.get(1)),
+                restControllerHelper.addEmbeddedFields(obsoleteFields.get(1),
+                        externalUrls.get(obsoleteFields.get(1)) == null ? "" : externalUrls.get(obsoleteFields.get(1)),
                         halProject);
             } else {
                 restControllerHelper.addEmbeddedFields(field.getValue(), sw360Project.getFieldValue(field.getKey()),
