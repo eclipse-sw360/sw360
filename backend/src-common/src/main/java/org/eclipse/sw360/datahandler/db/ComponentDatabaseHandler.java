@@ -54,9 +54,11 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerability
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService;
+import org.eclipse.sw360.exporter.ComponentExporter;
 import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
@@ -68,6 +70,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.spdx.library.InvalidSPDXAnalysisException;
 import java.net.MalformedURLException;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -2843,5 +2846,44 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             releaseNames.put(releaseName[0], releaseName[1]);
         }
         return releaseNames;
+    }
+
+    public String getComponentReportInEmail(User user,boolean extendedByReleases) throws TException {
+        try {
+        	List<Component> componentlist = getRecentComponentsSummary(-1, user);
+            ComponentExporter exporter = getComponentExporterObject(componentlist,user, extendedByReleases);
+             return exporter.makeExcelExportForProject(componentlist, user);
+          }catch (IOException e) {
+             throw new SW360Exception(e.getMessage());
+       }
+    }
+
+    private ComponentExporter getComponentExporterObject(List<Component> componentList ,User user,
+            boolean extendedByRelease) throws SW360Exception {
+    	ThriftClients thriftClients = new ThriftClients();
+        return new ComponentExporter(thriftClients.makeComponentClient(), componentList, user,extendedByRelease);
+    }
+
+    public ByteBuffer downloadExcel(User user,boolean extendedByReleases,String token) throws SW360Exception {
+        try {
+        	ThriftClients thriftClients = new ThriftClients();
+        	ComponentExporter exporter = new ComponentExporter(thriftClients.makeComponentClient(), user,
+                    extendedByReleases);
+            InputStream stream = exporter.downloadExcelSheet(token);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    public ByteBuffer getComponentReportDataStream(User user, boolean extendedByReleases) throws TException{
+    	try {
+        	List<Component> componentlist = getRecentComponentsSummary(-1, user);
+            ComponentExporter exporter = getComponentExporterObject(componentlist, user, extendedByReleases);
+            InputStream stream = exporter.makeExcelExport(componentlist);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+          }catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+       }
     }
 }

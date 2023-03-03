@@ -40,14 +40,17 @@ import lombok.RequiredArgsConstructor;
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class SW360ReportController implements RepresentationModelProcessor<RepositoryLinksResource>{
+    private static final String COMPONENTS = "components";
 
-    public static final String REPORTS_URL = "/reports";
+	private static final String PROJECTS = "projects";
+
+	public static final String REPORTS_URL = "/reports";
     
     private static String CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
-    
+
     @NonNull
     private final SW360ReportService sw360ReportService;
 
@@ -59,38 +62,28 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     
     private List<String> mimeTypeList = Arrays.asList("xls","xlsx");
     
-    @RequestMapping(value = REPORTS_URL + "/myprojectreports", method = RequestMethod.GET)
+    @RequestMapping(value = REPORTS_URL , method = RequestMethod.GET)
     public void getProjectReport(@RequestParam(value = "withlinkedreleases", required = false, defaultValue = "false") boolean withLinkedReleases,
             @RequestParam(value = "mimetype", required = false, defaultValue = "xlsx") String mimeType,
-            @RequestParam(value = "mailrequest", required = false, defaultValue="false") boolean mailRequest, HttpServletRequest request,
+            @RequestParam(value = "mailrequest", required = false, defaultValue="false") boolean mailRequest, 
+            @RequestParam(value = "module", required = true) String module,HttpServletRequest request,
             HttpServletResponse response) throws TException{
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         try {
             if(validateMimeType(mimeType)) {
-                if(mailRequest) {
-                    StringBuffer url = request.getRequestURL();
-                    String uri = request.getRequestURI();
-                    String ctx = request.getContextPath();
-                    String base = url.substring(0, url.length() - uri.length() + ctx.length()) + "/";
-
-                    String projectPath = sw360ReportService.getUploadedProjectPath(sw360User, withLinkedReleases);
-
-                    String backendURL = base + "api/reports/download?user="+sw360User.getEmail()+"&extendedByReleases="+withLinkedReleases+"&token=";
-                    URL emailURL = new URL(backendURL+projectPath);
+            	switch (module) {
+                case PROJECTS :
+                    getProjectReports(withLinkedReleases, mailRequest, response, request,sw360User,module);
+                    break;
                     
-                    if(!CommonUtils.isNullEmptyOrWhitespace(projectPath)) {
-                    	sw360ReportService.sendExportSpreadsheetSuccessMail(emailURL.toString(), sw360User.getEmail());
-                    }
-                    JsonObject responseJson = new JsonObject();
-                    responseJson.addProperty("response", "E-mail sent succesfully to the end user.");
-                    responseJson.addProperty("url", emailURL.toString());
-                    responseJson.toString();
-                    response.getWriter().write(responseJson.toString());
-                }else {
-                	downloadExcelReport(withLinkedReleases, response, sw360User);
+                case COMPONENTS :
+                    getComponentsReports(withLinkedReleases,mailRequest, response, request, sw360User,module);
+                    break;
+                default:
+                    break;
                 }
-            }else {
+            } else {
                 throw new TException("Error : Mimetype either should be : xls/xlsx");
             }
         }catch (Exception e) {
@@ -98,10 +91,79 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         }
     }
 
-    private void downloadExcelReport(boolean withLinkedReleases, HttpServletResponse response,
-            User user) throws TException, IOException {
+	private void getProjectReports(boolean withLinkedReleases, boolean mailRequest, HttpServletResponse response,HttpServletRequest request,
+			User sw360User, String module) throws TException{
+		try {
+			if(mailRequest) {
+	            String base = getBaseUrl(request);
+
+	            String projectPath = sw360ReportService.getUploadedProjectPath(sw360User, withLinkedReleases);
+
+	            String backendURL = base + "api/reports/download?user="+sw360User.getEmail() + "&module=projects" +"&extendedByReleases="+withLinkedReleases+"&token=";
+	            URL emailURL = new URL(backendURL+projectPath);
+	            
+	            if(!CommonUtils.isNullEmptyOrWhitespace(projectPath)) {
+	            	sw360ReportService.sendExportSpreadsheetSuccessMail(emailURL.toString(), sw360User.getEmail());
+	            }
+	            JsonObject responseJson = new JsonObject();
+	            responseJson.addProperty("response", "E-mail sent succesfully to the end user.");
+	            responseJson.addProperty("url", emailURL.toString());
+	            responseJson.toString();
+	            response.getWriter().write(responseJson.toString());
+	        }else {
+	        	downloadExcelReport(withLinkedReleases, response, sw360User,module);
+	        }
+		}catch (Exception e) {
+			throw new TException(e.getMessage());
+		}
+	}
+
+	private String getBaseUrl(HttpServletRequest request) {
+		StringBuffer url = request.getRequestURL();
+		String uri = request.getRequestURI();
+		String ctx = request.getContextPath();
+		return url.substring(0, url.length() - uri.length() + ctx.length()) + "/";
+	}
+	
+	private void getComponentsReports(boolean withLinkedReleases, boolean mailRequest, HttpServletResponse response,
+			HttpServletRequest request, User sw360User, String module) throws TException{
+		try {
+			if (mailRequest) {
+	    		String base = getBaseUrl(request);
+	            String componentPath = sw360ReportService.getUploadedComponentPath(sw360User,withLinkedReleases);
+	            String backendURL =base + "api/reports/download?user=" + sw360User.getEmail()+ "&module=components" + "&extendedByReleases=" + withLinkedReleases + "&token=";
+	            URL emailURL = new URL(backendURL+componentPath);
+
+	            if (!CommonUtils.isNullEmptyOrWhitespace(componentPath)) {
+	            	sw360ReportService.sendComponentExportSpreadsheetSuccessMail(emailURL.toString(), sw360User.getEmail());
+	            }
+	            JsonObject responseJson = new JsonObject();
+	            responseJson.addProperty("response", "E-mail sent succesfully to the end user.");
+	            responseJson.addProperty("url", emailURL.toString());
+	            responseJson.toString();
+	            response.getWriter().write(responseJson.toString());
+	        } else {
+	        	downloadExcelReport(withLinkedReleases, response, sw360User,module);
+	        }
+		}catch (Exception e) {
+			throw new TException(e.getMessage());
+		}
+	}
+
+	private void downloadExcelReport(boolean withLinkedReleases, HttpServletResponse response,
+            User user,String module) throws TException, IOException {
     	try {
-    		ByteBuffer buffer = sw360ReportService.getProjectBuffer(user,withLinkedReleases);
+    		ByteBuffer buffer = null;
+    		switch (module) {
+             case PROJECTS:
+            	 buffer = sw360ReportService.getProjectBuffer(user,withLinkedReleases);
+				break;
+             case COMPONENTS:
+            	 buffer = sw360ReportService.getComponentBuffer(user,withLinkedReleases);
+				break;
+			default:
+				break;
+			}
     		if(null==buffer) {
     			throw new TException("No data available for the user "+ user.getEmail());
     		}
@@ -121,16 +183,29 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     private boolean validateMimeType(String mimeType) {
         return mimeTypeList.contains(mimeType);
     }
-    
+
     @RequestMapping(value = REPORTS_URL + "/download", method = RequestMethod.GET)
     public void downloadExcel(HttpServletRequest request,HttpServletResponse response) throws TException{
     	final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+    	String module = request.getParameter("module");
         String token = request.getParameter("token");
         String extendedByReleases = request.getParameter("extendedByReleases");
         User user=restControllerHelper.getUserByEmail(sw360User.getEmail());
+        String fileConstant="projects-%s.xlsx";
         try {
-            ByteBuffer buffer =  sw360ReportService.getReportStreamFromURl(user,Boolean.valueOf(extendedByReleases), token);
-            String filename = String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
+            ByteBuffer buffer = null;
+    		switch (module) {
+             case PROJECTS:
+            	 buffer = sw360ReportService.getReportStreamFromURl(user,Boolean.valueOf(extendedByReleases), token);
+				break;
+             case COMPONENTS:
+            	 fileConstant="components-%s.xlsx";
+            	 buffer = sw360ReportService.getComponentReportStreamFromURl(user, Boolean.valueOf(extendedByReleases), token);
+				break;
+			default:
+				break;
+			}
+            String filename = String.format(fileConstant, SW360Utils.getCreatedOn());
             response.setContentType(CONTENT_TYPE);
             response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
             copyDataStreamToResponse(response, buffer);
@@ -138,5 +213,4 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             throw new TException(e.getMessage());
         }
     }
-    
 }

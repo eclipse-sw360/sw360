@@ -26,6 +26,7 @@ import org.ektorp.http.HttpClient;
 import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -717,4 +718,19 @@ public class ComponentHandler implements ComponentService.Iface {
     public void sendExportSpreadsheetSuccessMail(String url, String recepient) throws TException {
         handler.sendExportSpreadsheetSuccessMail(url, recepient);
     }
+
+    @Override
+    public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws TException {
+        return handler.downloadExcel(user,extendedByReleases,token);
+    }
+
+	@Override
+	public ByteBuffer getComponentReportDataStream(User user, boolean extendedByReleases) throws TException {
+		return handler.getComponentReportDataStream(user,extendedByReleases);
+	}
+
+	@Override
+	public String getComponentReportInEmail(User user, boolean extendedByReleases) throws TException {
+		return handler.getComponentReportInEmail(user,extendedByReleases);
+	}
 }

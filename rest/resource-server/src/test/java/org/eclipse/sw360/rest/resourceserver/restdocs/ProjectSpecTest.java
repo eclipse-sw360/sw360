@@ -1776,18 +1776,20 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_get_project_report() throws Exception{
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/reports/myprojectreports")
+        mockMvc.perform(get("/api/reports")
                         .header("Authorization", "Bearer " + accessToken)
                         .param("withlinkedreleases", "true")
                         .param("mimetype", "xlsx")
                         .param("mailrequest", "true")
+                        .param("module", "projects")
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         requestParameters(
                                 parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
                                 parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
-                                parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`")
+                                parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`"),
+                                parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`")
                         ),responseFields(
                                 subsectionWithPath("response").description("The response message displayed").optional(),
                                 subsectionWithPath("url").description("The project download path will be displayed").optional()
@@ -1798,18 +1800,20 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_get_project_report_without_mail_req() throws Exception{
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/reports/myprojectreports")
+        mockMvc.perform(get("/api/reports")
                         .header("Authorization", "Bearer " + accessToken)
                         .param("withlinkedreleases", "true")
                         .param("mimetype", "xlsx")
                         .param("mailrequest", "false")
+                        .param("module", "projects")
                         .accept("application/xhtml+xml"))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         requestParameters(
                                 parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
                                 parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
-                                parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`")
+                                parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`"),
+                                parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`")
                         )));
     }
 
