@@ -552,6 +552,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         for (Entry<Release._Fields, String> field : mapOfFieldsTobeEmbedded.entrySet()) {
             restControllerHelper.addEmbeddedFields(field.getValue(), release.getFieldValue(field.getKey()), halRelease);
         }
+        // Do not add attachment as it is an embedded field
+        release.unsetAttachments();
         return halRelease;
     }
 

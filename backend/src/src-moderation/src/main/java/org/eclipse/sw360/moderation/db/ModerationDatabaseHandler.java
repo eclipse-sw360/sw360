@@ -132,8 +132,16 @@ public class ModerationDatabaseHandler {
         return repository.getRequestsByModerator(moderator);
     }
 
+    public List<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(String moderator, PaginationData pageData) {
+        return repository.getRequestsByModeratorWithPaginationNoFilter(moderator, pageData);
+    }
+
     public Map<PaginationData, List<ModerationRequest>> getRequestsByModerator(String moderator, PaginationData pageData, boolean open) {
         return repository.getRequestsByModerator(moderator, pageData, open);
+    }
+
+    public Map<PaginationData, List<ModerationRequest>> getRequestsByModeratorAllDetails(String moderator, PaginationData pageData, boolean open) {
+        return repository.getRequestsByModeratorAllDetails(moderator, pageData, open);
     }
 
     public List<ModerationRequest> getRequestsByRequestingUser(String user) {

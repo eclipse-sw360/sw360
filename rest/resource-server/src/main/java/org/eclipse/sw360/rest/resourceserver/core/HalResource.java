@@ -15,14 +15,15 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
-import org.springframework.hateoas.Link;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,6 +58,8 @@ public class HalResource<T> extends EntityModel<T> {
             ((VulnerabilityDTO) content).setType(null);
         } else if (content instanceof ClearingRequest) {
             ((ClearingRequest) content).setType(null);
+        } else if (content instanceof ModerationRequest) {
+            ((ModerationRequest) content).setType(null);
         }
     }
 

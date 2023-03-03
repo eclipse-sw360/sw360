@@ -256,6 +256,13 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
+    public List<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(User user, PaginationData pageData) throws TException {
+        assertUser(user);
+
+        return handler.getRequestsByModeratorWithPaginationNoFilter(user.getEmail(), pageData);
+    }
+
+    @Override
     public List<ModerationRequest> getRequestsByRequestingUser(User user) throws TException {
         assertUser(user);
 
@@ -371,6 +378,14 @@ public class ModerationHandler implements ModerationService.Iface {
         assertUser(user);
 
         return handler.getRequestsByModerator(user.getEmail(), pageData, open);
+    }
+
+    @Override
+    public Map<PaginationData, List<ModerationRequest>> getRequestsByModeratorWithPaginationAllDetails(User user,
+                                                                                                       PaginationData pageData, boolean open) throws TException {
+        assertUser(user);
+
+        return handler.getRequestsByModeratorAllDetails(user.getEmail(), pageData, open);
     }
 
     @Override

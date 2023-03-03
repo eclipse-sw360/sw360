@@ -249,9 +249,20 @@ service ModerationService {
     list<ModerationRequest> getRequestsByModerator(1: User user);
 
     /**
+     * Get list of moderation requests where user is one of the moderator with pagination.
+     **/
+    list<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(1: User user, 2: PaginationData pageData);
+
+    /**
      * get list of moderation requests based on moderation state(open/closed) where user is one of the moderators, with pagination
      **/
     map<PaginationData, list<ModerationRequest>> getRequestsByModeratorWithPagination(1: User user, 2: PaginationData pageData, 3: bool open);
+
+    /**
+     * get list of moderation requests based on moderation state(open/closed) where user is one of the moderators,
+     * with pagination and return all details
+     **/
+    map<PaginationData, list<ModerationRequest>> getRequestsByModeratorWithPaginationAllDetails(1: User user, 2: PaginationData pageData, 3: bool open);
 
     /**
      * get list of moderation requests where user is requesting user

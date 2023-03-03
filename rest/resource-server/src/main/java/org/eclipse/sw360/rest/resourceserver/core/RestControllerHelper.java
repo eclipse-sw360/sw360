@@ -9,38 +9,53 @@
  */
 package org.eclipse.sw360.rest.resourceserver.core;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TBase;
+import org.apache.thrift.TException;
+import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.resourcelists.*;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationOptions;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceListController;
+import org.eclipse.sw360.datahandler.thrift.ModerationState;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.Quadratic;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityApiDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
-import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
-import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
-import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.Quadratic;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.rest.resourceserver.moderationrequest.EmbeddedModerationRequest;
+import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationRequestController;
+import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
 import org.eclipse.sw360.rest.resourceserver.obligation.ObligationController;
+import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
+import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
@@ -48,44 +63,44 @@ import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TException;
-import org.apache.thrift.TFieldIdEnum;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.hateoas.*;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.server.core.EmbeddedWrapper;
 import org.springframework.hateoas.server.core.EmbeddedWrappers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -879,4 +894,43 @@ public class RestControllerHelper<T> {
         return embeddedClearingRequest;
     }
 
+    public ModerationRequest convertToEmbeddedModerationRequest(ModerationRequest moderationRequest) {
+        ModerationRequest embeddedModerationRequest = new EmbeddedModerationRequest();
+        embeddedModerationRequest.setId(moderationRequest.getId())
+                .setTimestamp(moderationRequest.getTimestamp())
+                .setTimestampOfDecision(moderationRequest.getTimestampOfDecision())
+                .setDocumentId(moderationRequest.getDocumentId())
+                .setDocumentType(moderationRequest.getDocumentType())
+                .setDocumentName(moderationRequest.getDocumentName())
+                .setComponentType(moderationRequest.getComponentType())
+                .setRequestingUser(moderationRequest.getRequestingUser())
+                .setRequestingUserDepartment(moderationRequest.getRequestingUserDepartment())
+                .setModerators(moderationRequest.getModerators())
+                .setModerationState(moderationRequest.getModerationState())
+                .setReviewer(moderationRequest.getReviewer())
+                .setType(null);
+        return embeddedModerationRequest;
+    }
+
+    public void addEmbeddedModerationRequest(HalResource<ModerationRequest> halModerationRequest,
+                                             Set<String> moderationIds,
+                                             Sw360ModerationRequestService sw360ModerationRequestService)
+            throws TException {
+        for (String moderationId : moderationIds) {
+            final ModerationRequest moderationRequest = sw360ModerationRequestService.getModerationRequestById(moderationId);
+            addEmbeddedModerationRequest(halModerationRequest, moderationRequest, false);
+        }
+    }
+
+    public void addEmbeddedModerationRequest(HalResource halResource, ModerationRequest moderationRequest,
+                                             boolean isSingleRequest) {
+        ModerationRequest embeddedRequest = convertToEmbeddedModerationRequest(moderationRequest);
+        HalResource<ModerationRequest> halModerationRequest = new HalResource<>(embeddedRequest);
+        Link moderationRequestLink = linkTo(ModerationRequest.class)
+                .slash("api" + ModerationRequestController.MODERATION_REQUEST_URL + "/" + moderationRequest.getId())
+                .withSelfRel();
+        halModerationRequest.add(moderationRequestLink);
+        halResource.addEmbeddedResource(isSingleRequest ? "sw360:moderationRequest" : "sw360:moderationRequests",
+                halModerationRequest);
+    }
 }

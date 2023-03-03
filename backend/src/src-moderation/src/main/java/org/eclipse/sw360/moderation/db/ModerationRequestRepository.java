@@ -114,10 +114,33 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         return makeSummaryFromFullDocs(SummaryType.SHORT, mrs);
     }
 
+    public List<ModerationRequest> getRequestsByModeratorWithPaginationNoFilter(String moderator, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final boolean ascending = pageData.isAscending();
+        final int skip = pageData.getDisplayStart();
+        final Selector typeSelector = eq("type", "moderation");
+        final Selector filterByModeratorSelector = PredicatedOperation.elemMatch("moderators",
+                PredicateExpression.eq(moderator));
+        final Selector finalSelector = and(typeSelector, filterByModeratorSelector);
+        QueryBuilder qb = new QueryBuilder(finalSelector);
+        qb.limit(rowsPerPage);
+        qb.skip(skip);
+        qb.useIndex("byDate");
+        qb = ascending ? qb.sort(Sort.asc("timestamp")) : qb.sort(Sort.desc("timestamp"));
+        return getConnector().getQueryResult(qb.build(), ModerationRequest.class).getDocs();
+    }
+
     public Map<PaginationData, List<ModerationRequest>> getRequestsByModerator(String moderator, PaginationData pageData, boolean open) {
         Map<PaginationData, List<ModerationRequest>> paginatedModerations = queryViewWithPagination(moderator, pageData, open);
         List<ModerationRequest> moderationList = paginatedModerations.values().iterator().next();
         moderationList = makeSummaryFromFullDocs(SummaryType.SHORT, moderationList);
+        paginatedModerations.put(pageData, moderationList);
+        return paginatedModerations;
+    }
+
+    public Map<PaginationData, List<ModerationRequest>> getRequestsByModeratorAllDetails(String moderator, PaginationData pageData, boolean open) {
+        Map<PaginationData, List<ModerationRequest>> paginatedModerations = queryViewWithPagination(moderator, pageData, open);
+        List<ModerationRequest> moderationList = paginatedModerations.values().iterator().next();
         paginatedModerations.put(pageData, moderationList);
         return paginatedModerations;
     }

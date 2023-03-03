@@ -1,0 +1,92 @@
+//
+// Copyright Siemens AG, 2023. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+// SPDX-FileCopyrightText: 2023, Siemens AG. Part of the SW360 Portal Project.
+// SPDX-FileContributor: Gaurav Mishra <mishra.gaurav@siemens.com>
+//
+
+[[resources-moderationRequest]]
+=== ModerationRequest
+
+The ModerationRequest resource is used to get and list the moderation requests.
+
+[[resources-moderationRequests]]
+==== List all moderationRequest
+
+A `GET` request will list all the Moderation Requests with user as one of the moderator.
+
+===== Request parameter
+
+include::{snippets}/should_document_get_moderationrequests/request-parameters.adoc[]
+
+===== Response structure
+
+include::{snippets}/should_document_get_moderationrequests/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_moderationrequests/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_moderationrequests/http-response.adoc[]
+
+[[resources-moderationRequests-alldetails]]
+==== List all moderationRequest with all details
+
+A `GET` request will list all the Moderation Requests with all details with user as one of the moderator.
+
+===== Request parameter
+
+include::{snippets}/should_document_get_moderationrequests_alldetails/request-parameters.adoc[]
+
+===== Response structure
+
+include::{snippets}/should_document_get_moderationrequests_alldetails/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_moderationrequests_alldetails/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_moderationrequests_alldetails/http-response.adoc[]
+
+[[resources-moderationRequest-by-id]]
+==== Get moderationRequest by id
+
+A `GET` request will display the ModerationRequest by id.
+
+===== Response structure
+
+include::{snippets}/should_document_get_moderationrequest/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_moderationrequest/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_moderationrequest/http-response.adoc[]
+
+
+[[resources-moderationRequest-by-state]]
+==== List all moderationRequest by state
+
+A `GET` request will list all the ModerationRequest visible to the user based on the state.
+
+===== Request parameter
+include::{snippets}/should_document_get_moderationrequests_by_state/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_moderationrequests_by_state/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_moderationrequests_by_state/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_moderationrequests_by_state/http-response.adoc[]
+
