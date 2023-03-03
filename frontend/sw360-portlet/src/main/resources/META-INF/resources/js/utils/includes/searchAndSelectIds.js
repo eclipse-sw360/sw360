@@ -73,9 +73,7 @@ define('utils/includes/searchAndSelectIds', ['jquery', 'utils/keyboard', 'module
                     paging: false,
                     info: false,
                     searching: false,
-                    order: [
-                        [1, 'asc']
-                    ],
+                    order: [],
                     columnDefs: [
                         { targets: [0], orderable: false },
                     ],

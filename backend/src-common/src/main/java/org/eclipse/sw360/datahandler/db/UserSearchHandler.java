@@ -97,7 +97,7 @@ public class UserSearchHandler {
             searchText = "";
         }
         String queryString = prepareFuzzyQuery(cleanUp(searchText));
-        return connector.searchView(User.class, luceneSearchView, queryString);
+        return connector.searchAndSortByScore(User.class, luceneSearchView, queryString);
     }
 
     public List<User> search(String text, final Map<String, Set<String>> subQueryRestrictions) {
