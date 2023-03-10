@@ -11,6 +11,8 @@
 
 server:
   port: 8091
+  servlet:
+    context-path: /resource/api
 
 management:
   endpoints:
@@ -65,3 +67,14 @@ blacklist:
     rest:
       api:
         endpoints: /resource/api/users:POST
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api-docs
+  show-oauth2-endpoints: true
+  swagger-ui:
+    enabled: true
+    path: /api/swagger-ui
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/hal+json
