@@ -452,8 +452,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.searchProjectByType(any(), any())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.searchProjectByGroup(any(), any())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.refineSearch(any(), any())).willReturn(projectListByName);
-        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq("false"))).willReturn(releaseIds);
-        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq("true"))).willReturn(releaseIdsTransitive);
+        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(false))).willReturn(releaseIds);
+        given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(true))).willReturn(releaseIdsTransitive);
         given(this.projectServiceMock.deleteProject(eq(project.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(projectReleaseRelationshipResponseBody);
         given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(
@@ -674,7 +674,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         given(this.vulnerabilityMockService.fillVulnerabilityMetadata(any(), any())).willReturn(vulIdToRelIdToRatings);
         given(this.vulnerabilityMockService.updateProjectVulnerabilityRating(any(), any())).willReturn(RequestStatus.SUCCESS);
-        given(this.projectServiceMock.getReleasesFromProjectIds(any(), any(), any(), any())).willReturn(Set.of(rel));
+        given(this.projectServiceMock.getReleasesFromProjectIds(any(), anyBoolean(), any(), any())).willReturn(Set.of(rel));
     }
 
     @Test
@@ -1977,7 +1977,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"))
                         		));
     }
-    
+
     @Test
     public void should_document_get_project_report() throws Exception{
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);

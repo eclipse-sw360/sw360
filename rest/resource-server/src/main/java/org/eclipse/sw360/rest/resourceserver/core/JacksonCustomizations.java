@@ -50,6 +50,7 @@ import org.eclipse.sw360.rest.resourceserver.moderationrequest.EmbeddedModeratio
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
+import org.springdoc.core.SpringDocUtils;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -112,6 +113,53 @@ public class JacksonCustomizations {
             setMixInAnnotation(ProjectDTO.class, Sw360Module.ProjectDTOMixin.class);
             setMixInAnnotation(EmbeddedProjectDTO.class, Sw360Module.EmbeddedProjectDTOMixin.class);
             setMixInAnnotation(ReleaseNode.class, Sw360Module.ReleaseNodeMixin.class);
+
+            // Make spring doc aware of the mixin(s)
+            SpringDocUtils.getConfig()
+                    .replaceWithClass(Project.class, Sw360Module.ProjectMixin.class)
+                    .replaceWithClass(MultiStatus.class, MultiStatusMixin.class)
+                    .replaceWithClass(User.class, Sw360Module.UserMixin.class)
+                    .replaceWithClass(Component.class, Sw360Module.ComponentMixin.class)
+                    .replaceWithClass(ComponentDTO.class, Sw360Module.ComponentDTOMixin.class)
+                    .replaceWithClass(Release.class, Sw360Module.ReleaseMixin.class)
+                    .replaceWithClass(ReleaseLink.class, Sw360Module.ReleaseLinkMixin.class)
+                    .replaceWithClass(ClearingReport.class, Sw360Module.ClearingReportMixin.class)
+                    .replaceWithClass(Attachment.class, Sw360Module.AttachmentMixin.class)
+                    .replaceWithClass(AttachmentDTO.class, Sw360Module.AttachmentDTOMixin.class)
+                    .replaceWithClass(UsageAttachment.class, Sw360Module.UsageAttachmentMixin.class)
+                    .replaceWithClass(ProjectUsage.class, Sw360Module.ProjectUsageMixin.class)
+                    .replaceWithClass(Vendor.class, Sw360Module.VendorMixin.class)
+                    .replaceWithClass(License.class, Sw360Module.LicenseMixin.class)
+                    .replaceWithClass(Obligation.class, Sw360Module.ObligationMixin.class)
+                    .replaceWithClass(Vulnerability.class, Sw360Module.VulnerabilityMixin.class)
+                    .replaceWithClass(VulnerabilityState.class, Sw360Module.VulnerabilityStateMixin.class)
+                    .replaceWithClass(ReleaseVulnerabilityRelationDTO.class, Sw360Module.ReleaseVulnerabilityRelationDTOMixin.class)
+                    .replaceWithClass(VulnerabilityDTO.class, Sw360Module.VulnerabilityDTOMixin.class)
+                    .replaceWithClass(VulnerabilityApiDTO.class, Sw360Module.VulnerabilityApiDTOMixin.class)
+                    .replaceWithClass(EccInformation.class, Sw360Module.EccInformationMixin.class)
+                    .replaceWithClass(EmbeddedProject.class, Sw360Module.EmbeddedProjectMixin.class)
+                    .replaceWithClass(ExternalToolProcess.class, Sw360Module.ExternalToolProcessMixin.class)
+                    .replaceWithClass(ExternalToolProcessStep.class, Sw360Module.ExternalToolProcessStepMixin.class)
+                    .replaceWithClass(COTSDetails.class, Sw360Module.COTSDetailsMixin.class)
+                    .replaceWithClass(ClearingInformation.class, Sw360Module.ClearingInformationMixin.class)
+                    .replaceWithClass(Repository.class, Sw360Module.RepositoryMixin.class)
+                    .replaceWithClass(SearchResult.class, Sw360Module.SearchResultMixin.class)
+                    .replaceWithClass(ChangeLogs.class, Sw360Module.ChangeLogsMixin.class)
+                    .replaceWithClass(ChangedFields.class, Sw360Module.ChangedFieldsMixin.class)
+                    .replaceWithClass(ReferenceDocData.class, Sw360Module.ReferenceDocDataMixin.class)
+                    .replaceWithClass(ClearingRequest.class, Sw360Module.ClearingRequestMixin.class)
+                    .replaceWithClass(Comment.class, Sw360Module.CommentMixin.class)
+                    .replaceWithClass(ProjectReleaseRelationship.class, Sw360Module.ProjectReleaseRelationshipMixin.class)
+                    .replaceWithClass(ReleaseVulnerabilityRelation.class, Sw360Module.ReleaseVulnerabilityRelationMixin.class)
+                    .replaceWithClass(VerificationStateInfo.class, Sw360Module.VerificationStateInfoMixin.class)
+                    .replaceWithClass(ProjectProjectRelationship.class, Sw360Module.ProjectProjectRelationshipMixin.class)
+                    .replaceWithClass(ModerationRequest.class, Sw360Module.ModerationRequestMixin.class)
+                    .replaceWithClass(EmbeddedModerationRequest.class, Sw360Module.EmbeddedModerationRequestMixin.class)
+                    .replaceWithClass(ImportBomRequestPreparation.class, Sw360Module.ImportBomRequestPreparationMixin.class)
+                    .replaceWithClass(ModerationPatch.class, Sw360Module.ModerationPatchMixin.class)
+                    .replaceWithClass(ProjectDTO.class, Sw360Module.ProjectDTOMixin.class)
+                    .replaceWithClass(EmbeddedProjectDTO.class, Sw360Module.EmbeddedProjectDTOMixin.class)
+                    .replaceWithClass(ReleaseNode.class, Sw360Module.ReleaseNodeMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

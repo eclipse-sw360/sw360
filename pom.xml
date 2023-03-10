@@ -51,6 +51,7 @@
   <properties>
     <revision>17.0.${patchlevel}</revision>
     <patchlevel>0-SNAPSHOT</patchlevel>
+    <rest.version>1.0.0</rest.version>
 
     <!-- Build version properties -->
     <java_source.version>11</java_source.version>
@@ -150,6 +151,10 @@
     <spring-restdocs.version>2.0.6.RELEASE</spring-restdocs.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
     <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
+    <springdoc-openapi-hateos.version>1.7.0</springdoc-openapi-hateos.version>
+    <springdoc-openapi-ui.version>1.7.0</springdoc-openapi-ui.version>
+    <springdoc-openapi-security.version>1.7.0</springdoc-openapi-security.version>
+    <springdoc-openapi-webmvc.version>1.7.0</springdoc-openapi-webmvc.version>
     <springframework.version>5.3.27</springframework.version>
     <thrift.version>0.16.0</thrift.version>
     <tika.version>1.28.5</tika.version>

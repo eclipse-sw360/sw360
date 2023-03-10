@@ -49,7 +49,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpClientErrorException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -63,7 +62,6 @@ import java.util.Map;
 import static org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService.isOpenModerationRequest;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
-@RestController
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ModerationRequestController implements RepresentationModelProcessor<RepositoryLinksResource> {
