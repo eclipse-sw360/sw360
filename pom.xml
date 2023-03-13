@@ -118,7 +118,7 @@
     <liferay.util.bridges.version>9.0.6</liferay.util.bridges.version>
     <liferay.util.java.version>17.1.2</liferay.util.java.version>
     <liferay.util.taglib.version>8.4.8</liferay.util.taglib.version>
-    <log4j2.version>2.17.1</log4j2.version>
+    <log4j2.version>2.19.0</log4j2.version>
     <mockito.version>4.7.0</mockito.version>
     <okhttp.version>4.10.0</okhttp.version>
     <package-url.version>1.1.1</package-url.version>
@@ -136,7 +136,7 @@
     <spring-restdocs-asciidoctor.version>2.0.6.RELEASE</spring-restdocs-asciidoctor.version>
     <thrift.version>0.16.0</thrift.version>
     <wiremock.version>2.26.0</wiremock.version>
-    <org.spdx.tools.java.version>1.1.0</org.spdx.tools.java.version>
+    <org.spdx.tools.java.version>1.1.5</org.spdx.tools.java.version>
     <com.googlecode.json-simple.version>1.1.1</com.googlecode.json-simple.version>
 
     <!--  User must provide below property configuration based on his/her liferay deployment environment -->
