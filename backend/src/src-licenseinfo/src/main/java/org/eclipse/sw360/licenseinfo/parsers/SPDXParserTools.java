@@ -16,7 +16,7 @@ import com.google.common.collect.Sets;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
-import org.apache.jena.ext.xerces.util.XMLChar;
+import org.apache.jena.util.XMLChar;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
