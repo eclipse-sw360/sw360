@@ -177,6 +177,21 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
+    @RequestMapping(value = COMPONENTS_URL + "/recentComponents", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel>> getRecentComponent () throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        List<Component> sw360Components = componentService.getRecentComponents(user);
+
+        List<EntityModel> resources = new ArrayList<>();
+        sw360Components.forEach(c -> {
+            Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
+            resources.add(EntityModel.of(embeddedComponent));
+        });
+
+        CollectionModel<EntityModel> finalResources = CollectionModel.of(resources);
+        return new ResponseEntity<>(finalResources, HttpStatus.OK);
+    }
+
     @RequestMapping(value = COMPONENTS_URL + "/searchByExternalIds", method = RequestMethod.GET)
     public ResponseEntity searchByExternalIds(@RequestParam MultiValueMap<String, String> externalIdsMultiMap) throws TException {
         return restControllerHelper.searchByExternalIds(externalIdsMultiMap, componentService, null);

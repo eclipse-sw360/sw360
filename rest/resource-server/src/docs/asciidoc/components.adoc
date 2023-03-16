@@ -31,6 +31,25 @@ include::{snippets}/should_document_get_components/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_get_components/links.adoc[]
 
+
+[[resources-recent-components-list]]
+==== Listing recent components
+
+A `GET` request will list 5 of the service's most recently created components.
+
+===== Response structure
+include::{snippets}/should_document_get_recent_components/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_recent_components/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_recent_components/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_recent_components/links.adoc[]
+
+
 [[resources-components-list-with-fields]]
 ==== Listing components with fields
 
