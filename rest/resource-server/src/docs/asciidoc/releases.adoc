@@ -51,6 +51,24 @@ include::{snippets}/should_document_get_release_all_details/http-response.adoc[]
 include::{snippets}/should_document_get_release_all_details/links.adoc[]
 
 
+[[resources-recent-releases-list]]
+==== Listing recent releases
+
+A `GET` request will list 5 of the service's most recently created releases.
+
+===== Response structure
+include::{snippets}/should_document_get_recent_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_recent_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_recent_releases/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_recent_releases/links.adoc[]
+
+
 [[resources-releases-list-with-fields]]
 ==== Listing releases with fields
 

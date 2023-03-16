@@ -183,6 +183,22 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
     }
 
+    @GetMapping(value = RELEASES_URL + "/recentReleases")
+    public ResponseEntity<CollectionModel<EntityModel>> getRecentRelease() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<Release> sw360Releases = releaseService.getRecentReleases(sw360User);
+
+        List<EntityModel> resources = new ArrayList<>();
+        sw360Releases.forEach(r -> {
+            Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(r);
+            resources.add(EntityModel.of(embeddedRelease));
+        });
+
+        CollectionModel<EntityModel> finalResources = restControllerHelper.createResources(resources);
+        HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(finalResources, status);
+    }
+
     @RequestMapping(value = RELEASES_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
             throws TException {

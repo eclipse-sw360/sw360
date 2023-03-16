@@ -217,6 +217,11 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return sw360ComponentClient.getUsingComponentsForRelease(releaseId);
     }
 
+    public List<Release> getRecentReleases(User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.getRecentReleasesWithAccessibility(sw360User);
+    }
+
     public ExternalToolProcess fossologyProcess(String releaseId, User sw360User, String uploadDescription) throws TException {
         FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
         ExternalToolProcess fossologyProcess = null;
