@@ -22,6 +22,7 @@
 		<a href="/en_US" title="English"> <img src="<%=request.getContextPath()%>/images/en.png" width="25px" height="25px"></a>
 		<a href="/ja_JP" title="Japan"> <img src="<%=request.getContextPath()%>/images/jp.png" width="25px" height="25px"></a>
 		<a href="/vi_VN" title="Vietnam"> <img src="<%=request.getContextPath()%>/images/vi.png" width="25px" height="25px"></a>
+		<a href="/zh_CN" title="China"> <img src="<%=request.getContextPath()%>/images/cn.png" width="25px" height="25px"></a>
 		<br/>
 	    <p class="lead">
 		<liferay-ui:message key="sw360.is.an.open.source.software.project.that.provides.both.a.web.application.and.a.repository.to.collect.organize.and.make.available.information.about.software.components.it.establishes.a.central.hub.for.software.components.in.an.organization" />
