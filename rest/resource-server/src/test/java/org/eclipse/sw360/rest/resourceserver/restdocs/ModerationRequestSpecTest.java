@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -36,6 +37,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -55,11 +57,13 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -185,12 +189,20 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         Map<PaginationData, List<ModerationRequest>> requestsByState = new HashMap<>();
         requestsByState.put(new PaginationData().setTotalRowCount(moderationRequestsByState.size()), new ArrayList<>(moderationRequestsByState));
 
+        User user = new User();
+        user.setId("123456789");
+        user.setEmail(testUserId);
+        user.setFullname("John Doe");
+
         given(this.releaseServiceMock.getReleaseForUserById(eq(moderationRequest.getDocumentId()), any())).willReturn(releaseAdditions);
         given(this.userServiceMock.getUserByEmail(moderationRequest.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
+        given(this.userServiceMock.getUserByEmailOrExternalId(testUserId)).willReturn(user);
         given(this.moderationRequestServiceMock.getRequestsByModerator(any(), any())).willReturn(new ArrayList<>(moderationRequests));
         given(this.moderationRequestServiceMock.getTotalCountOfRequests(any())).willReturn((long) moderationRequests.size());
         given(this.moderationRequestServiceMock.getModerationRequestById(eq(moderationRequest.getId()))).willReturn(moderationRequest);
         given(this.moderationRequestServiceMock.getRequestsByState(any(), any(), eq(false), anyBoolean())).willReturn(requestsByState);
+        given(this.moderationRequestServiceMock.acceptRequest(eq(moderationRequest), eq("Changes looks good."), any())).willReturn(ModerationState.APPROVED);
+        given(this.moderationRequestServiceMock.assignRequest(eq(moderationRequest), any())).willReturn(ModerationState.INPROGRESS);
     }
 
     @Test
@@ -387,8 +399,53 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.totalElements").description("Total number of all existing moderation requests"),
                                 fieldWithPath("page.totalPages").description("Total number of pages"),
                                 fieldWithPath("page.number").description("Number of the current page"),
-                                subsectionWithPath("_links").description("Link to <<resources-clearingRequest, ClearingRequest resource>>")
+                                subsectionWithPath("_links").description("Link to <<resources-moderationRequest, ModerationRequest resource>>")
                         )));
     }
 
+    @Test
+    public void should_document_get_moderationrequests_accept() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        ModerationPatch patch = new ModerationPatch();
+        patch.setAction(ModerationPatch.ModerationAction.ACCEPT);
+        patch.setComment("Changes looks good.");
+
+        mockMvc.perform(patch("/api/moderationrequest/MR-101")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .content(this.objectMapper.writeValueAsString(patch))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isAccepted())
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("action").description("Action to perform on the moderation request. Possible values are: `" + List.of(ModerationPatch.ModerationAction.ACCEPT, ModerationPatch.ModerationAction.REJECT) + '`'),
+                                fieldWithPath("comment").description("Comment on the action from reviewer.")
+                        ),
+                        responseFields(
+                                fieldWithPath("status").description("New status of the moderation request. Possible values are: `" + List.of(ModerationState.APPROVED, ModerationState.REJECTED) + '`'),
+                                subsectionWithPath("_links").description("Link to current <<resources-moderationRequest, ModerationRequest resource>>")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_moderationrequests_assign() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        ModerationPatch patch = new ModerationPatch();
+        patch.setAction(ModerationPatch.ModerationAction.ASSIGN);
+
+        mockMvc.perform(patch("/api/moderationrequest/MR-101")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .content(this.objectMapper.writeValueAsString(patch))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isAccepted())
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("action").description("Action to perform on the moderation request. Possible values are: `" + List.of(ModerationPatch.ModerationAction.ASSIGN, ModerationPatch.ModerationAction.UNASSIGN) + '`')
+                        ),
+                        responseFields(
+                                fieldWithPath("status").description("`" + ModerationState.PENDING + "` if unassigned, `" + ModerationState.INPROGRESS + "` if assigned. Exception thrown in case of errors."),
+                                subsectionWithPath("_links").description("Link to current <<resources-moderationRequest, ModerationRequest resource>>")
+                        )));
+    }
 }

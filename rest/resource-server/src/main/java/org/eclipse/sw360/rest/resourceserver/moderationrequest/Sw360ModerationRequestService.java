@@ -20,7 +20,9 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
@@ -33,6 +35,7 @@ import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.security.InvalidParameterException;
 import java.util.List;
 import java.util.Map;
 
@@ -44,12 +47,23 @@ public class Sw360ModerationRequestService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
 
+    public static boolean isOpenModerationRequest(@NotNull ModerationRequest moderationRequest) {
+        return moderationRequest.getModerationState() == ModerationState.PENDING || moderationRequest.getModerationState() == ModerationState.INPROGRESS;
+    }
+
     private ModerationService.Iface getThriftModerationClient() throws TTransportException {
         THttpClient thriftClient = new THttpClient(thriftServerUrl + "/moderation/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new ModerationService.Client(protocol);
     }
 
+    /**
+     * Get a moderation request by id if exists. Otherwise raise appropriate exception.
+     *
+     * @param requestId ID of moderation request to get
+     * @return Moderation Request
+     * @throws TException Appropriate exception if request does not exists or not accessible.
+     */
     public ModerationRequest getModerationRequestById(String requestId) throws TException {
         try {
             return getThriftModerationClient().getModerationRequestById(requestId);
@@ -66,6 +80,15 @@ public class Sw360ModerationRequestService {
         }
     }
 
+    /**
+     * Get paginated list of moderation requests where user is one of the
+     * moderators.
+     *
+     * @param sw360User Moderator
+     * @param pageable  Pageable information from request
+     * @return Paginated list of moderation requests.
+     * @throws TException Exception in case of error.
+     */
     public List<ModerationRequest> getRequestsByModerator(User sw360User, Pageable pageable) throws TException {
         PaginationData pageData = pageableToPaginationData(pageable);
         return getThriftModerationClient().getRequestsByModeratorWithPaginationNoFilter(sw360User, pageData);
@@ -76,7 +99,7 @@ public class Sw360ModerationRequestService {
      *
      * @param sw360User Moderator
      * @return Count of moderation requests
-     * @throws TException
+     * @throws TException Throws exception in case of error
      */
     public long getTotalCountOfRequests(User sw360User) throws TException {
         Map<String, Long> countInfo = getThriftModerationClient().getCountByModerationState(sw360User);
@@ -86,6 +109,12 @@ public class Sw360ModerationRequestService {
         return totalCount;
     }
 
+    /**
+     * Convert Pageable from spring request to PaginationData
+     *
+     * @param pageable Pageable from request
+     * @return Converted PaginationData
+     */
     private static @NotNull PaginationData pageableToPaginationData(@NotNull Pageable pageable) {
         PaginationData pageData = new PaginationData();
         pageData.setRowsPerPage(pageable.getPageSize());
@@ -94,6 +123,17 @@ public class Sw360ModerationRequestService {
         return pageData;
     }
 
+    /**
+     * Get list of moderation requests based on moderation state(open/closed)
+     * where user is one of the moderators.
+     *
+     * @param sw360user  Moderator
+     * @param pageable   Pagination information
+     * @param open       State is open?
+     * @param allDetails Need all details?
+     * @return Map of pagination information and list of moderation requests
+     * @throws TException Exception in case of error.
+     */
     public Map<PaginationData, List<ModerationRequest>> getRequestsByState(User sw360user, Pageable pageable,
                                                                            boolean open, boolean allDetails) throws TException {
         PaginationData pageData = pageableToPaginationData(pageable);
@@ -114,5 +154,79 @@ public class Sw360ModerationRequestService {
         }
         moderationData.put(paginationData, moderationRequests);
         return moderationData;
+    }
+
+    /**
+     * Set moderation state of moderation request to ACCEPTED
+     *
+     * @param request          Request to accept
+     * @param moderatorComment Comments from moderator
+     * @param reviewer         Reviewer
+     * @return Current status of request
+     * @throws TException Exception in case of error.
+     */
+    public ModerationState acceptRequest(ModerationRequest request, String moderatorComment, @NotNull User reviewer)
+            throws TException {
+        getThriftModerationClient().acceptRequest(request, moderatorComment, reviewer.getEmail());
+        return ModerationState.APPROVED;
+    }
+
+    /**
+     * Set moderation state of the moderation request to REJECTED
+     *
+     * @param request          Moderation request to reject
+     * @param moderatorComment Comment from moderator
+     * @param reviewer         Reviewer
+     * @return Current status of the moderation request
+     * @throws TException Exception in case of error.
+     */
+    public ModerationState rejectRequest(@NotNull ModerationRequest request, String moderatorComment,
+                                         @NotNull User reviewer) throws TException {
+        getThriftModerationClient().refuseRequest(request.getId(), moderatorComment, reviewer.getEmail());
+        return ModerationState.REJECTED;
+    }
+
+    /**
+     * Remove the user from moderator list of the moderation request.
+     *
+     * @param request  Moderation request to edit
+     * @param reviewer User to remove
+     * @return Pending status if removal successful
+     * @throws SW360Exception Throws exception if user is last moderator of the request.
+     */
+    public ModerationState removeMeFromModerators(@NotNull ModerationRequest request, @NotNull User reviewer)
+            throws SW360Exception {
+        RemoveModeratorRequestStatus status = RemoveModeratorRequestStatus.FAILURE;
+        try {
+            status = getThriftModerationClient().removeUserFromAssignees(request.getId(), reviewer);
+        } catch (TException e) {
+            log.error("Error in Moderation ", e);
+        }
+        if (status == RemoveModeratorRequestStatus.LAST_MODERATOR) {
+            throw new InvalidParameterException("You are the last moderator for this request - " +
+                    "you are not allowed to unsubscribe.");
+        } else if (status == RemoveModeratorRequestStatus.FAILURE) {
+            throw new SW360Exception("Failed to remove from moderator list.");
+        }
+        return ModerationState.PENDING;
+    }
+
+    /**
+     * Assign a moderation request to the user.
+     *
+     * @param request  Moderation request to assign
+     * @param reviewer User to assign MR to
+     * @return Moderation state in-progress if assignment successful.
+     * @throws TException Throws exception in case of errors.
+     */
+    public ModerationState assignRequest(@NotNull ModerationRequest request, @NotNull User reviewer)
+            throws TException {
+        if (!request.getModerators().contains(reviewer.getEmail())) {
+            throw new AccessDeniedException("User is not assigned as a moderator for the request.");
+        } else if (!isOpenModerationRequest(request)) {
+            throw new InvalidParameterException("Moderation request is not in open state.");
+        }
+        getThriftModerationClient().setInProgress(request.getId(), reviewer);
+        return ModerationState.INPROGRESS;
     }
 }
