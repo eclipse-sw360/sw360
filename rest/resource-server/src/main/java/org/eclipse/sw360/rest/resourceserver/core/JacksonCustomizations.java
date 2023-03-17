@@ -42,6 +42,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonProjectRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonReleaseRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.EmbeddedModerationRequest;
+import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -74,8 +75,6 @@ public class JacksonCustomizations {
             setMixInAnnotation(VulnerabilityState.class, Sw360Module.VulnerabilityStateMixin.class);
             setMixInAnnotation(ReleaseVulnerabilityRelationDTO.class, Sw360Module.ReleaseVulnerabilityRelationDTOMixin.class);
             setMixInAnnotation(VulnerabilityDTO.class, Sw360Module.VulnerabilityDTOMixin.class);
-            setMixInAnnotation(VulnerabilityState.class, Sw360Module.VulnerabilityStateMixin.class);
-            setMixInAnnotation(ReleaseVulnerabilityRelationDTO.class, Sw360Module.ReleaseVulnerabilityRelationDTOMixin.class);
             setMixInAnnotation(VulnerabilityApiDTO.class, Sw360Module.VulnerabilityApiDTOMixin.class);
             setMixInAnnotation(EccInformation.class, Sw360Module.EccInformationMixin.class);
             setMixInAnnotation(EmbeddedProject.class, Sw360Module.EmbeddedProjectMixin.class);
@@ -97,6 +96,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(ModerationRequest.class, Sw360Module.ModerationRequestMixin.class);
             setMixInAnnotation(EmbeddedModerationRequest.class, Sw360Module.EmbeddedModerationRequestMixin.class);
             setMixInAnnotation(ImportBomRequestPreparation.class, Sw360Module.ImportBomRequestPreparationMixin.class);
+            setMixInAnnotation(ModerationPatch.class, Sw360Module.ModerationPatchMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -1367,6 +1367,10 @@ public class JacksonCustomizations {
                 "setRequestStatus"
         })
         public static abstract class ImportBomRequestPreparationMixin extends ImportBomRequestPreparation {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        public static abstract class ModerationPatchMixin extends ModerationPatch {
         }
     }
 }

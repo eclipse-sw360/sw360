@@ -90,3 +90,42 @@ include::{snippets}/should_document_get_moderationrequests_by_state/curl-request
 ===== Example response
 include::{snippets}/should_document_get_moderationrequests_by_state/http-response.adoc[]
 
+[[resources-moderationRequest-accept-reject]]
+==== Accepting or rejecting a moderation request
+
+A `PATCH` request will accept or reject the ModerationRequest, save the comment by the reviewer and send email notifications.
+
+===== Request body
+include::{snippets}/should_document_get_moderationrequests_accept/request-body.adoc[]
+
+===== Request structure
+include::{snippets}/should_document_get_moderationrequests_accept/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_moderationrequests_accept/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_moderationrequests_accept/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_moderationrequests_accept/http-response.adoc[]
+
+[[resources-moderationRequest-assign-unassign]]
+==== Assign or Unassign a moderation request
+
+A `PATCH` request will assign a ModerationRequest to the user. The request can be used to unassign the user from the ModerationRequest as well.
+
+===== Request body
+include::{snippets}/should_document_get_moderationrequests_assign/request-body.adoc[]
+
+===== Request structure
+include::{snippets}/should_document_get_moderationrequests_assign/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_moderationrequests_assign/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_moderationrequests_assign/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_moderationrequests_assign/http-response.adoc[]
