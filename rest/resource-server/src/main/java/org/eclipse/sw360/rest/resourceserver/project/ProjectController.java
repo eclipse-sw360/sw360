@@ -247,8 +247,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
                 embeddedProjectResource = EntityModel.of(embeddedProject);
             } else {
-                embeddedProjectResource = createHalProjectResourceWithAllDetails(p, sw360User, mapOfProjects,
-                        !isSearchByName);
+                embeddedProjectResource = createHalProjectResourceWithAllDetails(p, sw360User);
                 if (embeddedProjectResource == null) {
                     return;
                 }
@@ -1069,12 +1068,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return projectService.updateProject(project, sw360User);
     }
 
-    private HalResource<Project> createHalProjectResourceWithAllDetails(Project sw360Project, User sw360User,
-            Map<String, Project> mapOfProjects, boolean isAllAccessibleProjectFetched) {
-        Map<String, ProjectProjectRelationship> linkedProjects = sw360Project.getLinkedProjects();
-        if (!isLinkedProjectsVisible(linkedProjects, sw360User, mapOfProjects, isAllAccessibleProjectFetched)) {
-            return null;
-        }
+    private HalResource<Project> createHalProjectResourceWithAllDetails(Project sw360Project, User sw360User) {
         HalResource<Project> halProject = new HalResource<>(sw360Project);
         halProject.addEmbeddedResource("createdBy", sw360Project.getCreatedBy());
 
@@ -1096,28 +1090,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         return halProject;
-    }
-
-    private boolean isLinkedProjectsVisible(Map<String, ProjectProjectRelationship> linkedProjects, User sw360User,
-            Map<String, Project> mapOfProjects, boolean isAllAccessibleProjectFetched) {
-        if (isAllAccessibleProjectFetched && !CommonUtils.isNullOrEmptyMap(linkedProjects)) {
-            for (String linkedProjectId : linkedProjects.keySet()) {
-                if (!mapOfProjects.containsKey(linkedProjectId)) {
-                    return false;
-                }
-            }
-        } else if (!CommonUtils.isNullOrEmptyMap(linkedProjects)) {
-            for (String linkedProjectId : linkedProjects.keySet()) {
-                if (!mapOfProjects.containsKey(linkedProjectId)) {
-                    try {
-                        projectService.getProjectForUserById(linkedProjectId, sw360User);
-                    } catch (TException exp) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
     }
 
     private Project convertToProject(Map<String, Object> requestBody) {
