@@ -157,7 +157,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.getResourcesFromList(any())).willReturn(CollectionModel.of(attachmentResources));
         given(this.attachmentServiceMock.uploadAttachment(any(), any(), any())).willReturn(attachment);
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
-        Mockito.doNothing().when(projectServiceMock).deleteProject(any(), any());
         Mockito.doNothing().when(projectServiceMock).copyLinkedObligationsForClonedProject(any(), any(),
                 any());
 
@@ -298,6 +297,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.refineSearch(any(), any())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq("false"))).willReturn(releaseIds);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq("true"))).willReturn(releaseIdsTransitive);
+        given(this.projectServiceMock.deleteProject(eq(project.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(projectReleaseRelationshipResponseBody);
         given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(
                 new Project("Emerald Web")
