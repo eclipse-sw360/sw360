@@ -127,10 +127,13 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
         }
 
+        for(Release release: sw360Releases) {
+            releaseService.setComponentDependentFieldsInRelease(release, sw360User);
+        }
+
         sw360Releases = sw360Releases.stream()
                 .filter(release -> name == null || name.isEmpty() || release.getName().equalsIgnoreCase(name))
                 .collect(Collectors.toList());
-
         PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE);
 
         List<EntityModel> releaseResources = new ArrayList<>();
