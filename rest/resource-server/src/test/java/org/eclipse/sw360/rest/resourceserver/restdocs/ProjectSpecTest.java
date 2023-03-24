@@ -945,6 +945,38 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_linked_projects() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/linkedProjects")
+                .header("Authorization", "Bearer " + accessToken)
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "name,desc")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects page"),
+                                parameterWithName("sort").description("Defines order of the projects")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing projects"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
     public void should_document_get_project_releases() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/projects/" + project.getId() + "/releases")
