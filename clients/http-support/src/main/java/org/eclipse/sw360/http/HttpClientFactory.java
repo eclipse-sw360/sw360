@@ -32,4 +32,13 @@ public interface HttpClientFactory {
      * @return the new {@code HttpClient} instance
      */
     HttpClient newHttpClient(HttpClientConfig config);
+
+    /**
+     * Creates a new instance of {@code HttpClient} and configures it
+     * according to the passed in configuration object.
+     *
+     * @param config the configuration for the new(native java) client
+     * @return the new {@code HttpClient} instance
+     */
+    HttpClient newHttpClientAlt(HttpClientConfig config);
 }

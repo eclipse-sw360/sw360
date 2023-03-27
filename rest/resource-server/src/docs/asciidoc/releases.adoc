@@ -109,9 +109,7 @@ include::{snippets}/should_document_get_releases_by_name/links.adoc[]
 [[resources-releases-get-by-externalids]]
 ==== Listing by external ids
 
-A `GET` request will get all releases corresponding to external ids +
-The request parameter supports MultiValueMap (allows to add duplicate keys with different values) +
-It's possible to search for releases only by the external id key by leaving the value.
+A `GET` request will get all releases corresponding to external ids. A request body has to be passed where a single key(external ID) can take different values. It is possible to search for releases by omitting the values and passing the external ID as the key.
 
 ===== Response structure
 include::{snippets}/should_document_get_releases_by_external-ids/response-fields.adoc[]

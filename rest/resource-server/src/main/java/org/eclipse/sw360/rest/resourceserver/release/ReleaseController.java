@@ -27,7 +27,6 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -50,7 +49,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.MultiValueMap;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -223,8 +222,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     }
 
     @GetMapping(value = RELEASES_URL + "/searchByExternalIds")
-    public ResponseEntity searchByExternalIds(@RequestParam MultiValueMap<String, String> externalIdsMultiMap) throws TException {
-        return restControllerHelper.searchByExternalIds(externalIdsMultiMap, releaseService, null);
+    public ResponseEntity searchByExternalIds(@RequestBody(required = false) Map<String, List<String>> externalIdsMultiMap) throws TException {
+        return restControllerHelper.searchByExternalIds(new LinkedMultiValueMap<String, String>(externalIdsMultiMap), releaseService, null);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
