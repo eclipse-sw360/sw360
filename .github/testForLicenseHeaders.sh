@@ -38,6 +38,7 @@ done <<< "$(git ls-files \
     | grep -v .pre-commit-config.yaml \
     | grep -v 'id_rsa' \
     | grep -v '.versions' \
+    | grep -v 'default_secrets' \
     | grep -Ev '*/asciidoc/*')"
 
 if [ "$failure" = true ]; then

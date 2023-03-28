@@ -158,6 +158,8 @@ ARG MAVEN_VERSION
 
 WORKDIR /build
 
+SHELL ["/bin/bash", "-c"]
+
 # Install mkdocs to generate documentation
 RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
@@ -183,7 +185,14 @@ COPY --from=sw360thrift /usr/local/bin/thrift /usr/bin
 
 RUN --mount=type=bind,target=/build/sw360,rw \
     --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
+    --mount=type=secret,id=sw360,target=/run/secrets/sw360 \
     cd /build/sw360 \
+    && set -a \
+    && source /run/secrets/sw360 \
+    && envsubst < scripts/docker-config/couchdb.properties.template | tee scripts/docker-config/etc_sw360/couchdb.properties \
+    && set +a \
+    && cp scripts/docker-config/etc_sw360/couchdb.properties build-configuration/resources/ \
+    && cat scripts/docker-config/etc_sw360/couchdb.properties \
     && mvn clean package \
     -P deploy \
     -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \

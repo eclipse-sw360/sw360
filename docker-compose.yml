@@ -58,7 +58,7 @@ services:
     volumes:
       - couchdb:/opt/couchdb/data
     healthcheck:
-      test: [ "CMD-SHELL", "curl --fail -s http://localhost:5984/_up" ]
+      test: [ "CMD-SHELL", "curl --fail -s http://couchdb:5984/_up" ]
       interval: 10s
       timeout: 5s
       retries: 5
