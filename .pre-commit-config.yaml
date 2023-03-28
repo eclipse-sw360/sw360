@@ -1,5 +1,20 @@
 repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+    -   id: check-merge-conflict
+    # -   id: end-of-file-fixer
+    # -   id: trailing-whitespace
+
+-   repo: https://github.com/compilerla/conventional-pre-commit
+    rev: 'v2.1.1'
+    hooks:
+    -   id: conventional-pre-commit
+        stages: [commit-msg]
+
 -   repo: https://github.com/ejba/pre-commit-maven
     rev: v0.3.3
     hooks:
     -   id: maven-spotless-apply
+        stages: [manual]
+        always_run: false
