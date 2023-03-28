@@ -29,6 +29,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - uses: webiny/action-conventional-commits@v1.1.0
 
     - name: Verify license headers
       run: |
@@ -87,4 +88,3 @@ jobs:
       run: |
         cd clients
         mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true
-
