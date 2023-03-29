@@ -16,8 +16,6 @@ on:
   schedule:
       - cron: '0 0 * * *' # Midnight
   push:
-    schedule:
-      - cron: '0 0 * * *' # Midnight
     tags:
       - 'sw360-*'
     paths-ignore:
@@ -134,7 +132,6 @@ jobs:
           load: false
           build-args: |
             CLUCENE_VERSION=${{ env.CLUCENE_VERSION }}
-            MAVEN_VERSION=${{ env.MAVEN_VERSION }}
           tags: |
             ${{ steps.meta_clucene.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/clucene:${{ env.CLUCENE_VERSION }}
@@ -162,8 +159,6 @@ jobs:
           target: sw360
           push: true
           load: false
-          build-args: |
-            MAVEN_VERSION=${{ env.MAVEN_VERSION }}
           tags: |
             ${{ steps.meta_sw360.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/binaries:${{ env.GIT_REVISION }}
