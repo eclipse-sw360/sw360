@@ -30,7 +30,10 @@
     <portlet:param name="<%=PortalConstants.DOCUMENT_ID%>" value="${documentID}"/>
     <portlet:param name="<%=PortalConstants.DOCUMENT_TYPE%>" value="${documentType}"/>
     <portlet:param name="<%=PortalConstants.IS_ERROR_IN_UPDATE_OR_CREATE%>"  value="${isErrorInUpdateOrCreate}" />
-    <portlet:param name="<%=PortalConstants.ATTACHMENTS%>"  value="${attachments}" />
+    <core_rt:set var="isError" value="${isErrorInUpdateOrCreate}"/>
+    <core_rt:if test="${isError}">
+        <portlet:param name="<%=PortalConstants.ATTACHMENTS%>"  value="${attachments}" />
+    </core_rt:if>
 </portlet:resourceURL>
 
 <table id="attachmentInfo" class="table edit-table attachments" title="<liferay-ui:message key="attachment.information" /> ${documentType}"
