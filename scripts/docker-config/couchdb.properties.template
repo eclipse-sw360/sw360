@@ -9,8 +9,8 @@
 #
 
 couchdb.url = $COUCHDB_URL
-couchdb.user = "$COUCHDB_USER"
-couchdb.password = "$COUCHDB_PASSWORD"
+couchdb.user = $COUCHDB_USER
+couchdb.password = $COUCHDB_PASSWORD
 couchdb.database = sw360db
 couchdb.usersdb = sw360users
 couchdb.attachments = sw360attachments
