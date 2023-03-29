@@ -20,7 +20,7 @@ set -e -o  pipefail
 # shellcheck disable=SC1091
 . .versions
 
-DOCKER_IMAGE_ROOT="${DOCKER_IMAGE_ROOT:-eclipse/sw360}"
+DOCKER_IMAGE_ROOT="${DOCKER_IMAGE_ROOT:-eclipse-sw360}"
 GIT_REVISION=$(git describe --abbrev=6 --always --tags --match=[0-9]*)
 SECRETS=${SECRETS:-"$PWD/scripts/docker-config/default_secrets"}
 export DOCKER_PLATFORM DOCKER_IMAGE_ROOT GIT_REVISION SECRETS
