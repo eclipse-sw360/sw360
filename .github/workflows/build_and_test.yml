@@ -69,7 +69,9 @@ jobs:
         path: |
           /usr/local/bin/thrift
           /usr/share/thrift/${{ env.THRIFT_VERSION }}
-        key: ${{ runner.os }}-thriftbin
+        key: ${{ runner.os }}-thrift-${{ hashFiles('/usr/local/bin/thrift') }}
+        restore-keys: |
+          ${{ runner.os }}-thrift-
 
     - name: Install Thrift
       if: steps.cache-thrift.outputs.cache-hit != 'true'
