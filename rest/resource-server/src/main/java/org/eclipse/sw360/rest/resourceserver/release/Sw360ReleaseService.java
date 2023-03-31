@@ -118,8 +118,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return releaseById;
     }
 
-    public void setComponentDependentFieldsInRelease(Release releaseById, User sw360User) {
-
+    public Release setComponentDependentFieldsInRelease(Release releaseById, User sw360User) {
         String componentId = releaseById.getComponentId();
         if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
             throw new HttpMessageNotReadableException("ComponentId must be present");
@@ -132,7 +131,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             throw new HttpMessageNotReadableException("No Component found with Id - " + componentId);
         }
         releaseById.setComponentType(componentById.getComponentType());
-
+        return releaseById;
     }
 
     @Override
