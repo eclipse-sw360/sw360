@@ -62,11 +62,9 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -592,8 +590,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     ///////////////////////////////
     // UPDATE INDIVIDUAL OBJECTS //
     ///////////////////////////////
-
     public RequestStatus updateComponent(Component component, User user) throws SW360Exception {
+        return updateComponent(component, user, false);
+    }
+
+    public RequestStatus updateComponent(Component component, User user, boolean forceUpdate) throws SW360Exception {
         removeLeadingTrailingWhitespace(component);
         String name = component.getName();
         if (name == null || name.isEmpty()) {
@@ -617,7 +618,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.DUPLICATE_ATTACHMENT;
         } else if (!isDependenciesExistInComponent(component)){
             return RequestStatus.INVALID_INPUT;
-        } else if (makePermission(actual, user).isActionAllowed(RequestedAction.WRITE)) {
+        } else if (makePermission(actual, user).isActionAllowed(RequestedAction.WRITE) || forceUpdate) {
             // Nested releases and attachments should not be updated by this method
             boolean isComponentNameChanged = false;
             if (actual.isSetReleaseIds()) {
@@ -986,6 +987,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestStatus updateRelease(Release release, User user, Iterable<Release._Fields> immutableFields) throws SW360Exception {
+        return updateRelease(release, user, immutableFields, false);
+    }
+    
+    public RequestStatus updateRelease(Release release, User user, Iterable<Release._Fields> immutableFields, boolean forceUpdate) throws SW360Exception {
         removeLeadingTrailingWhitespace(release);
         String name = release.getName();
         String version = release.getVersion();
@@ -1014,7 +1019,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             boolean hasChangesInEccFields = hasChangesInEccFields(release, actual);
 
             if ((hasChangesInEccFields && permissions.isActionAllowed(RequestedAction.WRITE_ECC))
-                    || (!hasChangesInEccFields && permissions.isActionAllowed(RequestedAction.WRITE))) {
+                    || (!hasChangesInEccFields && permissions.isActionAllowed(RequestedAction.WRITE)) 
+                    || forceUpdate) {
 
                 if (!hasChangesInEccFields && hasEmptyEccFields(release)) {
                     autosetEccFieldsForReleaseWithDownloadUrl(release);
@@ -1625,9 +1631,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     ///////////////////////////////
     // DELETE INDIVIDUAL OBJECTS //
     ///////////////////////////////
-
-
     public RequestStatus deleteComponent(String id, User user) throws SW360Exception {
+        return deleteComponent(id, user, false);
+    }
+
+    public RequestStatus deleteComponent(String id, User user, boolean forceDelete) throws SW360Exception {
         Component component = new Component();
         try {
             component = componentRepository.get(id);
@@ -1641,8 +1649,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (checkIfInUse(releaseIds)) return RequestStatus.IN_USE;
 
 
-        if (makePermission(component, user).isActionAllowed(RequestedAction.DELETE)) {
-
+        if (makePermission(component, user).isActionAllowed(RequestedAction.DELETE) || forceDelete) {
 
             for (Release release : releaseRepository.get(nullToEmptySet(component.releaseIds))) {
                 component = removeReleaseAndCleanUp(release, user);
@@ -1708,12 +1715,16 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestStatus deleteRelease(String id, User user) throws SW360Exception {
+        return deleteRelease(id, user, false);
+    }
+    
+    public RequestStatus deleteRelease(String id, User user, boolean forceDelete) throws SW360Exception {
         Release release = releaseRepository.get(id);
         assertNotNull(release);
 
         if (checkIfInUse(id)) return RequestStatus.IN_USE;
 
-        if (makePermission(release, user).isActionAllowed(RequestedAction.DELETE)) {
+        if (makePermission(release, user).isActionAllowed(RequestedAction.DELETE) || forceDelete) {
             Component componentBefore = componentRepository.get(release.getComponentId());
             // Remove release id from component
             removeReleaseId(id, release.componentId);

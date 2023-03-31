@@ -54,6 +54,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public static final String JWKS_ISSUER_URL;
     public static final String JWKS_ENDPOINT_URL;
     public static final Boolean IS_JWKS_VALIDATION_ENABLED;
+    public static final Boolean IS_FORCE_UPDATE_ENABLED;
 
     static {
         Properties props = CommonUtils.loadProperties(Sw360ResourceServer.class, SW360_PROPERTIES_FILE_PATH);
@@ -66,6 +67,8 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         JWKS_ISSUER_URL = props.getProperty("jwks.issuer.url", null);
         JWKS_ENDPOINT_URL = props.getProperty("jwks.endpoint.url", null);
         IS_JWKS_VALIDATION_ENABLED = Boolean.parseBoolean(props.getProperty("jwks.validation.enabled", "false"));
+        IS_FORCE_UPDATE_ENABLED = Boolean.parseBoolean(
+                System.getProperty("RunRestForceUpdateTest", props.getProperty("rest.force.update.enabled", "false")));
     }
 
     @Bean

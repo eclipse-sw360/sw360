@@ -262,6 +262,15 @@ public class ProjectHandler implements ProjectService.Iface {
         return handler.updateProject(project, user);
     }
 
+    @Override
+    public RequestStatus updateProjectWithForceFlag(Project project, User user, boolean forceUpdate) throws TException {
+        assertNotNull(project);
+        assertId(project.getId());
+        assertUser(user);
+
+        return handler.updateProject(project, user, forceUpdate);
+    }
+    
     public RequestStatus updateProjectFromModerationRequest(Project projectAdditions, Project projectDeletions, User user) {
         return handler.updateProjectFromAdditionsAndDeletions(projectAdditions, projectDeletions, user);
     }
@@ -276,6 +285,14 @@ public class ProjectHandler implements ProjectService.Iface {
         assertUser(user);
 
         return handler.deleteProject(id, user);
+    }
+    
+    @Override
+    public RequestStatus deleteProjectWithForceFlag(String id, User user, boolean forceDelete) throws TException {
+        assertId(id);
+        assertUser(user);
+
+        return handler.deleteProject(id, user, forceDelete);
     }
 
 
