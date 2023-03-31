@@ -13,6 +13,7 @@ package org.eclipse.sw360.components.db;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
+import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
@@ -51,6 +52,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ComponentDatabaseHandlerTest {
@@ -854,6 +857,27 @@ public class ComponentDatabaseHandlerTest {
     }
 
     @Test
+    public void testForceUpdateComponent() throws Exception {
+        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+            return;
+        }
+        // Make some changes in the component
+        Component component = components.get(0);
+        String expected = "UPDATE";
+        component.setName(expected);
+
+        lenient().when(moderator.updateComponent(component, user2)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+        RequestStatus status = handler.updateComponent(component, user2, true);
+        Component actual = handler.getComponent("C1", user1);
+
+        assertEquals(RequestStatus.SUCCESS, status);
+
+        assertEquals(component.getId(), actual.getId());
+        assertEquals(expected, actual.getName());
+        verify(moderator, never()).updateComponent(component, user2);
+    }
+    
+    @Test
     public void testUpdateRelease() throws Exception {
         Release expected = releases.get(1);
         expected.setName("UPDATED");
@@ -903,6 +927,24 @@ public class ComponentDatabaseHandlerTest {
     }
 
     @Test
+    public void testForceUpdateRelease() throws Exception {
+        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+            return;
+        }
+        Release release = releases.get(1);
+        String expected = "UPDATED";
+        release.setName(expected);
+
+        lenient().when(releaseModerator.updateRelease(release, user1)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+        RequestStatus status = handler.updateRelease(release, user1, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
+        Release actual = handler.getRelease("R1B", user1);
+
+        assertEquals(RequestStatus.SUCCESS, status);
+        assertEquals(expected, actual.getName());
+        verify(releaseModerator, never()).updateRelease(release, user1);
+    }
+    
+    @Test
     public void testEccUpdateSentToEccModeration() throws Exception {
         Release release = releases.get(1);
         String expected = release.getEccInformation().getAl();
@@ -916,6 +958,25 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(expected, actual.getEccInformation().getAl());
         verify(releaseModerator).updateReleaseEccInfo(release, user1);
     }
+
+    @Test
+    public void testForceEccUpdate() throws Exception {
+        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+            return;
+        }
+        Release release = releases.get(1);
+        String expected = "UPDATED";
+        release.getEccInformation().setAl(expected);
+
+        lenient().when(releaseModerator.updateReleaseEccInfo(release, user1)).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+        RequestStatus status = handler.updateRelease(release, user1, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
+        Release actual = handler.getRelease("R1B", user1);
+
+        assertEquals(RequestStatus.SUCCESS, status);
+        assertEquals(expected, actual.getEccInformation().getAl());
+        verify(releaseModerator, never()).updateReleaseEccInfo(release, user1);
+    }
+    
     @Test
     public void testDeleteComponent() throws Exception {
         RequestStatus status = handler.deleteComponent("C3", user1);
@@ -936,6 +997,20 @@ public class ComponentDatabaseHandlerTest {
         verify(moderator).deleteComponent(any(Component.class), eq(user2));
     }
 
+    @Test
+    public void testForceDeleteComponent() throws Exception {
+        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+            return;
+        }
+        lenient().when(moderator.deleteComponent(any(Component.class), eq(user2))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+        RequestStatus status = handler.deleteComponent("C3", user2, true);
+        assertEquals(RequestStatus.SUCCESS, status);
+        List<Component> componentSummary = handler.getComponentSummary(user1);
+        assertEquals(2, componentSummary.size());
+        assertFalse("Component deleted", componentsContain(componentSummary, "C3"));
+        verify(moderator, never()).deleteComponent(any(Component.class), eq(user2));
+    }
+    
     @Test
     public void testDontDeleteUsedComponent() throws Exception {
         final Release r1A = handler.getRelease("R1A", user1);
@@ -990,6 +1065,20 @@ public class ComponentDatabaseHandlerTest {
         verify(releaseModerator).deleteRelease(any(Release.class), eq(user1));
     }
 
+    @Test
+    public void testForceDeleteRelease() throws Exception {
+        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+            return;
+        }
+        lenient().when(releaseModerator.deleteRelease(any(Release.class), eq(user1))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+        RequestStatus status = handler.deleteRelease("R1B", user1, true);
+        assertEquals(RequestStatus.SUCCESS, status);
+        List<Release> releaseSummary = handler.getReleaseSummary();
+        assertEquals(4, releaseSummary.size());
+        assertFalse("Release deleted", releasesContain(releaseSummary, "R1B"));
+        verify(releaseModerator, never()).deleteRelease(any(Release.class), eq(user1));
+    }
+    
     private static boolean componentsContain(Collection<Component> components, @NotNull String id) {
         for (Component component : components) {
             if (id.equals(component.getId()))
