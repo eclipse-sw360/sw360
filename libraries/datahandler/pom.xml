@@ -154,6 +154,11 @@
             <groupId>org.ektorp</groupId>
             <artifactId>org.ektorp</artifactId>
         </dependency>
+        <dependency>
+             <groupId>com.google.code.gson</groupId>
+             <artifactId>gson</artifactId>
+             <version>${gson.version}</version>
+        </dependency>
 	<dependency>
             <groupId>com.cloudant</groupId>
             <artifactId>cloudant-client</artifactId>

@@ -15,6 +15,7 @@ import com.github.ldriscoll.ektorplucene.LuceneQuery;
 import com.github.ldriscoll.ektorplucene.LuceneResult;
 import com.github.ldriscoll.ektorplucene.util.IndexUploader;
 import com.google.common.base.Joiner;
+import com.google.gson.Gson;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -105,6 +106,31 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
     public <T> List<String> searchIds(Class<T> type, LuceneSearchView function, String queryString) {
         LuceneResult queryLuceneResult = searchView(function, queryString, false);
         return getIdsFromResult(queryLuceneResult);
+    }
+
+    /**
+     * Search, sort and translate Lucene Result
+     */
+    public <T> List<T> searchAndSortByScore(Class<T> type, LuceneSearchView function, String queryString) {
+        LuceneResult queryLuceneResult = searchView(function, queryString);
+        Collections.sort(queryLuceneResult.getRows(), new LuceneResultComparator());
+        List<T> results = new ArrayList<T>();
+        Gson gson = new Gson();
+        for (LuceneResult.Row row : queryLuceneResult.getRows()) {
+             if(row != null && row.getDoc() != null && !row.getDoc().isEmpty() && !row.getDoc().containsKey("error") ) {
+                  results.add(gson.fromJson(gson.toJson(row.getDoc()), type));
+             }
+        }
+        return results;
+    }
+    /**
+     * Comparator to provide ordered search results
+     */
+    public class LuceneResultComparator implements Comparator<LuceneResult.Row> {
+        @Override
+        public int compare(LuceneResult.Row o1, LuceneResult.Row o2) {
+            return -Double.compare(o1.getScore(), o2.getScore());
+        }
     }
 
     /**
