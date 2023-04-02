@@ -65,6 +65,7 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
         nameToDisplayName.put(SECURITY_RESPONSIBLES.getFieldName(), "security responsibles");
         nameToDisplayName.put(CREATED_ON.getFieldName(), "created on");
         nameToDisplayName.put(ENABLE_SVM.getFieldName(), "enable svm");
+        nameToDisplayName.put(VISBILITY.getFieldName(), "Project visibility");
     }
 
     private static final List<Project._Fields> PROJECT_REQUIRED_FIELDS = ImmutableList.<Project._Fields>builder()
@@ -79,6 +80,7 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
             .add(SECURITY_RESPONSIBLES)
             .add(CREATED_ON)
             .add(ENABLE_SVM)
+            .add(VISBILITY)
             .build();
 
     public static final List<Project._Fields> PROJECT_RENDERED_FIELDS = Project.metaDataMap.keySet()
