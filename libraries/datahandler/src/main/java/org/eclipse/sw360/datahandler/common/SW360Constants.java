@@ -87,6 +87,8 @@ public class SW360Constants {
     public static final String TYPE_SPDX_DOCUMENT_CREATION_INFO = "documentCreationInformation";
     public static final String TYPE_SPDX_PACKAGE_INFO = "packageInformation";
     public static final String TYPE_PACKAGE = "package";
+    public static final String PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP = "Please enable flexible project " +
+            "release relationship configuration to use this function (enable.flexible.project.release.relationship = true)";
 
     public static final String SVM_COMPONENT_ID;
     public static final String SVM_MONITORINGLIST_ID;
@@ -102,6 +104,7 @@ public class SW360Constants {
     public static final String TOOL_NAME;
     public static final String TOOL_VENDOR;
     public static final UserGroup SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE;
+    public static final boolean ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP;
 
     /**
      * Hashmap containing the name field for each type.
@@ -201,6 +204,8 @@ public class SW360Constants {
         TOOL_NAME = props.getProperty("sw360.tool.name", "SW360");
         TOOL_VENDOR = props.getProperty("sw360.tool.vendor", "Eclipse Foundation");
         SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE = UserGroup.valueOf(props.getProperty("sbom.import.export.access.usergroup", UserGroup.USER.name()));
+        ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP = Boolean.parseBoolean(
+                System.getProperty("RunTestFlexibleRelationship", props.getProperty("enable.flexible.project.release.relationship", "false")));
     }
 
     private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName){

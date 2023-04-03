@@ -11,6 +11,8 @@ package org.eclipse.sw360.datahandler.common;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -22,7 +24,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectProjectRelationshipMixin;
+import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -858,5 +862,155 @@ public class SW360Utils {
         } catch (TException e) {
             log.error(e.getMessage());
         }
+    }
+
+    public static Set<String> getReleaseIdsLinkedWithProject(Project project) {
+        Set<String> releasesIds = new HashSet<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        List<ReleaseNode> releaseLinkJSONS = new ArrayList<>();
+        if (project.getReleaseRelationNetwork() != null) {
+            try {
+                releaseLinkJSONS = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<List<ReleaseNode>>() {
+                });
+                for (ReleaseNode release : releaseLinkJSONS) {
+                    releasesIds.addAll(flattenReleaseIdInNetwork(release));
+                }
+            } catch (JsonProcessingException e) {
+                log.error(e.getMessage());
+            }
+        }
+
+        return releasesIds;
+    }
+
+    private static Set<String> flattenReleaseIdInNetwork(ReleaseNode node) {
+        Set<String> setReleaseIds = new HashSet<>();
+        setReleaseIds.add(node.getReleaseId());
+        List<ReleaseNode> children = node.getReleaseLink();
+        if (!CommonUtils.isNullOrEmptyCollection(children)) {
+            for (ReleaseNode child : children) {
+                setReleaseIds.addAll(flattenReleaseIdInNetwork(child));
+            }
+        }
+
+        return setReleaseIds;
+    }
+
+    public static ProjectReleaseRelationship extractProjectReleaseRelationShipFromReleaseNode(ReleaseNode node) {
+        ProjectReleaseRelationship projectReleaseRelationship = new ProjectReleaseRelationship();
+        projectReleaseRelationship.setReleaseRelation(ReleaseRelationship.valueOf(node.getReleaseRelationship()));
+        projectReleaseRelationship.setMainlineState(MainlineState.valueOf(node.getMainlineState()));
+        projectReleaseRelationship.setCreatedBy(node.getCreateBy());
+        projectReleaseRelationship.setCreatedOn(node.getCreateOn());
+        projectReleaseRelationship.setComment(node.getComment());
+        return projectReleaseRelationship;
+    }
+
+    public static List<Project> getUsingProjectByReleaseIds(Set<String> releaseIds, User user) {
+        ProjectService.Iface projectClient = new ThriftClients().makeProjectClient();
+        Map<String, Set<String>> filterMap = getFilterMapForSetReleaseIds(releaseIds);
+        List<Project> projectsUsings;
+        try {
+            if (user == null) {
+                projectsUsings = projectClient.refineSearchWithoutUser(null, filterMap);
+            } else {
+                projectsUsings = projectClient.refineSearch(null, filterMap, user);
+            }
+        } catch (TException e) {
+            log.error("Could not fetch projects");
+            projectsUsings = Collections.emptyList();
+        }
+        return projectsUsings;
+    }
+
+    private static Map<String, Set<String>> getFilterMapForSetReleaseIds(Set<String> releaseIds) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        Set<String> values = new HashSet<>();
+        for(String releaseId : releaseIds) {
+            values.add("\"releaseId\":\"" + releaseId + "\"");
+            values.add("\"releaseId\": \"" + releaseId + "\"");
+        }
+        values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+        filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);
+        return filterMap;
+    }
+
+    public static Collection<ProjectLink> getLinkedProjectWithoutReleases(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+        if (project != null) {
+            try {
+                ProjectService.Iface client = thriftClients.makeProjectClient();
+                return client.getLinkedProjectsOfProjectWithoutReleases(project, deep, user);
+            } catch (TException e) {
+                log.error("Could not get linked projects", e);
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Sync data between releaseRelationNetwork and releaseIdToUsage (enable.flexible.project.release.relationship = true)
+     * @param project
+     * @return void
+     */
+    public static void syncReleaseRelationNetworkAndReleaseIdToUsage(Project project, User user) throws TException {
+        if (project.getReleaseRelationNetwork() != null && project.getReleaseIdToUsage() == null) {
+            createReleaseIdToUsages(project);
+        } else if (project.getReleaseIdToUsage() != null && project.getReleaseRelationNetwork() == null) {
+            createDefaultDependenciesNetwork(project, user);
+        }
+    }
+
+    /**
+     * Create default dependency network (enable.flexible.project.release.relationship = true)
+     * @param project Project
+     * @param user   sw360 User
+     * @return void
+     */
+    private static void createDefaultDependenciesNetwork(Project project, User user) throws TException {
+        List<ReleaseNode> dependencyNetwork = new ArrayList<>();
+        ComponentService.Iface sw360ComponentService = new ThriftClients().makeComponentClient();
+        if (project.getReleaseIdToUsage() != null) {
+            Map<String, ProjectReleaseRelationship> oriReleaseIdToUsage = project.getReleaseIdToUsage();
+            for (Map.Entry<String, ProjectReleaseRelationship> entry : oriReleaseIdToUsage.entrySet()) {
+                Release release = sw360ComponentService.getAccessibleReleaseById(entry.getKey(), user);
+                ReleaseNode node = sw360ComponentService.getReleaseRelationNetworkOfRelease(release, user).get(0);
+                node.setMainlineState(entry.getValue().getMainlineState().toString());
+                node.setReleaseRelationship(entry.getValue().getReleaseRelation().toString());
+                node.setComment(entry.getValue().getComment());
+                node.setCreateBy(user.getEmail());
+                node.setCreateOn(SW360Utils.getCreatedOn());
+                dependencyNetwork.add(node);
+            }
+        }
+        project.setReleaseRelationNetwork(new Gson().toJson(dependencyNetwork));
+    }
+
+    /**
+     * Create releaseIdToUsage form releaseRelationNetwork (enable.flexible.project.release.relationship = true)
+     * @param project Project
+     * @return void
+     */
+    private static void createReleaseIdToUsages(Project project) {
+        if (CommonUtils.isNullEmptyOrWhitespace(project.getReleaseRelationNetwork())) {
+            return;
+        }
+
+        List<ReleaseNode> dependencyNetwork = new ArrayList<>();
+        try {
+            dependencyNetwork = objectMapper.readValue(project.getReleaseRelationNetwork(), new TypeReference<>() {
+            });
+        } catch (JsonProcessingException e) {
+            log.error("Error when parsing dependency network from json to array");
+        }
+
+        Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
+
+        for (ReleaseNode node : dependencyNetwork) {
+            ProjectReleaseRelationship projectReleaseRelationship = SW360Utils.extractProjectReleaseRelationShipFromReleaseNode(node);
+            releaseIdToUsage.put(node.getReleaseId(), projectReleaseRelationship);
+        }
+        project.setReleaseIdToUsage(releaseIdToUsage);
     }
 }

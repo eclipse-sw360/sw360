@@ -21,6 +21,7 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -220,6 +221,13 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public RequestStatus deleteRelease(String releaseId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         RequestStatus deleteStatus;
+
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            if (!projectService.getProjectsUsedReleaseInDependencyNetwork(releaseId).isEmpty()) {
+                return RequestStatus.IN_USE;
+            }
+        }
+
         if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
             deleteStatus = sw360ComponentClient.deleteReleaseWithForceFlag(releaseId, sw360User, true);
         } else {

@@ -43,6 +43,7 @@ typedef licenses.Obligation Obligation
 typedef licenses.ObligationType ObligationType
 typedef licenses.ObligationLevel ObligationLevel
 typedef vendors.Vendor Vendor
+typedef components.ReleaseNode ReleaseNode
 
 const string CLEARING_TEAM_UNKNOWN = "Unknown"
 
@@ -166,6 +167,8 @@ struct Project {
     203: optional string vendorId,
     204: optional string modifiedBy, // Last Modified By User Email
     205: optional string modifiedOn, // Last Modified Date YYYY-MM-dd
+
+    206: optional string releaseRelationNetwork, // For configuration enable.flexible.project.release.relationship = true
 }
 
 struct ProjectLink {
@@ -243,6 +246,87 @@ struct ClearingRequest {
     17: optional i64 modifiedOn,
     18: optional list<i64> reOpenOn,
     19: optional ClearingPriority priority
+}
+
+struct ProjectDTO{
+    // For configuration enable.flexible.project.release.relationship = true
+    // General information
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "project",
+    4: required string name,
+    5: optional string description,
+    6: optional string version,
+    7: optional string domain,
+
+    // information from external data sources
+    9: optional map<string, string> externalIds,
+    300: optional map<string, string> additionalData,
+
+    // Additional informations
+    10: optional set<Attachment> attachments,
+    11: optional string createdOn, // Creation date YYYY-MM-dd
+    12: optional string businessUnit,
+    13: optional ProjectState state = ProjectState.ACTIVE,
+    15: optional ProjectType projectType = ProjectType.PRODUCT,
+    16: optional string tag,// user defined tags
+    17: optional ProjectClearingState clearingState,
+
+    // User details
+    21: optional string createdBy,
+    22: optional string projectResponsible,
+    23: optional string leadArchitect,
+    25: optional set<string> moderators = [],
+//    26: optional set<string> comoderators, //deleted
+    27: optional set<string> contributors = [],
+    28: optional Visibility visbility = sw360.Visibility.BUISNESSUNIT_AND_MODERATORS,
+    29: optional map<string,set<string>> roles, //customized roles with set of mail addresses
+    129: optional set<string> securityResponsibles = [],
+    130: optional string projectOwner,
+    131: optional string ownerAccountingUnit,
+    132: optional string ownerGroup,
+    133: optional string ownerCountry,
+
+    // Linked objects
+    30: optional map<string, ProjectProjectRelationship> linkedProjects,
+
+    // Admin data
+    40: optional string clearingTeam;
+    41: optional string preevaluationDeadline,
+    42: optional string systemTestStart,
+    43: optional string systemTestEnd,
+    44: optional string deliveryStart,
+    45: optional string phaseOutSince,
+    46: optional bool enableSvm, // flag for enabling Security Vulnerability Monitoring
+    49: optional bool considerReleasesFromExternalList, // Consider list of releases from existing external list,
+    47: optional string licenseInfoHeaderText;
+    48: optional bool enableVulnerabilitiesDisplay, // flag for enabling displaying vulnerabilities in project view
+    134: optional string obligationsText,
+    135: optional string clearingSummary,
+    136: optional string specialRisksOSS,
+    137: optional string generalRisks3rdParty,
+    138: optional string specialRisks3rdParty,
+    139: optional string deliveryChannels,
+    140: optional string remarksAdditionalRequirements,
+
+    // Information for ModerationRequests
+    70: optional DocumentState documentState,
+    80: optional string clearingRequestId,
+
+    // Optional fields for summaries!
+//    100: optional set<string> releaseIds, //deleted
+    101: optional ReleaseClearingStateSummary releaseClearingStateSummary,
+
+    // linked release obligations
+    102: optional string linkedObligationId,
+    200: optional map<RequestedAction, bool> permissions,
+
+    // Urls for the project
+    201: optional map<string, string> externalUrls,
+    202: optional Vendor vendor,
+    203: optional string vendorId,
+
+    204: optional list<ReleaseNode> dependencyNetwork
 }
 
 service ProjectService {
@@ -573,4 +657,37 @@ service ProjectService {
     * download excel
     */
     binary downloadExcel(1:User user,2:bool extendedByReleases,3:string token) throws (1: SW360Exception exc);
+
+    /**
+    * get list ReleaseLink in release network of project by project id and trace
+    */
+    list<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(1: string projectId, 2: list<string> trace, 3: User user);
+
+    /**
+    * get dependency network for list view
+    */
+    list<map<string, string>> getAccessibleDependencyNetworkForListView(1: string projectId, 2: User user);
+
+
+    /**
+     * returns a list of projects which match `text` and the `subQueryRestrictions`
+     */
+    list<Project> refineSearchWithoutUser(1: string text, 2: map<string,set<string>>  subQueryRestrictions);
+
+    /**
+     * get a list of project links from keys of map `relations`
+     * do not get linked releases
+     */
+    list<ProjectLink> getLinkedProjectsWithoutReleases(1:  map<string, ProjectProjectRelationship> relations, 2: bool depth, 3: User user);
+
+    /**
+     * get a list of project links of the project
+     * The returned list contains one element and its pointing to the original linking project.
+     * This not allows returning linked releases of the original project at the same time.
+     * If parameter `deep` is false, then the links are loaded only one level deep.
+     * That is, the project links referenced by the top project link
+     * do not have any release links or their subprojects loaded.
+     */
+    list<ProjectLink> getLinkedProjectsOfProjectWithoutReleases(1: Project project, 2: bool deep, 3: User user);
+
 }

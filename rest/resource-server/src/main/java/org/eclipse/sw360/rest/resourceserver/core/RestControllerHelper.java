@@ -18,6 +18,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
 import org.apache.thrift.TFieldIdEnum;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationOptions;
@@ -43,6 +45,7 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
@@ -56,6 +59,17 @@ import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.EmbeddedModerationRequest;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationRequestController;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
+import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
+import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
+import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.Quadratic;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.resourceserver.obligation.ObligationController;
 import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
@@ -1170,4 +1184,33 @@ public class RestControllerHelper<T> {
         }
     }
 
+    public void addEmbeddedProjectDTO(HalResource<ProjectDTO> halProject, Set<String> projectIds, Sw360ProjectService sw360ProjectService, User user) throws TException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        for (String projectId : projectIds) {
+            final Project project = sw360ProjectService.getProjectForUserById(projectId, user);
+            addEmbeddedProjectDTO(halProject, project);
+        }
+    }
+
+    public void addEmbeddedProjectDTO(HalResource halResource, Project project) {
+        ProjectDTO embeddedProject = convertToEmbeddedProjectDTO(project);
+        HalResource<ProjectDTO> halProject = new HalResource<>(embeddedProject);
+        Link projectLink = linkTo(ProjectController.class)
+                .slash("api" + ProjectController.PROJECTS_URL + "/" + project.getId()).withSelfRel();
+        halProject.add(projectLink);
+        halResource.addEmbeddedResource("sw360:projectDTOs", halProject);
+    }
+
+    public ProjectDTO convertToEmbeddedProjectDTO(Project project) {
+        ProjectDTO embeddedProject = new EmbeddedProjectDTO();
+        embeddedProject.setName(project.getName());
+        embeddedProject.setId(project.getId());
+        embeddedProject.setProjectType(project.getProjectType());
+        embeddedProject.setVersion(project.getVersion());
+        embeddedProject.setVisbility(project.getVisbility());
+        embeddedProject.setType(null);
+        return embeddedProject;
+    }
 }

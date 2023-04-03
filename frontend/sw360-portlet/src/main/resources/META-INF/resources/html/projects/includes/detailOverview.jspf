@@ -42,8 +42,13 @@
 			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Administration'}">active</core_rt:if>" href="#tab-Administration" data-toggle="list" role="tab"><liferay-ui:message key="administration" /></a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-licenseClearing'}">active</core_rt:if>" href="#tab-licenseClearing" data-toggle="list" role="tab"><liferay-ui:message key="license.clearing" /></a>		
-			<core_rt:if test="${isPackagePortletEnabled}">
+            <core_rt:if test="${not isFlexibleProjectReleaseRelationshipEnabled}">
+			    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-licenseClearing'}">active</core_rt:if>" href="#tab-licenseClearing" data-toggle="list" role="tab"><liferay-ui:message key="license.clearing" /></a>
+			</core_rt:if>
+            <core_rt:if test="${isFlexibleProjectReleaseRelationshipEnabled}">
+                <a id="dependencyNetwork" class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-dependencyNetwork'}">active</core_rt:if>" href="#tab-dependencyNetwork" data-toggle="list" role="tab"><liferay-ui:message key="license.clearing" /></a>
+            </core_rt:if>
+            <core_rt:if test="${isPackagePortletEnabled}">
 			    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedPackages'}">active</core_rt:if>" href="#tab-linkedPackages" data-toggle="list" role="tab"><liferay-ui:message key="linked.packages" /></a>
 			</core_rt:if>
 			<core_rt:if test="${isProjectObligationsEnabled}">
@@ -124,61 +129,120 @@
 							    </div>
 							    </core_rt:if>
 							</div>
-							 <div class="list-group-companion" data-belong-to="tab-licenseClearing">
-								<div class="nav nav-pills justify-content-center bg-light font-weight-bold d-inline-flex" id="pills-tab" role="tablist">
-									<a class="nav-item nav-link active" id="pills-tree-tab" data-toggle="pill" href="#pills-treeView" role="tab" aria-controls="pills-treeView" aria-selected="true">
-									<liferay-ui:message key="tree.view" /></a>
-									<a class="nav-item nav-link" id="pills-list-tab" data-toggle="pill" href="#pills-listView" role="tab" aria-controls="pills-listView" aria-selected="false">
-									<liferay-ui:message key="list.view" /></a>
-								</div>
-								<div id="btnExportGroup" class="btn-group" role="group">
-									<button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-										<liferay-ui:message key="export.spreadsheet" />
-										<clay:icon symbol="caret-bottom" />
-									</button>
-									<div class="dropdown-menu" aria-labelledby="btnExport">
-										<a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="projects.only" /></a>
-										<a class="dropdown-item" data-type="projectWithReleases"><liferay-ui:message key="projects.with.linked.releases" /></a>
-									</div>
-								</div>
-								<div class="btn-group" role="group">
-									<div class="btn-group" id="downloadLicenseInfo" style="margin-right: auto;">
-										<button id="downloadLicenseInfoButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
-											<liferay-ui:message key="generate.license.info" />
-											<clay:icon symbol="caret-bottom" />
-										</button>
-										<div class="dropdown-menu">
-											<a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
-											<a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
-										</div>
-									</div>
-									<div class="btn-group" id="downloadSourceCode">
-										<button id="downloadSourceCodeBundleButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
-											<liferay-ui:message key="generate.source.code.bundle" />
-											<clay:icon symbol="caret-bottom" />
-										</button>
-										<div class="dropdown-menu">
-											<a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
-											<a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
-										</div>
-									</div>
-								</div>
-								<core_rt:if test='${not isCrDisabledForProjectBU}'>
-								<div class="btn-group" role="group" id="clearingRequest">
-									<button id="createClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${not empty project.clearingRequestId}">d-none</core_rt:if>"
-									    <core_rt:if test = "${(project.clearingState eq 'CLOSED') || !writeAccessUser}">
-											disabled="disabled"
-										</core_rt:if>
-										>
-										<liferay-ui:message key="create.clearing.request" />
-									</button>
-									<button id="viewClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${empty project.clearingRequestId}">d-none</core_rt:if>"
-										data-clearing-request-id="${project.clearingRequestId}">
-										<liferay-ui:message key="view.clearing.request" />
-									</button>
-								</div>
-								</core_rt:if>
-							</div>
+                            <core_rt:if test="${not isFlexibleProjectReleaseRelationshipEnabled}">
+                                <div class="list-group-companion" data-belong-to="tab-licenseClearing">
+                                    <div class="nav nav-pills justify-content-center bg-light font-weight-bold d-inline-flex" id="pills-tab" role="tablist">
+                                        <a class="nav-item nav-link active" id="pills-tree-tab" data-toggle="pill" href="#pills-treeView" role="tab" aria-controls="pills-treeView" aria-selected="true">
+                                        <liferay-ui:message key="tree.view" /></a>
+                                        <a class="nav-item nav-link" id="pills-list-tab" data-toggle="pill" href="#pills-listView" role="tab" aria-controls="pills-listView" aria-selected="false">
+                                        <liferay-ui:message key="list.view" /></a>
+                                    </div>
+                                    <div id="btnExportGroup" class="btn-group" role="group">
+                                        <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <liferay-ui:message key="export.spreadsheet" />
+                                            <clay:icon symbol="caret-bottom" />
+                                        </button>
+                                        <div class="dropdown-menu" aria-labelledby="btnExport">
+                                            <a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="projects.only" /></a>
+                                            <a class="dropdown-item" data-type="projectWithReleases"><liferay-ui:message key="projects.with.linked.releases" /></a>
+                                        </div>
+                                    </div>
+                                    <div class="btn-group" role="group">
+                                        <div class="btn-group" id="downloadLicenseInfo" style="margin-right: auto;">
+                                            <button id="downloadLicenseInfoButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
+                                                <liferay-ui:message key="generate.license.info" />
+                                                <clay:icon symbol="caret-bottom" />
+                                            </button>
+                                            <div class="dropdown-menu">
+                                                <a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
+                                                <a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
+                                            </div>
+                                        </div>
+                                        <div class="btn-group" id="downloadSourceCode">
+                                            <button id="downloadSourceCodeBundleButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
+                                                <liferay-ui:message key="generate.source.code.bundle" />
+                                                <clay:icon symbol="caret-bottom" />
+                                            </button>
+                                            <div class="dropdown-menu">
+                                                <a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
+                                                <a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <core_rt:if test='${not isCrDisabledForProjectBU}'>
+                                    <div class="btn-group" role="group" id="clearingRequest">
+                                        <button id="createClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${not empty project.clearingRequestId}">d-none</core_rt:if>"
+                                            <core_rt:if test = "${(project.clearingState eq 'CLOSED') || !writeAccessUser}">
+                                                disabled="disabled"
+                                            </core_rt:if>
+                                            >
+                                            <liferay-ui:message key="create.clearing.request" />
+                                        </button>
+                                        <button id="viewClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${empty project.clearingRequestId}">d-none</core_rt:if>"
+                                            data-clearing-request-id="${project.clearingRequestId}">
+                                            <liferay-ui:message key="view.clearing.request" />
+                                        </button>
+                                    </div>
+                                    </core_rt:if>
+                                </div>
+							</core_rt:if>
+                            <core_rt:if test="${isFlexibleProjectReleaseRelationshipEnabled}">
+                                <div class="list-group-companion" data-belong-to="tab-dependencyNetwork">
+                                    <div class="nav nav-pills justify-content-center bg-light font-weight-bold d-inline-flex" id="pills-tab" role="tablist">
+                                        <a class="nav-item nav-link active" id="pills-tree-tab" data-toggle="pill" href="#pills-network-treeView" role="tab" aria-controls="pills-treeView" aria-selected="true">
+                                        <liferay-ui:message key="tree.view" /></a>
+                                        <a class="nav-item nav-link" id="pills-list-tab" data-toggle="pill" href="#pills-network-listView" role="tab" aria-controls="pills-listView" aria-selected="false">
+                                        <liferay-ui:message key="list.view" /></a>
+                                    </div>
+                                    <div id="btnExportGroup" class="btn-group" role="group">
+                                        <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <liferay-ui:message key="export.spreadsheet" />
+                                            <clay:icon symbol="caret-bottom" />
+                                        </button>
+                                        <div class="dropdown-menu" aria-labelledby="btnExport">
+                                            <a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="projects.only" /></a>
+                                            <a class="dropdown-item" data-type="projectWithReleases"><liferay-ui:message key="projects.with.linked.releases" /></a>
+                                        </div>
+                                    </div>
+                                    <div class="btn-group" role="group">
+                                        <div class="btn-group" id="downloadLicenseInfo" style="margin-right: auto;">
+                                            <button id="downloadLicenseInfoButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
+                                                <liferay-ui:message key="generate.license.info" />
+                                                <clay:icon symbol="caret-bottom" />
+                                            </button>
+                                            <div class="dropdown-menu">
+                                                <a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
+                                                <a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
+                                            </div>
+                                        </div>
+                                        <div class="btn-group" id="downloadSourceCode">
+                                            <button id="downloadSourceCodeBundleButton" type="button" data-toggle="dropdown" class="btn btn-secondary dropdown-toggle">
+                                                <liferay-ui:message key="generate.source.code.bundle" />
+                                                <clay:icon symbol="caret-bottom" />
+                                            </button>
+                                            <div class="dropdown-menu">
+                                                <a class="dropdown-item" data-type="projectOnly"><liferay-ui:message key="project.only" /></a>
+                                                <a class="dropdown-item" data-type="projectWithSubProject"><liferay-ui:message key="project.with.sub.project" /></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <core_rt:if test='${not isCrDisabledForProjectBU}'>
+                                    <div class="btn-group" role="group" id="clearingRequest">
+                                        <button id="createClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${not empty project.clearingRequestId}">d-none</core_rt:if>"
+                                            <core_rt:if test = "${(project.clearingState eq 'CLOSED') || !writeAccessUser}">
+                                                disabled="disabled"
+                                            </core_rt:if>
+                                            >
+                                            <liferay-ui:message key="create.clearing.request" />
+                                        </button>
+                                        <button id="viewClearingRequestBtn" type="button" class="btn btn-secondary <core_rt:if test="${empty project.clearingRequestId}">d-none</core_rt:if>"
+                                            data-clearing-request-id="${project.clearingRequestId}">
+                                            <liferay-ui:message key="view.clearing.request" />
+                                        </button>
+                                    </div>
+                                    </core_rt:if>
+                                </div>
+                            </core_rt:if>
 							<div class="list-group-companion" data-belong-to="tab-attachmentUsages">
 								<core_rt:if test="${writeAccessUser}">
 									<div class="btn-group" role="group">
@@ -267,9 +331,11 @@
 		                        <jsp:include page="/html/utils/includes/linkedPackages.jsp" />
 		                    </div>
 		                </core_rt:if>
-		                <div id="tab-licenseClearing" class="tab-pane <core_rt:if test="${selectedTab == 'tab-licenseClearing'}">active show</core_rt:if>"> 
-		                    <jsp:include page="/html/projects/includes/projects/clearingStatus.jsp" />
-		                </div>
+		                <core_rt:if test="${not isFlexibleProjectReleaseRelationshipEnabled}">
+                            <div id="tab-licenseClearing" class="tab-pane <core_rt:if test="${selectedTab == 'tab-licenseClearing'}">active show</core_rt:if>" name="${isFlexibleProjectReleaseRelationshipEnabled}">
+                                <jsp:include page="/html/projects/includes/projects/clearingStatus.jsp" />
+                            </div>
+		                </core_rt:if>
 		                <core_rt:if test="${inProjectDetailsContext}">
 			                <div id="tab-attachmentUsages" class="tab-pane <core_rt:if test="${selectedTab == 'tab-attachmentUsages'}">active show</core_rt:if>">
 			                    <%@include file="/html/projects/includes/attachmentUsages.jspf" %>
@@ -330,6 +396,11 @@
 		                <div id="tab-ChangeLogs" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active show</core_rt:if>">
 			                <jsp:include page="/html/changelogs/elementView.jsp" />
 		                </div>
+                        <core_rt:if test="${isFlexibleProjectReleaseRelationshipEnabled}">
+                            <div id="tab-dependencyNetwork" class="tab-pane <core_rt:if test="${selectedTab == 'tab-dependencyNetwork'}">active show</core_rt:if>" name="${isFlexibleProjectReleaseRelationshipEnabled}">
+                                <jsp:include page="/html/projects/includes/projects/dependencyNetwork.jsp" />
+                            </div>
+                        </core_rt:if>
 		            </div>
 		        </div>
 		    </div>

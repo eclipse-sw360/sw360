@@ -414,4 +414,8 @@ public class DatabaseRepositoryCloudantClient<T> {
     public int getDocumentCount() {
         return connector.getDocumentCount(type);
     }
+
+    public List<T> getDocsByListIds(Collection<String> ids) {
+        return connector.getDocsByListIds(type, ids);
+    }
 }

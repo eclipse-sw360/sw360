@@ -787,3 +787,51 @@ include::{snippets}/should_document_get_project_report/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_get_project_report/http-response.adoc[]
 
+[[resources-project-get-with-network]]
+==== Get a single project with dependencies network
+
+A `GET` request will get a single project with dependencies network.
+
+===== Response structure
+include::{snippets}/should_document_get_project_with_dependencies_network/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_with_dependencies_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_with_dependencies_network/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_with_dependencies_network/links.adoc[]
+
+[[resources-projects-create-with-network]]
+==== Creating a project with dependencies network
+
+A `POST` request is used to create a project with dependencies network
+
+===== Request structure
+include::{snippets}/should_document_create_project_with_network/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_project_with_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_project_with_network/http-response.adoc[]
+
+[[resources-projects-update-with-network]]
+==== Update a project with dependencies network
+
+A `PATCH` request is used to update an existing project with dependencies network
+
+===== Request structure
+Almost every editable fields can be updated. Only a few fields are explicitly given as an example.
+include::{snippets}/should_document_update_project_with_network/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_update_project_with_network/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_project_with_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_project_with_network/http-response.adoc[]

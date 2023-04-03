@@ -60,6 +60,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -531,5 +532,18 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public RequestSummary importCycloneDX(User user, String attachmentContentId, String projectId) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         return sw360ProjectClient.importCycloneDxFromAttachmentContent(user, attachmentContentId, CommonUtils.nullToEmptyString(projectId));
+    }
+
+    /**
+     * Get Projects are using release in dependencies (enable.flexible.project.release.relationship = true)
+     * @param releaseId                Id of release
+     * @return List<Project>
+     */
+    public List<Project> getProjectsUsedReleaseInDependencyNetwork(String releaseId) {
+        return SW360Utils.getUsingProjectByReleaseIds(Collections.singleton(releaseId), null);
+    }
+
+    public void syncReleaseRelationNetworkAndReleaseIdToUsage(Project project, User user) throws TException {
+        SW360Utils.syncReleaseRelationNetworkAndReleaseIdToUsage(project, user);
     }
 }

@@ -791,6 +791,39 @@ public class PortalConstants {
     public static final String ACTUAL_PACKAGE_INFO = "actual_PackageInfo";
     public static final Set<String> SET_RELATIONSHIP_TYPE;
 
+    //! Specialized keys for Flexible project and releases relationship configuration
+    public static final String RELEASE_ID_ARRAY = "releaseIdArray[]";
+    public static final String RELEASES_WITH_SAME_COMPONENT_ID = "releaseWithSameComponentId";
+    public static final String CURRENT_NETWORK = "currentNetwork";
+    public static final String CHECK_DIFF_DEPENDENCY_NETWORK_WITH_RELEASES_RELATIONSHIP = "checkDiffDependencyNetworkWithReleasesRelationship";
+    public static final String RESTRICTED_RELEASE = "Restricted release";
+    public static final String GET_HTML_RELEASE_ROWS = "getHtmlReleaseRows";
+    public static final String DEFAULT_RELEASE_RELATION_NETWORK = "[]";
+    public static final String ATTACHMENT_USAGE_ON_CLICK = "attachmentUsageOnClick";
+    public static final String SUB_PROJECTS_LINK_TRANSITIVE = "subProjectsLinkTransitive";
+    public static final String LOGIN_USER = "loginUser";
+    public static final String IS_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP_ENABLED = "isFlexibleProjectReleaseRelationshipEnabled";
+    public static final String NETWORK_PARENT_BRANCH_ID = "networkParentBranchId";
+    public static final String NETWORK_RELEASE_LIST = "networkReleaseList";
+    public static final String NETWORK_TOTAL_INACCESSIBLE_ROWS = "netWorkTotalInAccessibleRow";
+    public static final String DEPENDENCY_NETWORK_LIST = "dependencyNetworkList";
+    public static final String DEPENDENCY_NETWORK_ON_LOAD = "dependencyNetworkOnLoad";
+    public static final String IS_OBLIGATION_PRESENT = "isObligationPresent";
+    public static final String CREATE_LINKED_RELEASE_ROW = "createLinkedReleaseRow";
+    public static final String PARENT_NODE_ID = "parentNodeIds[]";
+    public static final String LAYER = "layer[]";
+    public static final String RELEASE_RELATION_SHIP = "releaseRelationShip[]";
+    public static final String MAINLINE_STATE = "mainlineState[]";
+    public static final String INDEXES = "indexes[]";
+    public static final String COMMENTS = "comments[]";
+    public static final String FIND_LINKED_RELEASE_OF_NODE = "findLinkedReleaseOfNode";
+    public static final String RELEASES_IN_NETWORK = "releasesInNetwork";
+    public static final String NUMBER_LINKED_RELEASE = "numberLinkedRelease";
+    public static final String TOTAL_RELEASE_COUNT = "totalReleaseCount";
+    public static final String CHECK_RELEASE_EXIST = "checkReleaseExist";
+    public static final String RELEASE_USAGE = "releaseUsage";
+    public static final String CYCLIC_LINKED_RELEASE_PATH = "cyclicLinkedReleasePath";
+    public static final String CHILD_RELEASE_ID_ARRAY = "childReleaseId[]";
     static {
         Properties props = CommonUtils.loadProperties(PortalConstants.class, PROPERTIES_FILE_PATH);
 
