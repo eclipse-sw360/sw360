@@ -33,8 +33,7 @@ ARG HOMEDIR=/workspace
 ENV HOME=$HOMEDIR
 
 # Base system
-RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -85,8 +84,7 @@ FROM ubuntu:jammy AS sw360thriftbuild
 ARG BASEDIR="/build"
 ARG THRIFT_VERSION
 
-RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,target=/var/cache/apt \
     apt-get -qq update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     bison \
@@ -109,15 +107,13 @@ COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
 
 #--------------------------------------------------------------------------------------------------
 # Couchdb-Lucene
-FROM eclipse-temurin:11-jdk-jammy as sw360clucenebuild
+FROM maven:3.9-eclipse-temurin-11 as sw360clucenebuild
 
 ARG CLUCENE_VERSION
-ARG MAVEN_VERSION
 
 WORKDIR /build
 
-RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,target=/var/cache/apt \
     apt-get -qq update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     gettext-base \
@@ -126,7 +122,6 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
 # Prepare maven from binary to avoid wrong java dependencies and proxy
 COPY scripts/docker-config/mvn-proxy-settings.xml /etc
 COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
-RUN curl -JL https://dlcdn.apache.org/maven/maven-3/"$MAVEN_VERSION"/binaries/apache-maven-"$MAVEN_VERSION"-bin.tar.gz | tar -xz --strip-components=1 -C /usr/local
 RUN chmod a+x /usr/local/bin/setup_maven_proxy \
     && setup_maven_proxy
 
@@ -136,7 +131,7 @@ COPY ./scripts/patches/couchdb-lucene.patch /var/tmp/couchdb-lucene.patch
 
 # Build CLucene
 RUN --mount=type=tmpfs,target=/build \
-    --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
+    --mount=type=cache,target=/root/.m2 \
     curl -JL https://github.com/rnewson/couchdb-lucene/archive/v"$CLUCENE_VERSION".tar.gz | tar -C /build -xz --strip-components=1 \
     && patch -p1 < /var/tmp/couchdb-lucene.patch \
     && cp /var/tmp/couchdb-lucene.ini src/main/resources/couchdb-lucene.ini \
@@ -152,15 +147,14 @@ COPY --from=sw360clucenebuild /couchdb-lucene.war /couchdb-lucene.war
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-FROM eclipse-temurin:11-jdk-jammy as sw360build
-
-ARG MAVEN_VERSION
+FROM maven:3.9-eclipse-temurin-11 as sw360build
 
 WORKDIR /build
 
+SHELL ["/bin/bash", "-c"]
+
 # Install mkdocs to generate documentation
-RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,mode=0755,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
     gettext-base \
@@ -175,15 +169,21 @@ RUN --mount=type=cache,mode=0755,target=/var/cache/apt,sharing=locked \
 # Prepare maven from binary to avoid wrong java dependencies and proxy
 COPY scripts/docker-config/mvn-proxy-settings.xml /etc
 COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
-RUN curl -JL https://dlcdn.apache.org/maven/maven-3/"$MAVEN_VERSION"/binaries/apache-maven-"$MAVEN_VERSION"-bin.tar.gz | tar -xz --strip-components=1 -C /usr/local
 RUN chmod a+x /usr/local/bin/setup_maven_proxy \
     && setup_maven_proxy
 
 COPY --from=sw360thrift /usr/local/bin/thrift /usr/bin
 
 RUN --mount=type=bind,target=/build/sw360,rw \
-    --mount=type=cache,mode=0755,target=/root/.m2,rw,sharing=locked \
+    --mount=type=cache,target=/root/.m2 \
+    --mount=type=secret,id=sw360 \
     cd /build/sw360 \
+    && set -a \
+    && source /run/secrets/sw360 \
+    && envsubst < scripts/docker-config/couchdb.properties.template | tee scripts/docker-config/etc_sw360/couchdb.properties \
+    && set +a \
+    && cp scripts/docker-config/etc_sw360/couchdb.properties build-configuration/resources/ \
+    && cp -a scripts/docker-config/etc_sw360 /etc/sw360 \
     && mvn clean package \
     -P deploy \
     -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
@@ -205,6 +205,7 @@ RUN bash /bin/slim.sh
 FROM scratch AS sw360
 COPY --from=sw360build /sw360_deploy /sw360_deploy
 COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
+COPY --from=sw360build /etc/sw360 /etc/sw360
 
 #--------------------------------------------------------------------------------------------------
 # Runtime image
@@ -222,6 +223,8 @@ COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/slim-wars/*.
 COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/*.jar /app/sw360/tomcat/webapps/
 # Shared streamlined jar libs
 COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
+# Modified etc
+COPY --chown=$USERNAME:$USERNAME --from=sw360 /etc/sw360 /etc/sw360
 
 # Make catalina understand shared directory
 RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
@@ -229,7 +232,6 @@ RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
 
 # Copy liferay/sw360 config files
 COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/portal-ext.properties /app/sw360/portal-ext.properties
-COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/etc_sw360 /etc/sw360
 COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/entry_point.sh /app/entry_point.sh
 
 STOPSIGNAL SIGINT

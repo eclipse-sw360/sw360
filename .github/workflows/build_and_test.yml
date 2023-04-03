@@ -29,6 +29,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - uses: webiny/action-conventional-commits@v1.1.0
 
     - name: Verify license headers
       run: |
@@ -68,7 +69,9 @@ jobs:
         path: |
           /usr/local/bin/thrift
           /usr/share/thrift/${{ env.THRIFT_VERSION }}
-        key: ${{ runner.os }}-thriftbin
+        key: ${{ runner.os }}-thrift-${{ hashFiles('/usr/local/bin/thrift') }}
+        restore-keys: |
+          ${{ runner.os }}-thrift-
 
     - name: Install Thrift
       if: steps.cache-thrift.outputs.cache-hit != 'true'
@@ -86,7 +89,7 @@ jobs:
 
     - name: Build SW360
       run: |
-        mvn clean package --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false
+        mvn clean package --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false -DRunRestForceUpdateTest=false
 
     - name: Run PrivateProjectAccessTest
       run: |
@@ -94,7 +97,7 @@ jobs:
         mvn install
         cd ..
         cd libraries/datahandler
-        mvn test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true
+        mvn test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true
 
     - name: Deploy Backend and Rest Server
       run: |
@@ -109,4 +112,3 @@ jobs:
       run: |
         cd clients
         mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true
-

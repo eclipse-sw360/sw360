@@ -13,18 +13,20 @@
 name: Docker Build
 
 on:
-  push:
-    schedule:
+  schedule:
       - cron: '0 0 * * *' # Midnight
+  push:
     tags:
       - 'sw360-*'
     paths-ignore:
       - "**.md"
+
 env:
   REGISTRY: ghcr.io
 
 jobs:
   docker_push:
+    if: ${{ github.event.schedule }} == '0 0 * * *' || ${{ github.event.act }}
     name: Build Docker Image
     runs-on: ubuntu-22.04
     permissions:
@@ -64,7 +66,7 @@ jobs:
         run: echo "Will be tagged as ${{ steps.meta_base.outputs.tags }} and labeled as ${{ steps.meta_base.outputs.labels }}"
 
       - name: Build sw360 base container
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           target: base
@@ -94,7 +96,7 @@ jobs:
         run: echo "Will be tagged as ${{ steps.meta_thrift.outputs.tags }} and labeled as ${{ steps.meta_thrift.outputs.labels }}"
 
       - name: Build sw360 Thrift container
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           target: sw360thrift
@@ -111,7 +113,7 @@ jobs:
           cache-to: type=gha,scope=thrift,mode=max
 
       #------------------------------------------------
-      # CLucene
+      # ClLucene
       - name: Extract components metadata (tags, labels) for clucene image
         id: meta_clucene
         uses: docker/metadata-action@v4
@@ -123,7 +125,7 @@ jobs:
         run: echo "Will be tagged as ${{ steps.meta_clucene.outputs.tags }} and labeled as ${{ steps.meta_clucene.outputs.labels }}"
 
       - name: Build sw360 clucene container
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           target: sw360clucene
@@ -131,7 +133,6 @@ jobs:
           load: false
           build-args: |
             CLUCENE_VERSION=${{ env.CLUCENE_VERSION }}
-            MAVEN_VERSION=${{ env.MAVEN_VERSION }}
           tags: |
             ${{ steps.meta_clucene.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/clucene:${{ env.CLUCENE_VERSION }}
@@ -153,14 +154,14 @@ jobs:
         run: echo "Will be tagged as ${{ steps.meta_sw360.outputs.tags }} and labeled as ${{ steps.meta_sw360.outputs.labels }}"
 
       - name: Build sw360 build container
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           target: sw360
           push: true
           load: false
-          build-args: |
-            MAVEN_VERSION=${{ env.MAVEN_VERSION }}
+          secret-files: |
+            "sw360=./scripts/docker-config/default_secrets"
           tags: |
             ${{ steps.meta_sw360.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/binaries:${{ env.GIT_REVISION }}
@@ -174,7 +175,7 @@ jobs:
 
       #------------------------------------------------
       # sw360 runtime container
-      - name: Extract components metadata (tags, labels) for clucene image
+      - name: Extract components metadata (tags, labels) runtime image
         id: meta_runtime
         uses: docker/metadata-action@v4
         with:
@@ -185,7 +186,7 @@ jobs:
         run: echo "Will be tagged as ${{ steps.meta_runtime.outputs.tags }} and labeled as ${{ steps.meta_runtime.outputs.labels }}"
 
       - name: Build sw360 build container
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           target: runtime

@@ -35,6 +35,11 @@ public class HttpClientFactoryImpl implements HttpClientFactory {
         return new HttpClientImpl(createClient(config), config.getOrCreateObjectMapper());
     }
 
+    @Override
+    public HttpClient newHttpClientAlt(HttpClientConfig config) {
+        return new NewHttpClientImpl(createClientAlt(config), config.getOrCreateObjectMapper());
+    }
+
     /**
      * Creates a new {@code OkHttpClient} object that is correctly configured.
      *
@@ -56,6 +61,17 @@ public class HttpClientFactoryImpl implements HttpClientFactory {
     }
 
     /**
+     * Creates a new {@code java.net.http.HttpClient} object that is correctly configured.
+     *
+     * @param config the client configuration
+     * @return the new client object
+     */
+    private static java.net.http.HttpClient createClientAlt(HttpClientConfig config) {
+        java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+        return client;
+    }
+
+    /**
      * Using the Property CLIENT_ACCESS_UNVERIFIED_PROPERTY, the connection to
      * the client can be done without verification of the ssl certificate
      *
@@ -73,7 +89,6 @@ public class HttpClientFactoryImpl implements HttpClientFactory {
      * @return the corresponding {@code Proxy} representation
      */
     private static Proxy createProxy(ProxySettings settings) {
-        return new Proxy(Proxy.Type.HTTP,
-                new InetSocketAddress(settings.getProxyHost(), settings.getProxyPort()));
+        return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(settings.getProxyHost(), settings.getProxyPort()));
     }
 }

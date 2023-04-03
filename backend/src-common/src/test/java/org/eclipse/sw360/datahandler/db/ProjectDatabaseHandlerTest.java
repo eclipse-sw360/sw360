@@ -13,6 +13,7 @@ package org.eclipse.sw360.datahandler.db;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.SetMultimap;
 
+import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -40,6 +41,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -143,7 +145,22 @@ public class ProjectDatabaseHandlerTest {
         // Now contributors can also change the project
         assertEquals(RequestStatus.SUCCESS, status);
     }
+    
+    @Test
+    public void testForceUpdateProject() throws Exception {
+        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+            return;
+        }
+        Project project1 = handler.getProjectById("P1", user1);
+        project1.setName("Project1new");
 
+        Mockito.lenient().doReturn(RequestStatus.SENT_TO_MODERATOR).when(moderator).updateProject(project1, user2);
+
+        RequestStatus status = handler.updateProject(project1, user2, true);
+
+        // if force option is enabled, the project can be changed. 
+        assertEquals(RequestStatus.SUCCESS, status);
+    }
 
     @Test
     public void testDeleteProject1_3() throws Exception {
@@ -259,6 +276,21 @@ public class ProjectDatabaseHandlerTest {
 
         boolean deleted = (handler.getProjectById("P3", user3) == null);
         assertEquals(false, deleted);
+    }
+    
+    @Test
+    public void testForceDeleteProject() throws Exception {
+        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+            return;
+        }
+        int expect = handler.getMyProjectsSummary(user1.getEmail()).size() - 1;
+        lenient().when(moderator.deleteProject(any(Project.class), eq(user3))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
+        RequestStatus status = handler.deleteProject("P1", user3, true);
+
+        assertEquals(RequestStatus.SUCCESS, status);
+        // Project can be deleted by a non-owner as force update is enabled
+        assertEquals(expect, handler.getMyProjectsSummary(user1.getEmail()).size());
+
     }
 
     @Ignore("One is no longer able to create duplicate projects via the service, so if you want enable the test, you cannot create the duplicate project via addProject()")

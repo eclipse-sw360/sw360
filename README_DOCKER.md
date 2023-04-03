@@ -23,20 +23,19 @@
     The script will build multiple intermediary images.
     Subsequent builds will only build the differences
 
-    For runtime, docker compose for sw360 are configured with default entries on docker-compose.yml.
+    To configure couchdb, create a file containing the necessary credentials.
 
-    The config entries that can be modifiled:
+    A template of this file can be found in:
+    `scripts/docker_config/default_secrets`
 
+    Example:
     ```ini
-    # Postgres
-    POSTGRES_USER=liferay
-    POSTGRES_PASSWORD=liferay
-    POSTGRES_DB=lportal
-    # Couchdb
+    COUCHDB_URL=http://couchdb:5984
     COUCHDB_USER=admin
     COUCHDB_PASSWORD=password
-    COUCHDB_CREATE_DATABASE=yes
     ```
+
+    To pass your file during build export a variable called **SECRETS** pointing to your file
 
 * Proxy during build stage
 
@@ -46,7 +45,7 @@
 
     * systemd based
       If you are using a regular systemd based docker:
-      * Create the following file **http_proxy.conf** on the directory **/etc/systemd/system/docker.service.d/**
+      * Create the following file **http_proxy.conf** on the directory `/etc/systemd/system/docker.service.d/`
 
       ```ini
       [Service]

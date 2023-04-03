@@ -344,10 +344,24 @@ service ProjectService {
     RequestStatus updateProject(1: Project project, 2: User user);
 
     /**
+     * try to update a project as a user, if user has no permission, a moderation request is created
+     * (part of project CRUD support)
+     * If forceUpdate is true, this function can update regardless of write permissions.
+     */
+    RequestStatus updateProjectWithForceFlag(1: Project project, 2: User user, 3: bool forceUpdate);
+
+    /**
      * try to delete a project as a user, if user has no permission, a moderation request is created
      * (part of project CRUD support)
      */
     RequestStatus deleteProject(1: string id, 2: User user);
+
+    /**
+     * try to delete a project as a user, if user has no permission, a moderation request is created
+     * (part of project CRUD support)
+     * If forceDelete is true, this function can delete regardless of delete permissions.
+     */
+    RequestStatus deleteProjectWithForceFlag(1: string id, 2: User user, 3: bool forceDelete);
 
     /**
      * updateproject in database if user has permissions, additions and deletions are the parts of the moderation request

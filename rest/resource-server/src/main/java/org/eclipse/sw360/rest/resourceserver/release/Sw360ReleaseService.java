@@ -40,6 +40,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -117,8 +118,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return releaseById;
     }
 
-    public void setComponentDependentFieldsInRelease(Release releaseById, User sw360User) {
-
+    public Release setComponentDependentFieldsInRelease(Release releaseById, User sw360User) {
         String componentId = releaseById.getComponentId();
         if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
             throw new HttpMessageNotReadableException("ComponentId must be present");
@@ -131,7 +131,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             throw new HttpMessageNotReadableException("No Component found with Id - " + componentId);
         }
         releaseById.setComponentType(componentById.getComponentType());
-
+        return releaseById;
     }
 
     @Override
@@ -186,7 +186,12 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         rch.checkForCyclicOrInvalidDependencies(sw360ComponentClient, release, sw360User);
 
-        RequestStatus requestStatus = sw360ComponentClient.updateRelease(release, sw360User);
+        RequestStatus requestStatus;
+        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+            requestStatus = sw360ComponentClient.updateReleaseWithForceFlag(release, sw360User, true);
+        } else {
+            requestStatus = sw360ComponentClient.updateRelease(release, sw360User);
+        }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
         } else if (requestStatus == RequestStatus.NAMINGERROR) {
@@ -201,7 +206,12 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
 
     public RequestStatus deleteRelease(String releaseId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        RequestStatus deleteStatus = sw360ComponentClient.deleteRelease(releaseId, sw360User);
+        RequestStatus deleteStatus;
+        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+            deleteStatus = sw360ComponentClient.deleteReleaseWithForceFlag(releaseId, sw360User, true);
+        } else {
+            deleteStatus = sw360ComponentClient.deleteRelease(releaseId, sw360User);
+        }
         if (deleteStatus.equals(RequestStatus.SUCCESS)) {
             SW360Utils.removeReleaseVulnerabilityRelation(releaseId, sw360User);
         }

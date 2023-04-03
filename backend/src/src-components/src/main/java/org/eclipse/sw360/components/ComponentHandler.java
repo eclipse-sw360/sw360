@@ -351,7 +351,16 @@ public class ComponentHandler implements ComponentService.Iface {
 
         return handler.updateComponent(component, user);
     }
+    
+    @Override
+    public RequestStatus updateComponentWithForceFlag(Component component, User user, boolean forceUpdate) throws TException {
+        assertNotNull(component);
+        assertId(component.getId());
+        assertUser(user);
 
+        return handler.updateComponent(component, user, forceUpdate);
+    }
+    
     @Override
     public RequestSummary updateComponents(Set<Component> components, User user) throws TException {
         assertUser(user);
@@ -378,6 +387,15 @@ public class ComponentHandler implements ComponentService.Iface {
         return handler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE);
     }
 
+    @Override
+    public RequestStatus updateReleaseWithForceFlag(Release release, User user, boolean forceUpdate) throws TException {
+        assertNotNull(release);
+        assertId(release.getId());
+        assertUser(user);
+        removeSelfLink(release);
+        return handler.updateRelease(release, user, ThriftUtils.IMMUTABLE_OF_RELEASE, forceUpdate);
+    }
+    
     private void removeSelfLink(Release release) {
         if(release.releaseIdToRelationship != null && !release.releaseIdToRelationship.isEmpty()) {
             release.releaseIdToRelationship.remove(release.id);
@@ -433,6 +451,14 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public RequestStatus deleteComponentWithForceFlag(String id, User user, boolean forceDelete) throws TException {
+        assertUser(user);
+        assertId(id);
+
+        return handler.deleteComponent(id, user, forceDelete);
+    }
+    
+    @Override
     public RequestStatus deleteRelease(String id, User user) throws TException {
         assertUser(user);
         assertId(id);
@@ -440,6 +466,14 @@ public class ComponentHandler implements ComponentService.Iface {
         return handler.deleteRelease(id, user);
     }
 
+    @Override
+    public RequestStatus deleteReleaseWithForceFlag(String id, User user, boolean forceDelete) throws TException {
+        assertUser(user);
+        assertId(id);
+
+        return handler.deleteRelease(id, user, forceDelete);
+    }
+    
     @Override
     public List<Release> getReleasesByComponentId(String id, User user) throws TException {
         assertUser(user);

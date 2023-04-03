@@ -49,6 +49,8 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -608,9 +610,12 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_releases_by_externalIds() throws Exception {
+        MultiValueMap<String, String> externalIds = new LinkedMultiValueMap<>();
+        externalIds.put("mainline-id-component", List.of("1432","4876"));
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/releases/searchByExternalIds?mainline-id-component=1432&mainline-id-component=4876")
+        mockMvc.perform(get("/api/releases/searchByExternalIds")
                 .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(externalIds))
                 .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(

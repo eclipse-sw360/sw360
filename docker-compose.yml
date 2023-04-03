@@ -10,7 +10,7 @@ version: '3.8'
 
 services:
   sw360:
-    image: 'ghcr.io/eclipse/sw360/sw360:latest'
+    image: 'ghcr.io/eclipse-sw360/sw360:latest'
     restart: unless-stopped
     container_name: sw360
     depends_on:
@@ -58,7 +58,7 @@ services:
     volumes:
       - couchdb:/opt/couchdb/data
     healthcheck:
-      test: [ "CMD-SHELL", "curl --fail -s http://localhost:5984/_up" ]
+      test: [ "CMD-SHELL", "curl --fail -s http://couchdb:5984/_up" ]
       interval: 10s
       timeout: 5s
       retries: 5

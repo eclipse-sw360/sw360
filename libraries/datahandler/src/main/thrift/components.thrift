@@ -529,6 +529,13 @@ service ComponentService {
     RequestStatus updateComponent(1: Component component, 2: User user);
 
     /**
+     * update component in database if user has permissions
+     * otherwise create moderation request
+     * If forceUpdate is true, this function can update regardless of write permissions.
+     **/
+    RequestStatus updateComponentWithForceFlag(1: Component component, 2: User user, 3: bool forceUpdate);
+
+    /**
     * update the bulk of components in database if user is admin
     **/
     RequestSummary updateComponents(1: set<Component> components, 2: User user);
@@ -538,6 +545,13 @@ service ComponentService {
      * otherwise create moderation request
      **/
     RequestStatus deleteComponent(1: string id, 2: User user);
+
+    /**
+     * delete component from database if user has permissions,
+     * otherwise create moderation request
+     * If forceDelete is true, this function can delete regardless of delete permissions.
+     **/
+    RequestStatus deleteComponentWithForceFlag(1: string id, 2: User user, 3: bool forceDelete);
 
     /**
      * update component in database if user has permissions, additions and deletions are the parts of the moderation request
@@ -639,6 +653,13 @@ service ComponentService {
     RequestStatus updateRelease(1: Release release, 2: User user);
 
     /**
+     * update release in database if user has permissions
+     * otherwise create moderation request
+     * If forceUpdate is true, this function can update regardless of write permissions.
+     **/
+    RequestStatus updateReleaseWithForceFlag(1: Release release, 2: User user, 3: bool forceUpdate);
+
+    /**
      * update release called only by fossology service - is allowed to manipulate external requests.
      * update release in database if user has permissions
      * otherwise create moderation request
@@ -668,6 +689,13 @@ service ComponentService {
      * otherwise create moderation request
      **/
     RequestStatus deleteRelease(1: string id, 2: User user);
+
+    /**
+     * delete release from database if user has permissions
+     * otherwise create moderation request
+     * If forceDelete is true, this function can delete regardless of delete permissions.
+     **/
+    RequestStatus deleteReleaseWithForceFlag(1: string id, 2: User user, 3: bool forceDelete);
 
     /**
      * update release in database if user has permissions, additions and deletions are the parts of the moderation request

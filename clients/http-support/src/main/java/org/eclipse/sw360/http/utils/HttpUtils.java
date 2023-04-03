@@ -269,6 +269,34 @@ public final class HttpUtils {
     /**
      * Returns a {@code ResponseProcessor} that uses the {@code ObjectMapper}
      * specified to map the JSON payload of a response to an object of the
+     * given result class. The resulting processor directly accesses the
+     * payload of the response; it can be combined with one of the
+     * {@code checkResponse()} methods to make sure that the response is
+     * successful before it is processed.
+     *
+     * @param mapper      the JSON mapper
+     * @param resultClass the result class
+     * @param <T>         the type of the resulting object
+     * @return the {@code ResponseProcessor} doing a JSON de-serialization
+     */
+    public static <T> ResponseProcessor<T> jsonResultNew(ObjectMapper mapper, Class<T> resultClass) {
+        return response -> {
+            if (response.bodyStream().available() != 0) {
+                return mapper.readValue(response.bodyStream(), resultClass);
+            } else {
+                try {
+                    return resultClass.newInstance();
+                } catch (InstantiationException | IllegalAccessException e) {
+
+                }
+                return null;
+            }
+        };
+    }
+
+    /**
+     * Returns a {@code ResponseProcessor} that uses the {@code ObjectMapper}
+     * specified to map the JSON payload of a response to an object of the
      * type defined by the given reference. This is analogous to the overloaded
      * method, but allows for more flexibility  to specify the result type.
      *

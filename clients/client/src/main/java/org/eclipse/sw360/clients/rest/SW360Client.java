@@ -137,6 +137,25 @@ public abstract class SW360Client {
     }
 
     /**
+     * Executes a request to SW360 with authentication and retry logic that
+     * expects a JSON response. This method performs the same checks as
+     * {@code executeRequest()}, but it creates the {@code ResponseProcessor}
+     * automatically that can convert the JSON response to the desired target
+     * type.
+     *
+     * @param producer    the {@code RequestProducer}
+     * @param resultClass the class to which the JSON payload is to be
+     *                    converted
+     * @param tag         a tag to identify the request
+     * @param <T>         the type of the result
+     * @return a future with the result of the request
+     */
+    protected <T> CompletableFuture<T> executeJsonRequestNew(Consumer<? super RequestBuilder> producer,
+            Class<T> resultClass, String tag) {
+        return executeRequest(producer, HttpUtils.jsonResultNew(getClientConfig().getObjectMapper(), resultClass), tag);
+    }
+
+    /**
      * Executes a request to delete multiple entities of a given resource.
      * SW360 typically supports DELETE operations on resources that accept a
      * list of IDs. Result is a {@code MultiStatusResponse} with information
