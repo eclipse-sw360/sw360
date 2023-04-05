@@ -376,3 +376,20 @@ include::{snippets}/should_document_get_usedbyresource_for_release/curl-request.
 
 ===== Example response
 include::{snippets}/should_document_get_usedbyresource_for_release/http-response.adoc[]
+
+[[resources-release-get-release-vulnerabilities]]
+==== Listing release vulnerabilities
+
+A `GET` request will get vulnerabilities of a single release.
+
+===== Response structure
+include::{snippets}/should_document_get_release_vulnerabilities/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_release_vulnerabilities/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_release_vulnerabilities/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_release_vulnerabilities/links.adoc[]
