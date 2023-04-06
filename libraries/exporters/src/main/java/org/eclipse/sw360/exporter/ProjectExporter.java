@@ -19,7 +19,6 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.exporter.helper.ExporterHelper;
 import org.eclipse.sw360.exporter.helper.ProjectHelper;
 import org.eclipse.sw360.exporter.helper.ReleaseHelper;
@@ -46,7 +45,6 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
         nameToDisplayName.put(TAG.getFieldName(), "project tag");
         nameToDisplayName.put(BUSINESS_UNIT.getFieldName(), "group");
         nameToDisplayName.put(RELEASE_CLEARING_STATE_SUMMARY.getFieldName(), "release clearing state summary");
-        nameToDisplayName.put(EXTERNAL_IDS.getFieldName(), "external IDs");
         nameToDisplayName.put(VISBILITY.getFieldName(), "visibility");
         nameToDisplayName.put(PROJECT_TYPE.getFieldName(), "project type");
         nameToDisplayName.put(LINKED_PROJECTS.getFieldName(), "linked projects with relationship");
@@ -65,6 +63,8 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
         nameToDisplayName.put(SECURITY_RESPONSIBLES.getFieldName(), "security responsibles");
         nameToDisplayName.put(CREATED_ON.getFieldName(), "created on");
         nameToDisplayName.put(ENABLE_SVM.getFieldName(), "enable svm");
+        nameToDisplayName.put(EXTERNAL_IDS.getFieldName(), "external IDs");
+        nameToDisplayName.put(ADDITIONAL_DATA.getFieldName(), "additional data");
         nameToDisplayName.put(VISBILITY.getFieldName(), "Project visibility");
     }
 
@@ -80,6 +80,8 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
             .add(SECURITY_RESPONSIBLES)
             .add(CREATED_ON)
             .add(ENABLE_SVM)
+            .add(EXTERNAL_IDS)
+            .add(ADDITIONAL_DATA)
             .add(VISBILITY)
             .build();
 
