@@ -207,6 +207,10 @@ public class ModerationDatabaseHandler {
                 request.unsetPriority();
             }
             ClearingRequest currentRequest = getClearingRequestByIdForEdit(request.getId(), user);
+
+            if (request.equals(currentRequest)) {
+                return RequestStatus.SUCCESS;
+            }
             StringBuilder commentText = new StringBuilder("Clearing Request is updated: ");
             if (!currentRequest.getClearingState().equals(request.getClearingState())) {
                 if (ClearingRequestState.CLOSED.equals(currentRequest.getClearingState())
@@ -217,6 +221,14 @@ public class ModerationDatabaseHandler {
                         .append(ThriftEnumUtils.enumToString(currentRequest.getClearingState())).append("</b> to <b>")
                         .append(ThriftEnumUtils.enumToString(request.getClearingState())).append("</b>");
             }
+            String oldRequestingUser = CommonUtils.nullToEmptyString(currentRequest.getRequestingUser());
+            String newRequestingUser = CommonUtils.nullToEmptyString(request.getRequestingUser());
+            if (!oldRequestingUser.equals(newRequestingUser)) {
+                commentText = commentText.append("\n\tRequesting User changed from: <b>")
+                        .append(StringUtils.defaultIfBlank(oldRequestingUser, "NULL")).append("</b> to <b>")
+                        .append(StringUtils.defaultIfBlank(newRequestingUser, "NULL")).append("</b>");
+            }
+
             String oldAgreedClDate = CommonUtils.nullToEmptyString(currentRequest.getAgreedClearingDate());
             String newAgreedClDate = CommonUtils.nullToEmptyString(request.getAgreedClearingDate());
             if (!oldAgreedClDate.equals(newAgreedClDate)) {
@@ -254,6 +266,7 @@ public class ModerationDatabaseHandler {
             clearingRequestRepository.update(request);
             projectDatabaseHandler.sendEmailForClearingRequestUpdate(request, projectUrl, user);
             return RequestStatus.SUCCESS;
+
         } catch (SW360Exception e) {
             log.error("Failed to update clearing request: " + request.getId(), e);
         }

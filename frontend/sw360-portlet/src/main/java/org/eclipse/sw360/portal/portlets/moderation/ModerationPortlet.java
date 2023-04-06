@@ -460,6 +460,8 @@ public class ModerationPortlet extends FossologyAwarePortlet {
         final String clearingId = request.getParameter(CLEARING_REQUEST_ID);
         final User user = UserCacheHolder.getUserFromRequest(request);
 
+        request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user) ? "Yes" : "No");
+
         if (CommonUtils.isNullEmptyOrWhitespace(clearingId)) {
             throw new PortletException("Clearing request ID not set!");
         }

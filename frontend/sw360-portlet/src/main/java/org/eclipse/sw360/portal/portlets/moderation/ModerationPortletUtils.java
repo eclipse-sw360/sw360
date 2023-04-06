@@ -104,6 +104,14 @@ public class ModerationPortletUtils {
                 String isClearingExpertEdit = request.getParameter(PortalConstants.IS_CLEARING_EXPERT);
                 ModerationService.Iface client = new ThriftClients().makeModerationClient();
                 ClearingRequest clearingRequest = client.getClearingRequestByIdForEdit(id, user);
+
+                String requestingUser = request.getParameter(ClearingRequest._Fields.REQUESTING_USER.toString());
+                if (CommonUtils.isNullEmptyOrWhitespace(requestingUser)) {
+                    log.warn("Invalid requesting user email: " + requestingUser + " is entered, by user: "+ user.getEmail());
+                    return requestSummary.setMessage("Invalid requesting user email");
+                }
+                clearingRequest.setRequestingUser(requestingUser);
+
                 String clearingTeam = request.getParameter(ClearingRequest._Fields.CLEARING_TEAM.toString());
                 if (CommonUtils.isNullEmptyOrWhitespace(clearingTeam)) {
                     log.warn("Invalid clearingTeam email: " + clearingTeam + " is entered, by user: "+ user.getEmail());
