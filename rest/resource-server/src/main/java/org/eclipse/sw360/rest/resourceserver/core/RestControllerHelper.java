@@ -139,6 +139,18 @@ public class RestControllerHelper<T> {
         return paginationResult;
     }
 
+    public PaginationResult<T> paginationResultFromPaginatedList(HttpServletRequest request, Pageable pageable,
+                                                                 List<T> resources, String resourceType, int totalCount)
+            throws ResourceClassNotFoundException {
+        if (!requestContainsPaging(request)) {
+            request.setAttribute(PAGINATION_PARAM_PAGE, pageable.getPageNumber());
+            request.setAttribute(PAGINATION_PARAM_PAGE_ENTRIES, pageable.getPageSize());
+        }
+        PaginationOptions<T> paginationOptions = paginationOptionsFromPageable(pageable, resourceType);
+        return resourceListController.getPaginationResultFromPaginatedList(resources,
+                paginationOptions, totalCount);
+    }
+
     private boolean requestContainsPaging(HttpServletRequest request) {
         return request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE) || request.getParameterMap().containsKey(PAGINATION_PARAM_PAGE_ENTRIES);
     }

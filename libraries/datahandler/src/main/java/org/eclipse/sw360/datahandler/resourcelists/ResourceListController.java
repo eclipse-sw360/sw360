@@ -11,7 +11,6 @@
 
 package org.eclipse.sw360.datahandler.resourcelists;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -38,6 +37,13 @@ public class ResourceListController<T> {
             toIndex = sortedResources.size();
         }
         return new PaginationResult<>(sortedResources.subList(fromIndex, toIndex), sortedResources.size(), paginationOptions);
+    }
+
+    public PaginationResult<T> getPaginationResultFromPaginatedList(List<T> resources,
+                                                                    PaginationOptions<T> paginationOptions,
+                                                                    int totalCount) {
+        return new PaginationResult<>(this.sortList(resources, paginationOptions.getSortComparator()),
+                totalCount, paginationOptions);
     }
 
     private List<T> sortList(List<T> resources, Comparator<T> comparator) {
