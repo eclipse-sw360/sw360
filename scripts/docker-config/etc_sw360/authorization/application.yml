@@ -36,7 +36,7 @@ sw360:
   sw360-liferay-company-id: ${SW360_LIFERAY_COMPANY_ID:20101}
   # Allowed origins that should be set in the header
   cors:
-    allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
+    allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:*}
 
 security:
   # Configuration for enabling authorization via headers, e.g. when using SSO
