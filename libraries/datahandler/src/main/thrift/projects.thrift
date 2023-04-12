@@ -94,10 +94,6 @@ struct Project {
     6: optional string version,
     7: optional string domain,
 
-    // information from external data sources
-    9: optional map<string, string> externalIds,
-    300: optional map<string, string> additionalData,
-
     // Additional informations
     10: optional set<Attachment> attachments,
     11: optional string createdOn, // Creation date YYYY-MM-dd
@@ -134,6 +130,11 @@ struct Project {
     44: optional string deliveryStart,
     45: optional string phaseOutSince,
     46: optional bool enableSvm, // flag for enabling Security Vulnerability Monitoring
+
+    // information from external data sources
+    9: optional map<string, string> externalIds,
+    300: optional map<string, string> additionalData,
+
     49: optional bool considerReleasesFromExternalList, // Consider list of releases from existing external list
     47: optional string licenseInfoHeaderText;
     48: optional bool enableVulnerabilitiesDisplay, // flag for enabling displaying vulnerabilities in project view
