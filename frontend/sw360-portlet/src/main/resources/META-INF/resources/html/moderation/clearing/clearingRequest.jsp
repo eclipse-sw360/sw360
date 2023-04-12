@@ -31,7 +31,7 @@
 <jsp:useBean id="printDate" class="java.util.Date"/>
 <jsp:useBean id="approvedReleaseCount" class="java.lang.Integer" scope="request" />
 <jsp:useBean id="PreferredClearingDateLimit" class="java.lang.String" scope="request" />
-
+<jsp:useBean id="isUserAdmin" class="java.lang.String" scope="request" />
 
 <core_rt:if test="${not empty clearingRequest.id}">
 
@@ -137,7 +137,19 @@
                                         <tbody>
                                             <tr>
                                                 <td><label class="form-group"><liferay-ui:message key="requesting.user" />:</label></td>
-                                                <td><sw360:DisplayUserEmail email="${clearingRequest.requestingUser}" /></td>
+                                                <td>
+                                                <core_rt:choose>
+                                                    <core_rt:when test="${isUserAdmin == 'Yes' and isEditable}">
+                                                        <sw360:DisplayUserEdit id="REQUESTING_USER" email="${clearingRequest.requestingUser}" description="" multiUsers="false" />
+                                                        <div class="invalid-feedback" id="clearingTeamEmailErrorMsg">
+                                                             <liferay-ui:message key="email.should.be.in.valid.format" />
+                                                        </div>
+                                                    </core_rt:when>
+                                                    <core_rt:otherwise>
+                                                        <sw360:DisplayUserEmail email="${clearingRequest.requestingUser}" />
+                                                    </core_rt:otherwise>
+                                                </core_rt:choose>
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td><label class="form-group"><liferay-ui:message key="created.on" />:</label></td>
