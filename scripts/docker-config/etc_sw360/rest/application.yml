@@ -58,4 +58,4 @@ sw360:
   test-user-password: sw360-password
   couchdb-url: ${SW360_COUCHDB_URL:http://couchdb:5984}
   cors:
-    allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
+    allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:*}
