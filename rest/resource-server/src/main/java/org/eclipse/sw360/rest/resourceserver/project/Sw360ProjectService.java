@@ -209,18 +209,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return requestStatus;
     }
 
-    public void deleteProject(String projectId, User sw360User) throws TException {
+    public RequestStatus deleteProject(String projectId, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        RequestStatus requestStatus;
         if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
-            requestStatus = sw360ProjectClient.deleteProjectWithForceFlag(projectId, sw360User, true);
+            return sw360ProjectClient.deleteProjectWithForceFlag(projectId, sw360User, true);
         } else {
-            requestStatus = sw360ProjectClient.deleteProject(projectId, sw360User);
-        }
-        if (requestStatus == RequestStatus.IN_USE) {
-            throw new HttpMessageNotReadableException("Unable to delete project. Project is in Use");
-        } else if (requestStatus != RequestStatus.SUCCESS) {
-            throw new RuntimeException("sw360 project with id '" + projectId + " cannot be deleted.");
+            return sw360ProjectClient.deleteProject(projectId, sw360User);
         }
     }
 

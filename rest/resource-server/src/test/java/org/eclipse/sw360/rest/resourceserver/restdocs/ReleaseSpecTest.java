@@ -209,7 +209,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         Map<String, String> release2ExternalIds = new HashMap<>();
         release2ExternalIds.put("mainline-id-component", "4876");
         release2ExternalIds.put("ws-component-id", "[\"589211\",\"987135\"]");
-        release2.setId("3765276512");
+        release2.setId("6868686868");
         release2.setName("Angular");
         release2.setCpeid("cpe:/a:Google:Angular:2.3.1:");
         release2.setReleaseDate("2016-12-15");

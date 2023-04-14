@@ -365,8 +365,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.DELETE)
     public ResponseEntity deleteProject(@PathVariable("id") String id) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        projectService.deleteProject(id, sw360User);
-        return new ResponseEntity<>(HttpStatus.OK);
+        RequestStatus requestStatus = projectService.deleteProject(id, sw360User);
+        if(requestStatus == RequestStatus.SUCCESS) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        } else if(requestStatus == RequestStatus.IN_USE) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
+        } else if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST,HttpStatus.ACCEPTED);
+        } else {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
