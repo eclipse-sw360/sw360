@@ -379,3 +379,20 @@ include::{snippets}/should_document_get_component_vulnerabilities/http-response.
 
 ===== Links
 include::{snippets}/should_document_get_component_vulnerabilities/links.adoc[]
+
+[[resources-component-get-component-releases]]
+==== Listing component releases
+
+A `GET` request will get releases of a single component.
+
+===== Response structure
+include::{snippets}/should_document_get_releases_by_component/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_by_component/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_by_component/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_releases_by_component/links.adoc[]

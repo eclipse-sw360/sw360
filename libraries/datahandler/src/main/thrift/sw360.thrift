@@ -146,6 +146,12 @@ enum DateRange {
     BETWEEN = 3
 }
 
+enum ClearingReportStatus {
+    NO_STATUS = 0,
+    NO_REPORT = 1,
+    DOWNLOAD = 2
+}
+
 struct ConfigContainer {
     1: optional string id,
     2: optional string revision,

@@ -29,15 +29,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
-import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
-import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.Repository;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -80,6 +72,8 @@ public class JacksonCustomizations {
             setMixInAnnotation(User.class, Sw360Module.UserMixin.class);
             setMixInAnnotation(Component.class, Sw360Module.ComponentMixin.class);
             setMixInAnnotation(Release.class, Sw360Module.ReleaseMixin.class);
+            setMixInAnnotation(ReleaseLink.class, Sw360Module.ReleaseLinkMixin.class);
+            setMixInAnnotation(ClearingReport.class, Sw360Module.ClearingReportMixin.class);
             setMixInAnnotation(Attachment.class, Sw360Module.AttachmentMixin.class);
             setMixInAnnotation(Vendor.class, Sw360Module.VendorMixin.class);
             setMixInAnnotation(License.class, Sw360Module.LicenseMixin.class);
@@ -500,6 +494,68 @@ public class JacksonCustomizations {
             abstract public EccInformation getEccInformation();
         }
 
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "vendor",
+                "longName",
+                "releaseRelationship",
+                "hasSubreleases",
+                "nodeId",
+                "parentNodeId",
+                "componentType",
+                "licenseIds",
+                "licenseNames",
+                "comment",
+                "otherLicenseIds",
+                "accessible",
+                "attachmentsSize",
+                "setName",
+                "setVersion",
+                "setComponentType",
+                "attachmentsIterator",
+                "setAttachments",
+                "setMainlineState",
+                "setClearingState",
+                "otherLicenseIdsSize",
+                "otherLicenseIdsIterator",
+                "setOtherLicenseIds",
+                "setVendor",
+                "setComment",
+                "setNodeId",
+                "setParentNodeId",
+                "setLongName",
+                "setReleaseRelationship",
+                "setHasSubreleases",
+                "licenseIdsSize",
+                "licenseIdsIterator",
+                "setLicenseIds",
+                "licenseNamesSize",
+                "licenseNamesIterator",
+                "setLicenseNames",
+                "setAccessible",
+                "setId",
+                "setClearingReport"
+
+        })
+        static abstract class ReleaseLinkMixin {
+
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "id",
+                "revision",
+                "attachmentsSize",
+                "setAttachments",
+                "setRevision",
+                "attachmentsIterator",
+                "setId",
+                "setClearingReportStatus"
+
+        })
+        static abstract class ClearingReportMixin {
+
+        }
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
                 "attachmentContentId",

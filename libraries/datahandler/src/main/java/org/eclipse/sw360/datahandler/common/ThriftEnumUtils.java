@@ -337,6 +337,12 @@ public class ThriftEnumUtils {
             .put(ClearingRequestState.AWAITING_RESPONSE, "Awaiting Response")
             .build();
 
+    private static final ImmutableMap<ClearingReportStatus, String> MAP_CLEARING_REPORT_STATUS_STRING = ImmutableMap.<ClearingReportStatus, String>builder()
+            .put(ClearingReportStatus.NO_STATUS, "No status")
+            .put(ClearingReportStatus.NO_REPORT, "No report")
+            .put(ClearingReportStatus.DOWNLOAD, "Download")
+            .build();
+
     private static final ImmutableMap<ClearingRequestPriority, String> MAP_CLEARING_REQUEST_PRIORITY_STRING = ImmutableMap.of(
             ClearingRequestPriority.LOW, "Low",
             ClearingRequestPriority.MEDIUM, "Medium",
@@ -380,6 +386,7 @@ public class ThriftEnumUtils {
             .put(DocumentType.class, MAP_DOCUMENT_TYPE_STRING)
             .put(ObligationStatus.class, MAP_OBLIGATION_STATUS_STRING)
             .put(ClearingRequestState.class, MAP_CLEARING_REQUEST_STATE_STRING)
+            .put(ClearingReportStatus.class, MAP_CLEARING_REPORT_STATUS_STRING)
             .put(ObligationLevel.class, MAP_OBLIGATION_LEVEL_STRING)
             .put(ObligationType.class, MAP_OBLIGATION_TYPE_STRING)
             .put(ClearingRequestPriority.class, MAP_CLEARING_REQUEST_PRIORITY_STRING)
