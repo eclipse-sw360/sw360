@@ -11,7 +11,7 @@
 
 define('components/includes/releases/regexjs', ['jquery'] , function($) {
     function regex(key,value) {
-                let regexEmail = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+                let regexEmail = /^\w+([\.-]\w+)*@\w+([\.-]\w+)*(\.\w{2,3})+$/;
                 let regexUrl = /^(https?|chrome):\/\/[^\s$.?#].[^\s]*$/g;
                 let content = '';
                 if (value.match(regexEmail)) {
