@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -67,8 +68,10 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -132,8 +135,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     private Sw360VulnerabilityService vulnerabilityMockService;
 
     private Project project;
+    private Project sBOMProject;
     private Set<Project> projectList = new HashSet<>();
     private Attachment attachment;
+    private Attachment sBOMAttachment;
+    private RequestSummary requestSummary = new RequestSummary();
 
 
     @Before
@@ -285,10 +291,33 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Set<String> releaseIds = new HashSet<>(Collections.singletonList("3765276512"));
         Set<String> releaseIdsTransitive = new HashSet<>(Arrays.asList("3765276512", "5578999"));
 
+        sBOMAttachment = new Attachment("3331231254", "bom.spdx.rdf");
+        sBOMAttachment.setSha1("df903e491d3863477568896089ee9457bc316183");
+        sBOMAttachment.setAttachmentType(AttachmentType.SBOM);
+        Set<Attachment> sbomSet = new HashSet<>();
+        sbomSet.add(sBOMAttachment);
+
+        sBOMProject = new Project();
+        sBOMProject.setId("333655");
+        sBOMProject.setName("Green Web");
+        sBOMProject.setVersion("1.0.1");
+        sBOMProject.setCreatedOn("2022-11-13");
+        sBOMProject.setBusinessUnit("sw360 BA");
+        sBOMProject.setState(ProjectState.ACTIVE);
+        sBOMProject.setClearingState(ProjectClearingState.OPEN);
+        sBOMProject.setProjectType(ProjectType.PRODUCT);
+        sBOMProject.setCreatedBy("admin@sw360.org");
+        sBOMProject.setAttachments(sbomSet);
+
+        requestSummary.setMessage(sBOMProject.getId());
+        requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+
+        given(this.projectServiceMock.importSBOM(any(),any())).willReturn(requestSummary);
         given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
         given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(project2);
         given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(projectForAtt);
+        given(this.projectServiceMock.getProjectForUserById(eq(sBOMProject.getId()), any())).willReturn(sBOMProject);
         given(this.projectServiceMock.searchLinkingProjects(eq(project.getId()), any())).willReturn(usedByProjectList);
         given(this.projectServiceMock.searchProjectByName(eq(project.getName()), any())).willReturn(projectListByName);
         given(this.projectServiceMock.searchProjectByTag(any(), any())).willReturn(new ArrayList<Project>(projectList));
@@ -652,7 +681,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:moderators").description("An array of all project moderators with email").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:contributors").description("An array of all project contributors with email").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:attachments").description("An array of all project attachments").optional(),
-                                subsectionWithPath("_embedded.sw360:projects.[]vendor").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),  
+                                subsectionWithPath("_embedded.sw360:projects.[]vendor").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of projects per page"),
@@ -1328,7 +1357,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project")
                         )));
     }
-    
+
     @Test
     public void should_document_update_project() throws Exception {
         Project updateProject = new Project();
@@ -1624,5 +1653,17 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_import_sbom() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file","file=@/bom.spdx.rdf".getBytes());
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/import/SBOM")
+                .content(file.getBytes())
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .header("Authorization", "Bearer " + accessToken)
+                .queryParam("type", "SPDX");
+        this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
 }

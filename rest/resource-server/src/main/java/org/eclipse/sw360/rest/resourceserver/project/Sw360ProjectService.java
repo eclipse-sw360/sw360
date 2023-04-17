@@ -26,6 +26,7 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -480,5 +481,17 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public int getMyAccessibleProjectCounts(User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         return sw360ProjectClient.getMyAccessibleProjectCounts(sw360User);
+    }
+
+    /**
+     * Import SBOM using the method on the thrift client.
+     * @param user                User uploading the SBOM
+     * @param attachmentContentId Id of the attachment uploaded
+     * @return RequestSummary
+     * @throws TException
+     */
+    public RequestSummary importSBOM(User user, String attachmentContentId) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.importBomFromAttachmentContent(user, attachmentContentId);
     }
 }
