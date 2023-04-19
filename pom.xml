@@ -9,7 +9,9 @@
   ~
   ~ SPDX-License-Identifier: EPL-2.0
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.eclipse.sw360</groupId>
@@ -98,6 +100,7 @@
     <jackson.databind.version>2.13.4.2</jackson.databind.version>
     <jackson.annotations.version>2.13.4</jackson.annotations.version>
     <javax-annotation.version>1.3.2</javax-annotation.version>
+    <javax-activation.version>1.1.1</javax-activation.version>
     <jcraft.version>0.1.54</jcraft.version>
     <jgiven.version>0.17.0</jgiven.version>
     <jquery.confirm.version>3.3.2</jquery.confirm.version>
@@ -341,6 +344,11 @@
         <groupId>org.apache.httpcomponents</groupId>
         <artifactId>httpcore</artifactId>
         <version>4.4.8</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.activation</groupId>
+        <artifactId>activation</artifactId>
+        <version>1.1.1</version>
       </dependency>
       <dependency>
         <groupId>com.google.code.gson</groupId>
@@ -718,8 +726,8 @@
           <ratchetFrom>origin/main</ratchetFrom>
           <formats>
             <format>
-              <trimTrailingWhitespace/>
-              <endWithNewline/>
+              <trimTrailingWhitespace />
+              <endWithNewline />
               <includes>
                 <include>*.java</include>
               </includes>
@@ -779,9 +787,11 @@
                       </artifactItem>
                     </artifactItems>
                     <!--
-                                            This property is set by the submodules themself, depending wether they are backend, frontend or library
+                                            This property is set by the submodules themself, depending wether they are backend, frontend or
+                    library
                                             modules.
-                                            All other submodule leave this property blank causing the dependency plugin to copy the artifact inside
+                                            All other submodule leave this property blank causing the dependency plugin to copy the artifact
+                    inside
                                             the target folder.
                                         -->
                     <outputDirectory>${artifact.deploy.dir}</outputDirectory>
