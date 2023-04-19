@@ -199,12 +199,13 @@ RUN --mount=type=bind,target=/build/sw360,rw \
 WORKDIR /sw360_tomcat_webapps/
 
 COPY scripts/create-slim-war-files.sh /bin/slim.sh
-COPY --from=sw360clucene /couchdb-lucene.war /sw360_tomcat_webapps
+
 RUN bash /bin/slim.sh
 
 FROM scratch AS sw360
 COPY --from=sw360build /sw360_deploy /sw360_deploy
 COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
+COPY --from=sw360clucene /couchdb-lucene.war /sw360_tomcat_webapps
 COPY --from=sw360build /etc/sw360 /etc/sw360
 
 #--------------------------------------------------------------------------------------------------
