@@ -75,6 +75,14 @@
     <maven-war-plugin.version>3.3.2</maven-war-plugin.version>
     <versions-maven-plugin.version>2.12.0</versions-maven-plugin.version>
 
+    <!-- JSON Libraries used in the project -->
+    <gson.version>2.10.1</gson.version>
+    <json.version>20230227</json.version>
+    <json-path.version>2.8.0</json-path.version>
+    <json-smart.version>2.4.10</json-smart.version>
+    <json-simple.version>2.3.1</json-simple.version>
+    <jackson.version>2.14.2</jackson.version>
+
     <!-- Dependencies version properties -->
     <byte-buddy.version>1.12.13</byte-buddy.version>
     <cloudant.version>2.19.1</cloudant.version>
@@ -91,15 +99,11 @@
     <failureaccess.version>1.0.1</failureaccess.version>
     <findbugs-annotations.version>1.3.9-1</findbugs-annotations.version>
     <glassfish-jaxb.version>2.3.2</glassfish-jaxb.version>
-    <gson.version>2.8.9</gson.version>
     <guava.version>31.1-jre</guava.version>
     <hamcrest.version>1.3</hamcrest.version>
     <httpclient.version>4.5.14</httpclient.version>
     <httpcore.version>4.4.16</httpcore.version>
     <jakarta-xml-bind.version>2.3.2</jakarta-xml-bind.version>
-    <jackson.core.version>2.13.4</jackson.core.version>
-    <jackson.databind.version>2.13.4.2</jackson.databind.version>
-    <jackson.annotations.version>2.13.4</jackson.annotations.version>
     <javax-annotation.version>1.3.2</javax-annotation.version>
     <javax-activation.version>1.1.1</javax-activation.version>
     <jcraft.version>0.1.54</jcraft.version>
@@ -142,7 +146,6 @@
     <thrift.version>0.16.0</thrift.version>
     <wiremock.version>2.26.0</wiremock.version>
     <org.spdx.tools.java.version>1.1.5</org.spdx.tools.java.version>
-    <com.googlecode.json-simple.version>1.1.1</com.googlecode.json-simple.version>
 
     <!--  User must provide below property configuration based on his/her liferay deployment
     environment -->
@@ -191,7 +194,22 @@
       <dependency>
         <groupId>com.github.cliftonlabs</groupId>
         <artifactId>json-simple</artifactId>
-        <version>2.3.1</version>
+        <version>${json-simple.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>${json.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.minidev</groupId>
+        <artifactId>json-smart</artifactId>
+        <version>${json-smart.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.jayway.jsonpath</groupId>
+        <artifactId>json-path</artifactId>
+        <version>${json-path.version}</version>
       </dependency>
       <dependency>
         <groupId>com.github.package-url</groupId>
@@ -329,17 +347,17 @@
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>${jackson.databind.version}</version>
+        <version>${jackson.version}</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-core</artifactId>
-        <version>${jackson.core.version}</version>
+        <version>${jackson.version}</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-annotations</artifactId>
-        <version>${jackson.annotations.version}</version>
+        <version>${jackson.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.httpcomponents</groupId>
@@ -365,12 +383,6 @@
         <groupId>org.spdx</groupId>
         <artifactId>tools-java</artifactId>
         <version>${org.spdx.tools.java.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.googlecode.json-simple</groupId>
-        <artifactId>json-simple</artifactId>
-        <version>${com.googlecode.json-simple.version}</version>
-        <scope>compile</scope>
       </dependency>
       <dependency>
         <groupId>org.apache.velocity</groupId>
