@@ -9,8 +9,8 @@
   ~ SPDX-License-Identifier: EPL-2.0
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -28,7 +28,7 @@
     </properties>
 
     <build>
-	<finalName>org.eclipse.sw360.datahandler-${project.version}</finalName>
+        <finalName>org.eclipse.sw360.datahandler-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.thrift.tools</groupId>
@@ -62,17 +62,17 @@
                 <version>${build-helper-maven-plugin.version}</version>
                 <executions>
                     <execution>
-                            <id>thrift-sources</id>
-                            <phase>generate-sources</phase>
-                            <goals>
-                                <goal>add-source</goal>
-                            </goals>
-                            <configuration>
-                                <sources>
-                                    <source>target/generated-sources/thrift</source>
-                                </sources>
-                            </configuration>
-                        </execution>
+                        <id>thrift-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>target/generated-sources/thrift</source>
+                            </sources>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>thrift-test-sources</id>
                         <phase>generate-test-sources</phase>
@@ -108,7 +108,7 @@
                     </execution>
                 </executions>
                 <configuration>
-			        <archive>
+                    <archive>
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
@@ -155,15 +155,15 @@
             <artifactId>org.ektorp</artifactId>
         </dependency>
         <dependency>
-             <groupId>com.google.code.gson</groupId>
-             <artifactId>gson</artifactId>
-             <version>${gson.version}</version>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
         </dependency>
-	<dependency>
+        <dependency>
             <groupId>com.cloudant</groupId>
             <artifactId>cloudant-client</artifactId>
             <version>2.19.1</version>
-	</dependency>
+        </dependency>
         <!-- Pull in newer versions of fasterxml (excluded by ektorp) -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -176,10 +176,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.github.stephenc.findbugs</groupId>
-            <artifactId>findbugs-annotations</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
