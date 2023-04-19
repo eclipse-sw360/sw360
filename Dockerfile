@@ -42,6 +42,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     gnupg2 \
     iproute2 \
     iputils-ping \
+    less \
     libarchive-tools \
     locales \
     lsof \
