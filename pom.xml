@@ -103,6 +103,7 @@
     <jcraft.version>0.1.54</jcraft.version>
     <jetbrains-annotations.version>24.0.1</jetbrains-annotations.version>
     <jgiven.version>0.17.0</jgiven.version>
+    <jopt-simple.version>5.0.4</jopt-simple.version>
     <jquery.confirm.version>3.3.2</jquery.confirm.version>
     <jquery.datatables.buttons.version>1.5.3</jquery.datatables.buttons.version>
     <jquery.datatables.select.version>1.2.7</jquery.datatables.select.version>
@@ -424,6 +425,11 @@
           </exclusion>
         </exclusions>
       </dependency>
+      <dependency>
+    <groupId>net.sf.jopt-simple</groupId>
+    <artifactId>jopt-simple</artifactId>
+    <version>${jopt-simple.version}</version>
+  </dependency>
       <dependency>
         <groupId>org.dom4j</groupId>
         <artifactId>dom4j</artifactId>
