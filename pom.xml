@@ -112,6 +112,9 @@
     <jquery.treetable.version>3.2.0</jquery.treetable.version>
     <jquery.ui.version>1.12.1</jquery.ui.version>
     <jquery.validation.version>1.19.0</jquery.validation.version>
+    <json.version>20230227</json.version>
+    <json-path.version>2.8.0</json-path.version>
+    <json-smart.version>2.4.10</json-smart.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>4.13.2</junit.version>
     <liferay.portal.tools.theme.builder.version>1.1.9</liferay.portal.tools.theme.builder.version>
@@ -198,6 +201,21 @@
         <groupId>com.github.cliftonlabs</groupId>
         <artifactId>json-simple</artifactId>
         <version>2.3.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.json</groupId>
+        <artifactId>json</artifactId>
+        <version>${json.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>net.minidev</groupId>
+        <artifactId>json-smart</artifactId>
+        <version>${json-smart.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.jayway.jsonpath</groupId>
+        <artifactId>json-path</artifactId>
+        <version>${json-path.version}</version>
       </dependency>
       <dependency>
         <groupId>com.github.package-url</groupId>
