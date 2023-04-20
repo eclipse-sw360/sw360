@@ -10,10 +10,13 @@
 package org.eclipse.sw360.users.db;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.db.UserSearchHandler;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -39,6 +42,8 @@ import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePerm
  */
 public class UserDatabaseHandler {
 
+    private static final String LAST_NAME_IS_MANDATORY = "Last Name is mandatory";
+    private static final String GIVEN_NAME_IS_MANDATORY = "Given Name is mandatory";
     /**
      * Connection to the couchDB database
      */
@@ -76,12 +81,24 @@ public class UserDatabaseHandler {
         ThriftValidate.prepareUser(user);
     }
 
-    public RequestStatus addUser(User user) throws SW360Exception {
+    public AddDocumentRequestSummary addUser(User user) throws SW360Exception {
         prepareUser(user);
+        AddDocumentRequestSummary addDocReqSummarry = new AddDocumentRequestSummary();
+        if (CommonUtils.isNullEmptyOrWhitespace(user.getGivenname())) {
+            return addDocReqSummarry.setMessage(GIVEN_NAME_IS_MANDATORY).setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
+        } else if (CommonUtils.isNullEmptyOrWhitespace(user.getLastname())) {
+            return addDocReqSummarry.setMessage(LAST_NAME_IS_MANDATORY).setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
+        }
+
+        User existingUserInDB = getByEmail(user.getEmail());
+        if (null != existingUserInDB) {
+            return addDocReqSummarry.setId(existingUserInDB.getId())
+                    .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
+        }
         // Add to database
         db.add(user);
 
-        return RequestStatus.SUCCESS;
+        return addDocReqSummarry.setId(user.getId()).setRequestStatus(AddDocumentRequestStatus.SUCCESS);
     }
 
     public RequestStatus updateUser(User user) throws SW360Exception {

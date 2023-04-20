@@ -250,6 +250,9 @@ Token response elements
 | `Write Access`
 | rest.write.access.usergroup
 | SW360_ADMIN
+| `Admin Access`
+| rest.admin.access.usergroup
+| SW360_ADMIN
 | `Enable Token Generator`
 | rest.apitoken.generator.enable
 | false

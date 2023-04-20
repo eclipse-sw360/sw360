@@ -121,7 +121,14 @@ public class RestControllerHelper<T> {
 
     public User getSw360UserFromAuthentication() {
         try {
-            String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String userId;
+            Object principle = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principle instanceof String) {
+                userId = principle.toString();
+            } else {
+                org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) principle;
+                userId = user.getUsername();
+            }
             return userService.getUserByEmailOrExternalId(userId);
         } catch (RuntimeException e) {
             throw new AuthenticationServiceException("Could not load user from authentication.");

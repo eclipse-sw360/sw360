@@ -21,6 +21,10 @@ import static org.junit.Assert.assertFalse;
 
 
 public class UserHandlerTest {
+    private static final String DUMMY_LASTNAME = "Dummy Lastname";
+
+    private static final String DUMMY_GIVENNAME = "Dummy Givenname";
+
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_USERS;
 
     private static final String DUMMY_EMAIL_ADDRESS_1 = "dummy.user1@dummy.domain.tld";
@@ -47,7 +51,7 @@ public class UserHandlerTest {
 
     @Test
     public void testAddUser() throws Exception {
-        User userWithComment = new User().setEmail(DUMMY_EMAIL_ADDRESS_1).setCommentMadeDuringModerationRequest(DUMMY_COMMENT);
+        User userWithComment = new User().setEmail(DUMMY_EMAIL_ADDRESS_1).setCommentMadeDuringModerationRequest(DUMMY_COMMENT).setGivenname(DUMMY_GIVENNAME).setLastname(DUMMY_LASTNAME).setDepartment(DUMMY_DEPARTMENT);
 
         handler.addUser(userWithComment);
 
@@ -58,7 +62,7 @@ public class UserHandlerTest {
 
     @Test
     public void testUpdateUser() throws Exception {
-        User userWithoutComment = new User().setEmail(DUMMY_EMAIL_ADDRESS_2);
+        User userWithoutComment = new User().setEmail(DUMMY_EMAIL_ADDRESS_2).setGivenname(DUMMY_GIVENNAME).setLastname(DUMMY_LASTNAME).setDepartment(DUMMY_DEPARTMENT);
 
         handler.addUser(userWithoutComment); // does not contain a comment
 
