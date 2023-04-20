@@ -190,6 +190,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         boolean isSearchByTag = CommonUtils.isNotNullEmptyOrWhitespace(tag);
         boolean isSearchByType = CommonUtils.isNotNullEmptyOrWhitespace(projectType);
         boolean isSearchByGroup = CommonUtils.isNotNullEmptyOrWhitespace(group);
+        boolean isNoFilter = false;
         List<Project> sw360Projects = new ArrayList<>();
         Map<String, Set<String>> filterMap = new HashMap<>();
         if (luceneSearch) {
@@ -224,21 +225,29 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             } else if (isSearchByType) {
                 sw360Projects.addAll(projectService.searchProjectByType(projectType, sw360User));
             } else {
-                sw360Projects.addAll(projectService.getProjectsForUser(sw360User));
+                sw360Projects.addAll(projectService.getProjectsForUser(sw360User, pageable));
+                isNoFilter = true;
             }
         }
         return getProjectResponse(pageable, projectType, group, tag, allDetails, luceneSearch, request, sw360User,
-                mapOfProjects, isSearchByName, sw360Projects);
+                mapOfProjects, isSearchByName, sw360Projects, isNoFilter);
     }
 
     @NotNull
     private ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectResponse(Pageable pageable,
-            String projectType, String group, String tag, boolean allDetails, boolean luceneSearch,
-            HttpServletRequest request, User sw360User, Map<String, Project> mapOfProjects, boolean isSearchByName,
-            List<Project> sw360Projects) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
+                                                                                     String projectType, String group, String tag, boolean allDetails, boolean luceneSearch,
+                                                                                     HttpServletRequest request, User sw360User, Map<String, Project> mapOfProjects, boolean isSearchByName,
+                                                                                     List<Project> sw360Projects, boolean isNoFilter) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException, TException {
         sw360Projects.stream().forEach(prj -> mapOfProjects.put(prj.getId(), prj));
-        PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                sw360Projects, SW360Constants.TYPE_PROJECT);
+        PaginationResult<Project> paginationResult;
+        if (isNoFilter) {
+            int totalCount = projectService.getMyAccessibleProjectCounts(sw360User);
+            paginationResult = restControllerHelper.paginationResultFromPaginatedList(request, pageable,
+                    sw360Projects, SW360Constants.TYPE_PROJECT, totalCount);
+        } else {
+            paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                    sw360Projects, SW360Constants.TYPE_PROJECT);
+        }
 
         List<EntityModel<Project>> projectResources = new ArrayList<>();
         Consumer<Project> consumer = p -> {
@@ -312,7 +321,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360Projects = projectService.getWithFilledClearingStatus(sw360Projects, clearingState);
 
         return getProjectResponse(pageable, null, null, null, allDetails, true, request, sw360User,
-                mapOfProjects, true, sw360Projects);
+                mapOfProjects, true, sw360Projects, false);
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.GET)
