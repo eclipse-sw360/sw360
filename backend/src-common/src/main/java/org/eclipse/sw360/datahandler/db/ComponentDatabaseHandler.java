@@ -187,12 +187,27 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private void autosetReleaseClearingState(Release releaseAfter, Release releaseBefore) {
         Optional<Attachment> oldBestCR = getBestClearingReport(releaseBefore);
         Optional<Attachment> newBestCR = getBestClearingReport(releaseAfter);
+
+        Optional<Attachment> oldSecondBestCR = getBestInternalUseScanReport(releaseBefore);
+        Optional<Attachment> newSecondBestCR = getBestInternalUseScanReport(releaseAfter);
+
         long isrCountAfter = evaluateClearingStateForScanAvailable(releaseAfter);
         if (isrCountAfter > 0) {
             releaseAfter.setClearingState(ClearingState.SCAN_AVAILABLE);
         } else {
             releaseAfter.setClearingState(ClearingState.NEW_CLEARING);
         }
+
+        if (newSecondBestCR.isPresent()) {
+            if (newSecondBestCR.get().getCheckStatus() == CheckStatus.ACCEPTED) {
+                releaseAfter.setClearingState(ClearingState.INTERNAL_USE_SCAN_AVAILABLE);
+            }
+        } else {
+            if (oldSecondBestCR.isPresent()) {
+                releaseAfter.setClearingState(ClearingState.NEW_CLEARING);
+            }
+        }
+
         if (newBestCR.isPresent()) {
             if (newBestCR.get().getCheckStatus() == CheckStatus.ACCEPTED) {
                 releaseAfter.setClearingState(ClearingState.APPROVED);
@@ -203,6 +218,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (oldBestCR.isPresent()) {
                 releaseAfter.setClearingState(ClearingState.NEW_CLEARING);
             }
+
+            if (newSecondBestCR.isPresent() &&  (newSecondBestCR.get().getCheckStatus() == CheckStatus.ACCEPTED)) {
+                    releaseAfter.setClearingState(ClearingState.INTERNAL_USE_SCAN_AVAILABLE);
+            }
+
             if (isrCountAfter > 0) {
                 releaseAfter.setClearingState(ClearingState.SCAN_AVAILABLE);
             }

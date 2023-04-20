@@ -507,6 +507,7 @@ public class PortalConstants {
     public static final String PROJECT_STATE_ACTIVE__CSS      = "projectStateActive";
     public static final String PROJECT_STATE_INACTIVE__CSS    = "projectStateInactive";
     public static final String CLEARING_STATE_OPEN__CSS       = "clearingStateOpen";
+    public static final String CLEARING_STATE_IUSA__CSS       = "clearingStateISUA";
     public static final String CLEARING_STATE_INPROGRESS__CSS = "clearingStateInProgress";
     public static final String CLEARING_STATE_CLOSED__CSS     = "clearingStateClosed";
     public static final String CLEARING_STATE_UNKNOWN__CSS    = "clearingStateUnknown";

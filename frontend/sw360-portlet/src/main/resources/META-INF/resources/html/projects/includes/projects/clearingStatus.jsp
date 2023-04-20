@@ -230,6 +230,10 @@
                                 <input type="checkbox" class="form-check-input ml-4" id="underClearing" data-releaseclearingstate="Under clearing" />
                                 <label class="mb-0"><liferay-ui:message key="under.clearing" /></label>
                             </li>
+                            <li>
+                                <input type="checkbox" class="form-check-input ml-4" id="internalUseScanAvailable" data-releaseclearingstate="Internal use scan available" />
+                                <label class="mb-0"><liferay-ui:message key="under.clearing" /></label>
+                            </li>
                         </ul>
                     </div>
                     </th>
@@ -698,6 +702,8 @@ AUI().use('liferay-portlet-url', function () {
                     case 'Open': // -> red
                     case 'New':
                         return '<%=PortalConstants.CLEARING_STATE_OPEN__CSS%>';
+                    case 'Internal use scan available':
+                        return '<%=PortalConstants.CLEARING_STATE_IUSA__CSS%>';
                     case 'Report available':  //->blue
                         return 'bg-info';
                     case 'Sent to clearing tool':  //->orange

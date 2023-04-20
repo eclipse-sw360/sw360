@@ -643,6 +643,12 @@ public class CommonUtils {
                 .max(Comparator.comparing(Attachment::getCheckStatus, CHECK_STATUS_COMPARATOR));
     }
 
+    public static Optional<Attachment> getBestInternalUseScanReport(Release release) {
+        return nullToEmptyCollection(release.getAttachments()).stream()
+                .filter(att -> att.getAttachmentType() == AttachmentType.INTERNAL_USE_SCAN)
+                .max(Comparator.comparing(Attachment::getCheckStatus, CHECK_STATUS_COMPARATOR));
+    }
+
     public static boolean isTemporaryObligation(Obligation oblig) {
         return oblig.isSetId() && oblig.getId().startsWith(TMP_OBLIGATION_ID_PREFIX);
     }
