@@ -71,7 +71,7 @@ jobs:
           /usr/share/thrift/${{ env.THRIFT_VERSION }}
         key: ${{ runner.os }}-thrift-${{ hashFiles('/usr/local/bin/thrift') }}
         restore-keys: |
-          ${{ runner.os }}-thrift-
+          ${{ runner.os }}-thrift-${{ hashFiles('/usr/local/bin/thrift') }}
 
     - name: Install Thrift
       if: steps.cache-thrift.outputs.cache-hit != 'true'
@@ -85,7 +85,7 @@ jobs:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
-          ${{ runner.os }}-maven-
+          ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
 
     - name: Build SW360
       run: |
