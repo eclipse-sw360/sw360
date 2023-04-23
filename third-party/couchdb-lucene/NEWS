@@ -1,0 +1,107 @@
+Version 1.0.1
+--------------------------
+
+* Use Lucene 4.9.0 index format
+* Honor "index" property when adding strings
+
+Version 1.0.0
+---------------------------
+
+* Upgrade to Lucene 4.9.0
+* Upgrade to Tika 1.5
+* Use the full OOXML Schemas from Apache POI, to make Tika
+  able to parse Office documents that use exotic features
+* Allow search by POST (using form data)
+
+Version 0.9.0
+
+* Upgrade to Rhino 1.7R4
+* Upgrade to Lucene 3.6.1
+* Upgrade to Tika 1.2
+* Add JSON.stringify support (see above)
+* Support highlights
+
+Version 0.8.0
+-------------
+
+* Upgrade to Lucene 3.5
+* Upgrade to Tika 1.0
+* Add include_fields=[field] to allow control over stored fields
+* Add [lucene] allowLeadingWildcard=true|false option
+* Add [lucene] lowercaseExpandedTerms=true|false
+* Include uuid and digest in view info
+* Include ddoc and view name in compilation error log
+* Fix hang when last change was _revs_limit or _security
+* Add "classic" analyzer for pre-3.3 analysis
+
+Version 0.7.0
+-------------
+
+* Upgrade to Lucene 3.3
+* Upgrade to Tika 0.9
+* Add snowball analyzer
+* Add BigCouch compatibility
+* Return stored numeric fields as numbers, not strings
+* include_docs=true now gets docs once, not twice
+
+Version 0.6.0
+-------------
+
+* Upgrade to Lucene 3.0.3.
+* Upgrade to Tika 0.8.
+* Changed JSON library for improved JSON parsing.
+* Control over term vectors when indexing.
+* Added the whitespace analyzer.
+* Include init.d startup script in zip.
+* Allow query-time override of analyzer.
+* Split multiple queries with embedding commas correctly.
+* Support for remote couchdb nodes over HTTPS.
+
+Version 0.5.6
+-------------
+
+* Full text functions that do not compile caused clients to hang forever.
+* Basic authentication backported from master for require_valid_user=true scenario.
+
+Version 0.5.5
+-------------
+
+* Pass query string through analyzer so that the same stemming rules are applied as when indexing.
+
+Version 0.5.4
+-------------
+
+* Allow searching on numeric terms.
+* Fix reindexing bug when index function changes.
+* Enhance the 'welcome' message to include the correct version string.
+
+Version 0.5.3
+-------------
+
+* Permit url-escaped / character in database names.
+
+Version 0.5.2
+-------------
+
+* Make searching thread-safe.
+
+
+Version 0.5.1
+-------------
+
+* Support multiple queries in a single call through the Python script.
+* Allow customization of field boost.
+* Improved handled for emitted null values.
+* Improved date handling.
+
+
+Version 0.5
+-----------
+
+* c-l now runs as a standalone server.
+* Compatibility with CouchDB 0.10.0, 0.10.1 and 0.11.
+* Upgraded to use Lucene 3.0.1.
+* Upgraded to use Tika 0.6.
+* Efficient numeric range queries.
+* Near-realtime indexing updates.
+* Added ability to set multiple q parameters to perform several queries in one call.
