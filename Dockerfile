@@ -42,6 +42,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     gnupg2 \
     iproute2 \
     iputils-ping \
+    less \
     libarchive-tools \
     locales \
     lsof \
@@ -104,42 +105,6 @@ RUN --mount=type=tmpfs,target=/build \
 
 FROM scratch AS sw360thrift
 COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
-
-#--------------------------------------------------------------------------------------------------
-# Couchdb-Lucene
-FROM maven:3.9-eclipse-temurin-11 as sw360clucenebuild
-
-ARG CLUCENE_VERSION
-
-WORKDIR /build
-
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get -qq update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    gettext-base \
-    patch
-
-# Prepare maven from binary to avoid wrong java dependencies and proxy
-COPY scripts/docker-config/mvn-proxy-settings.xml /etc
-COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
-RUN chmod a+x /usr/local/bin/setup_maven_proxy \
-    && setup_maven_proxy
-
-# Prepare source code
-COPY ./scripts/docker-config/couchdb-lucene.ini /var/tmp/couchdb-lucene.ini
-COPY ./scripts/patches/couchdb-lucene.patch /var/tmp/couchdb-lucene.patch
-
-# Build CLucene
-RUN --mount=type=tmpfs,target=/build \
-    --mount=type=cache,target=/root/.m2 \
-    curl -JL https://github.com/rnewson/couchdb-lucene/archive/v"$CLUCENE_VERSION".tar.gz | tar -C /build -xz --strip-components=1 \
-    && patch -p1 < /var/tmp/couchdb-lucene.patch \
-    && cp /var/tmp/couchdb-lucene.ini src/main/resources/couchdb-lucene.ini \
-    && mvn -X install war:war \
-    && cp ./target/*.war /couchdb-lucene.war
-
-FROM scratch AS sw360clucene
-COPY --from=sw360clucenebuild /couchdb-lucene.war /couchdb-lucene.war
 
 #--------------------------------------------------------------------------------------------------
 # SW360
@@ -205,7 +170,6 @@ RUN bash /bin/slim.sh
 FROM scratch AS sw360
 COPY --from=sw360build /sw360_deploy /sw360_deploy
 COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
-COPY --from=sw360clucene /couchdb-lucene.war /sw360_tomcat_webapps
 COPY --from=sw360build /etc/sw360 /etc/sw360
 
 #--------------------------------------------------------------------------------------------------
