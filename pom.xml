@@ -28,12 +28,13 @@
 
   <modules>
     <module>build-configuration</module>
+    <module>third-party</module>
+    <module>utils</module>
     <module>libraries</module>
     <module>backend</module>
     <module>frontend</module>
     <module>rest</module>
     <module>clients</module>
-    <module>utils</module>
   </modules>
 
   <scm>
