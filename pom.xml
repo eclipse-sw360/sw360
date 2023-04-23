@@ -90,6 +90,7 @@
     <commons-codec.version>1.15</commons-codec.version>
     <commons-collection4.version>4.4</commons-collection4.version>
     <commons-compress.version>1.21</commons-compress.version>
+    <commons-configuration.version>1.10</commons-configuration.version>
     <commons-csv.version>1.9.0</commons-csv.version>
     <commons-io.version>2.11.0</commons-io.version>
     <commons-lang3.version>3.12.0</commons-lang3.version>
@@ -105,9 +106,11 @@
     <httpclient.version>4.5.14</httpclient.version>
     <httpcore.version>4.4.16</httpcore.version>
     <jakarta-xml-bind.version>2.3.2</jakarta-xml-bind.version>
-    <javax-annotation.version>1.3.2</javax-annotation.version>
     <javax-activation.version>1.1.1</javax-activation.version>
+    <javax-annotation.version>1.3.2</javax-annotation.version>
+    <jcip-annotations.version>1.0</jcip-annotations.version>
     <jcraft.version>0.1.54</jcraft.version>
+    <jetty.version>11.0.15</jetty.version>
     <jgiven.version>0.17.0</jgiven.version>
     <jquery.confirm.version>3.3.2</jquery.confirm.version>
     <jquery.datatables.buttons.version>1.5.3</jquery.datatables.buttons.version>
@@ -116,21 +119,25 @@
     <jquery.treetable.version>3.2.0</jquery.treetable.version>
     <jquery.ui.version>1.12.1</jquery.ui.version>
     <jquery.validation.version>1.19.0</jquery.validation.version>
+    <json.version>20230227</json.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>4.13.2</junit.version>
-    <liferay.portal.tools.theme.builder.version>1.1.9</liferay.portal.tools.theme.builder.version>
     <liferay.css.builder.version>3.1.0</liferay.css.builder.version>
     <liferay.frontend.css.common.version>6.0.3</liferay.frontend.css.common.version>
     <liferay.frontend.theme.styled.version>6.0.27</liferay.frontend.theme.styled.version>
     <liferay.frontend.theme.unstyled.version>6.0.29</liferay.frontend.theme.unstyled.version>
     <liferay.petra.function.version>5.1.2</liferay.petra.function.version>
     <liferay.portal.kernel.version>43.0.1</liferay.portal.kernel.version>
+    <liferay.portal.tools.theme.builder.version>1.1.9</liferay.portal.tools.theme.builder.version>
     <liferay.util.bridges.version>9.0.6</liferay.util.bridges.version>
     <liferay.util.java.version>17.1.2</liferay.util.java.version>
     <liferay.util.taglib.version>8.4.8</liferay.util.taglib.version>
     <log4j2.version>2.19.0</log4j2.version>
+    <lucene.version>6.6.6</lucene.version>
     <mockito.version>4.7.0</mockito.version>
     <okhttp.version>4.10.0</okhttp.version>
+    <org.spdx.java.spdx.library.version>1.1.1</org.spdx.java.spdx.library.version>
+    <org.spdx.tools.java.version>1.1.5</org.spdx.tools.java.version>
     <package-url.version>1.1.1</package-url.version>
     <poi.version>4.1.2</poi.version>
     <project-lombok.version>1.18.24</project-lombok.version>
@@ -138,17 +145,15 @@
     <resumable.js.version>1.1.0</resumable.js.version>
     <slf4j.version>1.7.30</slf4j.version>
     <spotless.version>2.29.0</spotless.version>
-    <spring.version>5.3.19</spring.version>
     <spring-boot.version>2.7.11</spring-boot.version>
-    <spring-restdocs.version>2.0.6.RELEASE</spring-restdocs.version>
-    <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
-    <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
     <spring-restdocs-asciidoctor.version>2.0.6.RELEASE</spring-restdocs-asciidoctor.version>
+    <spring-restdocs.version>2.0.6.RELEASE</spring-restdocs.version>
+    <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
+    <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
+    <spring.version>5.3.19</spring.version>
     <thrift.version>0.16.0</thrift.version>
+    <tika.version>1.28.5</tika.version>
     <wiremock.version>2.26.0</wiremock.version>
-    <org.spdx.tools.java.version>1.1.5</org.spdx.tools.java.version>
-    <org.spdx.java.spdx.library.version>1.1.1</org.spdx.java.spdx.library.version>
-    <com.googlecode.json-simple.version>1.1.1</com.googlecode.json-simple.version>
 
     <!--  User must provide below property configuration based on his/her liferay deployment
     environment -->
@@ -393,12 +398,6 @@
         <version>${org.spdx.java.spdx.library.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.googlecode.json-simple</groupId>
-        <artifactId>json-simple</artifactId>
-        <version>${com.googlecode.json-simple.version}</version>
-        <scope>compile</scope>
-      </dependency>
-      <dependency>
         <groupId>org.apache.velocity</groupId>
         <artifactId>velocity-engine-core</artifactId>
         <version>2.3</version>
@@ -557,49 +556,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
           <version>${maven-jar-plugin.version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-dependency-plugin</artifactId>
-          <version>${maven-dependency-plugin.version}</version>
-          <executions>
-            <execution>
-              <id>add-build-configuration-resources</id>
-              <goals>
-                <goal>unpack</goal>
-              </goals>
-              <phase>generate-resources</phase>
-              <configuration>
-                <artifactItems combine.children="append">
-                  <artifactItem>
-                    <groupId>org.eclipse.sw360</groupId>
-                    <artifactId>build-configuration</artifactId>
-                    <version>${project.version}</version>
-                    <type>jar</type>
-                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                  </artifactItem>
-                </artifactItems>
-              </configuration>
-            </execution>
-            <execution>
-              <id>add-build-configuration-test-resources</id>
-              <goals>
-                <goal>unpack</goal>
-              </goals>
-              <phase>generate-test-resources</phase>
-              <configuration>
-                <artifactItems combine.children="append">
-                  <artifactItem>
-                    <groupId>org.eclipse.sw360</groupId>
-                    <artifactId>build-configuration</artifactId>
-                    <version>${project.version}</version>
-                    <type>test-jar</type>
-                    <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
-                  </artifactItem>
-                </artifactItems>
-              </configuration>
-            </execution>
-          </executions>
         </plugin>
 
         <plugin>

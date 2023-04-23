@@ -51,12 +51,9 @@ image_build base base "$GIT_REVISION" --build-arg LIFERAY_VERSION="$LIFERAY_VERS
 
 image_build sw360thrift thrift "$THRIFT_VERSION" --build-arg THRIFT_VERSION="$THRIFT_VERSION" "$@"
 
-image_build sw360clucene clucene "$CLUCENE_VERSION" --build-arg CLUCENE_VERSION="$CLUCENE_VERSION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" "$@"
-
 image_build sw360 binaries "$GIT_REVISION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
     --secret id=sw360,src=$SECRETS \
-    --build-context "sw360thrift=docker-image://${DOCKER_IMAGE_ROOT}/thrift:latest" \
-    --build-context "sw360clucene=docker-image://${DOCKER_IMAGE_ROOT}/clucene:latest" "$@"
+    --build-context "sw360thrift=docker-image://${DOCKER_IMAGE_ROOT}/thrift:latest" "$@"
 
 image_build runtime sw360 "$GIT_REVISION" \
     --build-context "base=docker-image://${DOCKER_IMAGE_ROOT}/base:latest" \
