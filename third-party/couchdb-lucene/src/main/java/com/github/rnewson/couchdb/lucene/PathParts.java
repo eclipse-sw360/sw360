@@ -20,6 +20,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.rnewson.couchdb.lucene.util.ServletUtils.getUri;
+
 public class PathParts {
 
     private static final Pattern QUERY_REGEX = Pattern
@@ -31,7 +33,7 @@ public class PathParts {
     private Matcher matcher;
 
     public PathParts(final HttpServletRequest req) {
-        this(req.getRequestURI());
+        this(getUri(req));
     }
 
     public PathParts(final String path) {
