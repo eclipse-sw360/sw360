@@ -329,3 +329,20 @@ include::{snippets}/should_document_get_mysubscriptions_components/http-response
 
 ===== Links
 include::{snippets}/should_document_get_mysubscriptions_components/links.adoc[]
+
+[[resources-mycomponents-components]]
+==== Listing my components
+
+A `GET` request will list all components associated to the user.
+
+===== Response structure
+include::{snippets}/should_document_get_mycomponents_components/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_mycomponents_components/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_mycomponents_components/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_mycomponents_components/links.adoc[]

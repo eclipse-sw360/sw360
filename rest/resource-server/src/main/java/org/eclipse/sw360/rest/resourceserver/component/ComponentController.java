@@ -426,4 +426,28 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         halDefaultVendor.add(vendorSelfLink);
         halComponent.addEmbeddedResource("defaultVendor", halDefaultVendor);
     }
+
+    @RequestMapping(value = COMPONENTS_URL + "/mycomponents", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel>> getMyComponents(Pageable pageable, HttpServletRequest request)
+            throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<Component> sw360Components = componentService.getMyComponentsForUser(sw360User);
+        PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                sw360Components, SW360Constants.TYPE_COMPONENT);
+        List<EntityModel<Component>> componentResources = new ArrayList<>();
+
+        paginationResult.getResources().stream().forEach(c -> {
+            Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, null);
+            EntityModel<Component> embeddedComponentResource = EntityModel.of(embeddedComponent);
+            if (embeddedComponentResource == null) {
+                return;
+            }
+            componentResources.add(embeddedComponentResource);
+        });
+
+        CollectionModel finalResources = restControllerHelper.generatePagesResource(paginationResult,
+                componentResources);
+        HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(finalResources, status);
+    }
 }
