@@ -224,6 +224,7 @@ COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/slim-wars/*.
 COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/*.jar /app/sw360/tomcat/webapps/
 # Shared streamlined jar libs
 COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
+
 # Modified etc
 COPY --chown=$USERNAME:$USERNAME --from=sw360 /etc/sw360 /etc/sw360
 

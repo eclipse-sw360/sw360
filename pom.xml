@@ -117,8 +117,8 @@
     <jquery.validation.version>1.19.0</jquery.validation.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>4.13.2</junit.version>
-    <liferay.portal.tools.theme.builder.version>1.1.9</liferay.portal.tools.theme.builder.version>
-    <liferay.css.builder.version>3.1.0</liferay.css.builder.version>
+    <liferay.portal.tools.theme.builder.version>1.1.11</liferay.portal.tools.theme.builder.version>
+    <liferay.css.builder.version>3.1.2</liferay.css.builder.version>
     <liferay.frontend.css.common.version>6.0.3</liferay.frontend.css.common.version>
     <liferay.frontend.theme.styled.version>6.0.27</liferay.frontend.theme.styled.version>
     <liferay.frontend.theme.unstyled.version>6.0.29</liferay.frontend.theme.unstyled.version>

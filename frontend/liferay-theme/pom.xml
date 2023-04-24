@@ -10,17 +10,19 @@
   ~ SPDX-License-Identifier: EPL-2.0
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <artifactId>frontend</artifactId>
-        <groupId>org.eclipse.sw360</groupId>
-        <version>${revision}</version>
-    </parent>
+	<parent>
+		<artifactId>frontend</artifactId>
+		<groupId>org.eclipse.sw360</groupId>
+		<version>${revision}</version>
+	</parent>
 
-    <artifactId>liferay-theme</artifactId>
-    <packaging>war</packaging>
+	<artifactId>liferay-theme</artifactId>
+	<packaging>war</packaging>
 
 	<properties>
 		<com.liferay.css.builder.outputDir>${project.build.directory}/build-css</com.liferay.css.builder.outputDir>
@@ -30,7 +32,7 @@
 	</properties>
 
 	<build>
-        <finalName>org.eclipse.sw360.liferay-theme-${project.version}</finalName>
+		<finalName>org.eclipse.sw360.liferay-theme-${project.version}</finalName>
 		<plugins>
 			<plugin>
 				<artifactId>maven-war-plugin</artifactId>
@@ -109,6 +111,12 @@
 			<groupId>com.liferay</groupId>
 			<artifactId>com.liferay.frontend.theme.unstyled</artifactId>
 			<version>${liferay.frontend.theme.unstyled.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.liferay.portal</groupId>
+			<artifactId>com.liferay.portal.kernel</artifactId>
+			<version>${liferay.portal.kernel.version}</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
