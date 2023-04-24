@@ -24,6 +24,8 @@ on:
 env:
   REGISTRY: ghcr.io
 
+permissions: write-all
+
 jobs:
   docker_push:
     if: ${{ github.event.schedule }} == '0 0 * * *' || ${{ github.event.act }}
