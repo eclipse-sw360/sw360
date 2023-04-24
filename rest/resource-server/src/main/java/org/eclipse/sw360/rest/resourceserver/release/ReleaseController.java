@@ -218,9 +218,25 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             vulnerabilityResources.add(EntityModel.of(vulnerability));
         });
         CollectionModel<EntityModel<Vulnerability>> resources = CollectionModel.of(vulnerabilityResources);
-        return new ResponseEntity<>(resources,HttpStatus.OK);
+        return new ResponseEntity<>(resources, HttpStatus.OK);
     }
-    
+
+    @GetMapping(value = RELEASES_URL + "/mySubscriptions")
+    public ResponseEntity<CollectionModel<EntityModel>> getReleaseSubscription() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<Release> sw360Releases = releaseService.getReleaseSubscriptions(sw360User);
+
+        List<EntityModel> resources = new ArrayList<>();
+        sw360Releases.forEach(c -> {
+            Release embeddedComponent = restControllerHelper.convertToEmbeddedRelease(c);
+            resources.add(EntityModel.of(embeddedComponent));
+        });
+
+        CollectionModel<EntityModel> finalResources = restControllerHelper.createResources(resources);
+        HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(finalResources, status);
+    }
+
     @RequestMapping(value = RELEASES_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
             throws TException {
