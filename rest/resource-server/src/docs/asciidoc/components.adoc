@@ -333,7 +333,7 @@ include::{snippets}/should_document_get_mysubscriptions_components/links.adoc[]
 [[resources-mycomponents-components]]
 ==== Listing my components
 
-A `GET` request will list all of the service's getMyComponents components.
+A `GET` request will list all components associated to the user.
 
 ===== Response structure
 include::{snippets}/should_document_get_mycomponents_components/response-fields.adoc[]

@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -30,6 +31,7 @@ import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
 
 /**
  * Implementation of the Thrift service
@@ -101,9 +103,8 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public RequestStatus addUser(User user) throws TException {
-        assertNotNull(user);
-        assertNotNull(user.getEmail());
+    public AddDocumentRequestSummary addUser(User user) throws TException {
+        assertUser(user);
         return db.addUser(user);
     }
 

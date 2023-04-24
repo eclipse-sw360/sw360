@@ -53,7 +53,7 @@ public class ProjectTest extends TestIntegrationBase {
         project.setDescription("Project description");
         projectList.add(project);
 
-        given(this.projectServiceMock.getProjectsForUser(any())).willReturn(projectList);
+        given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
 
         User user = new User();
         user.setId("123456789");

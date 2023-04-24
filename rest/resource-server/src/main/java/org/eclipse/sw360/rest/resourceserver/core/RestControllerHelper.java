@@ -121,7 +121,14 @@ public class RestControllerHelper<T> {
 
     public User getSw360UserFromAuthentication() {
         try {
-            String userId = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String userId;
+            Object principle = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principle instanceof String) {
+                userId = principle.toString();
+            } else {
+                org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) principle;
+                userId = user.getUsername();
+            }
             return userService.getUserByEmailOrExternalId(userId);
         } catch (RuntimeException e) {
             throw new AuthenticationServiceException("Could not load user from authentication.");
@@ -137,6 +144,18 @@ public class RestControllerHelper<T> {
             paginationResult = new PaginationResult<>(resources);
         }
         return paginationResult;
+    }
+
+    public PaginationResult<T> paginationResultFromPaginatedList(HttpServletRequest request, Pageable pageable,
+                                                                 List<T> resources, String resourceType, int totalCount)
+            throws ResourceClassNotFoundException {
+        if (!requestContainsPaging(request)) {
+            request.setAttribute(PAGINATION_PARAM_PAGE, pageable.getPageNumber());
+            request.setAttribute(PAGINATION_PARAM_PAGE_ENTRIES, pageable.getPageSize());
+        }
+        PaginationOptions<T> paginationOptions = paginationOptionsFromPageable(pageable, resourceType);
+        return resourceListController.getPaginationResultFromPaginatedList(resources,
+                paginationOptions, totalCount);
     }
 
     private boolean requestContainsPaging(HttpServletRequest request) {

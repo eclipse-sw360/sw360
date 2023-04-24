@@ -48,6 +48,7 @@ import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.Link;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -95,24 +96,14 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public static final ExecutorService releaseExecutor = Executors.newFixedThreadPool(10);
 
-    public Set<Project> getProjectsForUser(User sw360User) throws TException {
+    public Set<Project> getProjectsForUser(User sw360User, Pageable pageable) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        int total = sw360ProjectClient.getMyAccessibleProjectCounts(sw360User);
-        PaginationData pageData = new PaginationData();
-        pageData.setAscending(true);
-        Map<PaginationData, List<Project>> pageDtToProjects;
-        Set<Project> projects = new HashSet<>();
-        int displayStart = 0;
-        int rowsPerPage = 500;
-        while (0 < total) {
-            pageData.setDisplayStart(displayStart);
-            pageData.setRowsPerPage(rowsPerPage);
-            displayStart = displayStart + rowsPerPage;
-            pageDtToProjects = sw360ProjectClient.getAccessibleProjectsSummaryWithPagination(sw360User, pageData);
-            projects.addAll(pageDtToProjects.entrySet().iterator().next().getValue());
-            total = total - rowsPerPage;
-        }
-        return projects;
+        PaginationData pageData = new PaginationData()
+                .setDisplayStart((int) pageable.getOffset())
+                .setRowsPerPage(pageable.getPageSize())
+                .setSortColumnNumber(0);
+        Map<PaginationData, List<Project>> pageDtToProjects = sw360ProjectClient.getAccessibleProjectsSummaryWithPagination(sw360User, pageData);
+        return new HashSet<>(pageDtToProjects.entrySet().iterator().next().getValue());
     }
 
     public Project getProjectForUserById(String projectId, User sw360User) throws TException {
@@ -478,5 +469,16 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public List<Project> getMyProjects(User user, Map<String, Boolean> userRoles) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         return sw360ProjectClient.getMyProjects(user, userRoles);
+    }
+
+    /**
+     * Get count of projects accessible by given user.
+     * @param sw360User User to get the count for.
+     * @return Total count of projects accessible by user.
+     * @throws TException
+     */
+    public int getMyAccessibleProjectCounts(User sw360User) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.getMyAccessibleProjectCounts(sw360User);
     }
 }

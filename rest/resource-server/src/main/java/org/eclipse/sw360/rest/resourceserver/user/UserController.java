@@ -12,6 +12,9 @@ package org.eclipse.sw360.rest.resourceserver.user;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -24,11 +27,17 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +55,9 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @NonNull
     private final Sw360UserService userService;
+
+    @NonNull
+    private final PasswordEncoder passwordEncoder;
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
@@ -90,6 +102,22 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         User sw360User = userService.getUser(id);
         HalResource<User> halResource = createHalUser(sw360User);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
+    }
+
+    @PostMapping(value = USERS_URL)
+    public ResponseEntity<EntityModel<User>> createUser(@RequestBody User user) throws TException {
+        if(CommonUtils.isNullEmptyOrWhitespace(user.getPassword())) {
+            throw new HttpMessageNotReadableException("Password can not be null or empty or whitespace!");
+        }
+        String encodedPassword = passwordEncoder.encode(user.getPassword());
+        user.setPassword(encodedPassword);
+        User createdUser = userService.addUser(user);
+        HalResource<User> halResource = createHalUser(createdUser);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest().path("/{id}")
+                .buildAndExpand(createdUser.getId()).toUri();
+
+        return ResponseEntity.created(location).body(halResource);
     }
 
     @Override

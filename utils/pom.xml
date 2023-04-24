@@ -10,7 +10,9 @@
   ~ SPDX-License-Identifier: EPL-2.0
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>sw360</artifactId>
         <groupId>org.eclipse.sw360</groupId>
@@ -34,7 +36,8 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <!-- <outputDirectory>${session.executionRootDirectory}/deps/jars</outputDirectory> -->
+                            <!--
+                            <outputDirectory>${session.executionRootDirectory}/deps/jars</outputDirectory> -->
                             <outputDirectory>${jars.deploy.dir}</outputDirectory>
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>false</overWriteSnapshots>
@@ -44,7 +47,7 @@
                     </execution>
                 </executions>
             </plugin>
-          </plugins>
+        </plugins>
     </build>
 
     <dependencies>
@@ -56,22 +59,18 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>${jackson.annotations.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.core.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.databind.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>${gson.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>

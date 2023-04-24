@@ -698,7 +698,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     public void should_document_get_mycomponents_components() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
 
-        mockMvc.perform(get("/api/components/getMyComponents")
+        mockMvc.perform(get("/api/components/mycomponents")
                 .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(

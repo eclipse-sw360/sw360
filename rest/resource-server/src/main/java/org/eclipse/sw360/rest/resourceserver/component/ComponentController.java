@@ -427,7 +427,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         halComponent.addEmbeddedResource("defaultVendor", halDefaultVendor);
     }
 
-    @RequestMapping(value = COMPONENTS_URL + "/getMyComponents", method = RequestMethod.GET)
+    @RequestMapping(value = COMPONENTS_URL + "/mycomponents", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel>> getMyComponents(Pageable pageable, HttpServletRequest request)
             throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
