@@ -18,6 +18,8 @@ on:
     paths-ignore:
       - "**.md"
 
+permissions: write-all
+
 env:
   COUCHDB_USER: admin
   COUCHDB_PASSWORD: password
