@@ -134,6 +134,11 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return releaseById;
     }
 
+    public List<Release> getReleaseSubscriptions(User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.getSubscribedReleases(sw360User);
+    }
+
     @Override
     public Set<Release> searchByExternalIds(Map<String, Set<String>> externalIds, User user) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();

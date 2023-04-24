@@ -393,3 +393,24 @@ include::{snippets}/should_document_get_release_vulnerabilities/http-response.ad
 
 ===== Links
 include::{snippets}/should_document_get_release_vulnerabilities/links.adoc[]
+
+[[resources-release-subscription]]
+==== Listing releases subscription
+
+A `GET` request will list all the service's releases subscription.
+
+===== Response structure
+
+include::{snippets}/should_document_get_release_subscription/response-fields.adoc[]
+
+===== Example request
+
+include::{snippets}/should_document_get_release_subscription/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_release_subscription/http-response.adoc[]
+
+===== Links
+
+include::{snippets}/should_document_get_release_subscription/links.adoc[]
