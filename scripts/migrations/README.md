@@ -100,6 +100,7 @@ To migrate it is recommended to do this in the following order:
 - `053_remove_whitespace_component_name.py`
 - `054_remove_inactiveUsers_from_moderators.py`
 - `055_deactivateEmailNotification.py`
+- `056_dataReduction.py`
 
 ### 17.0.0 -> 17.0.1
 
