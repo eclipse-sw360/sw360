@@ -31,6 +31,22 @@ include::{snippets}/should_document_get_components/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_get_components/links.adoc[]
 
+[[resources-components-list-all-details]]
+==== Listing components with all details
+
+A `GET` request will list all of the service's components with all details.
+
+===== Request parameter
+include::{snippets}/should_document_get_components_with_all_details/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_components_with_all_details/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_components_with_all_details/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_components_with_all_details/http-response.adoc[]
 
 [[resources-recent-components-list]]
 ==== Listing recent components

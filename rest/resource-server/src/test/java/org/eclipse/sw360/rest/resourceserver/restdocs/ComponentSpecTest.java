@@ -14,6 +14,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import com.google.common.collect.ImmutableSet;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
@@ -280,6 +281,75 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
+
+    @Test
+    public void should_document_get_components_with_all_details() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/components")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("allDetails", "true")
+                        .param("page", "0")
+                        .param("page_entries", "5")
+                        .param("sort", "name,desc")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("allDetails").description("Flag to get components with all details. Possible values are `<true|false>`"),
+                                parameterWithName("page").description("Page of components"),
+                                parameterWithName("page_entries").description("Amount of components per page"),
+                                parameterWithName("sort").description("Defines order of the components")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
+                        responseFields(
+
+                                subsectionWithPath("_embedded.sw360:components.[]name").description("The name of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]description").description("The component description"),
+                                subsectionWithPath("_embedded.sw360:components.[]createdOn").description("The date the component was created"),
+                                subsectionWithPath("_embedded.sw360:components.[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:components.[]componentOwner").description("The owner of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]ownerAccountingUnit").description("The owner accounting unit of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]ownerGroup").description("The owner group of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]ownerCountry").description("The owner country of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]visbility").description("The component visibility, possible values are: " + Arrays.asList(Visibility.values())),
+                                subsectionWithPath("_embedded.sw360:components.[]externalIds").description("When components are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
+                                subsectionWithPath("_embedded.sw360:components.[]additionalData").description("A place to store additional data used by external tools").optional(),
+
+                                subsectionWithPath("_embedded.sw360:components.[]categories").description("The component categories"),
+                                subsectionWithPath("_embedded.sw360:components.[]languages").description("The language of the component"),
+
+                                subsectionWithPath("_embedded.sw360:components.[]operatingSystems").description("The OS on which the component operates"),
+                                subsectionWithPath("_embedded.sw360:components.[]mailinglist").description("Component mailing lists"),
+                                subsectionWithPath("_embedded.sw360:components.[]setVisbility").description("The visibility of the component"),
+
+                                subsectionWithPath("_embedded.sw360:components.[]setBusinessUnit").description("The business unit this component belongs to"),
+                                subsectionWithPath("_embedded.sw360:components.[]_links").description("Self <<resources-index-links,Links>> to Component resource").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:moderators").description("An array of all component moderators with email").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:releases").description("An array of all releases").optional(),
+
+                                subsectionWithPath("_embedded.sw360:components.[]homepage").description("The homepage url of the component").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.email").description("The email of user who created this Component").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.deactivated").description("The user is activated or deactivated").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy._links").description("Self <<resources-index-links,Links>> to Component resource").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]filename").description("Attached file name").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]sha1").description("The attachment sha1 value").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]_links").description("Self <<resources-index-links,Links>> to Component resource").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:vendors").description("The vendors list").optional(),
+
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of components per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing components"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
+
+                        )));
+    }
+
     @Test
     public void should_document_get_mysubscriptions_components() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);

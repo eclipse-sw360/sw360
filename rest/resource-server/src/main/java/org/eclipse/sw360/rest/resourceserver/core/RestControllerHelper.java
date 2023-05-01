@@ -252,7 +252,8 @@ public class RestControllerHelper<T> {
 
         for (String moderatorEmail : moderators) {
             User sw360User = getUserByEmail(moderatorEmail);
-            addEmbeddedUser(halResource, sw360User, "sw360:moderators");
+            if(sw360User!=null)
+                addEmbeddedUser(halResource, sw360User, "sw360:moderators");
         }
     }
 
@@ -323,9 +324,11 @@ public class RestControllerHelper<T> {
         HalResource<Vendor> halVendor = new HalResource<>(embeddedVendor);
         try {
             Vendor vendorByFullName = vendorService.getVendorByFullName(vendorFullName);
-            Link vendorSelfLink = linkTo(UserController.class)
-                    .slash("api" + VendorController.VENDORS_URL + "/" + vendorByFullName.getId()).withSelfRel();
-            halVendor.add(vendorSelfLink);
+            if(vendorByFullName != null) {
+                Link vendorSelfLink = linkTo(UserController.class)
+                        .slash("api" + VendorController.VENDORS_URL + "/" + vendorByFullName.getId()).withSelfRel();
+                halVendor.add(vendorSelfLink);
+            }
             return halVendor;
         } catch (Exception e) {
             LOGGER.error("cannot create self link for vendor with full name: " + vendorFullName);

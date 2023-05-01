@@ -414,7 +414,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             restControllerHelper.addEmbeddedAttachments(halComponent, sw360Component.getAttachments());
         }
 
-        restControllerHelper.addEmbeddedUser(halComponent, componentCreator, "createdBy");
+        if(null!= componentCreator)
+            restControllerHelper.addEmbeddedUser(halComponent, componentCreator, "createdBy");
 
         return halComponent;
     }
