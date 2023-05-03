@@ -36,6 +36,7 @@
     <jsp:useBean id="isUserAllowedToMerge" type="java.lang.Boolean" scope="request"/>
     <core_rt:set var="cotsMode" value="<%=component.componentType == ComponentType.COTS%>"/>
     <jsp:useBean id="vulnerabilityVerificationEditable" type="java.lang.Boolean" scope="request"/>
+    <jsp:useBean id="isSpdxDocument" type="java.lang.Boolean" scope="request" />
     <core_rt:if test="${vulnerabilityVerificationEditable}">
         <jsp:useBean id="numberOfIncorrectVulnerabilities" type="java.lang.Long" scope="request"/>
     </core_rt:if>

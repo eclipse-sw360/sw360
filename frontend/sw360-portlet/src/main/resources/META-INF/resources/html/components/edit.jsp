@@ -152,6 +152,7 @@
                                         </tbody>
                                     </table>
                                     <button type="button" class="btn btn-secondary mt-3" onclick="window.location.href='<%=addReleaseURL%>'"><liferay-ui:message key="add.releases" /></button>
+                                    <%@include file="/html/utils/includes/importBomForComponent.jspf" %>
                                 </div>
                                 <core_rt:if test="${not componentDivAddMode}" >
                                     <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">

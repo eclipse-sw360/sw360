@@ -25,6 +25,7 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
+import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentDatabaseHandler;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
@@ -65,6 +66,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import org.spdx.library.InvalidSPDXAnalysisException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -100,6 +103,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private static final String ECC_AUTOSET_VALUE = "N";
     private static final String DEFAULT_CATEGORY = "Default_Category";
     private static final String ECC_FIELDS_VALUE_RESET = "";
+    private static final String NO_COMPONENT = "Don't have Component created!";
+    private static final String NO_RELEASE = "Don't have Release created!";
+    private static final List<String> listComponentName = new ArrayList<>();
+    private static final Map<String, String> mapReleaseName = new HashMap<>();
 
     /**
      * Connection to the couchDB database
@@ -113,6 +120,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private final AttachmentConnector attachmentConnector;
     private SvmConnector svmConnector;
+    private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
     /**
      * Access to moderation
      */
@@ -162,6 +170,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
+
+        // Create the spdx document database handler
+        this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(httpClient, DatabaseSettings.COUCH_DB_SPDX);
     }
 
     public ComponentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
@@ -540,6 +551,20 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         List<Release> duplicates = releaseRepository.searchByNameAndVersion(releaseName, releaseVersion);
         return duplicates.size()>0;
+    }
+
+    private void isDuplicateComponent(List<String> componentNames, boolean caseInsenstive) {
+        for (String name : componentNames) {
+            if(!isDuplicate(name, caseInsenstive))
+               listComponentName.add(name);
+        }
+    }
+
+    private void isDuplicateRelease(Map<String, String>  releases) {
+        for (Map.Entry<String, String> release : releases.entrySet()) {
+            if(!isDuplicate(release.getKey(), release.getValue()))
+                mapReleaseName.put(release.getKey(), release.getValue());
+        }
     }
 
     private void resetReleaseDependentFields(Component component) {
@@ -1728,7 +1753,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Component componentBefore = componentRepository.get(release.getComponentId());
             // Remove release id from component
             removeReleaseId(id, release.componentId);
-            Component componentAfter=removeReleaseAndCleanUp(release, user);
+            // Remove spdx if exist
+            String spdxId = release.getSpdxId();
+            if (CommonUtils.isNotNullEmptyOrWhitespace(spdxId)) {
+                spdxDocumentDatabaseHandler.deleteSPDXDocument(spdxId, user);
+                release = releaseRepository.get(id);
+            }
+            Component componentAfter = removeReleaseAndCleanUp(release, user);
             dbHandlerUtil.addChangeLogs(null, release, user.getEmail(), Operation.DELETE, attachmentConnector,
                     Lists.newArrayList(), null, null);
             dbHandlerUtil.addChangeLogs(componentAfter, componentBefore, user.getEmail(), Operation.UPDATE,
@@ -2543,24 +2574,41 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
                 ImportBomRequestPreparation importBomRequestPreparation = spdxBOMImporter.prepareImportSpdxBOMAsRelease(sourceFile);
                 if (RequestStatus.SUCCESS.equals(importBomRequestPreparation.getRequestStatus())) {
-                    String name = importBomRequestPreparation.getName();
-                    String version = importBomRequestPreparation.getVersion();
-                    if (!isDuplicate(name, true)) {
-                        importBomRequestPreparation.setIsComponentDuplicate(false);
-                        importBomRequestPreparation.setIsReleaseDuplicate(false);
-                    } else if (!isDuplicate(name, version)) {
-                        importBomRequestPreparation.setIsComponentDuplicate(true);
-                        importBomRequestPreparation.setIsReleaseDuplicate(false);
-                    } else {
+                    List<String> componentsName = getComponentsName(importBomRequestPreparation.getComponentsName());
+                    Map<String, String> releasesName = getReleasesName(importBomRequestPreparation.getReleasesName());
+                    isDuplicateRelease(releasesName);
+                    isDuplicateComponent(componentsName,true);
+                    if (listComponentName.size() == 0 && mapReleaseName.size() == 0){
                         importBomRequestPreparation.setIsComponentDuplicate(true);
                         importBomRequestPreparation.setIsReleaseDuplicate(true);
                     }
+                    else {
+                        String componentName = "";
+                        String releaseName = "";
+                        if (listComponentName.isEmpty()){
+                            componentName = NO_COMPONENT;
+                        } else {
+                            componentName = listComponentName.stream().collect(Collectors.joining(" , "));
+                        }
+                        if (mapReleaseName.isEmpty()){
+                            releaseName = NO_RELEASE;
+                        } else {
+                            releaseName = mapReleaseName.keySet().stream().map(key -> key + " " + mapReleaseName.get(key)).collect(Collectors.joining(" , "));
+                        }
+                        listComponentName.clear();
+                        mapReleaseName.clear();
+                        importBomRequestPreparation.setComponentsName(componentName);
+                        importBomRequestPreparation.setReleasesName(releaseName);
+                        importBomRequestPreparation.setIsComponentDuplicate(false);
+                        importBomRequestPreparation.setIsReleaseDuplicate(false);
+                    }
+
                     importBomRequestPreparation.setMessage(sourceFile.getAbsolutePath());
                 }
 
                 return importBomRequestPreparation;
             }
-        } catch (IOException e) {
+        } catch (IOException | InvalidSPDXAnalysisException e) {
             throw new SW360Exception(e.getMessage());
         }
     }
@@ -2738,4 +2786,18 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 "component", url);
     }
 
+    public List<String> getComponentsName(String components) {
+        String[] parts = components.split(",");
+        return Arrays.asList(parts);
+    }
+
+    public Map<String, String> getReleasesName(String releases) {
+        Map<String,String> releaseNames= new HashMap<>();
+        String[] parts = releases.split(",");
+        for (int i = 0; i < parts.length; i++) {
+            String[] releaseName = parts[i].split(" ");
+            releaseNames.put(releaseName[0], releaseName[1]);
+        }
+        return releaseNames;
+    }
 }

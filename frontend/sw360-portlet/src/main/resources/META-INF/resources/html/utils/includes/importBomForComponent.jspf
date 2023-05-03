@@ -46,7 +46,9 @@
             <div class="modal-content">
                 <div class="modal-body container" id="spdxBomUploadUpload">
                     <h2>Upload BOM document as ${documentType}</h2>
-                    <p>This currently only supports SPDX RDF/XML or JSON files with a uniq described top level node.</p>
+                    This currently only supports SPDX RDF/XML files with a uniq described top level node.
+                    <br>
+                    If the wrong SPDX is entered, the information will not be registered correctly.
                     <div class="lfr-dynamic-uploader">
                         <div class="lfr-upload-container">
                             <div id="spdx-fileupload-drop" class="upload-target">
@@ -62,7 +64,6 @@
                 <div class="modal-body container d-none" id="spdxBomUploadStatus"></div>
                 <div id="spdxBomUploadAction" class="modal-footer">
                     <button id="importSBOM" type="button" class="btn btn-primary" data-dismiss="modal" style="display: none">Import</button>
-                    <button id="importSBOMAsNew" type="button" class="btn btn-secondary" data-dismiss="modal" style="display: none">Import As New</button>
                     <button id="cancelImportSBOM" type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
                 </div>
             </div>
@@ -90,7 +91,7 @@
         var attachmentContentId = '';
         var rdfFilePath = '';
 
-        const neededKeys = ['isComponentDuplicate','isReleaseDuplicate','name','version'];
+        const neededKeys = ['isComponentDuplicate','isReleaseDuplicate','componentsName','releasesName'];
 
         function getAttachmentIdPromise(file) {
             var data = {};
@@ -125,21 +126,6 @@
 
             return $.ajax({
                 url: urls.importBom,
-                cache: false,
-                dataType: "json",
-                data: data
-            });
-        }
-
-        function importBomAsNewFromAttachment(attachmentContentId, newReleaseVersion, rdfFilePath) {
-            var data = {};
-
-            data[portletNamespace + "<%=PortalConstants.ATTACHMENT_CONTENT_ID%>"] = attachmentContentId;
-            data[portletNamespace + "<%=PortalConstants.NEW_RELEASE_VERSION%>"] = newReleaseVersion;
-            data[portletNamespace + "<%=PortalConstants.RDF_FILE_PATH%>"] = rdfFilePath;
-
-            return $.ajax({
-                url: urls.importBomAsNew,
                 cache: false,
                 dataType: "json",
                 data: data
@@ -181,52 +167,60 @@
 
                 console.log("prepareImportsuccess...");
 
-                if (rdfFilePath == 'error-read-file') {
+                if (rdfFilePath == 'error-convert') {
                     console.log("File import is Invalid");
                     $('#importSBOM').hide();
                     $('#importSBOMAsNew').hide();
                     $('#cancelImportSBOM').show();
-                    statusDiv.html("<h2 style='color:red; text-align: center'>-- File import is Invalid --</h2>");
+                    statusDiv.html("<h2 style='color:red; text-align: center'>-- File SPDX is incomplete --</h2>");
                     contentDiv.show();
                 } else {
                     if (neededKeys.every(key => Object.keys(data).includes(key))) {
                         $('#importSBOM').css('display', 'block');
-
-                        componentName = data.name;
-
-                        componentVersion = data.version;
-
+                        componentName = data.componentsName;
+                        releases      = data.releasesName;
                         actualComponentName = $('#import-spdx-bom').data().componentName;
-
                         if (actualComponentName) {
-                            if (actualComponentName === componentName) {
-                                if (!data.isReleaseDuplicate) {
-                                    statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
-                                    statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
-                                } else {
-                                    statusDiv.html("<h3>The Release existed, do you want:</h3>");
-                                    statusDiv.append("<div>Update Release: <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
-                                    statusDiv.append("<div>Create new Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
-                                    $('#importSBOMAsNew').show();
+                            if (componentName === "Don't have Component created!" ) {
+                                const split = releases.split(' ');
+                                const name = split[0];
+                                if (name === actualComponentName) {
+                                    if (!data.isReleaseDuplicate) {
+                                        statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
+                                        statusDiv.append("<div>New Release: <b>"+ releases+"</b></div>");
+                                    } else {
+                                        statusDiv.html("<h3>The Release existed, do you want:</h3>");
+                                        statusDiv.append("<div>Update Release: <b>"+ releases+"</b> (please choose Import button)</div>");
+                                        statusDiv.append("<div>Create new Release: <b>"+componentName+" ("+ releases+"-sbom-"+attachmentContentId.substring(0,6)+")</b></div>");
+                                    }
                                 }
                             } else {
-                                $('#importSBOM').hide();
-                                statusDiv.html("<h3>The provided SPDX file is not a release of \""+actualComponentName+"\" component.</h3>");
-                                contentDiv.show();
+                                if (actualComponentName === componentName) {
+                                    if (!data.isReleaseDuplicate) {
+                                        statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
+                                        statusDiv.append("<div>New Release: <b>"+ releases+"</b></div>");
+                                    } else {
+                                        statusDiv.html("<h3>The Release existed, do you want:</h3>");
+                                        statusDiv.append("<div>Update Release: <b>"+ releases+"</b> (please choose Import button)</div>");
+                                        statusDiv.append("<div>Create new Release: <b>"+componentName+" ("+ releases+"-sbom-"+attachmentContentId.substring(0,6)+")</b></div>");
+                                    }
+                                } else {
+                                    $('#importSBOM').hide();
+                                    statusDiv.html("<h3>The provided SPDX file is not a release of \""+actualComponentName+"\" component.</h3>");
+                                    contentDiv.show();
+                                }
                             }
                         } else {
                             if (!data.isComponentDuplicate) {
                                 statusDiv.html("<h3>The new Component and new Release will be created, do you want to import?</h3>");
                                 statusDiv.append("<div>New Component: <b>"+componentName+"</b></div>");
-                                statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
+                                statusDiv.append("<div>New Release: <b>"+ releases+"</b></div>");
                             } else if (!data.isReleaseDuplicate) {
                                 statusDiv.html("<h3>The new Release will be created, do you want to import?</h3>");
-                                statusDiv.append("<div>New Release: <b>"+componentName+" "+componentVersion+"</b></div>");
+                                statusDiv.append("<div>New Release: <b>"+ releases+"</b></div>");
                             } else {
-                                statusDiv.html("<h3>The Component and Release existed, do you want:</h3>");
-                                statusDiv.append("<div>Update Release: <b>"+componentName+" "+componentVersion+"</b> (please choose Import button)</div>");
-                                statusDiv.append("<div>Create new Component and Release: <b>"+componentName+" ("+componentVersion+"-sbom-"+attachmentContentId.substring(0,6)+")</b> (please choose Import As New button)</div>");
-                                $('#importSBOMAsNew').show();
+                                statusDiv.html("<h3>The Component and Release existed !</h3>");
+                                $('#importSBOM').hide();
                             }
                         }
                     } else {
@@ -246,7 +240,6 @@
                 }
             }).catch(function (err) {
                 $('#importSBOM').hide();
-                $('#importSBOMAsNew').hide();
                 $('#cancelImportSBOM').show();
                 statusDiv.html("<h2>Failed :(</h2>");
                 statusDiv.append("<div>" + JSON.stringify(err) + "</div>");
@@ -273,25 +266,9 @@
                     contentDiv.show();
 
                     $('#importSBOM').hide();
-                    $('#importSBOMAsNew').hide();
-
                     $('#importSBOM').on('click', function() {
                         if (attachmentContentId === "") return;
                         importBomFromAttachment(attachmentContentId, rdfFilePath).then(function (data) {
-                            statusDiv.html("<h2>Imported</h2>");
-                            if ('redirectUrl' in data) {
-                                statusDiv.append("<div>Created as <a href=\"" + data.redirectUrl + "\">" + data.message + "</a>, redirecting ...</div>");
-                                window.location.href = data.redirectUrl;
-                            } else {
-                                statusDiv.append("<div>" + JSON.stringify(data) + "</div>");
-                                contentDiv.show();
-                            }
-                        });
-                    });
-
-                    $('#importSBOMAsNew').on('click', function() {
-                        if (attachmentContentId === "") return;
-                        importBomAsNewFromAttachment(attachmentContentId, componentVersion+"-sbom-"+attachmentContentId.substring(0,6), rdfFilePath).then(function (data) {
                             statusDiv.html("<h2>Imported</h2>");
                             if ('redirectUrl' in data) {
                                 statusDiv.append("<div>Created as <a href=\"" + data.redirectUrl + "\">" + data.message + "</a>, redirecting ...</div>");

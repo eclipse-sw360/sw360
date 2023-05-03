@@ -41,6 +41,9 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -313,6 +316,27 @@ public class SW360Utils {
             return "New User";
         }
         return user.getEmail();
+    }
+
+    public static String printName(SPDXDocument spdx) {
+        if (spdx == null || isNullOrEmpty(spdx.getId())) {
+            return "New SPDX Document";
+        }
+        return spdx.getId();
+    }
+
+    public static String printName(DocumentCreationInformation documentCreationInfo) {
+        if (documentCreationInfo == null || isNullOrEmpty(documentCreationInfo.getName())) {
+            return "New SPDX Document Creation Info";
+        }
+        return documentCreationInfo.getName();
+    }
+
+    public static String printName(PackageInformation packageInfo) {
+        if (packageInfo == null || isNullOrEmpty(packageInfo.getName())) {
+            return "New SPDX Package Info";
+        }
+        return packageInfo.getName();
     }
 
     public static String printFullname(User user) {

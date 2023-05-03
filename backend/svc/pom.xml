@@ -42,6 +42,9 @@
         <module>svc-wsimport</module>
         <module>svc-changelogs</module>
         <module>svc-health</module>
+        <module>svc-spdxdocument</module>
+        <module>svc-spdxdocumentcreationinfo</module>
+        <module>svc-spdxpackageinfo</module>
     </modules>
 
     <build>
