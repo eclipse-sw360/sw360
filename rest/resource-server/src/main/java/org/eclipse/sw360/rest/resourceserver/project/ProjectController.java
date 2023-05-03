@@ -38,6 +38,7 @@ import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -1022,6 +1023,41 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         HttpStatus status = attachmentUsageMap == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(attachmentUsageMap, status);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = PROJECTS_URL + "/import/SBOM", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<?> importSBOM(@RequestParam(value = "type", required = true) String type,
+                                                  @RequestBody MultipartFile file) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Attachment attachment = null;
+        final RequestSummary requestSummary;
+        if (!type.equalsIgnoreCase("SPDX")) {
+            return new ResponseEntity<String>("Invalid SBOM file type. It currently only supports SPDX(.rdf/.xml) files.",
+                    HttpStatus.BAD_REQUEST);
+        }
+        try {
+            attachment = attachmentService.uploadAttachment(file, new Attachment(), sw360User);
+            try {
+                requestSummary = projectService.importSBOM(sw360User, attachment.getAttachmentContentId());
+            } catch (Exception e) {
+                log.error("Failed to import SBOM", e.getMessage());
+                throw new RuntimeException(e.getMessage());
+            }
+        } catch (IOException e) {
+            log.error("failed to upload attachment", e);
+            throw new RuntimeException("failed to upload attachment", e);
+        }
+
+        String projectId = requestSummary.getMessage();
+
+        if (!(requestSummary.requestStatus == RequestStatus.SUCCESS && CommonUtils.isNotNullEmptyOrWhitespace(projectId))) {
+            return new ResponseEntity<String>("Invalid SBOM file", HttpStatus.BAD_REQUEST);
+        }
+        Project project = projectService.getProjectForUserById(projectId, sw360User);
+        HttpStatus status = HttpStatus.OK;
+        HalResource<Project> halResource = createHalProject(project, sw360User);
+        return new ResponseEntity<HalResource<Project>>(halResource, status);
     }
 
     @Override

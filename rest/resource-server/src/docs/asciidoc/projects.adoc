@@ -617,3 +617,36 @@ include::{snippets}/should_document_update_project_vulnerabilities/http-response
 
 ===== Links
 include::{snippets}/should_document_update_project_vulnerabilities/links.adoc[]
+
+[[resources-import-sbom]]
+==== Import SBOM
+
+A `POST` request is used to import SBOM in SPDX format.
+
+[red]#Request parameters#
+|===
+|Parameter |Description
+
+|type
+|File type of SBOM
+|===
+
+[red]#Request structure#
+|===
+Type |Description
+
+|file
+|Path of the SBOM file
+|===
+
+
+[red]#Response structure#
+|===
+|Complete Project will be returned
+|===
+
+===== Example request
+include::{snippets}/should_document_import_sbom/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_import_sbom/http-response.adoc[]
