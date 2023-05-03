@@ -59,7 +59,9 @@ sw360:
   couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
-  rest:
-    api:
-      createuser:
-        disabled: true
+
+blacklist:
+  sw360:
+    rest:
+      api:
+        endpoints: /resource/api/users:POST
