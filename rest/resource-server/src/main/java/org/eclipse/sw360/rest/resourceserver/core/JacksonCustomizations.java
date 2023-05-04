@@ -77,6 +77,8 @@ public class JacksonCustomizations {
             setMixInAnnotation(VulnerabilityState.class, Sw360Module.VulnerabilityStateMixin.class);
             setMixInAnnotation(ReleaseVulnerabilityRelationDTO.class, Sw360Module.ReleaseVulnerabilityRelationDTOMixin.class);
             setMixInAnnotation(VulnerabilityDTO.class, Sw360Module.VulnerabilityDTOMixin.class);
+            setMixInAnnotation(VulnerabilityState.class, Sw360Module.VulnerabilityStateMixin.class);
+            setMixInAnnotation(ReleaseVulnerabilityRelationDTO.class, Sw360Module.ReleaseVulnerabilityRelationDTOMixin.class);
             setMixInAnnotation(VulnerabilityApiDTO.class, Sw360Module.VulnerabilityApiDTOMixin.class);
             setMixInAnnotation(EccInformation.class, Sw360Module.EccInformationMixin.class);
             setMixInAnnotation(EmbeddedProject.class, Sw360Module.EmbeddedProjectMixin.class);
