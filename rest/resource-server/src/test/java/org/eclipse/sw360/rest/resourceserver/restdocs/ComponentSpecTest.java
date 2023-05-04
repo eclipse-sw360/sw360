@@ -14,6 +14,12 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import com.google.common.collect.ImmutableSet;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.ImportBomRequestPreparation;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.Visibility;
+import org.eclipse.sw360.datahandler.thrift.VerificationState;
+import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
@@ -41,8 +47,11 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -89,6 +98,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     private Attachment attachment;
 
     private Project project;
+
+    private Component sBOMComponent;
+    private Attachment sBOMAttachment;
+    private RequestSummary requestSummary = new RequestSummary();
 
     @Before
     public void before() throws TException, IOException {
@@ -354,6 +367,46 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         given(this.vulnerabilityServiceMock.updateReleaseVulnerabilityRelation(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vulnerabilityServiceMock.getVulnerabilitiesByReleaseId(any(), any())).willReturn(vulDtos);
         angularComponent.setReleases(releaseList);
+
+        sBOMAttachment = new Attachment("3331231254", "bom.spdx.rdf");
+        sBOMAttachment.setSha1("df90312312312534543544375345345383");
+        sBOMAttachment.setAttachmentType(AttachmentType.SBOM);
+        Set<Attachment> attachments = new HashSet<>();
+        attachments.add(sBOMAttachment);
+
+        sBOMComponent = new Component();
+        sBOMComponent.setId("2222222");
+        sBOMComponent.setName("Maven");
+        sBOMComponent.setCreatedOn("2023-04-30");
+        sBOMComponent.setBusinessUnit("sw360 BA");
+        sBOMComponent.setComponentType(ComponentType.SERVICE);
+        sBOMComponent.setCreatedBy("admin@sw360.org");
+        sBOMComponent.setAttachments(attachments);
+
+        Release release1 = new Release();
+        release1.setId("3333333");
+        release1.setComponentId("2222222");
+        release1.setName("Green Web");
+        release1.setVersion("1.0.0");
+        release1.setCreatedOn("2023-04-30");
+        release1.setComponentType(ComponentType.SERVICE);
+        release1.setCreatedBy("admin@sw360.org");
+
+        requestSummary.setMessage(sBOMComponent.getId());
+        requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+
+        ImportBomRequestPreparation importBomRequestPreparation = new ImportBomRequestPreparation();
+        importBomRequestPreparation.setComponentsName(sBOMComponent.getName());
+        StringBuilder relesaeName = new StringBuilder();
+        relesaeName.append(release1.getName());
+        relesaeName.append(" ");
+        relesaeName.append(release1.getVersion());
+        importBomRequestPreparation.setReleasesName(relesaeName.toString());
+
+        given(this.componentServiceMock.prepareImportSBOM(any(),any())).willReturn(importBomRequestPreparation);
+        given(this.componentServiceMock.importSBOM(any(),any())).willReturn(requestSummary);
+        given(this.componentServiceMock.getReleaseById(any(),any())).willReturn(release1);
+        given(this.componentServiceMock.getComponentForUserById(eq(sBOMComponent.getId()), any())).willReturn(sBOMComponent);
     }
 
     @Test
@@ -990,4 +1043,27 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         )));
     }
 
+    @Test
+    public void should_document_import_sbom_for_component() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file","file=@/bom.spdx.rdf".getBytes());
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/components/import/SBOM")
+                .content(file.getBytes())
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .header("Authorization", "Bearer " + accessToken)
+                .queryParam("type", "SPDX");
+        this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
+    }
+
+    @Test
+    public void should_document_prepare_import_sbom_for_component() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file","file=@/bom.spdx.rdf".getBytes());
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/components/prepareImport/SBOM")
+                .content(file.getBytes())
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .header("Authorization", "Bearer " + accessToken)
+                .queryParam("type", "SPDX");
+        this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
+    }
 }

@@ -19,6 +19,9 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.ImportBomRequestPreparation;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -623,5 +626,73 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         }
         long countExternalIdsFromRequest = vulnerabilityState.getReleaseVulnerabilityRelationDTOs().stream().count();
         return countExternalIdsActual != countExternalIdsFromRequest;
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = COMPONENTS_URL + "/import/SBOM", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<?> importSBOM(@RequestParam(value = "type", required = true) String type,
+                                                  @RequestBody MultipartFile file) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Attachment attachment;
+        final RequestSummary requestSummary;
+        if(!type.equalsIgnoreCase("SPDX")) {
+            throw new IllegalArgumentException("SBOM file type is not valid. It currently only supports SPDX(.rdf/.spdx) files.");
+        }
+        try {
+            attachment = attachmentService.uploadAttachment(file, new Attachment(), sw360User);
+            try {
+                requestSummary = componentService.importSBOM(sw360User, attachment.getAttachmentContentId());
+            } catch (Exception e) {
+                throw new RuntimeException(e.getMessage());
+            }
+        } catch (IOException e) {
+            log.error("failed to upload attachment", e);
+            throw new RuntimeException("failed to upload attachment", e);
+        }
+        String releaseId = requestSummary.getMessage();
+        if (!(requestSummary.getRequestStatus() == RequestStatus.SUCCESS && CommonUtils.isNotNullEmptyOrWhitespace(releaseId))) {
+            return new ResponseEntity<>("Invalid SBOM file", HttpStatus.BAD_REQUEST);
+        }
+        Release release = componentService.getReleaseById(requestSummary.getMessage(),sw360User);
+        Component component = componentService.getComponentForUserById(release.getComponentId(),sw360User);
+        HttpStatus status = HttpStatus.OK;
+        HalResource<Component> halResource = createHalComponent(component, sw360User);
+        return new ResponseEntity<>(halResource, status);
+    }
+
+    @RequestMapping(value = COMPONENTS_URL + "/prepareImport/SBOM", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<?> prepareImportSBOM(@RequestParam(value = "type", required = true) String type,
+                                        @RequestBody MultipartFile file) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Attachment attachment;
+        final ImportBomRequestPreparation importBomRequestPreparation;
+        if(!type.equalsIgnoreCase("SPDX")) {
+            throw new IllegalArgumentException("SBOM file type is not valid. It currently only supports SPDX(.rdf/.spdx) files.");
+        }
+        try {
+            attachment = attachmentService.uploadAttachment(file, new Attachment(), sw360User);
+            try {
+                importBomRequestPreparation = componentService.prepareImportSBOM(sw360User, attachment.getAttachmentContentId());
+            } catch (Exception e) {
+                throw new RuntimeException(e.getMessage());
+            }
+        } catch (IOException e) {
+            log.error("failed to upload attachment", e);
+            throw new RuntimeException("failed to upload attachment", e);
+        }
+        ImportBomRequestPreparation importBomRequestPreparationResponse = handleImportBomRequestPreparation(importBomRequestPreparation);
+        HttpStatus status = importBomRequestPreparationResponse != null ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(importBomRequestPreparationResponse, status);
+    }
+
+    private ImportBomRequestPreparation handleImportBomRequestPreparation(ImportBomRequestPreparation importBomRequestPreparation) {
+        ImportBomRequestPreparation importBomRequestPreparationResponse = new ImportBomRequestPreparation();
+        if (importBomRequestPreparation.isComponentDuplicate && importBomRequestPreparation.isReleaseDuplicate) {
+            importBomRequestPreparationResponse.setMessage("The Component and Release existed !");
+        } else {
+            importBomRequestPreparationResponse.setComponentsName(importBomRequestPreparation.getComponentsName());
+            importBomRequestPreparationResponse.setReleasesName(importBomRequestPreparation.getReleasesName());
+        }
+        return importBomRequestPreparationResponse;
     }
 }

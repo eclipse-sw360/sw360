@@ -21,10 +21,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
@@ -97,6 +94,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(ProjectProjectRelationship.class, Sw360Module.ProjectProjectRelationshipMixin.class);
             setMixInAnnotation(ModerationRequest.class, Sw360Module.ModerationRequestMixin.class);
             setMixInAnnotation(EmbeddedModerationRequest.class, Sw360Module.EmbeddedModerationRequestMixin.class);
+            setMixInAnnotation(ImportBomRequestPreparation.class, Sw360Module.ImportBomRequestPreparationMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -1352,6 +1350,23 @@ public class JacksonCustomizations {
             @Override
             @JsonIgnore
             abstract public boolean isRequestDocumentDelete();
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "requestStatus",
+                "isComponentDuplicate",
+                "isReleaseDuplicate",
+                "version",
+                "setVersion",
+                "setIsComponentDuplicate",
+                "setIsReleaseDuplicate",
+                "setComponentsName",
+                "setReleasesName",
+                "setMessage",
+                "setRequestStatus"
+        })
+        public static abstract class ImportBomRequestPreparationMixin extends ImportBomRequestPreparation {
         }
     }
 }
