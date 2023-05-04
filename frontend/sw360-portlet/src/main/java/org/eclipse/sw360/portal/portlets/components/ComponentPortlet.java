@@ -700,7 +700,7 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         String attachmentContentId = request.getParameter(PortalConstants.ATTACHMENT_ID);
         String attachmentName = request.getParameter(PortalConstants.ATTACHMENT_NAME);
         Map<String, Set<String>> licenseToSrcFilesMap = new LinkedHashMap<>();
-        boolean includeConcludedLicense = new Boolean(request.getParameter(PortalConstants.INCLUDE_CONCLUDED_LICENSE));
+        boolean includeConcludedLicense = Boolean.valueOf(request.getParameter(PortalConstants.INCLUDE_CONCLUDED_LICENSE));
 
         ComponentService.Iface componentClient = thriftClients.makeComponentClient();
         LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
@@ -713,22 +713,27 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         long totalFileCount = 0;
         try {
             Release release = componentClient.getReleaseById(releaseId, user);
+            attachmentType = release.getAttachments().stream()
+                    .filter(att -> attachmentContentId.equals(att.getAttachmentContentId())).map(Attachment::getAttachmentType).findFirst().orElse(null);
+            final boolean isISR = AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType);
+            if (isISR) {
+                includeConcludedLicense = true;
+            }
             List<LicenseInfoParsingResult> licenseInfoResult = licenseInfoClient.getLicenseInfoForAttachment(release,
                     attachmentContentId, includeConcludedLicense, user);
-            attachmentType = release.getAttachments().stream().filter(att -> attachmentContentId.equals(att.getAttachmentContentId())).map(Attachment::getAttachmentType).findFirst().orElse(null);
             List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
                     .filter(filterLicenseResult)
-                    .flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
+                    .map(LicenseInfoParsingResult::getLicenseInfo).map(LicenseInfo::getLicenseNamesWithTexts).flatMap(Set::stream)
                     .filter(license -> !license.getLicenseName().equalsIgnoreCase(SW360Constants.LICENSE_NAME_UNKNOWN)
                             && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NA)
                             && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NO_ASSERTION)) // exclude unknown, n/a and noassertion
                     .collect(Collectors.toList());
 
             if (attachmentName.endsWith(PortalConstants.RDF_FILE_EXTENSION)) {
-                if (AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType)) {
-                    totalFileCount = licenseInfoResult.stream().flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
-                            .map(LicenseNameWithText::getSourceFiles).filter(Objects::nonNull).flatMap(Set::stream).collect(Collectors.toSet()).size();
-                    licenseToSrcFilesMap = licenseWithTexts.stream().collect(Collectors.toMap(LicenseNameWithText::getLicenseName,
+                if (isISR) {
+                    totalFileCount = licenseInfoResult.stream().map(LicenseInfoParsingResult::getLicenseInfo).map(LicenseInfo::getLicenseNamesWithTexts).flatMap(Set::stream)
+                            .map(LicenseNameWithText::getSourceFiles).filter(Objects::nonNull).flatMap(Set::stream).distinct().count();
+                    licenseToSrcFilesMap = CommonUtils.nullToEmptyList(licenseWithTexts).stream().collect(Collectors.toMap(LicenseNameWithText::getLicenseName,
                             LicenseNameWithText::getSourceFiles, (oldValue, newValue) -> oldValue));
                     licenseWithTexts.forEach(lwt -> {
                         lwt.getSourceFiles().forEach(sf -> {
@@ -738,17 +743,18 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                         });
                     });
                 } else {
-                    concludedLicenseIds.addAll(licenseInfoResult.stream().flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream()).collect(Collectors.toCollection(TreeSet::new)));
+                    concludedLicenseIds.addAll(licenseInfoResult.stream().flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
+                            .collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER))));
                 }
-                otherLicenseNames = licenseWithTexts.stream().map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(TreeSet::new));
+                otherLicenseNames = licenseWithTexts.stream().map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)));
                 otherLicenseNames.removeAll(concludedLicenseIds);
             } else if (attachmentName.endsWith(PortalConstants.XML_FILE_EXTENSION)) {
                 mainLicenseNames = licenseWithTexts.stream()
                         .filter(license -> license.getType().equals(LICENSE_TYPE_GLOBAL))
-                        .map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(TreeSet::new));
+                        .map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)));
                 otherLicenseNames = licenseWithTexts.stream()
                         .filter(license -> !license.getType().equals(LICENSE_TYPE_GLOBAL))
-                        .map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(TreeSet::new));
+                        .map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)));
             }
         } catch (TException e) {
             log.error("Cannot retrieve license information for attachment id " + attachmentContentId + " in release "
