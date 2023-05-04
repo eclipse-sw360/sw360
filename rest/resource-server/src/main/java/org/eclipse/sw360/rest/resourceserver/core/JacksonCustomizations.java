@@ -41,12 +41,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VendorAdvisory;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityApiDTO;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonProjectRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonReleaseRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.EmbeddedModerationRequest;
@@ -79,6 +74,8 @@ public class JacksonCustomizations {
             setMixInAnnotation(License.class, Sw360Module.LicenseMixin.class);
             setMixInAnnotation(Obligation.class, Sw360Module.ObligationMixin.class);
             setMixInAnnotation(Vulnerability.class, Sw360Module.VulnerabilityMixin.class);
+            setMixInAnnotation(VulnerabilityState.class, Sw360Module.VulnerabilityStateMixin.class);
+            setMixInAnnotation(ReleaseVulnerabilityRelationDTO.class, Sw360Module.ReleaseVulnerabilityRelationDTOMixin.class);
             setMixInAnnotation(VulnerabilityDTO.class, Sw360Module.VulnerabilityDTOMixin.class);
             setMixInAnnotation(VulnerabilityApiDTO.class, Sw360Module.VulnerabilityApiDTOMixin.class);
             setMixInAnnotation(EccInformation.class, Sw360Module.EccInformationMixin.class);
@@ -711,6 +708,8 @@ public class JacksonCustomizations {
                 "references",
                 "intComponentId",
                 "intComponentName",
+                "matchedBy",
+                "usedNeedle",
                 "setType",
                 "setId",
                 "setRevision",
@@ -763,6 +762,37 @@ public class JacksonCustomizations {
             @Override
             @JsonProperty()
             abstract public String getExternalId();
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "id",
+                "revision",
+                "type",
+                "setType",
+                "setId",
+                "setRevision",
+                "releaseVulnerabilityRelationDTOsIterator",
+                "setReleaseVulnerabilityRelationDTOs",
+                "setComment",
+                "setVerificationState",
+                "releaseVulnerabilityRelationDTOsSize"
+        })
+        static abstract class VulnerabilityStateMixin extends VulnerabilityState {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "id",
+                "revision",
+                "type",
+                "setId",
+                "setRevision",
+                "setType",
+                "setExternalId",
+                "setReleaseName"
+        })
+        static abstract class ReleaseVulnerabilityRelationDTOMixin extends ReleaseVulnerabilityRelationDTO {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

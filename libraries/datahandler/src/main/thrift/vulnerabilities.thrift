@@ -18,6 +18,7 @@ typedef sw360.RequestSummary RequestSummary
 typedef users.User User
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.RequestStatus RequestStatus
+typedef sw360.VerificationState VerificationState
 typedef sw360.VerificationStateInfo VerificationStateInfo
 typedef components.Release Release
 
@@ -144,6 +145,27 @@ struct VulnerabilityDTO{
    // Used in REST API
    300: optional string projectRelevance,
    301: optional string comment
+}
+
+struct VulnerabilityState{
+    // WILL NOT BE SAVED IN DB, only for view
+    // General information
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "vulnerabilityState",
+    4: required set<ReleaseVulnerabilityRelationDTO> releaseVulnerabilityRelationDTOs,
+    5: optional string comment,
+    6: required VerificationState verificationState
+}
+
+struct ReleaseVulnerabilityRelationDTO {
+    // WILL NOT BE SAVED IN DB, only for view
+    // General information
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "releaseVulnerabilityRelationDTO",
+    4: required string externalId,
+    5: required string releaseName,
 }
 
 struct CVEReference{
@@ -368,4 +390,10 @@ service VulnerabilityService {
     *
     */
     Vulnerability getByExternalId(1: string externalId)
+
+    /**
+    * Find vulnerabilityDTO by external id
+    *
+    */
+    list<VulnerabilityDTO> getvulnerabilityDTOByExternalId(1: set<string> externalIds, 2: string releaseId)
 }
