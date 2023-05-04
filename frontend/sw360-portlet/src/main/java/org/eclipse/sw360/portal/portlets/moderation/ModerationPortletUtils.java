@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -26,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.portal.common.CustomFieldHelper;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
@@ -105,12 +107,14 @@ public class ModerationPortletUtils {
                 ModerationService.Iface client = new ThriftClients().makeModerationClient();
                 ClearingRequest clearingRequest = client.getClearingRequestByIdForEdit(id, user);
 
-                String requestingUser = request.getParameter(ClearingRequest._Fields.REQUESTING_USER.toString());
-                if (CommonUtils.isNullEmptyOrWhitespace(requestingUser)) {
-                    log.warn("Invalid requesting user email: " + requestingUser + " is entered, by user: "+ user.getEmail());
-                    return requestSummary.setMessage("Invalid requesting user email");
+                if (PermissionUtils.isUserAtLeast(UserGroup.SW360_ADMIN, user)) {
+                    String requestingUser = request.getParameter(ClearingRequest._Fields.REQUESTING_USER.toString());
+                    if (CommonUtils.isNullEmptyOrWhitespace(requestingUser)) {
+                        log.warn("Invalid requesting user email: " + requestingUser + " is entered, by user: "+ user.getEmail());
+                        return requestSummary.setMessage("Invalid requesting user email");
+                    }
+                    clearingRequest.setRequestingUser(requestingUser);
                 }
-                clearingRequest.setRequestingUser(requestingUser);
 
                 String clearingTeam = request.getParameter(ClearingRequest._Fields.CLEARING_TEAM.toString());
                 if (CommonUtils.isNullEmptyOrWhitespace(clearingTeam)) {
