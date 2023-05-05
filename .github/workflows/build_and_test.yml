@@ -17,6 +17,7 @@ on:
     branches: [ main ]
     paths-ignore:
       - "**.md"
+      - ".github/workflows/docker_deploy.yml"
 
 permissions: write-all
 

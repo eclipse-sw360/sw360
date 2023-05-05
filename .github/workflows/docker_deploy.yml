@@ -15,6 +15,9 @@ name: Docker Build
 on:
   schedule:
       - cron: '0 0 * * *' # Midnight
+  workflow_dispatch:
+    branches:
+      - main
   push:
     tags:
       - 'sw360-*'
@@ -115,37 +118,8 @@ jobs:
           cache-to: type=gha,scope=thrift,mode=max
 
       #------------------------------------------------
-      # ClLucene
-      - name: Extract components metadata (tags, labels) for clucene image
-        id: meta_clucene
-        uses: docker/metadata-action@v4
-        with:
-          images: |
-            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/clucene
-
-      - name: Identify clucene image
-        run: echo "Will be tagged as ${{ steps.meta_clucene.outputs.tags }} and labeled as ${{ steps.meta_clucene.outputs.labels }}"
-
-      - name: Build sw360 clucene container
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          target: sw360clucene
-          push: true
-          load: false
-          build-args: |
-            CLUCENE_VERSION=${{ env.CLUCENE_VERSION }}
-          tags: |
-            ${{ steps.meta_clucene.outputs.tags }}
-            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/clucene:${{ env.CLUCENE_VERSION }}
-            ${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/clucene:latest
-          labels: ${{ steps.meta_clucene.outputs.labels }}
-          cache-from: type=gha,scope=clucene
-          cache-to: type=gha,scope=clucene,mode=max
-
-      #------------------------------------------------
       # sw360 compilation
-      - name: Extract components metadata (tags, labels) for clucene image
+      - name: Extract components metadata (tags, labels) for sw360
         id: meta_sw360
         uses: docker/metadata-action@v4
         with:
@@ -171,7 +145,6 @@ jobs:
           labels: ${{ steps.meta_sw360.outputs.labels }}
           build-contexts: |
             sw360thrift=docker-image://${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/thrift:latest
-            sw360clucene=docker-image://${{ env.REGISTRY }}/${{ env.ORG_BASE_NAME }}/clucene:latest
           cache-from: type=gha,scope=sw360
           cache-to: type=gha,scope=sw360,mode=max
 
