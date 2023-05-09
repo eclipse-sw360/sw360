@@ -187,8 +187,8 @@ public class Sw360AttachmentService {
         }
     }
 
-    public void downloadAttachmentBundleWithContext (Object context, Set<Attachment> attachments, User user, HttpServletResponse response) throws IOException, TException {
-        if(CommonUtils.isNullOrEmptyCollection(attachments)) {
+    public void downloadAttachmentBundleWithContext (Object context, Set<Attachment> attachments, User user, HttpServletResponse response) throws TException, IOException {
+        if (CommonUtils.isNullOrEmptyCollection(attachments)) {
             response.setStatus(HttpServletResponse.SC_NO_CONTENT);
             return;
         }

@@ -668,6 +668,16 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_release_attachment_bundle() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/releases/" + release.getId() + "/attachments/download")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .accept("application/*"))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document());
+    }
+
+    @Test
     public void should_document_get_releases_by_externalIds() throws Exception {
         MultiValueMap<String, String> externalIds = new LinkedMultiValueMap<>();
         externalIds.put("mainline-id-component", List.of("1432","4876"));
