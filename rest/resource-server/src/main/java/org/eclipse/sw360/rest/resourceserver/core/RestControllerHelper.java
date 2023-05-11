@@ -523,6 +523,11 @@ public class RestControllerHelper<T> {
         embeddedComponent.setName(component.getName());
         embeddedComponent.setComponentType(component.getComponentType());
         embeddedComponent.setVisbility(component.getVisbility());
+        embeddedComponent.setMainLicenseIds(component.getMainLicenseIds());
+        if (CommonUtils.isNotNullEmptyOrWhitespace(component.getDefaultVendorId())) {
+            Vendor defaultVendor = vendorService.getVendorById(component.getDefaultVendorId());
+            embeddedComponent.setDefaultVendor(defaultVendor);
+        }
         embeddedComponent.setType(null);
         return embeddedComponent;
     }

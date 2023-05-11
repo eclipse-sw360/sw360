@@ -315,14 +315,12 @@ public class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties(value = {
-                "id",
                 "revision",
                 "attachments",
                 "createdBy",
                 "subscribers",
                 "moderators",
                 "releases",
-                "mainLicenseIds",
                 "softwarePlatforms",
                 "wiki",
                 "blog",
