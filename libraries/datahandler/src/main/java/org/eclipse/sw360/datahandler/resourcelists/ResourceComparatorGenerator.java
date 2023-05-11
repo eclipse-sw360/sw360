@@ -11,17 +11,22 @@
 
 package org.eclipse.sw360.datahandler.resourcelists;
 
-import org.apache.thrift.TBase;
-import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public class ResourceComparatorGenerator<T> {
 
@@ -31,6 +36,7 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<SearchResult._Fields, Comparator<SearchResult>> searchResultMap = generateSearchResultMap();
     private static final Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = generateChangeLogMap();
     private static final Map<VulnerabilityDTO._Fields, Comparator<VulnerabilityDTO>> vDtoMap = generateVulDtoMap();
+    private static final Map<ModerationRequest._Fields, Comparator<ModerationRequest>> moderationRequestMap = generateModerationRequestMap();
 
     private static Map<Component._Fields, Comparator<Component>> generateComponentMap() {
         Map<Component._Fields, Comparator<Component>> componentMap = new HashMap<>();
@@ -81,6 +87,19 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(vulDTOMap);
     }
 
+    private static Map<ModerationRequest._Fields, Comparator<ModerationRequest>> generateModerationRequestMap() {
+        Map<ModerationRequest._Fields, Comparator<ModerationRequest>> moderationRequestMap = new HashMap<>();
+        moderationRequestMap.put(ModerationRequest._Fields.TIMESTAMP,
+                Comparator.comparingLong(ModerationRequest::getTimestamp));
+        moderationRequestMap.put(ModerationRequest._Fields.REVISION,
+                Comparator.comparing(ModerationRequest::getRevision, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        moderationRequestMap.put(ModerationRequest._Fields.REQUESTING_USER,
+                Comparator.comparing(ModerationRequest::getRequestingUser, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        moderationRequestMap.put(ModerationRequest._Fields.DOCUMENT_TYPE,
+                Comparator.comparing(c -> Optional.ofNullable(c.getDocumentType()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(moderationRequestMap);
+    }
+
     public Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
@@ -95,6 +114,8 @@ public class ResourceComparatorGenerator<T> {
                 return (Comparator<T>)defaultChangeLogComparator();
             case SW360Constants.TYPE_VULNERABILITYDTO:
                 return (Comparator<T>)defaultVulDtoComparator();
+            case SW360Constants.TYPE_MODERATION:
+                return (Comparator<T>)defaultModerationRequestComparator();
             default:
                 throw new ResourceClassNotFoundException("No default comparator for resource class with name " + type);
         }
@@ -313,5 +334,9 @@ public class ResourceComparatorGenerator<T> {
 
     private Comparator<VulnerabilityDTO> defaultVulDtoComparator() {
         return vDtoMap.get(VulnerabilityDTO._Fields.EXTERNAL_ID);
+    }
+
+    private Comparator<ModerationRequest> defaultModerationRequestComparator() {
+        return moderationRequestMap.get(ModerationRequest._Fields.TIMESTAMP);
     }
 }
