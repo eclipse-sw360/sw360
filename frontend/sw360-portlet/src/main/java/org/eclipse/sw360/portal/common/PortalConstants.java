@@ -123,7 +123,7 @@ public class PortalConstants {
     public static final String LICENSE_TYPE_GLOBAL = "global";
     public static final String LICENSE_TYPE_OTHERS = "Others";
     public static final String LICENSE_IDS = "licenseIds";
-    public static final String MAIN_LICENSE_FILES = "LICENSE.*|license|license.txt|license.html|COPYING.*|copying|copying.txt|copying.html";
+    public static final String MAIN_LICENSE_FILES = "LICENSE.*|License.*|license|license.txt|license.html|COPYING.*|Copying.*|copying|copying.txt|copying.html";
 
     //! Specialized keys for moderation
     public static final String MODERATION_PORTLET_NAME = PORTLET_NAME_PREFIX + "moderations";

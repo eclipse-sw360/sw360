@@ -2930,20 +2930,20 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                         attachmentContentId, true, user);
                 List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
                         .filter(filterLicenseResult)
-                        .flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
+                        .map(LicenseInfoParsingResult::getLicenseInfo).map(LicenseInfo::getLicenseNamesWithTexts).flatMap(Set::stream)
                         .filter(license -> !license.getLicenseName().equalsIgnoreCase(SW360Constants.LICENSE_NAME_UNKNOWN)
                                 && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NA)
                                 && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NO_ASSERTION)) // exclude unknown, n/a and noassertion
                         .collect(Collectors.toList());
                 if (attachmentName.endsWith(PortalConstants.RDF_FILE_EXTENSION)) {
-                    totalFileCount = licenseInfoResult.stream().flatMap(result -> result.getLicenseInfo().getLicenseNamesWithTexts().stream())
-                            .map(LicenseNameWithText::getSourceFiles).filter(Objects::nonNull).flatMap(Set::stream).collect(Collectors.toSet()).size();
+                    totalFileCount = licenseInfoResult.stream().map(LicenseInfoParsingResult::getLicenseInfo).map(LicenseInfo::getLicenseNamesWithTexts).flatMap(Set::stream)
+                            .map(LicenseNameWithText::getSourceFiles).filter(Objects::nonNull).flatMap(Set::stream).distinct().count();
                     concludedLicenseIds = licenseInfoResult.stream()
                             .filter(filterConcludedLicense)
                             .flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
-                            .collect(Collectors.toCollection(TreeSet::new));
+                            .collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)));
                     otherLicenseNames = licenseWithTexts.stream().map(LicenseNameWithText::getLicenseName)
-                            .collect(Collectors.toCollection(TreeSet::new));
+                            .collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)));
                     otherLicenseNames.removeAll(concludedLicenseIds);
                 }
                 try {
