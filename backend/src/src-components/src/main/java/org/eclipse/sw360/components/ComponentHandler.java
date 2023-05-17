@@ -260,6 +260,12 @@ public class ComponentHandler implements ComponentService.Iface {
     }
 
     @Override
+    public List<String> getReleaseIdsFromComponentId(String id, User user) throws TException {
+        assertNotNull(id);
+        return handler.getReleaseIdsFromComponentId(id,user);
+    }
+
+    @Override
     public List<Release> getReleasesWithAccessibilityByIdsForExport(Set<String> ids, User user) throws TException {
         assertNotNull(ids);
         assertUser(user);

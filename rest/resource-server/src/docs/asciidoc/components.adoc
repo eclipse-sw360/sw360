@@ -362,3 +362,20 @@ include::{snippets}/should_document_get_mycomponents_components/http-response.ad
 
 ===== Links
 include::{snippets}/should_document_get_mycomponents_components/links.adoc[]
+
+[[resources-component-get-component-vulnerabilities]]
+==== Listing component vulnerabilities
+
+A `GET` request will get vulnerabilities of a single component.
+
+===== Response structure
+include::{snippets}/should_document_get_component_vulnerabilities/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_component_vulnerabilities/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_component_vulnerabilities/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_component_vulnerabilities/links.adoc[]

@@ -192,6 +192,11 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
                 new ArrayList<Release>(getFullDocsById(releaseIds)), user);
     }
 
+    public List<String> getReleaseIdsFromComponentId(String id, User user) {
+        Set<String> releaseIds = queryForIdsAsValue("releasesByComponentId", id);
+        return new ArrayList<String>(releaseIds);
+    }
+
     public List<Release> getReleasesIgnoringNotFound(Collection<String> ids) {
         return getConnector().get(Release.class, ids, true);
     }

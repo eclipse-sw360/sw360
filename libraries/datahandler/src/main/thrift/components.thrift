@@ -604,6 +604,11 @@ service ComponentService {
     list<Release> getReleasesByIdsForExport(1: set<string> ids);
 
     /**
+      * get list Release ids from Component ID
+      **/
+    list<string> getReleaseIdsFromComponentId(1: string id, 2: User user);
+
+    /**
       * get short summary with accessibility of all releases specified by ids
       **/
     list<Release> getReleasesWithAccessibilityByIdsForExport(1: set<string> ids, 2: User user);

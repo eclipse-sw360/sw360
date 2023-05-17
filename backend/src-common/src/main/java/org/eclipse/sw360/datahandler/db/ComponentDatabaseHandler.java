@@ -1980,6 +1980,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.makeSummary(SummaryType.DETAILED_EXPORT_SUMMARY, ids, true);
     }
 
+    public List<String> getReleaseIdsFromComponentId(String id, User user) {
+        return releaseRepository.getReleaseIdsFromComponentId(id,user);
+    }
+
     public List<Release> getDetailedReleasesWithAccessibilityForExport(Set<String> ids, User user) {
         List<Release> releaseList = releaseRepository.makeSummary(SummaryType.DETAILED_EXPORT_SUMMARY, ids);
         for (Release release : releaseList) {

@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
@@ -368,6 +369,15 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ComponentController.class).slash("api/components").withRel("components"));
         return resource;
+    }
+
+    @GetMapping(value = COMPONENTS_URL + "/{id}/vulnerabilities")
+    public ResponseEntity<CollectionModel<VulnerabilityDTO>> getVulnerabilitiesOfComponent(
+            @PathVariable("id") String id) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        List<VulnerabilityDTO> allVulnerabilityDTOs = componentService.getVulnerabilitiesByComponent(id, user);
+        CollectionModel<VulnerabilityDTO> resources = CollectionModel.of(allVulnerabilityDTOs);
+        return new ResponseEntity<>(resources,HttpStatus.OK);
     }
 
     private HalResource<Component> createHalComponent(Component sw360Component, User user) throws TException {

@@ -330,6 +330,21 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         releaseIdToRelationship1 = ImmutableMap.of(release2.getId(), ReleaseRelationship.DYNAMICALLY_LINKED, release3.getId(), ReleaseRelationship.CONTAINED);
 
         List<VulnerabilityDTO> vulDtos = new ArrayList<VulnerabilityDTO>();
+
+        VerificationStateInfo verificationStateInfo = new VerificationStateInfo();
+        verificationStateInfo.setCheckedBy("admin@sw360.org");
+        verificationStateInfo.setCheckedOn("2018-12-18");
+        verificationStateInfo.setComment("Change status not checked");
+        verificationStateInfo.setVerificationState(VerificationState.NOT_CHECKED);
+
+        List<VerificationStateInfo> verificationStateInfos = new ArrayList<>();
+        verificationStateInfos.add(verificationStateInfo);
+
+        ReleaseVulnerabilityRelation relation = new ReleaseVulnerabilityRelation();
+        relation.setReleaseId("3765276512");
+        relation.setVulnerabilityId("1333333333");
+        relation.setVerificationStateInfo(verificationStateInfos);
+
         VulnerabilityDTO vulDto = new VulnerabilityDTO();
         vulDto.setComment("Lorem Ipsum");
         vulDto.setExternalId("12345");
@@ -338,7 +353,23 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         vulDto.setIntReleaseName("Angular 2.3.0");
         vulDto.setAction("Update to Fixed Version");
         vulDto.setPriority("2 - major");
+        vulDto.setReleaseVulnerabilityRelation(relation);
         vulDtos.add(vulDto);
+
+
+        VerificationStateInfo verificationStateInfo1 = new VerificationStateInfo();
+        verificationStateInfo1.setCheckedBy("user@sw360.org");
+        verificationStateInfo1.setCheckedOn("2016-12-18");
+        verificationStateInfo1.setComment("Change status checked");
+        verificationStateInfo1.setVerificationState(VerificationState.CHECKED);
+
+        List<VerificationStateInfo> verificationStateInfos1 = new ArrayList<>();
+        verificationStateInfos1.add(verificationStateInfo1);
+
+        ReleaseVulnerabilityRelation relation1 = new ReleaseVulnerabilityRelation();
+        relation1.setReleaseId("3765276512");
+        relation1.setVulnerabilityId("122222222");
+        relation1.setVerificationStateInfo(verificationStateInfos1);
 
         VulnerabilityDTO vulDto1 = new VulnerabilityDTO();
         vulDto1.setComment("Lorem Ipsum");
@@ -348,6 +379,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         vulDto1.setIntReleaseName("Angular 2.3.0");
         vulDto1.setAction("Update to Fixed Version");
         vulDto1.setPriority("1 - critical");
+        vulDto1.setReleaseVulnerabilityRelation(relation1);
         vulDtos.add(vulDto1);
 
         given(this.vulnerabilityServiceMock.getVulnerabilitiesByReleaseId(any(), any())).willReturn(vulDtos);
@@ -820,8 +852,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("curies").description("Curies are used for online documentation")
                         ),
                         responseFields(
-                                subsectionWithPath("_embedded.sw360:vulnerabilities.[]externalId").description("The external Id of the vulnerability"),
-                                subsectionWithPath("_embedded.sw360:vulnerabilities").description("An array of <<resources-vulnerabilities, Vulnerabilities resources>>"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]externalId").description("The external Id of the vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilityDTOes").description("An array of <<resources-vulnerabilities, Vulnerabilities resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
