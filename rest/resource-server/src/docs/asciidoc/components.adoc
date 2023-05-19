@@ -245,6 +245,18 @@ include::{snippets}/should_document_get_component_attachment/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_get_component_attachment/http-response.adoc[]
 
+[[resources-component-attachment-bundle-get]]
+==== Download attachment bundle
+
+A `GET` request will allow you to download the attachment bundle of a component. +
+Please set the Accept-Header `application/zip`. Only this Accept-Header is supported.
+
+===== Example request
+include::{snippets}/should_document_get_component_attachment_bundle/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_component_attachment_bundle/http-response.adoc[]
+
 [[resources-component-attachment-delete]]
 ==== Delete attachments
 

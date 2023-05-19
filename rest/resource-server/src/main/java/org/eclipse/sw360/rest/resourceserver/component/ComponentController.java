@@ -342,6 +342,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         attachmentService.downloadAttachmentWithContext(component, attachmentId, response, sw360User);
     }
 
+    @GetMapping(value = COMPONENTS_URL + "/{componentId}/attachments/download", produces="application/zip")
+    public void downloadAttachmentBundleFromComponent(
+            @PathVariable("componentId") String componentId,
+            HttpServletResponse response) throws TException, IOException {
+        final User user = restControllerHelper.getSw360UserFromAuthentication();
+        final Component component = componentService.getComponentForUserById(componentId, user);
+        Set<Attachment> attachments = component.getAttachments();
+        attachmentService.downloadAttachmentBundleWithContext(component, attachments, user, response);
+    }
+
     @DeleteMapping(COMPONENTS_URL + "/{componentId}/attachments/{attachmentIds}")
     public ResponseEntity<HalResource<Component>> deleteAttachmentsFromComponent(
             @PathVariable("componentId") String componentId,

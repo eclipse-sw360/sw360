@@ -15,6 +15,8 @@ package org.eclipse.sw360.rest.resourceserver.attachment;
 import com.google.common.collect.Sets;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -34,7 +36,6 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
@@ -48,8 +49,7 @@ import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -61,6 +61,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -181,6 +185,34 @@ public class Sw360AttachmentService {
         } catch (TException | IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    public void downloadAttachmentBundleWithContext (Object context, Set<Attachment> attachments, User user, HttpServletResponse response) throws IOException, TException {
+        if(CommonUtils.isNullOrEmptyCollection(attachments)) {
+            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+            return;
+        }
+        List<File> files = new ArrayList<>();
+        for (Attachment attachment : attachments) {
+            AttachmentContent attachmentContent = getAttachmentContent(attachment.getAttachmentContentId());
+            InputStream inputStream = getStreamToAttachments(Collections.singleton(attachmentContent), user, context);
+            String fileType = getFileType(attachmentContent.getFilename());
+            File sourceFile = saveAsTempFile(inputStream, attachment.getAttachmentContentId(), fileType);
+            File file = renameFile(sourceFile, attachment.getFilename());
+            files.add(file);
+            FileUtils.delete(sourceFile);
+        }
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.addHeader("Content-Disposition", "attachment; filename=\"AttachmentBundle.zip\"");
+        ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream());
+        for (File file : files) {
+            zipOutputStream.putNextEntry(new ZipEntry(file.getName()));
+            FileInputStream fileInputStream = new FileInputStream(file);
+            IOUtils.copy(fileInputStream, zipOutputStream);
+            fileInputStream.close();
+            zipOutputStream.closeEntry();
+        }
+        zipOutputStream.close();
     }
 
     public <T> InputStream getStreamToAttachments(Set<AttachmentContent> attachments, User sw360User, T context) throws IOException, TException {
@@ -327,5 +359,33 @@ public class Sw360AttachmentService {
                 attachmentToUpdate.unsetCheckedOn();
             }
         }
+    }
+
+    public File saveAsTempFile(InputStream inputStream, String prefix, String suffix) throws IOException {
+        final File tempFile = File.createTempFile(prefix, suffix);
+        tempFile.deleteOnExit();
+        // Set append to false, overwrite if file existed
+        try (FileOutputStream outputStream = new FileOutputStream(tempFile, false)) {
+            IOUtils.copy(inputStream, outputStream);
+        }
+        return tempFile;
+    }
+
+    private String getFileType(String fileName) {
+        if (isNullEmptyOrWhitespace(fileName) || !fileName.contains(".")) {
+            log.error("Can not get file type from file name - no file extension");
+            return null;
+        }
+        return fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+    }
+
+    private File renameFile(File sourceFile, String filename) throws IOException {
+        String pathFile = sourceFile.getPath().substring(0,sourceFile.getPath().lastIndexOf("/"));
+        StringBuilder newName = new StringBuilder(pathFile);
+        newName.append("/");
+        newName.append(filename);
+        File file = new File(newName.toString());
+        FileUtils.copyFile(sourceFile, file);
+        return file;
     }
 }

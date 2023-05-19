@@ -765,6 +765,16 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_component_attachment_bundle() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/components/" + angularComponent.getId() + "/attachments/download")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .accept("application/zip"))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document());
+    }
+
+    @Test
     public void should_document_get_components_by_externalIds() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components/searchByExternalIds?component-id-key=1831A3&component-id-key=c77321")
