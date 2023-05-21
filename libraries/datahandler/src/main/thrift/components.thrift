@@ -125,6 +125,7 @@ enum ClearingState {
     REPORT_AVAILABLE = 3,
     APPROVED = 4,
     SCAN_AVAILABLE = 5,
+    INTERNAL_USE_SCAN_AVAILABLE = 6
 }
 
 /**
@@ -138,6 +139,7 @@ struct ReleaseClearingStateSummary {
     4: required i32 reportAvailable,
     5: required i32 approved,
     6: required i32 scanAvailable, 
+    7: required i32 internalUseScanAvailable,
 }
 
 enum ECCStatus {

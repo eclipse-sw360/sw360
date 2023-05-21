@@ -9,7 +9,6 @@
  */
 package org.eclipse.sw360.datahandler.businessrules;
 
-import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
@@ -29,7 +28,7 @@ import java.util.List;
 public class ReleaseClearingStateSummaryComputer {
 
     public static ReleaseClearingStateSummary computeReleaseClearingStateSummary(List<Release> releases, String clearingTeam) {
-        ReleaseClearingStateSummary summary = new ReleaseClearingStateSummary(0, 0, 0, 0, 0, 0);
+        ReleaseClearingStateSummary summary = new ReleaseClearingStateSummary(0, 0, 0, 0, 0, 0, 0);
 
         if (releases == null) {
             return summary;
@@ -60,6 +59,9 @@ public class ReleaseClearingStateSummaryComputer {
                     break;
                 case SCAN_AVAILABLE:
                     summary.scanAvailable++;
+                    break;
+                case INTERNAL_USE_SCAN_AVAILABLE:
+                    summary.internalUseScanAvailable++;
                     break;
                 default:
                     summary.newRelease++;
