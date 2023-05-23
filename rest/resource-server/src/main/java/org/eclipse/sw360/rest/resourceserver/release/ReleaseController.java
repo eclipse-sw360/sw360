@@ -25,6 +25,8 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
+import org.eclipse.sw360.datahandler.thrift.attachments.UsageAttachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -413,11 +415,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     }
 
     @GetMapping(value = RELEASES_URL + "/{id}/attachments")
-    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getReleaseAttachments(
+    public ResponseEntity<CollectionModel<EntityModel<AttachmentDTO>>> getReleaseAttachment1s(
             @PathVariable("id") String id) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
-        final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getResourcesFromList(sw360Release.getAttachments());
+        final CollectionModel<EntityModel<AttachmentDTO>> resources = attachmentService.getAttachmentDTOResourcesFromList(sw360User, sw360Release.getAttachments(), Source.releaseId(sw360Release.getId()));
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
