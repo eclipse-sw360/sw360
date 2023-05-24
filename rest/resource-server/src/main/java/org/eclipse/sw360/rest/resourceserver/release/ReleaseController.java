@@ -48,9 +48,7 @@ import org.springframework.hateoas.Link;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.CollectionModel;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -65,20 +63,14 @@ import com.google.common.collect.ImmutableMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -349,6 +341,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
         final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getResourcesFromList(sw360Release.getAttachments());
         return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    @GetMapping(value = RELEASES_URL + "/{releaseId}/attachments/download", produces="application/zip")
+    public void downloadAttachmentBundleFromRelease(
+            @PathVariable("releaseId") String releaseId,
+            HttpServletResponse response) throws TException, IOException {
+        final User user = restControllerHelper.getSw360UserFromAuthentication();
+        final Release release = releaseService.getReleaseForUserById(releaseId, user);
+        final Set<Attachment> attachments = release.getAttachments();
+        attachmentService.downloadAttachmentBundleWithContext(release, attachments, user, response);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
