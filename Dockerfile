@@ -70,8 +70,12 @@ RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
 
 # Unpack liferay as sw360 and link current tomcat version
 # to tomcat to make future proof updates
-RUN mkdir -p /app/sw360 \
-    && curl -JL https://github.com/liferay/liferay-portal/releases/download/"$LIFERAY_VERSION"/"$LIFERAY_SOURCE" | tar -xz -C /app/sw360 --strip-components=1 \
+RUN --mount=type=cache,target=/var/cache/deps \
+    mkdir -p /app/sw360 \
+    && if [ ! -f /var/cache/deps/"$LIFERAY_SOURCE" ]; then \
+    curl -o /var/cache/deps/"$LIFERAY_SOURCE" -JL https://github.com/liferay/liferay-portal/releases/download/"$LIFERAY_VERSION"/"$LIFERAY_SOURCE"; \
+    fi \
+    && tar -xzf /var/cache/deps/"$LIFERAY_SOURCE" -C /app/sw360 --strip-components=1 \
     && chown -R $USERNAME:$USERNAME /app \
     && ln -s /app/sw360/tomcat-* /app/sw360/tomcat
 
@@ -101,6 +105,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
 COPY ./scripts/install-thrift.sh build_thrift.sh
 
 RUN --mount=type=tmpfs,target=/build \
+    --mount=type=cache,target=/var/cache/deps \
     ./build_thrift.sh
 
 FROM scratch AS sw360thrift
@@ -160,7 +165,7 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     -Drest.deploy.dir=/sw360_tomcat_webapps \
     -Dhelp-docs=true
 
-# # Generate slim war files
+# Generate slim war files
 WORKDIR /sw360_tomcat_webapps/
 
 COPY scripts/create-slim-war-files.sh /bin/slim.sh
@@ -168,9 +173,9 @@ COPY scripts/create-slim-war-files.sh /bin/slim.sh
 RUN bash /bin/slim.sh
 
 FROM scratch AS sw360
+COPY --from=sw360build /etc/sw360 /etc/sw360
 COPY --from=sw360build /sw360_deploy /sw360_deploy
 COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
-COPY --from=sw360build /etc/sw360 /etc/sw360
 
 #--------------------------------------------------------------------------------------------------
 # Runtime image
@@ -180,6 +185,8 @@ WORKDIR /app/
 
 USER $USERNAME
 
+# Modified etc
+COPY --chown=$USERNAME:$USERNAME --from=sw360 /etc/sw360 /etc/sw360
 # Downloaded jar dependencies
 COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_deploy/* /app/sw360/deploy
 # Streamlined wars
@@ -188,8 +195,6 @@ COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/slim-wars/*.
 COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/*.jar /app/sw360/tomcat/webapps/
 # Shared streamlined jar libs
 COPY --chown=$USERNAME:$USERNAME --from=sw360 /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
-# Modified etc
-COPY --chown=$USERNAME:$USERNAME --from=sw360 /etc/sw360 /etc/sw360
 
 # Make catalina understand shared directory
 RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
