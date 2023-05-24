@@ -21,8 +21,8 @@ set -e -o  pipefail
 . .versions
 
 DOCKER_IMAGE_ROOT="${DOCKER_IMAGE_ROOT:-eclipse-sw360}"
-GIT_REVISION=$(git describe --abbrev=6 --always --tags --match=[0-9]*)
 SECRETS=${SECRETS:-"$PWD/scripts/docker-config/default_secrets"}
+SW360_VERSION=${SW360_VERSION:-18-development}
 export DOCKER_PLATFORM DOCKER_IMAGE_ROOT GIT_REVISION SECRETS
 
 # ---------------------------
@@ -47,14 +47,14 @@ image_build() {
         "$@" .
 }
 
-image_build base base "$GIT_REVISION" --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE" "$@"
+image_build base base "$SW360_VERSION" --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE" "$@"
 
 image_build sw360thrift thrift "$THRIFT_VERSION" --build-arg THRIFT_VERSION="$THRIFT_VERSION" "$@"
 
-image_build sw360 binaries "$GIT_REVISION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
-    --secret id=sw360,src=$SECRETS \
+image_build sw360 binaries "$SW360_VERSION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
+    --secret id=sw360,src="$SECRETS" \
     --build-context "sw360thrift=docker-image://${DOCKER_IMAGE_ROOT}/thrift:latest" "$@"
 
-image_build runtime sw360 "$GIT_REVISION" \
+image_build runtime sw360 "$SW360_VERSION" \
     --build-context "base=docker-image://${DOCKER_IMAGE_ROOT}/base:latest" \
     --build-context "sw360=docker-image://${DOCKER_IMAGE_ROOT}/binaries:latest" "$@"
