@@ -31,6 +31,8 @@ import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
+import org.eclipse.sw360.datahandler.thrift.attachments.UsageAttachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -656,6 +658,28 @@ public class RestControllerHelper<T> {
         attachment.setCheckedComment(null);
         attachment.setCheckStatus(null);
         return attachment;
+    }
+
+    public AttachmentDTO convertAttachmentToAttachmentDTO(Attachment attachment, UsageAttachment usage) {
+        AttachmentDTO attachmentDTO = new AttachmentDTO();
+        attachmentDTO.setAttachmentContentId(attachment.getAttachmentContentId());
+        attachmentDTO.setFilename(attachment.getFilename());
+        attachmentDTO.setSha1(attachment.getSha1());
+        attachmentDTO.setAttachmentType(attachment.getAttachmentType());
+        attachmentDTO.setCreatedBy(attachment.getCreatedBy());
+        attachmentDTO.setCreatedTeam(attachment.getCreatedTeam());
+        attachmentDTO.setCreatedComment(attachment.getCreatedComment());
+        attachmentDTO.setCreatedOn(attachment.getCreatedOn());
+        attachmentDTO.setCheckedBy(attachment.getCheckedBy());
+        attachmentDTO.setCheckedTeam(attachment.getCheckedTeam());
+        attachmentDTO.setCheckedComment(attachment.getCheckedComment());
+        attachmentDTO.setCheckedOn(attachment.getCheckedOn());
+        attachmentDTO.setCheckStatus(attachment.getCheckStatus());
+        attachmentDTO.setSuperAttachmentId(attachment.getSuperAttachmentId());
+        attachmentDTO.setSuperAttachmentFilename(attachment.getSuperAttachmentFilename());
+        attachmentDTO.setUsageAttachment(usage);
+
+        return attachmentDTO;
     }
 
     public Vulnerability convertToEmbeddedVulnerability(Vulnerability vulnerability) {

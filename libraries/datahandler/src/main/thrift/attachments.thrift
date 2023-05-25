@@ -74,6 +74,55 @@ struct Attachment {
     23: optional string superAttachmentFilename
 }
 
+struct AttachmentDTO {
+    // WILL NOT BE SAVED IN DB, only for api
+    // General information
+    1: required string attachmentContentId,
+    5: required string filename,
+    6: optional string sha1,
+
+    10: optional AttachmentType attachmentType,
+
+    11: optional string createdBy,
+    12: optional string createdTeam,
+    13: optional string createdComment,
+    14: optional string createdOn,
+    15: optional string checkedBy,
+    16: optional string checkedTeam,
+    17: optional string checkedComment,
+    18: optional string checkedOn,
+
+    20: optional set<string> uploadHistory,
+    21: optional CheckStatus checkStatus;
+    22: optional string superAttachmentId,
+    23: optional string superAttachmentFilename,
+    24: optional UsageAttachment usageAttachment;
+}
+
+struct UsageAttachment {
+    // WILL NOT BE SAVED IN DB, only for api
+    // General information
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "usage",
+
+    10: optional i64 visible;
+    11: optional i64 restricted,
+    12: optional set<ProjectUsage> projectUsages
+}
+
+struct ProjectUsage {
+    // WILL NOT BE SAVED IN DB, only for api
+    // General information
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "ProjectUsage",
+
+    10: optional string projectId;
+    11: optional string projectName,
+
+}
+
 struct AttachmentContent {
     1: optional string id,
     2: optional string revision,
@@ -282,6 +331,11 @@ service AttachmentService {
      * is used for the filter.
      */
     list<AttachmentUsage> getUsedAttachments(1: Source usedBy, 2: UsageData filter);
+
+    /**
+     * Returns attachments based on its Id value
+     */
+    list<AttachmentUsage> getUsedAttachmentsById(1: string attachmentId);
 
     /**
      * Returns attachments based on its attachmentContentId value

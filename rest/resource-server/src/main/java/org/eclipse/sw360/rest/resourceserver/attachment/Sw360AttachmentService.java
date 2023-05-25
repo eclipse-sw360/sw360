@@ -12,6 +12,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.attachment;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TCompactProtocol;
+import org.apache.thrift.protocol.TProtocol;
+import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -28,14 +32,10 @@ import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
+import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
@@ -51,20 +51,15 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -99,6 +94,15 @@ public class Sw360AttachmentService {
             throw new ResourceNotFoundException("Attachment not found.");
         }
         return createAttachmentInfo(attachmentClient, attachments.get(0));
+    }
+
+    public List<AttachmentUsage> getAttachmentUseById(String id) throws TException {
+        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
+        List<AttachmentUsage> attachments = attachmentClient.getUsedAttachmentsById(id);
+        if (attachments.isEmpty()) {
+            throw new ResourceNotFoundException("Attachment not found.");
+        }
+        return attachments;
     }
 
     public List<AttachmentInfo> getAttachmentsBySha1(String sha1) throws TException {
@@ -294,6 +298,19 @@ public class Sw360AttachmentService {
         return CollectionModel.of(attachmentResources);
     }
 
+    public CollectionModel<EntityModel<AttachmentDTO>> getAttachmentDTOResourcesFromList(User user, Set<Attachment> attachments, Source owner) throws TTransportException {
+        Map<Attachment,UsageAttachment> attachmentUsageAttachmentMap = getAttachmentUsages(user, attachments, owner);
+        Set<AttachmentDTO> attachmentDTOs = getAttachmentDTOs(attachments, attachmentUsageAttachmentMap);
+        final List<EntityModel<AttachmentDTO>> attachmentResources = new ArrayList<>();
+        if (CommonUtils.isNotEmpty(attachmentDTOs)) {
+            for (final AttachmentDTO attachment : attachmentDTOs) {
+                final EntityModel<AttachmentDTO> attachmentResource = EntityModel.of(attachment);
+                attachmentResources.add(attachmentResource);
+            }
+        }
+        return CollectionModel.of(attachmentResources);
+    }
+
     public List<AttachmentUsage> getAllAttachmentUsage(String projectId) throws TException {
         AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
         return attachmentClient.getUsedAttachments(Source.projectId(projectId), null);
@@ -387,5 +404,140 @@ public class Sw360AttachmentService {
         File file = new File(newName.toString());
         FileUtils.copyFile(sourceFile, file);
         return file;
+    }
+
+    public Map<Attachment, UsageAttachment> getAttachmentUsages(User user, Set<Attachment> attachments, Source owner) throws TTransportException {
+        Set<Attachment> atts = CommonUtils.nullToEmptySet(attachments);
+        Set<String> attachmentContentIds = atts.stream().map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
+        Map<String, Long> restrictedProjectsCountsByContentId = getRestrictedProjectsCountsByContentId(attachmentContentIds, user, owner);
+        Map<Attachment, UsageAttachment> attachmentUsageMap = getAttachmentUsageMap(restrictedProjectsCountsByContentId, user);
+
+        return attachmentUsageMap;
+    }
+
+    private Map<String, Long> getRestrictedProjectsCountsByContentId(Set<String> attachmentContentIds, User user, Source owner) throws TTransportException {
+        AttachmentService.Iface client = getThriftAttachmentClient();
+        Map<String, Long> restrictedProjectsCountsByContentId = new HashMap<>();
+        try {
+            Map<String, List<AttachmentUsage>> attachmentUsagesByContentId =
+                    client.getAttachmentsUsages(owner, attachmentContentIds, null)
+                            .stream()
+                            .collect(Collectors.groupingBy(AttachmentUsage::getAttachmentContentId));
+
+            Map<String, List<Project>> usingProjectsByContentId = fetchUsingProjectsForAttachmentUsages(attachmentUsagesByContentId, user);
+            restrictedProjectsCountsByContentId = countRestrictedProjectsByContentId(attachmentUsagesByContentId, usingProjectsByContentId);
+        } catch (TException e) {
+            log.error("Cannot load restricted projects counts by contentId", e);
+        }
+        return restrictedProjectsCountsByContentId;
+    }
+
+    private Map<Attachment, UsageAttachment> getAttachmentUsageMap(Map<String, Long> restrictedProjectsCountsByContentId, User user) {
+        Map<Attachment, UsageAttachment> attachmentUsageMap = new HashMap<>();
+
+        restrictedProjectsCountsByContentId.entrySet().stream().forEach(stringLongEntry -> {
+            try {
+                List<AttachmentUsage> attachmentUsages = getAttachmentUseById(stringLongEntry.getKey());
+
+                Attachment attachment = getAttachmentForId(stringLongEntry.getKey());
+                Set<ProjectUsage> projectUsages = getProjectAttachmentUsages(attachmentUsages, user);
+                long numberProjectByAttachmentUsages = distinctProjectIdsFromAttachmentUsages(attachmentUsages).count();
+
+                UsageAttachment usage =  new UsageAttachment();
+                usage.setVisible(numberProjectByAttachmentUsages);
+                usage.setRestricted(stringLongEntry.getValue());
+                usage.setProjectUsages(projectUsages);
+
+                attachmentUsageMap.put(attachment,usage);
+            } catch (TException e) {
+                log.error("Cannot load map attachment usages", e);
+            }
+        });
+        return attachmentUsageMap;
+    }
+
+    private  Set<ProjectUsage> getProjectAttachmentUsages(List<AttachmentUsage> attachmentUsages, User user) {
+        Set<ProjectUsage> projectUsages = new HashSet<>();
+        attachmentUsages.stream().forEach(attachmentUsage -> {
+            try {
+                Project project = getThriftProjectClient().getProjectById(attachmentUsage.getUsedBy().getProjectId(), user);
+
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append(project.getName());
+                stringBuilder.append("(");
+                stringBuilder.append(project.getVersion());
+                stringBuilder.append(")");
+
+                ProjectUsage projectUsage = new ProjectUsage();
+                projectUsage.setProjectId(attachmentUsage.getUsedBy().getProjectId());
+                projectUsage.setProjectName(stringBuilder.toString());
+
+                projectUsages.add(projectUsage);
+            } catch (TException e) {
+                log.error("Cannot load project name attachment usages", e);
+            }
+        });
+        return projectUsages;
+    }
+
+    private Map<String, List<Project>> fetchUsingProjectsForAttachmentUsages(Map<String, List<AttachmentUsage>> attachmentUsagesByContentId, User user) throws TException {
+        List<String> projectIds = attachmentUsagesByContentId.values().stream()
+                .flatMap(Collection::stream)
+                .map(AttachmentUsage::getUsedBy)
+                .map(Source::getProjectId)
+                .distinct().collect(Collectors.toList());
+
+        List<Project> usingProjectsList = getThriftProjectClient().getProjectsById(projectIds, user);
+        Map<String, Project> usingProjects = ThriftUtils.getIdMap(usingProjectsList);
+        return Maps.transformValues(
+                attachmentUsagesByContentId,
+                attUsages -> distinctProjectIdsFromAttachmentUsages(attUsages)
+                        .map(usingProjects::get)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList()));
+    }
+
+    private ProjectService.Iface getThriftProjectClient() throws TTransportException {
+        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/projects/thrift");
+        TProtocol protocol = new TCompactProtocol(thriftClient);
+        return new ProjectService.Client(protocol);
+    }
+
+    private Stream<String> distinctProjectIdsFromAttachmentUsages (List<AttachmentUsage> usages){
+        return nullToEmptyList(usages).stream()
+                .map(AttachmentUsage::getUsedBy)
+                .map(Source::getProjectId)
+                .distinct();
+    }
+
+    private Map<String, Long> countRestrictedProjectsByContentId(Map<String, List<AttachmentUsage>> attachmentUsagesByContentId, Map<String, List<Project>> usingProjectsByContentId) {
+        return attachmentUsagesByContentId.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> distinctProjectIdsFromAttachmentUsages(entry.getValue())
+                                .count() - usingProjectsByContentId.get(entry.getKey()).size()
+                ));
+    }
+
+    public Attachment getAttachmentForId(String id) throws TException {
+        AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
+        List<Attachment> attachments = attachmentClient.getAttachmentsByIds(Collections.singleton(id));
+        if (attachments.isEmpty()) {
+            throw new ResourceNotFoundException("Attachment not found.");
+        }
+        return attachments.get(0);
+    }
+
+    public Set<AttachmentDTO> getAttachmentDTOs(Set<Attachment> attachments, Map<Attachment,UsageAttachment> attachmentUsages ) {
+        Set<AttachmentDTO> attachmentDTOS = new HashSet<>();
+        attachmentUsages.entrySet().stream().forEach(attachmentUsageEntry -> {
+            attachments.remove(attachmentUsageEntry.getKey());
+            AttachmentDTO attachmentDTO = restControllerHelper.convertAttachmentToAttachmentDTO(attachmentUsageEntry.getKey(),attachmentUsageEntry.getValue());
+            attachmentDTOS.add(attachmentDTO);
+        });
+        attachments.forEach(attachment -> {
+            AttachmentDTO attachmentDTO = restControllerHelper.convertAttachmentToAttachmentDTO(attachment,new UsageAttachment());
+            attachmentDTOS.add(attachmentDTO);
+        });
+        return attachmentDTOS;
     }
 }
