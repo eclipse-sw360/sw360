@@ -12,12 +12,15 @@
 
 package org.eclipse.sw360.rest.resourceserver.component;
 
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -26,6 +29,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelationDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
@@ -39,6 +45,7 @@ import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -97,8 +104,10 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     private final Sw360AttachmentService attachmentService;
 
     @NonNull
-    private final RestControllerHelper<Component> restControllerHelper;
+    private final RestControllerHelper restControllerHelper;
 
+    @NonNull
+    private final Sw360VulnerabilityService vulnerabilityService;
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel> getComponents(Pageable pageable,
                                                                         @RequestParam(value = "name", required = false) String name,
@@ -480,5 +489,139 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                 componentResources);
         HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(finalResources, status);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @PatchMapping(value = COMPONENTS_URL + "/{id}/vulnerabilities")
+    public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> patchReleaseVulnerabilityRelation(@PathVariable("id") String componentId,
+                          @RequestBody VulnerabilityState vulnerabilityState) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+
+        checkRequireReleaseVulnerabilityRelation(vulnerabilityState);
+        Set<ReleaseVulnerabilityRelationDTO> releaseVulnerabilityRelationDTOsFromRequest = vulnerabilityState.getReleaseVulnerabilityRelationDTOs();
+        Map<String,List<VulnerabilityDTO>> releaseIdsWithVulnerabilityDTOsActual = getReleaseIdsWithVulnerabilityDTOsActual(componentId, user);
+
+        Map<String,Set<String>> releaseIdsWithExternalIdsFromRequest = new HashMap<>();
+        Map<String, List<VulnerabilityDTO>> releaseVulnerabilityRelations = new HashMap<>();
+        getReleaseIdsWithExternalIdsFromRequest(releaseIdsWithExternalIdsFromRequest, releaseVulnerabilityRelations, releaseIdsWithVulnerabilityDTOsActual, releaseVulnerabilityRelationDTOsFromRequest);
+        if (validateReleaseVulnerabilityRelationDTO(releaseIdsWithExternalIdsFromRequest, vulnerabilityState)) {
+            throw new HttpMessageNotReadableException("ReleaseVulnerabilityRelationDTO is not valid");
+        }
+
+        RequestStatus requestStatus = null;
+        int countRequestStatus = 0;
+        for (Map.Entry<String, List<VulnerabilityDTO>> entry : releaseVulnerabilityRelations.entrySet()) {
+            for (VulnerabilityDTO vulnerabilityDTO: entry.getValue()) {
+                requestStatus = updateReleaseVulnerabilityRelation(entry.getKey(), user, vulnerabilityState,vulnerabilityDTO.getExternalId());
+                if (requestStatus != RequestStatus.SUCCESS) {
+                    countRequestStatus ++;
+                    break;
+                }
+            }
+            if (countRequestStatus != 0){
+                break;
+            }
+        }
+        if (requestStatus == RequestStatus.ACCESS_DENIED){
+            throw new HttpMessageNotReadableException("User not allowed!");
+        }
+
+        final List<EntityModel<VulnerabilityDTO>> vulnerabilityResources = getVulnerabilityResources(releaseIdsWithExternalIdsFromRequest);
+        CollectionModel<EntityModel<VulnerabilityDTO>> resources = restControllerHelper.createResources(vulnerabilityResources);
+        HttpStatus status = resources == null ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
+    }
+
+    private void checkRequireReleaseVulnerabilityRelation(VulnerabilityState vulnerabilityState) {
+        if(CommonUtils.isNullOrEmptyCollection(vulnerabilityState.getReleaseVulnerabilityRelationDTOs())) {
+            throw new HttpMessageNotReadableException("Required field ReleaseVulnerabilityRelation is not present");
+        }
+        if(vulnerabilityState.getVerificationState() == null) {
+            throw new HttpMessageNotReadableException("Required field verificationState is not present");
+        }
+    }
+
+    private Map<String,List<VulnerabilityDTO>> getReleaseIdsWithVulnerabilityDTOsActual(String componentId, User user) throws TException {
+        Map<String,List<VulnerabilityDTO>> releaseIdsWithVulnerabilityDTOsActual = new HashMap<>();
+        List<String> releaseIds = componentService.getReleaseIdsFromComponentId(componentId, user);
+
+        for (String releaseId: releaseIds) {
+            List<VulnerabilityDTO> vulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByReleaseId(releaseId, user);
+            releaseIdsWithVulnerabilityDTOsActual.put(releaseId,vulnerabilityDTOs);
+        }
+        return releaseIdsWithVulnerabilityDTOsActual;
+    }
+
+    private void getReleaseIdsWithExternalIdsFromRequest(Map<String,Set<String>> releaseIdsWithExternalIdsFromRequest, Map<String, List<VulnerabilityDTO>> releaseVulnerabilityRelations,
+                 Map<String,List<VulnerabilityDTO>> releaseIdsWithVulnerabilityDTOsActual, Set<ReleaseVulnerabilityRelationDTO> releaseVulnerabilityRelationDTOsFromRequest) {
+        for (Map.Entry<String, List<VulnerabilityDTO>> entry : releaseIdsWithVulnerabilityDTOsActual.entrySet()) {
+            List<VulnerabilityDTO> vulnerabilityDTOs = new ArrayList<>();
+            Set<String> externalIds = new HashSet<>();
+            entry.getValue().forEach(vulnerabilityDTO -> {
+                releaseVulnerabilityRelationDTOsFromRequest.forEach(releaseVulnerabilityRelationDTO -> {
+                    if (vulnerabilityDTO.getExternalId().equals(releaseVulnerabilityRelationDTO.getExternalId())
+                            && vulnerabilityDTO.getIntReleaseName().equals(releaseVulnerabilityRelationDTO.getReleaseName())) {
+                        externalIds.add(releaseVulnerabilityRelationDTO.getExternalId());
+                        vulnerabilityDTOs.add(vulnerabilityDTO);
+                    }
+                });
+            });
+            if (CommonUtils.isNullOrEmptyCollection(externalIds) || CommonUtils.isNullOrEmptyCollection(vulnerabilityDTOs)){
+                continue;
+            }
+            releaseIdsWithExternalIdsFromRequest.put(entry.getKey(),externalIds);
+            releaseVulnerabilityRelations.put(entry.getKey(),vulnerabilityDTOs);
+        }
+    }
+
+    private List<EntityModel<VulnerabilityDTO>> getVulnerabilityResources(Map<String,Set<String>> releaseIdsWithExternalIdsFromRequest) {
+        List<VulnerabilityDTO> vulnerabilityDTOList = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> releaseIdsWithExternalIds: releaseIdsWithExternalIdsFromRequest.entrySet()) {
+            vulnerabilityDTOList.addAll(vulnerabilityService.getVulnerabilityDTOByExternalId(releaseIdsWithExternalIds.getValue(), releaseIdsWithExternalIds.getKey()));
+        }
+        List<EntityModel<VulnerabilityDTO>> vulnerabilityResources = new ArrayList<>();
+        vulnerabilityDTOList.forEach(dto->{
+            EntityModel<VulnerabilityDTO> vulnerabilityDTOEntityModel = EntityModel.of(dto);
+            vulnerabilityResources.add(vulnerabilityDTOEntityModel);
+        });
+        return vulnerabilityResources ;
+    }
+
+    private RequestStatus updateReleaseVulnerabilityRelation(String releaseId, User user, VulnerabilityState vulnerabilityState, String externalIdRequest) throws TException {
+        List<VulnerabilityDTO> vulnerabilityDTOs = vulnerabilityService.getVulnerabilitiesByReleaseId(releaseId, user);
+        ReleaseVulnerabilityRelation releaseVulnerabilityRelation = new ReleaseVulnerabilityRelation();
+        for (VulnerabilityDTO vulnerabilityDTO: vulnerabilityDTOs) {
+            if (vulnerabilityDTO.getExternalId().equals(externalIdRequest)) {
+                releaseVulnerabilityRelation = vulnerabilityDTO.getReleaseVulnerabilityRelation();
+            }
+        }
+        ReleaseVulnerabilityRelation relation = updateReleaseVulnerabilityRelationFromRequest(releaseVulnerabilityRelation, vulnerabilityState, user);
+        return vulnerabilityService.updateReleaseVulnerabilityRelation(relation,user);
+    }
+
+    private static ReleaseVulnerabilityRelation updateReleaseVulnerabilityRelationFromRequest(ReleaseVulnerabilityRelation dbRelation, VulnerabilityState vulnerabilityState, User user) {
+        if (!dbRelation.isSetVerificationStateInfo()) {
+            dbRelation.setVerificationStateInfo(new ArrayList<>());
+        }
+        VerificationStateInfo verificationStateInfo = new VerificationStateInfo();
+        List<VerificationStateInfo> verificationStateHistory = dbRelation.getVerificationStateInfo();
+
+        verificationStateInfo.setCheckedBy(user.getEmail());
+        verificationStateInfo.setCheckedOn(SW360Utils.getCreatedOn());
+        verificationStateInfo.setVerificationState(vulnerabilityState.getVerificationState());
+        verificationStateInfo.setComment(vulnerabilityState.getComment());
+
+        verificationStateHistory.add(verificationStateInfo);
+        dbRelation.setVerificationStateInfo(verificationStateHistory);
+        return dbRelation;
+    }
+
+    private boolean validateReleaseVulnerabilityRelationDTO(Map<String,Set<String>> releaseIdsWithExternalIdsFromRequest, VulnerabilityState vulnerabilityState ) {
+        long countExternalIdsActual = 0;
+        for (Map.Entry<String, Set<String>> releaseIdWithVulnerabilityId: releaseIdsWithExternalIdsFromRequest.entrySet()){
+            countExternalIdsActual += releaseIdWithVulnerabilityId.getValue().stream().count();
+        }
+        long countExternalIdsFromRequest = vulnerabilityState.getReleaseVulnerabilityRelationDTOs().stream().count();
+        return countExternalIdsActual != countExternalIdsFromRequest;
     }
 }

@@ -260,4 +260,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         }
         return vulnerabilityDTOByComponent;
     }
+
+    public List<String> getReleaseIdsFromComponentId(String componentId, User user) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.getReleaseIdsFromComponentId(componentId, user);
+    }
 }

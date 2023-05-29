@@ -408,3 +408,20 @@ include::{snippets}/should_document_get_releases_by_component/http-response.adoc
 
 ===== Links
 include::{snippets}/should_document_get_releases_by_component/links.adoc[]
+
+[[resources-project-update-component-vulnerabilities]]
+==== Update component vulnerabilities
+
+A `PATCH` request will patch vulnerabilities of a component.
+
+===== Response structure
+include::{snippets}/should_document_update_component_vulnerabilities/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_component_vulnerabilities/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_component_vulnerabilities/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_update_component_vulnerabilities/links.adoc[]
