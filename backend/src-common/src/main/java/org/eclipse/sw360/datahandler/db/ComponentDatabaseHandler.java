@@ -323,6 +323,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.getReleasesFromComponentId(id, user);
     }
 
+    public List<Release> getReleasesFullDocsFromComponentId(String id, User user) throws TException {
+        return releaseRepository.getReleasesFullDocsFromComponentId(id, user);
+    }
+
     public List<Component> getMyComponents(String user) {
         Collection<Component> myComponents = componentRepository.getMyComponents(user);
 

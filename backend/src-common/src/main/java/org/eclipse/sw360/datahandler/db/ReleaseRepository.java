@@ -186,6 +186,11 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
          return new ArrayList<Release>(getFullDocsById(releaseIds));
     }
 
+    public List<Release> getReleasesFullDocsFromComponentId(String id, User user) {
+        Set<String> releaseIds = queryForIdsAsValue("releasesByComponentId", id);
+        return new ArrayList<Release>(getFullDocsById(releaseIds));
+    }
+
     public List<Release> getReleasesFromComponentId(String id, User user) {
         Set<String> releaseIds = queryForIdsAsValue("releasesByComponentId", id);
         return makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, 

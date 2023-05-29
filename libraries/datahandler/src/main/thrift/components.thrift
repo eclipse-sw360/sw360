@@ -27,6 +27,7 @@ typedef sw360.MainlineState MainlineState
 typedef sw360.ProjectReleaseRelationship ProjectReleaseRelationship
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.PaginationData PaginationData
+typedef sw360.ClearingReportStatus ClearingReportStatus
 typedef sw360.ImportBomRequestPreparation ImportBomRequestPreparation
 typedef attachments.Attachment Attachment
 typedef attachments.FilledAttachment FilledAttachment
@@ -370,7 +371,7 @@ struct ReleaseLink{
     22: required bool hasSubreleases,
     25: optional string nodeId,
     26: optional string parentNodeId,
-
+    27: optional ClearingReport clearingReport,
     31: optional ClearingState clearingState,
     32: optional list<Attachment> attachments,
     33: optional ComponentType componentType,
@@ -387,6 +388,13 @@ struct ReleaseClearingStatusData {
     3: optional string projectNames, // comma separated list of project names for display; possibly abbreviated
     4: optional string mainlineStates, // comma separated list of mainline states for display; possibly abbreviated
     5: optional bool accessible = true
+}
+
+struct ClearingReport{
+    1: optional string id,
+    2: optional string revision,
+    3: required ClearingReportStatus clearingReportStatus,
+    4: required set<Attachment> attachments
 }
 
 service ComponentService {
@@ -716,6 +724,8 @@ service ComponentService {
      * get summaries of releases of component specified by id, filled with permissions for user
      **/
     list<Release> getReleasesByComponentId(1: string id, 2: User user);
+
+    list<Release> getReleasesFullDocsFromComponentId(1: string id, 2: User user);
 
     /**
      * get components belonging to linked releases of the release specified by releaseId

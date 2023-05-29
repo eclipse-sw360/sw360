@@ -13,17 +13,12 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import com.google.common.collect.ImmutableSet;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
-import org.eclipse.sw360.datahandler.thrift.VerificationState;
-import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -33,7 +28,6 @@ import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
-import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,9 +75,6 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360AttachmentService attachmentServiceMock;
-
-    @MockBean
-    private Sw360VulnerabilityService vulnerabilityServiceMock;
 
     private Component angularComponent;
 
@@ -309,6 +300,43 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         vulDtos.add(vulDto1);
 
         given(this.componentServiceMock.getVulnerabilitiesByComponent(any(), any())).willReturn(vulDtos);
+
+        List<ReleaseLink> releaseLinks = new ArrayList<>();
+        Set<Attachment> attachmentList1 = new HashSet<>();
+        Attachment attachment1 = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
+        attachment1.setCheckedComment("1111");
+        attachment1.setAttachmentType(AttachmentType.CLEARING_REPORT);
+        attachment1.setCheckedBy("admin@sw360.org");
+        attachment1.setCheckStatus(CheckStatus.ACCEPTED);
+        attachmentList1.add(attachment1);
+
+        ClearingReport clearingReport = new ClearingReport();
+        clearingReport.setClearingReportStatus(ClearingReportStatus.DOWNLOAD);
+        clearingReport.setAttachments(attachmentList1);
+
+        ReleaseLink releaseLink = new ReleaseLink();
+
+        releaseLink.setId("376527651211");
+        releaseLink.setName("ReactJs 1.1.0");
+        releaseLink.setVersion("1.1.0");
+        releaseLink.setMainlineState(MainlineState.OPEN);
+        releaseLink.setClearingReport(clearingReport);
+        releaseLink.setClearingState(ClearingState.APPROVED);
+        releaseLinks.add(releaseLink);
+
+        ReleaseLink releaseLink2 = new ReleaseLink();
+        ClearingReport clearingReport1 = new ClearingReport();
+        clearingReport1.setClearingReportStatus(ClearingReportStatus.NO_REPORT);
+
+        releaseLink2.setId("3765276512");
+        releaseLink2.setName("Angular 2.3.1");
+        releaseLink2.setVersion("2.3.1");
+        releaseLink2.setMainlineState(MainlineState.OPEN);
+        releaseLink2.setClearingReport(clearingReport1);
+        releaseLink2.setClearingState(ClearingState.NEW_CLEARING);
+        releaseLinks.add(releaseLink2);
+
+        given(this.componentServiceMock.convertReleaseToReleaseLink(any(),any())).willReturn(releaseLinks);
 
         angularComponent.setReleases(releaseList);
     }
@@ -879,4 +907,30 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                             )
                         ));
     }
+
+    @Test
+    public void should_document_get_releases_by_component() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/components/" + angularComponent.getId()+ "/releases")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:releaseLinks.[]id").description("The Id of the releaseLinks"),
+                                subsectionWithPath("_embedded.sw360:releaseLinks.[]name").description("The name of the releaseLinks"),
+                                subsectionWithPath("_embedded.sw360:releaseLinks.[]version").description("The version of the releaseLinks"),
+                                subsectionWithPath("_embedded.sw360:releaseLinks.[]mainlineState").description("The mainlineState of the releaseLinks "+ Arrays.asList(MainlineState.values())),
+                                subsectionWithPath("_embedded.sw360:releaseLinks.[]clearingReport").description("The clearingReport of the releaseLinks "),
+                                subsectionWithPath("_embedded.sw360:releaseLinks.[]clearingReport.clearingReportStatus").description("The clearingReportStatus of the clearingReport "+Arrays.asList(ClearingReportStatus.values())),
+                                subsectionWithPath("_embedded.sw360:releaseLinks.[]clearingState").description("The clearingState of the releaseLinks "+ Arrays.asList(ClearingState.values())),
+                                subsectionWithPath("_embedded.sw360:releaseLinks").description("An array of <<resources-releases, releases resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
 }

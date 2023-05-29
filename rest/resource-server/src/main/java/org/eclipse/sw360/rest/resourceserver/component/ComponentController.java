@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -289,6 +290,15 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
         final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getResourcesFromList(sw360Component.getAttachments());
+        return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = COMPONENTS_URL + "/{id}/releases", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<ReleaseLink>> getReleaseLinksByComponentId(
+            @PathVariable("id") String id) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final List<ReleaseLink> releaseLinks = componentService.convertReleaseToReleaseLink(id, sw360User);
+        CollectionModel<ReleaseLink> resources = CollectionModel.of(releaseLinks);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
