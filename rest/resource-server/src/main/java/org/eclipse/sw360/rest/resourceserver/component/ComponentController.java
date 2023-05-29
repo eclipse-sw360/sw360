@@ -188,6 +188,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
         HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
+        restControllerHelper.addEmbeddedDataToComponent(userHalResource, sw360Component);
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 

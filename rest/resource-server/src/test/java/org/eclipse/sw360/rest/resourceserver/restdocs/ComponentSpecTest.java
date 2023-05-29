@@ -164,6 +164,13 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         angularComponent.setDescription("Angular is a development platform for building mobile and desktop web applications.");
         angularComponent.setCreatedOn("2016-12-15");
         angularComponent.setCreatedBy("admin@sw360.org");
+        angularComponent.setModifiedBy("admin1@sw360.org");
+        angularComponent.setModifiedOn("2016-12-30");
+        angularComponent.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Linux")));
+        angularComponent.setMainLicenseIds(new HashSet<>(Arrays.asList("123")));
+        angularComponent.setSubscribers(new HashSet<>(Arrays.asList("Mari")));
+        angularComponent.setWiki("http://wiki.ubuntu.com/");
+        angularComponent.setBlog("http://www.javaworld.com/");
         angularComponent.setComponentType(ComponentType.OSS);
         angularComponent.setVendorNames(new HashSet<>(Collections.singletonList("Google")));
         angularComponent.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "john@sw360.org")));
@@ -194,6 +201,13 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         springComponent.setDescription("The Spring Framework provides a comprehensive programming and configuration model for modern Java-based enterprise applications.");
         springComponent.setCreatedOn("2016-12-18");
         springComponent.setCreatedBy("jane@sw360.org");
+        springComponent.setModifiedBy("User@sw360.org");
+        springComponent.setModifiedOn("2016-12-25");
+        springComponent.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Windows")));
+        springComponent.setMainLicenseIds(new HashSet<>(Arrays.asList("222")));
+        springComponent.setSubscribers(new HashSet<>(Arrays.asList("Natan")));
+        springComponent.setWiki("http://wiki.ubuntu.com/");
+        springComponent.setBlog("http://www.javaworld.com/");
         springComponent.setComponentType(ComponentType.OSS);
         springComponent.setVendorNames(new HashSet<>(Collections.singletonList("Pivotal")));
         springComponent.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
@@ -502,6 +516,13 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.defaultVendor").description("Default vendor of component"),
                                 subsectionWithPath("_embedded.sw360:components.[]defaultVendorId").description("Default vendor of component"),
 
+                                subsectionWithPath("_embedded.sw360:components.[]subscribers").description("The subscribers of component"),
+                                subsectionWithPath("_embedded.sw360:components.[]mainLicenseIds").description("The Main License Ids of component"),
+                                subsectionWithPath("_embedded.sw360:components.[]softwarePlatforms").description("The Software Platforms of component"),
+                                subsectionWithPath("_embedded.sw360:components.[]wiki").description("The wiki of component"),
+                                subsectionWithPath("_embedded.sw360:components.[]blog").description("The blog of component"),
+                                subsectionWithPath("_embedded.sw360:components.[]modifiedOn").description("The date the component was modified"),
+
                                 subsectionWithPath("_embedded.sw360:components.[]categories").description("The component categories"),
                                 subsectionWithPath("_embedded.sw360:components.[]languages").description("The language of the component"),
 
@@ -665,6 +686,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("description").description("The component description"),
                                 fieldWithPath("createdOn").description("The date the component was created"),
+                                fieldWithPath("modifiedOn").description("The date the component was modified"),
                                 fieldWithPath("componentOwner").description("The owner name of the component"),
                                 fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the component"),
                                 fieldWithPath("ownerGroup").description("The owner group of the component"),
@@ -674,6 +696,11 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("externalIds").description("When components are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
                                 fieldWithPath("operatingSystems").description("The OS on which the component operates"),
+                                fieldWithPath("softwarePlatforms").description("The Software Platforms of component"),
+                                fieldWithPath("subscribers").description("The subscribers of component"),
+                                fieldWithPath("mainLicenseIds").description("The Main License Ids of component"),
+                                fieldWithPath("wiki").description("The wiki of component"),
+                                fieldWithPath("blog").description("The blog of component"),
                                 fieldWithPath("mailinglist").description("Component mailing lists"),
                                 fieldWithPath("homepage").description("The homepage url of the component"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
@@ -946,6 +973,12 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("ownerCountry").description("The owner country of the component"),
                         subsectionWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                         subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
+                        fieldWithPath("modifiedOn").description("The date the component was modified"),
+                        fieldWithPath("softwarePlatforms").description("The Software Platforms of component"),
+                        fieldWithPath("subscribers").description("The subscribers of component"),
+                        fieldWithPath("mainLicenseIds").description("The Main License Ids of component"),
+                        fieldWithPath("wiki").description("The wiki of component"),
+                        fieldWithPath("blog").description("The blog of component"),
                         fieldWithPath("categories").description("The component categories"),
                         fieldWithPath("languages").description("The language of the component"),
                         fieldWithPath("mailinglist").description("Component mailing lists"),
