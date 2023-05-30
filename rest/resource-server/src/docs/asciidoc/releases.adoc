@@ -426,3 +426,20 @@ include::{snippets}/should_document_get_release_subscription/http-response.adoc[
 ===== Links
 
 include::{snippets}/should_document_get_release_subscription/links.adoc[]
+
+[[resources-project-update-release-vulnerabilities]]
+==== Update release vulnerabilities
+
+A `PATCH` request will patch vulnerabilities of a release.
+
+===== Response structure
+include::{snippets}/should_document_update_release_vulnerabilities/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_release_vulnerabilities/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_release_vulnerabilities/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_update_release_vulnerabilities/links.adoc[]

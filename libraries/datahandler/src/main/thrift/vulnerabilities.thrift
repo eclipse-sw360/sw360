@@ -395,5 +395,5 @@ service VulnerabilityService {
     * Find vulnerabilityDTO by external id
     *
     */
-    list<VulnerabilityDTO> getvulnerabilityDTOByExternalId(1: set<string> externalIds, 2: string releaseId)
+    list<VulnerabilityDTO> getVulnerabilityDTOByExternalId(1: set<string> externalIds, 2: string releaseId)
 }
