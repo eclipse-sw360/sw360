@@ -650,3 +650,17 @@ include::{snippets}/should_document_import_sbom/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_import_sbom/http-response.adoc[]
+
+[[resources-project-getprojectcount]]
+==== Get project count of a user
+
+A `GET` request will get project count of a user.
+
+===== Example request
+include::{snippets}/should_document_get_project_count/curl-request.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_count/response-fields.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_count/http-response.adoc[]
