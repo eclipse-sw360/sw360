@@ -265,4 +265,14 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.getReleaseIdsFromComponentId(componentId, user);
     }
+
+    public RequestSummary importSBOM(User user, String attachmentContentId) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.importBomFromAttachmentContent(user, attachmentContentId);
+    }
+
+    public ImportBomRequestPreparation prepareImportSBOM(User user, String attachmentContentId) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.prepareImportBom(user, attachmentContentId);
+    }
 }
