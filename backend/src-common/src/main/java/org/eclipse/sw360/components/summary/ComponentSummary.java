@@ -103,6 +103,9 @@ public class ComponentSummary extends DocumentSummary<Component> {
         copyField(document, copy, Component._Fields.CREATED_BY);
         copyField(document, copy, Component._Fields.CREATED_ON);
         copyField(document, copy, Component._Fields.VENDOR_NAMES);
+        copyField(document, copy, Component._Fields.MAIN_LICENSE_IDS);
+        copyField(document, copy, Component._Fields.COMPONENT_TYPE);
+        copyField(document, copy, Component._Fields.DEFAULT_VENDOR_ID);
 
 
         for (Release release : releases) {

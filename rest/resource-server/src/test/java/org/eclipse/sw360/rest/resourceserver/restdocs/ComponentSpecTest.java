@@ -32,11 +32,13 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerability
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelationDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
+import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
+import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -93,6 +95,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     @MockBean
     private Sw360VulnerabilityService vulnerabilityServiceMock;
 
+    @MockBean
+    private Sw360VendorService vendorServiceMock;
+
     private Component angularComponent;
 
     private Attachment attachment;
@@ -105,6 +110,14 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Before
     public void before() throws TException, IOException {
+        Set<String> licenseIds = new HashSet<>();
+        licenseIds.add("MIT");
+        licenseIds.add("Apache-2.0");
+        Vendor vendor = new Vendor();
+        vendor.setId("vendorId");
+        vendor.setFullname("vendorFullName");
+        vendor.setShortname("vendorShortName");
+        vendor.setUrl("https://vendor.com");
         Set<Attachment> attachmentList = new HashSet<>();
         List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
         attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
@@ -165,6 +178,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         angularComponent.setMailinglist("test@liferay.com");
         angularComponent.setAdditionalData(Collections.singletonMap("Key", "Value"));
         angularComponent.setHomepage("https://angular.io");
+        angularComponent.setMainLicenseIds(licenseIds);
+        angularComponent.setDefaultVendorId("vendorId");
         componentList.add(angularComponent);
         componentListByName.add(angularComponent);
 
@@ -190,6 +205,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         springComponent.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
         springComponent.setExternalIds(springComponentExternalIds);
         springComponent.setMailinglist("test@liferay.com");
+        springComponent.setMainLicenseIds(licenseIds);
+        springComponent.setDefaultVendorId("vendorId");
         componentList.add(springComponent);
         usedByComponent.add(springComponent);
 
@@ -239,6 +256,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 new User("admin@sw360.org", "sw360").setId("123456789"));
         given(this.userServiceMock.getUserByEmail("john@sw360.org")).willReturn(
                 new User("john@sw360.org", "sw360").setId("74427996"));
+
+        given(this.vendorServiceMock.getVendorById("vendorId")).willReturn(vendor);
 
         List<Release> releaseList = new ArrayList<>();
         Release release = new Release();
@@ -467,7 +486,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
-
+                                subsectionWithPath("_embedded.sw360:components.[]id").description("The id of the component"),
                                 subsectionWithPath("_embedded.sw360:components.[]name").description("The name of the component"),
                                 subsectionWithPath("_embedded.sw360:components.[]description").description("The component description"),
                                 subsectionWithPath("_embedded.sw360:components.[]createdOn").description("The date the component was created"),
@@ -479,6 +498,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:components.[]visbility").description("The component visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 subsectionWithPath("_embedded.sw360:components.[]externalIds").description("When components are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 subsectionWithPath("_embedded.sw360:components.[]additionalData").description("A place to store additional data used by external tools").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]mainLicenseIds").description("Main license ids of component"),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.defaultVendor").description("Default vendor of component"),
+                                subsectionWithPath("_embedded.sw360:components.[]defaultVendorId").description("Default vendor of component"),
 
                                 subsectionWithPath("_embedded.sw360:components.[]categories").description("The component categories"),
                                 subsectionWithPath("_embedded.sw360:components.[]languages").description("The language of the component"),
@@ -638,6 +660,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-components,Component resource>>")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The id of the component"),
                                 fieldWithPath("name").description("The name of the component"),
                                 fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("description").description("The component description"),
@@ -661,7 +684,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                                 fieldWithPath("visbility").description("The visibility type of the component"),
                                 fieldWithPath("setVisbility").description("The visibility of the component"),
-                                fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component")
+                                fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component"),
+                                fieldWithPath("mainLicenseIds").description("Main license ids of component"),
+                                subsectionWithPath("_embedded.defaultVendor").description("Default vendor of component"),
+                                fieldWithPath("defaultVendorId").description("Default vendor id of component")
                         )));
     }
 
@@ -689,6 +715,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("homepage").description("The homepage url of the component")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The id of the component"),
                                 fieldWithPath("name").description("The name of the component"),
                                 fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("description").description("The component description"),
@@ -908,6 +935,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         linkWithRel("self").description("The <<resources-components,Component resource>>")
                 ),
                 responseFields(
+                        fieldWithPath("id").description("The id of the component"),
                         fieldWithPath("name").description("The name of the component"),
                         fieldWithPath("componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
                         fieldWithPath("description").description("The component description"),
@@ -931,7 +959,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         subsectionWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                         fieldWithPath("visbility").description("The visibility type of the component"),
                         fieldWithPath("setVisbility").description("The visibility of the component"),
-                        fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component")
+                        fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component"),
+                        fieldWithPath("mainLicenseIds").description("Main license ids of component"),
+                        subsectionWithPath("_embedded.defaultVendor").description("Default vendor of component"),
+                        fieldWithPath("defaultVendorId").description("Default vendor id of component")
                 ));
     }
 
