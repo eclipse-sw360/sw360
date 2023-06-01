@@ -252,7 +252,6 @@ public class JacksonCustomizations {
             abstract public boolean isEnableVulnerabilitiesDisplay();
 
             @Override
-            @JsonIgnore
             abstract public ProjectState getState();
         }
 
