@@ -36,6 +36,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.UsageAttachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -100,6 +101,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -293,6 +295,56 @@ public class RestControllerHelper<T> {
         }
     }
 
+    public void addEmbeddedDataToHalResourceRelease(HalResource halResource, Release sw360Release) {
+        addEmbeddedContributorsToHalResourceRelease(halResource, sw360Release);
+        addEmbeddedCreatedByToHalResourceRelease(halResource, sw360Release.getCreatedBy());
+        addEmbeddedModifiedByToHalResourceRelease(halResource, sw360Release.getModifiedBy());
+        addEmbeddedSubcribeToHalResourceRelease(halResource, sw360Release);
+    }
+
+    public void addEmbeddedContributorsToHalResourceRelease(HalResource halResource, Release sw360Release) {
+        if (!CommonUtils.isNullOrEmptyCollection(sw360Release.getContributors())) {
+            Set<String> contributors = sw360Release.getContributors();
+            for (String contributorEmail : contributors) {
+                User sw360User = getUserByEmail(contributorEmail);
+                if (null != sw360User) {
+                    addEmbeddedUser(halResource, sw360User, "sw360:contributors");
+                    sw360Release.setContributors(null);
+                }
+
+            }
+        }
+    }
+
+    public void addEmbeddedSubcribeToHalResourceRelease(HalResource halResource, Release sw360Release) {
+        if (!CommonUtils.isNullOrEmptyCollection(sw360Release.getSubscribers())) {
+            Set<String> subscribers = sw360Release.getSubscribers();
+            for (String subscribersEmail : subscribers) {
+                User sw360User = getUserByEmail(subscribersEmail);
+                if (null != sw360User) {
+                    addEmbeddedUser(halResource, sw360User, "sw360:subscribers");
+                    sw360Release.setSubscribers(null);
+                }
+            }
+        }
+    }
+
+    public void addEmbeddedCreatedByToHalResourceRelease(HalResource halRelease, String createdBy) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(createdBy)) {
+            User releaseCreator = getUserByEmail(createdBy);
+            if (null != releaseCreator )
+                addEmbeddedUser(halRelease, releaseCreator, "sw360:createdBy");
+        }
+    }
+
+    public void addEmbeddedModifiedByToHalResourceRelease(HalResource halRelease, String modifiedBy) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(modifiedBy)) {
+            User releaseModify = getUserByEmail(modifiedBy);
+            if (null != releaseModify)
+                addEmbeddedUser(halRelease, releaseModify, "sw360:modifiedBy");
+        }
+    }
+
     public void addEmbeddedLeadArchitect(HalResource halResource, String leadArchitect) {
         User sw360User = getUserByEmail(leadArchitect);
         addEmbeddedUser(halResource, sw360User, "leadArchitect");
@@ -314,6 +366,15 @@ public class RestControllerHelper<T> {
             List<Release> releases) {
         for (Release release : releases) {
             addEmbeddedRelease(halResource, release);
+        }
+    }
+
+    public void addEmbeddedReleaseLinks(
+            HalResource halResource,
+            List<ReleaseLink> releaseLinks) {
+        List<ReleaseLink> releaseLinkInogreAttachments = releaseLinks.stream().map(releaseLink -> releaseLink.setAttachments(null)).collect(Collectors.toList());
+        for (ReleaseLink releaseLink : releaseLinkInogreAttachments) {
+            addEmbeddedReleaseLink(halResource, releaseLink);
         }
     }
 
@@ -349,6 +410,23 @@ public class RestControllerHelper<T> {
             return halVendor;
         } catch (Exception e) {
             LOGGER.error("cannot create self link for vendor with full name: " + vendorFullName);
+        }
+        return null;
+    }
+
+    public HalResource<Vendor> addEmbeddedVendor(Vendor vendor) {
+        Vendor embeddedVendor = convertToEmbeddedVendor(vendor);
+        HalResource<Vendor> halVendor = new HalResource<>(embeddedVendor);
+        try {
+            Vendor vendorByFullName = vendorService.getVendorByFullName(vendor.getFullname());
+            if(vendorByFullName != null) {
+                Link vendorSelfLink = linkTo(UserController.class)
+                        .slash("api" + VendorController.VENDORS_URL + "/" + vendorByFullName.getId()).withSelfRel();
+                halVendor.add(vendorSelfLink);
+            }
+            return halVendor;
+        } catch (Exception e) {
+            LOGGER.error("cannot create self link for vendor with full name: " + vendor.getFullname());
         }
         return null;
     }
@@ -393,6 +471,11 @@ public class RestControllerHelper<T> {
                 slash("api/releases/" + release.getId()).withSelfRel();
         halRelease.add(releaseLink);
         halResource.addEmbeddedResource("sw360:releases", halRelease);
+    }
+
+    public void addEmbeddedReleaseLink(HalResource halResource, ReleaseLink releaseLink) {
+        HalResource<ReleaseLink> halRelease = new HalResource<>(releaseLink);
+        halResource.addEmbeddedResource("sw360:releaseLinks", halRelease);
     }
 
     public void addEmbeddedAttachments(
@@ -652,9 +735,10 @@ public class RestControllerHelper<T> {
     }
 
     public Vendor convertToEmbeddedVendor(Vendor vendor) {
-        Vendor embeddedVendor = convertToEmbeddedVendor(vendor.getFullname());
+        Vendor embeddedVendor = new Vendor();
         embeddedVendor.setId(vendor.getId());
         embeddedVendor.setShortname(vendor.getShortname());
+        embeddedVendor.setFullname(vendor.getFullname());
         embeddedVendor.setUrl(vendor.getUrl());
         return embeddedVendor;
     }
@@ -988,6 +1072,7 @@ public class RestControllerHelper<T> {
     public void addEmbeddedDataToComponent(HalResource halResource, Component sw360Component) {
         addEmbeddedModifiedByToComponent(halResource,sw360Component);
         addEmbeddedComponentOwnerToComponent(halResource,sw360Component);
+        addEmbeddedSubcribeToHalResourceComponent(halResource,sw360Component);
     }
 
     public void addEmbeddedModifiedByToComponent(HalResource halResource, Component sw360Component) {
@@ -1007,4 +1092,18 @@ public class RestControllerHelper<T> {
             }
         }
     }
+
+    public void addEmbeddedSubcribeToHalResourceComponent(HalResource halResource, Component sw360Component) {
+        if (!CommonUtils.isNullOrEmptyCollection(sw360Component.getSubscribers())) {
+            Set<String> subscribers = sw360Component.getSubscribers();
+            for (String subscribersEmail : subscribers) {
+                User sw360User = getUserByEmail(subscribersEmail);
+                if (null != sw360User) {
+                    addEmbeddedUser(halResource, sw360User, "sw360:subscribers");
+                    sw360Component.setSubscribers(null);
+                }
+            }
+        }
+    }
+
 }

@@ -15,17 +15,9 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
+import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
-import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalTool;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
@@ -177,6 +169,17 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         releaseExternalIds.put("mainline-id-component", "1432");
         releaseExternalIds.put("ws-component-id", "[\"2365\",\"5487923\"]");
 
+        EccInformation eccInformation = new EccInformation();
+        eccInformation.setAl("AL");
+        eccInformation.setEccn("ECCN");
+        eccInformation.setAssessorContactPerson("admin@sw360.org");
+        eccInformation.setAssessorDepartment("DEPARTMENT");
+        eccInformation.setEccComment("Set ECC");
+        eccInformation.setMaterialIndexNumber("12");
+        eccInformation.setAssessmentDate("2023-06-27");
+        eccInformation.setEccStatus(ECCStatus.OPEN);
+
+
         release.setId(releaseId);
         owner.setReleaseId(release.getId());
         release.setName("Spring Core 4.3.4");
@@ -186,7 +189,10 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setCreatedOn("2016-12-18");
         release.setCreatedBy("admin@sw360.org");
         release.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
+        release.setSubscribers(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
+        release.setContributors(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
         release.setCreatedBy("admin@sw360.org");
+        release.setModifiedBy("admin@sw360.org");
         release.setSourceCodeDownloadurl("http://www.google.com");
         release.setBinaryDownloadurl("http://www.google.com/binaries");
         release.setComponentId(component.getId());
@@ -201,6 +207,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setOtherLicenseIds(new HashSet<>(Arrays.asList("MIT", "BSD-3-Clause")));
         release.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
         release.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Java SE", ".NET")));
+        release.setEccInformation(eccInformation);
         releaseList.add(release);
 
         Release release2 = new Release();
@@ -230,6 +237,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release2.setReleaseIdToRelationship(releaseIdToRelationship);
         release2.setClearingInformation(clearingInfo);
         release2.setCotsDetails(cotsDetails);
+        release2.setEccInformation(eccInformation);
         releaseList.add(release2);
 
         release3 = new Release();
@@ -479,9 +487,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:releases.[]sourceCodeDownloadurl").description("the source code download url of the release"),
                                 subsectionWithPath("_embedded.sw360:releases.[]binaryDownloadurl").description("the binary download url of the release"),
                                 subsectionWithPath("_embedded.sw360:releases.[]externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
+                                subsectionWithPath("_embedded.sw360:releases.[]eccInformation").description("The eccInformation of this release"),
                                 subsectionWithPath("_embedded.sw360:releases.[]additionalData").description("A place to store additional data used by external tools").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]languages").description("The language of the component"),
-                                subsectionWithPath("_embedded.sw360:releases.[]contributors").description("An array of all project contributors with email").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]mainLicenseIds").description("An array of all main licenses").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]otherLicenseIds").description("An array of all other licenses associated with the release").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]operatingSystems").description("The OS on which the release operates"),
@@ -577,6 +585,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
                                 fieldWithPath("componentType").description("The componentType of the release, possible values are " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
+                                subsectionWithPath("eccInformation").description("The eccInformation of this release"),
                                 fieldWithPath("sourceCodeDownloadurl").description("the source code download url of the release"),
                                 fieldWithPath("binaryDownloadurl").description("the binary download url of the release"),
                                 fieldWithPath("otherLicenseIds").description("An array of all other licenses associated with the release"),
@@ -587,6 +596,10 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("operatingSystems").description("The OS on which the release operates"),
                                 fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
+                                subsectionWithPath("_embedded.sw360:subscribers").description("An array of all release subscribers with email and link to their <<resources-user-get,User resource>>"),
+                                subsectionWithPath("_embedded.sw360:contributors").description("An array of all release contributors with email and link to their <<resources-user-get,User resource>>"),
+                                subsectionWithPath("_embedded.sw360:modifiedBy").description("A release modifiedBy with email and link to their <<resources-user-get,User resource>>"),
+                                subsectionWithPath("_embedded.sw360:createdBy").description("A release createdBy with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
@@ -883,6 +896,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
                         fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
                         fieldWithPath("sourceCodeDownloadurl").description("the source code download url of the release"),
+                        subsectionWithPath("eccInformation").description("The eccInformation of this release"),
                         fieldWithPath("binaryDownloadurl").description("the binary download url of the release"),
                         fieldWithPath("otherLicenseIds").description("An array of all other licenses associated with the release"),
                         subsectionWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
