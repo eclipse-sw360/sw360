@@ -696,4 +696,36 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         }
         return importBomRequestPreparationResponse;
     }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = COMPONENTS_URL + "/mergecomponents", method = RequestMethod.PATCH)
+    public ResponseEntity<RequestStatus> mergeComponents(
+            @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
+            @RequestParam(value = "mergeSourceId", required = true) String mergeSourceId,
+            @RequestBody Component mergeSelection ) throws TException {
+
+
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+        // perform the real merge, update merge target and delete merge sources
+        RequestStatus requestStatus = componentService.mergeComponents(mergeTargetId, mergeSourceId, mergeSelection, sw360User);
+
+        return new ResponseEntity<>(requestStatus, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = COMPONENTS_URL + "/splitComponents", method = RequestMethod.PATCH)
+    public ResponseEntity<RequestStatus> splitComponents(
+            @RequestBody Map<String, Component> componentMap) throws TException {
+
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+        Component srcComponent = componentMap.get("srcComponent");
+        Component targetComponent = componentMap.get("targetComponent");
+
+        // perform the real merge, update merge target and delete merge source
+        RequestStatus requestStatus = componentService.splitComponents(srcComponent, targetComponent, sw360User);
+
+        return new ResponseEntity<>(requestStatus, HttpStatus.OK);
+    }
 }

@@ -275,4 +275,37 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.prepareImportBom(user, attachmentContentId);
     }
+
+  public RequestStatus mergeComponents(String componentTargetId, String componentSourceId, Component componentSelection, User user) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        RequestStatus requestStatus;
+        requestStatus =  sw360ComponentClient.mergeComponents(componentTargetId, componentSourceId, componentSelection, user);
+
+        if (requestStatus == RequestStatus.IN_USE) {
+            throw new HttpMessageNotReadableException("Component already in use.");
+        } else if (requestStatus == RequestStatus.FAILURE) {
+            throw new HttpMessageNotReadableException("Cannot merge these components");
+        } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
+            throw new RuntimeException("Access denied");
+        }
+
+        return requestStatus;
+  }
+
+
+    public RequestStatus splitComponents(Component srcComponent, Component targetComponent, User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        RequestStatus requestStatus;
+        requestStatus = sw360ComponentClient.splitComponent(srcComponent, targetComponent, sw360User);
+
+        if (requestStatus == RequestStatus.IN_USE) {
+            throw new HttpMessageNotReadableException("Component already in use.");
+        } else if (requestStatus == RequestStatus.FAILURE) {
+            throw new HttpMessageNotReadableException("Cannot split these components");
+        } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
+            throw new RuntimeException("Access denied...!");
+        }
+
+        return requestStatus;
+    }
 }
