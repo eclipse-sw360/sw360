@@ -193,6 +193,7 @@
         </developer>
     </developers>
     <build>
+        <finalName>couchdb-lucene</finalName>
         <defaultGoal>assembly:assembly</defaultGoal>
         <plugins>
             <plugin>
@@ -235,7 +236,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.2-beta-4</version>
+                <version>3.6.0</version>
                 <configuration>
                     <descriptors>
                         <descriptor>src/main/assembly/dist.xml</descriptor>
@@ -257,6 +258,14 @@
                     </archive>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <outputFileNameMapping>@{artifactId}@.@{extension}@</outputFileNameMapping>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-eclipse-plugin</artifactId>
