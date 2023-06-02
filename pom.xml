@@ -145,15 +145,16 @@
     <resumable.js.version>1.1.0</resumable.js.version>
     <slf4j.version>1.7.30</slf4j.version>
     <spotless.version>2.29.0</spotless.version>
-    <spring-boot.version>2.7.11</spring-boot.version>
+    <spring-boot.version>2.7.6</spring-boot.version>
     <spring-restdocs-asciidoctor.version>2.0.6.RELEASE</spring-restdocs-asciidoctor.version>
     <spring-restdocs.version>2.0.6.RELEASE</spring-restdocs.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
     <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
-    <spring.version>5.3.19</spring.version>
+    <springframework.version>5.3.27</springframework.version>
     <thrift.version>0.16.0</thrift.version>
     <tika.version>1.28.5</tika.version>
     <wiremock.version>2.26.0</wiremock.version>
+    <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
 
     <!--  User must provide below property configuration based on his/her liferay deployment
     environment -->
@@ -521,6 +522,38 @@
         <artifactId>commons-compress</artifactId>
         <version>${commons-compress.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-webmvc</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-web</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>javax.servlet-api</artifactId>
+        <version>${javax.servlet-api.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
     </dependencies>
   </dependencyManagement>
 
