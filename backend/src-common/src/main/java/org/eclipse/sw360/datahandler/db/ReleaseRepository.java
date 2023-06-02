@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.PaginationData;
 
 import java.util.*;
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
@@ -26,6 +27,11 @@ import com.cloudant.client.api.views.ViewRequestBuilder;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+
+import com.google.common.collect.Maps;
+import com.google.common.collect.Lists;
+import com.cloudant.client.api.views.ViewRequest;
+import com.cloudant.client.api.views.ViewResponse;
 
 /**
  * CRUD access for the Release class
@@ -126,6 +132,40 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
                     "    emit(doc.version.toLowerCase(), doc._id);" +
                     "  } " +
                     "}";
+    private static final String BY_STATUS_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'release') {" +
+                    "    emit(doc.eccInformation.eccStatus, doc._id);" +
+                    "  } " +
+                    "}";
+
+    private static final String BY_ASSESSOR_CONTACT_PERSON_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'release') {" +
+                    "    emit(doc.eccInformation.assessorContactPerson, doc._id);" +
+                    "  } " +
+                    "}";
+
+    private static final String BY_ASSESSOR_DEPARTMENT_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'release') {" +
+                    "    emit(doc.eccInformation.assessorDepartment, doc._id);" +
+                    "  } " +
+                    "}";
+
+    private static final String BY_ASSESSMENT_DATE_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'release') {" +
+                    "    emit(doc.eccInformation.assessmentDate, doc._id);" +
+                    "  } " +
+                    "}";
+
+    private static final String BY_CREATOR_DEPARTMENT_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'release') {" +
+                    "    emit(doc.creatorDepartment, doc._id);" +
+                    "  } " +
+                    "}";
 
     public ReleaseRepository(DatabaseConnectorCloudant db, VendorRepository vendorRepository) {
         super(Release.class, db, new ReleaseSummary(vendorRepository));
@@ -144,6 +184,11 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         views.put("releaseByName", createMapReduce(BY_LOWERCASE_RELEASE_NAME_VIEW, null));
         views.put("releaseByVersion", createMapReduce(BY_LOWERCASE_RELEASE_VERSION_VIEW, null));
         views.put("releaseIdsByVendorId", createMapReduce(RELEASEIDSBYVENDORID, null));
+        views.put("byStatus", createMapReduce(BY_STATUS_VIEW, null));
+        views.put("byECCAssessorContactPerson", createMapReduce(BY_ASSESSOR_CONTACT_PERSON_VIEW, null));
+        views.put("byECCAssessorGroup", createMapReduce(BY_ASSESSOR_DEPARTMENT_VIEW, null));
+        views.put("byECCAssessmentDate", createMapReduce(BY_ASSESSMENT_DATE_VIEW, null));
+        views.put("byCreatorGroup", createMapReduce(BY_CREATOR_DEPARTMENT_VIEW, null));
         initStandardDesignDocument(views, db);
     }
 
@@ -255,5 +300,70 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
 
     public List<Release> getReferencingReleases(String releaseId) {
         return queryView("usedInReleaseRelation", releaseId);
+    }
+    
+    public Map<PaginationData, List<Release>> getAccessibleReleasesWithPagination(User user, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        Map<PaginationData, List<Release>> result = Maps.newHashMap();
+        List<Release> releases = Lists.newArrayList();
+        final boolean ascending = pageData.isAscending();
+        final int sortColumnNo = pageData.getSortColumnNumber();
+
+        ViewRequestBuilder query;
+        switch (sortColumnNo) {
+        case -1:
+            query = getConnector().createQuery(Release.class, "byCreatedOn");
+            break;
+        case 0:
+            query = getConnector().createQuery(Release.class, "byStatus");
+            break;
+        case 1:
+            query = getConnector().createQuery(Release.class, "byname");
+            break;
+        case 2:
+            query = getConnector().createQuery(Release.class, "releaseByVersion");
+            break;
+        case 3:
+            query = getConnector().createQuery(Release.class, "byCreatorGroup");
+            break;
+        case 4:
+            query = getConnector().createQuery(Release.class, "byECCAssessorContactPerson");
+            break;
+        case 5:
+            query = getConnector().createQuery(Release.class, "byECCAssessorGroup");
+            break;
+        case 6:
+            query = getConnector().createQuery(Release.class, "byECCAssessmentDate");
+            break;
+        default:
+            query = getConnector().createQuery(Release.class, "all");
+            break;
+        }
+
+        ViewRequest<String, Object> request = null;
+        if (rowsPerPage == -1) {
+            request = query.newRequest(Key.Type.STRING, Object.class).descending(!ascending).includeDocs(true).build();
+        } else {
+            request = query.newPaginatedRequest(Key.Type.STRING, Object.class).rowsPerPage(rowsPerPage)
+                    .descending(!ascending).includeDocs(true).build();
+        }
+
+        ViewResponse<String, Object> response = null;
+        try {
+            response = request.getResponse();
+            int pageNo = pageData.getDisplayStart() / rowsPerPage;
+            int i = 1;
+            while (i <= pageNo) {
+                response = response.nextPage();
+                i++;
+            }
+            releases = response.getDocsAs(Release.class);
+        } catch (Exception e) {
+            log.error("Error getting recent releases", e);
+        }
+        releases = makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, releases, user);
+        pageData.setTotalRowCount(response.getTotalRowCount());
+        result.put(pageData, releases);
+        return result;
     }
 }
