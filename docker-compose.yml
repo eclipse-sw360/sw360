@@ -23,6 +23,7 @@ services:
     tty: true
     volumes:
       - etc:/etc/sw360
+      - document_library:/app/sw360/data/document_library
       - ./config:/app/sw360/config
 
   postgresdb:
@@ -67,6 +68,7 @@ volumes:
   postgres: null
   couchdb: null
   etc: null
+  document_library: null
 
 networks:
   default:
