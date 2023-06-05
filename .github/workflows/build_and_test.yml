@@ -18,6 +18,7 @@ on:
     paths-ignore:
       - "**.md"
       - ".github/workflows/docker_deploy.yml"
+  workflow_dispatch: 
 
 permissions: write-all
 
