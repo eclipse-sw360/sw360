@@ -41,6 +41,7 @@
                 </configuration>
                 <executions>
                     <execution>
+                        <?m2e execute onConfiguration,onIncremental?>
                         <id>thrift-sources</id>
                         <phase>generate-sources</phase>
                         <goals>
@@ -48,6 +49,7 @@
                         </goals>
                     </execution>
                     <execution>
+                        <?m2e execute onConfiguration,onIncremental?>
                         <id>thrift-test-sources</id>
                         <phase>generate-test-sources</phase>
                         <goals>
