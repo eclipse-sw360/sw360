@@ -68,7 +68,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
         List<EntityModel<User>> userResources = new ArrayList<>();
         for (User sw360User : sw360Users) {
-            User embeddedUser = restControllerHelper.convertToEmbeddedUser(sw360User);
+            User embeddedUser = restControllerHelper.convertToEmbeddedGetUsers(sw360User);
             EntityModel<User> userResource = EntityModel.of(embeddedUser);
             userResources.add(userResource);
         }
