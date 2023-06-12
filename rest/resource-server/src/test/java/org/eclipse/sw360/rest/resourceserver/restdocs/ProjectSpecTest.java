@@ -1666,4 +1666,19 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .queryParam("type", "SPDX");
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
+
+    @Test
+    public void should_document_get_project_count() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(get("/api/projects/projectcount")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON)
+                .contentType(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                       responseFields(
+                               fieldWithPath("status").description("status of the API. Possible values are `<success|failure>`").optional(),
+                               fieldWithPath("count").description("Count of projects for a user.").optional()
+                       )));
+    }
 }
