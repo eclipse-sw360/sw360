@@ -501,7 +501,11 @@ public class RestControllerHelper<T> {
         Project embeddedProject = new EmbeddedProject();
         embeddedProject.setName(project.getName());
         embeddedProject.setId(project.getId());
+        embeddedProject.setDescription(project.getDescription());
+        embeddedProject.setProjectResponsible(project.getProjectResponsible());
         embeddedProject.setProjectType(project.getProjectType());
+        embeddedProject.setState(project.getState());
+        embeddedProject.setClearingState(project.getClearingState());
         embeddedProject.setVersion(project.getVersion());
         embeddedProject.setVisbility(project.getVisbility());
         embeddedProject.setType(null);
@@ -521,6 +525,7 @@ public class RestControllerHelper<T> {
         Component embeddedComponent = new Component();
         embeddedComponent.setId(component.getId());
         embeddedComponent.setName(component.getName());
+        embeddedComponent.setDescription(component.getDescription());
         embeddedComponent.setComponentType(component.getComponentType());
         embeddedComponent.setVisbility(component.getVisbility());
         embeddedComponent.setMainLicenseIds(component.getMainLicenseIds());
