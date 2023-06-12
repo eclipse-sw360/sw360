@@ -318,12 +318,8 @@ public class JacksonCustomizations {
                 "revision",
                 "attachments",
                 "createdBy",
-                "subscribers",
                 "moderators",
                 "releases",
-                "softwarePlatforms",
-                "wiki",
-                "blog",
                 "wikipedia",
                 "openHub",
                 "documentState",
@@ -391,7 +387,6 @@ public class JacksonCustomizations {
                 "additionalDataSize",
                 "setAdditionalData",
                 "setModifiedOn",
-                "modifiedOn",
                 "setModifiedBy",
                 "modifiedBy"
         })

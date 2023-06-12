@@ -941,4 +941,27 @@ public class RestControllerHelper<T> {
         halResource.addEmbeddedResource(isSingleRequest ? "sw360:moderationRequest" : "sw360:moderationRequests",
                 halModerationRequest);
     }
+
+    public void addEmbeddedDataToComponent(HalResource halResource, Component sw360Component) {
+        addEmbeddedModifiedByToComponent(halResource,sw360Component);
+        addEmbeddedComponentOwnerToComponent(halResource,sw360Component);
+    }
+
+    public void addEmbeddedModifiedByToComponent(HalResource halResource, Component sw360Component) {
+        if (sw360Component.getModifiedBy() != null) {
+            User componentModify = getUserByEmail(sw360Component.getModifiedBy());
+            if (null != componentModify)
+                addEmbeddedUser(halResource, componentModify, "modifiedBy");
+        }
+    }
+
+    public void addEmbeddedComponentOwnerToComponent(HalResource halResource, Component sw360Component) {
+        if (sw360Component.getComponentOwner() != null) {
+            User componentOwner = getUserByEmail(sw360Component.getComponentOwner());
+            if (null != componentOwner) {
+                addEmbeddedUser(halResource, componentOwner, "componentOwner");
+                sw360Component.setComponentOwner(null);
+            }
+        }
+    }
 }
