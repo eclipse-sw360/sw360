@@ -313,6 +313,24 @@ include::{snippets}/should_document_update_component/http-response.adoc[]
 include::{snippets}/should_document_update_component/links.adoc[]
 
 
+[[resources-components-update]]
+==== Merge a component
+
+A `PATCH` request is used to merge two components
+
+===== Response structure
+include::{snippets}/should_document_merge_components/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_merge_components/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_merge_components/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_merge_components/links.adoc[]
+
+
 [[resources-components-delete]]
 ==== Delete a component
 
