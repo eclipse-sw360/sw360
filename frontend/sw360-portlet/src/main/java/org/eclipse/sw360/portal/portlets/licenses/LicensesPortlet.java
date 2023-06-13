@@ -348,12 +348,14 @@ public class LicensesPortlet extends Sw360Portlet {
         boolean checked = "true".equals(request.getParameter(License._Fields.CHECKED.toString()));
         String licenseTypeString =
                 request.getParameter(License._Fields.LICENSE_TYPE.toString() + LicenseType._Fields.LICENSE_TYPE.toString());
+        String note = request.getParameter(License._Fields.NOTE.name());
         license.setText(CommonUtils.nullToEmptyString(text));
         license.setFullname(CommonUtils.nullToEmptyString(fullname));
         license.setShortname((CommonUtils.nullToEmptyString(shortname)));
         license.setOSIApproved(osiApproved);
         license.setFSFLibre(fsfLibre);
         license.setChecked(checked);
+        license.setNote(note);
         String obligationIds = request.getParameter("obligations");
         List<String> oblIds = CommonUtils.isNotNullEmptyOrWhitespace(obligationIds) ? Arrays.asList(obligationIds.split(",")) : Lists.newArrayList();
         license.setObligationDatabaseIds(Sets.newHashSet(oblIds));

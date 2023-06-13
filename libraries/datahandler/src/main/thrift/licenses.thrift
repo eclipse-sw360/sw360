@@ -109,6 +109,7 @@ struct License {
 	 6: optional LicenseType licenseType,
 	 7: optional string licenseTypeDatabaseId,
      8: optional string externalLicenseLink,
+     10: optional string note,
 
     // information from external data sources
      9: optional map<string, string> externalIds,

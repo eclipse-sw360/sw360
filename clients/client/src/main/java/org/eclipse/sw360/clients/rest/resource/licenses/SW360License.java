@@ -20,6 +20,7 @@ public final class SW360License extends SW360SimpleHalResource {
     private String text;
     private String shortName;
     private String fullName;
+    private String note;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getText() {
@@ -51,6 +52,16 @@ public final class SW360License extends SW360SimpleHalResource {
         return this;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getNote() {
+        return this.note;
+    }
+
+    public SW360License setNote(String note) {
+        this.note = note;
+        return this;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -58,12 +69,13 @@ public final class SW360License extends SW360SimpleHalResource {
         SW360License that = (SW360License) o;
         return Objects.equals(text, that.text) &&
                 Objects.equals(shortName, that.shortName) &&
-                Objects.equals(fullName, that.fullName);
+                Objects.equals(fullName, that.fullName) &&
+                Objects.equals(note, that.note);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), text, shortName, fullName);
+        return Objects.hash(super.hashCode(), text, shortName, fullName, note);
     }
 
     @Override

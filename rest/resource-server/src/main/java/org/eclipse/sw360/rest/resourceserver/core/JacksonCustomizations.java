@@ -637,6 +637,7 @@ public class JacksonCustomizations {
                 "setChecked",
                 "additionalDataSize",
                 "setAdditionalData",
+                "setNote",
         })
         static abstract class LicenseMixin extends License {
             @Override
