@@ -103,6 +103,8 @@ To migrate it is recommended to do this in the following order:
 - `054_remove_inactiveUsers_from_moderators.py`
 - `055_deactivateEmailNotification.py`
 - `056_dataReduction.py`
+- `057_deleteClosedModReq.py`
+- `058_closedModReqStats.py`
 
 ### 17.0.0 -> 17.0.1
 
