@@ -168,6 +168,7 @@
                     <div class="btn-toolbar" role="toolbar">
                         <div class="btn-group" role="group">
                             <button type="button" class="btn btn-primary" onclick="window.location.href='<%=addProjectURL%>'"><liferay-ui:message key="add.project" /></button>
+                            <%-- commented by Anupam, to block cyclonedx
                             <core_rt:if test = "${isSbomImportExportAccessUser}">
                             <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <liferay-ui:message key="import.sbom" />
@@ -178,6 +179,8 @@
                                 <a class="dropdown-item import" href="#" data-type="cycloneDx"><liferay-ui:message key="cyclonedx" /></a>
                             </div>
                             </core_rt:if>
+                            --%>
+                            <button type="button" class="btn btn-secondary" data-action="import-spdx-bom" style="display:none;"><liferay-ui:message key="import.spdx.bom" /></button>
                         </div>
                         <div id="btnExportGroup" class="btn-group" role="group">
                             <button id="btnExport" type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
