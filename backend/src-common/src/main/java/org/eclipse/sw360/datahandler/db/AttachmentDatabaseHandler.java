@@ -236,6 +236,10 @@ public class AttachmentDatabaseHandler {
         }
     }
 
+    public List<AttachmentUsage> getUsedAttachmentsById(String attachmentId) {
+        return attachmentUsageRepository.getUsedAttachmentById(attachmentId);
+    }
+
     public Map<Map<Source, String>, Integer> getAttachmentUsageCount(Map<Source, Set<String>> attachments, UsageData filter) {
         Map<String, Source._Fields> idToType = Maps.newHashMap();
         Map<String, Set<String>> queryFor = attachments.entrySet().stream()

@@ -20,11 +20,8 @@ import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.VerificationState;
 import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -189,6 +186,29 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         angularComponent.setDefaultVendorId("vendorId");
         componentList.add(angularComponent);
         componentListByName.add(angularComponent);
+
+        AttachmentDTO attachmentDTO = new AttachmentDTO();
+        attachmentDTO.setAttachmentContentId("");
+        attachmentDTO.setFilename(attachment.getFilename());
+        attachmentDTO.setSha1(attachment.getSha1());
+        attachmentDTO.setAttachmentType(AttachmentType.BINARY_SELF);
+        attachmentDTO.setCreatedBy("admin@sw360.org");
+        attachmentDTO.setCreatedTeam("Clearing Team 1");
+        attachmentDTO.setCreatedComment("please check asap");
+        attachmentDTO.setCreatedOn("2016-12-18");
+        attachmentDTO.setCheckedTeam("Clearing Team 2");
+        attachmentDTO.setCheckedComment("everything looks good");
+        attachmentDTO.setCheckedOn("2016-12-18");
+        attachmentDTO.setCheckStatus(CheckStatus.ACCEPTED);
+
+        UsageAttachment usageAttachment = new UsageAttachment();
+        usageAttachment.setVisible(0);
+        usageAttachment.setRestricted(0);
+
+        attachmentDTO.setUsageAttachment(usageAttachment);
+        List<EntityModel<AttachmentDTO>> atEntityModels = new ArrayList<>();
+        atEntityModels.add(EntityModel.of(attachmentDTO));
+        given(this.attachmentServiceMock.getAttachmentDTOResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(atEntityModels));
 
         Component springComponent = new Component();
         Map<String, String> springComponentExternalIds = new HashMap<>();
@@ -863,9 +883,20 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         responseFields(
-                                subsectionWithPath("_embedded.sw360:attachments").description("An array of <<resources-attachment, Attachments resources>>"),
-                                subsectionWithPath("_embedded.sw360:attachments.[]filename").description("The attachment filename"),
-                                subsectionWithPath("_embedded.sw360:attachments.[]sha1").description("The attachment sha1 value"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes").description("An array of <<resources-attachment, Attachments resources>>"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]attachmentContentId").description("The attachment attachmentContentId"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]filename").description("The attachment filename"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]sha1").description("The attachment sha1"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]attachmentType").description("The attachment attachmentType"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdBy").description("The attachment createdBy"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdTeam").description("The attachment createdTeam"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdComment").description("The attachment createdComment"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdOn").description("The attachment createdOn"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]checkedComment").description("The attachment checkedComment"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]checkStatus").description("The attachment checkStatus"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment").description("The usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment.visible").description("The visible usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment.restricted").description("The restricted usages in project"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
