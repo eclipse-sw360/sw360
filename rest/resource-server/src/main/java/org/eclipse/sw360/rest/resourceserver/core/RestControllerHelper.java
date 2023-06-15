@@ -610,6 +610,18 @@ public class RestControllerHelper<T> {
         return embeddedUser;
     }
 
+    public User convertToEmbeddedGetUsers(User user) {
+        User embeddedUser = new User();
+        embeddedUser.setId(user.getId());
+        embeddedUser.setFullname(user.getFullname());
+        embeddedUser.setEmail(user.getEmail());
+        embeddedUser.setGivenname(user.getGivenname());
+        embeddedUser.setLastname(user.getLastname());
+        embeddedUser.setDepartment(user.getDepartment());
+        embeddedUser.setType(null);
+        return embeddedUser;
+    }
+
     public void addEmbeddedObligations(HalResource<License> halLicense, List<Obligation> obligations) {
         for (Obligation obligation : obligations) {
             HalResource<Obligation> obligationHalResource = addEmbeddedObligation(obligation);

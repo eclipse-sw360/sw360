@@ -117,6 +117,11 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                         ),
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:users[]email").description("The user's email"),
+                                subsectionWithPath("_embedded.sw360:users[]department").description("The user's department"),
+                                subsectionWithPath("_embedded.sw360:users[]deactivated").description("The user's deactivated"),
+                                subsectionWithPath("_embedded.sw360:users[]fullName").description("The user's full name"),
+                                subsectionWithPath("_embedded.sw360:users[]givenName").description("The user's given name"),
+                                subsectionWithPath("_embedded.sw360:users[]lastName").description("The user's last name"),
                                 subsectionWithPath("_embedded.sw360:users").description("An array of <<resources-users, User resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
