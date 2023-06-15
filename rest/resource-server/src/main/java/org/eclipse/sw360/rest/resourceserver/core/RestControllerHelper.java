@@ -642,6 +642,8 @@ public class RestControllerHelper<T> {
     public Vendor convertToEmbeddedVendor(Vendor vendor) {
         Vendor embeddedVendor = convertToEmbeddedVendor(vendor.getFullname());
         embeddedVendor.setId(vendor.getId());
+        embeddedVendor.setShortname(vendor.getShortname());
+        embeddedVendor.setUrl(vendor.getUrl());
         return embeddedVendor;
     }
 
