@@ -99,4 +99,8 @@
             </core_rt:choose>
         </td>
     </tr>
+    <tr>
+        <td><liferay-ui:message key="note" />:</td>
+        <td><sw360:out value="${licenseDetail.note}"/></td>
+    </tr>
 </table>
