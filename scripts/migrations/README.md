@@ -4,10 +4,12 @@ This folder contains scripts which implement the database migrations.
 
 The scripts are written in `python2` and depend on `python2-couchdb`. The couchdb has to run and be accessible on `localhost:5984`.
 
+From release 16.0.0 onwards python2 is not supported.All migration scripts form release 16.0.0 onwards are in python3.
+
 To migrate it is recommended to do this in the following order:
 1. stop SW360 (i.e. the tomcat)
 2. ensure that couchdb is accessible (try to open `http://localhost:5984/_utils/`)
-3. run the migration scripts (i.e. for each script call `python2 /PATH/TO/00?_some_migration_script.py`)
+3. run the migration scripts (i.e. for each script call `python3 /PATH/TO/00?_some_migration_script.py`)
     * be aware that some scripts are using an internal dry-run switch which you have to change manually in the script's code
 4. deploy the new `.war` files
 5. start SW360 again
