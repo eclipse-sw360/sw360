@@ -4,7 +4,7 @@ This folder contains scripts which implement the database migrations.
 
 The scripts are written in `python2` and depend on `python2-couchdb`. The couchdb has to run and be accessible on `localhost:5984`.
 
-From release 16.0.0 onwards python2 is not supported.All migration scripts form release 16.0.0 onwards are in python3.
+From release 16.0.0 onwards python2 is not supported.All migration scripts form release 16.0.0 onwards are in python3. To adapt the migrate scripts to be Python 3 compatible, you need to change the print statement to a print() function. Because in Python 2, print is a statement and can be used without parentheses. However, in Python 3, print is a function and therefore always requires parentheses. Try modifying print "CR Id: " + cr.get("_id") like this: print("CR Id: " + str(cr.get("_id"))).
 
 To migrate it is recommended to do this in the following order:
 1. stop SW360 (i.e. the tomcat)
