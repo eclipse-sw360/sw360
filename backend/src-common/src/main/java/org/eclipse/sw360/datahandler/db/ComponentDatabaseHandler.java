@@ -1972,6 +1972,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return getAccessibleReleaseList(releaseRepository.makeSummary(SummaryType.SHORT, ids), user);
     }
     
+    public Map<PaginationData, List<Release>> getAccessibleReleasesWithPagination(User user, PaginationData pageData) throws TException {
+        return releaseRepository.getAccessibleReleasesWithPagination(user, pageData);
+    }
+
     private List<Release> getAccessibleReleaseList(List<Release> releaseList, User user) {
         List<Release> resultList = new ArrayList<Release>();
         for (Release release : releaseList) {

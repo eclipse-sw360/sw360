@@ -474,6 +474,11 @@ service ComponentService {
     list<Release> searchAccessibleReleases(1: string text, 2: User user);
 
     /**
+     *  list accessible releases with pagination for ECC page
+     */
+    map<PaginationData, list<Release>> getAccessibleReleasesWithPagination(1: User user, 2: PaginationData pageData);
+
+    /**
      * get short summary of release by release name prefix
      **/
     list<Release> searchReleaseByNamePrefix(1: string name);

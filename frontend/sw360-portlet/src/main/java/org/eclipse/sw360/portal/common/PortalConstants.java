@@ -590,6 +590,7 @@ public class PortalConstants {
     public static final String UNSUBSCRIBE = "unsubscribe";
     public static final String UNSUBSCRIBE_RELEASE = "unsubscribe_release";
     public static final String LOAD_COMPONENT_LIST = "load_component_list";
+    public static final String LOAD_ECC_LIST = "load_ecc_list";
 
     // fossology actions
     public static final String FOSSOLOGY_PREFIX = "fossology";

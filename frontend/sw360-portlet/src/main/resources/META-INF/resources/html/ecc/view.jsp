@@ -16,7 +16,6 @@
 <portlet:defineObjects/>
 <liferay-theme:defineObjects/>
 
-<jsp:useBean id="releaseList" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.Release>" scope="request"/>
 
 <portlet:resourceURL var="viewVendorURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.VIEW_VENDOR%>"/>
@@ -24,6 +23,10 @@
 
 <portlet:resourceURL var="updateReleaseURL">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.RELEASE%>"/>
+</portlet:resourceURL>
+
+<portlet:resourceURL var="loadECCURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.LOAD_ECC_LIST%>'/>
 </portlet:resourceURL>
 
 
@@ -44,39 +47,6 @@
             <div class="row">
                 <div class="col">
 			        <table id="eccInfoTable" class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th><liferay-ui:message key="status" /></th>
-                                <th><liferay-ui:message key="release.name" /></th>
-                                <th><liferay-ui:message key="release.version" /></th>
-                                <th><liferay-ui:message key="creator.group" /></th>
-                                <th><liferay-ui:message key="ecc.assessor" /></th>
-                                <th><liferay-ui:message key="ecc.assessor.group" /></th>
-                                <th><liferay-ui:message key="ecc.assessment.date" /></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <core_rt:forEach items="${releaseList}" var="release">
-                                <tr id="TableRow${release.id}">
-                                    <td class="content-space-between">
-                                        <sw360:DisplayEnum value="${release.eccInformation.eccStatus}"/>
-                                        <span
-                                            <core_rt:if test="${release.eccInformation.eccStatus.value == 0 || release.eccInformation.eccStatus.value == 3}"> class="badge badge-empty badge-danger" </core_rt:if> <%--ECCStatus.OPEN || ECCStatus.REJECTED--%>
-                                            <core_rt:if test="${release.eccInformation.eccStatus.value == 1}"> class="badge badge-empty badge-warning" </core_rt:if> <%--ECCStatus.IN_PROGRESS--%>
-                                            <core_rt:if test="${release.eccInformation.eccStatus.value == 2}"> class="badge badge-empty badge-success" </core_rt:if>> <%--ECCStatus.APPROVED--%>
-                                            <core_rt:if test="${release.eccInformation.eccStatus.value == 3}">!</core_rt:if> <%--ECCStatus.REJECTED--%>
-                                            <core_rt:if test="${release.eccInformation.eccStatus.value != 3}">&nbsp;</core_rt:if> <%--ECCStatus.REJECTED--%>
-                                        </span>
-                                    </td>
-                                    <td><sw360:DisplayReleaseLink showName="true" release="${release}"/></td>
-                                    <td><sw360:out value="${release.version}"/></td>
-                                    <td><sw360:out value="${release.creatorDepartment}"/></td>
-                                    <td><sw360:DisplayUserEmail email="${release.eccInformation.assessorContactPerson}" bare="true"/></td>
-                                    <td><sw360:out value="${release.eccInformation.assessorDepartment}"/></td>
-                                    <td><sw360:out value="${release.eccInformation.assessmentDate}"/></td>
-                                </tr>
-                            </core_rt:forEach>
-                        </tbody>
                     </table>
                 </div>
             </div>
@@ -90,7 +60,7 @@
     AUI().use('liferay-portlet-url', function () {
         var PortletURL = Liferay.PortletURL;
 
-        require(['jquery', 'utils/includes/quickfilter', 'bridges/datatables'], function($, quickfilter, datatables) {
+        require(['jquery', 'utils/includes/quickfilter', 'bridges/datatables', 'bridges/jquery-ui'], function($, quickfilter, datatables) {
             var eccInfoTable;
 
             // initializing
@@ -107,12 +77,27 @@
 
             function configureEccInfoTable(){
                 return datatables.create('#eccInfoTable', {
+                    bServerSide: true,
+                    sAjaxSource: '<%=loadECCURL%>',
+                    columns: [
+                    {"title": "<liferay-ui:message key="status" />", data: "status"},
+                    {"title": "<liferay-ui:message key="release.name" />", data: function(row){return row["name"];}, render: {display: renderReleaseNameLink}},
+                    {"title": "<liferay-ui:message key="release.version" />", data: "version", render: {display: renderReleaseNameLink}},
+                    {"title": "<liferay-ui:message key="creator.group" />", data: "group"},
+                    {"title": "<liferay-ui:message key="ecc.assessor" />", data: "assessor_contact_person"},
+                    {"title": "<liferay-ui:message key="ecc.assessor.group" />", data: "assessor_dept"},
+                    {"title": "<liferay-ui:message key="ecc.assessment.date" />", data: "assessment_date"},
+                    ],
+                    columnDefs: [],
                     language: {
                         url: "<liferay-ui:message key="datatables.lang" />",
                         loadingRecords: "<liferay-ui:message key="loading" />"
                     },
                     searching: true
                 }, [0, 1, 2, 3, 4, 5, 6]);
+            }
+            function renderReleaseNameLink(name, type, row) {
+                return $("<span></span>").text(name)[0].outerHTML;
             }
         });
     });
