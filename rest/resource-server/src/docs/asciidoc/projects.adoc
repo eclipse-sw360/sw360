@@ -664,3 +664,17 @@ include::{snippets}/should_document_get_project_count/response-fields.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_get_project_count/http-response.adoc[]
+
+[[resources-project-get-summaryadministraion-project]]
+==== Administration and Summary Info
+
+A `GET` request will get summary and administration page of project tab.
+
+===== Response structure
+include::{snippets}/should_document_create_summary_administration/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_summary_administration/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_summary_administration/http-response.adoc[]

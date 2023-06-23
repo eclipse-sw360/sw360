@@ -1106,7 +1106,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         if (sw360Project.getVendor() != null) {
             Vendor vendor = sw360Project.getVendor();
-            HalResource<Vendor> vendorHalResource = restControllerHelper.addEmbeddedVendor(vendor.getFullname());
+            Vendor vendorHalResource = restControllerHelper.convertToEmbeddedVendor(vendor);
             halProject.addEmbeddedResource("sw360:vendors", vendorHalResource);
             sw360Project.setVendor(null);
         }
@@ -1227,4 +1227,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throw new SW360Exception(e.getMessage());
         }
     }
+    @RequestMapping(value = PROJECTS_URL + "/{id}/summaryAdministration", method = RequestMethod.GET)
+    public ResponseEntity<EntityModel<Project>> getAdministration(
+            @PathVariable("id") String id) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        Map<String, String> sortedExternalURLs = CommonUtils.getSortedMap(sw360Project.getExternalUrls(), true);
+        sw360Project.setExternalUrls(sortedExternalURLs);
+        sw360Project.setReleaseIdToUsage(null);
+        sw360Project.setLinkedProjects(null);
+        HalResource<Project> userHalResource = createHalProject(sw360Project, sw360User);
+        sw360Project.unsetLinkedProjects();
+        sw360Project.unsetReleaseIdToUsage();
+
+        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
+
 }
