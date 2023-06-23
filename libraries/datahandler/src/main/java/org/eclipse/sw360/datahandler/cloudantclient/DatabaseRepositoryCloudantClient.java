@@ -366,6 +366,14 @@ public class DatabaseRepositoryCloudantClient<T> {
         connector.update(doc);
     }
 
+    /**
+     * This function should NOT be used for updating document containing Attachment.
+     * Ex: Project, Component & Release
+     */
+    public Response updateWithResponse(T doc) {
+        return connector.updateWithResponse(doc);
+    }
+
     public boolean remove(T doc) {
         return connector.remove(doc);
     }

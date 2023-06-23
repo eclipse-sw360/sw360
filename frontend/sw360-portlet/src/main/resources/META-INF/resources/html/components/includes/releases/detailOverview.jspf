@@ -36,6 +36,9 @@
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-SPDX'}">active</core_rt:if>" href="#tab-SPDX" data-toggle="list" role="tab"><liferay-ui:message key="spdx.document" /></a>
             </core_rt:if>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab"><liferay-ui:message key="linked.releases" /></a>
+			<core_rt:if test="${isPackagePortletEnabled}">
+			    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedPackages'}">active</core_rt:if>" href="#tab-linkedPackages" data-toggle="list" role="tab"><liferay-ui:message key="linked.packages" /></a>
+			</core_rt:if>
 			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active</core_rt:if>" href="#tab-ClearingDetails" data-toggle="list" role="tab"><liferay-ui:message key="clearing.details" /></a>
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCDetails'}">active</core_rt:if>" href="#tab-ECCDetails" data-toggle="list" role="tab">
                     <liferay-ui:message key="ecc.details" />
@@ -148,13 +151,20 @@
                             <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
                             <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
                         </div>
-                        <div id="tab-SPDX" class="tab-pane <core_rt:if test="${selectedTab == 'tab-SPDX'}">active show</core_rt:if>">
-                            <%@include file="/html/components/includes/releases/spdx/view.jsp" %>
-                            <core_rt:set var="tableId" value="usingProjectsTableSPDX"/>
-		                </div>
+                        <core_rt:if test="${isSpdxDocument == true}">
+                            <div id="tab-SPDX" class="tab-pane <core_rt:if test="${selectedTab == 'tab-SPDX'}">active show</core_rt:if>">
+                                <%@include file="/html/components/includes/releases/spdx/view.jsp" %>
+                                <core_rt:set var="tableId" value="usingProjectsTableSPDX"/>
+                            </div>
+                        </core_rt:if>
 		                <div id="tab-linkedReleases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active show</core_rt:if>">
 		                    <%@include file="/html/utils/includes/linkedReleaseDetails.jspf" %>
 		                </div>
+                            <core_rt:if test="${isPackagePortletEnabled}">
+                            <div id="tab-linkedPackages" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedPackages'}">active show</core_rt:if>">
+                                <jsp:include page="/html/utils/includes/linkedPackages.jsp" />
+                            </div>
+                        </core_rt:if>
                         <div id="tab-ClearingDetails" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active show</core_rt:if>">
 		                    <%@include file="/html/components/includes/releases/clearingDetails.jspf" %>
 		                </div>

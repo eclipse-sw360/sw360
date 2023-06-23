@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.*;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
@@ -76,6 +77,7 @@ public class ThriftUtils {
             .add(DocumentCreationInformation.class ) // Document Creation Information service
             .add(PackageInformation.class ) // Package Information service
             .add(FileInformation.class) // File Information Service
+            .add(Package.class) // Package Service
             .build();
 
     public static final List<Class<?>> THRIFT_NESTED_CLASSES = ImmutableList.<Class<?>>builder()

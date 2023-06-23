@@ -84,7 +84,7 @@ public class ComponentAndAttachmentAwareDBTest {
 
         ThriftClients thriftClients = failingMock(ThriftClients.class);
 
-        ComponentHandler componentHandler = new ComponentHandler(DatabaseSettingsTest.getConfiguredHttpClient(),DatabaseSettingsTest.getConfiguredClient(),DatabaseSettingsTest.COUCH_DB_DATABASE, DatabaseSettingsTest.COUCH_CHANGELOGS, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS, thriftClients);
+        ComponentHandler componentHandler = new ComponentHandler(DatabaseSettingsTest.getConfiguredHttpClient(),DatabaseSettingsTest.getConfiguredClient(),DatabaseSettingsTest.COUCH_DB_DATABASE, DatabaseSettingsTest.COUCH_DB_CHANGELOGS, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS, thriftClients);
         VendorHandler vendorHandler = new VendorHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
         AttachmentHandler attachmentHandler = new AttachmentHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
 

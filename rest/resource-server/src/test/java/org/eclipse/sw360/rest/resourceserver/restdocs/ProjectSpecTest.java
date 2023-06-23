@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
@@ -37,6 +38,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
@@ -54,6 +57,7 @@ import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
+import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
@@ -122,6 +126,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360UserService userServiceMock;
+
+    @MockBean
+    private SW360PackageService packageServiceMock;
 
     @MockBean
     private Sw360ProjectService projectServiceMock;
@@ -194,6 +201,41 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         projectForAtt.setCreatedOn("2021-04-27");
         projectForAtt.setCreatedBy("admin@sw360.org");
 
+        Set<String> licenseIds = new HashSet<>();
+        licenseIds.add("MIT");
+        licenseIds.add("GPL");
+
+        Package package1 = new Package("angular-sanitize", "1.8.2", "pkg:npm/angular-sanitize@1.8.2", CycloneDxComponentType.FRAMEWORK)
+                .setId("122357345")
+                .setCreatedBy("admin@sw360.org")
+                .setCreatedOn("2023-01-02")
+                .setVcs("git+https://github.com/angular/angular.js.git")
+                .setHomepageUrl("http://angularjs.org")
+                .setLicenseIds(licenseIds)
+                .setReleaseId("12345678")
+                .setPackageManager(PackageManager.NPM)
+                .setDescription("Sanitizes an html string by stripping all potentially dangerous tokens.");
+
+        Package package2 = new Package()
+                .setId("875689754")
+                .setName("applicationinsights-web")
+                .setVersion("2.5.11")
+                .setCreatedBy("user@sw360.org")
+                .setCreatedOn("2023-02-02")
+                .setPurl("pkg:npm/@microsoft/applicationinsights-web@2.5.11")
+                .setPackageManager(PackageManager.NPM)
+                .setPackageType(CycloneDxComponentType.LIBRARY)
+                .setVcs("git+https://github.com/microsoft/ApplicationInsights-JS.git")
+                .setHomepageUrl("https://github.com/microsoft/ApplicationInsights-JS#readme")
+                .setDescription("Application Insights is an extension of Azure Monitor and provides application performance monitoring (APM) features");
+
+        given(this.packageServiceMock.getPackageForUserById(eq(package1.getId()))).willReturn(package1);
+        given(this.packageServiceMock.getPackageForUserById(eq(package2.getId()))).willReturn(package2);
+
+        Set<String> linkedPackages = new HashSet<>();
+        linkedPackages.add(package1.getId());
+        linkedPackages.add(package2.getId());
+
         List<Project> projectListByName = new ArrayList<>();
         Set<Project> usedByProjectList = new HashSet<>();
         project = new Project();
@@ -229,6 +271,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setReleaseIdToUsage(linkedReleases);
         linkedProjects.put("376570", new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(true));
         project.setLinkedProjects(linkedProjects);
+        project.setPackageIds(linkedPackages);
         project.setAttachments(attachmentList);
         project.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
         project.setProjectResponsible("projectresponsible@sw360.org");
@@ -286,6 +329,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         linkedReleases.put("5578999", projectReleaseRelationship);
         project2.setReleaseIdToUsage(linkedReleases);
         project2.setExternalIds(externalIds2);
+        project2.setPackageIds(linkedPackages);
         Map<String, String> externalURLs = new HashMap<>();
         externalURLs.put("homepage", "http://test_wiki_url.com");
         externalURLs.put("wiki", "http://test_wiki_url.com");
@@ -379,6 +423,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         cycloneDXProject.setProjectType(ProjectType.PRODUCT);
         cycloneDXProject.setCreatedBy("admin@sw360.org");
         cycloneDXProject.setAttachments(cyclonedxSet);
+        cycloneDXProject.setPackageIds(linkedPackages);
 
         RequestSummary requestSummaryForSPDX = new RequestSummary();
         requestSummaryForSPDX.setMessage(SPDXProject.getId());
@@ -461,6 +506,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release.setComponentId("12356115");
         release.setClearingState(ClearingState.APPROVED);
         release.setExternalIds(Collections.singletonMap("mainline-id-component", "1432"));
+        release.setPackageIds(linkedPackages);
 
         Release release2 = new Release();
         release2.setId("5578999");
@@ -503,6 +549,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         rel.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Java SE", ".NET")));
         rel.setMainlineState(MainlineState.MAINLINE);
         rel.setVendor(new Vendor("TV", "Test Vendor", "http://testvendor.com"));
+        rel.setPackageIds(linkedPackages);
 
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
@@ -835,6 +882,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project"),
                                 subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                                 subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
+                                subsectionWithPath("_embedded.sw360:packages").description("An array of linked <<resources-packages, Packages resources>>"),
                                 subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of all project moderators with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>")
@@ -1574,6 +1622,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
                         subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                         subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
+                        subsectionWithPath("_embedded.sw360:packages").description("An array of linked <<resources-packages, Packages resources>>"),
                         subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                         subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"))));
     }
@@ -1605,6 +1654,18 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     public void should_document_patch_releases_with_project_release_relation() throws Exception {
         MockHttpServletRequestBuilder requestBuilder = patch("/api/projects/" + project.getId() + "/releases");
         add_patch_releases_with_project_release_relation(requestBuilder);
+    }
+
+    @Test
+    public void should_document_link_packages() throws Exception {
+        MockHttpServletRequestBuilder requestBuilder = patch("/api/projects/" + project.getId() + "/link/packages");
+        link_unlink_packages(requestBuilder);
+    }
+
+    @Test
+    public void should_document_unlink_packages() throws Exception {
+        MockHttpServletRequestBuilder requestBuilder = patch("/api/projects/" + project.getId() + "/unlink/packages");
+        link_unlink_packages(requestBuilder);
     }
 
     @Test
@@ -1683,6 +1744,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                      subsectionWithPath("_embedded.sw360:releases.[]version").description("The version of the release"),
                                      subsectionWithPath("_embedded.sw360:releases.[]createdBy").description("Email of the release creator"),
                                      subsectionWithPath("_embedded.sw360:releases.[]componentId").description("The component id"),
+                                     subsectionWithPath("_embedded.sw360:releases.[]packageIds").description("The component id"),
                                      subsectionWithPath("_embedded.sw360:releases.[]cpeId").description("CpeId of the release"),
                                      subsectionWithPath("_embedded.sw360:releases.[]clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
                                      subsectionWithPath("_embedded.sw360:releases.[]releaseDate").description("The date of this release"),
@@ -1723,6 +1785,19 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(releaseIds))
+                .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
+    }
+
+    private void link_unlink_packages(MockHttpServletRequestBuilder requestBuilder) throws Exception {
+        Set<String> packageIds = new HashSet<>();
+
+        packageIds.add("9876746589");
+        packageIds.add("4444444467");
+        packageIds.add("5555555576");
+
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(packageIds))
                 .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
     }
 
@@ -1859,6 +1934,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("externalUrls").description("A place to store additional data used by external URLs"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project"),
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
+                                subsectionWithPath("_embedded.sw360:packages").description("An array of linked <<resources-packages, Packages resources>>"),
                                 subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"))

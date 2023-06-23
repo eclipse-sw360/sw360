@@ -60,7 +60,7 @@ public class ComponentDatabaseHandlerTest {
 
     private static final String dbName = DatabaseSettingsTest.COUCH_DB_DATABASE;
     private static final String attachmentsDbName = DatabaseSettingsTest.COUCH_DB_ATTACHMENTS;
-    private static final String changeLogsDbName = DatabaseSettingsTest.COUCH_CHANGELOGS;
+    private static final String changeLogsDbName = DatabaseSettingsTest.COUCH_DB_CHANGELOGS;
 
     private static final String email1 = "cedric.bodet@tngtech.com";
     private static final String email2 = "johannes.najjar@tngtech.com";

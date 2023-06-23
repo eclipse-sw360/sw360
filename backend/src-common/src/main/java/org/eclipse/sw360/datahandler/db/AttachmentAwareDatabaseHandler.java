@@ -28,6 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 
 import com.cloudant.client.api.CloudantClient;
@@ -101,6 +102,10 @@ public abstract class AttachmentAwareDatabaseHandler {
             Project project = (Project) type;
             project.setModifiedBy(userEmail);
             project.setModifiedOn(SW360Utils.getCreatedOn());
+        } else if (type instanceof Package) {
+            Package pkg = (Package) type;
+            pkg.setModifiedBy(userEmail);
+            pkg.setModifiedOn(SW360Utils.getCreatedOn());            
         }
     }
 }

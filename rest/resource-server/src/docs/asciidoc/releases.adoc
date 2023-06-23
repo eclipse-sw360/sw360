@@ -388,6 +388,34 @@ include::{snippets}/should_document_link_releases_to_release/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_link_releases_to_release/http-response.adoc[]
 
+[[resources-release-link-packages]]
+==== Link packages to the release
+
+A `PATCH` request to add/link packages to the release. Please pass a set of package ids to be linked as request body.
+
+===== Request structure
+Pass a set of package ids to be linked as request body.
+
+===== Example request 1
+include::{snippets}/should_document_link_packages/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_link_packages/http-response.adoc[]
+
+[[resources-release-unlink-packages]]
+==== Unlink packages from the release
+
+A `PATCH` request to remove/unlink packages from a release. Please pass a set of package ids to be unlinked as request body.
+
+===== Request structure
+Pass a set of package ids to be unlinked as request body.
+
+===== Example request
+include::{snippets}/should_document_unlink_packages/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_unlink_packages/http-response.adoc[]
+
 
 [[resources-release-usedby-list]]
 ==== Resources using the release

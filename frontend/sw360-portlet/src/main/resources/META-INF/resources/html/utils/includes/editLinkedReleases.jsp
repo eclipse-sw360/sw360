@@ -8,6 +8,10 @@
   ~ SPDX-License-Identifier: EPL-2.0
 --%>
 
+<%@include file="/html/init.jsp" %>
+
+<portlet:defineObjects/>
+<liferay-theme:defineObjects/>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.ReleaseRelationship" %>
 
 <table class="table edit-table" id="LinkedReleasesInfo">

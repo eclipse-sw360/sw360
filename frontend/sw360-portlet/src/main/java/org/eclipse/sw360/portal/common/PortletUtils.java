@@ -33,6 +33,8 @@ import org.eclipse.sw360.datahandler.thrift.cvesearch.UpdateType;
 import org.eclipse.sw360.datahandler.thrift.cvesearch.VulnerabilityUpdateStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
@@ -150,6 +152,10 @@ public class PortletUtils {
         return  ObligationType.findByValue(parseInt(enumNumber));
     }
 
+    public static PackageManager getPackageManagerFromString(String enumNumber) {
+        return  PackageManager.findByValue(parseInt(enumNumber));
+    }
+
     public static CycloneDxComponentType getCycloneDxComponentTypeFromString(String enumNumber) {
         return  CycloneDxComponentType.findByValue(parseInt(enumNumber));
     }
@@ -209,7 +215,9 @@ public class PortletUtils {
             return getObligationLevelFromString(value);
         else if (field == Obligation._Fields.OBLIGATION_TYPE)
             return getObligationTypeFromString(value);
-        else if (field == Component._Fields.CDX_COMPONENT_TYPE)
+        else if (field == Package._Fields.PACKAGE_MANAGER)
+            return getPackageManagerFromString(value);
+        else if (field == Component._Fields.CDX_COMPONENT_TYPE || field == Package._Fields.PACKAGE_TYPE)
             return getCycloneDxComponentTypeFromString(value);
         else {
             LOGGER.error("Missing case in enumFromString, unknown field was " + field.toString());

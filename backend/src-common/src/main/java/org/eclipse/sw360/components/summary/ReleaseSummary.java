@@ -109,6 +109,7 @@ public class ReleaseSummary extends DocumentSummary<Release> {
         copyField(document, copy, _Fields.RELEASE_DATE);
         copyField(document, copy, _Fields.SOURCE_CODE_DOWNLOADURL);
         copyField(document, copy, _Fields.BINARY_DOWNLOADURL);
+        copyField(document, copy, _Fields.PACKAGE_IDS);
     }
 
     private void setAdditionalFieldsForSummariesOtherThanShortAndDetailedExport(Release document, Release copy){

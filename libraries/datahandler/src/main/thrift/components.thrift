@@ -274,6 +274,7 @@ struct Release {
     71: optional string binaryDownloadurl, // URL for download page for this release binaries
 
     80: optional map<string, ReleaseRelationship> releaseIdToRelationship,    //id, comment
+    81: optional set<string> packageIds,
 
     // Information for ModerationRequests
     90: optional DocumentState documentState,

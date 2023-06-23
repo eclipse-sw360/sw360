@@ -11,9 +11,25 @@
  */
 package org.eclipse.sw360.rest.resourceserver.release;
 
-import com.google.common.collect.Sets;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -23,10 +39,13 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
-import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.VerificationState;
+import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageAttachment;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -34,48 +53,45 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelationDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
+import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.CollectionModel;
-import org.springframework.http.*;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.server.RepresentationModelProcessor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
-
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -97,6 +113,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private Sw360ReleaseService releaseService;
+
+    @NonNull
+    private SW360PackageService packageService;
 
     @NonNull
     private final Sw360VulnerabilityService vulnerabilityService;
@@ -657,13 +676,54 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = RELEASES_URL + "/{id}/link/packages", method = RequestMethod.PATCH)
+    public ResponseEntity<?> linkPackages(
+            @PathVariable("id") String id,
+            @RequestBody Set<String> packagesInRequestBody) throws URISyntaxException, TException {
+        RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true);
+        if (linkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = RELEASES_URL + "/{id}/unlink/packages", method = RequestMethod.PATCH)
+    public ResponseEntity<?> unlinkPackages(
+            @PathVariable("id") String id,
+            @RequestBody Set<String> packagesInRequestBody) throws URISyntaxException, TException {
+        RequestStatus unlinkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false);
+        if (unlinkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    private RequestStatus linkOrUnlinkPackages(String id, Set<String> packagesInRequestBody, boolean link)
+            throws URISyntaxException, TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Release release = releaseService.getReleaseForUserById(id, sw360User);
+        Set<String> packageIds = new HashSet<>();
+        packageIds = release.getPackageIds();
+
+        if (link) {
+            packageIds.addAll(packagesInRequestBody);
+        } else {
+            packageIds.removeAll(packagesInRequestBody);
+        }
+
+        release.setPackageIds(packageIds);
+        return releaseService.updateRelease(release, sw360User);
+    }
+
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ReleaseController.class).slash("api" + RELEASES_URL).withRel("releases"));
         return resource;
     }
 
-    private HalResource<Release> createHalReleaseResource(Release release, boolean verbose) {
+    private HalResource<Release> createHalReleaseResource(Release release, boolean verbose) throws TException {
         HalResource<Release> halRelease = new HalResource<>(release);
         Link componentLink = linkTo(ReleaseController.class)
                 .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId()).withRel("component");
@@ -690,6 +750,12 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 restControllerHelper.addEmbeddedLicenses(halRelease, release.getMainLicenseIds());
                 release.setMainLicenseIds(null);
             }
+            Set<String> packageIds = release.getPackageIds();
+
+            if (packageIds != null) {
+                restControllerHelper.addEmbeddedPackages(halRelease, packageIds, packageService);
+                release.setPackageIds(null);
+            }
         }
         return halRelease;
     }
@@ -700,7 +766,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 .withRel("component");
         halRelease.add(componentLink);
         release.setComponentId(null);
+        Set<String> packageIds = release.getPackageIds();
 
+        if (packageIds != null) {
+            for (String id : release.getPackageIds()) {
+                Link packageLink = linkTo(ReleaseController.class)
+                        .slash("api" + PackageController.PACKAGES_URL + "/" + id).withRel("packages");
+                halRelease.add(packageLink);
+            }
+        }
+        release.setPackageIds(null);
         for (Entry<Release._Fields, String> field : mapOfFieldsTobeEmbedded.entrySet()) {
             restControllerHelper.addEmbeddedFields(field.getValue(), release.getFieldValue(field.getKey()), halRelease);
         }

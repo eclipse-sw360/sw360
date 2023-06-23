@@ -20,6 +20,7 @@ import org.eclipse.sw360.portal.portlets.admin.UserPortlet;
 import org.eclipse.sw360.portal.portlets.components.ComponentPortlet;
 import org.eclipse.sw360.portal.portlets.licenses.LicensesPortlet;
 import org.eclipse.sw360.portal.portlets.moderation.ModerationPortlet;
+import org.eclipse.sw360.portal.portlets.packages.PackagePortlet;
 import org.eclipse.sw360.portal.portlets.projects.ProjectPortlet;
 import org.eclipse.sw360.portal.portlets.vulnerabilities.VulnerabilitiesPortlet;
 
@@ -40,7 +41,8 @@ public enum LinkToPortletConfiguration {
     LICENSES(LicensesPortlet.class),
     MODERATION(ModerationPortlet.class),
     VULNERABILITIES(VulnerabilitiesPortlet.class),
-    USERS(UserPortlet.class);
+    USERS(UserPortlet.class),
+    PACKAGES(PackagePortlet.class);
 
     private final Class<? extends Sw360Portlet> portletClass;
 

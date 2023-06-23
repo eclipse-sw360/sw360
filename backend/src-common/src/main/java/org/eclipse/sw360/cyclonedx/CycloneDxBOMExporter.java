@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.apache.jena.ext.com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.plexus.util.CollectionUtils;
@@ -31,6 +30,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
+import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
@@ -40,12 +40,16 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.packageurl.MalformedPackageURLException;
+import com.github.packageurl.PackageURL;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 /**
  * CycloneDX BOM export implementation.
@@ -58,11 +62,14 @@ public class CycloneDxBOMExporter {
     private static final Logger log = LogManager.getLogger(CycloneDxBOMExporter.class);
     private final ProjectDatabaseHandler projectDatabaseHandler;
     private final ComponentDatabaseHandler componentDatabaseHandler;
+    private final PackageDatabaseHandler packageDatabaseHandler;
     private final User user;
 
-    public CycloneDxBOMExporter(ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler, User user) {
+    public CycloneDxBOMExporter(ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler,
+            PackageDatabaseHandler packageDatabaseHandler, User user) {
         this.projectDatabaseHandler = projectDatabaseHandler;
         this.componentDatabaseHandler = componentDatabaseHandler;
+        this.packageDatabaseHandler = packageDatabaseHandler;
         this.user = user;
     }
 
@@ -72,6 +79,7 @@ public class CycloneDxBOMExporter {
             Project project = projectDatabaseHandler.getProjectById(projectId, user);
             Bom bom = new Bom();
             Set<String> linkedReleaseIds = Sets.newHashSet(CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage()));
+            Set<String> linkedPackageIds = Sets.newHashSet(CommonUtils.nullToEmptySet(project.getPackageIds()));
 
             if (!SW360Utils.isUserAtleastDesiredRoleInPrimaryOrSecondaryGroup(user, SW360Constants.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE)) {
                 log.warn("User does not have permission to export the SBOM: " + user.getEmail());
@@ -81,16 +89,32 @@ public class CycloneDxBOMExporter {
 
             if (includeSubProjReleases && project.getLinkedProjectsSize() > 0) {
                 ProjectService.Iface client = new ThriftClients().makeProjectClient();
-                linkedReleaseIds.addAll(SW360Utils.getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project, Sets.newHashSet(), Sets.newHashSet(), client, user));
+                Map<String, Set<String>> idsMap = SW360Utils.getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project, Sets.newHashSet(), Sets.newHashSet(), Sets.newHashSet(), client, user);
+                linkedReleaseIds.addAll(idsMap.get(SW360Constants.RELEASE_IDS));
+                linkedPackageIds.addAll(idsMap.get(SW360Constants.PACKAGE_IDS));
             }
 
             if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
                 List<Release> releaseList = componentDatabaseHandler.getAccessibleReleaseSummary(user);
                 Set<String> releaseListIds = releaseList.stream().map(Release::getId).collect(Collectors.toSet());
-                linkedReleaseIds = CollectionUtils.intersection(releaseListIds,linkedReleaseIds).stream().collect(Collectors.toSet());
+                linkedReleaseIds = CollectionUtils.intersection(releaseListIds, linkedReleaseIds).stream().collect(Collectors.toSet());
             }
 
-            if (CommonUtils.isNotEmpty(linkedReleaseIds)) {
+            if (SW360Constants.IS_PACKAGE_PORTLET_ENABLED && CommonUtils.isNotEmpty(linkedPackageIds)) {
+                List<Package> packages = packageDatabaseHandler.getPackageByIds(linkedPackageIds);
+                List<org.cyclonedx.model.Component> sbomComponents = getCycloneDxComponentsFromSw360Packages(packages);
+                Set<String> releaseIds = packages.stream()
+                        .filter(pkg -> CommonUtils.isNotNullEmptyOrWhitespace(pkg.getReleaseId()))
+                        .map(Package::getReleaseId).collect(Collectors.toSet());
+                // remove Releases of linked packages, & include remaining Release info in SBOM export
+                if (linkedReleaseIds.removeAll(releaseIds) && CommonUtils.isNotEmpty(linkedReleaseIds)) {
+                    List<Release> linkedReleases = componentDatabaseHandler.getReleasesByIds(linkedReleaseIds);
+                    Set<String> componentIds = linkedReleases.stream().map(Release::getComponentId).filter(Objects::nonNull).collect(Collectors.toSet());
+                    List<Component> components = componentDatabaseHandler.getComponentsByIds(componentIds);
+                    sbomComponents.addAll(getCycloneDxComponentsFromSw360Releases(linkedReleases, components));
+                }
+                bom.setComponents(sbomComponents);
+            } else if (CommonUtils.isNotEmpty(linkedReleaseIds)) {
                 List<Release> linkedReleases = componentDatabaseHandler.getReleasesByIds(linkedReleaseIds);
                 Set<String> componentIds = linkedReleases.stream().map(Release::getComponentId).filter(Objects::nonNull).collect(Collectors.toSet());
                 List<Component> components = componentDatabaseHandler.getComponentsByIds(componentIds);
@@ -239,6 +263,46 @@ public class CycloneDxBOMExporter {
         return comps;
     }
 
+    private List<org.cyclonedx.model.Component> getCycloneDxComponentsFromSw360Packages(List<Package> packages) {
+        List<org.cyclonedx.model.Component> comps = Lists.newArrayList();
+        for (Package pckg : packages) {
+            org.cyclonedx.model.Component comp = new org.cyclonedx.model.Component();
+            try {
+                PackageURL purl = new PackageURL(pckg.getPurl());
+                comp.setName(purl.getName());
+                comp.setPurl(purl);
+            } catch (MalformedPackageURLException e) {
+                log.error("Malformed PURL for component: " + pckg.getName(), e);
+            }
+            comp.setVersion(pckg.getVersion());
+            if (CommonUtils.isNotEmpty(pckg.getLicenseIds())) {
+                comp.setLicenseChoice(getLicenseFromSw360Document(pckg.getLicenseIds()));
+            }
+            if (null != pckg.getPackageType()) {
+                comp.setType(getCdxComponentType(pckg.getPackageType()));
+            }
+            comp.setLicenseChoice(getLicenseFromSw360Document(pckg.getLicenseIds()));
+            comp.setDescription(pckg.getDescription());
+            List<ExternalReference> extRefs = Lists.newArrayList();
+            if (CommonUtils.isNotNullEmptyOrWhitespace(pckg.getHomepageUrl())) {
+                ExternalReference extRef = new ExternalReference();
+                extRef.setType(org.cyclonedx.model.ExternalReference.Type.WEBSITE);
+                extRef.setUrl(pckg.getHomepageUrl());
+                extRefs.add(extRef);
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(pckg.getVcs())) {
+                ExternalReference extRef = new ExternalReference();
+                extRef.setType(org.cyclonedx.model.ExternalReference.Type.VCS);
+                extRef.setUrl(pckg.getVcs());
+                extRefs.add(extRef);
+            }
+            if (CommonUtils.isNotEmpty(extRefs)) {
+                comp.setExternalReferences(extRefs);
+            }
+            comps.add(comp);
+        }
+        return comps;
+    }
 
     private LicenseChoice getLicenseFromSw360Document(Set<String> sw360Licenses) {
         LicenseChoice licenseChoice = new LicenseChoice();

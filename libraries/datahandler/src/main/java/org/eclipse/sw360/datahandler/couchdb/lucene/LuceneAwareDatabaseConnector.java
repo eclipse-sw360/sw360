@@ -26,6 +26,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.ektorp.http.HttpClient;
@@ -165,7 +166,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
         queryURI.append(function.searchView.startsWith(DesignDocument.ID_PREFIX) ? function.searchView
                 : DesignDocument.ID_PREFIX + function.searchView);
         queryURI.append(function.searchFunction);
-        queryURI.param("include_docs", new Boolean(includeDocs).toString());
+        queryURI.param("include_docs", Boolean.valueOf(includeDocs).toString());
         if (resultLimit > 0) {
             queryURI.param("limit", resultLimit);
         }
@@ -241,7 +242,7 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
     /**
      * Search the database for a given string and types
      */
-    public <T> List<T> searchViewWithRestrictions(Class<T> type,LuceneSearchView luceneSearchView, String text, final Map<String , Set<String > > subQueryRestrictions) {
+    public <T> List<T> searchViewWithRestrictions(Class<T> type, LuceneSearchView luceneSearchView, String text, final Map<String , Set<String>> subQueryRestrictions) {
         List <String> subQueries = new ArrayList<>();
         for (Map.Entry<String, Set<String>> restriction : subQueryRestrictions.entrySet()) {
 
@@ -258,7 +259,12 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
             subQueries.add(prepareWildcardQuery(text));
         }
 
-        String query  = AND.join(subQueries);
+        if (type == Package.class && subQueryRestrictions.keySet().contains("orphanPackageCheckBox")) {
+            // get all packages with name field and then negate with releaseId field to find orphan packages
+            subQueries.add("(name:*) NOT (releaseId:*)");
+        }
+        String query = AND.join(subQueries);
+
         return searchView(type, luceneSearchView, query);
     }
 

@@ -14,7 +14,6 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.common.page.PortletDefaultPage;
-import org.eclipse.sw360.portal.common.page.PortletReleasePage;
 import org.eclipse.sw360.portal.portlets.LinkToPortletConfiguration;
 import org.eclipse.sw360.portal.tags.urlutils.UrlWriter;
 
@@ -50,19 +49,25 @@ public class DisplayLinkToSearchResult extends DisplayLinkAbstract {
                         .withParam(PortalConstants.RELEASE_ID, searchResultId);
                 break;
             case SW360Constants.TYPE_PROJECT:
-                writer =renderUrl(pageContext)
+                writer = renderUrl(pageContext)
                     .toPortlet(LinkToPortletConfiguration.PROJECTS, scopeGroupId)
                     .toPage(PortletDefaultPage.DETAIL)
                     .withParam(PortalConstants.PROJECT_ID, searchResultId);
                 break;
             case SW360Constants.TYPE_COMPONENT:
-                writer =renderUrl(pageContext)
+                writer = renderUrl(pageContext)
                     .toPortlet(LinkToPortletConfiguration.COMPONENTS, scopeGroupId)
                     .toPage(PortletDefaultPage.DETAIL)
                     .withParam(PortalConstants.COMPONENT_ID, searchResultId);
                 break;
+            case SW360Constants.TYPE_PACKAGE:
+                writer = renderUrl(pageContext)
+                    .toPortlet(LinkToPortletConfiguration.PACKAGES, scopeGroupId)
+                    .toPage(PortletDefaultPage.DETAIL)
+                    .withParam(PortalConstants.PACKAGE_ID, searchResultId);
+                break;
             case SW360Constants.TYPE_LICENSE:
-                writer =renderUrl(pageContext)
+                writer = renderUrl(pageContext)
                     .toPortlet(LinkToPortletConfiguration.LICENSES, scopeGroupId)
                     .toPage(PortletDefaultPage.DETAIL)
                     .withParam(PortalConstants.LICENSE_ID, searchResultId);

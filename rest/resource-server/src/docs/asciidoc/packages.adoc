@@ -1,0 +1,151 @@
+/*
+ * Copyright Siemens Healthineers GmBH, 2023. Part of the SW360 Portal package.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+
+[[resources-packages]]
+=== Packages
+
+The Packages resource is used to create and list packages.
+
+
+[[resources-packages-list]]
+==== List packages
+
+A `GET` request will list all of the service's packages with minimal details.
+
+===== Request parameter
+include::{snippets}/should_document_get_packages/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_packages/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_packages/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_packages/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_packages/links.adoc[]
+
+[[resources-packages-list-all-details]]
+==== List packages with all details
+
+A `GET` request will list all of the service's packages with all details.
+
+===== Request parameter
+include::{snippets}/should_document_get_packages_with_all_details/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_packages_with_all_details/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_packages_with_all_details/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_packages_with_all_details/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_packages_with_all_details/links.adoc[]
+
+[[resources-package-get]]
+==== List a single package with all details
+
+A `GET` request will get a single package with all details.
+
+===== Response structure
+include::{snippets}/should_document_get_package/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_package/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_package/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_package/links.adoc[]
+
+[[resources-packages-list-by-name]]
+==== List packages by name
+
+A `GET` request will list all of the service's packages by name. Use the 'exactMatch' parameter to get packages by name exactly matching the search input.
+
+===== Request parameter
+include::{snippets}/should_document_get_packages_by_name/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_packages_by_name/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_packages_by_name/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_packages_by_name/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_packages_by_name/links.adoc[]
+
+[[resources-packages-list-by-packageManager]]
+==== List packages by packageManager
+
+A `GET` request will list all of the service's packages by packageManager.
+
+===== Request parameter
+include::{snippets}/should_document_get_packages_by_package_manager/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_packages_by_package_manager/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_packages_by_package_manager/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_packages_by_package_manager/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_packages_by_package_manager/links.adoc[]
+
+[[resources-packages-create]]
+==== Creating a package
+
+A `POST` request is used to create a package
+
+===== Request structure
+include::{snippets}/should_document_create_package/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_package/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_package/http-response.adoc[]
+
+[[resources-package-update]]
+==== Update a package
+
+A `PATCH` request is used to update an existing package
+
+===== Response structure
+include::{snippets}/should_document_update_package/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_package/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_package/http-response.adoc[]
+
+[[resources-packages-delete]]
+==== Delete a package
+
+A `DELETE` request will delete a package.
+
+===== Example request
+include::{snippets}/should_document_delete_package/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_package/http-response.adoc[]

@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -291,6 +292,13 @@ public class SW360Utils {
         return sb.toString();
     }
 
+    public static String printName(Package pkg) {
+        if (pkg == null || isNullOrEmpty(pkg.getName())) {
+            return "New Package";
+        }
+        return getVersionedName(pkg.getName(), pkg.getVersion());
+    }
+
     public static String printName(Project project) {
         if (project == null || isNullOrEmpty(project.getName())) {
             return "New Project";
@@ -349,6 +357,16 @@ public class SW360Utils {
         return sb.toString();
     }
 
+    public static boolean isWriteAccessUser(String writeAccessUserEmail, User loggedInUser, UserGroup userGroup) {
+        if (CommonUtils.isNullEmptyOrWhitespace(writeAccessUserEmail)) {
+            return false;
+        }
+        if (writeAccessUserEmail.equalsIgnoreCase(loggedInUser.getEmail())) {
+            return true;
+        }
+        return isUserAtleastDesiredRoleInPrimaryOrSecondaryGroup(loggedInUser, userGroup);
+    }
+
     public static boolean isUserAtleastDesiredRoleInPrimaryOrSecondaryGroup(User user, UserGroup userGroup) {
         if (PermissionUtils.isUserAtLeast(userGroup, user)) {
             return true;
@@ -398,7 +416,7 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
-    public static Set<String> getLinkedReleaseIdsOfAllSubProjectsAsFlatList(Project project, Set<String> projectIds, Set<String> releaseIds, ProjectService.Iface client, User user) {
+    public static Map<String, Set<String>> getLinkedReleaseIdsOfAllSubProjectsAsFlatList(Project project, Set<String> projectIds, Set<String> releaseIds, Set<String> packageIds, ProjectService.Iface client, User user) {
         for (String projId : CommonUtils.getNullToEmptyKeyset(project.getLinkedProjects())) {
             if (!projectIds.contains(projId)) {
                 try {
@@ -407,15 +425,21 @@ public class SW360Utils {
                     if (project.getReleaseIdToUsageSize() > 0) {
                         releaseIds.addAll(project.getReleaseIdToUsage().keySet());
                     }
+                    if (project.getPackageIdsSize() > 0) {
+                        packageIds.addAll(project.getPackageIds());
+                    }
                     if (project.getLinkedProjectsSize() > 0) {
-                        getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project, projectIds, releaseIds, client, user);
+                        getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project, projectIds, releaseIds, packageIds, client, user);
                     }
                 } catch (TException e) {
                     log.error("Could not get linked projects while exporting SBOM: ", e);
                 }
             }
         }
-        return releaseIds;
+        Map<String, Set<String>> idsMap = new HashMap<>();
+        idsMap.put(SW360Constants.RELEASE_IDS, releaseIds);
+        idsMap.put(SW360Constants.PACKAGE_IDS, packageIds);
+        return idsMap;
     }
 
     public static Collection<ProjectLink> getLinkedProjectsAsFlatList(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {

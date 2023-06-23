@@ -122,6 +122,7 @@ struct Project {
     // Linked objects
     30: optional map<string, ProjectProjectRelationship> linkedProjects,
     31: optional map<string, ProjectReleaseRelationship> releaseIdToUsage,
+    32: optional set<string> packageIds,
 
     // Admin data
     40: optional string clearingTeam;
@@ -309,6 +310,21 @@ service ProjectService {
      * list of short project summaries which are visible to the `user` and have one of the `ids` in releaseIdToUsage
      */
     set<Project> searchByReleaseIds(1: set<string> ids, 2: User user);
+
+    /**
+     * list of full project summaries which are visible to the `user` and have `id` in packageIds
+     */
+    set<Project> searchProjectByPackageId(1: string id, 2: User user);
+
+    /**
+     * list of full project summaries which are visible to the `user` and have one of the `ids` in packageIds
+     */
+    set<Project> searchProjectByPackageIds(1: set<string> ids, 2: User user);
+
+    /**
+     * get the count value of projects which have `id` in packageIds
+     */
+    i32 getProjectCountByPackageId(1: string id);
 
     /**
      * get short summaries of projects linked to the project with the id `id` which are visible
@@ -502,7 +518,7 @@ service ProjectService {
     RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
 
     /**
-     * Parse a CycloneDx SBoM file (XML or JSON) and write the information to SW360 as Project / Component / Release
+     * Parse a CycloneDx SBoM file (XML or JSON) and write the information to SW360 as Project / Component / Release / Package
      */
     RequestSummary importCycloneDxFromAttachmentContent(1: User user, 2: string attachmentContentId, 3: string projectId) throws (1: SW360Exception exp);
 

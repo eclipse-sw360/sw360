@@ -9,6 +9,7 @@
   ~ SPDX-License-Identifier: EPL-2.0
   --%>
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
+<%@ page import="org.eclipse.sw360.datahandler.common.SW360Constants" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.ComponentType" %>
@@ -47,5 +48,6 @@
 
 <core_rt:if test="${empty attributeNotFoundException}">
     <core_rt:set var="inReleaseDetailsContext" value="true" scope="request"/>
+    <core_rt:set var="isPackagePortletEnabled" value='<%=SW360Constants.IS_PACKAGE_PORTLET_ENABLED%>' scope="request" />
     <%@include file="/html/components/includes/releases/detailOverview.jspf"%>
 </core_rt:if>

@@ -16,13 +16,16 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.Release" %>
 
 <jsp:useBean id="releaseSearch" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.Release>" class="java.util.ArrayList" scope="request"/>
+<jsp:useBean id="isSingleRelease" class="java.lang.String" scope="request" />
 
 <core_rt:if test="${releaseSearch.size()>0}" >
     <core_rt:forEach items="${releaseSearch}" var="entry">
         <tr>
             <td>
                 <div class="form-check">
-                    <input type="checkbox" class="form-check-input" name="<portlet:namespace/>releaseid" value="${entry.id}">
+                    <input <core_rt:choose> <core_rt:when test="${isSingleRelease}"> type="radio" </core_rt:when>
+                    <core_rt:otherwise> type="checkbox" </core_rt:otherwise> </core_rt:choose>
+                     class="form-check-input" name="<portlet:namespace/>releaseid" value="${entry.id}">
                     <input type="hidden" value="${entry.componentId}">
                 </div>
             </td>
