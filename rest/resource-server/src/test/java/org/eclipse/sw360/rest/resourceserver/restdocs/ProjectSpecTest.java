@@ -55,6 +55,7 @@ import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
+import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.hamcrest.Matchers;
@@ -74,6 +75,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,6 +91,7 @@ import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.OPEN;
 import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
@@ -133,6 +136,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360VulnerabilityService vulnerabilityMockService;
+
+    @MockBean
+    private SW360ReportService sw360ReportServiceMock;
 
     private Project project;
     private Project sBOMProject;
@@ -218,6 +224,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setSpecialRisksOSS("Lorem Ipsum");
         project.setGeneralRisks3rdParty("Lorem Ipsum");
         project.setSpecialRisks3rdParty("Lorem Ipsum");
+        project.setLicenseInfoHeaderText("Lorem Ipsum");
         project.setDeliveryChannels("Lorem Ipsum");
         project.setVendor(new Vendor());
         project.setRemarksAdditionalRequirements("Lorem Ipsum");
@@ -232,6 +239,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setAdditionalData(additionalData);
         project.setPhaseOutSince("2020-06-24");
         project.setClearingRequestId("CR-1");
+        Map<String, String> externalURLs1 = new HashMap<>();
+        externalURLs1.put("homepage", "http://test_wiki_url.com");
+        externalURLs1.put("wiki", "http://test_wiki_url.com");
+        project.setExternalUrls(externalURLs1);
 
         projectListByName.add(project);
         projectList.add(project);
@@ -266,6 +277,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project2.setSpecialRisks3rdParty("Lorem Ipsum");
         project2.setDeliveryChannels("Lorem Ipsum");
         project2.setRemarksAdditionalRequirements("Lorem Ipsum");
+        project2.setLicenseInfoHeaderText("Lorem Ipsum");
         project2.setVendor(new Vendor());
         project2.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
         project2.setProjectResponsible("projectresponsible@sw360.org");
@@ -313,6 +325,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         requestSummary.setRequestStatus(RequestStatus.SUCCESS);
 
         given(this.projectServiceMock.importSBOM(any(),any())).willReturn(requestSummary);
+        given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
         given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(project2);
@@ -678,6 +691,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.clearingTeam").description("The clearingTeam of the project").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.homepage").description("The homepage url of the project").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.wiki").description("The wiki url of the project").optional(),
+                                subsectionWithPath("_embedded.sw360:projects.[]licenseInfoHeaderText").description("The licenseInfoHeaderText text of the project"),
+                                subsectionWithPath("_embedded.sw360:projects.[]externalUrls").description("A place to store additional data used by external tools").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:moderators").description("An array of all project moderators with email").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:contributors").description("An array of all project contributors with email").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:attachments").description("An array of all project attachments").optional(),
@@ -737,6 +752,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                                 fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                fieldWithPath("licenseInfoHeaderText").description("The licenseInfoHeaderText text of the project"),
+                                subsectionWithPath("externalUrls").description("A place to store additional data used by external URLs"),
                                 fieldWithPath("clearingRequestId").description("Clearing Request id associated with project."),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project"),
@@ -1438,6 +1455,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                         subsectionWithPath("_embedded.createdBy").description("The user who created this project"),
                         fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                        fieldWithPath("licenseInfoHeaderText").description("The licenseInfoHeaderText text of the project"),
+                        subsectionWithPath("externalUrls").description("A place to store additional data used by external URLs"),
                         fieldWithPath("considerReleasesFromExternalList").description("Consider list of releases from existing external list"),
                         fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
@@ -1680,5 +1699,97 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                fieldWithPath("status").description("status of the API. Possible values are `<success|failure>`").optional(),
                                fieldWithPath("count").description("Count of projects for a user.").optional()
                        )));
+    }
+    
+    @Test
+    public void should_document_create_summary_administration() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/" + project.getId()+ "/summaryAdministration")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("name").description("The name of the project"),
+                                fieldWithPath("version").description("The project version"),
+                                fieldWithPath("createdOn").description("The date the project was created"),
+                                fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                fieldWithPath("domain").description("The domain, possible values are:"  + Sw360ResourceServer.DOMAIN.toString()),
+                                fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
+                                subsectionWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
+                                subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
+                                fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the project"),
+                                fieldWithPath("ownerGroup").description("The owner group of the project"),
+                                fieldWithPath("description").description("The project description"),
+                                fieldWithPath("ownerCountry").description("The owner country of the project"),
+                                fieldWithPath("obligationsText").description("The obligations text of the project"),
+                                fieldWithPath("clearingSummary").description("The clearing summary text of the project"),
+                                fieldWithPath("specialRisksOSS").description("The special risks OSS text of the project"),
+                                fieldWithPath("generalRisks3rdParty").description("The general risks 3rd party text of the project"),
+                                fieldWithPath("specialRisks3rdParty").description("The special risks 3rd party text of the project"),
+                                fieldWithPath("deliveryChannels").description("The sales and delivery channels text of the project"),
+                                fieldWithPath("remarksAdditionalRequirements").description("The remark additional requirements text of the project"),
+                                fieldWithPath("tag").description("The project tag"),
+                                fieldWithPath("businessUnit").description("The business unit this project belongs to"),
+                                fieldWithPath("deliveryStart").description("The project delivery start date"),
+                                fieldWithPath("preevaluationDeadline").description("The project preevaluation deadline"),
+                                fieldWithPath("systemTestStart").description("Date of the project system begin phase"),
+                                fieldWithPath("systemTestEnd").description("Date of the project system end phase"),
+                                fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
+                                fieldWithPath("projectResponsible").description("A user who is responsible for the project."),
+                                fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                                fieldWithPath("considerReleasesFromExternalList").description("Consider list of releases from existing external list"),
+                                fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
+                                fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
+                                fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                fieldWithPath("clearingRequestId").description("Clearing Request id associated with project."),
+                                fieldWithPath("licenseInfoHeaderText").description("Display licenseInfoHeaderText info"),
+                                subsectionWithPath("externalUrls").description("A place to store additional data used by external URLs"),
+                                subsectionWithPath("_embedded.createdBy").description("The user who created this project"),
+                                subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
+                                subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
+                                subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"))
+                        		));
+    }
+    
+    @Test
+    public void should_document_get_project_report() throws Exception{
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/reports/myprojectreports")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("withlinkedreleases", "true")
+                        .param("mimetype", "xlsx")
+                        .param("mailrequest", "true")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
+                                parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
+                                parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`")
+                        ),responseFields(
+                                subsectionWithPath("response").description("The response message displayed").optional(),
+                                subsectionWithPath("url").description("The project download path will be displayed").optional()
+                                )
+                        ));
+    }
+    
+    @Test
+    public void should_document_get_project_report_without_mail_req() throws Exception{
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/reports/myprojectreports")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("withlinkedreleases", "true")
+                        .param("mimetype", "xlsx")
+                        .param("mailrequest", "false")
+                        .accept("application/xhtml+xml"))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
+                                parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
+                                parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`")
+                        )));
     }
 }

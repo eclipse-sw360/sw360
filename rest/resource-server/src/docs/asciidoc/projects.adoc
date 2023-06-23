@@ -664,3 +664,48 @@ include::{snippets}/should_document_get_project_count/response-fields.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_get_project_count/http-response.adoc[]
+
+[[resources-project-get-summaryadministraion-project]]
+==== Administration and Summary Info
+
+A `GET` request will get summary and administration page of project tab.
+
+===== Response structure
+include::{snippets}/should_document_create_summary_administration/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_summary_administration/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_summary_administration/http-response.adoc[]
+
+[[resources-projects-download-report]]
+==== Downloading project report
+
+A `GET` request help to download the projects report with mail request false.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_report_without_mail_req/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_report_without_mail_req/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_report_without_mail_req/http-response.adoc[]
+
+[[resources-projects-download-report-mail-request]]
+==== Downloading project report with mail request
+
+A `GET` request help to download the projects report with mail request true.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_report/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_report/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_report/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_report/http-response.adoc[]

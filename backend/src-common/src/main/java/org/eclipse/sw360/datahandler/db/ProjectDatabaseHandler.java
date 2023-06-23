@@ -73,6 +73,9 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.getCreatedOn;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
+import org.apache.commons.io.IOUtils;
+import org.eclipse.sw360.exporter.ProjectExporter;
+import java.nio.ByteBuffer;
 
 /**
  * Class for accessing the CouchDB database
@@ -1907,4 +1910,44 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public ProjectData searchByType(String type, User user) {
         return repository.searchByType(type, user);
     }
+
+	public ByteBuffer getReportDataStream(User user, boolean extendedByReleases) throws TException {
+        try {
+        	List<Project> documents = getAccessibleProjectsSummary(user);
+            ProjectExporter exporter = getProjectExporterObject(documents, user, extendedByReleases);
+            InputStream stream = exporter.makeExcelExport(documents);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+          }catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+       }
+     }
+
+    private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases) throws SW360Exception {
+    	ThriftClients thriftClients = new ThriftClients();
+    	return new ProjectExporter(thriftClients.makeComponentClient(),
+                thriftClients.makeProjectClient(), user, documents, extendedByReleases);
+    }
+
+    public String getReportInEmail(User user,
+			boolean extendedByReleases) throws TException {
+        try {
+        	List<Project> documents = getAccessibleProjectsSummary(user);
+             ProjectExporter exporter = getProjectExporterObject(documents, user, extendedByReleases);
+             return exporter.makeExcelExportForProject(documents, user);
+          }catch (IOException e) {
+             throw new SW360Exception(e.getMessage());
+       }
+     }
+
+     public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws SW360Exception {
+        ThriftClients thriftClients = new ThriftClients();
+        ProjectExporter exporter = new ProjectExporter(thriftClients.makeComponentClient(),
+				thriftClients.makeProjectClient(), user, extendedByReleases);
+		try {
+			InputStream stream = exporter.downloadExcelSheet(token);
+			return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+		} catch (IOException e) {
+			throw new SW360Exception(e.getMessage());
+		}
+	}
 }
