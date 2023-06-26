@@ -13,12 +13,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingInformation;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
@@ -246,6 +243,36 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         attachment3.setAttachmentContentId("34535345");
         attachment3.setAttachmentType(AttachmentType.SOURCE);
         release3.setAttachments(ImmutableSet.of(attachment3));
+
+        AttachmentDTO attachmentDTO = new AttachmentDTO();
+        attachmentDTO.setAttachmentContentId(attachment3.getAttachmentContentId());
+        attachmentDTO.setFilename(attachment3.getFilename());
+        attachmentDTO.setSha1(attachment3.getSha1());
+        attachmentDTO.setAttachmentType(attachment3.getAttachmentType());
+        attachmentDTO.setCreatedBy(attachment3.getCreatedBy());
+        attachmentDTO.setCreatedTeam(attachment3.getCreatedTeam());
+        attachmentDTO.setCreatedComment(attachment3.getCreatedComment());
+        attachmentDTO.setCreatedOn(attachment3.getCreatedOn());
+        attachmentDTO.setCheckedBy(attachment3.getCheckedBy());
+        attachmentDTO.setCheckedTeam(attachment3.getCheckedTeam());
+        attachmentDTO.setCheckedComment(attachment3.getCheckedComment());
+        attachmentDTO.setCheckedOn(attachment3.getCheckedOn());
+        attachmentDTO.setCheckStatus(attachment3.getCheckStatus());
+
+        UsageAttachment usageAttachment = new UsageAttachment();
+        usageAttachment.setVisible(1);
+        usageAttachment.setRestricted(0);
+
+        ProjectUsage projectUsage = new ProjectUsage();
+        projectUsage.setProjectId("376576");
+        projectUsage.setProjectName("Emerald Web");
+
+        usageAttachment.setProjectUsages(new HashSet<>(Arrays.asList(projectUsage)));
+
+        attachmentDTO.setUsageAttachment(usageAttachment);
+        List<EntityModel<AttachmentDTO>> atEntityModels = new ArrayList<>();
+        atEntityModels.add(EntityModel.of(attachmentDTO));
+        given(this.attachmentServiceMock.getAttachmentDTOResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(atEntityModels));
 
         Set<Project> projectList = new HashSet<>();
         project = new Project();
@@ -620,15 +647,27 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_get_release_attachment_info() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/releases/" + release.getId() + "/attachments")
+        mockMvc.perform(get("/api/releases/" + release3.getId() + "/attachments")
                 .header("Authorization", "Bearer " + accessToken)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         responseFields(
-                                subsectionWithPath("_embedded.sw360:attachments").description("An array of <<resources-attachment, Attachments resources>>"),
-                                subsectionWithPath("_embedded.sw360:attachments.[]filename").description("The attachment filename"),
-                                subsectionWithPath("_embedded.sw360:attachments.[]sha1").description("The attachment sha1 value"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes").description("An array of <<resources-attachment, Attachments resources>>"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]attachmentContentId").description("The attachment attachmentContentId"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]filename").description("The attachment filename"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]sha1").description("The attachment sha1"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]attachmentType").description("The attachment attachmentType"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdBy").description("The attachment createdBy"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdTeam").description("The attachment createdTeam"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdComment").description("The attachment createdComment"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdOn").description("The attachment createdOn"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]checkedComment").description("The attachment checkedComment"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]checkStatus").description("The attachment checkStatus"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment").description("The usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment.visible").description("The visible usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment.restricted").description("The restricted usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment.projectUsages").description("The name of project usages"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
