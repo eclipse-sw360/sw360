@@ -55,6 +55,7 @@ import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
+import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.hamcrest.Matchers;
@@ -74,6 +75,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,6 +91,7 @@ import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
 import static org.eclipse.sw360.datahandler.thrift.MainlineState.OPEN;
 import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
@@ -133,6 +136,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360VulnerabilityService vulnerabilityMockService;
+
+    @MockBean
+    private SW360ReportService sw360ReportServiceMock;
 
     private Project project;
     private Project sBOMProject;
@@ -319,6 +325,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         requestSummary.setRequestStatus(RequestStatus.SUCCESS);
 
         given(this.projectServiceMock.importSBOM(any(),any())).willReturn(requestSummary);
+        given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
         given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(project2);
@@ -1693,6 +1700,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                fieldWithPath("count").description("Count of projects for a user.").optional()
                        )));
     }
+    
     @Test
     public void should_document_create_summary_administration() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
@@ -1741,7 +1749,47 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
                                 subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"),
-                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"))
+                        		));
+    }
+    
+    @Test
+    public void should_document_get_project_report() throws Exception{
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/reports/myprojectreports")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("withlinkedreleases", "true")
+                        .param("mimetype", "xlsx")
+                        .param("mailrequest", "true")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
+                                parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
+                                parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`")
+                        ),responseFields(
+                                subsectionWithPath("response").description("The response message displayed").optional(),
+                                subsectionWithPath("url").description("The project download path will be displayed").optional()
+                                )
+                        ));
+    }
+    
+    @Test
+    public void should_document_get_project_report_without_mail_req() throws Exception{
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/reports/myprojectreports")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("withlinkedreleases", "true")
+                        .param("mimetype", "xlsx")
+                        .param("mailrequest", "false")
+                        .accept("application/xhtml+xml"))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
+                                parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
+                                parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`")
                         )));
     }
 }
