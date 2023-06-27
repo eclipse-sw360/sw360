@@ -544,6 +544,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:components.[]modifiedOn").description("The date the component was modified"),
 
                                 subsectionWithPath("_embedded.sw360:components.[]categories").description("The component categories"),
+                                subsectionWithPath("_embedded.sw360:components.[]moderators").description("The component moderators"),
                                 subsectionWithPath("_embedded.sw360:components.[]languages").description("The language of the component"),
 
                                 subsectionWithPath("_embedded.sw360:components.[]operatingSystems").description("The OS on which the component operates"),
@@ -712,6 +713,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("ownerGroup").description("The owner group of the component"),
                                 fieldWithPath("ownerCountry").description("The owner country of the component"),
                                 fieldWithPath("categories").description("The component categories"),
+                                fieldWithPath("moderators").description("The component moderators"),
                                 fieldWithPath("languages").description("The language of the component"),
                                 subsectionWithPath("externalIds").description("When components are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
@@ -1011,6 +1013,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("wiki").description("The wiki of component"),
                         fieldWithPath("blog").description("The blog of component"),
                         fieldWithPath("categories").description("The component categories"),
+                        fieldWithPath("moderators").description("The component moderators"),
                         fieldWithPath("languages").description("The language of the component"),
                         fieldWithPath("mailinglist").description("Component mailing lists"),
                         fieldWithPath("operatingSystems").description("The OS on which the component operates"),

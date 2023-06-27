@@ -320,7 +320,6 @@ public class JacksonCustomizations {
                 "revision",
                 "attachments",
                 "createdBy",
-                "moderators",
                 "releases",
                 "wikipedia",
                 "openHub",
