@@ -29,14 +29,8 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalTool;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -57,16 +51,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
@@ -116,6 +107,22 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
 
         return releaseById;
+    }
+
+    public List<ReleaseLink> getLinkedReleaseRelations(Release release, User user) throws TException {
+        List<ReleaseLink> linkedReleaseRelations = getLinkedReleaseRelationsWithAccessibility(release, user);
+        linkedReleaseRelations = linkedReleaseRelations.stream().filter(Objects::nonNull).sorted(Comparator.comparing(
+                rl -> rl.isAccessible() ? SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()) : "~", String.CASE_INSENSITIVE_ORDER)
+        ).collect(Collectors.toList());
+        return linkedReleaseRelations;
+    }
+
+    public List<ReleaseLink> getLinkedReleaseRelationsWithAccessibility(Release release, User user) throws TException {
+        if (release != null && release.getReleaseIdToRelationship() != null) {
+            ComponentService.Iface componentClient = getThriftComponentClient();
+            return componentClient.getLinkedReleaseRelationsWithAccessibility(release.getReleaseIdToRelationship(), user);
+        }
+        return Collections.emptyList();
     }
 
     public Release setComponentDependentFieldsInRelease(Release releaseById, User sw360User) {

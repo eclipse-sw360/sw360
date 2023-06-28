@@ -193,7 +193,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
             ClearingReport clearingReport = new ClearingReport();
             Set<Attachment> attachments = getAttachmentForClearingReport(release);
-            if (attachments.size() != 0 ) {
+            if (!attachments.equals(Collections.emptySet())) {
                 Set<Attachment> attachmentsAccepted = getAttachmentsStatusAccept(attachments);
                 if(attachmentsAccepted.size() != 0) {
                     clearingReport.setClearingReportStatus(ClearingReportStatus.DOWNLOAD);
@@ -217,6 +217,8 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     private Set<Attachment> getAttachmentForClearingReport(Release release){
         final Set<Attachment> attachments = release.getAttachments();
+        if (CommonUtils.isNullOrEmptyCollection(attachments))
+            return Collections.emptySet();
         return attachments.stream().filter(attachment -> AttachmentType.COMPONENT_LICENSE_INFO_XML.equals(attachment.getAttachmentType()) ||
                                                          AttachmentType.CLEARING_REPORT.equals(attachment.getAttachmentType()))
                                    .collect(Collectors.toSet());
