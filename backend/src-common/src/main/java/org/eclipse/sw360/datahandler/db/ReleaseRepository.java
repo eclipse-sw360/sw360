@@ -43,8 +43,8 @@ import com.cloudant.client.api.views.ViewResponse;
 public class ReleaseRepository extends SummaryAwareRepository<Release> {
 
     private static final String ALL = "function(doc) { if (doc.type == 'release') emit(null, doc._id) }";
-    private static final String BYNAME = "function(doc) { if(doc.type == 'release') { emit(doc.name, doc._id) } }";
-    private static final String BYCREATEDON = "function(doc) { if(doc.type == 'release') { emit(doc.createdOn, doc._id) } }";
+    private static final String BY_NAME = "function(doc) { if(doc.type == 'release') { emit(doc.name, doc._id) } }";
+    private static final String BY_CREATED_ON = "function(doc) { if(doc.type == 'release') { emit(doc.createdOn, doc._id) } }";
     private static final String SUBSCRIBERS = "function(doc) {" +
             " if (doc.type == 'release'){" +
             "    for(var i in doc.subscribers) {" +
@@ -52,38 +52,38 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
             "    }" +
             "  }" +
             "}";
-    private static final String USEDINRELEASERELATION = "function(doc) {" +
+    private static final String USED_IN_RELEASE_RELATION = "function(doc) {" +
             " if(doc.type == 'release') {" +
             "   for(var id in doc.releaseIdToRelationship) {" +
             "     emit(id, doc._id);" +
             "   }" +
             " }" +
             "}";
-    private static final String RELEASEBYVENDORID = "function(doc) {" +
+    private static final String RELEASE_BY_VENDOR_ID = "function(doc) {" +
             " if (doc.type == 'release'){" +
             "     emit(doc.vendorId, doc._id);" +
             "  }" +
             "}";
-    private static final String RELEASESBYCOMPONENTID = "function(doc) {" +
+    private static final String RELEASES_BY_COMPONENT_ID = "function(doc) {" +
             " if (doc.type == 'release'){" +
             "      emit(doc.componentId, doc._id);" +
             "  }" +
             "}";
     
-    private static final String RELEASEIDSBYVENDORID = "function(doc) {" +
+    private static final String RELEASE_IDS_BY_VENDOR_ID = "function(doc) {" +
             " if (doc.type == 'release'){" +
             "      emit(doc.vendorId, doc._id);" +
             "  }" +
             "}";
 
-    private static final String RELEASEIDSBYLICENSEID = "function(doc) {" +
+    private static final String RELEASE_IDS_BY_LICENSE_ID = "function(doc) {" +
             "  if (doc.type == 'release'){" +
             "    for(var i in doc.mainLicenseIds) {" +
             "      emit(doc.mainLicenseIds[i], doc._id);" +
             "    }" +
             "  }" +
               "}";
-    private static final String BYEXTERNALIDS = "function(doc) {" +
+    private static final String BY_EXTERNAL_IDS = "function(doc) {" +
             "  if (doc.type == 'release') {" +
             "    for (var externalId in doc.externalIds) {" +
             "      try {" +
@@ -171,19 +171,19 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         super(Release.class, db, new ReleaseSummary(vendorRepository));
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
         views.put("all", createMapReduce(ALL, null));
-        views.put("byname", createMapReduce(BYNAME, null));
-        views.put("byCreatedOn", createMapReduce(BYCREATEDON, null));
+        views.put("byname", createMapReduce(BY_NAME, null));
+        views.put("byCreatedOn", createMapReduce(BY_CREATED_ON, null));
         views.put("subscribers", createMapReduce(SUBSCRIBERS, null));
-        views.put("usedInReleaseRelation", createMapReduce(USEDINRELEASERELATION, null));
-        views.put("releaseByVendorId", createMapReduce(RELEASEBYVENDORID, null));
-        views.put("releasesByComponentId", createMapReduce(RELEASESBYCOMPONENTID, null));
-        views.put("releaseIdsByLicenseId", createMapReduce(RELEASEIDSBYLICENSEID, null));
-        views.put("byExternalIds", createMapReduce(BYEXTERNALIDS, null));
+        views.put("usedInReleaseRelation", createMapReduce(USED_IN_RELEASE_RELATION, null));
+        views.put("releaseByVendorId", createMapReduce(RELEASE_BY_VENDOR_ID, null));
+        views.put("releasesByComponentId", createMapReduce(RELEASES_BY_COMPONENT_ID, null));
+        views.put("releaseIdsByLicenseId", createMapReduce(RELEASE_IDS_BY_LICENSE_ID, null));
+        views.put("byExternalIds", createMapReduce(BY_EXTERNAL_IDS, null));
         views.put("releaseByCpeId", createMapReduce(BY_LOWERCASE_RELEASE_CPE_VIEW, null));
         views.put("releaseBySvmId", createMapReduce(RELEASES_BY_SVM_ID_RELEASE_VIEW, null));
         views.put("releaseByName", createMapReduce(BY_LOWERCASE_RELEASE_NAME_VIEW, null));
         views.put("releaseByVersion", createMapReduce(BY_LOWERCASE_RELEASE_VERSION_VIEW, null));
-        views.put("releaseIdsByVendorId", createMapReduce(RELEASEIDSBYVENDORID, null));
+        views.put("releaseIdsByVendorId", createMapReduce(RELEASE_IDS_BY_VENDOR_ID, null));
         views.put("byStatus", createMapReduce(BY_STATUS_VIEW, null));
         views.put("byECCAssessorContactPerson", createMapReduce(BY_ASSESSOR_CONTACT_PERSON_VIEW, null));
         views.put("byECCAssessorGroup", createMapReduce(BY_ASSESSOR_DEPARTMENT_VIEW, null));
@@ -196,10 +196,15 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         return makeSummary(SummaryType.SHORT, queryForIdsByPrefix("byname", name));
     }
 
-    public List<Release> searchByNameAndVersion(String name, String version){
-        List<Release> releasesMatchingName =  new ArrayList<Release>(getFullDocsById(queryForIdsAsValue("byname", name)));
+    public List<Release> searchByNameAndVersion(String name, String version, boolean caseInsenstive){
+        List<Release> releasesMatchingName;
+        if (caseInsenstive) {
+            releasesMatchingName = new ArrayList<Release>(queryView("releaseByName", name.toLowerCase()));
+        } else {
+            releasesMatchingName = new ArrayList<Release>(queryView("byname", name));
+        }
         List<Release> releasesMatchingNameAndVersion = releasesMatchingName.stream()
-                .filter(r -> isNullOrEmpty(version) ? isNullOrEmpty(r.getVersion()) : version.equals(r.getVersion()))
+                .filter(r -> isNullOrEmpty(version) ? isNullOrEmpty(r.getVersion()) : version.equalsIgnoreCase(r.getVersion()))
                 .collect(Collectors.toList());
         return releasesMatchingNameAndVersion;
     }

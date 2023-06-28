@@ -37,15 +37,15 @@ import java.util.*;
  */
 public class ComponentRepository extends SummaryAwareRepository<Component> {
     private static final String ALL = "function(doc) { if (doc.type == 'component') emit(null, doc._id) }";
-    private static final String BYCREATEDON = "function(doc) { if(doc.type == 'component') { emit(doc.createdOn, doc._id) } }";
-    private static final String USEDATTACHMENTCONTENTS = "function(doc) { " +
+    private static final String BY_CREATED_ON = "function(doc) { if(doc.type == 'component') { emit(doc.createdOn, doc._id) } }";
+    private static final String USED_ATTACHMENT_CONTENTS = "function(doc) { " +
             "    if(doc.type == 'release' || doc.type == 'component' || doc.type == 'project') {" +
             "        for(var i in doc.attachments){" +
             "            emit(null, doc.attachments[i].attachmentContentId);" +
             "        }" +
             "    }" +
             "}";
-    private static final String MYCOMPONENTS = "function(doc) {" +
+    private static final String MY_COMPONENTS = "function(doc) {" +
             "  if (doc.type == 'component') {" +
             "    emit(doc.createdBy, doc._id);" +
             "  } " +
@@ -57,29 +57,29 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "    }" +
             "  }" +
             "}";
-    private static final String BYNAME = "function(doc) {" +
+    private static final String BY_NAME = "function(doc) {" +
             "  if (doc.type == 'component') {" +
             "    emit(doc.name, doc._id);" +
             "  } " +
             "}";
-    private static final String BYCOMPONENTTYPE = "function(doc) {" +
+    private static final String BY_COMPONENT_TYPE = "function(doc) {" +
             "  if (doc.type == 'component') {" +
             "    emit(doc.componentType, doc._id);" +
             "  } " +
             "}";
-    private static final String FULLBYNAME = "function(doc) {" +
+    private static final String FULL_BY_NAME = "function(doc) {" +
             "  if (doc.type == 'component') {" +
             "    emit(doc.name, doc._id);" +
             "  } " +
             "}";
-    private static final String BYLINKINGRELEASE = "function(doc) {" +
+    private static final String BY_LINKING_RELEASE = "function(doc) {" +
             "  if (doc.type == 'release') {" +
             "    for(var i in doc.releaseIdToRelationship) {" +
             "      emit(i, doc.componentId);" +
             "    }" +
             "  }" +
             "}";
-    private static final String BYFOSSOLOGYID = "function(doc) {\n" +
+    private static final String BY_FOSSOLOGY_ID = "function(doc) {\n" +
             "  if (doc.type == 'release') {\n" +
             "    if (Array.isArray(doc.externalToolProcesses)) {\n" +
             "      for (var i = 0; i < doc.externalToolProcesses.length; i++) {\n" +
@@ -97,7 +97,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "    }\n" +
             "  }\n" +
             "}";
-    private static final String BYEXTERNALIDS = "function(doc) {" +
+    private static final String BY_EXTERNAL_IDS = "function(doc) {" +
             "  if (doc.type == 'component') {" +
             "    for (var externalId in doc.externalIds) {" +
             "      try {" +
@@ -115,19 +115,19 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "    }" +
             "  }" +
             "}";
-    private static final String BYDEFAULTVENDORID = "function(doc) {" +
+    private static final String BY_DEFAULT_VENDOR_ID = "function(doc) {" +
             "  if (doc.type == 'component') {" +
             "       emit( doc.defaultVendorId , doc._id);" +
             "  }" +
             "}";
 
-    private static final String BYNAMELOWERCASE = "function(doc) {" +
+    private static final String BY_NAME_LOWERCASE = "function(doc) {" +
             "  if (doc.type == 'component') {" +
-            "    emit(doc.name.toLowerCase(), doc._id);" +
+            "    emit(doc.name.toLowerCase().trim(), doc._id);" +
             "  } " +
             "}";
 
-    private static final String BYMAINLICENSE = "function(doc) {" +
+    private static final String BY_MAIN_LICENSE = "function(doc) {" +
             "    if (doc.type == 'component') {" +
             "      if(doc.mainLicenseIds) {" +
             "            emit(doc.mainLicenseIds.join(), doc._id);" +
@@ -137,7 +137,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "    }" +
             "}";
 
-    private static final String BYVENDOR = "function(doc) {" +
+    private static final String BY_VENDOR = "function(doc) {" +
             "    if (doc.type == 'component') {" +
             "      if(doc.vendorNames) {" +
             "          emit(doc.vendorNames.join(), doc._id);" +
@@ -151,20 +151,20 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         super(Component.class, db, new ComponentSummary(releaseRepository, vendorRepository));
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
         views.put("all", createMapReduce(ALL, null));
-        views.put("byCreatedOn", createMapReduce(BYCREATEDON, null));
-        views.put("usedAttachmentContents", createMapReduce(USEDATTACHMENTCONTENTS, null));
-        views.put("mycomponents", createMapReduce(MYCOMPONENTS, null));
+        views.put("byCreatedOn", createMapReduce(BY_CREATED_ON, null));
+        views.put("usedAttachmentContents", createMapReduce(USED_ATTACHMENT_CONTENTS, null));
+        views.put("mycomponents", createMapReduce(MY_COMPONENTS, null));
         views.put("subscribers", createMapReduce(SUBSCRIBERS, null));
-        views.put("byname", createMapReduce(BYNAME, null));
-        views.put("bycomponenttype", createMapReduce(BYCOMPONENTTYPE, null));
-        views.put("fullbyname", createMapReduce(FULLBYNAME, null));
-        views.put("byLinkingRelease", createMapReduce(BYLINKINGRELEASE, null));
-        views.put("byFossologyId", createMapReduce(BYFOSSOLOGYID, null));
-        views.put("byExternalIds", createMapReduce(BYEXTERNALIDS, null));
-        views.put("byDefaultVendorId", createMapReduce(BYDEFAULTVENDORID, null));
-        views.put("bynamelowercase", createMapReduce(BYNAMELOWERCASE, null));
-        views.put("bymainlicense", createMapReduce(BYMAINLICENSE, null));
-        views.put("byvendor", createMapReduce(BYVENDOR, null));
+        views.put("byname", createMapReduce(BY_NAME, null));
+        views.put("bycomponenttype", createMapReduce(BY_COMPONENT_TYPE, null));
+        views.put("fullbyname", createMapReduce(FULL_BY_NAME, null));
+        views.put("byLinkingRelease", createMapReduce(BY_LINKING_RELEASE, null));
+        views.put("byFossologyId", createMapReduce(BY_FOSSOLOGY_ID, null));
+        views.put("byExternalIds", createMapReduce(BY_EXTERNAL_IDS, null));
+        views.put("byDefaultVendorId", createMapReduce(BY_DEFAULT_VENDOR_ID, null));
+        views.put("bynamelowercase", createMapReduce(BY_NAME_LOWERCASE, null));
+        views.put("bymainlicense", createMapReduce(BY_MAIN_LICENSE, null));
+        views.put("byvendor", createMapReduce(BY_VENDOR, null));
         initStandardDesignDocument(views, db);
     }
 
@@ -215,7 +215,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         return queryForIdsAsValue("byname", name);
     }
 
-    public List<Component> searchByNameForExport(String name, boolean caseSensitive) {
+    public List<Component> searchComponentByName(String name, boolean caseSensitive) {
         Set<String> componentIds;
         if (caseSensitive) {
             componentIds = queryForIdsAsValueByPrefix("fullbyname", name);

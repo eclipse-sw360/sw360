@@ -359,6 +359,17 @@ public class ThriftEnumUtils {
             .put(UserAccess.READ_WRITE, "Read and Write")
             .build();
 
+    private static final ImmutableMap<CycloneDxComponentType, String> MAP_CYCLONE_DX_COMPONENT_TYPE_STRING = ImmutableMap.<CycloneDxComponentType, String>builder()
+            .put(CycloneDxComponentType.APPLICATION, "Application")
+            .put(CycloneDxComponentType.CONTAINER, "Container")
+            .put(CycloneDxComponentType.DEVICE, "Device")
+            .put(CycloneDxComponentType.FILE, "File")
+            .put(CycloneDxComponentType.FIRMWARE, "Firmware")
+            .put(CycloneDxComponentType.FRAMEWORK, "Framework")
+            .put(CycloneDxComponentType.LIBRARY, "Library")
+            .put(CycloneDxComponentType.OPERATING_SYSTEM, "Operating System")
+            .build();
+
     public static final ImmutableMap<Class<? extends TEnum>, Map<? extends TEnum, String>>
             MAP_ENUMTYPE_MAP = ImmutableMap.<Class<? extends TEnum>, Map<? extends TEnum, String>>builder()
             .put(ComponentType.class, MAP_COMPONENT_TYPE_STRING)
@@ -395,6 +406,7 @@ public class ThriftEnumUtils {
             .put(ObligationType.class, MAP_OBLIGATION_TYPE_STRING)
             .put(ClearingRequestPriority.class, MAP_CLEARING_REQUEST_PRIORITY_STRING)
             .put(UserAccess.class, MAP_USER_ACCESS_STRING)
+            .put(CycloneDxComponentType.class, MAP_CYCLONE_DX_COMPONENT_TYPE_STRING)
             .build();
 
     public static String enumToString(TEnum value) {
@@ -413,7 +425,8 @@ public class ThriftEnumUtils {
 
          return null;
      }
-    public static  <T extends Enum<T>> T  enumByString(String in, Class<T> clazz){
+
+     public static  <T extends Enum<T>> T  enumByString(String in, Class<T> clazz){
         Map<? extends TEnum, String> map = MAP_ENUMTYPE_MAP.get(clazz);
         for (T t : clazz.getEnumConstants()) {
             if(map.get(t).equals(in)) return t;

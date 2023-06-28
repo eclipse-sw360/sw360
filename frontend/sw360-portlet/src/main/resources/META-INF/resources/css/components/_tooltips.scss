@@ -117,6 +117,43 @@
     display: none;
 }
 
+/** CycloneDxComponentType **/
+.sw360-tt-CycloneDxComponentType:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-CycloneDxComponentType-APPLICATION:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-CycloneDxComponentType-CONTAINER:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-CycloneDxComponentType-DEVICE:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-CycloneDxComponentType-FILE:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-CycloneDxComponentType-FIRMWARE:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-CycloneDxComponentType-FRAMEWORK:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-CycloneDxComponentType-LIBRARY:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-CycloneDxComponentType-OPERATING_SYSTEM:hover:after {
+    content: attr(data-content);
+}
+
 /** Ternary **/
 .sw360-tt-Ternary:hover:after {
     content: attr(data-content);

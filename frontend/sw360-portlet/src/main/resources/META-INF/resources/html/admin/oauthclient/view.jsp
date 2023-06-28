@@ -377,7 +377,7 @@
                     $('#copyToClipboard').on('click', function(event) {
                         let textSelector = "#confirmDialog table tr td:eq(1)",
                             textToCopy = $("#confirmDialog table tr td pre#token").text();
-                        clipboard.copyToClipboard(textToCopy, textSelector, true);
+                        clipboard.copyToClipboard(textToCopy, '#copyToClipboard');
                     });
                     clientsTbl.destroy();
                     loadListOfClient();

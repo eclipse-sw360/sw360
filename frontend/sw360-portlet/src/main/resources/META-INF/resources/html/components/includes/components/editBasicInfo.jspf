@@ -8,6 +8,7 @@
   ~ SPDX-License-Identifier: EPL-2.0
 --%>
 
+<%@ page import="org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.ComponentType" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.Component" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.Visibility" %>
@@ -65,8 +66,23 @@
             </div>
         </td>
         <td>
+            <div class="form-group">
+                <label for="cdx_componenttype"><liferay-ui:message key="cyclonedx" /> <liferay-ui:message key="component.type" /></label>
+                <select class="form-control border" id="cdx_componenttype" name="<portlet:namespace/><%=Component._Fields.CDX_COMPONENT_TYPE%>" >
+                    <option value>-- <liferay-ui:message key="select" /> <liferay-ui:message key="cyclonedx" /> <liferay-ui:message key="component.type" /> --</option>
+                    <sw360:DisplayEnumOptions type="<%=CycloneDxComponentType.class%>" selected="${component.cdxComponentType}" />
+                </select>
+                <small class="form-text">
+                    <sw360:DisplayEnumInfo type="<%=CycloneDxComponentType.class%>"/>
+                    <liferay-ui:message key="learn.more.about.cyconedx.component.types" />
+                </small>
+            </div>
+        </td>
+        <td>
             <sw360:DisplayVendorEdit id="<%=Component._Fields.DEFAULT_VENDOR_ID.toString()%>" vendorId="${component.defaultVendorId}" vendor="${component.defaultVendor}" label="default.vendor"/>
         </td>
+    </tr>
+    <tr>
         <td>
             <div class="form-group">
                 <label for="comp_homeurl"><liferay-ui:message key="homepage.url" /></label>
@@ -74,8 +90,6 @@
                     value="<sw360:out value="${component.homepage}"/>" placeholder="<liferay-ui:message key="enter.home.url" />"/>
             </div>
         </td>
-    </tr>
-    <tr>
         <td>
             <div class="form-group">
                 <label for="comp_blogurl"><liferay-ui:message key="blog.url" /></label>
@@ -88,13 +102,6 @@
                 <label for="comp_wikiurl"><liferay-ui:message key="wiki.url" /></label>
                 <input class="form-control" id="comp_wikiurl" name="<portlet:namespace/><%=Component._Fields.WIKI%>" type="URL"
                     placeholder="<liferay-ui:message key="enter.wiki.url" />" value="<sw360:out value="${component.wiki}"/>"/>
-            </div>
-        </td>
-        <td>
-            <div class="form-group">
-                <label for="mailinglist"><liferay-ui:message key="mailing.list.url" /></label>
-                <input class="form-control" id="mailinglist" name="<portlet:namespace/><%=Component._Fields.MAILINGLIST%>" type="text"
-                    placeholder="<liferay-ui:message key="enter.mailing.list.url" />" value="<sw360:out value="${component.mailinglist}"/>"/>
             </div>
         </td>
     </tr>
@@ -130,19 +137,18 @@
     </core_rt:choose>
 
     <tr>
+        <td>
+            <div class="form-group">
+                <label for="mailinglist"><liferay-ui:message key="mailing.list.url" /></label>
+                <input class="form-control" id="mailinglist" name="<portlet:namespace/><%=Component._Fields.MAILINGLIST%>" type="text"
+                    placeholder="<liferay-ui:message key="enter.mailing.list.url" />" value="<sw360:out value="${component.mailinglist}"/>"/>
+            </div>
+        </td>
         <td >
             <div class="form-group">
                 <label for="comp_desc"><liferay-ui:message key="short.description" /></label>
                 <textarea class="form-control" id="comp_desc" name="<portlet:namespace/><%=Component._Fields.DESCRIPTION%>" rows="3"
                         placeholder="<liferay-ui:message key="enter.description" />"><sw360:out value="${component.description}"/></textarea>
-            </div>
-        </td>
-        <td>
-            <div class="form-group">
-                <label for="modified_on"><liferay-ui:message key="modified.on" /></label>
-                <input id="modified_on" name="<portlet:namespace/><%=Component._Fields.MODIFIED_ON%>" type="date"
-                    placeholder="<liferay-ui:message key="modified.date.yyyy.mm.dd" />"
-                    value="<sw360:out value="${component.modifiedOn}"/>" readonly class="form-control"/>
             </div>
         </td>
         <td>
