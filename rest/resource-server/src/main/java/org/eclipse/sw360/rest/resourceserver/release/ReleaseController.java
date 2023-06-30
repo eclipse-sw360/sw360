@@ -53,6 +53,7 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -247,8 +248,28 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     }
 
     @GetMapping(value = RELEASES_URL + "/searchByExternalIds")
-    public ResponseEntity searchByExternalIds(@RequestBody(required = false) Map<String, List<String>> externalIdsMultiMap) throws TException {
+    public ResponseEntity searchByExternalIds(HttpServletRequest request) throws TException {
+        String queryString = request.getQueryString();
+        MultiValueMap<String, String> externalIdsMultiMap = parseQueryString(queryString);
         return restControllerHelper.searchByExternalIds(new LinkedMultiValueMap<String, String>(externalIdsMultiMap), releaseService, null);
+    }
+
+    private MultiValueMap<String, String> parseQueryString(String queryString) {
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+
+        if (queryString != null && !queryString.isEmpty()) {
+            String[] params = queryString.split("&");
+            for (String param : params) {
+                String[] keyValue = param.split("=");
+                if (keyValue.length == 2) {
+                    String key = keyValue[0];
+                    String value = keyValue[1];
+                    parameters.add(key, value);
+                }
+            }
+        }
+
+        return parameters;
     }
 
     @PreAuthorize("hasAuthority('WRITE')")

@@ -744,7 +744,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         MultiValueMap<String, String> externalIds = new LinkedMultiValueMap<>();
         externalIds.put("mainline-id-component", List.of("1432","4876"));
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/releases/searchByExternalIds")
+        mockMvc.perform(get("/api/releases/searchByExternalIds?mainline-id-component=1432&mainline-id-component=4876")
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(externalIds))
                 .header("Authorization", "Bearer " + accessToken))
