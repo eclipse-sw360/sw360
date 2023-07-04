@@ -697,4 +697,20 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         }
         return importBomRequestPreparationResponse;
     }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = COMPONENTS_URL + "/mergecomponents", method = RequestMethod.PATCH)
+    public ResponseEntity<RequestStatus> mergeComponents(
+            @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
+            @RequestParam(value = "mergeSourceId", required = true) String mergeSourceId,
+            @RequestBody Component mergeSelection ) throws TException {
+
+
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+        // perform the real merge, update merge target and delete merge sources
+        RequestStatus requestStatus = componentService.mergeComponents(mergeTargetId, mergeSourceId, mergeSelection, sw360User);
+
+        return new ResponseEntity<>(requestStatus, HttpStatus.OK);
+    }
 }

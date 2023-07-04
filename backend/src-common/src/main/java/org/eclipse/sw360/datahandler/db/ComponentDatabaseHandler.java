@@ -945,29 +945,30 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (mergeTarget.getAttachments() == null) {
             mergeTarget.setAttachments(new HashSet<>());
         }
-
-        Set<String> attachmentIdsSelected = mergeSelection.getAttachments().stream()
-                .map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
-        // add new attachments from source
-        Set<Attachment> attachmentsToAdd = new HashSet<>();
-        mergeSource.getAttachments().forEach(a -> {
-            if (attachmentIdsSelected.contains(a.getAttachmentContentId())) {
-                attachmentsToAdd.add(a);
-            }
-        });
-        // remove moved attachments in source
-        attachmentsToAdd.forEach(a -> {
-            mergeTarget.addToAttachments(a);
-            mergeSource.getAttachments().remove(a);
-        });
-        // delete unchosen attachments from target
-        Set<Attachment> attachmentsToDelete = new HashSet<>();
-        mergeTarget.getAttachments().forEach(a -> {
-            if (!attachmentIdsSelected.contains(a.getAttachmentContentId())) {
-                attachmentsToDelete.add(a);
-            }
-        });
-        mergeTarget.getAttachments().removeAll(attachmentsToDelete);
+        if (mergeSelection.getAttachments() != null) {
+	        Set<String> attachmentIdsSelected = mergeSelection.getAttachments().stream()
+	                .map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
+	        // add new attachments from source
+	        Set<Attachment> attachmentsToAdd = new HashSet<>();
+	        mergeSource.getAttachments().forEach(a -> {
+	            if (attachmentIdsSelected.contains(a.getAttachmentContentId())) {
+	                attachmentsToAdd.add(a);
+	            }
+	        });
+	        // remove moved attachments in source
+	        attachmentsToAdd.forEach(a -> {
+	            mergeTarget.addToAttachments(a);
+	            mergeSource.getAttachments().remove(a);
+	        });
+	        // delete unchosen attachments from target
+	        Set<Attachment> attachmentsToDelete = new HashSet<>();
+	        mergeTarget.getAttachments().forEach(a -> {
+	            if (!attachmentIdsSelected.contains(a.getAttachmentContentId())) {
+	                attachmentsToDelete.add(a);
+	            }
+	        });
+	        mergeTarget.getAttachments().removeAll(attachmentsToDelete);
+        }
     }
 
     private void transferReleases(Set<String> releaseIds, Component mergeTarget, Component mergeSource) throws SW360Exception {
