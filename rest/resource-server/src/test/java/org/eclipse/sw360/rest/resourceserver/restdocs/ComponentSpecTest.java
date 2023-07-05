@@ -939,6 +939,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("blog").description("The blog of component"),
                                 fieldWithPath("homepage").description("The homepage url of the component"),
                                 fieldWithPath("modifiedOn").description("The date the component was modified"),
+                                fieldWithPath("moderators").description("The component moderators"),
 
                                 fieldWithPath("name").description("The updated name of the component"),
                                 fieldWithPath("type").description("The updated name of the component"),
