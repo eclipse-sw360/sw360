@@ -179,6 +179,17 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         eccInformation.setAssessmentDate("2023-06-27");
         eccInformation.setEccStatus(ECCStatus.OPEN);
 
+        ClearingInformation clearingInformation = new ClearingInformation();
+        clearingInformation.setComment("Comment");
+        clearingInformation.setEvaluated("Evaluated");
+        clearingInformation.setProcStart("Proc Start");
+        clearingInformation.setRequestID("REQ-111");
+        clearingInformation.setScanned("Scanned");
+        clearingInformation.setClearingStandard("Clearing Standard");
+        clearingInformation.setCountOfSecurityVn(2);
+        clearingInformation.setComponentClearingReport(true);
+        clearingInformation.setComponentClearingReportIsSet(false);
+        clearingInformation.setExternalUrl("https://external.url");
 
         release.setId(releaseId);
         owner.setReleaseId(release.getId());
@@ -208,6 +219,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setOperatingSystems(ImmutableSet.of("Windows", "Linux"));
         release.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Java SE", ".NET")));
         release.setEccInformation(eccInformation);
+        release.setClearingInformation(clearingInformation);
         releaseList.add(release);
 
         Release release2 = new Release();
@@ -495,6 +507,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:releases.[]operatingSystems").description("The OS on which the release operates"),
                                 subsectionWithPath("_embedded.sw360:releases.[]softwarePlatforms").description("The software platforms of the component"),
                                 subsectionWithPath("_embedded.sw360:releases.[]vendor").description("The Id of the vendor").optional(),
+                                subsectionWithPath("_embedded.sw360:releases.[]clearingInformation").description("Clearing information of release").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]_embedded.sw360:moderators").description("An array of all release moderators with email"),
                                 subsectionWithPath("_embedded.sw360:releases.[]_embedded.sw360:attachments").description("An array of all release attachments").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]_embedded.sw360:cotsDetails").description("An cotsDetails of the release").optional(),
@@ -595,6 +608,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:licenses").description("An array of all main licenses with their fullName and link to their <<resources-license-get,License resource>>"),
                                 fieldWithPath("operatingSystems").description("The OS on which the release operates"),
                                 fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
+                                subsectionWithPath("clearingInformation").description("Clearing information of release"),
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:subscribers").description("An array of all release subscribers with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:contributors").description("An array of all release contributors with email and link to their <<resources-user-get,User resource>>"),
@@ -901,6 +915,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("otherLicenseIds").description("An array of all other licenses associated with the release"),
                         subsectionWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                         subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
+                        subsectionWithPath("clearingInformation").description("Clearing information of release"),
                         fieldWithPath("languages").description("The language of the component"),
                         subsectionWithPath("_embedded.sw360:licenses").description("An array of all main licenses with their fullName and link to their <<resources-license-get,License resource>>"),
                         fieldWithPath("operatingSystems").description("The OS on which the release operates"),

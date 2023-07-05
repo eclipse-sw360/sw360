@@ -408,7 +408,6 @@ public class JacksonCustomizations {
                 "moderators",
                 "subscribers",
                 "contributors",
-                "clearingInformation",
                 "setAttachments",
                 "setCreatedOn",
                 "setRepository",
