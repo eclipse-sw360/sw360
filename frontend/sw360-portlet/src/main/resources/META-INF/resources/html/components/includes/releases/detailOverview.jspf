@@ -251,7 +251,7 @@
         $('#copyToClipboard').on('click', function(event) {
             let textSelector = "table tr td#documentId",
             textToCopy = $(textSelector).clone().children().remove().end().text().trim();
-            clipboard.copyToClipboard(textToCopy, textSelector);
+            clipboard.copyToClipboard(textToCopy, '#copyToClipboard');
         });
 
 

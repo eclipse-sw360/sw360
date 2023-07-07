@@ -12,7 +12,7 @@
 <%--
     Description:             Import SPDX BOM to SW360
 
-    Required Buttons:        - <button type="button" class="btn btn-primary" data-action="import-spdx-bom">Import SPDX BOM</button>
+    Required Buttons:        - <button type="button" class="btn btn-primary" data-action="import-project-bom">Import SBOM</button>
 
     Required Imports:        - org.eclipse.sw360.portal.common.PortalConstants
 
@@ -38,32 +38,68 @@
     <portlet:param name="<%=PortalConstants.DOCUMENT_TYPE%>" value="${documentType}"/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="deleteAttachmentAjaxURL">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.ATTACHMENT_CANCEL%>'/>
+</portlet:resourceURL>
+
 <div class="dialogs">
-    <div id="spdxBomUpload" data-title="Upload SBOM" class="modal fade" tabindex="-1" role="dialog"
+    <div id="spdxBomUpload" data-title="<liferay-ui:message key="upload"/> <span class='text-info spdxMsg'>SPDX</span> <span class='text-info cycloneDxMsg'>CyconeDX</span> <liferay-ui:message key="sbom"/>"
+         class="modal fade" tabindex="-1" role="dialog"
          data-portlet-namespace="<portlet:namespace/>"
          data-new-attachment-url="<%=newAttachmentAjaxURL%>"
          data-upload-attachment-part-url="<%=uploadPartAjaxURL%>"
          data-import-bom-url="<%=importBomAjaxURL%>" >
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable mw-100 w-50" role="document">
             <div class="modal-content">
                 <div class="modal-body container" id="spdxBomUploadUpload">
-                    <h2>Upload BOM document as ${documentType}</h2>
-                    <p>This currently only supports SPDX RDF/XML files with a uniq described top level node.</p>
+                    <h3><liferay-ui:message key="please.upload.the"/> <span class="text-info spdxMsg">SPDX -> RDF/XML</span> <span class="text-info cycloneDxMsg">CycloneDX -> XML/JSON</span> <liferay-ui:message key="sbom.document"/>.</h3>
+                    <p class="spdxMsg"><liferay-ui:message key="this.currently.only.supports.spdx.rdf.xml.files.with.a.unique.described.top.level.node" />.</p>
+                    <div class="cycloneDxMsg">
+                        <ul>
+                        <core_rt:choose>
+                        <core_rt:when test="${inProjectDetailsContext}">
+                            <li><liferay-ui:message key="import.will.fail.if.current.project.name.and.version.is.not.same.as.component.present.in.sbom"/>
+                                <span class="font-weight-bold text-monospace text-danger">metadata</span> <liferay-ui:message key="tag2"/>.
+                            </li>
+                        </core_rt:when>
+                        <core_rt:otherwise>
+                            <li><liferay-ui:message key="import.will.fail.if.there.is.already.an.existing.project.with.same.name.and.version.as.component.present.in.sbom"/>
+                                <span class="font-weight-bold text-monospace text-danger">metadata</span> <liferay-ui:message key="tag2"/>.
+                            </li>
+                        </core_rt:otherwise>
+                        </core_rt:choose>
+                            <li>
+                                <span class="font-weight-bold text-monospace text-danger"><liferay-ui:message key="components"/> & <liferay-ui:message key="releases"/></span>
+                                <liferay-ui:message key="will.not.be.created.if.it.does.not.contain"/> <span class="text-info"><liferay-ui:message key="name"/></span> <liferay-ui:message key="or2"/>
+                                <span class="text-info"><liferay-ui:message key="version"/></span>
+                                <liferay-ui:message key="in.sbom.file"/>.</li>
+                        </ul>
+                    </div>
                     <div class="lfr-dynamic-uploader">
                         <div class="lfr-upload-container">
                             <div id="fileupload-drop" class="upload-target">
-                                <span>Drop a File Here</span>
+                                <span><liferay-ui:message key="drop.a.file.here" /></span>
                                 <br/>
-                                Or
+                                <liferay-ui:message key="or"/>
                                 <br/>
-                                <button id="fileupload-browse" type="button" class="btn btn-secondary">Browse</button>
+                                <button id="fileupload-browse" type="button" class="btn btn-secondary"><liferay-ui:message key="browse" /></button>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-body container d-none" id="spdxBomUploadStatus"></div>
+                <div class="modal-body" id="importSbomSpinner">
+                    <div class="spinner text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only"><liferay-ui:message key="loading" /></span>
+                        </div>
+                    </div>
+                </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+                    <button id="sbom-upload" type=submit class="btn btn-primary" title="<liferay-ui:message key="upload.and.import" /> <liferay-ui:message key="sbom" />">
+                        <liferay-ui:message key="upload.and.import" />
+                    </button>
                 </div>
             </div>
         </div>
@@ -71,22 +107,68 @@
 </div>
 
 <script>
-    require(['jquery', 'resumable', 'modules/dialog', 'modules/validation'], function($, Resumable, dialog, validation) {
-        $('.portlet-toolbar button[data-action="import-spdx-bom"]').on('click', function() {
-            var dialogDivId = '#spdxBomUpload';
+    require(['jquery', 'resumable', 'modules/dialog', 'modules/validation', 'modules/button', 'utils/includes/clipboard'], function($, Resumable, dialog, validation, button, clipboard) {
+
+        const attIds = new Set();
+        const copyBtn = '<button type="button" class="btn btn-sm btn-secondary ml-3 copyToClipboard" data-toggle="tooltip" title="<liferay-ui:message key="copy.to.clipboard" />">' +
+        '<clay:icon symbol="paste" class="text-primary"/> </button>';
+
+        $('.portlet-toolbar #importSbom a.dropdown-item').on('click', function() {
+            uploadAndImportSbom();
+        });
+
+        $('#spdxBomUpload').on("hidden.bs.modal", function () {
+            console.log("dislaog is closed....");
+            cleanupDuplicateAttachment(attIds);
+        });
+
+        $(document).on('click', 'button.copyToClipboard', function(event) {
+            let textToCopy = $(this).parent('div.alert')[0].innerText;
+            clipboard.copyToClipboard(textToCopy, '#' + $(this).attr('id'));
+        });
+
+        function cleanupDuplicateAttachment(attachmentIds) {
+            for (const id of attachmentIds) {
+
+                var data = {};
+                data["<portlet:namespace/>attachmentId"] = id;
+
+                $.ajax({
+                    url: "<%=deleteAttachmentAjaxURL%>",
+                    cache: false,
+                    dataType: "json",
+                    data: data
+                });
+                attIds.delete(id);
+            }
+        }
+
+        function uploadAndImportSbom() {
+            let dialogDivId = '#spdxBomUpload',
+                isProjectDetailsPage = '${inProjectDetailsContext}',
+                r, uploadButton, statusDiv, spinnerDiv;
 
             //function open(selector, data, submitCallback, beforeShowFn, afterShowFn) {
             $dialog = dialog.open(dialogDivId,
                 {}, // data
                 function(submit, callback) {
                     // submitCallback
+                    r.upload();
+                    callback();
                 },
                 function() {
                     // beforeShowFn
 
                     var dialogDiv = $(dialogDivId);
                     var contentDiv = dialogDiv.find("#spdxBomUploadUpload");
-                    var statusDiv = dialogDiv.find("#spdxBomUploadStatus");
+                    contentDiv.show();
+                    statusDiv = dialogDiv.find("#spdxBomUploadStatus");
+                    spinnerDiv = dialogDiv.find("#importSbomSpinner");
+                    if (!statusDiv.hasClass('d-none')) {
+                    	statusDiv.html("");
+                    	statusDiv.addClass('d-none');
+                    }
+                    spinnerDiv.hide();
                     var data = dialogDiv.data();
                     var portletNamespace = data.portletNamespace;
 
@@ -94,6 +176,19 @@
                     urls.newAttachment = data.newAttachmentUrl;
                     urls.uploadAttachmentPart = data.uploadAttachmentPartUrl;
                     urls.importBom = data.importBomUrl;
+
+                    uploadButton = $("button#sbom-upload");
+                    uploadButton.hide();
+                    let buttonData = $(event.currentTarget).data();
+                    var bomType = buttonData.type.trim().toUpperCase();
+                    if (bomType == 'SPDX') {
+                        $("#spdxBomUpload .spdxMsg").show();
+                        $("#spdxBomUpload .cycloneDxMsg").hide();
+                    } else {
+                        $("#spdxBomUpload .spdxMsg").hide();
+                        $("#spdxBomUpload .cycloneDxMsg").show();
+                    }
+
                     function getAttachmentIdPromise(file) {
                         var data = {};
                         data[portletNamespace + "fileName"] = file.fileName || file.name;
@@ -109,6 +204,12 @@
                     function importBomFromAttachment(attachmentContentId) {
                         var data = {};
                         data[portletNamespace + "<%=PortalConstants.ATTACHMENT_CONTENT_ID%>"] = attachmentContentId;
+                        data[portletNamespace + "<%=PortalConstants.BOM_TYPE%>"] = bomType;
+                        data[portletNamespace + "<%=PortalConstants.PROJECT_ID%>"] = '${docid}';
+                        button.wait(uploadButton);
+                        $(dialogDivId).find("[data-dismiss='modal']").each(function(index, element) {
+                            $(this).attr('disabled', 'disabled');
+                        });
 
                         return $.ajax({
                             url: urls.importBom,
@@ -118,60 +219,168 @@
                         });
                     }
 
-                    var r = new Resumable({
+                    r = new Resumable({
                         target: urls.uploadAttachmentPart,
                         parameterNamespace: portletNamespace,
                         simultaneousUploads: 1,
                         generateUniqueIdentifier: getAttachmentIdPromise,
                         chunkRetryInterval: 2000,
                         maxChunkRetries: 3,
-                        fileType: ['rdf','json','spdx']
+                        maxFiles: 1,
+                        fileType: ['rdf', 'spdx', 'xml', 'json']
                     });
 
                     r.assignBrowse($('#fileupload-browse')[0]);
                     r.assignDrop($('#fileupload-drop')[0]);
 
                     r.on('fileAdded', function (file) {
-                        console.log("fileAdded...");
+                        attIds.add(file.uniqueIdentifier);
                         contentDiv.hide();
                         statusDiv.removeClass('d-none');
-                        r.upload();
-                        statusDiv.html("<h2>Uploading " + file.fileName + " file</h2>");
+                        uploadButton.show();
+                        statusDiv.html('<h3><liferay-ui:message key="file" /> <span class="text-info">' + file.fileName + '</span> <liferay-ui:message key="added.successfully" />, ' +
+                                '<liferay-ui:message key="click.on.upload.and.import.button" />.</h3>');
                     });
-                    r.on('fileProgress', function (file) {
-                        console.log("fileProgress...");
+                    r.on('uploadStart', function () {
+                        $(dialogDivId).find("[data-dismiss='modal']").each(function(index, element) {
+                            $(this).attr('disabled', 'disabled');
+                        });
+                        spinnerDiv.show();
+                        statusDiv.html('<h3><liferay-ui:message key="uploading.sbom.file" />...</h3>');
                     });
                     r.on('fileSuccess', function (file) {
-                        console.log("fileSuccess...");
-                        statusDiv.html("<h2>Importing ...</h2>");
+                    	var startTime = Date.now();
+                        statusDiv.html('<h3><liferay-ui:message key="upload.successful.importing.of.sbom.is.in.progress" />...</h3>');
                         var attachmentContentId = file.uniqueIdentifier;
+                        attIds.delete(attachmentContentId);
                         importBomFromAttachment(attachmentContentId).then(function (data) {
-                            console.log("importSuccess...");
-                            statusDiv.html("<h2>Imported</h2>");
-                            if ('redirectUrl' in data) {
-                                statusDiv.append("<div>Created as <a href=\"" + data.redirectUrl + "\">" + data.message + "</a>, redirecting ...</div>");
-                                window.location.href = data.redirectUrl;
+                            button.finish(uploadButton);
+                            $(dialogDivId).find("[data-dismiss='modal']").each(function(index, element) {
+                                $(this).removeAttr('disabled');
+                            });
+                            spinnerDiv.hide();
+                            if (bomType === 'SPDX') {
+                                statusDiv.html('<h3><liferay-ui:message key="sbom.imported.successfully" />...</h3>');
+	                            if ('redirectUrl' in data) {
+	                                statusDiv.append('<div><liferay-ui:message key="created.project.with.id" />: <a href=\"' + data.redirectUrl + '\">' + data.message + '</a>, <liferay-ui:message key="redirecting.to.project.details.page" />...</div>');
+	                                window.location.href = data.redirectUrl;
+	                            } else {
+	                                statusDiv.append("<div>" + JSON.stringify(data) + "</div>");
+	                                contentDiv.show();
+	                            }
                             } else {
-                                statusDiv.append("<div>" + JSON.stringify(data) + "</div>");
-                                contentDiv.show();
+                                var result = data.result;
+                                var endTime = Date.now();
+                                var timeTakenInSeconds = (endTime - startTime) / 1000;
+                                if ((data.projectName && data.projectName.length) || (data.message && data.message.length)) {
+                                    if (result !== 'SUCCESS') {
+                                        statusDiv.html('<h3><liferay-ui:message key="failed.to.import.sbom" />: <span class="text-info">' + file.fileName + '</span></h3>');
+                                        if (result == 'DUPLICATE') {
+                                            statusDiv.append("<div class='alert alert-danger'><b><liferay-ui:message key="duplicate.sbom" />:</b>" +
+                                                "<br><liferay-ui:message key="a.project.with.the.same.name.and.version.already.exists" /> <liferay-ui:message key="please.import.this.sbom.from.project.details.page" />!<br>" +
+                                                "&emsp;<a href=\"" + data.redirectUrl + "\" target='_blank'>" + data.projectName + "</a><br><liferay-ui:message key="click.the.url.to.open.project.details.page" />.</div>");
+                                        } else if (result == 'FAILED_SANITY_CHECK') {
+                                            statusDiv.append("<div class='alert alert-danger'><b><liferay-ui:message key="sbom.failed.sanity.check" />:</b> <br>" +
+                                                "<liferay-ui:message key="project.name.and.version.x.present.in.sbom.metadata.tag.is.not.same.as.the.current.sw360.project" />!</div>");
+                                        } else if (result == 'ACCESS_DENIED') {
+                                            statusDiv.append("<div class='alert alert-danger'><b><liferay-ui:message key="access.denied.2" />:</b> <br>" +
+                                                    "<liferay-ui:message key="you.do.not.have.permission.to.import.or.export.the.sbom" />" +
+                                                    "<br><liferay-ui:message key="only.user.with.role.x.and.above.have.permission.to.import.or.export.the.sbom" />!</div>");
+                                        } else {
+                                            statusDiv.append("<span class='alert alert-danger'> <b>" + result + ':</b> <br>' + data.message + "</span>");
+                                        }
+                                    } else {
+                                        statusDiv.html('<h3><liferay-ui:message key="sbom.imported.successfully" />...</h3>');
+                                        statusDiv.append("<span class='alert alert-success'>" + data.message + "</span>");
+                                    }
+                                }
+                                if (result === 'SUCCESS') {
+                                    statusDiv.html('<h3><liferay-ui:message key="sbom.imported.successfully" />...</h3>');
+                                    if ('redirectUrl' in data) {
+                                        if (isProjectDetailsPage) {
+                                            statusDiv.append("<div class='alert alert-info'><liferay-ui:message key="imported.sbom.into.project" />: <a href=\"" + data.redirectUrl + "\" target='_blank'>" + data.projectName +
+                                                    "</a>.<br> <liferay-ui:message key="time.taken.for.import" />: " + timeTakenInSeconds + " <liferay-ui:message key="seconds" /> </div>");
+                                        } else {
+                                            statusDiv.append("<div class='alert alert-info'><liferay-ui:message key="created.project.with.name" />: <a href=\"" + data.redirectUrl + "\" target='_blank'>" + data.projectName +
+                                                    "</a>, <liferay-ui:message key="click.the.url.to.open.project.details.page" />.<br> <liferay-ui:message key="time.taken.for.import" />: " + timeTakenInSeconds + " <liferay-ui:message key="seconds" /> </div>");
+                                        }
+                                        countInfo = $('<ul/>');
+                                        if (data.compCreationCount || data.compReuseCount) {
+                                            let total = Number(data.compCreationCount) + Number(data.compReuseCount);
+                                            countInfo.append('<li><liferay-ui:message key="total.components" />: <b>' + total + '</b></li>');
+                                            countInfo.append('<ul><li><liferay-ui:message key="components.created" />: <b>' + data.compCreationCount + '</b></li></ul>');
+                                            countInfo.append('<ul><li><liferay-ui:message key="components.reused" />: <b>' + data.compReuseCount + '</b></li></ul>');
+                                        }
+                                        if (data.relCreationCount || data.relReuseCount) {
+                                        let total = Number(data.relCreationCount) + Number(data.relReuseCount);
+                                            countInfo.append('<li><liferay-ui:message key="total.releases" />: <b>' + total + '</b></li>');
+                                            countInfo.append('<ul><li><liferay-ui:message key="releases.created" />: <b>' + data.relCreationCount + '</b></li></ul>');
+                                            countInfo.append('<ul><li><liferay-ui:message key="releases.reused" />: <b>' + data.relReuseCount + '</b></li></ul>');
+                                        }
+                                        statusDiv.append("<div class='alert alert-success'> " + countInfo[0].outerHTML + "</div>");
+                                    }
+                                }
+                                if (data.invalidRel && data.invalidRel.length) {
+                                    invalidRelList = $('<ul/>');
+                                    data.invalidRel.split('||').forEach(function(comp, index) {
+                                        invalidRelList.append('<li>' + comp + '</li>');
+                                    });
+                                    var cpBtn = $(copyBtn).clone();
+                                    $(cpBtn).attr('id', 'copyToClipboard_ir');
+                                    statusDiv.append("<div class='alert alert-danger'><liferay-ui:message key="list.of.components.without.version.information" />: <b>" + $(invalidRelList).find('li').length +
+                                            "</b> <small>(<liferay-ui:message key="not.imported" />)</small> " + cpBtn[0].outerHTML + " " +invalidRelList[0].outerHTML + "</div>")
+                                }
+                                if (data.dupComp && data.dupComp.length) {
+                                    compList = $('<ul/>');
+                                    data.dupComp.split('||').forEach(function(comp, index) {
+                                        compList.append('<li>' + comp + '</li>');
+                                    });
+                                    var cpBtn = $(copyBtn).clone();
+                                    $(cpBtn).attr('id', 'copyToClipboard_dc');
+                                    statusDiv.append("<div class='alert alert-warning'><b>" + $(compList).find('li').length +
+                                            "</b> <liferay-ui:message key="components.were.not.imported.because.multiple.duplicate.components.are.found.with.exact.same.name" />: " + copyBtn + " " + compList[0].outerHTML + "</div>")
+                                }
+                                if (data.dupRel && data.dupRel.length) {
+                                    relList = $('<ul/>');
+                                    data.dupRel.split('||').forEach(function(rel, index) {
+                                        relList.append('<li>' + rel + '</li>');
+                                    });
+                                    var cpBtn = $(copyBtn).clone();
+                                    $(cpBtn).attr('id', 'copyToClipboard_dr');
+                                    statusDiv.append("<div class='alert alert-warning'><b>" + $(relList).find('li').length +
+                                            "</b> <liferay-ui:message key="releases.were.not.imported.because.multiple.duplicate.releases.are.found.with.exact.same.name.and.version" />: " + copyBtn + " " + relList[0].outerHTML + "</div>")
+
+                                }
                             }
-                        }).catch(function (err) {
-                            statusDiv.html("<h2>Failed :(</h2>");
-                            statusDiv.append("<div>" + JSON.stringify(err) + "</div>");
+                            uploadButton.hide();
+                            cleanupDuplicateAttachment(attIds);
+                        }).catch(function (error) {
+                            statusDiv.html("<h3><span class='text-danger'><liferay-ui:message key="failed" /> : </span> </h3>");
+                            statusDiv.append("<div>" + JSON.stringify(error) + "</div>");
+                            if (error.message) {
+                            	statusDiv.append("<div>" + error.message + "</div>");
+                            }
+                            spinnerDiv.hide();
                             contentDiv.show();
+                            cleanupDuplicateAttachment(attIds);
                         });
                     });
                     r.on('fileError', function (file) {
-                        console.log("fileError...");
-                        statusDiv.html("<h2>Failed</h2>");
-                        statusDiv.append("<div>with fileError</div>");
+                        statusDiv.html("<h3><span class='text-danger'><liferay-ui:message key="failed" /> : </span> </h3>");
+                        statusDiv.append("<div><liferay-ui:message key="with.file.error" /></div>");
+                        uploadButton.hide();
+                        spinnerDiv.hide();
+                        cleanupDuplicateAttachment(attIds);
+                        $(dialogDivId).find("[data-dismiss='modal']").each(function(index, element) {
+                            $(this).removeAttr('disabled');
+                        });
                     });
                 },
                 function() {
                     // afterShowFn
                 }
             );
-        });
+        }
     });
 </script>
 

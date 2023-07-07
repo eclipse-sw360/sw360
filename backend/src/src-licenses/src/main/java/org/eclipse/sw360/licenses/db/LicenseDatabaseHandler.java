@@ -515,6 +515,7 @@ public class LicenseDatabaseHandler {
         license.setExternalLicenseLink(inputLicense.getExternalLicenseLink());
         license.setChecked(inputLicense.isChecked());
         license.setObligationDatabaseIds(inputLicense.getObligationDatabaseIds());
+        license.setNote(inputLicense.getNote());
 
         return license;
     }

@@ -18,12 +18,16 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EVALUATE_CLI_ATTACHMENTS%>"/>
     <portlet:param name="<%=PortalConstants.RELEASE_ID%>" value="${releaseId}"/>
 </portlet:resourceURL>
+<portlet:resourceURL var="loadSbomImportInfo">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.LOAD_SBOM_IMPORT_INFO%>"/>
+</portlet:resourceURL>
 <core_rt:catch var="attributeNotFoundException">
     <jsp:useBean id="attachments" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.attachments.Attachment>" scope="request" />
     <jsp:useBean id="attachmentUsages" type="java.util.Map<java.lang.String, java.util.List<org.eclipse.sw360.datahandler.thrift.projects.Project>>" scope="request" />
     <jsp:useBean id="attachmentUsagesRestrictedCounts" type="java.util.Map<java.lang.String, java.lang.Long>" scope="request" />
     <jsp:useBean id="documentType" type="java.lang.String" scope="request" />
     <jsp:useBean id="documentID" class="java.lang.String" scope="request" />
+    <core_rt:set var="portletName" value="<%=themeDisplay.getPortletDisplay().getPortletName() %>"/>
 </core_rt:catch>
 
 <%--for javascript library loading --%>
@@ -44,6 +48,37 @@
     </core_rt:if>
 
     <core_rt:if test="${not empty attachments}">
+
+        <core_rt:if test="${portletName eq 'sw360_portlet_projects'}">
+            <div class="dialogs auto-dialogs">
+                <div id="viewSbomImportResult" class="modal" tabindex="-1" role="dialog">
+                    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable modal-info mw-100 w-50" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <clay:icon symbol="import-list" /> &nbsp; <liferay-ui:message key="sbom.import.statistics.for" />: <span class="text-primary" data-name="fileName"></span>
+                                </h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="spinner text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="sr-only"><liferay-ui:message key="loading" /></span>
+                                    </div>
+                                </div>
+                                <div style="display: none;" id="bomImportInfo"></div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light" data-dismiss="modal"><liferay-ui:message key="close" /></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </core_rt:if>
+
         <core_rt:if test="${not empty releaseId and writeAccessUser}">
           <div id="errorMsgContainer">
             <div id="errorMsg" class="alert alert-dismissible d-none" role="alert">
@@ -91,10 +126,11 @@
         </table>
 
         <script>
-            require(['jquery', 'bridges/datatables', 'modules/dialog' ], function($, datatables, dialog) {
+            require(['jquery', 'bridges/datatables', 'modules/dialog', 'utils/includes/clipboard'], function($, datatables, dialog, clipboard) {
                 var attachmentJSON = [];
                 var usageLinks;
-
+                var isProjectPortlet = '${portletName}' === 'sw360_portlet_projects';
+                const importStatus = '_importstatus';
                 /* Print all attachment table data as array into the html page */
                 <core_rt:forEach items="${attachments}" var="attachment">
                     usageLinks = [];
@@ -271,7 +307,114 @@
                 }
 
                 function renderAttachmentFileName(data, type, row, meta) {
+                    if (isProjectPortlet && data.toLowerCase().indexOf(importStatus) !== -1 && data.toLowerCase().endsWith('.json') && $(row.type)[0].innerHTML == 'OTH') {
+                        return $('<span></span>').text(data).addClass(row.attachmentContentId)
+                            .append($('<span class="glyphicon glyphicon-info-sign float-right" title="<liferay-ui:message key="view.sbom.import.result" />" type="button"></span>'))[0].outerHTML;
+                    }
                     return $('<span></span>').text(data).addClass(row.attachmentContentId)[0].outerHTML;
+                }
+
+                const copyBtn = '<button type="button" class="btn btn-sm btn-secondary ml-3 copyToClipboard" data-toggle="tooltip" title="<liferay-ui:message key="copy.to.clipboard" />">' +
+                                 '<clay:icon symbol="paste" class="text-primary"/> </button>';
+
+                $(document).on('click', 'button.copyToClipboard', function(event) {
+                    let textToCopy = $(this).parent('div.alert')[0].innerText;
+                    clipboard.copyToClipboard(textToCopy, '#' + $(this).attr('id'));
+                });
+
+                var dialogDiv = $('#viewSbomImportResult');
+                $(document).on('click', '.glyphicon-info-sign', function() {
+                    loadSbomImportInfo($(this).parent('span')[0].getAttribute('class'), $(this).parent('span')[0].innerText);
+                });
+
+                function loadSbomImportInfo(attachmentId, attachmentName) {
+                    statusDiv = $('#viewSbomImportResult').find('#bomImportInfo');
+                    spinnerDiv = $('#viewSbomImportResult').find('.spinner')
+                    $dialog = dialog.open('#viewSbomImportResult', {
+                            fileName: attachmentName // data
+                        },
+                        undefined, // submitCallback
+                        function() { // beforeShowFn
+                            spinnerDiv.show();
+                            statusDiv.hide();
+                            statusDiv.html("");
+                        },
+                        undefined, // afterShowFn
+                        true // isHTML
+                    );
+                    jQuery.ajax({
+                        type: 'GET',
+                        url: '<%=loadSbomImportInfo%>',
+                        cache: false,
+                        data: {
+                            "<portlet:namespace/><%=PortalConstants.ATTACHMENT_CONTENT_ID%>": attachmentId
+                        },
+                        success: function (data) {
+                            if (!data || data.length == 0 || Object.getOwnPropertyNames(data).length == 0) {
+                                statusDiv.html('<liferay-ui:message key="failed.to.load.sbom.import.status.for.attachment" />!');
+                            } else {
+                                var result = data.result;
+                                if (data.message && data.message.length) {
+                                    statusDiv.html('<h3><liferay-ui:message key="sbom.import.status" />...</h3>');
+                                    statusDiv.append("<span class='alert alert-success'>" + data.message + "</span>");
+                                }
+                                if (result === 'SUCCESS') {
+                                    statusDiv.html('<h3><liferay-ui:message key="sbom.import.status" />...</h3>');
+                                    countInfo = $('<ul/>');
+                                    if (data.compCreationCount || data.compReuseCount) {
+                                        let total = Number(data.compCreationCount) + Number(data.compReuseCount);
+                                        countInfo.append('<li><liferay-ui:message key="total.components" />: <b>' + total + '</b></li>');
+                                        countInfo.append('<ul><li><liferay-ui:message key="components.created" />: <b>' + data.compCreationCount + '</b></li></ul>');
+                                        countInfo.append('<ul><li><liferay-ui:message key="components.reused" />: <b>' + data.compReuseCount + '</b></li></ul>');
+                                    }
+                                    if (data.relCreationCount || data.relReuseCount) {
+                                        let total = Number(data.relCreationCount) + Number(data.relReuseCount);
+                                        countInfo.append('<li><liferay-ui:message key="total.releases" />: <b>' + total + '</b></li>');
+                                        countInfo.append('<ul><li><liferay-ui:message key="releases.created" />: <b>' + data.relCreationCount + '</b></li></ul>');
+                                        countInfo.append('<ul><li><liferay-ui:message key="releases.reused" />: <b>' + data.relReuseCount + '</b></li></ul>');
+                                    }
+                                    statusDiv.append("<div class='alert alert-success'> " + countInfo[0].outerHTML + "</div>");
+                                }
+                                if (data.invalidRel && data.invalidRel.length) {
+                                    invalidRelList = $('<ul/>');
+                                    data.invalidRel.split('||').forEach(function(comp, index) {
+                                        invalidRelList.append('<li>' + comp + '</li>');
+                                    });
+                                    var cpBtn = $(copyBtn).clone();
+                                    $(cpBtn).attr('id', 'copyToClipboard_irs');
+                                    statusDiv.append("<div class='alert alert-danger'><liferay-ui:message key="list.of.components.without.version.information" />: <b>" + $(invalidRelList).find('li').length +
+                                        "</b> <small>(<liferay-ui:message key="not.imported" />)</small> " + cpBtn[0].outerHTML + " " + invalidRelList[0].outerHTML + "</div>")
+                                }
+                                if (data.dupComp && data.dupComp.length) {
+                                    compList = $('<ul/>');
+                                    data.dupComp.split('||').forEach(function(comp, index) {
+                                        compList.append('<li>' + comp + '</li>');
+                                    });
+                                    var cpBtn = $(copyBtn).clone();
+                                    $(cpBtn).attr('id', 'copyToClipboard_dcs');
+                                    statusDiv.append("<div class='alert alert-warning'><b>" + $(compList).find('li').length +
+                                        "</b> <liferay-ui:message key="components.were.not.imported.because.multiple.duplicate.components.are.found.with.exact.same.name" />: " + copyBtn + " " + compList[0].outerHTML + "</div>")
+                                }
+                                if (data.dupRel && data.dupRel.length) {
+                                    relList = $('<ul/>');
+                                    data.dupRel.split('||').forEach(function(rel, index) {
+                                        relList.append('<li>' + rel + '</li>');
+                                    });
+                                    var cpBtn = $(copyBtn).clone();
+                                    $(cpBtn).attr('id', 'copyToClipboard_drs');
+                                    statusDiv.append("<div class='alert alert-warning'><b>" + $(relList).find('li').length +
+                                        "</b> <liferay-ui:message key="releases.were.not.imported.because.multiple.duplicate.releases.are.found.with.exact.same.name.and.version" />: " + copyBtn + " " + relList[0].outerHTML + "</div>")
+                                }
+                            }
+                            spinnerDiv.hide();
+                            statusDiv.show();
+                        },
+                        error: function () {
+                            statusDiv.html('<liferay-ui:message key="failed.to.load.sbom.import.status.for.attachment" />: ' + attachmentName);
+                            spinnerDiv.hide();
+                            statusDiv.show();
+                        }
+                    });
                 }
 
                 function renderAttachmentUsages(data, type, row, meta) {

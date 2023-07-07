@@ -20,11 +20,8 @@ import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.VerificationState;
 import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -231,6 +228,29 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         componentList.add(angularComponent);
         componentList.add(angularTargetComponent);
         componentListByName.add(angularComponent);
+
+        AttachmentDTO attachmentDTO = new AttachmentDTO();
+        attachmentDTO.setAttachmentContentId("");
+        attachmentDTO.setFilename(attachment.getFilename());
+        attachmentDTO.setSha1(attachment.getSha1());
+        attachmentDTO.setAttachmentType(AttachmentType.BINARY_SELF);
+        attachmentDTO.setCreatedBy("admin@sw360.org");
+        attachmentDTO.setCreatedTeam("Clearing Team 1");
+        attachmentDTO.setCreatedComment("please check asap");
+        attachmentDTO.setCreatedOn("2016-12-18");
+        attachmentDTO.setCheckedTeam("Clearing Team 2");
+        attachmentDTO.setCheckedComment("everything looks good");
+        attachmentDTO.setCheckedOn("2016-12-18");
+        attachmentDTO.setCheckStatus(CheckStatus.ACCEPTED);
+
+        UsageAttachment usageAttachment = new UsageAttachment();
+        usageAttachment.setVisible(0);
+        usageAttachment.setRestricted(0);
+
+        attachmentDTO.setUsageAttachment(usageAttachment);
+        List<EntityModel<AttachmentDTO>> atEntityModels = new ArrayList<>();
+        atEntityModels.add(EntityModel.of(attachmentDTO));
+        given(this.attachmentServiceMock.getAttachmentDTOResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(atEntityModels));
 
         Component springComponent = new Component();
         Map<String, String> springComponentExternalIds = new HashMap<>();
@@ -572,6 +592,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:components.[]modifiedOn").description("The date the component was modified"),
 
                                 subsectionWithPath("_embedded.sw360:components.[]categories").description("The component categories"),
+                                subsectionWithPath("_embedded.sw360:components.[]moderators").description("The component moderators"),
                                 subsectionWithPath("_embedded.sw360:components.[]languages").description("The language of the component"),
 
                                 subsectionWithPath("_embedded.sw360:components.[]operatingSystems").description("The OS on which the component operates"),
@@ -740,6 +761,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("ownerGroup").description("The owner group of the component"),
                                 fieldWithPath("ownerCountry").description("The owner country of the component"),
                                 fieldWithPath("categories").description("The component categories"),
+                                fieldWithPath("moderators").description("The component moderators"),
                                 fieldWithPath("languages").description("The language of the component"),
                                 subsectionWithPath("externalIds").description("When components are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
@@ -921,6 +943,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("homepage").description("The homepage url of the component"),
                                 fieldWithPath("modifiedOn").description("The date the component was modified"),
 
+                                fieldWithPath("moderators").description("The component moderators"),
+
                                 fieldWithPath("name").description("The updated name of the component"),
                                 fieldWithPath("type").description("The updated name of the component"),
                                 fieldWithPath("createdOn").description("The date the component was created"),
@@ -938,6 +962,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("componentType").description("The updated  component type, possible values are: " + Arrays.asList(ComponentType.values()))
                         )));
     }
+
     @Test
     public void should_document_split_components() throws Exception {
 
@@ -1015,9 +1040,20 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         responseFields(
-                                subsectionWithPath("_embedded.sw360:attachments").description("An array of <<resources-attachment, Attachments resources>>"),
-                                subsectionWithPath("_embedded.sw360:attachments.[]filename").description("The attachment filename"),
-                                subsectionWithPath("_embedded.sw360:attachments.[]sha1").description("The attachment sha1 value"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes").description("An array of <<resources-attachment, Attachments resources>>"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]attachmentContentId").description("The attachment attachmentContentId"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]filename").description("The attachment filename"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]sha1").description("The attachment sha1"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]attachmentType").description("The attachment attachmentType"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdBy").description("The attachment createdBy"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdTeam").description("The attachment createdTeam"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdComment").description("The attachment createdComment"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdOn").description("The attachment createdOn"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]checkedComment").description("The attachment checkedComment"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]checkStatus").description("The attachment checkStatus"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment").description("The usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment.visible").description("The visible usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment.restricted").description("The restricted usages in project"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -1132,6 +1168,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("wiki").description("The wiki of component"),
                         fieldWithPath("blog").description("The blog of component"),
                         fieldWithPath("categories").description("The component categories"),
+                        fieldWithPath("moderators").description("The component moderators"),
                         fieldWithPath("languages").description("The language of the component"),
                         fieldWithPath("mailinglist").description("Component mailing lists"),
                         fieldWithPath("operatingSystems").description("The OS on which the component operates"),

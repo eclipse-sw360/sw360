@@ -152,6 +152,17 @@ enum ClearingReportStatus {
     DOWNLOAD = 2
 }
 
+enum CycloneDxComponentType {
+    APPLICATION = 0,
+    CONTAINER = 1,
+    DEVICE = 2,
+    FILE = 3,
+    FIRMWARE = 4,
+    FRAMEWORK = 5,
+    LIBRARY = 6,
+    OPERATING_SYSTEM = 7,
+}
+
 struct ConfigContainer {
     1: optional string id,
     2: optional string revision,

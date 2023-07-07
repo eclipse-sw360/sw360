@@ -150,6 +150,10 @@ public class PortletUtils {
         return  ObligationType.findByValue(parseInt(enumNumber));
     }
 
+    public static CycloneDxComponentType getCycloneDxComponentTypeFromString(String enumNumber) {
+        return  CycloneDxComponentType.findByValue(parseInt(enumNumber));
+    }
+
     public static <U extends TFieldIdEnum, T extends TBase<T, U>> void setFieldValue(PortletRequest request, T instance, U field, FieldMetaData fieldMetaData, String prefix) {
 
         String value = request.getParameter(prefix + field.toString());
@@ -205,6 +209,8 @@ public class PortletUtils {
             return getObligationLevelFromString(value);
         else if (field == Obligation._Fields.OBLIGATION_TYPE)
             return getObligationTypeFromString(value);
+        else if (field == Component._Fields.CDX_COMPONENT_TYPE)
+            return getCycloneDxComponentTypeFromString(value);
         else {
             LOGGER.error("Missing case in enumFromString, unknown field was " + field.toString());
             return null;

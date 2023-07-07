@@ -73,12 +73,14 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         externalIds.put("Trove", "License :: OSI Approved :: Apache Software License");
         license.setExternalIds(externalIds);
         license.setAdditionalData(Collections.singletonMap("Key", "Value"));
+        license.setNote("License's Note");
 
         License license2 = new License();
         license2.setId("MIT");
         license2.setFullname("The MIT License (MIT)");
         license2.setShortname("MIT");
         license2.setText("placeholder for the MIT license text");
+        license2.setNote("License2's Note");
 
         List<License> licenseList = new ArrayList<>();
         licenseList.add(license);
@@ -150,7 +152,8 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("OSIApproved").description("The OSI aprroved information, possible values are: " + Arrays.asList(Quadratic.values())),
                                 fieldWithPath("FSFLibre").description("The FSF libre information, possible values are: " + Arrays.asList(Quadratic.values())),
                                 subsectionWithPath("_embedded.sw360:obligations").description("An array of <<resources-obligations, Obligations obligations>>"),
-                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("note").description("The license's note")
                         )));
     }
 

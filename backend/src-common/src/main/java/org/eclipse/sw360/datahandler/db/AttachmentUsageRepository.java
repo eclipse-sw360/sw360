@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<AttachmentUsage> {
     private static final String USAGESBYATTACHMENT =  "function(doc) { if (doc.type == 'attachmentUsage') emit([doc.owner.value_, doc.attachmentContentId], null); }";
     private static final String USEDATTACHMENTS = "function(doc) { if (doc.type == 'attachmentUsage') emit(doc.usedBy.value_, null); }";
+    private static final String USEDATTACHMENTBYID = "function(doc) { if (doc.type == 'attachmentUsage') emit(doc.attachmentContentId, doc._id); }";
     private static final String USAGESBYATTACHMENTUSAGETYPE = "function(doc) { if (doc.type == 'attachmentUsage') emit([doc.owner.value_, doc.attachmentContentId, doc.usageData != null ? doc.usageData.setField_ : null], null); }";
     private static final String USEDATTACHMENTUSAGESTYPE = "function(doc) { if (doc.type == 'attachmentUsage') emit([doc.usedBy.value_, doc.usageData != null ? doc.usageData.setField_ : null], null); }";
     private static final String REFERENCES_RELEASEID = "" +
@@ -58,6 +59,7 @@ public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<
         views.put("all", createMapReduce(ALL, null));
         views.put("usagesByAttachment", createMapReduce(USAGESBYATTACHMENT, "_count"));
         views.put("usedAttachments", createMapReduce(USEDATTACHMENTS, "_count"));
+        views.put("usedAttachmentById", createMapReduce(USEDATTACHMENTBYID, null));
         views.put("usagesByAttachmentUsageType", createMapReduce(USAGESBYATTACHMENTUSAGETYPE, "_count"));
         views.put("usedAttachmentsUsageType", createMapReduce(USEDATTACHMENTUSAGESTYPE, "_count"));
         views.put("referencesReleaseId", createMapReduce(REFERENCES_RELEASEID, null));
@@ -73,6 +75,12 @@ public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<
     public List<AttachmentUsage> getUsedAttachments(String usedById) {
         ViewRequestBuilder viewQuery = getConnector().createQuery(AttachmentUsage.class, "usedAttachments");
         UnpaginatedRequestBuilder reqBuilder = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(true).reduce(false).keys(usedById);
+        return queryView(reqBuilder);
+    }
+
+    public List<AttachmentUsage> getUsedAttachmentById(String attachmentContentId) {
+        ViewRequestBuilder viewQuery = getConnector().createQuery(AttachmentUsage.class, "usedAttachmentById");
+        UnpaginatedRequestBuilder reqBuilder = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(true).reduce(false).keys(attachmentContentId);
         return queryView(reqBuilder);
     }
 

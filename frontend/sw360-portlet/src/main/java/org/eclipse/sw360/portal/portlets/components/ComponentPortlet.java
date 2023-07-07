@@ -1840,10 +1840,37 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
             component = client.getAccessibleComponentById(id, user);
             request.setAttribute(COMPONENT, component);
-            for (int i=0; i<component.releases.size(); i++) {
-                Collections.sort(component.releases, (release1, release2) -> release1.getVersion() .compareTo(release2.getVersion()) );
-            }
-            Collections.reverse(component.releases);
+            Comparator<Release> releaseVersionComparator = new Comparator<Release>() {
+                @Override
+                public int compare(Release vo1, Release vo2) {
+                    String version1 = vo1.getVersion();
+                    String version2 = vo2.getVersion();
+
+                    String[] v1 = version1.split("\\.");
+                    String[] v2 = version2.split("\\.");
+
+                    int length = Math.max(v1.length, v2.length);
+
+                    for (int i = 0; i < length; i++) {
+                        int num1 = i < v1.length ? parseVersion(v1[i]) : 0;
+                        int num2 = i < v2.length ? parseVersion(v2[i]) : 0;
+
+                        if (num1 != num2) {
+                            return Integer.compare(num2, num1);
+                        }
+                    }
+                    return 0;
+                }
+
+                private int parseVersion(String version) {
+                    try {
+                        return Integer.parseInt(version.replaceAll("[^\\d]", ""));
+                    } catch (NumberFormatException e) {
+                        return Integer.MIN_VALUE;
+                    }
+                }
+            };
+            Collections.sort(component.releases, releaseVersionComparator);
 
             addComponentBreadcrumb(request, response, component);
             if (release != null) {

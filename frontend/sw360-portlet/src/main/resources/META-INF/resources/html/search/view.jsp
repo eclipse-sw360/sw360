@@ -154,7 +154,7 @@
                 } else if (data === '<%=SW360Constants.TYPE_RELEASE%>') {
                     return '<svg class="lexicon-icon type-icon type-icon-release"><title><liferay-ui:message key="release" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#release"/></svg>';
                 } else if (data === '<%=SW360Constants.TYPE_OBLIGATION%>') {
-                    return '<svg class="lexicon-icon type-icon type-icon-oblig"><title>ToDo</title><use href="<%=request.getContextPath()%>/images/icons.svg#oblig"/></svg>';
+                    return '<svg class="lexicon-icon type-icon type-icon-oblig"><title><liferay-ui:message key="obligation" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#oblig"/></svg>';
                 } else if (data === '<%=SW360Constants.TYPE_USER%>') {
                     return '<svg class="lexicon-icon type-icon type-icon-user"><title><liferay-ui:message key="user" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#user"/></svg>'
                 } else if (data === '<%=SW360Constants.TYPE_VENDOR%>') {

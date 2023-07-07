@@ -67,7 +67,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import org.spdx.library.InvalidSPDXAnalysisException;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -150,6 +149,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     ClearingInformation._Fields.REQUEST_ID, ClearingInformation._Fields.ADDITIONAL_REQUEST_INFO,
                     ClearingInformation._Fields.EXTERNAL_SUPPLIER_ID, ClearingInformation._Fields.EVALUATED,
                     ClearingInformation._Fields.PROC_START);
+
     public ComponentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName, ComponentModerator moderator, ReleaseModerator releaseModerator, ProjectModerator projectModerator) throws MalformedURLException {
         super(httpClient, dbName, attachmentDbName);
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, dbName);
@@ -185,6 +185,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public ComponentDatabaseHandler(Supplier<CloudantClient> supplier, String dbName, String attachmentDbName) throws MalformedURLException {
         this(supplier, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
     }
+
     public ComponentDatabaseHandler(Supplier<CloudantClient> supplier, String dbName, String changelogsDbName, String attachmentDbName) throws MalformedURLException {
         this(supplier, dbName, attachmentDbName, new ComponentModerator(), new ReleaseModerator(), new ProjectModerator());
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(supplier, changelogsDbName);
@@ -488,7 +489,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if(isDuplicate(release)) {
             final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
-            List<Release> duplicates = releaseRepository.searchByNameAndVersion(release.getName(), release.getVersion());
+            List<Release> duplicates = releaseRepository.searchByNameAndVersion(release.getName(), release.getVersion(), true);
             if (duplicates.size() == 1) {
                 duplicates.stream()
                         .map(Release::getId)
@@ -573,7 +574,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (isNullEmptyOrWhitespace(releaseName)) {
             return false;
         }
-        List<Release> duplicates = releaseRepository.searchByNameAndVersion(releaseName, releaseVersion);
+        List<Release> duplicates = releaseRepository.searchByNameAndVersion(releaseName, releaseVersion, true);
         return duplicates.size()>0;
     }
 
@@ -1062,7 +1063,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.DUPLICATE_ATTACHMENT;
         } else if (changeWouldResultInDuplicate(actual, release)) {
             return RequestStatus.DUPLICATE;
-        }  else if (!isDependenciesExistsInRelease(release)) {
+        } else if (!isDependenciesExistsInRelease(release)) {
             return RequestStatus.INVALID_INPUT;
         } else {
             DocumentPermissions<Release> permissions = makePermission(actual, user);
@@ -1321,7 +1322,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return RepositoryUtils.doBulk(prepareReleases(releases), user, releaseRepository);
     }
 
-    public RequestStatus updateReleaseFromAdditionsAndDeletions(Release releaseAdditions, Release releaseDeletions, User user){
+    public RequestStatus updateReleaseFromAdditionsAndDeletions(Release releaseAdditions, Release releaseDeletions, User user) {
 
         try {
             Release release = getRelease(releaseAdditions.getId(), user);
@@ -1969,10 +1970,24 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return releaseRepository.makeSummary(SummaryType.SHORT, ids);
     }
 
+    // return release directly from db, without making summary.
+    public List<Release> getReleasesByIds(Set<String> ids) {
+        return CommonUtils.isNullOrEmptyCollection(ids) ? Lists.newArrayList() : releaseRepository.get(ids);
+    }
+
+    // return components directly from db, without making summary.
+    public List<Component> getComponentsByIds(Set<String> ids) {
+        return CommonUtils.isNullOrEmptyCollection(ids) ? Lists.newArrayList() : componentRepository.get(ids);
+    }
+
     public List<Release> getAccessibleReleases(Set<String> ids, User user) {
         return getAccessibleReleaseList(releaseRepository.makeSummary(SummaryType.SHORT, ids), user);
     }
     
+    public Map<PaginationData, List<Release>> getAccessibleReleasesWithPagination(User user, PaginationData pageData) throws TException {
+        return releaseRepository.getAccessibleReleasesWithPagination(user, pageData);
+    }
+
     private List<Release> getAccessibleReleaseList(List<Release> releaseList, User user) {
         List<Release> resultList = new ArrayList<Release>();
         for (Release release : releaseList) {
@@ -2193,7 +2208,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public List<Component> searchComponentByNameForExport(String name, boolean caseSensitive) {
-        return componentRepository.searchByNameForExport(name, caseSensitive);
+        return componentRepository.searchComponentByName(name, caseSensitive);
     }
 
     public Set<Component> getUsingComponents(String releaseId) {

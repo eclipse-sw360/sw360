@@ -502,6 +502,21 @@ service ProjectService {
     RequestSummary importBomFromAttachmentContent(1: User user, 2:string attachmentContentId);
 
     /**
+     * Parse a CycloneDx SBoM file (XML or JSON) and write the information to SW360 as Project / Component / Release
+     */
+    RequestSummary importCycloneDxFromAttachmentContent(1: User user, 2: string attachmentContentId, 3: string projectId) throws (1: SW360Exception exp);
+
+    /**
+     * Export a CycloneDx SBoM file (XML or JSON) for a Project
+     */
+    RequestSummary exportCycloneDxSbom(1: string projectId, 2: string bomType, 3: bool includeSubProjReleases, 4: User user) throws (1: SW360Exception exp);
+
+    /**
+     * Get the SBOM import statistics information from attachment as String (JSON formatted)
+     */
+    string getSbomImportInfoFromAttachmentAsString(string attachmentContentId) throws (1: SW360Exception exp);
+
+    /**
      * create clearing request for project
      */
     AddDocumentRequestSummary createClearingRequest(1: ClearingRequest clearingRequest, 2: User user, 3: string projectUrl);
@@ -530,4 +545,16 @@ service ProjectService {
     * Send email to the user once spreadsheet export completed
     */
     void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
+    /*
+    * make excel export
+    */
+    binary getReportDataStream(1: User user,2: bool extendedByReleases) throws (1: SW360Exception exp);
+     /*
+    * excel export - return the filepath
+    */
+    string getReportInEmail(1: User user, 2: bool extendedByReleases) throws (1: SW360Exception exp);
+    /*
+    * download excel
+    */
+    binary downloadExcel(1:User user,2:bool extendedByReleases,3:string token) throws (1: SW360Exception exc);
 }

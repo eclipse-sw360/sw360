@@ -93,4 +93,13 @@
             </div>
         </td>
     </tr>
+    <tr>
+        <td>
+            <div class="form-group">
+                <label for="lic_note"><liferay-ui:message key="note" /></label>
+                <textarea id="lic_note" name="<portlet:namespace/><%=License._Fields.NOTE%>" type="text" class="form-control"
+                    placeholder="<liferay-ui:message key="enter.note" />">${licenseDetail.note}</textarea>
+            </div>
+        </td>
+    </tr>
 </table>

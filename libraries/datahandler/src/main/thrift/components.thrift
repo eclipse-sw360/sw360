@@ -17,6 +17,7 @@ include "licenses.thrift"
 namespace java org.eclipse.sw360.datahandler.thrift.components
 namespace php sw360.thrift.components
 
+typedef sw360.CycloneDxComponentType CycloneDxComponentType
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary
 typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
@@ -320,6 +321,7 @@ struct Component {
     30: optional map<string,set<string>> roles, //customized roles with set of mail addresses
     80: optional Visibility visbility = sw360.Visibility.EVERYONE,
     81: optional string businessUnit,
+    82: optional CycloneDxComponentType cdxComponentType, // required field in CycloneDX specifications
 
     // information from external data sources
     31: optional  map<string, string> externalIds,
@@ -472,6 +474,11 @@ service ComponentService {
      * global search function to list accessible releases which match the text argument
      */
     list<Release> searchAccessibleReleases(1: string text, 2: User user);
+
+    /**
+     *  list accessible releases with pagination for ECC page
+     */
+    map<PaginationData, list<Release>> getAccessibleReleasesWithPagination(1: User user, 2: PaginationData pageData);
 
     /**
      * get short summary of release by release name prefix

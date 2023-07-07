@@ -166,6 +166,7 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
                 .andDo(this.documentationHandler.document(
                         links(
                                 linkWithRel("sw360:users").description("The <<resources-users,Users resource>>"),
+                                linkWithRel("sw360:reports").description("The <<resources-reports,Reports resource>>"),
                                 linkWithRel("sw360:projects").description("The <<resources-projects,Projects resource>>"),
                                 linkWithRel("sw360:components").description("The <<resources-components,Components resource>>"),
                                 linkWithRel("sw360:releases").description("The <<resources-releases,Releases resource>>"),

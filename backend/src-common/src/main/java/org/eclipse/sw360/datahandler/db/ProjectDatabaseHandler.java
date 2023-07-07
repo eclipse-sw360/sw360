@@ -17,11 +17,14 @@ import com.google.common.base.Strings;
 import com.google.common.collect.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.TException;
-
 import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
+import org.eclipse.sw360.cyclonedx.CycloneDxBOMExporter;
+import org.eclipse.sw360.cyclonedx.CycloneDxBOMImporter;
 import org.eclipse.sw360.datahandler.businessrules.ReleaseClearingStateSummaryComputer;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.*;
@@ -54,6 +57,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.net.MalformedURLException;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -73,6 +77,9 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.getCreatedOn;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
+import org.apache.commons.io.IOUtils;
+import org.eclipse.sw360.exporter.ProjectExporter;
+import java.nio.ByteBuffer;
 
 /**
  * Class for accessing the CouchDB database
@@ -1096,7 +1103,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             ReleaseClearingStatusData releaseClearingStatusData = new ReleaseClearingStatusData(release)
                     .setProjectNames(joinStrings(projectNames))
                     .setMainlineStates(joinStrings(mainlineStates))
-                    .setComponentType(componentsById.get(release.getComponentId()).getComponentType()); 
+                    .setComponentType(componentsById.get(release.getComponentId()).getComponentType());
 
             boolean isAccessible = componentDatabaseHandler.isReleaseActionAllowed(release, user, RequestedAction.READ);
             releaseClearingStatusData.setAccessible(isAccessible);
@@ -1696,6 +1703,48 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
     }
 
+    public RequestSummary importCycloneDxFromAttachmentContent(User user, String attachmentContentId, String projectId) throws SW360Exception {
+        final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
+        try {
+            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
+            try (final InputStream inputStream = attachmentStreamConnector
+                    .unsafeGetAttachmentStream(attachmentContent)) {
+                final CycloneDxBOMImporter cycloneDxBOMImporter = new CycloneDxBOMImporter(this,
+                        componentDatabaseHandler, attachmentConnector, user);
+                return cycloneDxBOMImporter.importFromBOM(inputStream, attachmentContent, projectId, user);
+            }
+        } catch (IOException e) {
+            log.error("Error while importing / parsing CycloneDX SBOM! ", e);
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    public RequestSummary exportCycloneDxSbom(String projectId, String bomType, Boolean includeSubProjReleases, User user) throws SW360Exception {
+        try {
+            final CycloneDxBOMExporter cycloneDxBOMExporter = new CycloneDxBOMExporter(this, componentDatabaseHandler, user);
+            return cycloneDxBOMExporter.exportSbom(projectId, bomType, includeSubProjReleases, user);
+        } catch (Exception e) {
+            log.error("Error while exporting CycloneDX SBOM! ", e);
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    public String getSbomImportInfoFromAttachmentAsString(String attachmentContentId) throws SW360Exception {
+        final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
+        final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
+        try {
+            final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
+            try (final InputStream inputStream = attachmentStreamConnector
+                    .unsafeGetAttachmentStream(attachmentContent)) {
+                return IOUtils.toString(inputStream, Charset.defaultCharset());
+            }
+        } catch (IOException e) {
+            log.error("Error while getting sbom import info from attachment! ", e);
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
     private void removeLeadingTrailingWhitespace(Project project) {
         DatabaseHandlerUtil.trimStringFields(project, listOfStringFieldsInProjToTrim);
 
@@ -1778,7 +1827,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (releaseOrigin.containsKey(releaseId))
                 return;
             Release rel = componentDatabaseHandler.getRelease(releaseId, user);
-            
+
             if (!isInaccessibleLinkMasked || componentDatabaseHandler.isReleaseActionAllowed(rel, user, RequestedAction.READ)) {
                 Map<String, ReleaseRelationship> releaseIdToRelationship = rel.getReleaseIdToRelationship();
                 releaseOrigin.put(releaseId, SW360Utils.printName(rel));
@@ -1808,7 +1857,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (releaseOrigin.containsKey(releaseId))
                 return;
             Release rel = componentDatabaseHandler.getRelease(releaseId, user);
-            
+
             if (!isInaccessibleLinkMasked || componentDatabaseHandler.isReleaseActionAllowed(rel, user, RequestedAction.READ)) {
                 Map<String, ReleaseRelationship> subReleaseIdToRelationship = rel.getReleaseIdToRelationship();
                 releaseOrigin.put(releaseId, SW360Utils.printName(rel));
@@ -1870,7 +1919,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         clearingStatusList.add(row);
         return row;
     }
-    
+
     private Map<String, String> createInaccessibleReleaseCSRow(List<Map<String, String>> clearingStatusList) throws SW360Exception {
         Map<String, String> row = new HashMap<>();
         row.put("id", "");
@@ -1907,4 +1956,44 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public ProjectData searchByType(String type, User user) {
         return repository.searchByType(type, user);
     }
+
+	public ByteBuffer getReportDataStream(User user, boolean extendedByReleases) throws TException {
+        try {
+        	List<Project> documents = getAccessibleProjectsSummary(user);
+            ProjectExporter exporter = getProjectExporterObject(documents, user, extendedByReleases);
+            InputStream stream = exporter.makeExcelExport(documents);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+          }catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+       }
+     }
+
+    private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases) throws SW360Exception {
+    	ThriftClients thriftClients = new ThriftClients();
+    	return new ProjectExporter(thriftClients.makeComponentClient(),
+                thriftClients.makeProjectClient(), user, documents, extendedByReleases);
+    }
+
+    public String getReportInEmail(User user,
+			boolean extendedByReleases) throws TException {
+        try {
+        	List<Project> documents = getAccessibleProjectsSummary(user);
+             ProjectExporter exporter = getProjectExporterObject(documents, user, extendedByReleases);
+             return exporter.makeExcelExportForProject(documents, user);
+          }catch (IOException e) {
+             throw new SW360Exception(e.getMessage());
+       }
+     }
+
+     public ByteBuffer downloadExcel(User user, boolean extendedByReleases, String token) throws SW360Exception {
+        ThriftClients thriftClients = new ThriftClients();
+        ProjectExporter exporter = new ProjectExporter(thriftClients.makeComponentClient(),
+				thriftClients.makeProjectClient(), user, extendedByReleases);
+		try {
+			InputStream stream = exporter.downloadExcelSheet(token);
+			return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+		} catch (IOException e) {
+			throw new SW360Exception(e.getMessage());
+		}
+	}
 }
