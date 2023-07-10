@@ -1874,8 +1874,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`"),
                                 parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`")
                         ),responseFields(
-                                subsectionWithPath("response").description("The response message displayed").optional(),
-                                subsectionWithPath("url").description("The project download path will be displayed").optional()
+                                subsectionWithPath("response").description("The response message displayed").optional()
                                 )
                         ));
     }
