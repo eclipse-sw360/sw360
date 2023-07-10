@@ -96,6 +96,8 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.MultiValueMap;
+import org.springframework.hateoas.Link;
+import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -335,6 +337,29 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return getProjectResponse(pageable, null, null, null, allDetails, true, request, sw360User,
                 mapOfProjects, true, sw360Projects, false);
     }
+
+    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseClearing", method = RequestMethod.GET)
+	public ResponseEntity licenseClearing(@PathVariable("id") String id, @RequestParam(value = "transitive", required = true) String transitive, HttpServletRequest request)
+			throws URISyntaxException, TException {
+
+		final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+
+		final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
+		List<Release> releases = releaseIds.stream().map(relId -> wrapTException(() -> {
+			final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+			releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
+			return sw360Release;
+		})).collect(Collectors.toList());
+
+		List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
+			final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(sw360Release);
+			return releaseResource;
+		})).collect(Collectors.toList());
+
+		HalResource<Project> userHalResource = createHalLicenseClearing(sw360Project, releaseList);
+		return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+	}
 
     @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<Project>> getProject(
@@ -1156,6 +1181,23 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         resource.add(linkTo(ProjectController.class).slash("api" + PROJECTS_URL).withRel("projects"));
         return resource;
     }
+
+    private HalResource<Project> createHalLicenseClearing(Project sw360Project, List<EntityModel<Release>> releases) {
+		Project sw360 = new Project();
+		Map<String, ProjectReleaseRelationship> releaseIdToUsage = sw360Project.getReleaseIdToUsage();
+		sw360.setReleaseIdToUsage(sw360Project.getReleaseIdToUsage());
+		sw360.setLinkedProjects(sw360Project.getLinkedProjects());
+		sw360.unsetState();
+		sw360.unsetProjectType();
+		sw360.unsetVisbility();
+		sw360.unsetSecurityResponsibles();
+		HalResource<Project> halProject = new HalResource<>(sw360);
+
+		if (releaseIdToUsage != null) {
+		    restControllerHelper.addEmbeddedProjectReleases(halProject, releases);
+		}
+		return halProject;
+	}
 
     private HalResource<Project> createHalProject(Project sw360Project, User sw360User) throws TException {
         HalResource<Project> halProject = new HalResource<>(sw360Project);

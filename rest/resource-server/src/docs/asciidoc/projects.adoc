@@ -567,6 +567,20 @@ include::{snippets}/should_document_unlink_packages/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_unlink_packages/http-response.adoc[]
 
+[[resources-project-get-project-license-clearing-information]]
+==== Listing license clearing information
+
+A `GET` request will get all releases of license clearing
+
+===== Response structure
+include::{snippets}/should_document_get_license_clearing/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_license_clearing/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_license_clearing/http-response.adoc[]
+
 [[resources-project-get-download-licenseinfo]]
 ==== Download License Info
 
