@@ -118,7 +118,7 @@ public class ThriftEnumUtils {
             .put(AttachmentType.SECURITY_ASSESSMENT, "Security Assessment")
             .put(AttachmentType.SBOM, "SBOM")
             .put(AttachmentType.INITIAL_SCAN_REPORT, "Initial Scan Report")
-            .put(AttachmentType.INTERNAL_USE_SCAN, "Initial Use Scan")
+            .put(AttachmentType.INTERNAL_USE_SCAN, "Internal Use Scan")
             .build();
 
     // @formatter:off
