@@ -738,3 +738,4 @@ include::{snippets}/should_document_get_project_report/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_get_project_report/http-response.adoc[]
+

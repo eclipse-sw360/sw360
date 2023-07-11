@@ -593,6 +593,7 @@ public class RestControllerHelper<T> {
         embeddedProject.setClearingState(project.getClearingState());
         embeddedProject.setVersion(project.getVersion());
         embeddedProject.setVisbility(project.getVisbility());
+        embeddedProject.setBusinessUnit(project.getBusinessUnit());
         embeddedProject.setType(null);
         return embeddedProject;
     }
