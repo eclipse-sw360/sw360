@@ -442,6 +442,28 @@ public class PortalConstants {
     public static final String DELETE_ATTACHMENT_INTERVAL = "deleteAttachmentInterval";
     public static final String DELETE_ATTACHMENT_NEXT_SYNC = "deleteAttachmentNextSync";
 
+    public static final String DEPARTMENT_IS_SCHEDULED = "departmentIsScheduled";
+    public static final String DEPARTMENT_OFFSET = "departmentOffset";
+    public static final String DEPARTMENT_INTERVAL = "departmentInterval";
+    public static final String DEPARTMENT_NEXT_SYNC = "departmentNextSync";
+    public static final String DEPARTMENT_LIST = "departmentList";
+
+    public static final String DEPARTMENT_KEY = "departmentKey";
+    public static final String EMAIL_BY_DEPARTMENT_JSON = "emailByDepartment";
+    public static final String EMAIL_OTHER_DEPARTMENT_JSON = "emailOtherDepartment";
+    public static final String DEPARTMENT_ROLE = "departmentRole";
+
+    public static final String DELETE_LIST_EMAIL = "deleteEmail";
+    public static final String ADD_LIST_EMAIL = "listEmail";
+
+    public static final String REMOVE_DEPARTMENT_BY_EMAIL = "remove_department";
+    public static final String DEPARTMENT_URL = "departmentUrl";
+    public static final String LIST_CONTENT_FILE_LOG = "listContentFileLog";
+    public static final String LAST_FILE_NAME = "lastFileName";
+    public static final String LAST_RUNNING_TIME = "lastRunningTime";
+    public static final String PATH_CONFIG_FOLDER_DEPARTMENT = "pathConfigFolderDepartment";
+    public static final String IMPORT_DEPARTMENT_MANUALLY = "importdepartmentmanually";
+
     //! Specialized keys for licenseInfo
     public static final String LICENSE_INFO_OUTPUT_FORMATS = "licenseInfoOutputFormats";
     public static final String LICENSE_INFO_SELECTED_OUTPUT_FORMAT = "licenseInfoSelectedOutputFormat";
@@ -492,6 +514,7 @@ public class PortalConstants {
     public static final String TODOS_PORTLET_NAME = PORTLET_NAME_PREFIX + "todos";
     public static final String OAUTH_CLIENT_PORTLET_NAME = PORTLET_NAME_PREFIX + "oauthclient";
     public static final String LICENSE_TYPE_PORTLET_NAME = PORTLET_NAME_PREFIX + "licensetypes";
+    public static final String DEPARTMENT_PORTLET_NAME = PORTLET_NAME_PREFIX + "department";
 
     //! Keys for Home portlets
     public static final String MY_COMPONENTS_PORTLET_NAME = PORTLET_NAME_PREFIX + "mycomponents";

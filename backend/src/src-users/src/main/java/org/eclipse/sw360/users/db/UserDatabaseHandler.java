@@ -9,29 +9,37 @@
  */
 package org.eclipse.sw360.users.db;
 
+import com.cloudant.client.api.CloudantClient;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
+import com.opencsv.exceptions.CsvException;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.poi.ss.usermodel.*;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.db.UserSearchHandler;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftValidate;
+import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.users.DepartmentConfigDTO;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.users.util.FileUtil;
+import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
 import org.ektorp.http.HttpClient;
 
-import com.cloudant.client.api.CloudantClient;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
@@ -51,12 +59,22 @@ public class UserDatabaseHandler {
     private DatabaseConnector dbConnector;
     private UserRepository repository;
     private UserSearchHandler userSearchHandler;
+    private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
+    private ReadFileDepartmentConfig readFileDepartmentConfig;
+    private static final String SUCCESS = "SUCCESS";
+    private static final String FAIL = "FAIL";
+    private static final String TITLE = "IMPORT";
+    private static boolean IMPORT_DEPARTMENT_STATUS = false;
+    private List<String> departmentDuplicate;
+    private List<String> emailDoNotExist;
+    DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
 
     public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         // Create the connector
         db = new DatabaseConnectorCloudant(httpClient, dbName);
         dbConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
         repository = new UserRepository(db);
+        readFileDepartmentConfig = new ReadFileDepartmentConfig();
         userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
     }
 
@@ -148,6 +166,292 @@ public class UserDatabaseHandler {
         return repository.getUsersWithPagination(pageData);
     }
 
+    public Set<String> getAllEmailsByDepartmentKey(String departmentKey) {
+        return repository.getEmailsByDepartmentName(departmentKey);
+    }
+
+    public RequestSummary importFileToDB(String pathFolder)  {
+        departmentDuplicate = new ArrayList<>();
+        emailDoNotExist = new ArrayList<>();
+        List<String> listFileSuccess = new ArrayList<>();
+        List<String> listFileFail = new ArrayList<>();
+        RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
+        DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
+        String pathFolderLog = configDTO.getPathFolderLog();
+        Map<String, List<String>> mapArrayList = new HashMap<>();
+        if (IMPORT_DEPARTMENT_STATUS) {
+            return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
+        }
+        IMPORT_DEPARTMENT_STATUS = true;
+        Calendar calendar = Calendar.getInstance(Locale.getDefault());
+        String lastRunningTime = dateFormat.format(calendar.getTime());
+        readFileDepartmentConfig.writeLastRunningTimeConfig(lastRunningTime);
+        try {
+            FileUtil.writeLogToFile(TITLE, "START IMPORT DEPARTMENT", "", pathFolderLog);
+            Set<String> files = FileUtil.listPathFiles(pathFolder);
+            for (String file : files) {
+                String extension = FilenameUtils.getExtension(file);
+                if (extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xls")) {
+                    mapArrayList = readFileExcel(file);
+                } else if (extension.equalsIgnoreCase("csv")) {
+                    mapArrayList = readFileCsv(file);
+                }
+                Map<String, User> mapEmail = validateListEmailExistDB(mapArrayList);
+                String fileName = FilenameUtils.getName(file);
+                if (departmentDuplicate.isEmpty() && emailDoNotExist.isEmpty()) {
+                    mapArrayList.forEach((k, v) -> v.forEach(email -> updateDepartmentToUser(mapEmail.get(email), k)));
+                    String joined = mapArrayList.keySet().stream().sorted().collect(Collectors.joining(", "));
+                    listFileSuccess.add(fileName);
+                    FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] - FILE NAME: [" + fileName + "]", SUCCESS, pathFolderLog);
+                } else {
+                    if (!departmentDuplicate.isEmpty()) {
+                        String joined = departmentDuplicate.stream().sorted().collect(Collectors.joining(", "));
+                        FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] IS DUPLICATE - FILE NAME: [" + fileName + "]", FAIL, pathFolderLog);
+                        departmentDuplicate = new ArrayList<>();
+                    }
+                    if (!emailDoNotExist.isEmpty()) {
+                        String joined = emailDoNotExist.stream().sorted().collect(Collectors.joining(", "));
+                        FileUtil.writeLogToFile(TITLE, "USER [" + joined + "] DOES NOT EXIST - FILE NAME: [" + fileName + "]", FAIL, pathFolderLog);
+                        emailDoNotExist = new ArrayList<>();
+                    }
+                    listFileFail.add(fileName);
+                }
+            }
+            IMPORT_DEPARTMENT_STATUS = false;
+            requestSummary.setTotalAffectedElements(listFileSuccess.size());
+            requestSummary.setTotalElements(listFileSuccess.size() + listFileFail.size());
+            requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+        } catch (IOException e) {
+            IMPORT_DEPARTMENT_STATUS = false;
+            String msg = "Failed to import department";
+            requestSummary.setMessage(msg);
+            requestSummary.setRequestStatus(RequestStatus.FAILURE);
+            FileUtil.writeLogToFile(TITLE, "FILE ERROR: " + e.getMessage(), "", pathFolderLog);
+        }
+        FileUtil.writeLogToFile(TITLE, "[ FILE SUCCESS: " + listFileSuccess.size() + " - " + "FILE FAIL: " + listFileFail.size() + " - " + "TOTAL FILE: " + (listFileSuccess.size() + listFileFail.size()) + " ]", "Complete The File Import", pathFolderLog);
+        FileUtil.writeLogToFile(TITLE, "END IMPORT DEPARTMENT", "", pathFolderLog);
+
+        return requestSummary;
+    }
+
+    public Map<String, List<String>> readFileCsv(String filePath) {
+        Map<String, List<String>> listMap = new HashMap<>();
+        List<String> emailCsv = new ArrayList<>();
+        try {
+            File file = new File(filePath);
+            CSVReader reader = new CSVReaderBuilder(new FileReader(file)).withSkipLines(1).build();
+            List<String[]> rows = reader.readAll();
+            String mapTemp = "";
+            for (String[] row : rows) {
+                if (row.length > 1) {
+                    if (!Objects.equals(row[0], "")) {
+                        if (!mapTemp.isEmpty()) {
+                            if (listMap.containsKey(mapTemp)) {
+                                departmentDuplicate.add(mapTemp);
+                            }
+                            listMap.put(mapTemp, emailCsv);
+                            emailCsv = new ArrayList<>();
+                        }
+                        mapTemp = row[0];
+                    }
+                    String email = row[1];
+                    emailCsv.add(email);
+                }
+            }
+            if (listMap.containsKey(mapTemp)) {
+                departmentDuplicate.add(mapTemp);
+            }
+            listMap.put(mapTemp, emailCsv);
+        } catch (IOException | CsvException e) {
+            log.error("Can't read file csv: {}", e.getMessage());
+        }
+        return listMap;
+    }
+
+    public Map<String, List<String>> readFileExcel(String filePath) {
+        Map<String, List<String>> listMap = new HashMap<>();
+        List<String> emailExcel = new ArrayList<>();
+
+        Workbook wb = null;
+        try (InputStream inp = new FileInputStream(filePath)) {
+            wb = WorkbookFactory.create(inp);
+            Sheet sheet = wb.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
+            rows.next();
+            String mapTemp = "";
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                if (!isRowEmpty(row)) {
+                    if (row.getCell(0) != null) {
+                        if (!mapTemp.isEmpty()) {
+                            if (listMap.containsKey(mapTemp)) {
+                                departmentDuplicate.add(mapTemp);
+                            }
+                            listMap.put(mapTemp, emailExcel);
+                            emailExcel = new ArrayList<>();
+                        }
+                        mapTemp = row.getCell(0).getStringCellValue();
+                    }
+                    String email = row.getCell(1).getStringCellValue();
+                    emailExcel.add(email);
+                }
+            }
+            if (listMap.containsKey(mapTemp)) {
+                departmentDuplicate.add(mapTemp);
+            }
+            listMap.put(mapTemp, emailExcel);
+        } catch (IOException ex) {
+            log.error("Can't read file excel: {}", ex.getMessage());
+        } finally {
+            try {
+                if (wb != null) wb.close();
+            } catch (IOException e) {
+                log.error(e.getMessage());
+            }
+        }
+        return listMap;
+    }
+
+    public static boolean isRowEmpty(Row row) {
+        boolean isEmpty = true;
+        DataFormatter dataFormatter = new DataFormatter();
+        if (row != null) {
+            for (Cell cell : row) {
+                if (dataFormatter.formatCellValue(cell).trim().length() > 0) {
+                    isEmpty = false;
+                    break;
+                }
+            }
+        }
+        return isEmpty;
+    }
+
+    public Map<String, List<User>> getAllUserByDepartment() {
+        List<User> users = repository.getAll();
+        Map<String, List<User>> listMap = new HashMap<>();
+        for (User user : users) {
+            if (user.getSecondaryDepartmentsAndRoles() != null) {
+                user.getSecondaryDepartmentsAndRoles().forEach((key, value) -> {
+                    if (listMap.containsKey(key)) {
+                        List<User> list = listMap.get(key);
+                        list.add(user);
+                    } else {
+                        List<User> list = new ArrayList<>();
+                        list.add(user);
+                        listMap.put(key, list);
+                    }
+                });
+            }
+        }
+        return listMap;
+    }
+
+    public String convertUsersByDepartmentToJson(String departmentKey) {
+        Set<String> emails = repository.getEmailsByDepartmentName(departmentKey);
+        JsonArray departmentJsonArray = new JsonArray();
+        for (String email : emails) {
+            JsonObject object = new JsonObject();
+            object.addProperty("email", email);
+            departmentJsonArray.add(object);
+        }
+        return departmentJsonArray.toString().replace("\\", "");
+    }
+
+    public List<String> getAllEmailOtherDepartment(String departmentKey) {
+        Set<String> emailsbyDepartment = getAllEmailsByDepartmentKey(departmentKey);
+        Set<String> emailByListUser = getUserEmails();
+
+        List<User> users = repository.getAll();
+        for (User user : users) {
+            emailByListUser.add(user.getEmail());
+        }
+        List<String> emailOtherDepartment = new ArrayList<>(emailByListUser);
+        emailOtherDepartment.removeAll(emailsbyDepartment);
+        return emailOtherDepartment;
+    }
+
+    public String convertEmailsOtherDepartmentToJson(String departmentKey) {
+        JsonArray emailJsonArray = new JsonArray();
+        List<String> emailOtherDepartment = getAllEmailOtherDepartment(departmentKey);
+        for (String email : emailOtherDepartment) {
+            JsonObject object = new JsonObject();
+            object.addProperty("email", email);
+            emailJsonArray.add(object);
+        }
+        return emailJsonArray.toString().replace("\\", "");
+    }
+
+    public Map<String, User> validateListEmailExistDB(Map<String, List<String>> mapList) {
+        Map<String, User> listUser = new HashMap<>();
+        Set<String> setEmail = new HashSet<>();
+        mapList.forEach((v, k) -> setEmail.addAll(k));
+        for (String email : setEmail) {
+            User user = repository.getByEmail(email);
+            if (user == null) {
+                emailDoNotExist.add(email);
+            } else {
+                listUser.put(email, user);
+            }
+        }
+        return listUser;
+    }
+
+    public void updateDepartmentToUser(User user, String department) {
+        Map<String, Set<UserGroup>> map;
+        Set<UserGroup> userGroups = new HashSet<>();
+        if (user.getSecondaryDepartmentsAndRoles() != null) {
+            map = user.getSecondaryDepartmentsAndRoles();
+            for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
+                if (entry.getKey().equals(department)) {
+                    userGroups = entry.getValue();
+                }
+            }
+        } else {
+            map = new HashMap<>();
+        }
+        userGroups.add(UserGroup.USER);
+        map.put(department, userGroups);
+        user.setSecondaryDepartmentsAndRoles(map);
+        repository.update(user);
+    }
+
+    public void updateDepartmentToUsers(List<User> users, String department) {
+        users.forEach(u -> {
+            User user = repository.getByEmail(u.getEmail());
+            updateDepartmentToUser(user, department);
+        });
+    }
+
+    public void deleteDepartmentByUser(User user, String departmentKey) {
+        Map<String, Set<UserGroup>> map = user.getSecondaryDepartmentsAndRoles();
+        Set<UserGroup> userGroups = new HashSet<>();
+        for (Map.Entry<String, Set<UserGroup>> entry : map.entrySet()) {
+            if (entry.getKey().equals(departmentKey)) {
+                userGroups = entry.getValue();
+            }
+        }
+        map.remove(departmentKey, userGroups);
+        user.setSecondaryDepartmentsAndRoles(map);
+        repository.update(user);
+    }
+
+
+    public void deleteDepartmentByUsers(List<User> users, String departmentKey) {
+        for (User user : users) {
+            deleteDepartmentByUser(user, departmentKey);
+        }
+    }
+
+    public List<User> getAllUserByEmails(List<String> emails) {
+        List<User> users = new ArrayList<>();
+        for (String email : emails) {
+            if (getByEmail(email) != null) {
+                users.add(getByEmail(email));
+            }
+        }
+        return users;
+    }
+    
     public User getByOidcClientId(String clientId) {
         return repository.getByOidcClientId(clientId);
     }

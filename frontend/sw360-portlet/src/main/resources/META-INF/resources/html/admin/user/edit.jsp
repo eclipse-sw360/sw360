@@ -128,7 +128,8 @@
                                     </td>
                                     <td>
                                         <div class="form-group">
-                                            <label class="mandatory" for="user_lastname"><liferay-ui:message key="last.name" /></label> <input id="user_lastname" class="form-control"
+                                            <label class="mandatory" for="user_lastname"><liferay-ui:message key="last.name" /></label>
+                                            <input id="user_lastname" class="form-control"
                                                 name="<portlet:namespace/><%=User._Fields.LASTNAME%>" type="text" required pattern=".*\S.*"
                                                 placeholder="<liferay-ui:message key="enter.user.lastname" />" value="<sw360:out value="${userObj.lastname}"/>" />
                                         </div>
@@ -138,14 +139,16 @@
                                 <tr>
                                     <td>
                                         <div class="form-group">
-                                            <label for="userEmail" class="mandatory"><liferay-ui:message key="email.id" />:</label> <input id="userEmail" type="email" class="form-control"
+                                            <label for="userEmail" class="mandatory"><liferay-ui:message key="email.id" />:</label>
+                                            <input id="userEmail" type="email" class="form-control"
                                                 autocomplete="off" value="<sw360:out value="${userObj.email}"/>" name="<portlet:namespace/><%=User._Fields.EMAIL%>"
                                                 placeholder="<liferay-ui:message key='enter.user.email' />" required />
                                         </div>
                                     </td>
                                     <td>
                                         <div class="form-group">
-                                            <label class="mandatory" for="user_gid"><liferay-ui:message key="gid" /></label> <input id="user_gid" class="form-control"
+                                            <label class="mandatory" for="user_gid"><liferay-ui:message key="gid" /></label>
+                                            <input id="user_gid" class="form-control"
                                                 name="<portlet:namespace/><%=User._Fields.EXTERNALID%>" type="text" required pattern=".*\S.*" placeholder="<liferay-ui:message key="enter.user.gid" />"
                                                 value="<sw360:out value="${userObj.externalid}"/>" />
                                         </div>
@@ -155,15 +158,18 @@
                                 <tr>
                                     <td>
                                         <div class="form-group">
-                                            <label class="mandatory" for="user_department"><liferay-ui:message key="department" /></label> <input id="user_department" class="form-control"
+                                            <label class="mandatory" for="user_department"><liferay-ui:message key="department" /></label>
+                                            <input id="user_department" class="form-control"
                                                 name="<portlet:namespace/><%=User._Fields.DEPARTMENT%>" type="text" required pattern=".*\S.*"
-                                                placeholder="<liferay-ui:message key="enter.user.primary.department" />" value="<sw360:out value="${userObj.department}"/>" />
+                                                placeholder="<liferay-ui:message key="enter.user.primary.department" />"
+                                                   value="<sw360:out value="${userObj.department}"/>" />
                                         </div>
                                     </td>
 
                                     <td>
                                         <div class="form-group">
-                                            <label class="mandatory" for="user_primary_roles"><liferay-ui:message key="primary.roles" /></label> <select class="form-control" id="user_primary_roles"
+                                            <label class="mandatory" for="user_primary_roles"><liferay-ui:message key="primary.roles" /></label>
+                                            <select class="form-control" id="user_primary_roles"
                                                 name="<portlet:namespace/><%=User._Fields.USER_GROUP%>" required>
                                                 <option value="" class="textlabel stackedLabel"><liferay-ui:message key="select.primary.role" /></option>
                                                 <sw360:DisplayEnumOptions type="<%=UserGroup.class%>" useStringValues="true" selected="${userObj.userGroup}" />

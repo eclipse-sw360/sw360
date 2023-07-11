@@ -19,5 +19,6 @@ JAVA_OPTS="$JAVA_OPTS -Duser.timezone=GMT"
 JAVA_OPTS="$JAVA_OPTS -Xms${JAVA_MEMORY_MIN} -Xmx${JAVA_MEMORY_MAX}"
 JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC"
 JAVA_OPTS="$JAVA_OPTS -XX:SurvivorRatio=20"
+JAVA_OPTS="$JAVA_OPTS -Djdk.http.auth.tunneling.disabledSchemes"
 
 export JAVA_OPTS

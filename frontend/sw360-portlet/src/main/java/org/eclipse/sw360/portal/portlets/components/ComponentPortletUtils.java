@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
@@ -27,6 +28,7 @@ import org.eclipse.sw360.portal.users.UserCacheHolder;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -164,6 +166,46 @@ public abstract class ComponentPortletUtils {
         setFieldValue(request, vendor, Vendor._Fields.URL);
     }
 
+    public static List<User> updateUserAddFromRequest(PortletRequest request, Logger log) throws TException {
+        ThriftClients thriftClients = new ThriftClients();
+        UserService.Iface client = thriftClients.makeUserClient();
+        List<User> users;
+        List<String> emails = new ArrayList<>();
+        String emailsAddRequest = request.getParameter(PortalConstants.ADD_LIST_EMAIL);
+        String replaceEmailsAddRequest = emailsAddRequest.replace("[", "").replace("]", "");
+        if (replaceEmailsAddRequest.length() == 2) {
+            return Collections.emptyList();
+        } else {
+            String[] parts = replaceEmailsAddRequest.split(",");
+            for (String email : parts) {
+                emails.add(handlerEmails(email));
+            }
+            users = client.getAllUserByEmails(emails);
+            return users;
+        }
+    }
+
+
+    public static List<User> updateUserDeleteFromRequest(PortletRequest request, Logger log) throws TException {
+        ThriftClients thriftClients = new ThriftClients();
+        UserService.Iface client = thriftClients.makeUserClient();
+        List<User> users;
+        List<String> emails = new ArrayList<>();
+        String emailsDeleteRequest = request.getParameter(PortalConstants.DELETE_LIST_EMAIL);
+        String replaceEmailsDeleteRequest = emailsDeleteRequest.replace("[", "").replace("]", "");
+        if (replaceEmailsDeleteRequest.length() == 2) {
+            return Collections.emptyList();
+        } else {
+            String[] parts = replaceEmailsDeleteRequest.split(",");
+            for (String email : parts) {
+                emails.add(handlerEmails(email));
+            }
+            users = client.getAllUserByEmails(emails);
+            return users;
+        }
+    }
+
+
     public static void updateTodoFromRequest(PortletRequest request, Obligation oblig) {
         setFieldValue(request, oblig, Obligation._Fields.TITLE);
         setFieldValue(request, oblig, Obligation._Fields.TEXT);
@@ -211,6 +253,10 @@ public abstract class ComponentPortletUtils {
 
     private static void setFieldValue(PortletRequest request, Vendor vendor, Vendor._Fields field) {
         PortletUtils.setFieldValue(request, vendor, field, Vendor.metaDataMap.get(field), "");
+    }
+
+    private static void setFieldValue(PortletRequest request, User user, User._Fields field) {
+        PortletUtils.setFieldValue(request, user, field, User.metaDataMap.get(field), "");
     }
 
     private static void setFieldValue(PortletRequest request, Obligation oblig, Obligation._Fields field) {
@@ -393,5 +439,13 @@ public abstract class ComponentPortletUtils {
         verificationStateHistory.add(resultInfo);
 
         return dbRelation;
+    }
+
+    public static String handlerEmails(String email) {
+        StringBuilder value = new StringBuilder();
+        for (int i = 1; i < email.length() - 1; i++) {
+            value.append(email.charAt(i));
+        }
+        return value.toString();
     }
 }

@@ -103,6 +103,7 @@ public class ThriftClients {
     public static final String SVM_LIST_UPDATE_SERVICE = "svmListUpdateService";
     public static final String SVM_TRACKING_FEEDBACK_SERVICE = "svmTrackingFeedbackService";
     public static final String DELETE_ATTACHMENT_SERVICE = "deleteattachmentService";
+    public static final String IMPORT_DEPARTMENT_SERVICE = "importdepartmentService";
 
 
     static {

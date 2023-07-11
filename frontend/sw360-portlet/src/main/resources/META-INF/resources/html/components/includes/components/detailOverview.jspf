@@ -9,8 +9,8 @@
   --%>
 
 <portlet:renderURL var="editComponentURL">
-	<portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
-	<portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>"/>
+        <portlet:param name="<%=PortalConstants.COMPONENT_ID%>" value="${component.id}"/>
+        <portlet:param name="<%=PortalConstants.PAGENAME%>" value="<%=PortalConstants.PAGENAME_EDIT%>"/>
 </portlet:renderURL>
 
 <portlet:resourceURL var="subscribeComponentURL">
@@ -27,21 +27,21 @@
 <core_rt:set var = "docid" scope = "request" value = "${component.id}"/>
 
 <div class="container" style="display: none;">
-	<div class="row">
-		<div class="col-3 sidebar">
-			<div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Releases'}">active</core_rt:if>" href="#tab-Releases" data-toggle="list" role="tab"><liferay-ui:message key="release.overview" /></a>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab"><liferay-ui:message key="attachments" /></a>
-			<core_rt:if test="${inComponentDetailsContext}">
-				<%@include file="/html/utils/includes/vulnerabilityTab.jspf" %>
-			</core_rt:if>
-			<a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active</core_rt:if>" href="#tab-ChangeLogs" data-toggle="list" role="tab"><liferay-ui:message key="change.log" /></a>
-		    </div>
-	    </div>
-	    <div class="col">
-		<div class="row portlet-toolbar">
-				<div class="col-auto">
+        <div class="row">
+            <div class="col-3 sidebar">
+                <div id="detailTab" class="list-group" data-initial-tab="${selectedTab}" role="tablist">
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Summary'}">active</core_rt:if>" href="#tab-Summary" data-toggle="list" role="tab"><liferay-ui:message key="summary" /></a>
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Releases'}">active</core_rt:if>" href="#tab-Releases" data-toggle="list" role="tab"><liferay-ui:message key="release.overview" /></a>
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Attachments'}">active</core_rt:if>" href="#tab-Attachments" data-toggle="list" role="tab"><liferay-ui:message key="attachments" /></a>
+                    <core_rt:if test="${inComponentDetailsContext}">
+                        <%@include file="/html/utils/includes/vulnerabilityTab.jspf" %>
+                    </core_rt:if>
+                    <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active</core_rt:if>" href="#tab-ChangeLogs" data-toggle="list" role="tab"><liferay-ui:message key="change.log" /></a>
+                </div>
+            </div>
+            <div class="col">
+                <div class="row portlet-toolbar">
+                    <div class="col-auto">
                     <core_rt:if test="${inComponentDetailsContext}">
                         <div class="btn-toolbar" role="toolbar">
                             <div class="btn-group" role="group">
@@ -90,39 +90,39 @@
                             </div>
                         </div>
                     </core_rt:if>
-				</div>
-				<div class="col portlet-title text-truncate" title="${sw360:printComponentName(component)}">
-					<sw360:out value="${component.name}"/>
-				</div>
-			</div>
-			<div class="row">
-				<div class="col">
-		            <div class="tab-content">
-		                <div id="tab-Summary" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>" >
-		                    <%@include file="/html/components/includes/components/summary.jspf" %>
+                                </div>
+                                <div class="col portlet-title text-truncate" title="${sw360:printComponentName(component)}">
+                                    <sw360:out value="${component.name}"/>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <div class="tab-content">
+                                        <div id="tab-Summary" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Summary'}">active show</core_rt:if>" >
+                                            <%@include file="/html/components/includes/components/summary.jspf" %>
 
                             <core_rt:set var="documentName"><sw360:out value='${component.name}'/></core_rt:set>
                             <core_rt:set var="tableId" value="usingProjectsTableSummary"/>
                             <%@include file="/html/utils/includes/usingProjectsTable.jspf" %>
                             <%@include file="/html/utils/includes/usingComponentsTable.jspf"%>
-		                </div>
-		                <div id="tab-Releases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Releases'}">active show</core_rt:if>">
-		                    <%@include file="/html/components/includes/components/clearingStatus.jspf" %>
-		                </div>
-		                <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
-		                    <jsp:include page="/html/utils/includes/attachmentsDetail.jsp" />
-		                </div>
+                                </div>
+                                <div id="tab-Releases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Releases'}">active show</core_rt:if>">
+                                    <%@include file="/html/components/includes/components/clearingStatus.jspf" %>
+                                </div>
+                                <div id="tab-Attachments" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Attachments'}">active show</core_rt:if>">
+                                    <jsp:include page="/html/utils/includes/attachmentsDetail.jsp" />
+                                </div>
                         <core_rt:if test="${inComponentDetailsContext}">
-		                    <div id="tab-Vulnerabilities" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active show</core_rt:if>">
-			                    <%@include file="/html/components/includes/components/vulnerabilities.jspf" %>
-			                </div>
-		                </core_rt:if>
-		                <div id="tab-ChangeLogs" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active show</core_rt:if>">
-			                <jsp:include page="/html/changelogs/elementView.jsp" />
-		                </div>
-		            </div>
-		        </div>
-		    </div>
+                                    <div id="tab-Vulnerabilities" class="tab-pane <core_rt:if test="${selectedTab == 'tab-Vulnerabilities'}">active show</core_rt:if>">
+                                        <%@include file="/html/components/includes/components/vulnerabilities.jspf" %>
+                                    </div>
+                                </core_rt:if>
+                                <div id="tab-ChangeLogs" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active show</core_rt:if>">
+                                    <jsp:include page="/html/changelogs/elementView.jsp" />
+                                </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -142,8 +142,8 @@
             var componentId = $(event.currentTarget).data().componentId;
             var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
                 portletURL = Liferay.PortletURL.createURL(baseUrl)
-                                               .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_MERGE_COMPONENT%>')
-                                               .setParameter('<%=PortalConstants.COMPONENT_ID%>', componentId);
+                                                .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_MERGE_COMPONENT%>')
+                                                .setParameter('<%=PortalConstants.COMPONENT_ID%>', componentId);
             window.location = portletURL.toString();
         });
 
@@ -151,8 +151,8 @@
             let splitComponentId = $(event.currentTarget).data().componentId;
             var baseUrlForSplitComponent = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
                 portletURL = Liferay.PortletURL.createURL(baseUrlForSplitComponent)
-                                               .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_SPLIT_COMPONENT%>')
-                                               .setParameter('<%=PortalConstants.COMPONENT_ID%>', splitComponentId);
+                                                .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_SPLIT_COMPONENT%>')
+                                                .setParameter('<%=PortalConstants.COMPONENT_ID%>', splitComponentId);
             window.location = portletURL.toString();
         });
 
