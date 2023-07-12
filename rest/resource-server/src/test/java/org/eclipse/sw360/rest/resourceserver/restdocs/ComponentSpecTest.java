@@ -121,10 +121,30 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
         attachment = new Attachment("1231231254", "spring-core-4.3.4.RELEASE.jar");
         attachment.setSha1("da373e491d3863477568896089ee9457bc316783");
+        attachment.setAttachmentType(AttachmentType.BINARY);
+        attachment.setCreatedBy("admin@sw360.org");
+        attachment.setCreatedTeam("DEPARTMENT");
+        attachment.setCreatedComment("Test attachment");
+        attachment.setCreatedOn("2023-07-11");
+        attachment.setCheckedBy("admin@sw360.org");
+        attachment.setCheckedTeam("DEPARTMENT");
+        attachment.setCheckedComment("test updated");
+        attachment.setCheckedOn("2023-07-11");
+        attachment.setCheckStatus(CheckStatus.REJECTED);
         attachmentList.add(attachment);
         attachmentResources.add(EntityModel.of(attachment));
         Attachment attachment2 = new Attachment("1231231255", "spring-mvc-4.3.4.RELEASE.jar");
         attachment2.setSha1("da373e491d3863477568896089ee9457bc316784");
+        attachment2.setAttachmentType(AttachmentType.BINARY);
+        attachment2.setCreatedBy("admin@sw360.org");
+        attachment2.setCreatedTeam("DEPARTMENT");
+        attachment2.setCreatedComment("Test attachment");
+        attachment2.setCreatedOn("2023-07-11");
+        attachment2.setCheckedBy("admin@sw360.org");
+        attachment2.setCheckedTeam("DEPARTMENT");
+        attachment2.setCheckedComment("test updated");
+        attachment2.setCheckedOn("2023-07-11");
+        attachment2.setCheckStatus(CheckStatus.REJECTED);
         attachmentList.add(attachment2);
         attachmentResources.add(EntityModel.of(attachment2));
 
@@ -607,6 +627,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy._links").description("Self <<resources-index-links,Links>> to Component resource").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]filename").description("Attached file name").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]sha1").description("The attachment sha1 value").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]attachmentType").description("The attachment type").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]_links").description("Self <<resources-index-links,Links>> to Component resource").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:vendors").description("The vendors list").optional(),
 
@@ -1260,5 +1281,31 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", "Bearer " + accessToken)
                 .queryParam("type", "SPDX");
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
+    }
+
+    @Test
+    public void should_document_get_component_attachments() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/components/17653524/attachmentList")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                subsectionWithPath("[].filename").description("The file name of attachment"),
+                                subsectionWithPath("[].sha1").description("The sha1 of attachment"),
+                                subsectionWithPath("[].attachmentType").description("The type of attachment"),
+                                subsectionWithPath("[].createdBy").description("The attachment created by"),
+                                subsectionWithPath("[].createdTeam").description("The team who created attachment"),
+                                subsectionWithPath("[].createdComment").description("The comments by creater of the attachment"),
+                                subsectionWithPath("[].createdOn").description("The attachment created on"),
+                                subsectionWithPath("[].checkedOn").description("The attachment checked on"),
+                                subsectionWithPath("[].checkedBy").description("The attachment checked By"),
+                                subsectionWithPath("[].checkedTeam").description("The attachment checked team"),
+                                subsectionWithPath("[].checkedComment").description("The attachment checked comment"),
+                                subsectionWithPath("[].checkStatus").description("The attachment check status")
+                        )
+                ));
     }
 }

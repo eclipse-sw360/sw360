@@ -713,4 +713,19 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
         return new ResponseEntity<>(requestStatus, HttpStatus.OK);
     }
+
+    @RequestMapping(value = COMPONENTS_URL + "/{id}/attachmentList", method = RequestMethod.GET)
+    public ResponseEntity<?> attachmentList(
+            @PathVariable("id") String id) throws TException {
+
+
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Component sw360Component = componentService.getComponentForUserById(id, user);
+        Set<Attachment> attachments = null;
+        if(sw360Component != null && sw360Component.getAttachments() != null) {
+            attachments = sw360Component.getAttachments();
+        }
+
+        return new ResponseEntity<>(attachments, HttpStatus.OK);
+    }
 }
