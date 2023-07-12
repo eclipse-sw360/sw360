@@ -26,6 +26,15 @@ import org.eclipse.sw360.clients.utils.SW360ResourceUtils;
 import org.eclipse.sw360.http.RequestBuilder;
 import org.eclipse.sw360.http.utils.HttpUtils;
 
+import org.eclipse.sw360.http.RequestBuilder;
+import org.eclipse.sw360.http.utils.HttpUtils;
+import org.eclipse.sw360.clients.config.SW360ClientConfig;
+import org.eclipse.sw360.clients.auth.AccessTokenProvider;
+import org.eclipse.sw360.clients.utils.SW360ResourceUtils;
+import org.eclipse.sw360.clients.rest.resource.releases.SW360Release;
+import org.eclipse.sw360.clients.rest.resource.releases.SW360ReleaseList;
+import org.eclipse.sw360.clients.rest.resource.releases.SW360SparseRelease;
+
 /**
  * <p>
  * An SW360 REST client implementation providing basic functionality related to
@@ -102,10 +111,15 @@ public class SW360ReleaseClient extends SW360AttachmentAwareClient<SW360Release>
     // which are mapped to numbered keys like `hash_1=...`, `hash_2=...`, ...
     // but can change in the order of the values
     public CompletableFuture<List<SW360SparseRelease>> getReleasesByExternalIds(Map<String, ?> externalIds) {
-        return executeJsonRequestNew(builder -> builder.method(RequestBuilder.Method.GET)
-                .uri(resourceUrl(RELEASES_ENDPOINT_APPENDIX, PATH_SEARCH_EXT_IDS)).body(body -> body.json(externalIds)),
-                SW360ReleaseList.class, TAG_GET_RELEASES_BY_EXTERNAL_IDS)
+        String url = getExternalIdUrl(externalIds);
+        return executeJsonRequestWithDefault(HttpUtils.get(url), SW360ReleaseList.class,
+                TAG_GET_RELEASES_BY_EXTERNAL_IDS, SW360ReleaseList::new)
                 .thenApply(SW360ResourceUtils::getSw360SparseReleases);
+    }
+    
+    private String getExternalIdUrl(Map<String, ?> externalIds) {
+        return HttpUtils.addQueryParameters(resourceUrl(RELEASES_ENDPOINT_APPENDIX, PATH_SEARCH_EXT_IDS),
+                externalIds);
     }
 
     /**
