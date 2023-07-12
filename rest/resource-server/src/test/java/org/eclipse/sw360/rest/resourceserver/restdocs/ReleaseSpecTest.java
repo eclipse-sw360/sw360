@@ -1005,4 +1005,18 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
+
+    @Test
+    public void should_document_trigger_reload_fossology_report() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(
+                        get("/api/releases/" + release3.getId() + "/reloadFossologyReport")
+                                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(responseFields(
+                        fieldWithPath("message").description(
+                                "Message indicating whether re-generate FOSSology's report Process for Release triggered or not"),
+                        subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"))));
+    }
+
 }

@@ -294,6 +294,20 @@ include::{snippets}/should_document_check_fossology_process_status/curl-request.
 ===== Example response
 include::{snippets}/should_document_check_fossology_process_status/http-response.adoc[]
 
+[[resources-trigger_reload_fossology_report-get]]
+==== Re-generate fossology report
+
+A `GET` request will allow you to Re-generate fossology report
+
+===== Response structure
+include::{snippets}/should_document_trigger_reload_fossology_report/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_trigger_reload_fossology_report/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_trigger_reload_fossology_report/http-response.adoc[]
+
 [[resources-release-get]]
 ==== Get a single release
 
