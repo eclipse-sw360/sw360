@@ -61,6 +61,7 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
             .build();
 
    public static final List<Release._Fields> RELEASE_REQUIRED_FIELDS = ImmutableList.<Release._Fields>builder()
+            .add(ID)
             .add(COMPONENT_ID)
             .add(NAME)
             .add(VERSION)
