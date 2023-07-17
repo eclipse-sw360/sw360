@@ -33,6 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
+import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
@@ -53,12 +54,14 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
@@ -94,6 +97,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360VendorService vendorServiceMock;
+    
+    @MockBean
+    private SW360ReportService sw360ReportServiceMock;
 
     private Component angularComponent;
 
@@ -300,6 +306,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
 
         given(this.componentServiceMock.getComponentsForUser(any())).willReturn(componentList);
+        given(this.sw360ReportServiceMock.getComponentBuffer(any(),anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.componentServiceMock.getRecentComponents(any())).willReturn(componentList);
         given(this.componentServiceMock.getComponentSubscriptions(any())).willReturn(componentList);
         given(this.componentServiceMock.getMyComponentsForUser(any())).willReturn(componentList);
@@ -1260,5 +1267,49 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", "Bearer " + accessToken)
                 .queryParam("type", "SPDX");
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
+    }
+    
+    @Test
+    public void should_document_get_component_report() throws Exception{
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/reports")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("withlinkedreleases", "true")
+                        .param("mimetype", "xlsx")
+                        .param("mailrequest", "false")
+                        .param("module", "components")
+                        .accept(MediaTypes.HAL_JSON))
+             .andExpect(status().isOk())
+             .andDo(this.documentationHandler.document(
+                     requestParameters(
+                             parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
+                             parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
+                             parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`"),
+                             parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`")
+                     )));
+    }
+    
+    @Test
+    public void should_document_get_component_report_with_mail_req() throws Exception{
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/reports")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("withlinkedreleases", "true")
+                        .param("mimetype", "xlsx")
+                        .param("mailrequest", "true")
+                        .param("module", "components")
+                        .accept(MediaTypes.HAL_JSON))
+             .andExpect(status().isOk())
+             .andDo(this.documentationHandler.document(
+                     requestParameters(
+                             parameterWithName("withlinkedreleases").description("components with linked releases. Possible values are `<true|false>`"),
+                             parameterWithName("mimetype").description("components download format. Possible values are `<xls|xlsx>`"),
+                             parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
+                             parameterWithName("mailrequest").description("Downloading components report requirted mail link. Possible values are `<true|false>`")
+                     ),responseFields(
+                             subsectionWithPath("response").description("The response message displayed").optional(),
+                             subsectionWithPath("url").description("The components download path will be displayed").optional()
+                             )
+                     ));
     }
 }

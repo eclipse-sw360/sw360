@@ -911,4 +911,16 @@ service ComponentService {
     * Send email to the user once spreadsheet export completed
     */
     void sendExportSpreadsheetSuccessMail(1: string url, 2: string userEmail);
+    /*
+    * download api
+    */
+    binary downloadExcel(1:User user,2:bool extendedByReleases,3:string token) throws (1: SW360Exception exp);
+    /*
+    * get report data stream
+    */
+    binary getComponentReportDataStream(1: User user, 2: bool extendedByReleases) throws (1: SW360Exception exp);
+    /*
+    * get component report in mail
+    */
+    string getComponentReportInEmail(1: User user, 2: bool extendedByReleases) throws (1: SW360Exception exp); 
 }

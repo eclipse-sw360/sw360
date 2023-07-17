@@ -92,6 +92,7 @@ import java.nio.ByteBuffer;
  */
 public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
+    private static final String PROJECTS = "projects";
     private static final Logger log = LogManager.getLogger(ProjectDatabaseHandler.class);
     private static final int DELETION_SANITY_CHECK_THRESHOLD = 5;
     private static final String DUMMY_NEW_PROJECT_ID = "newproject";
