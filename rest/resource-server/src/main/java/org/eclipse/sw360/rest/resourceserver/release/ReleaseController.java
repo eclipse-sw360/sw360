@@ -24,12 +24,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.Objects;
+import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.base.Predicate;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -46,8 +52,12 @@ import org.eclipse.sw360.datahandler.thrift.VerificationState;
 import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
@@ -66,6 +76,7 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
+import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -129,6 +140,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private RestControllerHelper restControllerHelper;
+
+    @NonNull
+    private Sw360LicenseInfoService sw360LicenseInfoService;
 
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
@@ -739,6 +753,103 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
         return new ResponseEntity<>(halRelease, HttpStatus.OK);
+    }
+
+    @GetMapping(value = RELEASES_URL + "/{id}/spdxLicensesInfo")
+    public ResponseEntity<?> loadSpdxLicensesInfo(
+            @PathVariable("id") String releaseId,
+            @RequestParam("attachmentId") String attachmentId,
+            @RequestParam(value = "includeConcludedLicense", required = false, defaultValue = "false") boolean includeConcludedLicense) {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Map<String, Set<String>> licenseToSrcFilesMap = new LinkedHashMap<>();
+        Set<String> mainLicenseNames = new TreeSet<>();
+        Set<String> otherLicenseNames = new TreeSet<>();
+        final Set<String> concludedLicenseIds = new TreeSet<>();
+
+        AttachmentType attachmentType;
+        String attachmentName;
+        long totalFileCount = 0;
+        Map<String, Object> responseBody = new LinkedHashMap<>();
+        Predicate<LicenseInfoParsingResult> filterLicenseResult = result -> (null != result.getLicenseInfo() &&
+                null != result.getLicenseInfo().getLicenseNamesWithTexts());
+
+        try {
+            Release release = releaseService.getReleaseForUserById(releaseId, user);
+            attachmentType = release.getAttachments().stream()
+                    .filter(att -> attachmentId.equals(att.getAttachmentContentId())).map(Attachment::getAttachmentType).findFirst().orElse(null);
+            if (null == attachmentType) {
+                return new ResponseEntity<>("Cannot retrieve license information for attachment id " + attachmentId + " in release "
+                        + releaseId + ".", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            if (!attachmentType.equals(AttachmentType.COMPONENT_LICENSE_INFO_XML) &&
+                    !attachmentType.equals(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED) &&
+                    !attachmentType.equals(AttachmentType.INITIAL_SCAN_REPORT)) {
+                return new ResponseEntity<>("Cannot retrieve license information for attachment type " + attachmentType + ".", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            attachmentName = release.getAttachments().stream()
+                    .filter(att -> attachmentId.equals(att.getAttachmentContentId())).map(Attachment::getFilename).findFirst().orElse("");
+            final boolean isISR = AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType);
+            if (isISR) {
+                includeConcludedLicense = true;
+            }
+            List<LicenseInfoParsingResult> licenseInfoResult = sw360LicenseInfoService.getLicenseInfoForAttachment(release, user, attachmentId, includeConcludedLicense);
+            List<LicenseNameWithText> licenseWithTexts = licenseInfoResult.stream()
+                    .filter(filterLicenseResult)
+                    .map(LicenseInfoParsingResult::getLicenseInfo).map(LicenseInfo::getLicenseNamesWithTexts).flatMap(Set::stream)
+                    .filter(license -> !license.getLicenseName().equalsIgnoreCase(SW360Constants.LICENSE_NAME_UNKNOWN)
+                            && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NA)
+                            && !license.getLicenseName().equalsIgnoreCase(SW360Constants.NO_ASSERTION)) // exclude unknown, n/a and noassertion
+                    .collect(Collectors.toList());
+
+            if (attachmentName.endsWith(SW360Constants.RDF_FILE_EXTENSION)) {
+                if (isISR) {
+                    totalFileCount = licenseInfoResult.stream().map(LicenseInfoParsingResult::getLicenseInfo).map(LicenseInfo::getLicenseNamesWithTexts).flatMap(Set::stream)
+                            .map(LicenseNameWithText::getSourceFiles).filter(Objects::nonNull).flatMap(Set::stream).distinct().count();
+                    licenseToSrcFilesMap = CommonUtils.nullToEmptyList(licenseWithTexts).stream().collect(Collectors.toMap(LicenseNameWithText::getLicenseName,
+                            LicenseNameWithText::getSourceFiles, (oldValue, newValue) -> oldValue));
+                    licenseWithTexts.forEach(lwt -> {
+                        lwt.getSourceFiles().forEach(sf -> {
+                            if (sf.replaceAll(".*/", "").matches(SW360Constants.MAIN_LICENSE_FILES)) {
+                                concludedLicenseIds.add(lwt.getLicenseName());
+                            }
+                        });
+                    });
+                } else {
+                    concludedLicenseIds.addAll(licenseInfoResult.stream().flatMap(singleResult -> singleResult.getLicenseInfo().getConcludedLicenseIds().stream())
+                            .collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER))));
+                }
+                otherLicenseNames = licenseWithTexts.stream().map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)));
+                otherLicenseNames.removeAll(concludedLicenseIds);
+            } else if (attachmentName.endsWith(SW360Constants.XML_FILE_EXTENSION)) {
+                mainLicenseNames = licenseWithTexts.stream()
+                        .filter(license -> license.getType().equalsIgnoreCase(SW360Constants.LICENSE_TYPE_GLOBAL))
+                        .map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)));
+                otherLicenseNames = licenseWithTexts.stream()
+                        .filter(license -> !license.getType().equalsIgnoreCase(SW360Constants.LICENSE_TYPE_GLOBAL))
+                        .map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)));
+            }
+        } catch (TException e) {
+            log.error(e.getMessage());
+            return new ResponseEntity<>("Cannot retrieve license information for attachment id " + attachmentId + " in release "
+                    + releaseId + ".", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        if (CommonUtils.isNotEmpty(concludedLicenseIds)) {
+            responseBody.put(SW360Constants.LICENSE_PREFIX, SW360Constants.CONCLUDED_LICENSE_IDS);
+            responseBody.put(SW360Constants.LICENSE_IDS, concludedLicenseIds);
+        } else if (CommonUtils.isNotEmpty(mainLicenseNames)) {
+            responseBody.put(SW360Constants.LICENSE_PREFIX, SW360Constants.MAIN_LICENSE_ID);
+            responseBody.put(SW360Constants.LICENSE_IDS, mainLicenseNames);
+        }
+        responseBody.put(SW360Constants.OTHER_LICENSE, SW360Constants.OTHER_LICENSE_IDS);
+        responseBody.put(SW360Constants.OTHER_LICENSE_IDS_KEY, otherLicenseNames);
+        if (AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType)) {
+            responseBody.put(SW360Constants.LICENSE_PREFIX, SW360Constants.POSSIBLE_MAIN_LICENSE_IDS);
+            responseBody.put(SW360Constants.TOTAL_FILE_COUNT, totalFileCount);
+        }
+        responseBody.putAll(licenseToSrcFilesMap);
+
+        return new ResponseEntity<>(responseBody, HttpStatus.OK);
     }
 
     private RequestStatus linkOrUnlinkPackages(String id, Set<String> packagesInRequestBody, boolean link)

@@ -502,3 +502,17 @@ include::{snippets}/should_document_write_spdx_licenses_info_into_release/curl-r
 
 ===== Example response
 include::{snippets}/should_document_write_spdx_licenses_info_into_release/http-response.adoc[]
+
+[[resources-load-SPDX-license-info-from-attachment-of-release]]
+==== Get SPDX License Info from attachment of release
+
+A `GET` request will retrieve SPDX License Information from the attachment of the release.
+
+===== Example request
+include::{snippets}/should_document_load_spdx_licenses_info_from_isr/curl-request.adoc[]
+
+===== Example response for Initial Scan Report (ISR) type
+include::{snippets}/should_document_load_spdx_licenses_info_from_isr/http-response.adoc[]
+
+===== Example response for Component license information (CLX or CLI) type
+include::{snippets}/should_document_load_spdx_licenses_info_from_clx_or_cli/http-response.adoc[]
