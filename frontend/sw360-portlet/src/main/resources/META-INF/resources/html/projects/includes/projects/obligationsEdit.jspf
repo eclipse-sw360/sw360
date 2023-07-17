@@ -203,6 +203,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
         actionOptions = {};
     var jsonObject = {},
         obligationsFromLicenseDatabase = "",
+        projectId = "<sw360:out value='${projectid}'/>",
         licenseTableData=$("#spinnerForLicenseObligation").html().toString();
     $("#spinnerForLicenseObligation").remove();
     <core_rt:forEach items="${obligationsActionSet}" var="action">
@@ -327,7 +328,25 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
                 "action": updateObligations
             }
         ],
-        "initComplete": datatables.showPageContainer
+        "initComplete": datatables.showPageContainer,
+        "fnDrawCallback": function() {
+            var table = document.getElementById("editObligationsTable");
+            for (var i = 1, row; row = table.rows[i]; i++) {
+                var statusTD = row.cells[4];
+                var commentTD = row.cells[7];
+                var oblTD = row.cells[1];
+                var obl = $(oblTD).find('span').text();
+
+                if (localStorage.getItem(obl+"- "+projectId)) {
+	                var json = JSON.parse(localStorage.getItem(obl+"- "+projectId));
+
+	                dataMap.set(obl, '');
+
+	                $(statusTD).find('select').val(json['status']);
+	                $(commentTD).find('input').val(json['comment']);
+                }
+            }
+          }
     }, undefined, [0, 4, 7]);
 
     function renderStatus(status, type, row) {
@@ -374,6 +393,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
     /* Add event listener for change in any editable fields in table */
     $("#editObligationsTable tbody").on("change", 'td select.obl_status', function () {
         storeData($(this));
+        saveStatusAndComment($(this));
     });
 
     /* $("#editObligationsTable tbody").on("change", 'td select.obl_action',function () {
@@ -383,8 +403,19 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
     $("#editObligationsTable tbody").on("change", 'td input.obl_comment', function () {
         if ($(this).closest('tr').find("input.obl_comment").val()) {
             storeData($(this));
+            saveStatusAndComment($(this));
         }
     });
+
+    function saveStatusAndComment(thisObj) {
+        let $tr = thisObj.closest("tr");
+        let localJsonObject = {};
+
+        localJsonObject["comment"] = $tr.find("input.obl_comment").val();
+        localJsonObject["status"] = $tr.find("select.obl_status").val();
+
+        localStorage.setItem($tr.find("span").text()+"- "+projectId, JSON.stringify(localJsonObject));
+    }
 
     function storeData(thisObj) {
         let $tr = thisObj.closest("tr");
