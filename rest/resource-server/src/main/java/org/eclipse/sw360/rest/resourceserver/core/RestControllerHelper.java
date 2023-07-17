@@ -598,6 +598,20 @@ public class RestControllerHelper<T> {
         return embeddedProject;
     }
 
+    public Project convertToEmbeddedLinkedProject(Project project) {
+        Project embeddedProject = new EmbeddedProject();
+        embeddedProject.setName(project.getName());
+        embeddedProject.setId(project.getId());
+        embeddedProject.setProjectType(project.getProjectType());
+        embeddedProject.setState(project.getState());
+        embeddedProject.setClearingState(project.getClearingState());
+        embeddedProject.setVersion(project.getVersion());
+        embeddedProject.setReleaseIdToUsage(project.getReleaseIdToUsage());
+        embeddedProject.setLinkedProjects(project.getLinkedProjects());
+        embeddedProject.setType(null);
+        return embeddedProject;
+    }
+
     public void addEmbeddedComponent(HalResource halResource, Component component) {
         Component embeddedComponent = convertToEmbeddedComponent(component);
         HalResource<Component> halComponent = new HalResource<>(embeddedComponent);

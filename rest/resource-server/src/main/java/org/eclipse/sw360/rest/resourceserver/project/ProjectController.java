@@ -340,41 +340,48 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @RequestMapping(value = PROJECTS_URL + "/{id}/linkedProjects", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel>> getLinkedProject(
-            Pageable pageable,
-            @PathVariable("id") String id,
-            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+	public ResponseEntity<CollectionModel<EntityModel>> getLinkedProject(Pageable pageable,
+			@PathVariable("id") String id,@RequestParam(value = "transitive", required = false) String transitive, HttpServletRequest request)
+			throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        Project sw360Proj = projectService.getProjectForUserById(id, sw360User);
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		Project sw360Proj = projectService.getProjectForUserById(id, sw360User);
+		final Set<String> projectIdsInBranch = new HashSet<>();
+		boolean isTransitive = Boolean.parseBoolean(transitive);
 
-        Map<String, ProjectProjectRelationship> linkedProjects = sw360Proj.getLinkedProjects();
-        List<String> keys = new ArrayList<>(linkedProjects.keySet());
-        List<Project> projects = keys.stream().map(projId -> wrapTException(() -> {
-            final Project sw360Project = projectService.getProjectForUserById(projId, sw360User);
-            return sw360Project;
-        })).collect(Collectors.toList());
+		Map<String, ProjectProjectRelationship> linkedProjects = sw360Proj.getLinkedProjects();
+		List<String> keys = new ArrayList<>(linkedProjects.keySet());
+		List<Project> projects = keys.stream().map(projId -> wrapTException(() -> {
+			final Project sw360Project = projectService.getProjectForUserById(projId, sw360User);
+			return sw360Project;
+		})).collect(Collectors.toList());
 
-        PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
-                projects, SW360Constants.TYPE_PROJECT);
+		PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+				projects, SW360Constants.TYPE_PROJECT);
 
-        final List<EntityModel<Project>> projectResources = paginationResult.getResources().stream()
-                .map(sw360Project -> wrapTException(() -> {
-                    final Project embeddedProject = restControllerHelper.convertToEmbeddedProject(sw360Project);
-                    final HalResource<Project> projectResource = new HalResource<>(embeddedProject);
-                    return projectResource;
-                })).collect(Collectors.toList());
+		final List<EntityModel<Project>> projectResources = paginationResult.getResources().stream()
+				.map(sw360Project -> wrapTException(() -> {
+					final Project embeddedProject = restControllerHelper.convertToEmbeddedLinkedProject(sw360Project);
+					final HalResource<Project> projectResource = new HalResource<>(embeddedProject);
+					System.out.println("before " + isTransitive);
+					if (isTransitive) {
+						System.out.println("after " + isTransitive);
+					    projectService.addEmbeddedLinkedProject(sw360Project, sw360User, projectResource,
+							projectIdsInBranch);
+					}
+					return projectResource;
+				})).collect(Collectors.toList());
 
-        CollectionModel resources;
-        if (projectResources.size() == 0) {
-            resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
-        } else {
-            resources = restControllerHelper.generatePagesResource(paginationResult, projectResources);
-        }
+		CollectionModel resources;
+		if (projectResources.size() == 0) {
+			resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
+		} else {
+			resources = restControllerHelper.generatePagesResource(paginationResult, projectResources);
+		}
 
-        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(resources, status);
-    }
+		HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+		return new ResponseEntity<>(resources, status);
+	}
 
     @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.DELETE)
     public ResponseEntity deleteProject(@PathVariable("id") String id) throws TException {

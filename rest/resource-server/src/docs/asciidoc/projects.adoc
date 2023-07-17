@@ -307,7 +307,8 @@ include::{snippets}/should_document_get_project/links.adoc[]
 [[resources-project-get-linked-projects]]
 ==== Listing linked projects
 
-A `GET` request will get linked projects of a single project.
+A `GET` request will get linked projects of a single project. +
+Only linked projects without any projects of sub-projects `&transitive=false`.
 
 ===== Response structure
 include::{snippets}/should_document_get_linked_projects/response-fields.adoc[]
@@ -320,6 +321,25 @@ include::{snippets}/should_document_get_linked_projects/http-response.adoc[]
 
 ===== Links
 include::{snippets}/should_document_get_linked_projects/links.adoc[]
+
+
+[[resources-project-get-linked-projects]]
+==== Listing linked projects (transitive)
+
+A `GET` request will get linked projects of a single project. +
+Please set the request parameter `&transitive=true`.
+
+===== Response structure
+include::{snippets}/should_document_get_linked_projects_transitive/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_projects_transitive/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_projects_transitive/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_linked_projects_transitive/links.adoc[]
 
 
 [[resources-project-get-project-releases]]
