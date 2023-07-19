@@ -92,16 +92,16 @@
         </td>
         <td>
             <div class="form-group">
-                <label for="comp_blogurl"><liferay-ui:message key="blog.url" /></label>
-                <input class="form-control" id="comp_blogurl" name="<portlet:namespace/><%=Component._Fields.BLOG%>" type="URL"
-                    placeholder="<liferay-ui:message key="enter.blog.url" />" value="<sw360:out value="${component.blog}"/>"/>
+                <label for="comp_vcs"><liferay-ui:message key="vcs./.repository.url" /></label>
+                <input class="form-control" id="comp_vcs" name="<portlet:namespace/><%=Component._Fields.VCS%>" type="URL"
+                    value="<sw360:out value="${component.vcs}"/>" placeholder="<liferay-ui:message key="enter.the.repository.url" />"/>
             </div>
         </td>
         <td>
             <div class="form-group">
-                <label for="comp_wikiurl"><liferay-ui:message key="wiki.url" /></label>
-                <input class="form-control" id="comp_wikiurl" name="<portlet:namespace/><%=Component._Fields.WIKI%>" type="URL"
-                    placeholder="<liferay-ui:message key="enter.wiki.url" />" value="<sw360:out value="${component.wiki}"/>"/>
+                <label for="comp_blogurl"><liferay-ui:message key="blog.url" /></label>
+                <input class="form-control" id="comp_blogurl" name="<portlet:namespace/><%=Component._Fields.BLOG%>" type="URL"
+                    placeholder="<liferay-ui:message key="enter.blog.url" />" value="<sw360:out value="${component.blog}"/>"/>
             </div>
         </td>
     </tr>
@@ -139,6 +139,13 @@
     <tr>
         <td>
             <div class="form-group">
+                <label for="comp_wikiurl"><liferay-ui:message key="wiki.url" /></label>
+                <input class="form-control" id="comp_wikiurl" name="<portlet:namespace/><%=Component._Fields.WIKI%>" type="URL"
+                    placeholder="<liferay-ui:message key="enter.wiki.url" />" value="<sw360:out value="${component.wiki}"/>"/>
+            </div>
+        </td>
+        <td>
+            <div class="form-group">
                 <label for="mailinglist"><liferay-ui:message key="mailing.list.url" /></label>
                 <input class="form-control" id="mailinglist" name="<portlet:namespace/><%=Component._Fields.MAILINGLIST%>" type="text"
                     placeholder="<liferay-ui:message key="enter.mailing.list.url" />" value="<sw360:out value="${component.mailinglist}"/>"/>
@@ -151,10 +158,12 @@
                         placeholder="<liferay-ui:message key="enter.description" />"><sw360:out value="${component.description}"/></textarea>
             </div>
         </td>
+    </tr>
+    <tr>
         <td>
             <div class="form-group">
                 <sw360:DisplayUserEdit email="${component.modifiedBy}" id="<%=Component._Fields.MODIFIED_BY.toString()%>"
-                                    description="modified.by" multiUsers="false" readonly="true"/>
+                    description="modified.by" multiUsers="false" readonly="true"/>
             </div>
         </td>
     </tr>

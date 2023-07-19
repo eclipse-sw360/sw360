@@ -72,6 +72,10 @@
         <td><sw360:DisplayLink target="${component.homepage}"/></td>
     </tr>
     <tr>
+        <td><liferay-ui:message key="vcs./.repository.url" />:</td>
+        <td><sw360:DisplayLink target="${component.vcs}"/></td>
+    </tr>
+    <tr>
         <td><liferay-ui:message key="blog" />:</td>
         <td><sw360:DisplayLink target="${component.blog}"/></td>
     </tr>

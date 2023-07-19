@@ -350,6 +350,7 @@ struct Component {
     53: optional string blog,
     54: optional string wikipedia,
     55: optional string openHub,
+    56: optional string vcs, //Repository URL of the component
 
     // Information for ModerationRequests
     70: optional DocumentState documentState,
