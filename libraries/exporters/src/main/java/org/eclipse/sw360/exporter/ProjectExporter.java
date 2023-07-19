@@ -70,6 +70,7 @@ public class ProjectExporter extends ExcelExporter<Project, ProjectHelper> {
 
     private static final List<Project._Fields> PROJECT_REQUIRED_FIELDS = ImmutableList.<Project._Fields>builder()
             .add(NAME)
+            .add(ID)
             .add(VERSION)
             .add(BUSINESS_UNIT)
             .add(PROJECT_TYPE)
