@@ -734,4 +734,20 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
         return new ResponseEntity<>(requestStatus, HttpStatus.OK);
     }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = COMPONENTS_URL + "/splitComponents", method = RequestMethod.PATCH)
+    public ResponseEntity<RequestStatus> splitComponents(
+            @RequestBody Map<String, Component> componentMap) throws TException {
+
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+        Component srcComponent = componentMap.get("srcComponent");
+        Component targetComponent = componentMap.get("targetComponent");
+
+        // perform the real merge, update merge target and delete merge source
+        RequestStatus requestStatus = componentService.splitComponents(srcComponent, targetComponent, sw360User);
+
+        return new ResponseEntity<>(requestStatus, HttpStatus.OK);
+    }
 }

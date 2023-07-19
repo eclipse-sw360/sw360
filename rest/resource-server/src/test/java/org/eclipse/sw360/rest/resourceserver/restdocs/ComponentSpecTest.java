@@ -113,6 +113,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     private Attachment sBOMAttachment;
     private RequestSummary requestSummary = new RequestSummary();
 
+    private Release release;
+    private Release release2;
+
     @Before
     public void before() throws TException, IOException {
         Set<String> licenseIds = new HashSet<>();
@@ -346,7 +349,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         given(this.vendorServiceMock.getVendorById("vendorId")).willReturn(vendor);
 
         List<Release> releaseList = new ArrayList<>();
-        Release release = new Release();
+        release = new Release();
         release.setId("3765276512");
         release.setName("Angular 2.3.0");
         release.setCpeid("cpe:/a:Google:Angular:2.3.0:");
@@ -358,7 +361,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         release.setComponentId(springComponent.getId());
         releaseList.add(release);
 
-        Release release2 = new Release();
+        release2 = new Release();
         release2.setId("3765276512");
         release2.setName("Angular 2.3.1");
         release2.setCpeid("cpe:/a:Google:Angular:2.3.1:");
@@ -946,6 +949,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("blog").description("The blog of component"),
                                 fieldWithPath("homepage").description("The homepage url of the component"),
                                 fieldWithPath("modifiedOn").description("The date the component was modified"),
+
                                 fieldWithPath("moderators").description("The component moderators"),
 
                                 fieldWithPath("name").description("The updated name of the component"),
@@ -963,6 +967,60 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("vendors").description("The vendors list"),
                                 fieldWithPath("description").description("The updated component description"),
                                 fieldWithPath("componentType").description("The updated  component type, possible values are: " + Arrays.asList(ComponentType.values()))
+                        )));
+    }
+
+    @Test
+    public void should_document_split_components() throws Exception {
+
+
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        Component srcComponent = new Component();
+        srcComponent.setId("17653524");
+        srcComponent.setName("Angular");
+        srcComponent.setComponentOwner("John");
+        srcComponent.setDescription("Angular is a development platform for building mobile and desktop web applications.");
+        List<Release> releaseList = new ArrayList<>();
+        releaseList.add(release);
+        Release release2 = new Release();
+        releaseList.add(release2);
+
+        srcComponent.setReleases(releaseList);
+        Component targetComponent = new Component();
+        targetComponent.setId("87654321");
+        targetComponent.setName("Angular");
+        targetComponent.setComponentOwner("John");
+        targetComponent.setDescription("Angular is a development platform for building mobile and desktop web applications.");
+        targetComponent.setReleases(releaseList);
+        Map<String, Object> componentsMap = new HashMap<>();
+        componentsMap.put("srcComponent", srcComponent);
+        componentsMap.put("targetComponent", targetComponent);
+
+                mockMvc.perform(patch("/api/components/splitComponents")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(componentsMap))
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("srcComponent.id").description("The ID of the source component"),
+                                fieldWithPath("srcComponent.name").description("The name of the source component"),
+                                fieldWithPath("srcComponent.description").description("The description of the source component"),
+                                fieldWithPath("srcComponent.type").description("The type of the source component"),
+                                fieldWithPath("srcComponent.componentOwner").description("The owner of the source component"),
+                                fieldWithPath("srcComponent.visbility").description("The visibility of the source component"),
+                                fieldWithPath("srcComponent.setVisbility").description("Flag indicating if the visibility is set"),
+                                fieldWithPath("srcComponent.setBusinessUnit").description("Flag indicating if the business unit is set"),
+                                fieldWithPath("targetComponent.id").description("The ID of the target component"),
+                                fieldWithPath("targetComponent.name").description("The name of the target component"),
+                                fieldWithPath("targetComponent.description").description("The description of the target component"),
+                                fieldWithPath("targetComponent.type").description("The type of the target component"),
+                                fieldWithPath("targetComponent.componentOwner").description("The owner of the target component"),
+                                fieldWithPath("targetComponent.visbility").description("The visibility of the target component"),
+                                fieldWithPath("targetComponent.setVisbility").description("Flag indicating if the visibility is set"),
+                                fieldWithPath("targetComponent.setBusinessUnit").description("Flag indicating if the business unit is set")
+
                         )));
     }
 

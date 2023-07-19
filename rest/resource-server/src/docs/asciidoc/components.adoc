@@ -330,6 +330,22 @@ include::{snippets}/should_document_merge_components/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_merge_components/links.adoc[]
 
+[[resources-components-update]]
+==== Split a component
+
+A `PATCH` request is used to split two components
+
+===== Response structure
+include::{snippets}/should_document_split_components/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_split_components/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_split_components/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_split_components/links.adoc[]
 
 [[resources-components-delete]]
 ==== Delete a component
