@@ -123,8 +123,11 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         List<Component> allComponents = new ArrayList<>();
+        String queryString = request.getQueryString();
+        Map<String, String> params = parseQueryString(queryString);
+
         if (name != null && !name.isEmpty()) {
-            allComponents.addAll(componentService.searchComponentByName(name));
+            allComponents.addAll(componentService.searchComponentByName(params.get("name")));
         } else {
             allComponents.addAll(componentService.getComponentsForUser(sw360User));
         }
@@ -159,6 +162,24 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             resources = restControllerHelper.generatePagesResource(paginationResult, componentResources);
         }
         return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    private Map<String, String> parseQueryString(String queryString) {
+        Map<String, String> parameters = new HashMap<>();
+
+        if (queryString != null && !queryString.isEmpty()) {
+            String[] params = queryString.split("&");
+            for (String param : params) {
+                String[] keyValue = param.split("=");
+                if (keyValue.length == 2) {
+                    String key = keyValue[0];
+                    String value = keyValue[1];
+                    parameters.put(key, value);
+                }
+            }
+        }
+
+        return parameters;
     }
 
     @RequestMapping(value = COMPONENTS_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
