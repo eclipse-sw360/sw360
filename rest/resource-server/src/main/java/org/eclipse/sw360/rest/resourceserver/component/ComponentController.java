@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentDTO;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -253,10 +254,20 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<Component>> patchComponent(
             @PathVariable("id") String id,
-            @RequestBody Component updateComponent) throws TException {
+            @RequestBody ComponentDTO updateComponentDto) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
-        sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponent);
+        sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponentDto);
+        Set<AttachmentDTO> attachmentDTOS = updateComponentDto.getAttachmentDTOs();
+        if (!CommonUtils.isNullOrEmptyCollection(attachmentDTOS)) {
+            Set<Attachment> attachments = new HashSet<>();
+            for (AttachmentDTO attachmentDTO: attachmentDTOS) {
+                attachments.add(restControllerHelper.convertToAttachment(attachmentDTO));
+            }
+            sw360Component.setAttachments(attachments);
+        } else {
+            sw360Component.setAttachments(null);
+        }
         RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, user);
         HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
         if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {

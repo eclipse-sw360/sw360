@@ -156,13 +156,21 @@ public class ComponentTest extends TestIntegrationBase {
     @Test
     public void should_update_component_valid() throws IOException, TException {
         String updatedComponentName = "updatedComponentName";
+        String body = "{\n" +
+                "  \"name\": \"updatedComponentName\",\n" +
+                "  \"invalid_property\": \"abcde123\",\n" +
+                "  \"attachmentDTOs\": [\n" +
+                "    {\n" +
+                "        \"attachmentContentId\": \"1231231255\",\n" +
+                "        \"filename\": \"spring-mvc-4.3.4.RELEASE.jar\"\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
         given(this.componentServiceMock.updateComponent(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.componentServiceMock.getComponentForUserById(eq(componentId), any())).willReturn(component);
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
-        Map<String, String> body = new HashMap<>();
-        body.put("name", updatedComponentName);
-        body.put("invalid_property", "abcde123");
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/components/" + componentId,
                         HttpMethod.PATCH,
