@@ -47,3 +47,22 @@ include::{snippets}/should_document_get_attachments_by_sha1/http-response.adoc[]
 
 ===== Links
 include::{snippets}/should_document_get_attachments_by_sha1/links.adoc[]
+
+[[resources-attachment-create]]
+==== Create attachment
+
+A `POST` request is used to create attachment
+
+[red]#Request structure#
+|===
+|Path |Type |Description
+
+|files
+|file
+|File path of the attachment
+|===
+===== Example request
+include::{snippets}/should_document_create_attachment/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_attachment/http-response.adoc[]

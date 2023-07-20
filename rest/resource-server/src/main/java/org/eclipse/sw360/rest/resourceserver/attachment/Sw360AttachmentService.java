@@ -262,6 +262,17 @@ public class Sw360AttachmentService {
         return attachment;
     }
 
+    public Attachment addAttachment(MultipartFile file, User sw360User) throws IOException, TException {
+        String fileName = file.getOriginalFilename();
+        String contentType = file.getContentType();
+        final AttachmentContent attachmentContent = makeAttachmentContent(fileName, contentType);
+        final AttachmentConnector attachmentConnector = getConnector();
+        Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, file.getInputStream(), sw360User);
+        attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
+
+        return attachment;
+    }
+
     private AttachmentContent makeAttachmentContent(String filename, String contentType) {
         AttachmentContent attachment = new AttachmentContent()
                 .setContentType(contentType)

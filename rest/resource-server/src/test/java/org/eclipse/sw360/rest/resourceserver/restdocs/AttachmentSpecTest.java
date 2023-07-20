@@ -28,8 +28,12 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -64,12 +68,13 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
     @MockBean
     private Sw360ReleaseService releaseServiceMock;
 
-    private Attachment attachment;
+    private Attachment attachment, attachment1;
 
     @Before
-    public void before() throws TException {
+    public void before() throws TException, IOException {
         List<Attachment> attachments = new ArrayList<>();
         attachment = new Attachment();
+        attachment1 = new Attachment();
 
         attachment.setAttachmentContentId("76537653");
         attachment.setFilename("spring-core-4.3.4.RELEASE.jar");
@@ -83,6 +88,16 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
         attachment.setCheckedComment("everything looks good");
         attachment.setCheckedOn("2016-12-18");
         attachment.setCheckStatus(CheckStatus.ACCEPTED);
+
+        attachment1.setAttachmentContentId("9eceeb5d511541c7853dec975d728731");
+        attachment1.setFilename("bom.spdx.rdf");
+        attachment1.setSha1("b39cee74077c578a16992defd565d5754cbf2c40");
+        attachment1.setAttachmentType(AttachmentType.DOCUMENT);
+        attachment1.setCreatedTeam("DEPARTMENT");
+        attachment1.setCreatedOn("2023-07-20");
+        attachment1.setCreatedBy("admin@sw360.org");
+        attachment1.setCheckStatus(CheckStatus.NOTCHECKED);
+
 
         attachments.add(attachment);
 
@@ -115,6 +130,7 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
         user.setFullname("John Doe");
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(user);
+        given(this.attachmentServiceMock.addAttachment(any(),any())).willReturn(attachment1);
     }
 
     @Test
@@ -163,4 +179,15 @@ public class AttachmentSpecTest extends TestRestDocsSpecBase {
                                         "The collection of <<resources-attachments,Attachment resources>>. In most cases the result should contain either one element or an empty collection. If the same binary file is uploaded and attached to multiple sw360 resources, the collection will contain all the attachments with matching sha1 hash."))))
                 .andReturn();
     }
+
+    @Test
+    public void should_document_create_attachment() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/attachments")
+                .file("files", "@/bom.spdx.rdf".getBytes())
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .header("Authorization", "Bearer " + accessToken);
+        this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
+    }
+
 }
