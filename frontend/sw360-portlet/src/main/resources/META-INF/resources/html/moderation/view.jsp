@@ -180,6 +180,8 @@
                             <option value="0" class="textlabel stackedLabel"><liferay-ui:message key="today" /></option>
                             <option value="-30" class="textlabel stackedLabel"><liferay-ui:message key="last.30.days" /></option>
                             <option value="-7" class="textlabel stackedLabel"><liferay-ui:message key="last.7.days" /></option>
+                            <option value="-15" class="textlabel stackedLabel"><liferay-ui:message key="last.15.days" /></option>
+                            <option value="15" class="textlabel stackedLabel"><liferay-ui:message key="next.15.days" /></option>
                             <option value="7" class="textlabel stackedLabel"><liferay-ui:message key="next.7.days" /></option>
                             <option value="30" class="textlabel stackedLabel"><liferay-ui:message key="next.30.days" /></option>
                         </select>
