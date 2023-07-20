@@ -516,3 +516,14 @@ include::{snippets}/should_document_load_spdx_licenses_info_from_isr/http-respon
 
 ===== Example response for Component license information (CLX or CLI) type
 include::{snippets}/should_document_load_spdx_licenses_info_from_clx_or_cli/http-response.adoc[]
+
+[[resources-load-assessment-summary-info-of-release]]
+==== Get assessment summary info of release
+
+A `GET` request will get assessment summary info of release (Have one CLI file only)
+
+===== Example request
+include::{snippets}/should_document_load_release_assessment_summary_information/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_load_release_assessment_summary_information/http-response.adoc[]

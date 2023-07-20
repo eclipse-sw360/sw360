@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.Sets;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
@@ -58,6 +59,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
@@ -868,6 +870,34 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
         release.setPackageIds(packageIds);
         return releaseService.updateRelease(release, sw360User);
+    }
+
+    @GetMapping(value = RELEASES_URL + "/{id}/assessmentSummaryInfo")
+    public ResponseEntity loadAssessmentSummaryInfo(
+            @PathVariable("id") String id) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Release release = releaseService.getReleaseForUserById(id, user);
+        final boolean INCLUDE_CONCLUDED_LICENSE = true;
+
+        Map<String, String> assessmentSummaryMap = new HashMap<>();
+        List<String> cliAttachmentIds = release.getAttachments().stream()
+                .filter(att -> att.getAttachmentType().equals(AttachmentType.COMPONENT_LICENSE_INFO_XML))
+                .map(Attachment::getAttachmentContentId).collect(Collectors.toList());
+        if (cliAttachmentIds.size() != 1) {
+            return new ResponseEntity<>("Number of CLI attachments must be 1", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        List<LicenseInfoParsingResult> licenseInfoResult = sw360LicenseInfoService.getLicenseInfoForAttachment(release,
+                user, cliAttachmentIds.get(0), INCLUDE_CONCLUDED_LICENSE);
+
+        if (CommonUtils.isNotEmpty(licenseInfoResult) && Objects.nonNull(licenseInfoResult.get(0).getLicenseInfo())) {
+            assessmentSummaryMap = licenseInfoResult.get(0).getLicenseInfo().getAssessmentSummary();
+        }
+
+        if (CommonUtils.isNullOrEmptyMap(assessmentSummaryMap)) {
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+
+        return new ResponseEntity<>(assessmentSummaryMap, HttpStatus.OK);
     }
 
     @Override
