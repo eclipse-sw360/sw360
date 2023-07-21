@@ -409,7 +409,6 @@ include::{snippets}/should_document_get_mycomponents_components/http-response.ad
 ===== Links
 include::{snippets}/should_document_get_mycomponents_components/links.adoc[]
 
-<<<<<<< HEAD
 [[resources-component-get-component-vulnerabilities]]
 ==== Listing component vulnerabilities
 
