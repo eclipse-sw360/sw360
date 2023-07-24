@@ -207,21 +207,24 @@ public class OSADLObligationConnector extends ObligationConnector {
 		List<List<String>> keywords = new ArrayList<List<String>>();
 		List<String> obligation = new ArrayList<>(Arrays.asList("YOU MUST", "YOU MUST NOT"));
 		List<String> other = new ArrayList<>(Arrays.asList(
-		"USE CASE",
-		"IF",
-		"EITHER",
-		"EITHER IF",
-		"OR",
-		"OR IF",
-		"EXCEPT IF",
-		"EXCEPT IF NOT",
-		"ATTRIBUTE",
 		"ATTRIBUTE NOT",
+		"ATTRIBUTE",
 		"COMPATIBILITY",
+		"COPYLEFT CLAUSE",
 		"DEPENDING COMPATIBILITY",
+		"EITHER IF",
+		"EITHER",
+		"EXCEPT IF NOT",
+		"EXCEPT IF",
+		"IF",
 		"INCOMPATIBILITY",
+		"OR IF",
+		"OR",
 		"PATENT HINTS",
-		"COPYLEFT CLAUSE"));
+		"USE CASE",
+		"YOU MUST NOT",
+		"YOU MUST"
+		));
 		keywords.add(obligation);
 		keywords.add(other);
 		return keywords;
