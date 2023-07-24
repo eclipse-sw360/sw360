@@ -49,6 +49,7 @@ import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
@@ -661,5 +662,17 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
 
         return fossologyClient;
+    }
+
+    /**
+     * Re-generate Fossology report for release
+     * @param releaseId                Id of Release need to re-generate report
+     * @param user                     Request User
+     * @return RequestStatus
+     * @throws TException
+     */
+    public RequestStatus triggerReportGenerationFossology(String releaseId, User user) throws TException {
+        FossologyService.Iface fossologyClient = getThriftFossologyClient();
+        return fossologyClient.triggerReportGenerationFossology(releaseId, user);
     }
 }

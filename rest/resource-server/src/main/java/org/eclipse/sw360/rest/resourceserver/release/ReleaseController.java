@@ -581,6 +581,62 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<HalResource>(responseResource, status);
     }
 
+    @RequestMapping(value = RELEASES_URL + "/{id}/reloadFossologyReport", method = RequestMethod.GET)
+    public ResponseEntity<HalResource> triggerReloadFossologyReport(@PathVariable("id") String releaseId) throws TException {
+        releaseService.checkFossologyConnection();
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Map<String, String> responseMap = new HashMap<>();
+        String errorMsg = "Could not trigger report generation for this release";
+        HttpStatus status = null;
+        try {
+            Release release = releaseService.getReleaseForUserById(releaseId, user);
+            RequestStatus requestResult = releaseService.triggerReportGenerationFossology(releaseId, user);
+
+            if (requestResult == RequestStatus.FAILURE) {
+                responseMap.put("message", errorMsg);
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+            } else {
+                ExternalToolProcess externalToolProcess = releaseService.getExternalToolProcess(release);
+                if (externalToolProcess != null) {
+                    ReentrantLock lock = mapOfLocks.get(releaseId);
+
+                    if (lock == null || !lock.isLocked()) {
+                        if (mapOfLocks.size() > 10) {
+                            responseMap.put("message",
+                                    "Max 10 FOSSology Process can be triggered simultaneously. Please try after sometime.");
+                            status = HttpStatus.TOO_MANY_REQUESTS;
+                        } else {
+                            releaseService.executeFossologyProcess(user, attachmentService, mapOfLocks, releaseId,
+                                    false, "");
+                            responseMap.put("message", "Re-generate FOSSology's report process for Release Id : " + releaseId
+                                    + " has been triggered.");
+                            status = HttpStatus.OK;
+                        }
+                    } else {
+                        responseMap.put("message", "Another FOSSology Process for Release Id : " + releaseId
+                                + " is already running. Please wait till it is completed.");
+                        status = HttpStatus.NOT_ACCEPTABLE;
+                    }
+                } else {
+                    responseMap.put("message", "The source file is either not yet uploaded or scanning is not done.");
+                    status = HttpStatus.INTERNAL_SERVER_ERROR;
+                }
+            }
+        } catch (TException | IOException e) {
+            responseMap.put("message", errorMsg);
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+            log.error("Error pulling report from fossology", e);
+        }
+
+        HalResource responseResource = new HalResource(responseMap);
+        if (status == HttpStatus.OK || status == HttpStatus.NOT_ACCEPTABLE) {
+            Link checkStatusLink = linkTo(ReleaseController.class).slash("api" + RELEASES_URL).slash(releaseId)
+                    .slash("checkFossologyProcessStatus").withSelfRel();
+            responseResource.add(checkStatusLink);
+        }
+        return new ResponseEntity<>(responseResource, status);
+    }
+
     // Link release to release
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = RELEASES_URL + "/{id}/releases", method = RequestMethod.POST)
