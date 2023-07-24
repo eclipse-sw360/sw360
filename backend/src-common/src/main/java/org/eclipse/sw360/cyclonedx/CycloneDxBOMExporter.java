@@ -10,18 +10,13 @@
 package org.eclipse.sw360.cyclonedx;
 
 import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.jena.ext.com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.plexus.util.CollectionUtils;
 import org.cyclonedx.exception.GeneratorException;
 import org.cyclonedx.generators.json.BomJsonGenerator14;
 import org.cyclonedx.generators.xml.BomXmlGenerator14;
@@ -37,6 +32,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -86,6 +82,12 @@ public class CycloneDxBOMExporter {
             if (includeSubProjReleases && project.getLinkedProjectsSize() > 0) {
                 ProjectService.Iface client = new ThriftClients().makeProjectClient();
                 linkedReleaseIds.addAll(SW360Utils.getLinkedReleaseIdsOfAllSubProjectsAsFlatList(project, Sets.newHashSet(), Sets.newHashSet(), client, user));
+            }
+
+            if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+                List<Release> releaseList = componentDatabaseHandler.getAccessibleReleaseSummary(user);
+                Set<String> releaseListIds = releaseList.stream().map(Release::getId).collect(Collectors.toSet());
+                linkedReleaseIds = CollectionUtils.intersection(releaseListIds,linkedReleaseIds).stream().collect(Collectors.toSet());
             }
 
             if (CommonUtils.isNotEmpty(linkedReleaseIds)) {
