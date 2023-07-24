@@ -87,3 +87,14 @@ include::{snippets}/should_document_delete_license/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_delete_license/http-response.adoc[]
+
+[[delete-all-license-info]]
+==== Delete all licenses info
+
+A `DELETE` request will delete all licenses info.
+
+===== Example request
+include::{snippets}/should_document_delete_all_license_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_all_license_info/http-response.adoc[]
