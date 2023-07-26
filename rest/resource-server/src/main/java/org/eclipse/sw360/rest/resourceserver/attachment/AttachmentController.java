@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -34,9 +35,12 @@ import org.springframework.hateoas.*;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -90,6 +94,20 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
         } else {
             return new ResponseEntity(attachmentResources, HttpStatus.NO_CONTENT);
         }
+    }
+
+    @RequestMapping(value = ATTACHMENTS_URL , method = RequestMethod.POST, consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<List<AttachmentDTO>> createAttachment(@RequestParam ("files") List<MultipartFile> files) throws TException, IOException {
+        if (files == null || files.isEmpty()) {
+            throw new RuntimeException("You must select at least one file for uploading");
+        }
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<AttachmentDTO> attachmentDTOs = new ArrayList<>();
+        for (MultipartFile file: files) {
+            AttachmentDTO attachmentDTO = restControllerHelper.convertAttachmentToAttachmentDTO(attachmentService.addAttachment(file, sw360User),null);
+            attachmentDTOs.add(attachmentDTO);
+        }
+        return new ResponseEntity<>(attachmentDTOs, HttpStatus.OK);
     }
 
     private HalResource<Attachment> createHalAttachment(AttachmentInfo attachmentInfo, User sw360User) throws TException {
