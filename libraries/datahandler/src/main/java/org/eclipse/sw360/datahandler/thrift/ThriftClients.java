@@ -34,6 +34,7 @@ import org.eclipse.sw360.datahandler.thrift.health.HealthService;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
+import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
 import org.eclipse.sw360.datahandler.thrift.projectimport.ProjectImportService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
@@ -93,7 +94,7 @@ public class ThriftClients {
     private static final String SPDX_DOCUMENT_INFO_SERVICE_URL = "/spdxdocumentcreationinfo/thrift";
     private static final String SPDX_PACKAGE_INFO_SERVICE_URL = "/spdxpackageinfo/thrift";
     private static final String SPDX_FILE_INFO_SERVICE_URL = "/fileinformation/thrift";
-
+    private static final String PACKAGE_SERVICE_URL = "/packages/thrift";
 
     // A service which has to be scheduled by the scheduler should be registered here!
     // names of services that can be scheduled by the schedule service, i.e. that have an "update" method
@@ -245,4 +246,7 @@ public class ThriftClients {
         return new FileInformationService.Client(makeProtocol(BACKEND_URL, SPDX_FILE_INFO_SERVICE_URL));
     }
 
+    public PackageService.Iface makePackageClient() {
+        return new PackageService.Client(makeProtocol(BACKEND_URL, PACKAGE_SERVICE_URL));
+    }
 }

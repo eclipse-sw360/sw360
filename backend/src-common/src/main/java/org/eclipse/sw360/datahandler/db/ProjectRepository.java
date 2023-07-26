@@ -224,6 +224,15 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
                     "  }" +
                     "}";
 
+    private static final String BY_PACKAGE_ID_VIEW =
+            "function(doc) {" +
+                    "  if (doc.type == 'project' && doc.packageIds) {" +
+                    "    for(var i in doc.packageIds) {" +
+                    "      emit(doc.packageIds[i], doc._id);" +
+                    "    }" +
+                    "  }" +
+                    "}";
+
     private static final String BY_LINKING_PROJECT_ID_VIEW =
             "function(doc) {" +
                     "  if (doc.type == 'project') {" +
@@ -264,6 +273,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         views.put("bytype", createMapReduce(BY_TYPE_VIEW, null));
         views.put("byState", createMapReduce(BY_STATE_VIEW, null));
         views.put("byreleaseid", createMapReduce(BY_RELEASE_ID_VIEW, null));
+        views.put("byPackageId", createMapReduce(BY_PACKAGE_ID_VIEW, null));
         views.put("fullbyreleaseid", createMapReduce(FULL_BY_RELEASE_ID_VIEW, null));
         views.put("bylinkingprojectid", createMapReduce(BY_LINKING_PROJECT_ID_VIEW, null));
         views.put("fullmyprojects", createMapReduce(FULL_MY_PROJECTS_VIEW, null));
@@ -303,6 +313,20 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
     public int getCountByReleaseIds(Set<String> ids) {
         Set<String> searchIds = queryForIdsAsValue("byreleaseid", ids);
         return searchIds.size();
+    }
+
+    public Set<Project> searchByPackageId(String id, User user) {
+        return searchByPackageIds(Collections.singleton(id), user);
+    }
+
+    public Set<Project> searchByPackageIds(Set<String> ids, User user) {
+        Set<String> projectIds = queryForIdsAsValue("byPackageId", ids);
+        return getAccessibleProjectSummary(user, projectIds);
+    }
+
+    public int getCountByPackageId(String id) {
+        Set<String> projectIds = queryForIdsAsValue("byPackageId", Collections.singleton(id));
+        return projectIds.size();
     }
 
     public Set<Project> searchByReleaseId(String id) {

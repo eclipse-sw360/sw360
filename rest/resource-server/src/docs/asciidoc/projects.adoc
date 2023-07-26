@@ -539,6 +539,34 @@ include::{snippets}/should_document_update_project_release_relationship/curl-req
 ===== Example response
 include::{snippets}/should_document_update_project_release_relationship/http-response.adoc[]
 
+[[resources-project-link-packages]]
+==== Link packages to the project
+
+A `PATCH` request to add/link packages to the project. Please pass a set of package ids to be linked as request body.
+
+===== Request structure
+Pass a set of package ids to be linked as request body.
+
+===== Example request 1
+include::{snippets}/should_document_link_packages/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_link_packages/http-response.adoc[]
+
+[[resources-project-unlink-packages]]
+==== Unlink packages from the project
+
+A `PATCH` request to remove/unlink packages from a project. Please pass a set of package ids to be unlinked as request body.
+
+===== Request structure
+Pass a set of package ids to be unlinked as request body.
+
+===== Example request
+include::{snippets}/should_document_unlink_packages/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_unlink_packages/http-response.adoc[]
+
 [[resources-project-get-download-licenseinfo]]
 ==== Download License Info
 

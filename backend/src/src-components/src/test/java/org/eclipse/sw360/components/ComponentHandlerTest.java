@@ -45,7 +45,7 @@ public class ComponentHandlerTest {
         deleteAllDatabases();
         componentHandler = new ComponentHandler(DatabaseSettingsTest.getConfiguredClient(),
                 DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE,
-                DatabaseSettingsTest.COUCH_CHANGELOGS, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
+                DatabaseSettingsTest.COUCH_DB_CHANGELOGS, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
     }
 
     @After

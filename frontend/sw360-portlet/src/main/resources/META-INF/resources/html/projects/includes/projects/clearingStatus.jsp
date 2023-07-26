@@ -49,6 +49,11 @@
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
 </portlet:resourceURL>
 
+<portlet:resourceURL var="updateReleaseByLinkedPackagesUrl">
+    <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.UPDATE_RELEASE_BY_LINKED_PACKAGES%>"/>
+    <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
+</portlet:resourceURL>
+
 <portlet:resourceURL var="generateExcelReport">
     <portlet:param name="<%=PortalConstants.ACTION%>" value="<%=PortalConstants.EMAIL_EXPORTED_EXCEL%>"/>
     <portlet:param name="<%=PortalConstants.PROJECT_ID%>" value="${docid}"/>
@@ -68,6 +73,11 @@
     <div class="btn-group mx-1" role="group">
         <button type="button" class="btn btn-sm btn-outline-dark" id="addLicenseToRelease"><liferay-ui:message key="add.license.info.to.release" /></button>
     </div>
+    <core_rt:if test="${writeAccessUser and isPackagePortletEnabled and project.getPackageIdsSize() > 0}">
+        <div class="btn-group mx-1" role="group">
+            <button type="button" class="btn btn-sm btn-outline-dark" id="updateReleaseByLinkedPackages"><liferay-ui:message key="sync" /> <liferay-ui:message key="linked.releases" /></button>
+        </div>
+    </core_rt:if>
     <div class="float-right mx-2">
         <input type="search" id="search_table" class="form-control form-control-sm mb-1 float-right" placeholder="<liferay-ui:message key="search" />">
     </div>
@@ -968,6 +978,58 @@ AUI().use('liferay-portlet-url', function () {
                     }
                 );
         }
+
+        <core_rt:if test="${writeAccessUser and isPackagePortletEnabled and project.getPackageIdsSize() > 0}">
+            $("button#updateReleaseByLinkedPackages").on("click", function(event) {
+                updateReleaseByLinkedPackages();
+            });
+
+            function updateReleaseByLinkedPackages() {
+                function updateReleaseByLinkedPackagesInternal(callback) {
+                    jQuery.ajax({
+                        type: 'POST',
+                        url: '<%=updateReleaseByLinkedPackagesUrl%>',
+                        cache: false,
+                        success: function (response) {
+                            callback();
+                            $("div.modal button:contains('<liferay-ui:message key="cancel" />')").text('<liferay-ui:message key="close" />');
+                            $("div.modal button:contains('<liferay-ui:message key="update" />')").attr('disabled', true);
+                            $("div.modal .modal-body div#updateReleaseByLinkedPackages").remove();
+                            if (response && response.status && response.status.toLowerCase() === "success") {
+                                if (response.data && response.data.length) {
+                                    releaseIds = $('<ul/>');
+                                    response.data.split('||').forEach(function(relId, index) {
+                                        releaseIds.append('<li>' + relId + '</li>');
+                                    });
+                                    $dialog.success('<b>' + $(releaseIds).find('li').length + '</b> <liferay-ui:message key="releases.synced.successfully.please.reload.the.page.to.see.the.changes" />.');
+                                    return;
+                                }
+                                $dialog.success('<liferay-ui:message key="releases.are.already.in.sync.no.action.needed" />.');
+                                return;
+                            }
+                            $dialog.alert('<liferay-ui:message key="failed.to.sync.releases" />!');
+                        },
+                        error: function (e) {
+                            callback();
+                            $dialog.alert('<liferay-ui:message key="failed.to.releases.with.error" />: ' + e.statusText + ' (' + e.status + ').');
+                        }
+                    });
+                }
+                $dialog = dialog.confirm(
+                    'info',
+                    'question-circle',
+                    '<liferay-ui:message key="update.linked.release.based.on.linked.packages" />?',
+                    '<div id="updateReleaseByLinkedPackages"><liferay-ui:message key="do.you.really.want.to.add.the.release.associated.with.the.linked.packages.to.the.project" />?' +
+                        '<ul><li><liferay-ui:message key="an.update.will.link.all.the.releases.if.not.already.linked.from.currenlty.linked.packages.to.the.project" />.</li>' +
+                        '<li><liferay-ui:message key="this.feature.is.useful.to.keep.the.linked.releases.of.the.project.in.sync.with.the.linked.packages" />.</li></ul></div>',
+                    '<liferay-ui:message key="update" />',
+                    undefined,
+                    function(submit, callback) {
+                        updateReleaseByLinkedPackagesInternal(callback);
+                    }
+                );
+            }
+        </core_rt:if>
     });
 });
 </script>

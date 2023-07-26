@@ -39,7 +39,7 @@ public class DatabaseSettingsTest {
     public static final String COUCH_DB_CONFIG;
     public static final String COUCH_DB_USERS;
     public static final String COUCH_DB_VM;
-    public static final String COUCH_CHANGELOGS;
+    public static final String COUCH_DB_CHANGELOGS;
 
     private static final String COUCH_DB_USERNAME;
     private static final String COUCH_DB_PASSWORD;
@@ -56,7 +56,7 @@ public class DatabaseSettingsTest {
         COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360_test_config");
         COUCH_DB_USERS = props.getProperty("couchdb.usersdb", "sw360_test_users");
         COUCH_DB_VM = props.getProperty("couchdb.vulnerability_management", "sw360_test_vm");
-        COUCH_CHANGELOGS = props.getProperty("couchdb.change_logs", "sw360_test_changelogs");
+        COUCH_DB_CHANGELOGS = props.getProperty("couchdb.change_logs", "sw360_test_changelogs");
     }
 
     public static Supplier<HttpClient> getConfiguredHttpClient() throws MalformedURLException {

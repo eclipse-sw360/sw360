@@ -100,6 +100,14 @@ public class DatabaseConnectorCloudant {
         }
     }
 
+    public Response updateWithResponse(Object document) {
+        Response resp = null;
+        if (document != null) {
+            resp = database.update(document);
+        }
+        return resp;
+    }
+
     public DatabaseInstanceCloudant getInstance() {
         return instance;
     }

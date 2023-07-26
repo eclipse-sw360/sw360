@@ -51,7 +51,7 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
     });
     $('#releasesTable').delegate('.actions .delete', 'click', function(event) {
         var data = $(event.currentTarget).data();
-        deleteRelease(data.releaseId, data.releaseName, data.linkedReleases, data.attachments);
+        deleteRelease(data.releaseId, data.releaseName, data.linkedReleases, data.attachments, data.linkedPackages);
     });
 
     function createClearingTable() {
@@ -69,7 +69,8 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                 "5": {
                     name: '<sw360:ReleaseName release="${release}" />',
                     linkedReleases: ${release.releaseIdToRelationshipSize},
-                    attachments: ${release.attachmentsSize}
+                    attachments: ${release.attachmentsSize},
+                    linkedPackages: ${release.packageIdsSize}
                 }
             });
         </core_rt:forEach>
@@ -148,7 +149,8 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                     'data-release-id': row.DT_RowId,
                     'data-release-name': row[5].name,
                     'data-linked-releases': row[5].linkedReleases,
-                    'data-attachments': row[5].attachments
+                    'data-attachments': row[5].attachments,
+                    'data-linked-packages': row[5].linkedPackages,
                 });
 
             $fossologyAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
@@ -162,7 +164,7 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
         return table;
     }
 
-    function deleteRelease(id, name, linkedReleasesSize, attachmentsSize) {
+    function deleteRelease(id, name, linkedReleasesSize, attachmentsSize, linkedPackagesSize) {
         var $dialog;
 
         function deleteReleaseInternal(callback) {
@@ -194,12 +196,20 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                 }
             });
         }
-
-        $dialog = dialog.confirm(
+        if (linkedPackagesSize > 0) {
+            dialog.warn(
+                '<liferay-ui:message key="the.release.x.cannot.be.deleted.since.it.contains.y.packages.please.delete.or.unlink.the.linked.packages.first" />',
+                {
+                    name: name,
+                    packageCount: linkedPackagesSize
+                }
+            );
+        } else {
+            $dialog = dialog.confirm(
             'danger',
             'question-circle',
             '<liferay-ui:message key="delete.release" />?',
-                '<p><liferay-ui:message key="do.you.really.want.to.delete.the.release.x" /></p>?' +
+                '<p><liferay-ui:message key="do.you.really.want.to.delete.the.release.x" />?</p>' +
                 '<div data-hide="hasNoDependencies">' +
                     '<p>' +
                         '<liferay-ui:message key="this.release.x.contains" />' +
@@ -227,7 +237,8 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
             }, function(submit, callback) {
                 deleteReleaseInternal(callback);
             }
-        );
+            );
+        }
     }
 
     // helper functions

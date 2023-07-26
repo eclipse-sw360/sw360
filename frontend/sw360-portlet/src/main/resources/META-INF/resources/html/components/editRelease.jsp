@@ -9,6 +9,7 @@
   --%>
 <%@ page import="com.liferay.portal.kernel.portlet.PortletURLFactoryUtil" %>
 <%@ page import="javax.portlet.PortletRequest" %>
+<%@ page import="org.eclipse.sw360.datahandler.common.SW360Constants" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.attachments.Attachment" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.ComponentType" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.Release" %>
@@ -59,6 +60,7 @@
     <jsp:useBean id="isSpdxDocument" type="java.lang.Boolean" scope="request" />
     <jsp:useBean id="isUserAtLeastClearingAdmin" type="java.lang.Boolean" scope="request" />
     <core_rt:set var="mainlineStateEnabledForUserRole" value='<%=PortalConstants.MAINLINE_STATE_ENABLED_FOR_USER%>'/>
+    <core_rt:set var="isPackagePortletEnabled" value='<%=SW360Constants.IS_PACKAGE_PORTLET_ENABLED%>' scope="request"/>
 </c:catch>
 
 <%--These variables are used as a trick to allow referencing enum values in EL expressions below--%>
@@ -77,6 +79,9 @@
                         <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-SPDX'}">active</core_rt:if>" href="#tab-SPDX" data-toggle="list" role="tab"><liferay-ui:message key="spdx.document" /></a>
                     </core_rt:if>
                     <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active</core_rt:if>" href="#tab-linkedReleases" data-toggle="list" role="tab"><liferay-ui:message key="linked.releases" /></a>
+                    <core_rt:if test="${isPackagePortletEnabled}">
+                        <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-linkedPackages'}">active</core_rt:if>" href="#tab-linkedPackages" data-toggle="list" role="tab"><liferay-ui:message key="linked.packages" /></a>
+                    </core_rt:if>
                     <core_rt:if test="${not addMode}" >
                         <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active</core_rt:if>" href="#tab-ClearingDetails" data-toggle="list" role="tab"><liferay-ui:message key="clearing.details" /></a>
                         <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ECCDetails'}">active</core_rt:if>" href="#tab-ECCDetails" data-toggle="list" role="tab"><liferay-ui:message key="ecc.details" /></a>
@@ -102,7 +107,7 @@
                             <core_rt:if test="${not addMode}" >
                                 <div class="btn-group" role="group">
                                     <button id="deleteReleaseButton" type="button" class="btn btn-danger"
-                                        <core_rt:if test="${usingComponents.size()>0 or usingProjects.size()>0}"> disabled="disabled" title="<liferay-ui:message key="deletion.is.disabled.as.the.release.is.used" />" </core_rt:if>
+                                        <core_rt:if test="${usingComponents.size()>0 or usingProjects.size()>0 or release.getPackageIdsSize()>0}"> disabled="disabled" title="<liferay-ui:message key="deletion.is.disabled.as.the.release.is.used" />" </core_rt:if>
                                     ><liferay-ui:message key="delete.release" /></button>
                                 </div>
                             </core_rt:if>
@@ -139,8 +144,13 @@
                                     <%@include file="/html/components/includes/releases/editReleaseRepository.jspf" %>
                                 </div>
                                 <div id="tab-linkedReleases" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedReleases'}">active show</core_rt:if>" >
-                                    <%@include file="/html/utils/includes/editLinkedReleases.jspf" %>
+                                    <jsp:include page="/html/utils/includes/editLinkedReleases.jsp" />
                                 </div>
+                                <core_rt:if test="${isPackagePortletEnabled}">
+                                    <div id="tab-linkedPackages" class="tab-pane <core_rt:if test="${selectedTab == 'tab-linkedPackages'}">active show</core_rt:if>" >
+                                        <jsp:include page="/html/utils/includes/editLinkedPackages.jsp" />
+                                    </div>
+                                </core_rt:if>
                                 <div id="tab-ClearingDetails" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ClearingDetails'}">active show</core_rt:if>" >
                                     <%@include file="/html/components/includes/releases/editReleaseClearingInformation.jspf" %>
                                 </div>
@@ -217,6 +227,9 @@
     <%@include file="/html/components/includes/vendors/searchVendor.jspf" %>
     <core_rt:set var="enableSearchForReleasesFromLinkedProjects" value="${false}" scope="request"/>
     <jsp:include page="/html/utils/includes/searchReleases.jsp" />
+    <core_rt:if test="${isPackagePortletEnabled}">
+        <jsp:include page="/html/utils/includes/searchPackages.jsp" />
+    </core_rt:if>
 </core_rt:if>
 
 <script>

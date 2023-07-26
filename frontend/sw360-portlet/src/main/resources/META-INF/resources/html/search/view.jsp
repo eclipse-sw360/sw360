@@ -58,6 +58,10 @@
                                 <label for="keyword-search-releases" class="form-check-label"><sw360:icon title="releases" icon="release" className="type-icon type-icon-release"/> <liferay-ui:message key="releases" /></label>
                             </div>
                             <div class="form-check">
+                                <input id="keyword-search-packages" type="checkbox" class="form-check-input" value="<%=SW360Constants.TYPE_PACKAGE%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_PACKAGE)%>">   checked="" </core_rt:if> >
+                                <label for="keyword-search-packages" class="form-check-label"><sw360:icon title="packages" icon="pkg" className="type-icon type-icon-package"/> <liferay-ui:message key="packages" /></label>
+                            </div>
+                            <div class="form-check">
                                 <input id="keyword-search-obligations" type="checkbox" class="form-check-input" value="<%=SW360Constants.TYPE_OBLIGATION%>" name="<portlet:namespace/><%=PortalConstants.TYPE_MASK%>"   <core_rt:if test="<%=typeMask.contains(SW360Constants.TYPE_OBLIGATIONS)%>">   checked="" </core_rt:if> >
                                 <label for="keyword-search-obligations" class="form-check-label"><sw360:icon title="obligations" icon="oblig" className="type-icon type-icon-oblig"/> <liferay-ui:message key="obligations" /></label>
                             </div>
@@ -107,7 +111,7 @@
                           <liferay-ui:message key="note.if.unchecked.entire.document.then.search.will.be.restricted.to" />
                           <ul class="mb-0">
                              <li>
-                                <liferay-ui:message key="name.for.project.component.and.release" />
+                                <liferay-ui:message key="name.for.project.component.release.and.package" />
                              </li>
                              <li>
                                 <liferay-ui:message key="fullname.for.license.user.and.vendor" />
@@ -153,6 +157,8 @@
                     return '<svg class="lexicon-icon type-icon type-icon-license"><title><liferay-ui:message key="license" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#license"/></svg>';
                 } else if (data === '<%=SW360Constants.TYPE_RELEASE%>') {
                     return '<svg class="lexicon-icon type-icon type-icon-release"><title><liferay-ui:message key="release" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#release"/></svg>';
+                } else if (data === '<%=SW360Constants.TYPE_PACKAGE%>') {
+                    return '<svg class="lexicon-icon type-icon type-icon-package"><title><liferay-ui:message key="package" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#pkg"/></svg>';
                 } else if (data === '<%=SW360Constants.TYPE_OBLIGATION%>') {
                     return '<svg class="lexicon-icon type-icon type-icon-oblig"><title><liferay-ui:message key="obligation" /></title><use href="<%=request.getContextPath()%>/images/icons.svg#oblig"/></svg>';
                 } else if (data === '<%=SW360Constants.TYPE_USER%>') {
@@ -180,6 +186,7 @@
                     <core_rt:when test="${doc.type.equals('project')
                                     || doc.type.equals('component')
                                     || doc.type.equals('release')
+                                    || doc.type.equals('package')
                                     || doc.type.equals('license')}">
                         "1":  "<sw360:DisplaySearchResultLink searchResult="${doc}" />"
                     </core_rt:when>

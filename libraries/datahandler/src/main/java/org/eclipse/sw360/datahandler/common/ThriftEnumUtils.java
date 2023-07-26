@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
+import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.UserAccess;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -359,6 +360,44 @@ public class ThriftEnumUtils {
             .put(UserAccess.READ_WRITE, "Read and Write")
             .build();
 
+    private static final ImmutableMap<PackageManager, String> MAP_PACKAGE_MANAGER_STRING = ImmutableMap.<PackageManager, String>builder()
+            .put(PackageManager.ALPINE, "Alpine")
+            .put(PackageManager.ALPM, "ALPM")
+            .put(PackageManager.APK, "APK")
+            .put(PackageManager.BITBUCKET, "Bitbucket")
+            .put(PackageManager.CARGO, "Cargo")
+            .put(PackageManager.COCOAPODS, "Cocoapods")
+            .put(PackageManager.COMPOSER, "Composer")
+            .put(PackageManager.CONAN, "Conan")
+            .put(PackageManager.CONDA, "Conda")
+            .put(PackageManager.CPAN, "Cpan")
+            .put(PackageManager.CRAN, "Cran")
+            .put(PackageManager.DEB, "Deb")
+            .put(PackageManager.DOCKER, "Docker")
+            .put(PackageManager.DRUPAL, "Drupal")
+            .put(PackageManager.GEM, "Gem")
+            .put(PackageManager.GENERIC, "Generic")
+            .put(PackageManager.GITHUB, "GitHub")
+            .put(PackageManager.GITLAB, "GitLab")
+            .put(PackageManager.GOLANG, "GoLang")
+            .put(PackageManager.GRADLE, "Gradle")
+            .put(PackageManager.HACKAGE, "Hackage")
+            .put(PackageManager.HEX, "Hex")
+            .put(PackageManager.HUGGINGFACE, "HuggingFace")
+            .put(PackageManager.MAVEN, "Maven")
+            .put(PackageManager.MLFLOW, "MLflow")
+            .put(PackageManager.NPM, "Npm")
+            .put(PackageManager.NUGET, "NuGet")
+            .put(PackageManager.OCI, "Oci")
+            .put(PackageManager.PUB, "Pub")
+            .put(PackageManager.PYPI, "PyPi")
+            .put(PackageManager.RPM, "Rpm")
+            .put(PackageManager.SWID, "Swid")
+            .put(PackageManager.SWIFT, "swift")
+            .put(PackageManager.YARN, "Yarn")
+            .put(PackageManager.YOCTO, "Yocto")
+            .build();
+
     private static final ImmutableMap<CycloneDxComponentType, String> MAP_CYCLONE_DX_COMPONENT_TYPE_STRING = ImmutableMap.<CycloneDxComponentType, String>builder()
             .put(CycloneDxComponentType.APPLICATION, "Application")
             .put(CycloneDxComponentType.CONTAINER, "Container")
@@ -406,6 +445,7 @@ public class ThriftEnumUtils {
             .put(ObligationType.class, MAP_OBLIGATION_TYPE_STRING)
             .put(ClearingRequestPriority.class, MAP_CLEARING_REQUEST_PRIORITY_STRING)
             .put(UserAccess.class, MAP_USER_ACCESS_STRING)
+            .put(PackageManager.class, MAP_PACKAGE_MANAGER_STRING)
             .put(CycloneDxComponentType.class, MAP_CYCLONE_DX_COMPONENT_TYPE_STRING)
             .build();
 

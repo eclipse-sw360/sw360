@@ -13,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
@@ -20,6 +21,8 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
@@ -28,6 +31,11 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.portal.common.PortalConstants;
 import org.eclipse.sw360.portal.users.UserCacheHolder;
 
+import com.google.common.collect.Lists;
+import com.liferay.portal.kernel.json.JSONArray;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
+
 import javax.portlet.PortletException;
 import javax.portlet.PortletRequest;
 import javax.portlet.ResourceRequest;
@@ -35,7 +43,6 @@ import javax.portlet.ResourceResponse;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +53,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.liferay.portal.kernel.json.JSONFactoryUtil.createJSONArray;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
@@ -112,6 +119,49 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
                 rl -> SW360Utils.getVersionedName(nullToEmptyString(rl.getName()), rl.getVersion()), String.CASE_INSENSITIVE_ORDER)
                 ).collect(Collectors.toList());
         request.setAttribute(RELEASE_LIST, linkedReleaseRelations);
+    }
+
+    protected void putDirectlyLinkedPackagesInRequest(PortletRequest request, Set<String> packageIds) {
+        List<Package> linkedPackages = Lists.newArrayList();
+        if (CommonUtils.isNotEmpty(packageIds)) {
+            try {
+                PackageService.Iface client = thriftClients.makePackageClient();
+                linkedPackages.addAll(client.getPackageByIds(packageIds));
+                linkedPackages = linkedPackages.stream()
+                        .sorted(Comparator.comparing(pkg -> SW360Utils.getVersionedName(nullToEmptyString(pkg.getName()), pkg.getVersion()),
+                                String.CASE_INSENSITIVE_ORDER))
+                        .collect(Collectors.toList());
+            } catch (TException e) {
+                log.error("Could not get linked packages", e);
+            }
+        }
+        request.setAttribute(PortalConstants.PACKAGE_LIST, linkedPackages);
+    }
+
+    protected JSONArray getPackageData(List<Package> packages, User user) {
+        JSONArray packageData = createJSONArray();
+        for (Package pkg : packages) {
+            JSONObject jsonObject = JSONFactoryUtil.createJSONObject();
+            jsonObject.put("id", pkg.getId());
+            jsonObject.put("DT_RowId", pkg.getId());
+            jsonObject.put("name", SW360Utils.printName(pkg));
+            final String relId = pkg.getReleaseId();
+            jsonObject.put("relId", CommonUtils.nullToEmptyString(relId));
+            if (Objects.nonNull(pkg.getRelease())) {
+                Release rel = pkg.getRelease();
+                jsonObject.put("relName", SW360Utils.printName(rel));
+                jsonObject.put("relCS", ThriftEnumUtils.enumToString(rel.getClearingState()));
+            }
+            JSONArray licenseArray = createJSONArray();
+            if (pkg.isSetLicenseIds()) {
+                pkg.getLicenseIds().stream().sorted().forEach(licenseArray::put);
+            }
+            jsonObject.put("lics", licenseArray);
+            jsonObject.put("pkgMgr", ThriftEnumUtils.enumToString(pkg.getPackageManager()));
+            jsonObject.put("writeAccess", SW360Utils.isWriteAccessUser(pkg.getCreatedBy(), user, SW360Constants.PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE));
+            packageData.put(jsonObject);
+        }
+        return packageData;
     }
 
     protected void putDirectlyLinkedReleaseRelationsWithAccessibilityInRequest(PortletRequest request, Release release, User user) {

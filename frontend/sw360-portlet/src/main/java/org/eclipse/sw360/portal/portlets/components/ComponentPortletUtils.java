@@ -87,6 +87,9 @@ public abstract class ComponentPortletUtils {
                 case ADDITIONAL_DATA:
                     release.setAdditionalData(PortletUtils.getAdditionalDataMapFromRequest(request));
                     break;
+                case PACKAGE_IDS:
+                    updatePackageIds(request, release);
+                    break;
                 default:
                     setFieldValue(request, release, field);
             }
@@ -100,6 +103,16 @@ public abstract class ComponentPortletUtils {
         }
 
         return clearingInformation;
+    }
+
+    private static void updatePackageIds(PortletRequest request, Release release) {
+        release.unsetPackageIds();
+        String[] ids = request.getParameterValues(PortalConstants.PACKAGE_IDS);
+        if (ids != null && ids.length > 0) {
+            for (int k = 0; k < ids.length; ++k) {
+                release.addToPackageIds(ids[k]);
+            }
+        }
     }
 
     private static EccInformation getEccInformationFromRequest(PortletRequest request) {

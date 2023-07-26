@@ -803,6 +803,17 @@
         </attribute>
     </tag>
     <tag>
+        <name>PackageName</name>
+        <tag-class>org.eclipse.sw360.portal.tags.PackageName</tag-class>
+        <body-content>empty</body-content>
+        <attribute>
+            <name>pkg</name>
+            <required>true</required>
+            <type>org.eclipse.sw360.datahandler.thrift.packages.Package</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
         <name>DisplayReleaseLink</name>
         <tag-class>org.eclipse.sw360.portal.tags.links.DisplayLinkToRelease</tag-class>
         <body-content>JSP</body-content>
@@ -1039,6 +1050,12 @@
         </attribute>
         <attribute>
             <name>commaJoiner</name>
+            <required>false</required>
+            <type>java.lang.Boolean</type>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>displayLink</name>
             <required>false</required>
             <type>java.lang.Boolean</type>
             <rtexprvalue>true</rtexprvalue>
@@ -1425,6 +1442,12 @@
         <name>printReleaseName</name>
         <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
         <function-signature>java.lang.String printName(org.eclipse.sw360.datahandler.thrift.components.Release)</function-signature>
+    </function>
+
+    <function>
+        <name>printPackageName</name>
+        <function-class>org.eclipse.sw360.datahandler.common.SW360Utils</function-class>
+        <function-signature>java.lang.String printName(org.eclipse.sw360.datahandler.thrift.packages.Package)</function-signature>
     </function>
 
     <function>

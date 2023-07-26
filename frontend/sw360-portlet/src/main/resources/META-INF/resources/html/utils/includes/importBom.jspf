@@ -68,11 +68,28 @@
                             </li>
                         </core_rt:otherwise>
                         </core_rt:choose>
+                        <core_rt:choose>
+                        <core_rt:when test="${isPackagePortletEnabled}">
+                            <li><span class="font-weight-bold text-monospace text-danger"><liferay-ui:message key="components"/> & <liferay-ui:message key="releases"/></span>
+                                    <liferay-ui:message key="will.not.be.created.for.those.packages.which.does.not.contain"/> <span class="text-info"><liferay-ui:message key="vcs.version.control.system"/></span>
+                                    <liferay-ui:message key="url"/>.
+                            </li>
+                            <li>
+                                <span class="font-weight-bold text-monospace text-danger"><liferay-ui:message key="packages"/></span>
+                        </core_rt:when>
+                        <core_rt:otherwise>
                             <li>
                                 <span class="font-weight-bold text-monospace text-danger"><liferay-ui:message key="components"/> & <liferay-ui:message key="releases"/></span>
+                        </core_rt:otherwise>
+                        </core_rt:choose>
                                 <liferay-ui:message key="will.not.be.created.if.it.does.not.contain"/> <span class="text-info"><liferay-ui:message key="name"/></span> <liferay-ui:message key="or2"/>
                                 <span class="text-info"><liferay-ui:message key="version"/></span>
-                                <liferay-ui:message key="in.sbom.file"/>.</li>
+                                <core_rt:if test="${isPackagePortletEnabled}">
+                                    <liferay-ui:message key="or2"/>
+                                    <span class="text-info"><liferay-ui:message key="purl.package.url"/></span>
+                                </core_rt:if>
+                                <liferay-ui:message key="in.sbom.file"/>.
+                            </li>
                         </ul>
                     </div>
                     <div class="lfr-dynamic-uploader">
@@ -317,8 +334,24 @@
                                             countInfo.append('<ul><li><liferay-ui:message key="releases.created" />: <b>' + data.relCreationCount + '</b></li></ul>');
                                             countInfo.append('<ul><li><liferay-ui:message key="releases.reused" />: <b>' + data.relReuseCount + '</b></li></ul>');
                                         }
+                                        if (data.pkgCreationCount || data.pkgReuseCount) {
+                                            let total = Number(data.pkgCreationCount) + Number(data.pkgReuseCount);
+                                            countInfo.append('<li><liferay-ui:message key="total.packages" />: <b>' + total + '</b></li>');
+                                            countInfo.append('<ul><li><liferay-ui:message key="packages.created" />: <b>' + data.pkgCreationCount + '</b></li></ul>');
+                                            countInfo.append('<ul><li><liferay-ui:message key="packages.reused" />: <b>' + data.pkgReuseCount + '</b></li></ul>');
+                                        }
                                         statusDiv.append("<div class='alert alert-success'> " + countInfo[0].outerHTML + "</div>");
                                     }
+                                }
+                                if (data.invalidPkg && data.invalidPkg.length) {
+                                    invalidPkgsList = $('<ul/>');
+                                    data.invalidPkg.split('||').forEach(function(pkg, index) {
+                                        invalidPkgsList.append('<li>' + pkg + '</li>');
+                                    });
+                                    var cpBtn = $(copyBtn).clone();
+                                    $(cpBtn).attr('id', 'copyToClipboard_ip');
+                                    statusDiv.append("<div class='alert alert-danger'><liferay-ui:message key="list.of.invalid.packages.without.purl.or.name.or.version" />: <b>" + $(invalidPkgsList).find('li').length +
+                                            "</b> <small>(<liferay-ui:message key="not.imported" />)</small> " + cpBtn[0].outerHTML + " " + invalidPkgsList[0].outerHTML + "</div>")
                                 }
                                 if (data.invalidRel && data.invalidRel.length) {
                                     invalidRelList = $('<ul/>');
@@ -329,6 +362,16 @@
                                     $(cpBtn).attr('id', 'copyToClipboard_ir');
                                     statusDiv.append("<div class='alert alert-danger'><liferay-ui:message key="list.of.components.without.version.information" />: <b>" + $(invalidRelList).find('li').length +
                                             "</b> <small>(<liferay-ui:message key="not.imported" />)</small> " + cpBtn[0].outerHTML + " " +invalidRelList[0].outerHTML + "</div>")
+                                }
+                                if (data.invalidComp && data.invalidComp.length) {
+                                    invalidCompList = $('<ul/>');
+                                    data.invalidComp.split('||').forEach(function(comp, index) {
+                                        invalidCompList.append('<li>' + comp + '</li>');
+                                    });
+                                    var cpBtn = $(copyBtn).clone();
+                                    $(cpBtn).attr('id', 'copyToClipboard_ic');
+                                    statusDiv.append("<div class='alert alert-info'><liferay-ui:message key="list.of.packages.without.vcs.information" />: <b>" + $(invalidCompList).find('li').length +
+                                            "</b> <small>(<liferay-ui:message key="not.linked.to.any.release" />)</small> " + cpBtn[0].outerHTML + " " + invalidCompList[0].outerHTML + "</div>")
                                 }
                                 if (data.dupComp && data.dupComp.length) {
                                     compList = $('<ul/>');
@@ -350,6 +393,16 @@
                                     statusDiv.append("<div class='alert alert-warning'><b>" + $(relList).find('li').length +
                                             "</b> <liferay-ui:message key="releases.were.not.imported.because.multiple.duplicate.releases.are.found.with.exact.same.name.and.version" />: " + copyBtn + " " + relList[0].outerHTML + "</div>")
 
+                                }
+                                if (data.dupPkg && data.dupPkg.length) {
+                                    pkgList = $('<ul/>');
+                                    data.dupPkg.split('||').forEach(function(pkg, index) {
+                                        pkgList.append('<li>' + pkg + '</li>');
+                                    });
+                                    var cpBtn = $(copyBtn).clone();
+                                    $(cpBtn).attr('id', 'copyToClipboard_dp');
+                                    statusDiv.append("<div class='alert alert-warning'><b>" + $(pkgList).find('li').length +
+                                            "</b> <liferay-ui:message key="packages.were.not.imported.because.multiple.duplicate.packages.are.found.with.exact.same.name.and.version" />: " + copyBtn + " " + pkgList[0].outerHTML + "</div>")
                                 }
                             }
                             uploadButton.hide();

@@ -14,6 +14,7 @@
 <liferay-theme:defineObjects/>
 
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.packages.Package" %>
 <jsp:useBean id="project" class="org.eclipse.sw360.datahandler.thrift.projects.Project" scope="request" />
 
 <portlet:resourceURL var="viewReleaseURL">
@@ -33,7 +34,7 @@
                                 <input type="text" name="searchrelease" id="searchrelease" placeholder="<liferay-ui:message key="enter.search.text" />" class="form-control" autofocus/>
                             </div>
                             <div class="col">
-                                <button type="button" class="btn btn-secondary" id="searchbuttonrelease"><liferay-ui:message key="search" /></button>
+                                <button type="button" class="btn btn-secondary <core_rt:if test="${isSingleRelease}">single</core_rt:if>" id="searchbuttonrelease"><liferay-ui:message key="search" /></button>
 
                                 <core_rt:if test="${enableSearchForReleasesFromLinkedProjects}">
                                     <button type="button" class="btn btn-secondary" id="linkedReleasesButton"><liferay-ui:message key="releases.of.linked.projects" /></button>
@@ -91,9 +92,11 @@
 
         var homeUrl = themeDisplay.getURLHome().replace(/\/web\//, '/group/');
 
+        $('#pkg_release').on('click', showReleaseDialog);
         $('#addLinkedReleasesToReleaseButton').on('click', showReleaseDialog);
         $('#searchbuttonrelease').on('click', function(){
-            var searchRelease = $('#searchrelease').val();
+            var searchRelease = $('#searchrelease').val(),
+                linkSingleRelease = $(this).hasClass('single');
             if ($('#exactMatchRelease').is(':checked') && !(searchRelease.startsWith("\"") && searchRelease.endsWith("\""))) {
                searchRelease = '"' + searchRelease + '"';
             }
@@ -103,7 +106,7 @@
                 }
                 $('#releaseSearchResultsTable tbody').html(data);
                 addLinkToReleaseNameAndVersion();
-                makeReleaseDataTable();
+                makeReleaseDataTable(linkSingleRelease);
             });
         });
         $('#linkedReleasesButton').on('click', function() {
@@ -120,23 +123,32 @@
             $dialog.enablePrimaryButtons($('#releaseSearchResultsTable input:checked').length > 0);
         });
 
-        function showReleaseDialog() {
+        function showReleaseDialog(event) {
             if($dataTable) {
                 $dataTable.destroy();
                 $dataTable = undefined;
             }
-
+            let inputId = event.target.id;
             $dialog = dialog.open('#searchReleasesDialog', {
             }, function(submit, callback) {
                 var releaseIds = [];
 
-                $('#releaseSearchResultsTable').find(':checked').each(function () {
-                    releaseIds.push(this.value);
-                });
-
-                releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', releaseIds, function(data) {
-                    $('#LinkedReleasesInfo tbody').append(data);
-                });
+                if (inputId === 'pkg_release') {
+                    $('#releaseSearchResultsTable').find(':checked').each(function () {
+                        let relName = $(this).closest('tr').find('td:eq(2)').text(),
+                            relVersion = $(this).closest('tr').find('td:eq(3)').text(),
+                            relId = this.value;
+                        $('#<%=Package._Fields.RELEASE_ID.toString()%>').val(relId);
+                        $('#pkg_release').val(relName + " (" + relVersion + ")");
+                    });
+                } else {
+                    $('#releaseSearchResultsTable').find(':checked').each(function () {
+                        releaseIds.push(this.value);
+                    });
+                    releaseContentFromAjax('<%=PortalConstants.LIST_NEW_LINKED_RELEASES%>', releaseIds, function(data) {
+                        $('#LinkedReleasesInfo tbody').append(data);
+                    });
+                }
 
                 callback(true);
             }, function() {
@@ -147,7 +159,7 @@
             });
         }
 
-        function makeReleaseDataTable() {
+        function makeReleaseDataTable(linkSingleRelease) {
             $dataTable = datatables.create('#releaseSearchResultsTable', {
                 destroy: true,
                 paging: false,
@@ -160,7 +172,7 @@
                 order: [
                     [2, 'asc']
                 ],
-                select: 'multi+shift'
+                select: linkSingleRelease ? 'single' : 'multi+shift'
             }, undefined, [0]);
             datatables.enableCheckboxForSelection($dataTable, 0);
         }

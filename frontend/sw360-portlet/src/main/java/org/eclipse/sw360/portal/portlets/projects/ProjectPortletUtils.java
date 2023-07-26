@@ -121,6 +121,9 @@ public class ProjectPortletUtils {
                 case EXTERNAL_URLS:
                     project.setExternalUrls(PortletUtils.getExternalUrlMapFromRequest(request));
                     break;
+                case PACKAGE_IDS:
+                    updatePackageIds(request, project);
+                    break;
                 default:
                     setFieldValue(request, project, field);
             }
@@ -129,6 +132,16 @@ public class ProjectPortletUtils {
 
     public static String getCommentsByTodoId(PortletRequest request, String id) {
         return request.getParameter("projectobligation:" + id);
+    }
+
+    private static void updatePackageIds(PortletRequest request, Project project) {
+        project.unsetPackageIds();
+        String[] ids = request.getParameterValues(PACKAGE_IDS);
+        if (ids != null && ids.length > 0) {
+            for (int k = 0; k < ids.length; ++k) {
+                project.addToPackageIds(ids[k]);
+            }
+        }
     }
 
     private static void updateLinkedReleasesFromRequest(PortletRequest request, Map<String, ProjectReleaseRelationship> releaseUsage) {

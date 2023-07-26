@@ -162,7 +162,7 @@ public abstract class AbstractDatabaseSearchHandler {
             typeField.add("title");
             query = "( " + Joiner.on(" OR ").join(FluentIterable.from(typeField).transform(addField)) + " ) ";
         } else {
-            if (typeMask.contains("project") || typeMask.contains("component") || typeMask.contains("release")) {
+            if (typeMask.contains("project") || typeMask.contains("component") || typeMask.contains("release") || typeMask.contains("package")) {
                 typeField.add("name");
             }
             if (typeMask.contains("license") || typeMask.contains("user") || typeMask.contains("vendor")) {

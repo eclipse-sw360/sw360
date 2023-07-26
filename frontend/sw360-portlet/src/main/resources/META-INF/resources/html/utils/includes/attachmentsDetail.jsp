@@ -373,7 +373,23 @@
                                         countInfo.append('<ul><li><liferay-ui:message key="releases.created" />: <b>' + data.relCreationCount + '</b></li></ul>');
                                         countInfo.append('<ul><li><liferay-ui:message key="releases.reused" />: <b>' + data.relReuseCount + '</b></li></ul>');
                                     }
+                                    if (data.pkgCreationCount || data.pkgReuseCount) {
+                                        let total = Number(data.pkgCreationCount) + Number(data.pkgReuseCount);
+                                        countInfo.append('<li><liferay-ui:message key="total.packages" />: <b>' + total + '</b></li>');
+                                        countInfo.append('<ul><li><liferay-ui:message key="packages.created" />: <b>' + data.pkgCreationCount + '</b></li></ul>');
+                                        countInfo.append('<ul><li><liferay-ui:message key="packages.reused" />: <b>' + data.pkgReuseCount + '</b></li></ul>');
+                                    }
                                     statusDiv.append("<div class='alert alert-success'> " + countInfo[0].outerHTML + "</div>");
+                                }
+                                if (data.invalidPkg && data.invalidPkg.length) {
+                                    invalidPkgsList = $('<ul/>');
+                                    data.invalidPkg.split('||').forEach(function(pkg, index) {
+                                        invalidPkgsList.append('<li>' + pkg + '</li>');
+                                    });
+                                    var cpBtn = $(copyBtn).clone();
+                                    $(cpBtn).attr('id', 'copyToClipboard_ips');
+                                    statusDiv.append("<div class='alert alert-danger'><liferay-ui:message key="list.of.invalid.packages.without.purl.or.name.or.version" />: <b>" + $(invalidPkgsList).find('li').length +
+                                        "</b> <small>(<liferay-ui:message key="not.imported" />)</small> " + cpBtn[0].outerHTML + " " + invalidPkgsList[0].outerHTML + "</div>")
                                 }
                                 if (data.invalidRel && data.invalidRel.length) {
                                     invalidRelList = $('<ul/>');
@@ -384,6 +400,16 @@
                                     $(cpBtn).attr('id', 'copyToClipboard_irs');
                                     statusDiv.append("<div class='alert alert-danger'><liferay-ui:message key="list.of.components.without.version.information" />: <b>" + $(invalidRelList).find('li').length +
                                         "</b> <small>(<liferay-ui:message key="not.imported" />)</small> " + cpBtn[0].outerHTML + " " + invalidRelList[0].outerHTML + "</div>")
+                                }
+                                if (data.invalidComp && data.invalidComp.length) {
+                                    invalidCompList = $('<ul/>');
+                                    data.invalidComp.split('||').forEach(function(comp, index) {
+                                        invalidCompList.append('<li>' + comp + '</li>');
+                                    });
+                                    var cpBtn = $(copyBtn).clone();
+                                    $(cpBtn).attr('id', 'copyToClipboard_ics');
+                                    statusDiv.append("<div class='alert alert-info'><liferay-ui:message key="list.of.packages.without.vcs.information" />: <b>" + $(invalidCompList).find('li').length +
+                                        "</b> <small>(<liferay-ui:message key="not.linked.to.any.release" />)</small> " + cpBtn[0].outerHTML + " " + invalidCompList[0].outerHTML + "</div>")
                                 }
                                 if (data.dupComp && data.dupComp.length) {
                                     compList = $('<ul/>');
@@ -404,6 +430,16 @@
                                     $(cpBtn).attr('id', 'copyToClipboard_drs');
                                     statusDiv.append("<div class='alert alert-warning'><b>" + $(relList).find('li').length +
                                         "</b> <liferay-ui:message key="releases.were.not.imported.because.multiple.duplicate.releases.are.found.with.exact.same.name.and.version" />: " + copyBtn + " " + relList[0].outerHTML + "</div>")
+                                }
+                                if (data.dupPkg && data.dupPkg.length) {
+                                    pkgList = $('<ul/>');
+                                    data.dupPkg.split('||').forEach(function(pkg, index) {
+                                        pkgList.append('<li>' + pkg + '</li>');
+                                    });
+                                    var cpBtn = $(copyBtn).clone();
+                                    $(cpBtn).attr('id', 'copyToClipboard_dps');
+                                    statusDiv.append("<div class='alert alert-warning'><b>" + $(pkgList).find('li').length +
+                                        "</b> <liferay-ui:message key="packages.were.not.imported.because.multiple.duplicate.packages.are.found.with.exact.same.name.and.version" />: " + copyBtn + " " + pkgList[0].outerHTML + "</div>")
                                 }
                             }
                             spinnerDiv.hide();
