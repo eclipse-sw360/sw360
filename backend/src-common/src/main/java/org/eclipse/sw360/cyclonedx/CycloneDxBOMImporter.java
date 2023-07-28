@@ -861,6 +861,9 @@ public class CycloneDxBOMImporter {
         } else {
             release.setMainLicenseIds(licenses);
         }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(componentFromBom.getCpe())) {
+            release.setCpeid(componentFromBom.getCpe());
+        }
         if (CommonUtils.isNotNullEmptyOrWhitespace(componentFromBom.getPurl())) {
             String purl = componentFromBom.getPurl();
             try {

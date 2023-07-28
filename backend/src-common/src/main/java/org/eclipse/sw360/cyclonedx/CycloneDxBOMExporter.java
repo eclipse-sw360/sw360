@@ -208,6 +208,10 @@ public class CycloneDxBOMExporter {
                 comp.setPurl(String.join(", ", purlSet));
             }
 
+            if (CommonUtils.isNotNullEmptyOrWhitespace(release.getCpeid())) {
+                comp.setCpe(release.getCpeid());
+            }
+
             // set CycloneDx component type
             if (sw360Comp.isSetCdxComponentType()) {
                 comp.setType(getCdxComponentType(sw360Comp.getCdxComponentType()));
