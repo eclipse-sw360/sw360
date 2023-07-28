@@ -410,6 +410,12 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.licenseServiceMock.getLicenseById("GPL-2.0-or-later")).willReturn(
                 new License("GNU General Public License 2.0").setText("GNU General Public License 2.0 Text")
                         .setShortname("GPL-2.0-or-later").setId(UUID.randomUUID().toString()));
+        given(this.licenseServiceMock.getLicenseById("ML1")).willReturn(
+                new License("Main license 1 name").setText("Main license 1 Text")
+                        .setShortname("ML1").setId("ML1"));
+        given(this.licenseServiceMock.getLicenseById("ML2")).willReturn(
+                new License("Main license 2 name").setText("Main license 2 Text")
+                        .setShortname("ML2").setId("ML2"));
         ExternalToolProcess fossologyProcess = new ExternalToolProcess();
         fossologyProcess.setAttachmentId("5345ab789");
         fossologyProcess.setAttachmentHash("535434657567");
@@ -1119,4 +1125,50 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"))));
     }
 
+    @Test
+    public void should_document_write_spdx_licenses_info_into_release() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
+        Map<String, List<String>> spdxLicenses= new HashMap<>();
+        spdxLicenses.put("mainLicenseIds", List.of("ML1", "ML2"));
+        spdxLicenses.put("otherLicenseIds", List.of("OL1", "OL2"));
+
+        this.mockMvc.perform(post("/api/releases/" + release.getId() + "/spdxLicenses")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(spdxLicenses))
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("mainLicenseIds").description("The main license ids need to write into release"),
+                                fieldWithPath("otherLicenseIds").description("The other license ids need to write into release")
+                        ),
+                        responseFields(
+                                fieldWithPath("name").description("The name of the release, optional"),
+                                fieldWithPath("version").description("The version of the release"),
+                                fieldWithPath("createdBy").description("Email of the release creator"),
+                                fieldWithPath("cpeId").description("CpeId of the release"),
+                                fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
+                                fieldWithPath("cpeId").description("The CPE id"),
+                                fieldWithPath("releaseDate").description("The date of this release"),
+                                fieldWithPath("componentType").description("The componentType of the release, possible values are " + Arrays.asList(ComponentType.values())),
+                                fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
+                                fieldWithPath("mainlineState").description("the mainline state of the release, possible values are: " + Arrays.asList(MainlineState.values())),
+                                fieldWithPath("sourceCodeDownloadurl").description("the source code download url of the release"),
+                                subsectionWithPath("eccInformation").description("The eccInformation of this release"),
+                                fieldWithPath("binaryDownloadurl").description("the binary download url of the release"),
+                                fieldWithPath("otherLicenseIds").description("An array of all other licenses associated with the release"),
+                                subsectionWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
+                                subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
+                                subsectionWithPath("clearingInformation").description("Clearing information of release"),
+                                fieldWithPath("languages").description("The language of the component"),
+                                subsectionWithPath("_embedded.sw360:licenses").description("An array of all main licenses with their fullName and link to their <<resources-license-get,License resource>>"),
+                                subsectionWithPath("_embedded.sw360:packages").description("An array of all the linked packages and link to their <<resources-package-get,Package resource>>"),
+                                fieldWithPath("operatingSystems").description("The OS on which the release operates"),
+                                fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
+                                subsectionWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
+                                subsectionWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
 }
