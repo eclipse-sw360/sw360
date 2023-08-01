@@ -25,7 +25,7 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
-import jakarta.servlet.DispatcherType;
+import javax.servlet.DispatcherType;
 import java.io.File;
 import java.util.EnumSet;
 
@@ -60,7 +60,6 @@ public final class Main {
                 ServletContextHandler.NO_SESSIONS | ServletContextHandler.NO_SECURITY);
         context.addServlet(new ServletHolder(servlet), "/*");
         context.setErrorHandler(new JSONErrorHandler());
-        context.setGzipHandler(new GzipHandler());
         server.setHandler(context);
 
         server.start();

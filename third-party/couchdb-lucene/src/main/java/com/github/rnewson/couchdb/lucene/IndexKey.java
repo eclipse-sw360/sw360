@@ -16,7 +16,7 @@
 
 package com.github.rnewson.couchdb.lucene;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 
 @Deprecated
 public class IndexKey {
