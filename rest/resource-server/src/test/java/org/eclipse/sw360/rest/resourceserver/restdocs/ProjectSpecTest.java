@@ -507,6 +507,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release.setClearingState(ClearingState.APPROVED);
         release.setExternalIds(Collections.singletonMap("mainline-id-component", "1432"));
         release.setPackageIds(linkedPackages);
+        release.setMainlineState(MainlineState.MAINLINE);
+        release.setMainLicenseIds(new HashSet<>(Arrays.asList("GPL-2.0-or-later", "Apache-2.0")));
+        release.setOtherLicenseIds(new HashSet<>(Arrays.asList("LGPL-2.0")));
 
         Release release2 = new Release();
         release2.setId("5578999");
@@ -523,6 +526,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release2.setClearingState(ClearingState.APPROVED);
         release2.setExternalIds(Collections.singletonMap("mainline-id-component", "1771"));
         release2.setComponentType(ComponentType.COTS);
+        release2.setMainlineState(MainlineState.MAINLINE);
+        release2.setMainLicenseIds(new HashSet<>(Arrays.asList("Apache-2.0")));
+        release2.setOtherLicenseIds(new HashSet<>(Arrays.asList("GPL-2.0")));
 
         Release rel = new Release();
         Map<String, String> releaseExternalIds = new HashMap<>();
@@ -1110,6 +1116,35 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]externalIds").description("External Ids of the project. Return as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
                                 subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_license_clearing() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/licenseClearing")
+                .header("Authorization", "Bearer " + accessToken)
+                .param("transitive", "true")
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "name,desc")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("transitive").description("Get the transitive releases"),
+                                parameterWithName("page").description("Page of releases"),
+                                parameterWithName("page_entries").description("Amount of releases page"),
+                                parameterWithName("sort").description("Defines order of the releases")
+                        ),
+                        responseFields(
+                                fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                                fieldWithPath("considerReleasesFromExternalList").description("Consider list of releases from existing external list"),
+                                fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
+                                subsectionWithPath("linkedReleases").description("The relationship between linked releases of the project"),
+                                subsectionWithPath("linkedProjects").description("The `linked project id` - metadata of linked projects (`enableSvm` - whether linked projects will be part of SVM, `projectRelationship` - relationship between linked project and the project. Possible values: " + Arrays.asList(ProjectRelationship.values())),
+                                subsectionWithPath("_embedded.sw360:release").description("An array of linked releases"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
