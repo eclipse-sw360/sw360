@@ -2,7 +2,7 @@
 
 # -----------------------------------------------------------------------------
 # Copyright BMW CarIT GmbH 2021
-# Copyright Helio Chissini de Castro 2022
+# Copyright Helio Chissini de Castro 2022-2023
 #
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
@@ -14,7 +14,7 @@
 # (execution of docker run cmd) starts couchdb and tomcat.
 # -----------------------------------------------------------------------------
 
-set -e -o  pipefail
+set -e -o pipefail
 
 # Source the version
 # shellcheck disable=SC1091
@@ -34,9 +34,12 @@ image_build() {
     local target
     local name
     local version
-    target="$1"; shift
-    name="$1"; shift
-    version="$1"; shift
+    target="$1"
+    shift
+    name="$1"
+    shift
+    version="$1"
+    shift
 
     docker buildx build \
         --target "$target" \
