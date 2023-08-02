@@ -904,8 +904,12 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_update_component() throws Exception {
-        Component updateComponent = new Component();
+        ComponentDTO updateComponent = new ComponentDTO();
+        AttachmentDTO attachmentDTO = new AttachmentDTO("1231231255", "spring-mvc-4.3.4.RELEASE.jar");
+        Set<AttachmentDTO> attachmentDTOS = new HashSet<>();
+        attachmentDTOS.add(attachmentDTO);
         updateComponent.setName("Updated Component");
+        updateComponent.setAttachmentDTOs(attachmentDTOS);
 
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(patch("/api/components/17653524")

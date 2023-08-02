@@ -31,6 +31,7 @@ typedef sw360.PaginationData PaginationData
 typedef sw360.ClearingReportStatus ClearingReportStatus
 typedef sw360.ImportBomRequestPreparation ImportBomRequestPreparation
 typedef attachments.Attachment Attachment
+typedef attachments.AttachmentDTO AttachmentDTO
 typedef attachments.FilledAttachment FilledAttachment
 typedef users.User User
 typedef users.RequestedAction RequestedAction
@@ -359,6 +360,50 @@ struct Component {
     200: optional map<RequestedAction, bool> permissions,
     204: optional string modifiedBy, // Last Modified By User Email
     205: optional string modifiedOn, // Last Modified Date YYYY-MM-dd
+}
+
+struct ComponentDTO {
+
+    // General information
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "component",
+
+    5: required string name,
+    6: optional string description,
+
+    // Additional informations
+    10: optional set<AttachmentDTO> attachmentDTOs,
+    11: optional string createdOn, // Creation date YYYY-MM-dd
+    12: optional ComponentType componentType,
+
+    // string details
+    20: optional string createdBy, // person who created the component in sw360
+    24: optional set<string> subscribers, // List of subscriber information
+    25: optional set<string> moderators, // people who can modify the data
+    26: optional string componentOwner,
+    27: optional string ownerAccountingUnit,
+    28: optional string ownerGroup,
+    29: optional string ownerCountry,
+    30: optional map<string,set<string>> roles, //customized roles with set of mail addresses
+    80: optional Visibility visbility = sw360.Visibility.EVERYONE,
+    81: optional string businessUnit,
+
+    // information from external data sources
+    31: optional  map<string, string> externalIds,
+    300: optional map<string, string> additionalData,
+
+    36: optional Vendor defaultVendor,
+    37: optional string defaultVendorId,
+
+    // List of keywords
+    40: optional set<string> categories,
+
+    // Urls for the component, TODO should be map
+    50: optional string homepage,
+    51: optional string mailinglist,
+    52: optional string wiki,
+    53: optional string blog,
 }
 
 struct ReleaseLink{
