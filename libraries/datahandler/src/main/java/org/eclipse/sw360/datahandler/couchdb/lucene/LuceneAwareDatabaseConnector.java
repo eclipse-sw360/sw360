@@ -176,16 +176,17 @@ public class LuceneAwareDatabaseConnector extends LuceneAwareCouchDbConnector {
         HttpURLConnection connection = null;
         try {
             connection = makeLuceneRequest(luceneResourceUrl);
-            log.debug("Lucene search URL = " + luceneResourceUrl.toString());
+            log.info("Lucene search URL = " + luceneResourceUrl.toString());
             int responseCode = connection.getResponseCode();
             if (responseCode == 200) {
                 return objectMapper.readValue(connection.getInputStream(), LuceneResult.class);
             } else {
                 connection.disconnect();
-                log.error("Getting error with response code = " + responseCode + ".Retrying with stale parameter");
+                log.error("Getting error with response code = " + responseCode + ". Retrying with stale parameter");
                 queryURI.param("stale", "ok");
                 luceneResourceUrl = new URL(DatabaseSettings.COUCH_DB_LUCENE_URL + queryURI.toString());
                 connection = makeLuceneRequest(luceneResourceUrl);
+                log.info("Stale Parameter Lucene search URL = " + luceneResourceUrl.toString());
                 responseCode = connection.getResponseCode();
                 if (responseCode == 200) {
                     return objectMapper.readValue(connection.getInputStream(), LuceneResult.class);
