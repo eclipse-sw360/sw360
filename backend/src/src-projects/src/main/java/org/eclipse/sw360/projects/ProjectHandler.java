@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -30,6 +31,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -154,11 +156,17 @@ public class ProjectHandler implements ProjectService.Iface {
 
     @Override
     public Set<Project> searchByReleaseId(String id, User user) throws TException {
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return searchHandler.searchByReleaseId(id, user);
+        }
         return handler.searchByReleaseId(id, user);
     }
 
     @Override
     public Set<Project> searchByReleaseIds(Set<String> ids, User user) throws TException {
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return searchHandler.searchByReleaseIds(ids, user);
+        }
         return handler.searchByReleaseId(ids, user);
     }
 
@@ -524,4 +532,34 @@ public class ProjectHandler implements ProjectService.Iface {
 			throws TException {
 		return handler.getReportInEmail(user, extendedByReleases);
 	}
+
+    @Override
+    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByTrace(String projectId, List<String> trace, User user) throws TException {
+        return handler.getReleaseLinksOfProjectNetWorkByTrace(trace, projectId, user);
+    }
+
+    @Override
+    public List<Map<String, String>> getAccessibleDependencyNetworkForListView(String projectId, User user) throws SW360Exception {
+        assertNotNull(projectId);
+        return handler.getClearingStateForDependencyNetworkListView(projectId, user, true);
+    }
+
+    @Override
+    public List<Project> refineSearchWithoutUser(String text, Map<String, Set<String>> subQueryRestrictions) {
+        return searchHandler.search(text, subQueryRestrictions);
+    }
+
+    @Override
+    public List<ProjectLink> getLinkedProjectsWithoutReleases(Map<String, ProjectProjectRelationship> relations, boolean depth, User user) throws TException {
+        assertNotNull(relations);
+        assertUser(user);
+
+        return handler.getLinkedProjectsWithoutReleases(relations, depth, user);
+    }
+
+    @Override
+    public List<ProjectLink> getLinkedProjectsOfProjectWithoutReleases(Project project, boolean deep, User user) throws TException {
+        assertNotNull(project);
+        return handler.getLinkedProjectsWithoutReleases(project, deep, user);
+    }
 }

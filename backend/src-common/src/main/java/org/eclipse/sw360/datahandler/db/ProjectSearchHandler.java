@@ -22,7 +22,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Collections;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
 
@@ -75,6 +79,9 @@ public class ProjectSearchHandler {
                     "    for(var [key, value] in doc.additionalData) {" +
                     "      ret.add(doc.additionalData[key], {\"field\": \"additionalData\"} );" +
                     "    }" +
+                    "    if(doc.releaseRelationNetwork !== undefined && doc.releaseRelationNetwork != null && doc.releaseRelationNetwork.length > 0) {  "+
+                    "      ret.add(doc.releaseRelationNetwork, {\"field\": \"releaseRelationNetwork\"} );" +
+                    "    }" +
                     "    return ret;" +
                     "}");
 
@@ -95,4 +102,34 @@ public class ProjectSearchHandler {
         return connector.searchView(Project.class, luceneSearchView, prepareWildcardQuery(searchText));
     }
 
+    public List<Project> search(String text, final Map<String , Set<String>> subQueryRestrictions) {
+        return connector.searchViewWithRestrictions(Project.class, luceneSearchView, text, subQueryRestrictions);
+    }
+
+    public Set<Project> searchByReleaseId(String id, User user) {
+        return searchByReleaseIds(Collections.singleton(id), user);
+    }
+
+    public Set<Project> searchByReleaseIds(Set<String> ids, User user) {
+        Map<String, Set<String>> filterMap = getFilterMapForSetReleaseIds(ids);
+        List<Project> projectsByReleaseIds;
+        if (user != null) {
+            projectsByReleaseIds = connector.searchProjectViewWithRestrictionsAndFilter(luceneSearchView, null, filterMap, user);
+        } else {
+            projectsByReleaseIds = connector.searchViewWithRestrictions(Project.class, luceneSearchView, null, filterMap);
+        }
+        return new HashSet<>(projectsByReleaseIds);
+    }
+
+    private static Map<String, Set<String>> getFilterMapForSetReleaseIds(Set<String> releaseIds) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        Set<String> values = new HashSet<>();
+        for(String releaseId : releaseIds) {
+            values.add("\"releaseId\":\"" + releaseId + "\"");
+            values.add("\"releaseId\": \"" + releaseId + "\"");
+        }
+        values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+        filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);
+        return filterMap;
+    }
 }

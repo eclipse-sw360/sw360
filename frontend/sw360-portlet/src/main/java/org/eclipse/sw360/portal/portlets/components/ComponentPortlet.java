@@ -589,8 +589,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
     }
 
     private void serveDeleteRelease(PortletRequest request, ResourceResponse response) throws IOException {
-        final RequestStatus requestStatus = ComponentPortletUtils.deleteRelease(request, log);
-        serveRequestStatus(request, response, requestStatus, "Problem removing release", log);
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            final RequestStatus requestStatus = ComponentPortletUtils.deleteRelease(request, log);
+            serveRequestStatus(request, response, requestStatus, "Problem removing release", log);
+        } else {
+            serveDeleteReleaseWithDependencyNetwork(request, response);
+        }
     }
 
     private void exportExcel(ResourceRequest request, ResourceResponse response) {
@@ -987,7 +991,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
                 addEditDocumentMessage(request, permissions, documentState);
                 Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
-                setUsingDocs(request, user, client, releaseIds);
+                if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+                    setUsingDocs(request, user, client, releaseIds);
+                } else {
+                    setUsingDocsWithFlexibleDependencyNetwork(request, user, client, releaseIds);
+                }
 
             } catch (TException e) {
                 if (e instanceof SW360Exception) {
@@ -1011,7 +1019,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             }
                 request.setAttribute(COMPONENT,component);
                 PortletUtils.setCustomFieldsEdit(request, user, component);
-                setUsingDocs(request, user, null, component.getReleaseIds());
+                if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+                    setUsingDocs(request, user, null, component.getReleaseIds());
+                } else {
+                    setUsingDocsWithFlexibleDependencyNetwork(request, user,  thriftClients.makeComponentClient(), component.getReleaseIds());
+                }
                 setAttachmentsInRequest(request, component);
                 SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.component"));
             }
@@ -1052,7 +1064,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 putDirectlyLinkedPackagesInRequest(request, release.getPackageIds());
                 Map<RequestedAction, Boolean> permissions = release.getPermissions();
                 DocumentState documentState = release.getDocumentState();
-                setUsingDocs(request, releaseId, user, client);
+                if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+                    setUsingDocs(request, releaseId, user, client);
+                } else {
+                    setUsingDocsWithFlexibleDependencyNetwork(request, releaseId, user, client);
+                }
                 addEditDocumentMessage(request, permissions, documentState);
 
                 if (isNullOrEmpty(id)) {
@@ -1092,7 +1108,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     putDirectlyLinkedReleaseRelationsWithAccessibilityInRequest(request, release, user);
                     putDirectlyLinkedPackagesInRequest(request, release.getPackageIds());
                     setAttachmentsInRequest(request, release);
-                    setUsingDocs(request, null, user, client);
+                    if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+                        setUsingDocs(request, null, user, client);
+                    } else {
+                        setUsingDocsWithFlexibleDependencyNetwork(request, null, user, client);
+                    }
                     SessionMessages.add(request, "request_processed", LanguageUtil.get(resourceBundle,"new.license"));
                 }
             }
@@ -1274,7 +1294,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             request.setAttribute(COMPONENT, component);
             request.setAttribute(RELEASE_LIST, Collections.emptyList());
             request.setAttribute(TOTAL_INACCESSIBLE_ROWS, 0);
-            setUsingDocs(request, null, user, client);
+            if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+                setUsingDocs(request, null, user, client);
+            } else {
+                setUsingDocsWithFlexibleDependencyNetwork(request, null, user, client);
+            }
             putDirectlyLinkedPackagesInRequest(request, Collections.emptySet());
             release.unsetExternalIds();
             request.setAttribute(RELEASE, release);
@@ -1749,7 +1773,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 setAttachmentsInRequest(request, component);
                 Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
 
-                setUsingDocs(request, user, client, releaseIds);
+                if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+                    setUsingDocs(request, user, client, releaseIds);
+                } else {
+                    setUsingDocsWithFlexibleDependencyNetwork(request, user, client, releaseIds);
+                }
+
                 if (IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
                     request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user));
                 } else {
@@ -1848,7 +1877,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 setAttachmentsInRequest(request, release);
                 setSpdxAttachmentsInRequest(request, release);
 
-                setUsingDocs(request, releaseId, user, client);
+                if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+                    setUsingDocs(request, releaseId, user, client);
+                } else {
+                    setUsingDocsWithFlexibleDependencyNetwork(request, releaseId, user, client);
+                }
+
                 putDirectlyLinkedReleaseRelationsWithAccessibilityInRequest(request, release, user);
 
                 if (IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
@@ -2837,6 +2871,51 @@ public class ComponentPortlet extends FossologyAwarePortlet {
             return "";
         } else {
             return CommonUtils.COMMA_JOINER.join(strings.stream().sorted().collect(Collectors.toList()));
+        }
+    }
+
+    private void serveDeleteReleaseWithDependencyNetwork(PortletRequest request, ResourceResponse response) {
+        String releaseId = request.getParameter(PortalConstants.RELEASE_ID);
+        Set<String> releaseIdToSet = Collections.singleton(releaseId);
+        if (SW360Utils.getUsingProjectByReleaseIds(releaseIdToSet, null).size() > 0) {
+            serveRequestStatus(request, response, RequestStatus.IN_USE, "Problem removing release", log);
+        } else {
+            final RequestStatus requestStatus = ComponentPortletUtils.deleteRelease(request, log);
+            serveRequestStatus(request, response, requestStatus, "Problem removing release", log);
+        }
+    }
+
+    private void setUsingDocsWithFlexibleDependencyNetwork(RenderRequest request, User user, ComponentService.Iface client, Set<String> releaseIds) {
+        Set<Component> usingComponentsForComponent = null;
+        List<Project> usingProjectInDependencyNetwork;
+        if (CommonUtils.isNotEmpty(releaseIds)) {
+            try {
+                usingComponentsForComponent = client.getUsingComponentsWithAccessibilityForComponent(releaseIds, user);
+                usingProjectInDependencyNetwork = SW360Utils.getUsingProjectByReleaseIds(releaseIds, user);
+                request.setAttribute(USING_PROJECTS, new HashSet<>(usingProjectInDependencyNetwork));
+                request.setAttribute(ALL_USING_PROJECTS_COUNT, SW360Utils.getUsingProjectByReleaseIds(releaseIds, null).size());
+            } catch (TException e) {
+                log.error("Problem filling using docs", e);
+            }
+        } else {
+            request.setAttribute(USING_PROJECTS, Collections.emptySet());
+            request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
+        }
+        request.setAttribute(USING_COMPONENTS, nullToEmptySet(usingComponentsForComponent));
+    }
+
+    private void setUsingDocsWithFlexibleDependencyNetwork(RenderRequest request, String releaseId, User user, ComponentService.Iface client) throws TException {
+        if (releaseId != null) {
+            final Set<Component> usingComponentsForRelease = client.getUsingComponentsWithAccessibilityForRelease(releaseId, user);
+            Set<String> releaseIdSet = Collections.singleton(releaseId);
+            List<Project> usingProjectInDependencyNetwork = SW360Utils.getUsingProjectByReleaseIds(releaseIdSet, user);
+            request.setAttribute(USING_COMPONENTS, nullToEmptySet(usingComponentsForRelease));
+            request.setAttribute(USING_PROJECTS, new HashSet<>(usingProjectInDependencyNetwork));
+            request.setAttribute(ALL_USING_PROJECTS_COUNT, SW360Utils.getUsingProjectByReleaseIds(releaseIdSet, null).size());
+        } else {
+            request.setAttribute(USING_PROJECTS,  Collections.emptySet());
+            request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
+            request.setAttribute(USING_COMPONENTS, Collections.emptySet());
         }
     }
 }

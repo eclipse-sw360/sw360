@@ -86,4 +86,14 @@ public class SummaryAwareRepository<T> extends DatabaseRepositoryCloudantClient<
         }
         return docs;
     }
+
+    public List<T> getFullDocsByListIds(SummaryType type, Collection<String> ids) {
+        if (ids == null) {
+            return Collections.emptyList();
+        }
+
+        List<T> documents = getDocsByListIds(ids);
+
+        return makeSummaryFromFullDocs(type, documents);
+    }
 }

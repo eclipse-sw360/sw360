@@ -428,7 +428,15 @@ struct ReleaseLink{
     101: optional set<string> licenseNames,
     102: optional string comment,
     103: optional set<string> otherLicenseIds,
-    104: optional bool accessible = true
+    104: optional bool accessible = true,
+
+    // For configuration enable.flexible.project.release.relationship = true
+    105: optional list<Release> releaseWithSameComponent,
+    106: optional i32 layer,
+    107: optional i32 index,
+    108: optional string defaultValue,
+    109: optional string projectId,
+    110: optional MainlineState releaseMainLineState
 }
 
 struct ReleaseClearingStatusData {
@@ -444,6 +452,16 @@ struct ClearingReport{
     2: optional string revision,
     3: required ClearingReportStatus clearingReportStatus,
     4: required set<Attachment> attachments
+}
+
+struct ReleaseNode {
+     1: required string releaseId,
+     2: optional string releaseRelationship,
+     3: optional string mainlineState,
+     4: optional string comment,
+     5: optional string createOn,
+     6: optional string createBy,
+     7: optional list<ReleaseNode> releaseLink,
 }
 
 service ComponentService {
@@ -970,4 +988,19 @@ service ComponentService {
     * get component report in mail
     */
     string getComponentReportInEmail(1: User user, 2: bool extendedByReleases) throws (1: SW360Exception exp); 
+
+    /**
+    * Check accessible of release
+    */
+    bool isReleaseActionAllowed(1: Release release, 2:User user, 3:RequestedAction action)
+
+    /**
+    * Gets list releases with list release id
+    */
+    list<Release> getReleasesByListIds(1: list<string> ids, 2:User user)
+
+    /**
+    * Get releases dependency network of release
+    */
+    list<ReleaseNode> getReleaseRelationNetworkOfRelease(1: Release release, 2:User user)
 }
