@@ -700,6 +700,36 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @PostMapping(value = RELEASES_URL + "/{id}/spdxLicenses")
+    public ResponseEntity writeSpdxLicenseInfoIntoRelease(
+            @PathVariable("id") String releaseId,
+            @RequestBody Map<String, Set<String>> licensesInfoInRequestBody
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
+        Set<String> licenseIds = licensesInfoInRequestBody.get("mainLicenseIds");
+        Set<String> otherLicenseIds = licensesInfoInRequestBody.get("otherLicenseIds");
+
+        if (!CommonUtils.isNullOrEmptyCollection(licenseIds)) {
+            for (String licenseId : licenseIds) {
+                sw360Release.addToMainLicenseIds(licenseId);
+            }
+        }
+
+        if (!CommonUtils.isNullOrEmptyCollection(otherLicenseIds)) {
+            for (String licenseId : otherLicenseIds) {
+                sw360Release.addToOtherLicenseIds(licenseId);
+            }
+        }
+
+        RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, sw360User);
+        HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
+        if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        return new ResponseEntity<>(halRelease, HttpStatus.OK);
+    }
+
     private RequestStatus linkOrUnlinkPackages(String id, Set<String> packagesInRequestBody, boolean link)
             throws URISyntaxException, TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
