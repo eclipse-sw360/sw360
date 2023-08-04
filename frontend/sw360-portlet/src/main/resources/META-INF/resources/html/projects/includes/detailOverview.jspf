@@ -104,8 +104,8 @@
 							    <button type="button" class="btn btn-secondary" id="linkToProjectButton"><liferay-ui:message key="link.to.projects" /></button>
 							</div>
 							<div class="btn-group" role="group">
-							    <core_rt:if test = "${isSbomImportExportAccessUser and (project.clearingState ne 'CLOSED') and writeAccessUser}">
-							    <div class="btn-group" style="margin-right: auto;">
+							    <%-- <core_rt:if test = "${isSbomImportExportAccessUser and (project.clearingState ne 'CLOSED') and writeAccessUser}">
+							    <div class="btn-group" style="margin-right: auto; visibility: hidden;">
 							        <button type="button" class="btn btn-light border dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 							            <liferay-ui:message key="import.sbom" />
 							            <clay:icon symbol="caret-bottom" />
@@ -114,7 +114,7 @@
 							            <a class="dropdown-item" href="#" data-type="cycloneDx"><liferay-ui:message key="cyclonedx" /></a>
 							        </div>
 							    </div>
-							    </core_rt:if>
+							    </core_rt:if> --%>
 							    <core_rt:if test = "${isSbomImportExportAccessUser and (project.getReleaseIdToUsageSize() > 0 or project.getLinkedProjectsSize() > 0 or project.getPackageIdsSize() > 0)}">
 							    <div class="btn-group" style="margin-right: auto;">
 							        <button type="button" class="btn btn-light border dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
