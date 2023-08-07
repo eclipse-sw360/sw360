@@ -158,4 +158,12 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         }
         return halLicense;
     }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = LICENSES_URL + "/deleteAll", method = RequestMethod.DELETE)
+    public ResponseEntity deleteAllLicense() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        licenseService.deleteAllLicenseInfo(sw360User);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

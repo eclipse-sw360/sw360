@@ -89,6 +89,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         given(this.licenseServiceMock.getLicenses()).willReturn(licenseList);
         given(this.licenseServiceMock.getLicenseById(eq(license.getId()))).willReturn(license);
         Mockito.doNothing().when(licenseServiceMock).deleteLicenseById(any(), any());
+        Mockito.doNothing().when(licenseServiceMock).deleteAllLicenseInfo(any());
         obligation1 = new Obligation();
         obligation1.setId("0001");
         obligation1.setTitle("Obligation 1");
@@ -202,4 +203,14 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    public void should_document_delete_all_license_info() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(delete("/api/licenses/" + "/delete")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
+    }
+
 }

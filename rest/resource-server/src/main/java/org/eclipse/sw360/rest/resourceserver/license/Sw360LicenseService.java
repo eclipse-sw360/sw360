@@ -16,13 +16,16 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -72,6 +75,15 @@ public class Sw360LicenseService {
             throw new HttpMessageNotReadableException("Unable to delete license. License is in Use");
         } else if (deleteLicenseStatus == RequestStatus.FAILURE) {
             throw new RuntimeException("Unable to delete License");
+        }
+    }
+
+    public void deleteAllLicenseInfo(User user) throws TException {
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
+            RequestSummary deleteLicenseStatus = sw360LicenseClient.deleteAllLicenseInformation(user);
+        } else {
+            throw new HttpMessageNotReadableException("Unable to delete license. User is not admin");
         }
     }
 
