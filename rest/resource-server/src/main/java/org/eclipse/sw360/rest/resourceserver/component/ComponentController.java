@@ -262,7 +262,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         if (!CommonUtils.isNullOrEmptyCollection(attachmentDTOS)) {
             Set<Attachment> attachments = new HashSet<>();
             for (AttachmentDTO attachmentDTO: attachmentDTOS) {
-                attachments.add(restControllerHelper.convertToAttachment(attachmentDTO));
+                attachments.add(restControllerHelper.convertToAttachment(attachmentDTO, user));
             }
             sw360Component.setAttachments(attachments);
         } else {

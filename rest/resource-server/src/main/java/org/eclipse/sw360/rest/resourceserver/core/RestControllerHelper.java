@@ -923,7 +923,7 @@ public class RestControllerHelper<T> {
         return attachmentDTO;
     }
 
-    public Attachment convertToAttachment(AttachmentDTO attachmentDTO) {
+    public Attachment convertToAttachment(AttachmentDTO attachmentDTO, User user) {
         Attachment attachment = new Attachment();
         attachment.setAttachmentContentId(attachmentDTO.getAttachmentContentId());
         attachment.setFilename(attachmentDTO.getFilename());
@@ -933,12 +933,12 @@ public class RestControllerHelper<T> {
         attachment.setCreatedTeam(attachmentDTO.getCreatedTeam());
         attachment.setCreatedComment(attachmentDTO.getCreatedComment());
         attachment.setCreatedOn(attachmentDTO.getCreatedOn());
-        attachment.setCheckedBy(attachmentDTO.getCheckedBy());
-        attachment.setCheckedTeam(attachmentDTO.getCheckedTeam());
         if (CheckStatus.NOTCHECKED != attachmentDTO.getCheckStatus()) {
             attachment.setCheckedComment(attachmentDTO.getCheckedComment());
+            attachment.setCheckedBy(user.getEmail());
+            attachment.setCheckedTeam(user.getDepartment());
+            attachment.setCheckedOn(SW360Utils.getCreatedOn());
         }
-        attachment.setCheckedOn(attachmentDTO.getCheckedOn());
         attachment.setCheckStatus(attachmentDTO.getCheckStatus());
         attachment.setSuperAttachmentId(attachmentDTO.getSuperAttachmentId());
         attachment.setSuperAttachmentFilename(attachmentDTO.getSuperAttachmentFilename());
