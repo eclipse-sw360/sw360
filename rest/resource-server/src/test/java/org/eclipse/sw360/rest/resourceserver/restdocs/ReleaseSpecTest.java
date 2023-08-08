@@ -185,7 +185,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         component.setDescription("Angular is a development platform for building mobile and desktop web applications.");
         component.setCreatedOn("2016-12-15");
         component.setCreatedBy("admin@sw360.org");
-        component.setComponentType(ComponentType.OSS);
+        component.setComponentType(ComponentType.COTS);
         component.setVendorNames(new HashSet<>(Collections.singletonList("Google")));
         component.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "john@sw360.org")));
         usedByComponent.add(component);
@@ -221,6 +221,10 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         clearingInformation.setComponentClearingReportIsSet(false);
         clearingInformation.setExternalUrl("https://external.url");
 
+        COTSDetails cotsDetails1 = new COTSDetails().setClearingDeadline("2016-12-18").setContainsOSS(true)
+                .setCotsResponsible("admin@sw360.org").setLicenseClearingReportURL("http://licenseclearingreporturl.com")
+                .setOssInformationURL("http://ossinformationurl.com").setUsedLicense("MIT");
+
         release.setId(releaseId);
         owner.setReleaseId(release.getId());
         release.setName("Spring Core 4.3.4");
@@ -250,6 +254,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Java SE", ".NET")));
         release.setEccInformation(eccInformation);
         release.setClearingInformation(clearingInformation);
+        release.setCotsDetails(cotsDetails1);
+        release.setComponentType(ComponentType.COTS);
 
         Set<String> licenseIds = new HashSet<>();
         licenseIds.add("MIT");
@@ -695,6 +701,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:modifiedBy").description("A release modifiedBy with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:createdBy").description("A release createdBy with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                                subsectionWithPath("_embedded.sw360:cotsDetails").description("Cots details information of release has component type = COTS "),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }

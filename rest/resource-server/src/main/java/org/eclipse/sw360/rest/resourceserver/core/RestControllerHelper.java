@@ -38,6 +38,8 @@ import org.eclipse.sw360.datahandler.thrift.attachments.UsageAttachment;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentDTO;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
+import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
@@ -318,6 +320,7 @@ public class RestControllerHelper<T> {
         addEmbeddedCreatedByToHalResourceRelease(halResource, sw360Release.getCreatedBy());
         addEmbeddedModifiedByToHalResourceRelease(halResource, sw360Release.getModifiedBy());
         addEmbeddedSubcribeToHalResourceRelease(halResource, sw360Release);
+        addEmbeddedCotsDetails(halResource, sw360Release);
     }
 
     public void addEmbeddedContributorsToHalResourceRelease(HalResource halResource, Release sw360Release) {
@@ -1294,5 +1297,18 @@ public class RestControllerHelper<T> {
         embeddedProject.setVisbility(project.getVisbility());
         embeddedProject.setType(null);
         return embeddedProject;
+    }
+
+    public void addEmbeddedCotsDetails(HalResource halResource, Release release) {
+        if (null != release.getCotsDetails() && release.getComponentType().equals(ComponentType.COTS)) {
+            HalResource<COTSDetails> cotsDetailsHalResource = new HalResource<>(release.getCotsDetails());
+            if (CommonUtils.isNotNullEmptyOrWhitespace(release.getCotsDetails().getCotsResponsible())) {
+                User sw360User = userService.getUserByEmail(release.getCotsDetails().getCotsResponsible());
+                if (null != sw360User) {
+                    addEmbeddedUser(cotsDetailsHalResource, sw360User, "sw360:cotsResponsible");
+                }
+            }
+            addEmbeddedFields("sw360:cotsDetails", cotsDetailsHalResource, halResource);
+        }
     }
 }
