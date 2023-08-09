@@ -120,7 +120,7 @@ COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
 FROM eclipse-temurin:11.0.19_7-jdk-jammy as sw360build
 
 # Thanks to Liferay, we need fix the java version
-ENV MAVEN_VERSION=3.9.3
+ENV MAVEN_VERSION=3.9.4
 ENV MAVEN_HOME /usr/share/maven
 ARG BASE_URL=https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries
 ARG COUCHDB_HOST=localhost
