@@ -117,18 +117,12 @@ COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-FROM eclipse-temurin:11.0.19_7-jdk-jammy as sw360build
+FROM maven:3.9-eclipse-temurin-11 as sw360build
 
-# Thanks to Liferay, we need fix the java version
-ENV MAVEN_VERSION=3.9.4
-ENV MAVEN_HOME /usr/share/maven
-ARG BASE_URL=https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries
 ARG COUCHDB_HOST=localhost
 
-RUN set -eux; curl -fsSLO --compressed ${BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz
-RUN mkdir -p ${MAVEN_HOME} ${MAVEN_HOME}/ref \
-    && tar -xzf apache-maven-${MAVEN_VERSION}-bin.tar.gz -C ${MAVEN_HOME} --strip-components=1 \
-    && ln -s ${MAVEN_HOME}/bin/mvn /usr/bin/mvn
+# Thanks to Liferay, we need fix the java version
+ENV _JAVA_OPTIONS='-Djdk.util.zip.disableZip64ExtraFieldValidation=true'
 
 WORKDIR /build
 
