@@ -635,7 +635,6 @@ public class JacksonCustomizations {
                 "languagesIterator",
                 "operatingSystemsIterator",
                 "cotsDetails",
-                "releaseIdToRelationship",
                 "documentState",
                 "contributorsIterator",
                 "rolesSize",
