@@ -1369,8 +1369,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                              parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
                              parameterWithName("mailrequest").description("Downloading components report requirted mail link. Possible values are `<true|false>`")
                      ),responseFields(
-                             subsectionWithPath("response").description("The response message displayed").optional(),
-                             subsectionWithPath("url").description("The components download path will be displayed").optional()
+                             subsectionWithPath("response").description("The response message displayed").optional()
                              )
                      ));
     }
