@@ -42,6 +42,7 @@ jobs:
 
     - name: Set environment variables
       run: |
+        echo _JAVA_OPTIONS= '-Djdk.util.zip.disableZip64ExtraFieldValidation=true' >> $GITHUB_ENV      
         cat .versions >> $GITHUB_ENV
 
     - name: Setup CouchDB
