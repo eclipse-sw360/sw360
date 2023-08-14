@@ -65,6 +65,7 @@ import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
+import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -121,6 +122,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     private final Sw360VulnerabilityService vulnerabilityService;
 
     @NonNull
+    private final Sw360VendorService vendorService;
+
+    @NonNull
     private Sw360AttachmentService attachmentService;
 
     @NonNull
@@ -153,6 +157,13 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         sw360Releases = sw360Releases.stream()
                 .filter(release -> name == null || name.isEmpty() || release.getName().equalsIgnoreCase(name))
                 .collect(Collectors.toList());
+        if (allDetails) {
+            for (Release release: sw360Releases) {
+                if(!CommonUtils.isNullEmptyOrWhitespace(release.getVendorId())) {
+                    release.setVendor(vendorService.getVendorById(release.getVendorId()));
+                }
+            }
+        }
         PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE);
 
         List<EntityModel> releaseResources = new ArrayList<>();
