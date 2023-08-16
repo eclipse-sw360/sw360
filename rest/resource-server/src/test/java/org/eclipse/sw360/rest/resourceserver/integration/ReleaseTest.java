@@ -152,7 +152,7 @@ public class ReleaseTest extends TestIntegrationBase {
 
     @Test
     public void should_get_all_releases_with_fields() throws IOException {
-        String extraField = "cpeId";
+        String extraField = "cpeid";
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/releases?fields=" + extraField,
