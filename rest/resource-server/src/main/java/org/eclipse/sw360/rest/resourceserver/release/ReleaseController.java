@@ -71,6 +71,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
@@ -829,7 +830,16 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(sw360Module);
+
+        Set<Attachment> attachments = getAttachmentsFromRequest(reqBodyMap.get("attachments"), mapper);
+        if (null != reqBodyMap.get("attachments")) {
+            reqBodyMap.remove("attachments");
+        }
         Release release = mapper.convertValue(reqBodyMap, Release.class);
+        if (null != attachments) {
+            release.setAttachments(attachments);
+        }
+
         mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames.entrySet().stream().forEach(entry -> {
             Release._Fields field = entry.getKey();
             String oldFieldName = entry.getValue()[0];
@@ -840,6 +850,24 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         });
 
         return release;
+    }
+
+    private Set<Attachment> getAttachmentsFromRequest(Object attachmentData, ObjectMapper mapper) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (null == attachmentData) {
+            return null;
+        }
+        Set<AttachmentDTO> attachmentDTOs = mapper.convertValue(attachmentData,
+                mapper.getTypeFactory().constructCollectionType(Set.class, AttachmentDTO.class));
+        return attachmentDTOs.stream()
+                .map(attachmentDTO -> {
+                    boolean isAttachmentExist = attachmentService.isAttachmentExist(attachmentDTO.getAttachmentContentId());
+                    if (!isAttachmentExist) {
+                        throw new ResourceNotFoundException("Attachment " + attachmentDTO.getAttachmentContentId() + " not found.");
+                    }
+                    return restControllerHelper.convertToAttachment(attachmentDTO, sw360User);
+                })
+                .collect(Collectors.toSet());
     }
 }
 

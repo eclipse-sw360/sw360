@@ -551,4 +551,13 @@ public class Sw360AttachmentService {
         });
         return attachmentDTOS;
     }
+
+    public boolean isAttachmentExist(String id) {
+        try {
+            Attachment attachment = getAttachmentForId(id);
+            return attachment != null;
+        } catch (ResourceNotFoundException | TException notFoundException) {
+            return false;
+        }
+    }
 }
