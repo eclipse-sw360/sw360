@@ -591,6 +591,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:releases.[]externalIds").description("When releases are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 subsectionWithPath("_embedded.sw360:releases.[]eccInformation").description("The eccInformation of this release"),
                                 subsectionWithPath("_embedded.sw360:releases.[]additionalData").description("A place to store additional data used by external tools").optional(),
+                                subsectionWithPath("_embedded.sw360:releases.[]releaseIdToRelationship").description("Release Id To Relationship of Release").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]languages").description("The language of the component"),
                                 subsectionWithPath("_embedded.sw360:releases.[]mainLicenseIds").description("An array of all main licenses").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]otherLicenseIds").description("An array of all other licenses associated with the release").optional(),
