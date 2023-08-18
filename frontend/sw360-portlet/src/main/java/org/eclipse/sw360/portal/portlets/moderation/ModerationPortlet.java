@@ -965,6 +965,7 @@ public class ModerationPortlet extends FossologyAwarePortlet {
             request.setAttribute(PortalConstants.ACTUAL_PROJECT, actual_project);
             request.setAttribute(PortalConstants.DEFAULT_LICENSE_INFO_HEADER_TEXT, getDefaultLicenseInfoHeaderText(actual_project.getBusinessUnit()));
             request.setAttribute(IS_CLEARING_REQUEST_DISABLED_FOR_PROJECT_BU, true);
+            request.setAttribute(PortalConstants.IS_SBOM_IMPORT_EXPORT_ACCESS_USER, SW360Utils.isUserAtleastDesiredRoleInPrimaryOrSecondaryGroup(user, SW360Constants.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE));
         } catch (TException e) {
             log.error("Could not retrieve project", e);
         }
