@@ -100,6 +100,14 @@ struct ObligationElement {
     7: optional ObligationElementStatus status
 }
 
+struct LicenseObligationList {
+    1: optional string id,
+    2: optional string revision,
+    3: optional string type = "licenseObligationList",
+    4: required string licenseId,
+    5: optional map<string, Obligation> linkedObligations
+}
+
 struct License {
 	 1: optional string id,
 	 2: optional string revision,
@@ -123,6 +131,7 @@ struct License {
 
     20: optional list<Obligation> obligations,
     21: optional set<string> obligationDatabaseIds,
+    22: optional string obligationListId,
     25: optional string text,
 
     30: optional bool checked = true;

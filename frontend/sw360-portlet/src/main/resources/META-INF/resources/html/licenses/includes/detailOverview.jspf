@@ -13,6 +13,8 @@
     <portlet:param name="<%=PortalConstants.LICENSE_ID%>" value="${licenseDetail.id}" />
 </portlet:renderURL>
 
+<core_rt:set var = "docid" scope = "request" value = "${licenseDetail.id}"/>
+
 <div class="container" style="display: none;">
     <div class="row">
         <div class="col-3 sidebar">
@@ -20,6 +22,7 @@
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-Details'}">active</core_rt:if>" href="#tab-Details" data-toggle="list" role="tab"><liferay-ui:message key="details" /></a>
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-LicenseText'}">active</core_rt:if>" href="#tab-LicenseText" data-toggle="list" role="tab"><liferay-ui:message key="text" /></a>
                 <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-TodosAndObligations'}">active</core_rt:if>" href="#tab-TodosAndObligations" data-toggle="list" role="tab"><liferay-ui:message key="obligations" /></a>
+                <a class="list-group-item list-group-item-action <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active</core_rt:if>" href="#tab-ChangeLogs" data-toggle="list" role="tab"><liferay-ui:message key="change.log" /></a>
             </div>
         </div>
         <div class="col">
@@ -59,6 +62,14 @@
                         <span class="badge badge-success"><liferay-ui:message key="checked" /></span>
                     </core_rt:if>
                 </div>
+                <div class="list-group-companion" data-belong-to="tab-ChangeLogs">
+                    <div class="nav nav-pills justify-content-center bg-light font-weight-bold" id="pills-tab" role="tablist">
+                        <a class="nav-item nav-link active" id="pills-changelogs-list-tab" data-toggle="pill" href="#pills-changelogslist" role="tab" aria-controls="pills-changeloglist" aria-selected="true">
+                            <liferay-ui:message key="change.log" /></a>
+                        <a class="nav-item nav-link" id="pills-changelogs-view-tab" href="#pills-changelogsView" role="tab" aria-controls="pills-changelogsView" aria-selected="false">
+                            <liferay-ui:message key="changes" /></a>
+                    </div>
+                </div>
             </div>
             <div class="row">
                 <div class="col">
@@ -77,6 +88,9 @@
                                 <%@include file="/html/licenses/includes/detailAddTodo.jspf" %>
                             </div>
                         </core_rt:if>
+                        <div id="tab-ChangeLogs" class="tab-pane <core_rt:if test="${selectedTab == 'tab-ChangeLogs'}">active show</core_rt:if>">
+                            <jsp:include page="/html/changelogs/elementView.jsp" />
+                        </div>
                     </div>
                 </div>
             </div>

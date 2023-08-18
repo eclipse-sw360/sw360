@@ -78,6 +78,7 @@ import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectRe
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.RepositoryMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.VendorMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ObligationMixin;
+import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.LicenseTypeMixin;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.*;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -118,6 +119,9 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReferen
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligationList;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -459,6 +463,16 @@ public class DatabaseHandlerUtil {
             changeLog.setDocumentId(newPkgVer.getId());
             changeLog.setDocumentType(newPkgVer.getType());
             changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+        } else if (newDocVersion instanceof License) {
+            License newProjVer = (License) newDocVersion;
+            changeLog.setDocumentId(newProjVer.getId());
+            changeLog.setDocumentType(newProjVer.getType());
+            changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
+        } else if (newDocVersion instanceof LicenseObligationList) {
+            LicenseObligationList newProjVer = (LicenseObligationList) newDocVersion;
+            changeLog.setDocumentId(newProjVer.getId());
+            changeLog.setDocumentType(newProjVer.getType());
+            changeLog.setDbName(DatabaseSettings.COUCH_DB_DATABASE);
         }
 
         log.info("Initialize ChangeLogs for Document Id : " + changeLog.getDocumentId());
@@ -649,6 +663,10 @@ public class DatabaseHandlerUtil {
             fields = Obligation._Fields.values();
         } else if (neworDeletedVersion instanceof Package) {
             fields = Package._Fields.values();
+        } else if (neworDeletedVersion instanceof License) {
+            fields = License._Fields.values();
+        } else if (neworDeletedVersion instanceof LicenseObligationList) {
+            fields = LicenseObligationList._Fields.values();
         } else {
             return;
         }
@@ -683,6 +701,10 @@ public class DatabaseHandlerUtil {
             fields = Obligation._Fields.values();
         } else if (newVersion instanceof Package) {
             fields = Package._Fields.values();
+        } else if (newVersion instanceof License) {
+            fields = License._Fields.values();
+        } else if (newVersion instanceof LicenseObligationList) {
+            fields = LicenseObligationList._Fields.values();
         } else {
             return;
         }
@@ -908,6 +930,7 @@ public class DatabaseHandlerUtil {
             mapper.addMixInAnnotations(SnippetInformation.class, SnippetInformationMixin.class);
             mapper.addMixInAnnotations(SnippetRange.class, SnippetRangeMixin.class);
             mapper.addMixInAnnotations(Obligation.class, ObligationMixin.class);
+            mapper.addMixInAnnotations(LicenseType.class, LicenseTypeMixin.class);
         }
         return mapper;
     }
