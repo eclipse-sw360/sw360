@@ -17,9 +17,17 @@
 </core_rt:if>
 
 <table class="table label-value-table" id="componentOverview">
-    <thead data-toggle="collapse" data-target="#componentOverviewBody" aria-expanded="true" aria-controls="componentOverviewBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#componentOverviewBody" aria-expanded="true" aria-controls="componentOverviewBody">
         <tr>
-            <th colspan="2"><liferay-ui:message key="general" /></th>
+            <th colspan="2">
+                <div class="d-flex justify-content-between">
+                    <liferay-ui:message key="general" />
+                    <div>
+                        <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                        <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                    </div>
+                </div>
+            </th>
         </tr>
     </thead>
     <tbody id="componentOverviewBody" class="collapse show">
@@ -105,9 +113,17 @@
 </table>
 
 <table class="table label-value-table" id="releaseAggregateTable">
-    <thead data-toggle="collapse" data-target="#releaseAggregateTableBody" aria-expanded="true" aria-controls="releaseAggregateTableBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#releaseAggregateTableBody" aria-expanded="true" aria-controls="releaseAggregateTableBody">
         <tr>
-            <th colspan="2"><liferay-ui:message key="release.aggregate.data" /></th>
+            <th colspan="2">
+                <div class="d-flex justify-content-between">
+                    <liferay-ui:message key="release.aggregate.data" />
+                    <div>
+                        <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                        <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                    </div>
+                </div>
+            </th>
         </tr>
     </thead>
     <tbody id="releaseAggregateTableBody" class="collapse show">
@@ -137,9 +153,17 @@
 </table>
 
 <table class="table label-value-table" id="componentRolesTable">
-    <thead data-toggle="collapse" data-target="#componentRolesTableBody" aria-expanded="true" aria-controls="componentRolesTableBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#componentRolesTableBody" aria-expanded="true" aria-controls="componentRolesTableBody">
         <tr>
-            <th colspan="2"><liferay-ui:message key="roles" /></th>
+            <th colspan="2">
+                <div class="d-flex justify-content-between">
+                    <liferay-ui:message key="roles" />
+                    <div>
+                        <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                        <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                    </div>
+                </div>
+            </th>
         </tr>
     </thead>
     <tbody id="componentRolesTableBody" class="collapse show">
@@ -179,3 +203,15 @@
     </tr>
     </tbody>
 </table>
+
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+
+    require(['jquery', 'modules/expandCollapse'], function($, expandCollapse){
+
+            $("th").click(function () {
+              expandCollapse.toggleIcon($(this));
+            });
+    });
+
+</script>

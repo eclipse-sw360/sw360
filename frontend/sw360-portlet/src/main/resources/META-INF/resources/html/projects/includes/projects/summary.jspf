@@ -16,9 +16,17 @@
 </core_rt:if>
 
 <table class="table label-value-table" id="general">
-    <thead data-toggle="collapse" data-target="#generalBody" aria-expanded="true" aria-controls="generalBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#generalBody" aria-expanded="true" aria-controls="generalBody">
     <tr>
-        <th colspan="2"><liferay-ui:message key="general.information" /></th>
+        <th colspan="2">
+            <div class="d-flex justify-content-between">
+                <liferay-ui:message key="general.information" />
+                <div>
+                    <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                    <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                </div>
+            </div>
+        </th>
     </tr>
     </thead>
     <tbody id="generalBody" class="collapse show">
@@ -86,9 +94,17 @@
 </table>
 
 <table class="table label-value-table" id="roles">
-    <thead data-toggle="collapse" data-target="#rolesBody" aria-expanded="true" aria-controls="rolesBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#rolesBody" aria-expanded="true" aria-controls="rolesBody">
     <tr>
-        <th colspan="2"><liferay-ui:message key="roles" /></th>
+        <th colspan="2">
+            <div class="d-flex justify-content-between">
+                <liferay-ui:message key="roles" />
+                <div>
+                    <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                    <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                </div>
+            </div>
+        </th>
     </tr>
     </thead>
     <tbody id="rolesBody" class="collapse show">
@@ -138,3 +154,16 @@
     </tr>
     </tbody>
 </table>
+
+<%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+
+    require(['jquery', 'modules/expandCollapse'], function($, expandCollapse){
+        $(document).ready(function () {
+            $("th").click(function () {
+              expandCollapse.toggleIcon($(this));
+            });
+        });
+    });
+
+</script>

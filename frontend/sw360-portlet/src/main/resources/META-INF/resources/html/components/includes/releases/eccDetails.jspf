@@ -11,9 +11,17 @@
 <core_rt:set var="eccInfo" value="${release.eccInformation}"/>
 
 <table class="table label-value-table" id="ECCInfo">
-    <thead data-toggle="collapse" data-target="#ECCInfoBody" aria-expanded="true" aria-controls="ECCInfoBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#ECCInfoBody" aria-expanded="true" aria-controls="ECCInfoBody">
     <tr>
-        <th colspan="2"><liferay-ui:message key="ecc.information" /></th>
+        <th colspan="2">
+            <div class="d-flex justify-content-between">
+               <liferay-ui:message key="ecc.information" />
+                <div>
+                    <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                    <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                </div>
+            </div>
+        </th>
     </tr>
     </thead>
     <tbody id="ECCInfoBody" class="collapse show">
