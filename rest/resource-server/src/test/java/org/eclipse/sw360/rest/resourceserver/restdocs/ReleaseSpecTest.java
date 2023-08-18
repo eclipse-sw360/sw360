@@ -71,6 +71,7 @@ import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.junit.Before;
 import org.junit.Test;
@@ -113,6 +114,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360AttachmentService attachmentServiceMock;
+
+    @MockBean
+    private Sw360VendorService sw360VendorService;
 
     @MockBean
     private Sw360LicenseService licenseServiceMock;
@@ -169,6 +173,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.uploadAttachment(any(), any(), any())).willReturn(attachment);
         given(this.attachmentServiceMock.filterAttachmentsToRemove(any(), any(), any())).willReturn(Collections.singleton(attachment));
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
+        given(this.sw360VendorService.getVendorById(any())).willReturn(new Vendor("TV", "Test Vendor", "http://testvendor.com"));
 
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("mainline-id-component", new HashSet<>(Arrays.asList("1432", "4876")));
