@@ -428,6 +428,21 @@ public class RestControllerHelper<T> {
         }
     }
 
+    public Release convertToEmbeddedReleaseAttachments(Release release) {
+        Release embeddedRelease = new Release();
+        embeddedRelease.setId(release.getId());
+        embeddedRelease.setName(release.getName());
+        embeddedRelease.setVersion(release.getVersion());
+        embeddedRelease.setAttachments(release.getAttachments());
+        embeddedRelease.setType(null);
+        return embeddedRelease;
+    }
+
+    public void addEmbeddedProjectAttachmentUsage(HalResource halResource, List<EntityModel<Release>> releases, List<Map<String, Object>> attachmentUsageMap) {
+        halResource.addEmbeddedResource("sw360:release", releases);
+        halResource.addEmbeddedResource("sw360:attachmentUsages", attachmentUsageMap);
+    }
+
     public HalResource<Vendor> addEmbeddedVendor(String vendorFullName) {
         Vendor embeddedVendor = convertToEmbeddedVendor(vendorFullName);
         HalResource<Vendor> halVendor = new HalResource<>(embeddedVendor);
@@ -528,12 +543,10 @@ public class RestControllerHelper<T> {
     }
 
     public HalResource<Release> addEmbeddedReleaseLinks(Release release) {
-        final Release embeddedRelease = convertToEmbeddedLinkedRelease(release);
-	    final HalResource<Release> releaseResource = new HalResource<>(embeddedRelease);
-	    Link releaseLink = linkTo(ReleaseController.class)
-                .slash("api/releases/" + embeddedRelease.getId()).withSelfRel();
-	    releaseResource.add(releaseLink);
-
+        final HalResource<Release> releaseResource = new HalResource<>(release);
+        Link releaseLink = linkTo(ReleaseController.class)
+                .slash("api/releases/" + release.getId()).withSelfRel();
+        releaseResource.add(releaseLink);
         return releaseResource;
     }
 

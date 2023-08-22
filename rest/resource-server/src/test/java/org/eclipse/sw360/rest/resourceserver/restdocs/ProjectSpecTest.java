@@ -512,6 +512,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release.setMainlineState(MainlineState.MAINLINE);
         release.setMainLicenseIds(new HashSet<>(Arrays.asList("GPL-2.0-or-later", "Apache-2.0")));
         release.setOtherLicenseIds(new HashSet<>(Arrays.asList("LGPL-2.0")));
+        release.setAttachments(setOfAttachment);
 
         Release release2 = new Release();
         release2.setId("5578999");
@@ -531,6 +532,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release2.setMainlineState(MainlineState.MAINLINE);
         release2.setMainLicenseIds(new HashSet<>(Arrays.asList("Apache-2.0")));
         release2.setOtherLicenseIds(new HashSet<>(Arrays.asList("GPL-2.0")));
+        release2.setAttachments(setOfAttachment);
 
         Release rel = new Release();
         Map<String, String> releaseExternalIds = new HashMap<>();
@@ -737,25 +739,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(responseFields(
-                        subsectionWithPath("sw360:attachmentUsages.[]id").description("The Id of the attachment usage"),
-                        subsectionWithPath("sw360:attachmentUsages.[]owner")
-                                .description("The owner of attachment usage, possible values are:"
-                                        + Arrays.asList("projectId", "componentId", "releaseId")),
-                        subsectionWithPath("sw360:attachmentUsages.[]attachmentContentId")
-                                .description("The Attachment Content Id associated with the Attachment"),
-                        subsectionWithPath("sw360:attachmentUsages.[]usedBy")
-                                .description("The Id of project using the attachment"),
-                        subsectionWithPath("sw360:attachmentUsages.[]usageData")
-                                .description("The usage information of attachment, possible values are:"
-                                        + Arrays.asList("licenseInfo", "sourcePackage", "manuallySet")),
-                        subsectionWithPath("sw360:attachmentUsages.[]usageData.licenseInfo.excludedLicenseIds")
-                                .description("The list of excluded License Ids."),
-                        subsectionWithPath("sw360:attachmentUsages.[]usageData.licenseInfo.projectPath").description(
-                                "The hierarchy of project in which attachment is used. Ex: projectId1:subProjectId1:subProjectId2"),
-                        subsectionWithPath("sw360:attachmentUsages.[]usageData.licenseInfo.includeConcludedLicense")
-                                .description("Value to indicate whether to include concluded license"),
-                        fieldWithPath("sw360:attachmentUsages").description(
-                                "An array of <<resources-project-get-attachmentusage, AttachmentUsages resources>>"))));
+                        subsectionWithPath("releaseIdToUsage").description("The relationship between linked releases of the project"),
+                        subsectionWithPath("linkedProjects").description("The linked projects"),
+                        subsectionWithPath("_embedded.sw360:release").description("An array of linked releases"),
+                        subsectionWithPath("_embedded.sw360:attachmentUsages").description("An array of project's attachment usages"))));
     }
 
     @Test
