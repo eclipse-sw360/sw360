@@ -185,6 +185,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.filterAttachmentsToRemove(any(), any(), any())).willReturn(Collections.singleton(attachment));
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
         given(this.sw360VendorService.getVendorById(any())).willReturn(new Vendor("TV", "Test Vendor", "http://testvendor.com"));
+        given(this.attachmentServiceMock.isAttachmentExist(eq("1231231254"))).willReturn(true);
 
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("mainline-id-component", new HashSet<>(Arrays.asList("1432", "4876")));
@@ -768,9 +769,23 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_update_release() throws Exception {
-        Release updateRelease = new Release();
-        release.setName("Updated release");
-        release.setComponentType(ComponentType.OSS);
+        Map<String, Object> updateRelease = new HashMap<>();
+        updateRelease.put("name", "Updated release");
+        updateRelease.put("componentType", ComponentType.OSS.toString());
+
+        Map<String, String> attachmentData = new HashMap<>();
+        attachmentData.put("sha1", "da373e491d3863477568896089ee9457bc316783");
+        attachmentData.put("attachmentType",AttachmentType.BINARY_SELF.toString());
+        attachmentData.put("attachmentContentId", "1231231254");
+        attachmentData.put("createdTeam", "Clearing Team 1");
+        attachmentData.put("createdComment", "please check asap");
+        attachmentData.put("createdOn", "2022-08-19");
+        attachmentData.put("createdBy", "admin@sw360.org");
+        attachmentData.put("checkedComment", "everything looks good");
+        attachmentData.put("checkedTeam", "Clearing Team 2");
+        attachmentData.put("checkedOn", "2016-12-18");
+        updateRelease.put("attachments", Collections.singletonList(attachmentData));
+
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(patch("/api/releases/" + releaseId)
                 .contentType(MediaTypes.HAL_JSON)
