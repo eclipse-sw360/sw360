@@ -21,21 +21,6 @@
 <%@ page import="org.eclipse.sw360.datahandler.thrift.MainlineState" %>
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 
-<style>
-    .component-name {
-        display: block;
-        width: max-content;
-        padding-right: 5px;
-        padding-top: 5px;
-    }
-    .component-name-col {
-        font-size: 1rem;
-        display: flex;
-        width: 100%;
-        border: none;
-    }
-</style>
-
 <jsp:useBean id="releasesInNetwork" type="java.util.List<org.eclipse.sw360.datahandler.thrift.components.ReleaseLink>"  scope="request"/>
 <core_rt:set var="mainlineStateEnabledForUserRole" value='<%=PortalConstants.MAINLINE_STATE_ENABLED_FOR_USER%>'/>
 <core_rt:forEach items="${releasesInNetwork}" var="releaseLink" varStatus="loop">
@@ -46,10 +31,7 @@
             <tr id="releaseLinkRow${uuid}" parent-node="${releaseLink.parentNodeId}" data-layer="${releaseLink.layer}" data-index="${releaseLink.index}">
                 <td class="form-group">
                     <div class="component-name-col">
-                        <div class="component-name">
-                            <core_rt:forEach begin="1" end="${releaseLink.layer}" var="val">
-                                  &nbsp;&nbsp;&nbsp;&nbsp;
-                            </core_rt:forEach>
+                        <div class="component-name" style="padding-left: ${releaseLink.layer*19}px">
                             <sw360:out value="${releaseLink.name}"/>
                         </div>
                         <button type="button" class="btn btn-secondary add-child float-right" style="margin-left: auto; margin-right: 0px;">

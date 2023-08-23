@@ -328,4 +328,18 @@
         cursor: pointer;
         pointer-events: auto !important;
     }
+
+    .component-name {
+        display: block;
+        width: max-content;
+        padding-right: 5px;
+        padding-top: 5px;
+    }
+
+    .component-name-col {
+        font-size: 1rem;
+        display: flex;
+        width: 100%;
+        border: none;
+    }
 }
