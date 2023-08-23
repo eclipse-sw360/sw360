@@ -65,6 +65,7 @@ public class ThriftUtils {
             .add(ObligationNode.class)
             .add(LicenseType.class) // License service
             .add(CustomProperties.class) // License service
+            .add(LicenseObligationList.class) // License service
             .add(Project.class).add(ObligationList.class).add(UsedReleaseRelations.class).add(ClearingRequest.class)  // Project service
             .add(User.class) // User service
             .add(Vendor.class) // Vendor service

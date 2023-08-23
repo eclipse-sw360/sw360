@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -372,9 +373,53 @@ public class DatabaseMixInForChangeLog {
             "node",
             "distribution",
             "development",
-            "obligationType"
+            "obligationType",
+            "id",
+            "revision",
+            "type",
+            "whitelist",
+            "developmentString",
+            "distributionString",
+            "setId",
+            "setText",
+            "whitelistSize",
+            "whitelistIterator",
+            "setWhitelist",
+            "setDevelopment",
+            "setDistribution",
+            "customPropertyToValueSize",
+            "setCustomPropertyToValue",
+            "setDevelopmentString",
+            "setDistributionString",
+            "setComments",
+            "setObligationType",
+            "setNode",
+            "setObligationLevel",
+            "externalIdsSize",
+            "setExternalIds",
+            "additionalDataSize",
+            "setAdditionalData",
+            "setRevision",
+            "setType",
+            "setTitle"
     })
     public static abstract class ObligationMixin extends Obligation {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonIgnoreProperties({
+            "id",
+            "revision",
+            "type",
+            "licenseTypeId",
+            "setId",
+            "setRevision",
+            "setType",
+            "setTitle",
+            "setLicenseTypeId",
+            "setLicenseType",
+    })
+    public static abstract class LicenseTypeMixin extends LicenseType {
     }
 
 }

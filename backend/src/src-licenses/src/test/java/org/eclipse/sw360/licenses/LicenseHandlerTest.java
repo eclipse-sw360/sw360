@@ -130,6 +130,7 @@ public class LicenseHandlerTest {
         License license = new License();
         license.setShortname("GPL+3.0");
         license.setFullname("The GPL Software License, Version 3.0");
+        license.addToObligationDatabaseIds("T1");
 
         RequestStatus status = handler.updateLicense(license, user, user);
         assertEquals(RequestStatus.SUCCESS, status);
