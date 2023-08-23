@@ -584,9 +584,7 @@ public class JacksonCustomizations {
                 "id",
                 "revision",
                 "permissions",
-                "moderators",
                 "subscribers",
-                "contributors",
                 "setAttachments",
                 "setCreatedOn",
                 "setRepository",
@@ -660,10 +658,6 @@ public class JacksonCustomizations {
                 "packageIdsIterator"
         })
         static abstract class ReleaseMixin extends Release {
-            @Override
-            @JsonProperty("cpeId")
-            abstract public String getCpeid();
-
             @Override
             @JsonProperty("eccInformation")
             abstract public EccInformation getEccInformation();
