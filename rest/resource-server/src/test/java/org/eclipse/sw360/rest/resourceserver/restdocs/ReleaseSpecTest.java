@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
@@ -69,6 +70,11 @@ import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
+import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
@@ -120,7 +126,11 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360LicenseService licenseServiceMock;
-    private Release release, release3;
+
+    @MockBean
+    private Sw360LicenseInfoService licenseInfoMockService;
+
+    private Release release, release3, releaseTest;
     private Attachment attachment;
     Component component;
     private Project project;
@@ -128,6 +138,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     private final String releaseId = "3765276512";
     private final String attachmentSha1 = "da373e491d3863477568896089ee9457bc316783";
+    private final String attachmentId = "11112222";
 
     @Before
     public void before() throws TException, IOException {
@@ -530,6 +541,11 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.vulnerabilityServiceMock.getVulnerabilityDTOByExternalId(any(), any())).willReturn(vulUpdates);
         given(this.vulnerabilityServiceMock.getVulnerabilitiesByReleaseId(any(), any())).willReturn(vulDtos);
         given(this.vulnerabilityServiceMock.updateReleaseVulnerabilityRelation(any(), any())).willReturn(RequestStatus.SUCCESS);
+
+        releaseTest = new Release();
+        releaseTest.setId("12121212");
+        releaseTest.setName("Test Load SPDX");
+        releaseTest.setVersion("1.0");
     }
     @Test
     public void should_document_get_releases() throws Exception {
@@ -1183,5 +1199,77 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_load_spdx_licenses_info_from_isr() throws Exception {
+        mockLicensesInfo(AttachmentType.INITIAL_SCAN_REPORT);
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/releases/" + releaseTest.getId() + "/spdxLicensesInfo?attachmentId=" + attachmentId)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_document_load_spdx_licenses_info_from_clx_or_cli() throws Exception {
+        mockLicensesInfo(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/releases/" + releaseTest.getId() + "/spdxLicensesInfo?attachmentId=" + attachmentId)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
+    }
+
+    public void mockLicensesInfo(AttachmentType attachmentType) throws TException{
+        Set<Attachment> listAttachment = new HashSet<>();
+        Attachment attachmentTest = new Attachment();
+
+        attachmentTest.setSha1(attachmentSha1);
+        attachmentTest.setAttachmentType(attachmentType);
+        attachmentTest.setCreatedOn("2016-12-18");
+        attachmentTest.setCreatedBy("admin@sw360.org");
+        attachmentTest.setFilename("SPDX_filename.rdf");
+        attachmentTest.setAttachmentContentId(attachmentId);
+        listAttachment.add(attachmentTest);
+        listAttachment.add(attachment);
+        releaseTest.setAttachments(listAttachment);
+
+        List<LicenseInfoParsingResult> licenseInfoResults = new ArrayList<>();
+        LicenseInfoParsingResult licenseInfoParsingResult = new LicenseInfoParsingResult();
+        licenseInfoParsingResult.setStatus(LicenseInfoRequestStatus.SUCCESS);
+        licenseInfoParsingResult.setRelease(releaseTest);
+        LicenseInfo licenseInfo = new LicenseInfo();
+        licenseInfo.setFilenames(Collections.singletonList("SPDX_filename.rdf"));
+        LicenseNameWithText license1 = new LicenseNameWithText();
+        license1.setLicenseName("MIT");
+        license1.setLicenseText("MIT Text");
+        license1.setLicenseSpdxId("MIT");
+
+        LicenseNameWithText license2 = new LicenseNameWithText();
+        license2.setLicenseName("RSA-Security");
+        license2.setLicenseText("License by Nomos.");
+        license2.setLicenseSpdxId("RSA-Security");
+
+        if (AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType)) {
+            license1.setSourceFiles(Sets.newHashSet(
+                    "test-3.2.tar.gz/test-3.2/sample",
+                    "test-3.2.tar.gz/test-3.2/support/sys/cron",
+                    "test-3.2.tar.gz/test-3.2/support/README")
+            );
+            license2.setSourceFiles(Sets.newHashSet(
+                    "test-3.2.tar.gz/test-3.2/support/md5.h")
+            );
+        } else {
+            licenseInfo.setConcludedLicenseIds(Sets.newHashSet("GPL", "BSD-3-Clause"));
+        }
+
+        licenseInfo.setLicenseNamesWithTexts(Sets.newHashSet(license1, license2));
+
+        licenseInfoParsingResult.setLicenseInfo(licenseInfo);
+        licenseInfoResults.add(licenseInfoParsingResult);
+        boolean includeConcludedLicense = AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(releaseTest.getId()), any())).willReturn(releaseTest);
+        given(this.licenseInfoMockService.getLicenseInfoForAttachment(any(), any(), any(), eq(includeConcludedLicense))).willReturn(licenseInfoResults);
     }
 }
