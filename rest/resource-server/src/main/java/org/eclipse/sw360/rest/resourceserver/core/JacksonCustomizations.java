@@ -632,7 +632,6 @@ public class JacksonCustomizations {
                 "setEccInformation",
                 "languagesIterator",
                 "operatingSystemsIterator",
-                "cotsDetails",
                 "documentState",
                 "contributorsIterator",
                 "rolesSize",
