@@ -18,6 +18,10 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -45,26 +49,46 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.RestController;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RestController
+@SecurityRequirement(name = "tokenAuth")
 public class SearchController implements RepresentationModelProcessor<RepositoryLinksResource> {
-    
+
     private static final Logger log = LogManager.getLogger(SearchController.class);
-    
+
     public static final String SEARCH_URL = "/search";
-    
+
     @Autowired
     private Sw360SearchService sw360SearchService;
-    
+
     @NonNull
     private final RestControllerHelper restControllerHelper;
-    
 
+
+    @Operation(
+            summary = "List all the search results based on the search text and type.",
+            description = "List all the search results based on the search text and type.",
+            tags = {"Search"}
+    )
     @RequestMapping(value = SEARCH_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<SearchResult>>> getSearchResult(Pageable pageable,
-            @RequestParam(value = "searchText") String searchText, @RequestParam Optional<List<String>> typeMasks,
-            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+    public ResponseEntity<CollectionModel<EntityModel<SearchResult>>> getSearchResult(
+            Pageable pageable,
+            @Parameter(description = "The search text.")
+            @RequestParam(value = "searchText") String searchText,
+            @Parameter(
+                    description = "The type of resource.",
+                    schema = @Schema(
+                            allowableValues = {"project", "component", "license", "release", "obligation", "user",
+                                    "vendor"},
+                            type = "array"
+                    )
+            )
+            @RequestParam Optional<List<String>> typeMasks,
+            HttpServletRequest request
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         log.debug("SearchText = {} typeMasks = {}", searchText, typeMasks);
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<SearchResult> searchResults = sw360SearchService.search(searchText, sw360User, typeMasks);

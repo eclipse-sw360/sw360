@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
@@ -267,7 +268,66 @@ public class JacksonCustomizations {
                 "packageIdsIterator",
                 "packageIds",
                 "setReleaseRelationNetwork",
-                "releaseRelationNetwork"
+                "releaseRelationNetwork",
+                "projectTypeIsSet",
+                "tagIsSet",
+                "projectResponsibleIsSet",
+                "leadArchitectIsSet",
+                "securityResponsiblesIsSet",
+                "projectOwnerIsSet",
+                "linkedProjectsIsSet",
+                "releaseIdToUsageIsSet",
+                "clearingTeamIsSet",
+                "preevaluationDeadlineIsSet",
+                "systemTestStartIsSet",
+                "systemTestEndIsSet",
+                "deliveryStartIsSet",
+                "phaseOutSinceIsSet",
+                "enableSvmIsSet",
+                "considerReleasesFromExternalListIsSet",
+                "licenseInfoHeaderTextIsSet",
+                "enableVulnerabilitiesDisplayIsSet",
+                "obligationsTextIsSet",
+                "clearingSummaryIsSet",
+                "specialRisksOSSIsSet",
+                "generalRisks3rdPartyIsSet",
+                "specialRisks3rdPartyIsSet",
+                "deliveryChannelsIsSet",
+                "remarksAdditionalRequirementsIsSet",
+                "clearingRequestIdIsSet",
+                "releaseClearingStateSummaryIsSet",
+                "linkedObligationIdIsSet",
+                "externalUrlsIsSet",
+                "releaseRelationNetworkIsSet",
+                "domainIsSet",
+                "stateIsSet",
+                "createdByIsSet",
+                "createdOnIsSet",
+                "packageIdsIsSet",
+                "modifiedByIsSet",
+                "modifiedOnIsSet",
+                "versionIsSet",
+                "externalIdsIsSet",
+                "additionalDataIsSet",
+                "attachmentsIsSet",
+                "clearingStateIsSet",
+                "contributorsIsSet",
+                "rolesIsSet",
+                "vendorIsSet",
+                "vendorIdIsSet",
+                "ownerAccountingUnitIsSet",
+                "ownerGroupIsSet",
+                "ownerCountryIsSet",
+                "visbilityIsSet",
+                "businessUnitIsSet",
+                "idIsSet",
+                "revisionIsSet",
+                "typeIsSet",
+                "nameIsSet",
+                "descriptionIsSet",
+                "documentStateIsSet",
+                "permissionsIsSet",
+                "moderatorsIsSet"
         })
         static abstract class ProjectMixin extends Project {
 
@@ -360,7 +420,30 @@ public class JacksonCustomizations {
                 "setPrimaryRoles",
                 "setDeactivated",
                 "oidcClientInfosSize",
-                "setOidcClientInfos"
+                "setOidcClientInfos",
+                "commentMadeDuringModerationRequest",
+                "oidcClientInfosIsSet",
+                "passwordIsSet",
+                "idIsSet",
+                "revisionIsSet",
+                "typeIsSet",
+                "emailIsSet",
+                "userGroupIsSet",
+                "externalidIsSet",
+                "fullnameIsSet",
+                "givennameIsSet",
+                "lastnameIsSet",
+                "departmentIsSet",
+                "wantsMailNotificationIsSet",
+                "commentMadeDuringModerationRequestIsSet",
+                "notificationPreferencesIsSet",
+                "formerEmailAddressesIsSet",
+                "restApiTokensIsSet",
+                "myProjectsPreferenceSelectionIsSet",
+                "secondaryDepartmentsAndRolesIsSet",
+                "primaryRolesIterator",
+                "primaryRolesIsSet",
+                "deactivatedIsSet"
         })
         static abstract class UserMixin extends User {
             @Override
@@ -815,15 +898,24 @@ public class JacksonCustomizations {
                 "setPermissions",
                 "setFullname",
                 "setShortname",
-                "setUrl"
+                "setUrl",
+                "fullnameIsSet",
+                "permissionsIsSet",
+                "typeIsSet",
+                "revisionIsSet",
+                "idIsSet",
+                "shortnameIsSet",
+                "urlIsSet"
         })
         static abstract class VendorMixin extends Vendor {
             @Override
             @JsonProperty("fullName")
+            @Schema(description = "The full name of the vendor")
             abstract public String getFullname();
 
             @Override
             @JsonProperty("shortName")
+            @Schema(description = "The Short Name of the vendor")
             abstract public String getShortname();
         }
 

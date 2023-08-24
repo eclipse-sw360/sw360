@@ -9,6 +9,9 @@
  */
 package org.eclipse.sw360.rest.resourceserver.user;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,11 +32,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.UnsupportedEncodingException;
@@ -47,6 +46,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @BasePathAwareController
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RestController
+@SecurityRequirement(name = "tokenAuth")
 public class UserController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     protected final EntityLinks entityLinks;
@@ -62,6 +63,11 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
+    @Operation(
+            summary = "List all of the service's users.",
+            description = "List all of the service's users.",
+            tags = {"Users"}
+    )
     @RequestMapping(value = USERS_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers() {
         List<User> sw360Users = userService.getAllUsers();
@@ -79,10 +85,16 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     // '/users/{xyz}' searches by email, as opposed to by id, as is customary,
     // for compatibility with older version of the REST API
+    @Operation(
+            summary = "Get a single user.",
+            description = "Get a single user by email.",
+            tags = {"Users"}
+    )
     @RequestMapping(value = USERS_URL + "/{email:.+}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<User>> getUserByEmail(
-            @PathVariable("email") String email) {
-
+            @Parameter(description = "The email of the user to be retrieved.")
+            @PathVariable("email") String email
+    ) {
         String decodedEmail;
         try {
             decodedEmail = URLDecoder.decode(email, "UTF-8");
@@ -96,16 +108,31 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     }
 
     // unusual URL mapping for compatibility with older version of the REST API (see getUserByEmail())
+    @Operation(
+            summary = "Get a single user.",
+            description = "Get a single user by id.",
+            tags = {"Users"}
+    )
     @RequestMapping(value = USERS_URL + "/byid/{id:.+}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<User>> getUser(
-            @PathVariable("id") String id) {
+            @Parameter(description = "The id of the user to be retrieved.")
+            @PathVariable("id") String id
+    ) {
         User sw360User = userService.getUser(id);
         HalResource<User> halResource = createHalUser(sw360User);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Create a new user.",
+            description = "Create a user (not in Liferay).",
+            tags = {"Users"}
+    )
     @PostMapping(value = USERS_URL)
-    public ResponseEntity<EntityModel<User>> createUser(@RequestBody User user) throws TException {
+    public ResponseEntity<EntityModel<User>> createUser(
+            @Parameter(description = "The user to be created.")
+            @RequestBody User user
+    ) throws TException {
         if(CommonUtils.isNullEmptyOrWhitespace(user.getPassword())) {
             throw new HttpMessageNotReadableException("Password can not be null or empty or whitespace!");
         }
