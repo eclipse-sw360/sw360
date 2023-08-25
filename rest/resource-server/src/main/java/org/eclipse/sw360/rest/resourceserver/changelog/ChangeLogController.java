@@ -20,6 +20,12 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -30,13 +36,13 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.UriTemplate;
@@ -54,9 +60,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.RestController;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RestController
+@SecurityRequirement(name = "tokenAuth")
 public class ChangeLogController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     private static final Logger log = LogManager.getLogger(ChangeLogController.class);
@@ -71,9 +80,27 @@ public class ChangeLogController implements RepresentationModelProcessor<Reposit
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
 
+    @Operation(
+            summary = "Get change logs for a document.",
+            description = "List all the changelog based on the document id and parent document id.",
+            tags = {"Changelog"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = {
+                                    @Content(mediaType = MediaTypes.HAL_JSON_VALUE,
+                                            schema = @Schema(implementation = ChangeLogs.class))
+                            }
+                    ),
+            }
+    )
     @RequestMapping(value = CHANGE_LOG_URL + "/document/{id}", method = RequestMethod.GET)
-    public ResponseEntity getChangeLogForDocument(Pageable pageable, @PathVariable("id") String docId,
-            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException,
+    public ResponseEntity getChangeLogForDocument(
+            Pageable pageable,
+            @Parameter(description = "id of the document")
+            @PathVariable("id") String docId,
+            HttpServletRequest request
+    ) throws TException, URISyntaxException, PaginationParameterException,
             ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<ChangeLogs> changelogs = sw360ChangeLogService.getChangeLogsByDocumentId(docId, sw360User);

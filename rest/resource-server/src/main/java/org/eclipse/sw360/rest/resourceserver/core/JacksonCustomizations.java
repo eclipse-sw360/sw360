@@ -742,7 +742,7 @@ public class JacksonCustomizations {
                 "setSuperAttachmentId",
                 "setSuperAttachmentFilename"
         })
-        static abstract class AttachmentMixin {
+        static abstract class AttachmentMixin extends Attachment {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -767,7 +767,7 @@ public class JacksonCustomizations {
                 "setSuperAttachmentFilename",
                 "setUsageAttachment"
         })
-        static abstract class AttachmentDTOMixin {
+        static abstract class AttachmentDTOMixin extends AttachmentDTO {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

@@ -10,6 +10,10 @@
 
 package org.eclipse.sw360.rest.resourceserver.attachment;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +35,10 @@ import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.hateoas.*;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.UriTemplate;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
@@ -49,6 +56,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @BasePathAwareController
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RestController
+@SecurityRequirement(name = "tokenAuth")
 public class AttachmentController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String ATTACHMENTS_URL = "/attachments";
 
@@ -67,9 +76,16 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
+    @Operation(
+            summary = "Get attachment information.",
+            description = "Get attachment information.",
+            tags = {"Attachments"}
+    )
     @GetMapping(value = ATTACHMENTS_URL + "/{id}")
     public ResponseEntity<EntityModel<Attachment>> getAttachmentForId(
-            @PathVariable("id") String id) throws TException {
+            @Parameter(description = "id of the attachment")
+            @PathVariable("id") String id
+    ) throws TException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         AttachmentInfo attachmentInfo = attachmentService.getAttachmentById(id);
@@ -77,8 +93,16 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
         return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Get attachment information by sha1.",
+            description = "Get attachment information by sha1 and the resource having it.",
+            tags = {"Attachments"}
+    )
     @GetMapping(value = ATTACHMENTS_URL)
-    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getAttachments(@RequestParam String sha1) throws TException {
+    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getAttachments(
+            @Parameter(description = "sha1 of the attachment", required = true)
+            @RequestParam String sha1
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<AttachmentInfo> attachmentInfos = attachmentService.getAttachmentsBySha1(sha1);
 
@@ -96,8 +120,22 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
         }
     }
 
+    @Operation(
+            summary = "Create attachment.",
+            description = "Create an attachment.",
+            tags = {"Attachments"}
+    )
     @RequestMapping(value = ATTACHMENTS_URL , method = RequestMethod.POST, consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<List<AttachmentDTO>> createAttachment(@RequestParam ("files") List<MultipartFile> files) throws TException, IOException {
+    public ResponseEntity<List<AttachmentDTO>> createAttachment(
+            @Parameter(description = "List of files to attach",
+                    schema = @Schema(
+                            type = "string",
+                            format = "binary",
+                            description = "File to attach"
+                    )
+            )
+            @RequestParam("files") List<MultipartFile> files
+    ) throws TException, IOException {
         if (files == null || files.isEmpty()) {
             throw new RuntimeException("You must select at least one file for uploading");
         }
