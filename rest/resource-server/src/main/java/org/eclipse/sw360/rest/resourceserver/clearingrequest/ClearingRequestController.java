@@ -20,6 +20,10 @@ import java.util.TreeSet;
 
 import javax.servlet.http.HttpServletRequest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
@@ -38,10 +42,7 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import lombok.NonNull;
@@ -49,6 +50,8 @@ import lombok.RequiredArgsConstructor;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RestController
+@SecurityRequirement(name = "tokenAuth")
 public class ClearingRequestController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     public static final String CLEARING_REQUEST_URL = "/clearingrequest";
@@ -68,9 +71,18 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     private final com.fasterxml.jackson.databind.Module sw360Module;
 
 
+    @Operation(
+            summary = "Get clearing request by id.",
+            description = "Get a clearing request by id.",
+            tags = {"ClearingRequest"}
+    )
     @RequestMapping(value = CLEARING_REQUEST_URL + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestById(Pageable pageable, @PathVariable("id") String docId,
-            HttpServletRequest request) throws TException, URISyntaxException {
+    public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestById(
+            Pageable pageable,
+            @Parameter(description = "id of the clearing request")
+            @PathVariable("id") String docId,
+            HttpServletRequest request
+    ) throws TException, URISyntaxException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestById(docId, sw360User);
         HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User);
@@ -78,9 +90,18 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         return new ResponseEntity<>(halClearingRequest, status);
     }
 
+    @Operation(
+            summary = "Get the ClearingRequest based on the project id.",
+            description = "Get the ClearingRequest based on the project id.",
+            tags = {"ClearingRequest"}
+    )
     @RequestMapping(value = CLEARING_REQUEST_URL + "/project/{id}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestByProjectId(Pageable pageable, @PathVariable("id") String projectId,
-            HttpServletRequest request) throws TException, URISyntaxException {
+    public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestByProjectId(
+            Pageable pageable,
+            @Parameter(description = "id of the project")
+            @PathVariable("id") String projectId,
+            HttpServletRequest request
+    ) throws TException, URISyntaxException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestByProjectId(projectId, sw360User);
         HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User);
@@ -102,9 +123,22 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         return halClearingRequest;
     }
 
+    @Operation(
+            summary = "Get all the Clearing Requests visible to the user.",
+            description = "Get all the Clearing Requests visible to the user.",
+            tags = {"ClearingRequest"}
+    )
     @RequestMapping(value = CLEARING_REQUESTS_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<ClearingRequest>>> getMyClearingRequests(Pageable pageable,
-            @RequestParam(value = "state", required = false) String state, HttpServletRequest request) throws TException {
+    public ResponseEntity<CollectionModel<EntityModel<ClearingRequest>>> getMyClearingRequests(
+            Pageable pageable,
+            @Parameter(description = "The clearing request state of the request.",
+                    schema = @Schema(
+                            implementation = ClearingRequestState.class
+                    )
+            )
+            @RequestParam(value = "state", required = false) String state,
+            HttpServletRequest request
+    ) throws TException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Set<ClearingRequest> clearingRequestSet = new TreeSet<>();
