@@ -1,5 +1,5 @@
 [![Eclipse Public License 2.0](https://img.shields.io/badge/license-EPL--2.0-green.svg "Eclipse Public License 2.0")](LICENSE)
-[![Build Status](https://travis-ci.org/eclipse/sw360.svg?branch=master)](https://travis-ci.org/eclipse/sw360)
+[![Build Status](https://github.com/eclipse-sw360/sw360/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/eclipse-sw360/sw360/actions/workflows/build_and_test.yml)
 [![Slack Channel](https://img.shields.io/badge/slack-sw360chat-blue.svg?longCache=true&logo=slack)](https://join.slack.com/t/sw360chat/shared_invite/enQtNzg5NDQxMTQyNjA5LThiMjBlNTRmOWI0ZjJhYjc0OTk3ODM4MjBmOGRhMWRmN2QzOGVmMzQwYzAzN2JkMmVkZTI1ZjRhNmJlNTY4ZGI)
 [![Changelog](https://badgen.net/badge/changelog/%E2%98%85/blue)](https://github.com/eclipse/sw360/blob/master/CHANGELOG.md)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/eclipse/sw360)](https://github.com/eclipse/sw360/releases/latest)
