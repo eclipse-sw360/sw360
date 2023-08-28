@@ -93,7 +93,7 @@ This composed image runs under a single default network, called **sw360net**
 So any external docker image can connect to internal couchdb or postgresql through this network
 
 
-## Running the image
+## Running the image first time
 
 * Run the resulting image:
 
@@ -112,6 +112,11 @@ So any external docker image can connect to internal couchdb or postgresql throu
     ```sh
     docker logs -f sw360
     ```
+
+### Post setup configuration
+
+* Please read this page after you have initial screen:
+[SW360 Initial Setup Configuration](https://eclipse.dev/sw360/docs/deployment/legacy/deploy-liferay7.4/)
 
 ## Fossology
 For docker based approach, is recommended use official [Fossology docker image](https://hub.docker.com/r/fossology/fossology/)
