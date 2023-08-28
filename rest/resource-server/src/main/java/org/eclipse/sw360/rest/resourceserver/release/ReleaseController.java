@@ -50,6 +50,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.VerificationState;
 import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
+import org.eclipse.sw360.datahandler.thrift.RestrictedResource;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
@@ -286,6 +287,10 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                     Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
                     resources.add(EntityModel.of(embeddedComponent));
                 });
+
+        RestrictedResource restrictedResource = new RestrictedResource();
+        restrictedResource.setProjects(releaseService.countProjectsByReleaseId(id) - sw360Projects.size());
+        resources.add(EntityModel.of(restrictedResource));
 
         CollectionModel<EntityModel> finalResources = restControllerHelper.createResources(resources);
         HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;

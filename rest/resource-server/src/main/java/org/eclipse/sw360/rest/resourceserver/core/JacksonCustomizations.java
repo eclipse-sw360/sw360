@@ -113,6 +113,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(ProjectDTO.class, Sw360Module.ProjectDTOMixin.class);
             setMixInAnnotation(EmbeddedProjectDTO.class, Sw360Module.EmbeddedProjectDTOMixin.class);
             setMixInAnnotation(ReleaseNode.class, Sw360Module.ReleaseNodeMixin.class);
+            setMixInAnnotation(RestrictedResource.class, Sw360Module.RestrictedResourceMixin.class);
 
             // Make spring doc aware of the mixin(s)
             SpringDocUtils.getConfig()
@@ -159,7 +160,8 @@ public class JacksonCustomizations {
                     .replaceWithClass(ModerationPatch.class, Sw360Module.ModerationPatchMixin.class)
                     .replaceWithClass(ProjectDTO.class, Sw360Module.ProjectDTOMixin.class)
                     .replaceWithClass(EmbeddedProjectDTO.class, Sw360Module.EmbeddedProjectDTOMixin.class)
-                    .replaceWithClass(ReleaseNode.class, Sw360Module.ReleaseNodeMixin.class);
+                    .replaceWithClass(ReleaseNode.class, Sw360Module.ReleaseNodeMixin.class)
+                    .replaceWithClass(RestrictedResource.class, Sw360Module.RestrictedResourceMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -1753,6 +1755,14 @@ public class JacksonCustomizations {
                 "setReleaseRelationship"
         })
         public abstract static class ReleaseNodeMixin extends ReleaseNode {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setProjects",
+                "setComponents"
+        })
+        public abstract static class RestrictedResourceMixin extends RestrictedResource {
         }
     }
 }

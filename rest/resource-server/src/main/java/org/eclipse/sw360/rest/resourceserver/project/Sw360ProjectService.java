@@ -547,4 +547,20 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public void syncReleaseRelationNetworkAndReleaseIdToUsage(Project project, User user) throws TException {
         SW360Utils.syncReleaseRelationNetworkAndReleaseIdToUsage(project, user);
     }
+
+    /**
+     * Count the number of projects are using the releases that has releaseIds
+     * @param releaseIds              Ids of Releases
+     * @return int                    Number of projects
+     * @throws TException
+     */
+    public int countProjectsByReleaseIds(Set<String> releaseIds) {
+        try {
+            ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+            return sw360ProjectClient.getCountByReleaseIds(releaseIds);
+        } catch (TException e) {
+            log.error(e.getMessage());
+            return 0;
+        }
+    }
 }

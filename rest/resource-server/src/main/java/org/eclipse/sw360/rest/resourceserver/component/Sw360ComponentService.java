@@ -309,4 +309,18 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
         return requestStatus;
     }
+
+    /**
+     * Count the number of projects are using the component that has componentId
+     *
+     * @param componentId Ids of Component
+     * @return int                    Number of projects
+     * @throws TException
+     */
+    public int countProjectsByComponentId(String componentId, User sw360user) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        Component component = sw360ComponentClient.getComponentById(componentId, sw360user);
+        Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
+        return projectService.countProjectsByReleaseIds(releaseIds);
+    }
 }

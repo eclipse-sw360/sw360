@@ -338,6 +338,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .setComponentType(ComponentType.OSS)
                         .setExternalIds(Collections.singletonMap("component-id-key", "c77321"))
         );
+        given(this.componentServiceMock.countProjectsByComponentId(eq("17653524"), any())).willReturn(2);
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
@@ -684,6 +685,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]version").description("The project version"),
                                 subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
                                 subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_embedded.sw360:restrictedResources.[]projects").description("Number of restricted projects"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }

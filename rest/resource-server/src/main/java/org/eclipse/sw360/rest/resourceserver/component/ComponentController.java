@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ImportBomRequestPreparation;
+import org.eclipse.sw360.datahandler.thrift.RestrictedResource;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
@@ -200,6 +201,10 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                     Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
                     resources.add(EntityModel.of(embeddedComponent));
                 });
+
+        RestrictedResource restrictedResource = new RestrictedResource();
+        restrictedResource.setProjects(componentService.countProjectsByComponentId(id, user) - sw360Projects.size());
+        resources.add(EntityModel.of(restrictedResource));
 
         CollectionModel<EntityModel> finalResources = CollectionModel.of(resources);
         return new ResponseEntity(finalResources, HttpStatus.OK);
