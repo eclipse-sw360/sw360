@@ -166,4 +166,12 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         licenseService.deleteAllLicenseInfo(sw360User);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = LICENSES_URL + "/import/SPDX", method = RequestMethod.POST)
+    public ResponseEntity importSPDX() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        licenseService.importSpdxInformation(sw360User);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

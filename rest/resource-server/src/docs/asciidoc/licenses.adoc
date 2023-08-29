@@ -98,3 +98,14 @@ include::{snippets}/should_document_delete_all_license_info/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_delete_all_license_info/http-response.adoc[]
+
+[[import-spdx-info]]
+==== Import SPDX information
+
+A `POST` request will import SPDX info.
+
+===== Example requestimport-SPDX-info
+include::{snippets}/should_document_import_spdx_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_import_spdx_info/http-response.adoc[]
