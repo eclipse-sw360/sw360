@@ -131,3 +131,14 @@ include::{snippets}/should_document_upload_license/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_upload_license/http-response.adoc[]
+
+[[import-osadl-info]]
+==== Import osadl information
+
+A `POST` request will import osadl licenses info.
+
+===== Example request
+include::{snippets}/should_document_import_osadl_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_import_osadl_info/http-response.adoc[]

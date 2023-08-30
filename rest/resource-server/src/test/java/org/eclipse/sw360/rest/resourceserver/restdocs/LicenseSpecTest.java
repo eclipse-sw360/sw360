@@ -17,6 +17,8 @@ import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,6 +67,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
 
     private License license;
     private Obligation obligation1, obligation2;
+    private RequestSummary requestSummary = new RequestSummary();
 
     @Before
     @SuppressWarnings("unchecked")
@@ -91,6 +94,8 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         List<License> licenseList = new ArrayList<>();
         licenseList.add(license);
         licenseList.add(license2);
+        
+        requestSummary.setRequestStatus(RequestStatus.SUCCESS);
 
         given(this.licenseServiceMock.getLicenses()).willReturn(licenseList);
         given(this.licenseServiceMock.getLicenseById(eq(license.getId()))).willReturn(license);
@@ -99,6 +104,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         Mockito.doNothing().when(licenseServiceMock).importSpdxInformation(any());
         Mockito.doNothing().when(licenseServiceMock).getDownloadLicenseArchive(any(), any(), any());
         Mockito.doNothing().when(licenseServiceMock).uploadLicense(any(), any(), anyBoolean(), anyBoolean());
+        given(this.licenseServiceMock.importOsadlInformation(any())).willReturn(requestSummary);
         obligation1 = new Obligation();
         obligation1.setId("0001");
         obligation1.setTitle("Obligation 1");
@@ -248,5 +254,13 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                 .file(file)
                 .header("Authorization", "Bearer " + accessToken);
         this.mockMvc.perform(builder).andExpect(status().isOk());
+    }
+        		
+    public void should_document_import_osadl_info() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(post("/api/licenses/import/OSADL")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
     }
 }

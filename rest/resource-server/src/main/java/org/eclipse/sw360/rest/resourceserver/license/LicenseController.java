@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -204,5 +205,16 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             throw new TException(e.getMessage());
 	    }
        return ResponseEntity.ok(Series.SUCCESSFUL);
+     }
+   
+    @RequestMapping(value = LICENSES_URL + "/import/OSADL", method = RequestMethod.POST)
+    public ResponseEntity<RequestSummary> importOsadlInfo() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary=licenseService.importOsadlInformation(sw360User);
+        requestSummary.setMessage("OSADL license has imported successfully");
+        requestSummary.unsetTotalAffectedElements();
+        requestSummary.unsetTotalElements();
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestSummary,status);
     }
 }
