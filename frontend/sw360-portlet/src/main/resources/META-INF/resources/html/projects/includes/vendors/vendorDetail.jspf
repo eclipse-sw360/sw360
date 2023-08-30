@@ -9,9 +9,17 @@
 --%>
 
 <table class="table label-value-table" id="projectDetailVendor">
-    <thead data-toggle="collapse" data-target="#vendorBody" aria-expanded="true" aria-controls="vendorBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#vendorBody" aria-expanded="true" aria-controls="vendorBody">
         <tr>
-            <th colspan="2"><liferay-ui:message key="project.vendor" /></th>
+            <th colspan="2">
+                <div class="d-flex justify-content-between">
+                    <liferay-ui:message key="project.vendor" />
+                    <div>
+                        <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                        <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                    </div>
+                </div>
+            </th>
         </tr>
     </thead>
     <tbody id="vendorBody" class="collapse show">

@@ -91,9 +91,17 @@
 <table class="table label-value-table" id="assessmentSummary"
         data-load-assessment-summary-info-url="<%=loadAssessmentSummaryInfoUrl%>"
         data-attachment-content-id="${cliDbid}" data-approved-attachment-content-id="${approvedCliDbid}">
-    <thead data-toggle="collapse" data-target="#assessmentSummaryBody" aria-expanded="true" aria-controls="assessmentSummaryBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#assessmentSummaryBody" aria-expanded="true" aria-controls="assessmentSummaryBody">
         <tr>
-            <th colspan="2"><liferay-ui:message key="assessment.summary" /> <liferay-ui:message key="info" />:</th>
+            <th colspan="2">
+                <div class="d-flex justify-content-between">
+                    <liferay-ui:message key="assessment.summary" /> <liferay-ui:message key="info" />:
+                    <div>
+                        <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                        <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                    </div>
+                </div>
+            </th>
         </tr>
     </thead>
 
@@ -146,9 +154,17 @@
 </table>
 
 <table class="table label-value-table" id="ReleaseClearingOverview">
-    <thead data-toggle="collapse" data-target="#ReleaseClearingOverviewBody" aria-expanded="true" aria-controls="ReleaseClearingOverviewBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#ReleaseClearingOverviewBody" aria-expanded="true" aria-controls="ReleaseClearingOverviewBody">
     <tr>
-        <th colspan="2"><liferay-ui:message key="clearing.details" />: <sw360:ReleaseName release="${release}" /></th>
+        <th colspan="2">
+            <div class="d-flex justify-content-between">
+                <liferay-ui:message key="clearing.details" />: <sw360:ReleaseName release="${release}" />
+                <div>
+                    <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                    <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                </div>
+            </div>
+        </th>
     </tr>
     </thead>
     <tbody id="ReleaseClearingOverviewBody" class="collapse show">
@@ -263,9 +279,17 @@
 </table>
 
 <table class="table label-value-table" id="RequestInfo">
-    <thead data-toggle="collapse" data-target="#RequestInfoBody" aria-expanded="true" aria-controls="RequestInfoBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#RequestInfoBody" aria-expanded="true" aria-controls="RequestInfoBody">
     <tr>
-        <th colspan="2"><liferay-ui:message key="request.information" /></th>
+        <th colspan="2">
+            <div class="d-flex justify-content-between">
+                <liferay-ui:message key="request.information" />
+                <div>
+                    <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                    <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                </div>
+            </div>
+        </th>
     </tr>
     </thead>
     <tbody id="RequestInfoBody" class="collapse show">
@@ -289,9 +313,17 @@
 </table>
 
 <table class="table label-value-table" id="ReleaseSupplementalInfo">
-    <thead data-toggle="collapse" data-target="#ReleaseSupplementalInfoBody" aria-expanded="true" aria-controls="ReleaseSupplementalInfoBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#ReleaseSupplementalInfoBody" aria-expanded="true" aria-controls="ReleaseSupplementalInfoBody">
     <tr>
-        <th colspan="2"><liferay-ui:message key="supplemental.information" /></th>
+        <th colspan="2">
+            <div class="d-flex justify-content-between">
+                <liferay-ui:message key="supplemental.information" />
+                <div>
+                    <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                    <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                </div>
+            </div>
+        </th>
     </tr>
     </thead>
     <tbody id="ReleaseSupplementalInfoBody" class="collapse show">
@@ -310,7 +342,7 @@
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
 <script type="text/javascript">
-    require(['jquery', 'modules/button', 'utils/includes/fossologyClearing', 'modules/dialog'], function ($, button, fossology, dialog) {
+    require(['jquery', 'modules/button', 'utils/includes/fossologyClearing', 'modules/dialog', 'modules/expandCollapse'], function ($, button, fossology, dialog, expandCollapse) {
         var releaseToLicenseDetailsMap = new Map();
         fossology.initialize();
 
@@ -541,6 +573,12 @@
             $parent.append($('<div>', { 'class': styleClass ? styleClass : '' })
                     .append($('<span>', { 'text': message })));
         }
+
+        $(document).ready(function () {
+            $("th").click(function () {
+              expandCollapse.toggleIcon($(this));
+            });
+        });
     });
 
 </script>

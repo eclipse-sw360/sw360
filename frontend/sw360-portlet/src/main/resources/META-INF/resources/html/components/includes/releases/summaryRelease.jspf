@@ -16,9 +16,17 @@
 
 <core_rt:if test="${release != null}">
     <table class="table label-value-table" id="ReleaseDetailOverview">
-        <thead data-toggle="collapse" data-target="#ReleaseDetailOverviewBody" aria-expanded="true" aria-controls="ReleaseDetailOverviewBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+        <thead data-toggle="collapse" data-target="#ReleaseDetailOverviewBody" aria-expanded="true" aria-controls="ReleaseDetailOverviewBody">
         <tr>
-            <th colspan="2"><liferay-ui:message key="general" /></th>
+            <th colspan="2">
+                <div class="d-flex justify-content-between">
+                    <liferay-ui:message key="general" />
+                    <div>
+                        <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                        <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                    </div>
+                </div>
+            </th>
         </tr>
         </thead>
         <tbody id="ReleaseDetailOverviewBody" class="collapse show">
@@ -120,9 +128,17 @@
 
     <core_rt:if test="${release.setRepository}">
         <table class="table label-value-table" id="ReleaseRepository">
-            <thead data-toggle="collapse" data-target="#ReleaseRepositoryBody" aria-expanded="true" aria-controls="ReleaseRepositoryBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+            <thead data-toggle="collapse" data-target="#ReleaseRepositoryBody" aria-expanded="true" aria-controls="ReleaseRepositoryBody">
             <tr>
-                <th colspan="2"><liferay-ui:message key="release.repository" /></th>
+                <th colspan="2">
+                    <div class="d-flex justify-content-between">
+                        <liferay-ui:message key="release.repository" />
+                        <div>
+                            <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                            <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                        </div>
+                    </div>
+                </th>
             </tr>
             </thead>
             <tbody id="ReleaseRepositoryBody" class="collapse show">

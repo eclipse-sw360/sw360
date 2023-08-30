@@ -9,9 +9,17 @@
 --%>
 
 <table class="table label-value-table" id="clearing">
-    <thead data-toggle="collapse" data-target="#clearingBody" aria-expanded="true" aria-controls="clearingBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#clearingBody" aria-expanded="true" aria-controls="clearingBody">
     <tr>
-        <th colspan="2"><liferay-ui:message key="clearing" /></th>
+        <th colspan="2">
+            <div class="d-flex justify-content-between">
+                <liferay-ui:message key="clearing" />
+                <div>
+                    <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                    <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                </div>
+            </div>
+        </th>
     </tr>
     </thead>
     <tbody id="clearingBody" class="collapse show">
@@ -92,9 +100,17 @@
 </table>
 
 <table class="table label-value-table" id="lifecycle">
-    <thead data-toggle="collapse" data-target="#lifecycleBody" aria-expanded="true" aria-controls="lifecycleBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#lifecycleBody" aria-expanded="true" aria-controls="lifecycleBody">
     <tr>
-        <th colspan="2"><liferay-ui:message key="lifecycle" /></th>
+        <th colspan="2">
+            <div class="d-flex justify-content-between">
+                <liferay-ui:message key="lifecycle" />
+                <div>
+                    <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                    <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                </div>
+            </div>
+        </th>
     </tr>
     </thead>
     <tbody id="lifecycleBody" class="collapse show">
@@ -122,9 +138,17 @@
 </table>
 
 <table class="table label-value-table" id="LicenseInfoHeader" title="<liferay-ui:message key="license.info.header" />">
-    <thead data-toggle="collapse" data-target="#LicenseInfoHeaderBody" aria-expanded="true" aria-controls="LicenseInfoHeaderBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#LicenseInfoHeaderBody" aria-expanded="true" aria-controls="LicenseInfoHeaderBody">
     <tr>
-        <th><liferay-ui:message key="license.info.header" /></th>
+        <th colspan="2">
+            <div class="d-flex justify-content-between">
+                <liferay-ui:message key="license.info.header" />
+                <div>
+                    <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                    <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                </div>
+            </div>
+        </th>
     </tr>
     </thead>
     <tbody id="LicenseInfoHeaderBody" class="collapse show">

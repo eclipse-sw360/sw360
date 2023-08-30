@@ -11,9 +11,17 @@
 
 <core_rt:if test="${pkg != null}">
     <table class="table label-value-table" id="PackageDetailOverview">
-        <thead data-toggle="collapse" data-target="#PackageDetailOverviewBody" aria-expanded="true" aria-controls="ReleaseDetailOverviewBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+        <thead data-toggle="collapse" data-target="#PackageDetailOverviewBody" aria-expanded="true" aria-controls="ReleaseDetailOverviewBody">
         <tr>
-            <th colspan="2"><liferay-ui:message key="summary" /></th>
+            <th colspan="2">
+                <div class="d-flex justify-content-between">
+                    <liferay-ui:message key="summary" />
+                    <div>
+                        <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                        <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                    </div>
+                </div>
+            </th>
         </tr>
         </thead>
         <tbody id="PackageDetailOverviewBody" class="collapse show">
@@ -96,4 +104,14 @@
 
 <%--for javascript library loading --%>
 <%@ include file="/html/utils/includes/requirejs.jspf" %>
+<script>
+
+    require(['jquery', 'modules/expandCollapse'], function($, expandCollapse){
+
+            $("th").click(function () {
+              expandCollapse.toggleIcon($(this));
+            });
+    });
+
+</script>
 </core_rt:if>

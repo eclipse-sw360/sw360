@@ -9,9 +9,17 @@
 --%>
 <core_rt:set var="cotsDetails" value="${release.cotsDetails}"/>
 <table class="table label-value-table" id="cotsDetailOverview">
-    <thead data-toggle="collapse" data-target="#cotsDetailOverviewBody" aria-expanded="true" aria-controls="cotsDetailOverviewBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#cotsDetailOverviewBody" aria-expanded="true" aria-controls="cotsDetailOverviewBody">
     <tr>
-        <th colspan="2"><liferay-ui:message key="commercial.details.administration" /></th>
+        <th colspan="2">
+            <div class="d-flex justify-content-between">
+                <liferay-ui:message key="commercial.details.administration" />
+                <div>
+                    <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                    <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                </div>
+            </div>
+        </th>
     </tr>
     </thead>
     <tbody  id="cotsDetailOverviewBody" class="collapse show">
@@ -36,9 +44,17 @@
 </table>
 
 <table class="table label-value-table" id="cotsOssInformation">
-    <thead data-toggle="collapse" data-target="#cotsOssInformationBody" aria-expanded="true" aria-controls="cotsOssInformationBody" title="<liferay-ui:message key="click.to.expand.or.collapse"/>">
+    <thead data-toggle="collapse" data-target="#cotsOssInformationBody" aria-expanded="true" aria-controls="cotsOssInformationBody">
     <tr>
-        <th colspan="2"><liferay-ui:message key="cots.oss.information" /></th>
+        <th colspan="2">
+            <div class="d-flex justify-content-between">
+                <liferay-ui:message key="cots.oss.information" />
+                <div>
+                    <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                    <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                </div>
+            </div>
+        </th>
     </tr>
     </thead>
     <tbody  id="cotsOssInformationBody" class="collapse show">
