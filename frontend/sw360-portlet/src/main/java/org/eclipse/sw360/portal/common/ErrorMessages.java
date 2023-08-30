@@ -35,6 +35,7 @@ public class ErrorMessages {
     public static final String ERROR_RELEASE_OR_COMPONENT_NOT_ACCESSIBLE  = "This release or related components are restricted and / or not accessible.";
     public static final String ERROR_GETTING_LICENSE = "No license details found in the database for given license id.";
     public static final String ERROR_GETTING_RELEASE = "Error fetching release from backend.";
+    public static final String ERROR_DELETING_RELEASE = "Error deleting release in backend.";
     public static final String LICENSE_USED_BY_RELEASE =  "Request could not be processed, as license is used by at least one release!";
     public static final String DOCUMENT_USED_BY_PROJECT_OR_RELEASE = "Document could not be processed, as it is used by other Projects or Releases!";
     public static final String DOCUMENT_USED_BY_PROJECT_OR_RELEASE_OR_PACKAGE = "Document could not be processed, as it is used by other Projects or Releases or Packages!";
@@ -68,6 +69,9 @@ public class ErrorMessages {
     public static final String OBLIGATION_NOT_UPDATED = "Obligation could not be updated.";
     public static final String VENDOR_DUPLICATE = "A vendor with the same name already exists.";
     public static final String ERROR_VENDOR = "Error: Invalid vendor Name or Url.";
+    public static final String ERROR_BULK_DELETING = "Error while bulk deleting";
+    public static final String ERROR_BULK_DELETING_IN_BACKEND = "Error while bulk deleting in backend.";
+    
     public static final String PACKAGE_NOT_ADDED = "Package could not be added.";
     public static final String PACKAGE_DUPLICATE = "A package with the same name and version already exists.";
     public static final String PACKAGE_NAME_VERSION_ERROR = "Name and version of the package cannot contain only space characters.";
@@ -114,6 +118,7 @@ public class ErrorMessages {
             .add(ERROR_COMPONENT_NOT_ACCESSIBLE)
             .add(ERROR_RELEASE_OR_COMPONENT_NOT_ACCESSIBLE)
             .add(ERROR_GETTING_RELEASE)
+            .add(ERROR_DELETING_RELEASE)
             .add(ERROR_GETTING_LICENSE)
             .add(LICENSE_SHORTNAME_TAKEN)
             .add(UPDATE_FAILED_SANITY_CHECK)
@@ -136,6 +141,8 @@ public class ErrorMessages {
             .add(ERROR_UPDATE_VULNERABILITY)
             .add(VENDOR_DUPLICATE)
             .add(ERROR_VENDOR)
+            .add(ERROR_BULK_DELETING)
+            .add(ERROR_BULK_DELETING_IN_BACKEND)
             .add(PACKAGE_NOT_ADDED)
             .add(PACKAGE_DUPLICATE)
             .add(PACKAGE_NAME_VERSION_ERROR)

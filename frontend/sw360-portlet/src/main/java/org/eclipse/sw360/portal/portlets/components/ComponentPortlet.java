@@ -152,6 +152,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    private int nodeIdCounter = 0;
+    
     private boolean typeIsComponent(String documentType) {
         return SW360Constants.TYPE_COMPONENT.equals(documentType);
     }
@@ -956,6 +958,12 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         } else if (PAGENAME_MERGE_RELEASE.equals(pageName)) {
             prepareReleaseMerge(request, response);
             include("/html/components/mergeRelease.jsp", request, response);
+        } else if (PAGENAME_DELETE_BULK_RELEASE.equals(pageName)) {
+            prepareDeleteBulkRelease(request, response);
+            include("/html/components/deleteBulkRelease.jsp", request, response);
+        } else if (PAGENAME_DELETE_BULK_RELEASE_PREVIEW.equals(pageName)) {
+            prepareDeleteBulkReleasePreview(request, response);
+            include("/html/components/deleteBulkReleasePreview.jsp", request, response);
         } else {
             prepareStandardView(request);
             super.doView(request, response);
@@ -1785,6 +1793,9 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                     request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT, user));
                 }
                 request.setAttribute(COMPONENT_VISIBILITY_RESTRICTION, IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED);
+                request.setAttribute(BULK_RELEASE_DELETING, IS_BULK_RELEASE_DELETING_ENABLED);
+                request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user));
+                
 
                 // get vulnerabilities
                 Set<UserGroup> allSecRoles = !CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())
@@ -1890,6 +1901,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 } else {
                     request.setAttribute(IS_USER_ALLOWED_TO_MERGE, PermissionUtils.isUserAtLeast(USER_ROLE_ALLOWED_TO_MERGE_OR_SPLIT_COMPONENT, user));
                 }
+                request.setAttribute(BULK_RELEASE_DELETING, IS_BULK_RELEASE_DELETING_ENABLED);
+                request.setAttribute(IS_USER_ADMIN, PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user));
 
                 Map<RequestedAction, Boolean> permissions = release.getPermissions();
 
@@ -2513,6 +2526,103 @@ public class ComponentPortlet extends FossologyAwarePortlet {
         request.setAttribute(USING_COMPONENTS, Collections.emptySet());
         request.setAttribute(ALL_USING_PROJECTS_COUNT, 0);
         request.setAttribute(IS_ERROR_IN_UPDATE_OR_CREATE, true);
+    }
+
+    private void prepareDeleteBulkRelease(RenderRequest request, RenderResponse response) {
+        try {
+            doBulkReleaseDeleting(request, response, false);
+        } catch (TException e) {
+            if (e instanceof SW360Exception) {
+                SW360Exception sw360Exp = (SW360Exception)e;
+                if (sw360Exp.getErrorCode() == 403) {
+                    log.error("This release or related components are restricted and / or not accessible.", sw360Exp);
+                    setSW360SessionError(request, ErrorMessages.ERROR_RELEASE_OR_COMPONENT_NOT_ACCESSIBLE);
+                } else {
+                    log.error("Error while bulk deleting in backend.", sw360Exp);
+                    setSW360SessionError(request, ErrorMessages.ERROR_BULK_DELETING_IN_BACKEND);
+                }
+            } else {
+                log.error("Error while bulk deleting!", e);
+                setSW360SessionError(request, ErrorMessages.ERROR_BULK_DELETING);
+            }
+        }
+    }
+    
+    private void prepareDeleteBulkReleasePreview(RenderRequest request, RenderResponse response) {
+        try {
+            doBulkReleaseDeleting(request, response, true);
+        } catch (TException e) {
+            if (e instanceof SW360Exception) {
+                SW360Exception sw360Exp = (SW360Exception)e;
+                if (sw360Exp.getErrorCode() == 403) {
+                    log.error("This release or related components are restricted and / or not accessible.", sw360Exp);
+                    setSW360SessionError(request, ErrorMessages.ERROR_RELEASE_OR_COMPONENT_NOT_ACCESSIBLE);
+                } else {
+                    log.error("Error while bulk deleting in backend.", sw360Exp);
+                    setSW360SessionError(request, ErrorMessages.ERROR_BULK_DELETING_IN_BACKEND);
+                }
+            } else {
+                log.error("Error while bulk deleting!", e);
+                setSW360SessionError(request, ErrorMessages.ERROR_BULK_DELETING);
+            }
+        }
+    }
+    
+    private void createBulkOperationNodeList(BulkOperationNode node, String parentPresentationId, List<BulkOperationNode> outNodeList) {
+        String presentationId = String.format("%s-%d", node.getId(), nodeIdCounter++);
+        node.putToAdditionalData("presentationId", presentationId);
+        node.putToAdditionalData("parentPresentationId", parentPresentationId);
+        switch (node.getState()) {
+            case SUCCEEDED:
+                node.putToAdditionalData("presentationStatus", BULK_DELETING_RESULT_DELETED);
+                break;
+            case FAILED:
+                node.putToAdditionalData("presentationStatus", BULK_DELETING_RESULT_ERROR);
+                break;
+            case CONFLICTED:
+                node.putToAdditionalData("presentationStatus", BULK_DELETING_RESULT_CONFLICTED);
+                break;
+            case EXCLUDED:
+                node.putToAdditionalData("presentationStatus", BULK_DELETING_RESULT_REMAINED);
+                break;
+        }
+        outNodeList.add(node);
+        for (BulkOperationNode childNode :  node.childList) {
+            createBulkOperationNodeList(childNode, presentationId, outNodeList);
+        }
+    }
+    
+    private void doBulkReleaseDeleting(RenderRequest request, RenderResponse response, boolean isPreview) throws TException {
+        //Delete records in bulk
+        String releaseId = request.getParameter(RELEASE_ID);
+        final User user = UserCacheHolder.getUserFromRequest(request);
+        ComponentService.Iface client = thriftClients.makeComponentClient();
+        BulkOperationNode rootNode = client.deleteBulkRelease(releaseId, user, isPreview);
+        //Create BulkOperationNode list
+        List<BulkOperationNode> nodeList = new ArrayList<BulkOperationNode>();
+        nodeIdCounter = 0;
+        createBulkOperationNodeList(rootNode, null, nodeList);
+        if (CommonUtils.isNotEmpty(nodeList) && 2 <= nodeList.size()) {
+            BulkOperationNode firstNode = nodeList.get(0);
+            if (firstNode.getType() != BulkOperationNodeType.COMPONENT) {
+                log.error("deleteBulkRelease error! The first node in the result list has the wrong type.");
+                return;
+            }
+            BulkOperationNode secondNode = nodeList.get(1);
+            if (secondNode.getType() != BulkOperationNodeType.RELEASE) {
+                log.error("deleteBulkRelease error! The second node in the result list has the wrong type.");
+                return;
+            }
+            secondNode.setParentId(null);
+            nodeList.remove(0);
+        } else {
+            log.error("deleteBulkRelease error! The number of elements in the return value is insufficient.");
+            return;
+        }
+        
+        //Set RenderRequest attributes
+        request.setAttribute(RELEASE_ID, releaseId);
+        request.setAttribute(BULK_OPERATION_RESULT_LIST, nodeList);
     }
 
     private void fillVendor(Release release) throws TException {
