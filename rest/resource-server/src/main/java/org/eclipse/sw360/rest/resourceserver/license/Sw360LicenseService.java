@@ -153,4 +153,12 @@ public class Sw360LicenseService {
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new LicenseService.Client(protocol);
     }
+    public void importSpdxInformation(User sw360User) throws TException {
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            RequestSummary allSPDXLicenseStatus = sw360LicenseClient.importAllSpdxLicenses(sw360User);
+        } else {
+            throw new HttpMessageNotReadableException("Unable to import All Spdx license. User is not admin");
+        }
+    }
 }

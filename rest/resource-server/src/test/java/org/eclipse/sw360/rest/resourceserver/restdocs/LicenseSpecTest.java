@@ -90,6 +90,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         given(this.licenseServiceMock.getLicenseById(eq(license.getId()))).willReturn(license);
         Mockito.doNothing().when(licenseServiceMock).deleteLicenseById(any(), any());
         Mockito.doNothing().when(licenseServiceMock).deleteAllLicenseInfo(any());
+        Mockito.doNothing().when(licenseServiceMock).importSpdxInformation(any());
         obligation1 = new Obligation();
         obligation1.setId("0001");
         obligation1.setTitle("Obligation 1");
@@ -213,4 +214,12 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    public void should_document_import_spdx_info() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(post("/api/licenses/" + "/import/SPDX")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
+    }
 }
