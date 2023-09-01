@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
@@ -547,6 +548,11 @@ public class ComponentHandler implements ComponentService.Iface {
         assertUser(user);
         assertId(componentId);
         return handler.updateReleaseDependentFieldsForComponentId(componentId, user);
+    }
+    
+    @Override
+    public BulkOperationNode deleteBulkRelease(String releaseId, User user, boolean isPreview) throws SW360Exception {
+        return handler.deleteBulkRelease(releaseId, user, isPreview);
     }
 
     //////////////////////////////////

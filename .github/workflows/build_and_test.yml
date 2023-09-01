@@ -95,7 +95,7 @@ jobs:
 
     - name: Build SW360
       run: |
-        mvn clean package --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false -DRunRestForceUpdateTest=false
+        mvn clean install --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false -DRunRestForceUpdateTest=false
 
     - name: Run PrivateProjectAccessTest
       run: |
@@ -104,6 +104,12 @@ jobs:
         cd ..
         cd libraries/datahandler
         mvn test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true
+        cd ../..
+
+    - name: Run BulkReleaseDeletingTest
+      run: |
+        cd backend/src/src-components
+        mvn test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true
 
     - name: Deploy Backend and Rest Server
       run: |

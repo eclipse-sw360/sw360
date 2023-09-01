@@ -447,6 +447,30 @@ struct ReleaseClearingStatusData {
     5: optional bool accessible = true
 }
 
+enum BulkOperationResultState {
+    SUCCEEDED = 0,
+    FAILED = 1,
+    CONFLICTED = 2,
+    EXCLUDED = 3,
+}
+
+enum BulkOperationNodeType {
+    PROJECT = 0,
+    COMPONENT = 1,
+    RELEASE = 2,
+}
+
+struct BulkOperationNode {
+    1: required string id,
+    2: required string name,
+    3: required string version,
+    4: required BulkOperationNodeType type,
+    5: optional string parentId,
+    6: optional list<BulkOperationNode> childList,
+    7: optional BulkOperationResultState state,
+    8: optional map<string, string> additionalData
+}
+
 struct ClearingReport{
     1: optional string id,
     2: optional string revision,
@@ -828,6 +852,11 @@ service ComponentService {
      * Recomputes the fields of a component that are aggregated by its releases.
      */
     Component recomputeReleaseDependentFields(1: string componentId, 2: User user);
+
+    /**
+     * Deletes the specified release and the linked releases in bulk.
+     */
+    BulkOperationNode deleteBulkRelease(1: string releaseId, 2: User user, 3: bool isPreview) throws (1: SW360Exception exp);
 
     /**
      * check if release is used by other releases, components or projects

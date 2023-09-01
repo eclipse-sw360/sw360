@@ -200,6 +200,8 @@ public class PortalConstants {
     public static final String PAGENAME_RELEASE_DETAIL = "detailRelease";
     public static final String PAGENAME_EDIT_RELEASE = "editRelease";
     public static final String PAGENAME_DUPLICATE_RELEASE = "duplicateRelease";
+    public static final String PAGENAME_DELETE_BULK_RELEASE = "deleteBulkRelease";
+    public static final String PAGENAME_DELETE_BULK_RELEASE_PREVIEW = "deleteBulkReleasePreview";
     public static final String RELEASE_ROLES;
     public static final String RELEASE_EXTERNAL_IDS;
     public static final Set<String> RELEASE_EXTERNAL_ID_KEYS;
@@ -209,6 +211,8 @@ public class PortalConstants {
     public static final String RELEASE_SOURCE_ID = "releaseSourceId";
     public static final String RELEASE_TARGET_ID = "releaseTargetId";
     public static final String EVALUATE_CLI_ATTACHMENTS = "evaluateCLIAttachments";
+    public static final String BULK_OPERATION_RESULT_LIST = "bulkOperationResultList";
+    public static final String BULK_RELEASE_DELETING = "bulkReleaseDeleting";
 
     //! Specialized keys for vendors
     public static final String VENDOR_PORTLET_NAME = PORTLET_NAME_PREFIX + "vendors";
@@ -762,6 +766,12 @@ public class PortalConstants {
     public static final String USER_CLIENT_ID_KEY = "userClientIdKey";
     public static final String USER_CLIENT_ID_ACCESS_VALUE = "userClientIdAccessValue";
     public static final String USER_CLIENT_ID_NAME_VALUE = "userClientIdNameValue";
+    
+    // Bulk deleting
+    public static final String BULK_DELETING_RESULT_REMAINED = "Remained";
+    public static final String BULK_DELETING_RESULT_DELETED = "Deleted";
+    public static final String BULK_DELETING_RESULT_CONFLICTED = "Conflicted";
+    public static final String BULK_DELETING_RESULT_ERROR = "Error";
 
     // Rest API constants
     public static final UserGroup API_WRITE_ACCESS_USERGROUP;
@@ -779,7 +789,7 @@ public class PortalConstants {
     public static final String PREDEFINED_TAGS;
     public static final boolean SSO_LOGIN_ENABLED;
     public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
-    
+    public static final Boolean IS_BULK_RELEASE_DELETING_ENABLED;
     public static final boolean IS_SVM_ENABLED;
 
     //! Specialized keys for SPDX
@@ -871,6 +881,7 @@ public class PortalConstants {
         DISABLE_CLEARING_REQUEST_FOR_PROJECT_WITH_GROUPS = props.getProperty("org.eclipse.sw360.disable.clearing.request.for.project.group", "");
         SEND_PROJECT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED = Boolean.parseBoolean(props.getProperty("send.project.spreadsheet.export.to.mail.enabled", "false"));
         SEND_COMPONENT_SPREADSHEET_EXPORT_TO_MAIL_ENABLED = Boolean.parseBoolean(props.getProperty("send.component.spreadsheet.export.to.mail.enabled", "false"));
+        IS_BULK_RELEASE_DELETING_ENABLED = Boolean.parseBoolean(System.getProperty("RunBulkReleaseDeletingTest", props.getProperty("bulk.release.deleting.enabled", "false")));
         IS_SVM_ENABLED = Boolean.parseBoolean(props.getProperty("enable.security.vulnerability.monitoring", "false"));
     }
 

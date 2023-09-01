@@ -27,6 +27,9 @@
 
 <core_rt:set var = "docid" scope = "request" value = "${release.id}"/>
 
+<jsp:useBean id="bulkReleaseDeleting" class="java.lang.Boolean" scope="request"/>
+<jsp:useBean id="isUserAdmin" class="java.lang.Boolean" scope="request"/>
+
 <div class="container" style="display: none;">
 	<div class="row">
 		<div class="col-3 sidebar">
@@ -102,6 +105,11 @@
                                 <sw360:DisplaySubscribeButton email="<%=themeDisplay.getUser().getEmailAddress()%>" object="${release}"
                                         id="SubscribeButton" />
                             </div>
+                            <core_rt:if test="${bulkReleaseDeleting and isUserAdmin}">
+                                <div class="btn-group" role="group">
+                                    <button type="button" data-release-id="${release.id}" id="BulkDeleteButton" class="btn btn-primary "><liferay-ui:message key="bulk.delete" /></button>
+                                </div>
+                            </core_rt:if>
                             <div class="list-group-companion" data-belong-to="tab-Attachments">
                                 <core_rt:if test="${inReleaseDetailsContext}">
                                     <div class="btn-group" role="group">
@@ -257,6 +265,15 @@
                 button.finish($button);
             });
         });
+        
+        $('#BulkDeleteButton').on('click',function(event){
+            var releaseId = $(event.currentTarget).data().releaseId;
+            var baseUrl = '<%= PortletURLFactoryUtil.create(request, portletDisplay.getId(), themeDisplay.getPlid(), PortletRequest.RENDER_PHASE) %>',
+            portletURL = Liferay.PortletURL.createURL(baseUrl)
+                                            .setParameter('<%=PortalConstants.PAGENAME%>', '<%=PortalConstants.PAGENAME_DELETE_BULK_RELEASE_PREVIEW%>')
+                                            .setParameter('<%=PortalConstants.RELEASE_ID%>', releaseId);
+            window.location = portletURL.toString();
+        })
 
         $('#copyToClipboard').on('click', function(event) {
             let textSelector = "table tr td#documentId",

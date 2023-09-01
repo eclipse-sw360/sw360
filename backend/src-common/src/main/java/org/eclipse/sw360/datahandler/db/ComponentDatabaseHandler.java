@@ -123,7 +123,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private final UserRepository userRepository;
     private final PackageRepository packageRepository;
     private DatabaseHandlerUtil dbHandlerUtil;
-
+    private BulkDeleteUtil bulkDeleteUtil;
+    
     private final AttachmentConnector attachmentConnector;
     private SvmConnector svmConnector;
     private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
@@ -178,6 +179,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
+        
+        this.bulkDeleteUtil = new BulkDeleteUtil(this, componentRepository, releaseRepository, projectRepository, moderator, releaseModerator,
+                attachmentConnector, attachmentDatabaseHandler, dbHandlerUtil);
 
         // Create the spdx document database handler
         this.spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(httpClient, DatabaseSettings.COUCH_DB_SPDX);
@@ -1438,6 +1442,14 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             if (containedRelease.getId().equals(skipThisReleaseId)) continue;
             updateReleaseDependentFieldsForComponent(component, containedRelease);
         }
+    }
+    
+    public BulkOperationNode deleteBulkRelease(String releaseId, User user, boolean isPreview) throws SW360Exception  {
+        return bulkDeleteUtil.deleteBulkRelease(releaseId, user, isPreview);
+    }
+    
+    public BulkDeleteUtil getBulkDeleteUtil() {
+        return bulkDeleteUtil;
     }
 
     public RequestStatus mergeReleases(String mergeTargetId, String mergeSourceId, Release mergeSelection,
