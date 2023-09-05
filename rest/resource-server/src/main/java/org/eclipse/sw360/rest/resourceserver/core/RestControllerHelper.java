@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
@@ -1581,5 +1582,17 @@ public class RestControllerHelper<T> {
         int totalReleaseCount = SW360Utils.getTotalReleaseCount(clearingInfo);
         halClearingRequest.addEmbeddedResource("openRelease", openReleaseCount);
         halClearingRequest.addEmbeddedResource("totalRelease", totalReleaseCount);
+    }
+
+    public ReleaseLink convertToReleaseLink(Release release, ReleaseRelationship relationship) {
+        ReleaseLink releaseLink = new ReleaseLink();
+        releaseLink.setId(release.getId());
+        releaseLink.setClearingState(release.getClearingState());
+        releaseLink.setLicenseIds(release.getMainLicenseIds());
+        releaseLink.setName(release.getName());
+        releaseLink.setVersion(release.getVersion());
+        releaseLink.setReleaseRelationship(relationship);
+        releaseLink.setComponentId(release.getComponentId());
+        return releaseLink;
     }
 }
