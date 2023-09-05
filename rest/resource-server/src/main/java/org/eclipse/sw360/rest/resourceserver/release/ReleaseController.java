@@ -11,6 +11,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.release;
 
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.IOException;
@@ -76,6 +77,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
@@ -1288,6 +1290,34 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         responseBody.putAll(licenseToSrcFilesMap);
 
         return new ResponseEntity<>(responseBody, HttpStatus.OK);
+    }
+
+    @GetMapping(value = RELEASES_URL + "/{id}/releases")
+    public ResponseEntity<CollectionModel<HalResource<ReleaseLink>>> getLinkedReleases(
+            @PathVariable("id") String id,
+            @RequestParam(value = "transitive", required = false, defaultValue = "false") boolean transitive
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
+        Map<String, ReleaseRelationship> releaseRelationshipMap = !CommonUtils.isNullOrEmptyMap(sw360Release.getReleaseIdToRelationship())
+                ? sw360Release.getReleaseIdToRelationship()
+                : new HashMap<>();
+        Set<String> releaseIdsInBranch = new HashSet<>();
+
+        final List<HalResource<ReleaseLink>> linkedReleaseResources = releaseRelationshipMap.entrySet().stream()
+                .map(item -> wrapTException(() -> {
+                    final Release releaseById = releaseService.getReleaseForUserById(item.getKey(), sw360User);
+                    final ReleaseLink embeddedReleaseLink = restControllerHelper.convertToReleaseLink(releaseById, item.getValue());
+                    embeddedReleaseLink.setAccessible(releaseService.isReleaseActionAllowed(releaseById, sw360User, RequestedAction.READ));
+                    final HalResource<ReleaseLink> releaseResource = new HalResource<>(embeddedReleaseLink);
+                    if (transitive) {
+                        releaseService.addEmbeddedLinkedRelease(releaseById, sw360User, releaseResource, releaseIdsInBranch);
+                    }
+                    return releaseResource;
+                })).collect(Collectors.toList());
+
+        CollectionModel<HalResource<ReleaseLink>> collectionModel = CollectionModel.of(linkedReleaseResources);
+        return new ResponseEntity<>(collectionModel, HttpStatus.OK);
     }
 
     private RequestStatus linkOrUnlinkPackages(String id, Set<String> packagesInRequestBody, boolean link)

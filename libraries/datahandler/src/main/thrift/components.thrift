@@ -430,6 +430,7 @@ struct ReleaseLink{
     102: optional string comment,
     103: optional set<string> otherLicenseIds,
     104: optional bool accessible = true,
+    111: optional string componentId,
 
     // For configuration enable.flexible.project.release.relationship = true
     105: optional list<Release> releaseWithSameComponent,

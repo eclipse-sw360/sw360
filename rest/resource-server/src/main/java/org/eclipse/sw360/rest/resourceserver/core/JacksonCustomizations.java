@@ -944,8 +944,18 @@ public class JacksonCustomizations {
                 "setLicenseNames",
                 "setAccessible",
                 "setId",
-                "setClearingReport"
-
+                "setClearingReport",
+                "hasSubreleases",
+                "layer",
+                "index",
+                "setIndex",
+                "releaseWithSameComponentSize",
+                "setReleaseWithSameComponent",
+                "setLayer",
+                "setDefaultValue",
+                "setProjectId",
+                "setReleaseMainLineState",
+                "setComponentId"
         })
         static abstract class ReleaseLinkMixin extends ReleaseLink {
 
