@@ -28,6 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -38,6 +39,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
+import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
@@ -47,6 +49,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.hateoas.Link;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
@@ -55,6 +58,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -682,5 +686,28 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public RequestStatus triggerReportGenerationFossology(String releaseId, User user) throws TException {
         FossologyService.Iface fossologyClient = getThriftFossologyClient();
         return fossologyClient.triggerReportGenerationFossology(releaseId, user);
+    }
+
+    public void addEmbeddedLinkedRelease(Release sw360Release, User sw360User, HalResource<ReleaseLink> releaseResource, Set<String> releaseIdsInBranch) {
+        releaseIdsInBranch.add(sw360Release.getId());
+        Map<String, ReleaseRelationship> releaseIdToRelationship = sw360Release.getReleaseIdToRelationship();
+        if (releaseIdToRelationship != null) {
+            releaseIdToRelationship.forEach((key, value) -> wrapTException(() -> {
+                if (releaseIdsInBranch.contains(key)) {
+                    return;
+                }
+
+                Release linkedRelease = getReleaseForUserById(key, sw360User);
+                ReleaseLink embeddedLinkedRelease = convertToEmbeddedLinkedRelease(linkedRelease, value);
+                HalResource<ReleaseLink> halLinkedRelease = new HalResource<>(embeddedLinkedRelease);
+                addEmbeddedLinkedRelease(linkedRelease, sw360User, halLinkedRelease, releaseIdsInBranch);
+                releaseResource.addEmbeddedResource("sw360:releaseLinks", halLinkedRelease);
+            }));
+        }
+        releaseIdsInBranch.remove(sw360Release.getId());
+    }
+
+    public ReleaseLink convertToEmbeddedLinkedRelease(Release release, ReleaseRelationship relationship) {
+        return rch.convertToReleaseLink(release, relationship);
     }
 }

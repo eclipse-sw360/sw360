@@ -516,3 +516,37 @@ include::{snippets}/should_document_load_spdx_licenses_info_from_isr/http-respon
 
 ===== Example response for Component license information (CLX or CLI) type
 include::{snippets}/should_document_load_spdx_licenses_info_from_clx_or_cli/http-response.adoc[]
+
+[[resources-get-linked-releases-of-release]]
+==== Get direct linked releases
+
+A `GET` request will get direct linked releases of a single release
+
+===== Response structure
+include::{snippets}/should_document_get_direct_linked_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_direct_linked_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_direct_linked_releases/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_direct_linked_releases/links.adoc[]
+
+[[resources-get-linked-releases-of-release-transitive]]
+==== Get linked releases (transitive)
+
+A `GET` request will get linked releases of a single release (transitive)
+
+===== Response structure
+include::{snippets}/should_document_get_linked_releases_transitively/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_releases_transitively/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_releases_transitively/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_linked_releases_transitively/links.adoc[]
