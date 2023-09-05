@@ -13,6 +13,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
@@ -57,6 +58,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
@@ -71,6 +73,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
@@ -126,7 +129,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     @MockBean
     private Sw360LicenseInfoService licenseInfoMockService;
 
-    private Release release, release3, releaseTest;
+    private Release release, release3, releaseTest, release5;
     private Attachment attachment;
     Component component;
     private Project project;
@@ -324,6 +327,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release2.setCotsDetails(cotsDetails);
         release2.setEccInformation(eccInformation);
         release2.setAttachments(ImmutableSet.of(att1));
+        release2.setMainLicenseIds(Set.of("MIT", "GPL"));
+        release2.setOtherLicenseIds(Set.of("MIT"));
         releaseList.add(release2);
 
         Package package2 = new Package()
@@ -354,6 +359,31 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release3.setCreatedOn("2016-12-18");
         release3.setCreatedBy("admin@sw360.org");
         release3.setComponentId("1234");
+        release3.setMainLicenseIds(Set.of("MIT", "GPL 2+"));
+        release3.setClearingState(ClearingState.APPROVED);
+        release3.setMainlineState(MainlineState.MAINLINE);
+        release3.setOtherLicenseIds(Set.of("MIT"));
+
+        Release release4 = new Release();
+        release4.setId("90876");
+        release4.setName("Numpy");
+        release4.setVersion("1.19.5");
+        release4.setMainLicenseIds(Set.of("MIT"));
+        release4.setClearingState(ClearingState.APPROVED);
+        release4.setOtherLicenseIds(Collections.emptySet());
+
+        ReleaseLink releaseLink4 = new ReleaseLink();
+        releaseLink4.setId(release4.getId());
+        releaseLink4.setName(release4.getName());
+        releaseLink4.setVersion(release4.getVersion());
+        releaseLink4.setLicenseIds(release4.getMainLicenseIds());
+        releaseLink4.setClearingState(release4.getClearingState());
+        releaseLink4.setReleaseRelationship(ReleaseRelationship.CODE_SNIPPET);
+
+        release5 = new Release();
+        release5.setId("3333333");
+        release5.setReleaseIdToRelationship(Map.of(release2.getId(), ReleaseRelationship.DYNAMICALLY_LINKED, release3.getId(), ReleaseRelationship.CODE_SNIPPET));
+
         Attachment attachment3 = new Attachment(attachment);
         attachment3.setAttachmentContentId("34535345");
         attachment3.setAttachmentType(AttachmentType.SOURCE);
@@ -402,6 +432,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getRecentReleases(any())).willReturn(releaseList);
         given(this.releaseServiceMock.getReleaseSubscriptions(any())).willReturn(releaseList);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release5.getId()), any())).willReturn(release5);
         given(this.releaseServiceMock.getReleaseForUserById(eq(testRelease.getId()), any())).willReturn(testRelease);
         given(this.releaseServiceMock.getProjectsByRelease(eq(release.getId()), any())).willReturn(projectList);
         given(this.releaseServiceMock.getUsingComponentsForRelease(eq(release.getId()), any())).willReturn(usedByComponent);
@@ -419,6 +451,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 new Release("Test Release", "1.0", component.getId())
                         .setId("1234567890"));
         given(this.releaseServiceMock.countProjectsByReleaseId(eq(release.getId()))).willReturn(2);
+        doCallRealMethod().when(this.releaseServiceMock).addEmbeddedLinkedRelease(any(), any(), any(), any());
+        given(this.releaseServiceMock.getReleaseForUserById(eq("90876"), any())).willReturn(release4);
+        given(this.releaseServiceMock.convertToEmbeddedLinkedRelease(any(), any(), any())).willReturn(releaseLink4);
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
@@ -1284,6 +1319,48 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_document_get_direct_linked_releases() throws Exception {
+        given(this.releaseServiceMock.isReleaseActionAllowed(any(), any(), any())).willReturn(true);
+        mockMvc.perform(get("/api/releases/" + release5.getId() + "/releases")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .param("transitive", "false")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("transitive").description("Get the transitive releases")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:releaseLinks").description("An array of <<resources-releases, Releases resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_linked_releases_transitively() throws Exception {
+        given(this.releaseServiceMock.isReleaseActionAllowed(any(), any(), any())).willReturn(true);
+        mockMvc.perform(get("/api/releases/" + release5.getId() + "/releases")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .param("transitive", "true")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("transitive").description("Get the transitive releases")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:releaseLinks").description("An array of <<resources-releases, Releases resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
     }
 
     public void mockLicensesInfo(AttachmentType attachmentType) throws TException{

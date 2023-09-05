@@ -28,16 +28,19 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
+import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
@@ -45,12 +48,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.hateoas.Link;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
+import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -741,5 +747,35 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public List<Release> refineSearch(String searchText, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.searchAccessibleReleases(searchText, sw360User);
+    }
+
+    public void addEmbeddedLinkedRelease(Release sw360Release, User sw360User, HalResource<ReleaseLink> releaseResource, Set<String> releaseIdsInBranch) {
+        releaseIdsInBranch.add(sw360Release.getId());
+        Map<String, ReleaseRelationship> releaseIdToRelationship = sw360Release.getReleaseIdToRelationship();
+        if (releaseIdToRelationship != null) {
+            releaseIdToRelationship.forEach((key, value) -> wrapTException(() -> {
+                if (releaseIdsInBranch.contains(key)) {
+                    return;
+                }
+
+                Release linkedRelease = getReleaseForUserById(key, sw360User);
+                ReleaseLink embeddedLinkedRelease = convertToEmbeddedLinkedRelease(linkedRelease, sw360User, value);
+                HalResource<ReleaseLink> halLinkedRelease = new HalResource<>(embeddedLinkedRelease);
+                addEmbeddedLinkedRelease(linkedRelease, sw360User, halLinkedRelease, releaseIdsInBranch);
+                releaseResource.addEmbeddedResource("sw360:releaseLinks", halLinkedRelease);
+            }));
+        }
+        releaseIdsInBranch.remove(sw360Release.getId());
+    }
+
+    public ReleaseLink convertToEmbeddedLinkedRelease(Release release, User sw360User, ReleaseRelationship relationship) throws TException {
+        ReleaseLink releaseLink = rch.convertToReleaseLink(release, relationship);
+        releaseLink.setAccessible(isReleaseActionAllowed(release, sw360User, RequestedAction.READ));
+        return releaseLink;
+    }
+
+    public boolean isReleaseActionAllowed(Release release, User sw360User, RequestedAction action) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.isReleaseActionAllowed(release, sw360User, action);
     }
 }
