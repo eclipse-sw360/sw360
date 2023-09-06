@@ -12,6 +12,14 @@
 
 package org.eclipse.sw360.rest.resourceserver.component;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -87,6 +95,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RestController
+@SecurityRequirement(name = "tokenAuth")
 public class ComponentController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     public static final String COMPONENTS_URL = "/components";
@@ -114,13 +124,25 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
     @NonNull
     private final Sw360VulnerabilityService vulnerabilityService;
+
+    @Operation(
+            summary = "List all of the service's components.",
+            description = "List all of the service's components.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel> getComponents(Pageable pageable,
-                                                                        @RequestParam(value = "name", required = false) String name,
-                                                                        @RequestParam(value = "type", required = false) String componentType,
-                                                                        @RequestParam(value = "fields", required = false) List<String> fields,
-                                                                        @RequestParam(value = "allDetails", required = false) boolean allDetails,
-                                                                        HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+    public ResponseEntity<CollectionModel<EntityModel<Component>>> getComponents(
+            Pageable pageable,
+            @Parameter(description = "Name of the component to filter")
+            @RequestParam(value = "name", required = false) String name,
+            @Parameter(description = "Type of the component to filter")
+            @RequestParam(value = "type", required = false) String componentType,
+            @Parameter(description = "Properties which should be present for each component in the result")
+            @RequestParam(value = "fields", required = false) List<String> fields,
+            @Parameter(description = "Flag to get components with all details.")
+            @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            HttpServletRequest request
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
@@ -184,9 +206,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         return parameters;
     }
 
+    @Operation(
+            summary = "Get all the resources where the component is used.",
+            description = "Get all the resources where the component is used.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/usedBy" + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(@PathVariable("id") String id)
-            throws TException {
+    public ResponseEntity<CollectionModel<EntityModel>> getUsedByResourceDetails(
+            @Parameter(description = "The id of the component.")
+            @PathVariable("id") String id
+    ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication(); // Project
         Set<Project> sw360Projects = componentService.getProjectsByComponentId(id, user);
         Set<Component> sw360Components = componentService.getUsingComponentsForComponent(id, user);
@@ -198,9 +227,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         });
 
         sw360Components.forEach(c -> {
-                    Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
-                    resources.add(EntityModel.of(embeddedComponent));
-                });
+            Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
+            resources.add(EntityModel.of(embeddedComponent));
+        });
 
         RestrictedResource restrictedResource = new RestrictedResource();
         restrictedResource.setProjects(componentService.countProjectsByComponentId(id, user) - sw360Projects.size());
@@ -210,9 +239,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         return new ResponseEntity(finalResources, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Get a single component.",
+            description = "Get a single component by its id.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<Component>> getComponent(
-            @PathVariable("id") String id) throws TException {
+            @Parameter(description = "The id of the component to be retrieved.")
+            @PathVariable("id") String id
+    ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
         HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
@@ -220,46 +256,75 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Get recently created components.",
+            description = "Return 5 of the service's most recently created components.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/recentComponents", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel>> getRecentComponent () throws TException {
+    public ResponseEntity<CollectionModel<EntityModel<Component>>> getRecentComponent() throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         List<Component> sw360Components = componentService.getRecentComponents(user);
 
-        List<EntityModel> resources = new ArrayList<>();
+        List<EntityModel<Component>> resources = new ArrayList<>();
         sw360Components.forEach(c -> {
             Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
             resources.add(EntityModel.of(embeddedComponent));
         });
 
-        CollectionModel<EntityModel> finalResources = CollectionModel.of(resources);
+        CollectionModel<EntityModel<Component>> finalResources = CollectionModel.of(resources);
         return new ResponseEntity<>(finalResources, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Get subscribed components.",
+            description = "List all of the service's mysubscriptions components.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/mySubscriptions", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel>> getMySubscriptions () throws TException {
+    public ResponseEntity<CollectionModel<EntityModel<Component>>> getMySubscriptions() throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         List<Component> sw360Components = componentService.getComponentSubscriptions(user);
 
-        List<EntityModel> resources = new ArrayList<>();
+        List<EntityModel<Component>> resources = new ArrayList<>();
         sw360Components.forEach(c -> {
             Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c);
             resources.add(EntityModel.of(embeddedComponent));
         });
 
-        CollectionModel<EntityModel> finalResources = CollectionModel.of(resources);
+        CollectionModel<EntityModel<Component>> finalResources = CollectionModel.of(resources);
         return new ResponseEntity<>(finalResources, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Get components by external ID.",
+            description = "Get components by external ID.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/searchByExternalIds", method = RequestMethod.GET)
-    public ResponseEntity searchByExternalIds(@RequestParam MultiValueMap<String, String> externalIdsMultiMap) throws TException {
+    public ResponseEntity<CollectionModel<EntityModel<Component>>> searchByExternalIds(
+            @Parameter(
+                    description = "The external IDs of the components to be retrieved.",
+                    example = "component-id-key=1831A3&component-id-key=c77321"
+            )
+            @RequestParam MultiValueMap<String, String> externalIdsMultiMap
+    ) throws TException {
         return restControllerHelper.searchByExternalIds(externalIdsMultiMap, componentService, null);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Update an existing component.",
+            description = "Update an existing component by its id.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<Component>> patchComponent(
+            @Parameter(description = "The id of the component to be updated.")
             @PathVariable("id") String id,
-            @RequestBody ComponentDTO updateComponentDto) throws TException {
+            @Parameter(description = "The component with updated fields.")
+            @RequestBody ComponentDTO updateComponentDto
+    ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
         sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponentDto);
@@ -282,9 +347,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Delete existing components.",
+            description = "Delete existing components by ids.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/{ids}", method = RequestMethod.DELETE)
     public ResponseEntity<List<MultiStatus>> deleteComponents(
-            @PathVariable("ids") List<String> idsToDelete) throws TException {
+            @Parameter(description = "The ids of the components to be deleted.")
+            @PathVariable("ids") List<String> idsToDelete
+    ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         List<MultiStatus> results = new ArrayList<>();
         for(String id:idsToDelete) {
@@ -303,8 +375,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Create a new component.",
+            description = "Create a new component.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL, method = RequestMethod.POST)
-    public ResponseEntity<EntityModel<Component>> createComponent(@RequestBody Component component) throws URISyntaxException, TException {
+    public ResponseEntity<EntityModel<Component>> createComponent(
+            @Parameter(description = "The component to be created.")
+            @RequestBody Component component
+    ) throws URISyntaxException, TException {
 
         User user = restControllerHelper.getSw360UserFromAuthentication();
         if(component.getComponentType() == null) {
@@ -338,18 +418,32 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         return ResponseEntity.created(location).body(halResource);
     }
 
+    @Operation(
+            summary = "Get all attachment information of a component.",
+            description = "Get all attachment information of a component.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/{id}/attachments", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<AttachmentDTO>>> getComponentAttachments(
-            @PathVariable("id") String id) throws TException {
+            @Parameter(description = "The id of the component.")
+            @PathVariable("id") String id
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
         final CollectionModel<EntityModel<AttachmentDTO>> resources = attachmentService.getAttachmentDTOResourcesFromList(sw360User, sw360Component.getAttachments(), Source.releaseId(sw360Component.getId()));
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Get all releases of a component.",
+            description = "Get all releases of a component.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/{id}/releases", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<ReleaseLink>> getReleaseLinksByComponentId(
-            @PathVariable("id") String id) throws TException {
+            @Parameter(description = "The id of the component.")
+            @PathVariable("id") String id
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final List<ReleaseLink> releaseLinks = componentService.convertReleaseToReleaseLink(id, sw360User);
         CollectionModel<ReleaseLink> resources = CollectionModel.of(releaseLinks);
@@ -357,10 +451,20 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Update an attachment info.",
+            description = "Update attachment info a component.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/{id}/attachment/{attachmentId}", method = RequestMethod.PATCH)
-    public ResponseEntity<EntityModel<Attachment>> patchComponentAttachmentInfo(@PathVariable("id") String id,
-            @PathVariable("attachmentId") String attachmentId, @RequestBody Attachment attachmentData)
-            throws TException {
+    public ResponseEntity<EntityModel<Attachment>> patchComponentAttachmentInfo(
+            @Parameter(description = "The id of the component.")
+            @PathVariable("id") String id,
+            @Parameter(description = "The id of the attachment.")
+            @PathVariable("attachmentId") String attachmentId,
+            @Parameter(description = "The attachment info to be updated.")
+            @RequestBody Attachment attachmentData
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
         Set<Attachment> attachments = sw360Component.getAttachments();
@@ -373,10 +477,41 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Create new attachment for a component.",
+            description = "Create new attachment for a component.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "Updated component.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = Component.class))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "202", description = "Request sent for moderation.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            examples = @ExampleObject(
+                                                    value = "{\"message\": \"Moderation request is created\"}"
+                                            ))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "500", description = "Failed to upload attachment."
+                    )
+            },
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments", method = RequestMethod.POST, consumes = {"multipart/mixed", "multipart/form-data"})
-    public ResponseEntity<HalResource> addAttachmentToComponent(@PathVariable("componentId") String componentId,
-                                                                @RequestPart("file") MultipartFile file,
-                                                                @RequestPart("attachment") Attachment newAttachment) throws TException {
+    public ResponseEntity<HalResource> addAttachmentToComponent(
+            @Parameter(description = "The id of the component.")
+            @PathVariable("componentId") String componentId,
+            @Parameter(description = "The file to be uploaded.")
+            @RequestPart("file") MultipartFile file,
+            @Parameter(description = "The attachment info to be created.")
+            @RequestPart("attachment") Attachment newAttachment
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component component = componentService.getComponentForUserById(componentId, sw360User);
         Attachment attachment = null;
@@ -396,26 +531,60 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         return new ResponseEntity<>(halComponent, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Download an attachment of a component.",
+            description = "Download an attachment of a component.",
+            parameters = {
+                    @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true, example = "application/*"),
+            },
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/{componentId}/attachments/{attachmentId}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public void downloadAttachmentFromComponent(
+            @Parameter(description = "The id of the component.")
             @PathVariable("componentId") String componentId,
+            @Parameter(description = "The id of the attachment.")
             @PathVariable("attachmentId") String attachmentId,
-            HttpServletResponse response) throws TException {
+            HttpServletResponse response
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component component = componentService.getComponentForUserById(componentId, sw360User);
         attachmentService.downloadAttachmentWithContext(component, attachmentId, response, sw360User);
     }
 
+    @Operation(
+            summary = "Download the attachment bundle of a component.",
+            description = "Download the attachment bundle of a component.",
+            parameters = {
+                    @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true, example = "application/zip"),
+            },
+            tags = {"Components"}
+    )
     @GetMapping(value = COMPONENTS_URL + "/{componentId}/attachments/download", produces="application/zip")
     public void downloadAttachmentBundleFromComponent(
+            @Parameter(description = "The id of the component.")
             @PathVariable("componentId") String componentId,
-            HttpServletResponse response) throws TException, IOException {
+            HttpServletResponse response
+    ) throws TException, IOException {
         final User user = restControllerHelper.getSw360UserFromAuthentication();
         final Component component = componentService.getComponentForUserById(componentId, user);
         Set<Attachment> attachments = component.getAttachments();
         attachmentService.downloadAttachmentBundleWithContext(component, attachments, user, response);
     }
 
+    @Operation(
+            summary = "Delete one or multiple attachments of a component.",
+            description = "Delete one or multiple attachments from a component.\n\n" +
+                    "Note that attachments can only be deleted if they are not used by a project.\n" +
+                    "Requests that cannot delete any of the attachments specified fail with response\n" +
+                    "status 500.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Attachments deleted successfully"),
+                    @ApiResponse(responseCode = "202", description = "Deletion sent for moderation"),
+                    @ApiResponse(responseCode = "500", description = "Attachment in use, can't delete")
+            },
+            tags = {"Components"}
+    )
     @DeleteMapping(COMPONENTS_URL + "/{componentId}/attachments/{attachmentIds}")
     public ResponseEntity<HalResource<Component>> deleteAttachmentsFromComponent(
             @PathVariable("componentId") String componentId,
@@ -445,9 +614,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         return resource;
     }
 
+    @Operation(
+            summary = "Get vulnerabilities of a single component.",
+            description = "Get vulnerabilities of a single component.",
+            tags = {"Components"}
+    )
     @GetMapping(value = COMPONENTS_URL + "/{id}/vulnerabilities")
     public ResponseEntity<CollectionModel<VulnerabilityDTO>> getVulnerabilitiesOfComponent(
-            @PathVariable("id") String id) throws TException {
+            @Parameter(description = "The id of the component.")
+            @PathVariable("id") String id
+    ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         List<VulnerabilityDTO> allVulnerabilityDTOs = componentService.getVulnerabilitiesByComponent(id, user);
         CollectionModel<VulnerabilityDTO> resources = CollectionModel.of(allVulnerabilityDTOs);
@@ -512,9 +688,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         halComponent.addEmbeddedResource("defaultVendor", halDefaultVendor);
     }
 
+    @Operation(
+            summary = "Get all components associated to the user.",
+            description = "Get all components associated to the user.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/mycomponents", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel>> getMyComponents(Pageable pageable, HttpServletRequest request)
-            throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+    public ResponseEntity<CollectionModel<EntityModel<Component>>> getMyComponents(
+            Pageable pageable,
+            HttpServletRequest request
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<Component> sw360Components = componentService.getMyComponentsForUser(sw360User);
         PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
@@ -530,16 +713,25 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             componentResources.add(embeddedComponentResource);
         });
 
-        CollectionModel finalResources = restControllerHelper.generatePagesResource(paginationResult,
-                componentResources);
+        CollectionModel<EntityModel<Component>> finalResources = restControllerHelper.generatePagesResource(
+                paginationResult, componentResources);
         HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(finalResources, status);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Update the vulnerability of a component.",
+            description = "Update the vulnerability of a component.",
+            tags = {"Components"}
+    )
     @PatchMapping(value = COMPONENTS_URL + "/{id}/vulnerabilities")
-    public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> patchReleaseVulnerabilityRelation(@PathVariable("id") String componentId,
-                          @RequestBody VulnerabilityState vulnerabilityState) throws TException {
+    public ResponseEntity<CollectionModel<EntityModel<VulnerabilityDTO>>> patchReleaseVulnerabilityRelation(
+            @Parameter(description = "The id of the component.")
+            @PathVariable("id") String componentId,
+            @Parameter(description = "The vulnerability state to be updated.")
+            @RequestBody VulnerabilityState vulnerabilityState
+    ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
 
         checkRequireReleaseVulnerabilityRelation(vulnerabilityState);
@@ -671,9 +863,32 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Import SBOM in SPDX format.",
+            description = "Import SBOM in SPDX format.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "Import successful.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = ImportBomRequestPreparation.class))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "500", description = "Failed to upload attachment."
+                    )
+            },
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/import/SBOM", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<?> importSBOM(@RequestParam(value = "type", required = true) String type,
-                                                  @RequestBody MultipartFile file) throws TException {
+    public ResponseEntity<?> importSBOM(
+            @Parameter(description = "Type of SBOM being uploaded.",
+                    schema = @Schema(type = "string", allowableValues = {"SPDX"})
+            )
+            @RequestParam(value = "type", required = true) String type,
+            @Parameter(description = "The file to be uploaded.")
+            @RequestBody MultipartFile file
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Attachment attachment;
         final RequestSummary requestSummary;
@@ -702,9 +917,32 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         return new ResponseEntity<>(halResource, status);
     }
 
+    @Operation(
+            summary = "Import SBOM in SPDX format.",
+            description = "Import SBOM in SPDX format.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "Import successful.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            schema = @Schema(implementation = ImportBomRequestPreparation.class))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "500", description = "Failed to upload attachment."
+                    )
+            },
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/prepareImport/SBOM", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<?> prepareImportSBOM(@RequestParam(value = "type", required = true) String type,
-                                        @RequestBody MultipartFile file) throws TException {
+    public ResponseEntity<?> prepareImportSBOM(
+            @Parameter(description = "Type of SBOM being uploaded.",
+                    schema = @Schema(type = "string", allowableValues = {"SPDX"})
+            )
+            @RequestParam(value = "type", required = true) String type,
+            @Parameter(description = "The file to be uploaded.")
+            @RequestBody MultipartFile file
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Attachment attachment;
         final ImportBomRequestPreparation importBomRequestPreparation;
@@ -739,13 +977,20 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Merge two components.",
+            description = "Merge source component into target component.",
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/mergecomponents", method = RequestMethod.PATCH)
     public ResponseEntity<RequestStatus> mergeComponents(
+            @Parameter(description = "The id of the merge target component.")
             @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
+            @Parameter(description = "The id of the merge source component.")
             @RequestParam(value = "mergeSourceId", required = true) String mergeSourceId,
-            @RequestBody Component mergeSelection ) throws TException {
-
-
+            @Parameter(description = "The merge selection.")
+            @RequestBody Component mergeSelection
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         // perform the real merge, update merge target and delete merge sources
@@ -755,10 +1000,42 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Split two components.",
+            description = "Split source component into target component.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Source and target components.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = {@ExampleObject(
+                                    value = "{\n" +
+                                            "  \"srcComponent\": {\n" +
+                                            "    ...\n" +
+                                            "  },\n" +
+                                            "  \"targetComponent\": {\n" +
+                                            "    ...\n" +
+                                            "  }\n" +
+                                            "}"
+                            )}
+                    )
+            ),
+            tags = {"Components"}
+    )
     @RequestMapping(value = COMPONENTS_URL + "/splitComponents", method = RequestMethod.PATCH)
     public ResponseEntity<RequestStatus> splitComponents(
-            @RequestBody Map<String, Component> componentMap) throws TException {
-
+            @Parameter(
+                    description = "Source and target components.",
+                    example = "{\n" +
+                            "  \"srcComponent\": {\n" +
+                            "    ...\n" +
+                            "  },\n" +
+                            "  \"targetComponent\": {\n" +
+                            "    ...\n" +
+                            "  }\n" +
+                            "}"
+            )
+            @RequestBody Map<String, Component> componentMap
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         Component srcComponent = componentMap.get("srcComponent");

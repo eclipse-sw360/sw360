@@ -543,6 +543,50 @@ public class JacksonCustomizations {
                 "cdxComponentType",
                 "setCdxComponentType",
                 "setVcs",
+                "createdByIsSet",
+                "createdOnIsSet",
+                "componentTypeIsSet",
+                "externalIdsIsSet",
+                "additionalDataIsSet",
+                "attachmentsIsSet",
+                "subscribersIsSet",
+                "rolesIsSet",
+                "mainLicenseIdsIsSet",
+                "languagesIsSet",
+                "operatingSystemsIsSet",
+                "softwarePlatformsIsSet",
+                "modifiedByIsSet",
+                "modifiedOnIsSet",
+                "idIsSet",
+                "revisionIsSet",
+                "typeIsSet",
+                "documentStateIsSet",
+                "permissionsIsSet",
+                "moderatorsIsSet",
+                "componentOwnerIsSet",
+                "ownerAccountingUnitIsSet",
+                "ownerGroupIsSet",
+                "ownerCountryIsSet",
+                "setVisbility",
+                "visbilityIsSet",
+                "setBusinessUnit",
+                "businessUnitIsSet",
+                "cdxComponentTypeIsSet",
+                "releasesIsSet",
+                "releaseIdsIsSet",
+                "defaultVendorIsSet",
+                "defaultVendorIdIsSet",
+                "categoriesIsSet",
+                "vendorNamesIsSet",
+                "mailinglistIsSet",
+                "wikiIsSet",
+                "blogIsSet",
+                "wikipediaIsSet",
+                "openHubIsSet",
+                "vcsIsSet",
+                "nameIsSet",
+                "homepageIsSet",
+                "descriptionIsSet"
         })
         static abstract class ComponentMixin extends Component {
             @Override
@@ -655,7 +699,62 @@ public class JacksonCustomizations {
                 "attachmentDTOsSize",
                 "setBusinessUnit",
                 "setVisbility",
-                "visbility"
+                "visbility",
+                "releaseIdsSize",
+                "setMainLicenseIds",
+                "createdByIsSet",
+                "createdOnIsSet",
+                "componentTypeIsSet",
+                "externalIdsIsSet",
+                "additionalDataIsSet",
+                "attachmentsIsSet",
+                "subscribersIsSet",
+                "rolesIsSet",
+                "mainLicenseIdsSize",
+                "mainLicenseIdsIterator",
+                "mainLicenseIdsIsSet",
+                "languagesSize",
+                "languagesIsSet",
+                "operatingSystemsIsSet",
+                "softwarePlatformsIsSet",
+                "setModifiedBy",
+                "modifiedByIsSet",
+                "setModifiedOn",
+                "modifiedOnIsSet",
+                "idIsSet",
+                "revisionIsSet",
+                "typeIsSet",
+                "documentStateIsSet",
+                "permissionsIsSet",
+                "moderatorsIsSet",
+                "componentOwnerIsSet",
+                "ownerAccountingUnitIsSet",
+                "ownerGroupIsSet",
+                "ownerCountryIsSet",
+                "visbilityIsSet",
+                "businessUnitIsSet",
+                "cdxComponentTypeIsSet",
+                "releasesSize",
+                "releasesIterator",
+                "setReleases",
+                "releasesIsSet",
+                "releaseIdsIterator",
+                "setReleaseIds",
+                "releaseIdsIsSet",
+                "defaultVendorIsSet",
+                "defaultVendorIdIsSet",
+                "categoriesIsSet",
+                "vendorNamesIsSet",
+                "mailinglistIsSet",
+                "wikiIsSet",
+                "blogIsSet",
+                "wikipediaIsSet",
+                "openHubIsSet",
+                "setVcs",
+                "vcsIsSet",
+                "nameIsSet",
+                "homepageIsSet",
+                "descriptionIsSet"
         })
         static abstract class ComponentDTOMixin extends Component {
             @Override
@@ -783,7 +882,7 @@ public class JacksonCustomizations {
                 "setClearingReport"
 
         })
-        static abstract class ReleaseLinkMixin {
+        static abstract class ReleaseLinkMixin extends ReleaseLink {
 
         }
 
@@ -823,7 +922,23 @@ public class JacksonCustomizations {
                 "setCheckedOn",
                 "setCheckStatus",
                 "setSuperAttachmentId",
-                "setSuperAttachmentFilename"
+                "setSuperAttachmentFilename",
+                "attachmentContentIdIsSet",
+                "filenameIsSet",
+                "sha1IsSet",
+                "attachmentTypeIsSet",
+                "createdByIsSet",
+                "createdTeamIsSet",
+                "createdCommentIsSet",
+                "createdOnIsSet",
+                "checkedByIsSet",
+                "checkedTeamIsSet",
+                "checkedCommentIsSet",
+                "checkedOnIsSet",
+                "uploadHistoryIsSet",
+                "checkStatusIsSet",
+                "superAttachmentIdIsSet",
+                "superAttachmentFilenameIsSet"
         })
         static abstract class AttachmentMixin extends Attachment {
         }
@@ -870,7 +985,7 @@ public class JacksonCustomizations {
                 "projectUsagesIterator",
                 "setProjectUsages",
         })
-        static abstract class UsageAttachmentMixin {
+        static abstract class UsageAttachmentMixin extends UsageAttachment {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -884,7 +999,7 @@ public class JacksonCustomizations {
                 "setId",
                 "setProjectName"
         })
-        static abstract class ProjectUsageMixin {
+        static abstract class ProjectUsageMixin extends ProjectUsage {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

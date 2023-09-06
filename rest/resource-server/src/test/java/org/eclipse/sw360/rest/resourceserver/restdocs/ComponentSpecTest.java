@@ -97,7 +97,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360VendorService vendorServiceMock;
-    
+
     @MockBean
     private SW360ReportService sw360ReportServiceMock;
 
@@ -177,9 +177,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         angularComponent.setCreatedBy("admin@sw360.org");
         angularComponent.setModifiedBy("admin1@sw360.org");
         angularComponent.setModifiedOn("2016-12-30");
-        angularComponent.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Linux")));
-        angularComponent.setMainLicenseIds(new HashSet<>(Arrays.asList("123")));
-        angularComponent.setSubscribers(new HashSet<>(Arrays.asList("Mari")));
+        angularComponent.setSoftwarePlatforms(new HashSet<>(List.of("Linux")));
+        angularComponent.setMainLicenseIds(new HashSet<>(List.of("123")));
+        angularComponent.setSubscribers(new HashSet<>(List.of("Mari")));
         angularComponent.setWiki("http://wiki.ubuntu.com/");
         angularComponent.setBlog("http://www.javaworld.com/");
         angularComponent.setComponentType(ComponentType.OSS);
@@ -209,9 +209,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         angularTargetComponent.setCreatedBy("admin@sw360.org");
         angularTargetComponent.setModifiedBy("admin1@sw360.org");
         angularTargetComponent.setModifiedOn("2016-12-30");
-        angularTargetComponent.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Linux")));
-        angularTargetComponent.setMainLicenseIds(new HashSet<>(Arrays.asList("123")));
-        angularTargetComponent.setSubscribers(new HashSet<>(Arrays.asList("Mari")));
+        angularTargetComponent.setSoftwarePlatforms(new HashSet<>(List.of("Linux")));
+        angularTargetComponent.setMainLicenseIds(new HashSet<>(List.of("123")));
+        angularTargetComponent.setSubscribers(new HashSet<>(List.of("Mari")));
         angularTargetComponent.setWiki("http://wiki.ubuntu.com/");
         angularTargetComponent.setBlog("http://www.javaworld.com/");
         angularTargetComponent.setComponentType(ComponentType.OSS);
@@ -271,9 +271,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         springComponent.setCreatedBy("jane@sw360.org");
         springComponent.setModifiedBy("User@sw360.org");
         springComponent.setModifiedOn("2016-12-25");
-        springComponent.setSoftwarePlatforms(new HashSet<>(Arrays.asList("Windows")));
-        springComponent.setMainLicenseIds(new HashSet<>(Arrays.asList("222")));
-        springComponent.setSubscribers(new HashSet<>(Arrays.asList("Natan")));
+        springComponent.setSoftwarePlatforms(new HashSet<>(List.of("Windows")));
+        springComponent.setMainLicenseIds(new HashSet<>(List.of("222")));
+        springComponent.setSubscribers(new HashSet<>(List.of("Natan")));
         springComponent.setWiki("http://wiki.ubuntu.com/");
         springComponent.setBlog("http://www.javaworld.com/");
         springComponent.setComponentType(ComponentType.OSS);
@@ -506,11 +506,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
         ImportBomRequestPreparation importBomRequestPreparation = new ImportBomRequestPreparation();
         importBomRequestPreparation.setComponentsName(sBOMComponent.getName());
-        StringBuilder relesaeName = new StringBuilder();
-        relesaeName.append(release1.getName());
-        relesaeName.append(" ");
-        relesaeName.append(release1.getVersion());
-        importBomRequestPreparation.setReleasesName(relesaeName.toString());
+        String releaseName = release1.getName() + " " + release1.getVersion();
+        importBomRequestPreparation.setReleasesName(releaseName);
 
         given(this.componentServiceMock.prepareImportSBOM(any(),any())).willReturn(importBomRequestPreparation);
         given(this.componentServiceMock.importSBOM(any(),any())).willReturn(requestSummary);
@@ -605,9 +602,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
                                 subsectionWithPath("_embedded.sw360:components.[]operatingSystems").description("The OS on which the component operates"),
                                 subsectionWithPath("_embedded.sw360:components.[]mailinglist").description("Component mailing lists"),
-                                subsectionWithPath("_embedded.sw360:components.[]setVisbility").description("The visibility of the component"),
 
-                                subsectionWithPath("_embedded.sw360:components.[]setBusinessUnit").description("The business unit this component belongs to"),
                                 subsectionWithPath("_embedded.sw360:components.[]_links").description("Self <<resources-index-links,Links>> to Component resource").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:moderators").description("An array of all component moderators with email").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:releases").description("An array of all releases").optional(),
@@ -789,8 +784,6 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                                 fieldWithPath("visbility").description("The visibility type of the component"),
-                                fieldWithPath("setVisbility").description("The visibility of the component"),
-                                fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component"),
                                 fieldWithPath("mainLicenseIds").description("Main license ids of component"),
                                 subsectionWithPath("_embedded.defaultVendor").description("Default vendor of component"),
                                 fieldWithPath("defaultVendorId").description("Default vendor id of component")
@@ -828,9 +821,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("createdOn").description("The date the component was created"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this component"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
-                                fieldWithPath("visbility").description("The visibility type of the component"),
-                                fieldWithPath("setVisbility").description("The visibility of the component"),
-                                fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component")
+                                fieldWithPath("visbility").description("The visibility type of the component")
                         )));
     }
 
@@ -968,8 +959,6 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("defaultVendorId").description("Default vendor id of component"),
                                 fieldWithPath("categories").description("The component categories"),
                                 fieldWithPath("mailinglist").description("Component mailing lists"),
-                                fieldWithPath("setVisbility").description("The visibility of the component"),
-                                fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component"),
                                 fieldWithPath("vendors").description("The vendors list"),
                                 fieldWithPath("description").description("The updated component description"),
                                 fieldWithPath("componentType").description("The updated  component type, possible values are: " + Arrays.asList(ComponentType.values()))
@@ -1016,16 +1005,12 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("srcComponent.type").description("The type of the source component"),
                                 fieldWithPath("srcComponent.componentOwner").description("The owner of the source component"),
                                 fieldWithPath("srcComponent.visbility").description("The visibility of the source component"),
-                                fieldWithPath("srcComponent.setVisbility").description("Flag indicating if the visibility is set"),
-                                fieldWithPath("srcComponent.setBusinessUnit").description("Flag indicating if the business unit is set"),
                                 fieldWithPath("targetComponent.id").description("The ID of the target component"),
                                 fieldWithPath("targetComponent.name").description("The name of the target component"),
                                 fieldWithPath("targetComponent.description").description("The description of the target component"),
                                 fieldWithPath("targetComponent.type").description("The type of the target component"),
                                 fieldWithPath("targetComponent.componentOwner").description("The owner of the target component"),
-                                fieldWithPath("targetComponent.visbility").description("The visibility of the target component"),
-                                fieldWithPath("targetComponent.setVisbility").description("Flag indicating if the visibility is set"),
-                                fieldWithPath("targetComponent.setBusinessUnit").description("Flag indicating if the business unit is set")
+                                fieldWithPath("targetComponent.visbility").description("The visibility of the target component")
 
                         )));
     }
@@ -1193,8 +1178,6 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with ful name and link to their <<resources-vendor-get,Vendor resource>>"),
                         subsectionWithPath("_embedded.sw360:attachments").description("An array of all component attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                         fieldWithPath("visbility").description("The visibility type of the component"),
-                        fieldWithPath("setVisbility").description("The visibility of the component"),
-                        fieldWithPath("setBusinessUnit").description("Whether or not a business unit is set for the component"),
                         fieldWithPath("mainLicenseIds").description("Main license ids of component"),
                         subsectionWithPath("_embedded.defaultVendor").description("Default vendor of component"),
                         fieldWithPath("defaultVendorId").description("Default vendor id of component")
@@ -1332,7 +1315,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .queryParam("type", "SPDX");
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
-    
+
     @Test
     public void should_document_get_component_report() throws Exception{
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
@@ -1352,7 +1335,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                              parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`")
                      )));
     }
-    
+
     @Test
     public void should_document_get_component_report_with_mail_req() throws Exception{
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
