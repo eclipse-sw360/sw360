@@ -34,6 +34,7 @@ import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
@@ -682,5 +683,15 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public RequestStatus triggerReportGenerationFossology(String releaseId, User user) throws TException {
         FossologyService.Iface fossologyClient = getThriftFossologyClient();
         return fossologyClient.triggerReportGenerationFossology(releaseId, user);
+    }
+
+    /**
+     * Count the number of projects are using the release that has releaseId
+     * @param releaseId              Id of release
+     * @return int                    Number of project
+     * @throws TException
+     */
+    public int countProjectsByReleaseId(String releaseId) {
+        return projectService.countProjectsByReleaseIds(Collections.singleton(releaseId));
     }
 }

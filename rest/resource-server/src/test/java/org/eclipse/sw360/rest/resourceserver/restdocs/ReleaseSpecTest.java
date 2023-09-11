@@ -418,6 +418,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         when(this.releaseServiceMock.createRelease(any(), any())).then(invocation ->
                 new Release("Test Release", "1.0", component.getId())
                         .setId("1234567890"));
+        given(this.releaseServiceMock.countProjectsByReleaseId(eq(release.getId()))).willReturn(2);
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
@@ -762,6 +763,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]version").description("The project version"),
                                 subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
                                 subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_embedded.sw360:restrictedResources.[]projects").description("Number of restricted projects"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }

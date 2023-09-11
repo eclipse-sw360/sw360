@@ -251,3 +251,7 @@ union Source {
   2: string componentId
   3: string releaseId
 }
+
+struct RestrictedResource {
+    1: optional i32 projects,
+}
