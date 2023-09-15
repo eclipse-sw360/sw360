@@ -29,25 +29,26 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.exporter.LicsExporter;
 import org.eclipse.sw360.exporter.utils.ZipTools;
+import org.eclipse.sw360.exporter.utils.ZipTools;
+import org.eclipse.sw360.importer.LicsImporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
-
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipOutputStream;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -210,4 +211,24 @@ public class Sw360LicenseService {
     private void copyDataStreamToResponse(HttpServletResponse response, ByteArrayInputStream buffer) throws IOException {
         FileCopyUtils.copy(buffer, response.getOutputStream());
     }
+
+    public void uploadLicense(User sw360User, MultipartFile file, boolean overwriteIfExternalIdMatches, boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) throws IOException, TException {
+		final HashMap<String, InputStream> inputMap = new HashMap<>();
+
+		if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+			throw new HttpMessageNotReadableException("Unable to upload license file. User is not admin");
+		}
+        try {
+            InputStream inputStream = file.getInputStream();
+            ZipTools.extractZipToInputStreamMap(inputStream, inputMap);
+            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+            final LicsImporter licsImporter = new LicsImporter(sw360LicenseClient, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
+            licsImporter.importLics(sw360User, inputMap);
+
+        }finally {
+            for (InputStream inputStream : inputMap.values()) {
+                inputStream.close();
+            }
+        }
+	}
 }

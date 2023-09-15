@@ -25,12 +25,16 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
@@ -94,6 +98,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         Mockito.doNothing().when(licenseServiceMock).deleteAllLicenseInfo(any());
         Mockito.doNothing().when(licenseServiceMock).importSpdxInformation(any());
         Mockito.doNothing().when(licenseServiceMock).getDownloadLicenseArchive(any(), any(), any());
+        Mockito.doNothing().when(licenseServiceMock).uploadLicense(any(), any(), anyBoolean(), anyBoolean());
         obligation1 = new Obligation();
         obligation1.setId("0001");
         obligation1.setTitle("Obligation 1");
@@ -233,5 +238,15 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", "Bearer " + accessToken)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_document_upload_license() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("licenseFile","file=@/bom.spdx.rdf".getBytes());
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/licenses/upload")
+                .file(file)
+                .header("Authorization", "Bearer " + accessToken);
+        this.mockMvc.perform(builder).andExpect(status().isOk());
     }
 }

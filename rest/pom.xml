@@ -43,6 +43,11 @@
             <artifactId>exporters</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>importers</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <pluginManagement>

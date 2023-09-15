@@ -121,3 +121,13 @@ include::{snippets}/should_document_get_download_license_archive/curl-request.ad
 ===== Example response
 include::{snippets}/should_document_get_download_license_archive/http-response.adoc[]
 
+[[upload-licenses]]
+==== Upload license
+
+A `POST` request will upload license file.
+
+===== Example request
+include::{snippets}/should_document_upload_license/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_upload_license/http-response.adoc[]
