@@ -29,6 +29,7 @@ import org.apache.logging.log4j.LogManager;
 
 import java.net.MalformedURLException;
 import java.util.*;
+import java.util.stream.Collectors;
 import com.google.common.collect.Lists;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -128,8 +129,15 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
 
     public RequestStatus updateDocumentCreationInformation(DocumentCreationInformation documentCreationInfo, User user) throws SW360Exception {
         DocumentCreationInformation actual = SPDXDocumentCreationInfoRepository.get(documentCreationInfo.getId());
+        documentCreationInfo.setRevision(actual.getRevision());
+        if(documentCreationInfo.getExternalDocumentRefs().size() < actual.getExternalDocumentRefs().size()){
+            updateIndex(documentCreationInfo);
+        }
         assertNotNull(actual, "Could not find SPDX Document Creation Information to update!");
         prepareSpdxDocumentCreationInfo(documentCreationInfo);
+        if(documentCreationInfo.getExternalDocumentRefs().size() < actual.getExternalDocumentRefs().size()) {
+            updateExternalDocumentReferences(documentCreationInfo);
+        }
         if (!makePermission(documentCreationInfo, user).isActionAllowed(RequestedAction.WRITE)) {
             if (isChanged(actual, documentCreationInfo)) {
                 return moderator.updateSpdxDocumentCreationInfo(documentCreationInfo, user);
@@ -140,6 +148,35 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         SPDXDocumentCreationInfoRepository.update(documentCreationInfo);
         dbHandlerUtil.addChangeLogs(documentCreationInfo, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
+    }
+
+    public void updateIndex(DocumentCreationInformation documentCreationInformation) {
+        List<ExternalDocumentReferences> externalDocumentReferences = documentCreationInformation.getExternalDocumentRefs().stream().collect(Collectors.toList());
+        Collections.sort(externalDocumentReferences, new Comparator<ExternalDocumentReferences>() {
+            @Override
+            public int compare(ExternalDocumentReferences o1, ExternalDocumentReferences o2) {
+                return  o1.getIndex() - o2.getIndex();
+            }
+        });
+        for (int i = 0; i < externalDocumentReferences.size(); i++) {
+            externalDocumentReferences.get(i).setIndex(i);
+        }
+        documentCreationInformation.setExternalDocumentRefs(externalDocumentReferences.stream().collect(Collectors.toSet()));
+    }
+
+    // Handle index of ExternalReferences
+    public void updateExternalDocumentReferences(DocumentCreationInformation request) {
+        List<ExternalDocumentReferences> externalDocumentReferences = request.getExternalDocumentRefs().stream().collect(Collectors.toList());
+        Collections.sort(externalDocumentReferences, new Comparator<ExternalDocumentReferences>() {
+            @Override
+            public int compare(ExternalDocumentReferences o1, ExternalDocumentReferences o2) {
+                return o1.getIndex() > o2.getIndex() ? 1 : (o1.getIndex() == o2.getIndex() ? 0 : -1);
+            }
+        });
+        for (int i = 0; i<externalDocumentReferences.size() ; i++) {
+            externalDocumentReferences.get(i).setIndex(i);
+        }
+        request.setExternalDocumentRefs(externalDocumentReferences.stream().collect(Collectors.toSet()));
     }
 
     public RequestStatus updateDocumentCreationInfomationFromModerationRequest(DocumentCreationInformation documentCreationInfoAdditions, DocumentCreationInformation documentCreationInfoDeletions, User user) throws SW360Exception {
@@ -173,17 +210,17 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     }
 
     private boolean isChanged(DocumentCreationInformation actual, DocumentCreationInformation update) {
-
         for (DocumentCreationInformation._Fields field : DocumentCreationInformation._Fields.values()) {
-            if(update.getFieldValue(field) == null) {
-                continue;
-            } else if (actual.getFieldValue(field) == null) {
+            if (null == actual.getFieldValue(field) && null == update.getFieldValue(field)) {
+                return false;
+            } else if (update.getFieldValue(field) != null && actual.getFieldValue(field) == null){
+                return true;
+            } else if (update.getFieldValue(field) == null && actual.getFieldValue(field) != null){
                 return true;
             } else if (!actual.getFieldValue(field).equals(update.getFieldValue(field))) {
                 return true;
             }
         }
-
         return false;
     }
 
