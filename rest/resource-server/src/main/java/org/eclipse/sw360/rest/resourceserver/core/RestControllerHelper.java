@@ -1308,7 +1308,7 @@ public class RestControllerHelper<T> {
                     addEmbeddedUser(cotsDetailsHalResource, sw360User, "sw360:cotsResponsible");
                 }
             }
-            addEmbeddedFields("sw360:cotsDetails", cotsDetailsHalResource, halResource);
+            addEmbeddedFields("sw360:cotsDetail", cotsDetailsHalResource, halResource);
         }
     }
 }
