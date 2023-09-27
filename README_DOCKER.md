@@ -4,7 +4,7 @@
 
 [Building](#building)
 
-[Running the Image](#running-the-image)
+[Running the Image](#running-the-image-first-time)
 
 [Extra Configurations](#configurations)
 
@@ -17,8 +17,16 @@
     Build is done by the script:
 
     ```sh
-    docker_build.sh
+    ./docker_build.sh
     ```
+
+    If you want to specify [CVE-Search](https://github.com/cve-search/cve-search) host at build time, run as follows:
+    ```sh
+    ./docker_build.sh --cvesearch-host <HOST_URL>
+    ```
+    The `<HOST_URL>` above should be `http://<YOUR_SERVER_HOST>:<PORT>` style, 
+    or it can be https://cvepremium.circl.lu for testing purposes only.
+
 
     The script will build multiple intermediary images.
     Subsequent builds will only build the differences
