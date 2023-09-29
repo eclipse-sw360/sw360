@@ -66,3 +66,14 @@ include::{snippets}/should_document_create_vendor/http-response.adoc[]
 
 ===== Links
 include::{snippets}/should_document_create_vendor/links.adoc[]
+
+[[resources-vendor-export]]
+==== Export vendor list
+
+A `GET` request will export the vendor list.
+
+===== Example request
+include::{snippets}/should_document_get_export_vendor/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_export_vendor/http-response.adoc[]

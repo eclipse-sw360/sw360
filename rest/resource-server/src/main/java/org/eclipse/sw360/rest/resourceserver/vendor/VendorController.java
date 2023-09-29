@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -26,12 +28,16 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -111,5 +117,23 @@ public class VendorController implements RepresentationModelProcessor<Repository
 
     private HalResource<Vendor> createHalVendor(Vendor sw360Vendor) {
         return new HalResource<>(sw360Vendor);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @GetMapping(value = VENDORS_URL + "/exportVendorDetails")
+    public ResponseEntity<?> exportVendor(HttpServletResponse response) throws TException {
+        try {
+            ByteBuffer buffer = vendorService.exportExcel();
+            String filename = String.format("vendors-%s.xlsx", SW360Utils.getCreatedOn());
+            response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
+            copyDataStreamToResponse(response, buffer);
+        } catch (Exception e) {
+            throw new TException(e.getMessage());
+        }
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    private void copyDataStreamToResponse(HttpServletResponse response, ByteBuffer buffer) throws IOException {
+        FileCopyUtils.copy(buffer.array(), response.getOutputStream());
     }
 }

@@ -24,6 +24,7 @@ import org.ektorp.http.HttpClient;
 import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -119,5 +120,10 @@ public class VendorHandler implements VendorService.Iface {
         assertNotNull(mergeSelection);
         
         return vendorDatabaseHandler.mergeVendors(mergeTargetId, mergeSourceId, mergeSelection, user);
+    }
+
+    @Override
+    public ByteBuffer getVendorReportDataStream(List<Vendor> vendorList) throws TException {
+        return vendorDatabaseHandler.getVendorReportDataStream(vendorList);
     }
 }

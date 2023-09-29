@@ -72,6 +72,11 @@ service VendorService {
      **/
     RequestStatus updateVendor(1: Vendor vendor, 2: User user);
 
+    /*
+    * get report data stream
+    */
+    binary getVendorReportDataStream(1: list<Vendor> vendorList);
+
     /**
      * merge vendor identified by vendorSourceId into vendor identified by vendorTargetId.
      * The vendorSelection shows which data has to be set on the target. The source will be deleted afterwards.

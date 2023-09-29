@@ -10,6 +10,7 @@
  */
 package org.eclipse.sw360.vendors;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
@@ -31,8 +32,11 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.exporter.VendorExporter;
 
+import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -236,6 +240,15 @@ public class VendorDatabaseHandler {
         ModerationService.Iface moderationClient = new ThriftClients().makeModerationClient();
         List<ModerationRequest> sourceModerationRequests = moderationClient.getModerationRequestByDocumentId(vendorId);
         return sourceModerationRequests.stream().anyMatch(CommonUtils::isInProgressOrPending);
+    }
+
+    public ByteBuffer getVendorReportDataStream(List<Vendor> vendorList) throws TException{
+        try {
+            InputStream stream = new VendorExporter().makeExcelExport(vendorList);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+        } catch (Exception e) {
+            throw new TException(e.getMessage());
+        }
     }
 
 }

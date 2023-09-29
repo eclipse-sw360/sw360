@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
@@ -20,6 +21,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +56,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
     private Vendor vendor;
 
     @Before
-    public void before() {
+    public void before() throws TException{
         vendor = new Vendor();
         vendor.setId("876876776");
         vendor.setFullname("Google Inc.");
@@ -73,6 +75,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
 
         given(this.vendorServiceMock.getVendors()).willReturn(vendorList);
         given(this.vendorServiceMock.getVendorById(eq(vendor.getId()))).willReturn(vendor);
+        given(this.vendorServiceMock.exportExcel()).willReturn(ByteBuffer.allocate(10000));
 
         when(this.vendorServiceMock.createVendor(any())).then(invocation ->
         new Vendor ("Apache", "Apache Software Foundation", "https://www.apache.org/").setId("987567468"));
@@ -145,5 +148,15 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("url").description("The vendor's home page URL"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_get_export_vendor() throws Exception{
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/vendors/exportVendorDetails")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document());
     }
 }
