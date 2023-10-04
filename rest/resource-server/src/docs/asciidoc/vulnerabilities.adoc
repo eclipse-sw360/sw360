@@ -126,3 +126,11 @@ include::{snippets}/should_document_delete_release_vulnerability_relation/curl-r
 
 ===== Example response
 include::{snippets}/should_document_delete_release_vulnerability_relation/http-response.adoc[]
+
+[[resources-vulnerabilitie-get-status]]
+==== Get a vulnerability tracking status
+
+A `GET` request will get vulnerability tracking status for project.
+
+===== Example request
+include::{snippets}/should_document_get_vulnerabilities_tracking_status/curl-request.adoc[]
