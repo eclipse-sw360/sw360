@@ -104,8 +104,20 @@ include::{snippets}/should_document_delete_all_license_info/http-response.adoc[]
 
 A `POST` request will import SPDX info.
 
-===== Example requestimport-SPDX-info
+===== Example request
 include::{snippets}/should_document_import_spdx_info/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_import_spdx_info/http-response.adoc[]
+
+[[download-license-archive]]
+==== Download license archive
+
+A `GET` request help to download the license archive.
+
+===== Example request
+include::{snippets}/should_document_get_download_license_archive/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_license_archive/http-response.adoc[]
+

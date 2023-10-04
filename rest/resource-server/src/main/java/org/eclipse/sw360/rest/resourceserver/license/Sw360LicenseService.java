@@ -16,6 +16,7 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -26,16 +27,29 @@ import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.exporter.LicsExporter;
+import org.eclipse.sw360.exporter.utils.ZipTools;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.FileCopyUtils;
 
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.zip.ZipOutputStream;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 
@@ -44,6 +58,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 public class Sw360LicenseService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
+    private static String CONTENT_TYPE = "application/zip";
 
     public List<License> getLicenses() throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
@@ -160,5 +175,39 @@ public class Sw360LicenseService {
         } else {
             throw new HttpMessageNotReadableException("Unable to import All Spdx license. User is not admin");
         }
+    }
+    
+    public void getDownloadLicenseArchive(User sw360User ,HttpServletRequest request,HttpServletResponse response) throws TException,IOException{
+        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            throw new HttpMessageNotReadableException("Unable to download archive license. User is not admin");
+        }
+        try {
+            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+            String fileConstant="LicensesBackup.lics";
+            Map<String, InputStream> fileNameToStreams = (new LicsExporter(sw360LicenseClient)).getFilenameToCSVStreams();
+            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            final ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream);
+
+            for (Map.Entry<String, InputStream> entry : fileNameToStreams.entrySet()) {
+                 ZipTools.addToZip(zipOutputStream, entry.getKey(), entry.getValue());
+            }
+            zipOutputStream.flush();
+            zipOutputStream.close();
+            final ByteArrayInputStream zipFile = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
+            String filename = String.format(fileConstant, SW360Utils.getCreatedOn());
+            response.setContentType(CONTENT_TYPE);
+            response.setHeader("Content-Disposition", String.format("license; filename=\"%s\"", filename));
+            copyDataStreamToResponse(response, zipFile);
+        } catch (SW360Exception exp) {
+            if (exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException(exp.getWhy());
+            } else {
+                throw new RuntimeException(exp.getWhy());
+            }
+        }
+    }
+
+    private void copyDataStreamToResponse(HttpServletResponse response, ByteArrayInputStream buffer) throws IOException {
+        FileCopyUtils.copy(buffer, response.getOutputStream());
     }
 }

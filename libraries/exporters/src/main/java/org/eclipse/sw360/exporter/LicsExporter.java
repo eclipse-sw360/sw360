@@ -37,6 +37,10 @@ public class LicsExporter {
         this.licenseClient = licenseClient;
     }
 
+    public LicsExporter() {
+        this.licenseClient = null;
+    }
+
     private ByteArrayInputStream getCsvStream(List<List<String>> listList) throws TException, IOException {
         return new ByteArrayInputStream(writeCsvStream(listList).toByteArray());
     }

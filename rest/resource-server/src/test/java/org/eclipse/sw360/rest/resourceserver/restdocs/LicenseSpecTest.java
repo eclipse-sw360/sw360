@@ -27,6 +27,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.IOException;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -62,7 +63,8 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
     private Obligation obligation1, obligation2;
 
     @Before
-    public void before() throws TException {
+    @SuppressWarnings("unchecked")
+    public void before() throws TException, IOException {
         license = new License();
         license.setId("Apache-2.0");
         license.setFullname("Apache License 2.0");
@@ -91,6 +93,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         Mockito.doNothing().when(licenseServiceMock).deleteLicenseById(any(), any());
         Mockito.doNothing().when(licenseServiceMock).deleteAllLicenseInfo(any());
         Mockito.doNothing().when(licenseServiceMock).importSpdxInformation(any());
+        Mockito.doNothing().when(licenseServiceMock).getDownloadLicenseArchive(any(), any(), any());
         obligation1 = new Obligation();
         obligation1.setId("0001");
         obligation1.setTitle("Obligation 1");
@@ -212,6 +215,15 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization", "Bearer " + accessToken)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
+    }
+    @Test
+    public void should_document_get_download_license_archive() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/licenses" + "/downloadLicenses")
+         .header("Authorization", "Bearer " + accessToken)
+         .accept("application/zip"))
+         .andExpect(status().isOk())
+         .andDo(this.documentationHandler.document());
     }
 
     @Test

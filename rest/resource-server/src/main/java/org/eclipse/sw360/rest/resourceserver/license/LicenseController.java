@@ -37,11 +37,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -173,5 +177,13 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         licenseService.importSpdxInformation(sw360User);
         return new ResponseEntity<>(HttpStatus.OK);
+    }   
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = LICENSES_URL + "/downloadLicenses", method = RequestMethod.GET, produces = "application/zip")
+    public void downloadLicenseArchive(HttpServletRequest request,HttpServletResponse response) throws TException,IOException  {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        licenseService.getDownloadLicenseArchive(sw360User,request,response);
+
     }
 }
