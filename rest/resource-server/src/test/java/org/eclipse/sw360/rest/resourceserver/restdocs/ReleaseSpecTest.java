@@ -275,6 +275,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release.setEccInformation(eccInformation);
         release.setClearingInformation(clearingInformation);
         release.setCotsDetails(cotsDetails1);
+        release.setVendor(new Vendor("Vendor", "Test Vendor", "http://testvendor.com"));
         release.setComponentType(ComponentType.COTS);
 
         Set<String> licenseIds = new HashSet<>();
@@ -620,7 +621,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:releases.[]otherLicenseIds").description("An array of all other licenses associated with the release").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]operatingSystems").description("The OS on which the release operates"),
                                 subsectionWithPath("_embedded.sw360:releases.[]softwarePlatforms").description("The software platforms of the component"),
-                                subsectionWithPath("_embedded.sw360:releases.[]vendor").description("The Id of the vendor").optional(),
+                                subsectionWithPath("_embedded.sw360:releases.[]vendor").description("The vendor of Release").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]clearingInformation").description("Clearing information of release").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]cotsDetails").description("Cots Details of release").optional(),
                                 subsectionWithPath("_embedded.sw360:releases.[]_embedded.sw360:moderators").description("An array of all release moderators with email"),
@@ -728,6 +729,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:subscribers").description("An array of all release subscribers with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:contributors").description("An array of all release contributors with email and link to their <<resources-user-get,User resource>>"),
+                                subsectionWithPath("_embedded.sw360:vendor").description("A vendor with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.sw360:modifiedBy").description("A release modifiedBy with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:createdBy").description("A release createdBy with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
@@ -1080,6 +1082,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("operatingSystems").description("The OS on which the release operates"),
                         fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
+                        subsectionWithPath("_embedded.sw360:vendor").description("A vendor with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                         subsectionWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                         subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                 )
@@ -1221,6 +1224,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("operatingSystems").description("The OS on which the release operates"),
                                 fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
+                                subsectionWithPath("_embedded.sw360:vendor").description("A vendor with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));

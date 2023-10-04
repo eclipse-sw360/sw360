@@ -931,7 +931,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             if (release.getVendor() != null) {
                 Vendor vendor = release.getVendor();
                 HalResource<Vendor> vendorHalResource = restControllerHelper.addEmbeddedVendor(vendor);
-                halRelease.addEmbeddedResource("sw360:vendors", vendorHalResource);
+                halRelease.addEmbeddedResource("sw360:vendor", vendorHalResource);
                 release.setVendor(null);
             }
             if (release.getMainLicenseIds() != null) {

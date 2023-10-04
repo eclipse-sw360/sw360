@@ -424,7 +424,7 @@ public class RestControllerHelper<T> {
     public void addEmbeddedVendors(HalResource<Component> halComponent, Set<String> vendorFullnames) {
         for (String vendorFullName : vendorFullnames) {
             HalResource<Vendor> vendorHalResource = addEmbeddedVendor(vendorFullName);
-            halComponent.addEmbeddedResource("sw360:vendors", vendorHalResource);
+            halComponent.addEmbeddedResource("sw360:vendor", vendorHalResource);
         }
     }
 
