@@ -29,7 +29,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
-
+import java.nio.ByteBuffer;
 import java.util.List;
 
 @Service
@@ -40,8 +40,7 @@ public class Sw360VendorService {
 
     public List<Vendor> getVendors() {
         try {
-            VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            return sw360VendorClient.getAllVendors();
+            return getAllVendorList();
         } catch (TException e) {
             throw new RuntimeException(e);
         }
@@ -58,8 +57,7 @@ public class Sw360VendorService {
 
     public Vendor getVendorByFullName(String fullName) {
         try {
-            VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            for (Vendor vendor : sw360VendorClient.getAllVendors()) {
+            for (Vendor vendor : getAllVendorList()) {
                 if(fullName.equals(vendor.getFullname())) {
                     return vendor;
                 }
@@ -123,7 +121,7 @@ public class Sw360VendorService {
     public void deleteAllVendors(User sw360User) {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
-            List<Vendor> vendors = sw360VendorClient.getAllVendors();
+            List<Vendor> vendors = getAllVendorList();
             for (Vendor vendor : vendors) {
                 sw360VendorClient.deleteVendor(vendor.getId(), sw360User);
             }
@@ -136,5 +134,16 @@ public class Sw360VendorService {
         THttpClient thriftClient = new THttpClient(thriftServerUrl + "/vendors/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new VendorService.Client(protocol);
+    }
+
+    public ByteBuffer exportExcel() throws TException {
+        List<Vendor> vendors = getAllVendorList();
+        VendorService.Iface sw360VendorClient = getThriftVendorClient();
+        return sw360VendorClient.getVendorReportDataStream(vendors);
+    }
+
+    private List<Vendor> getAllVendorList() throws TException {
+        VendorService.Iface sw360VendorClient = getThriftVendorClient();
+        return sw360VendorClient.getAllVendors();
     }
 }
