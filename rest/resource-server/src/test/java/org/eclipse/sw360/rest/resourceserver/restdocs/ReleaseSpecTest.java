@@ -54,6 +54,9 @@ import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStatus;
 import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcessStep;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
@@ -1293,5 +1296,54 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         boolean includeConcludedLicense = AttachmentType.INITIAL_SCAN_REPORT.equals(attachmentType);
         given(this.releaseServiceMock.getReleaseForUserById(eq(releaseTest.getId()), any())).willReturn(releaseTest);
         given(this.licenseInfoMockService.getLicenseInfoForAttachment(any(), any(), any(), eq(includeConcludedLicense))).willReturn(licenseInfoResults);
+    }
+
+    @Test
+    public void should_document_load_release_assessment_summary_information() throws Exception {
+        Release releaseWithAssessment = new Release();
+        releaseWithAssessment.setId("333333");
+        releaseWithAssessment.setName("Test Load Assessment Summary");
+        releaseWithAssessment.setVersion("1.0");
+
+        Attachment attachmentTest = new Attachment();
+
+        attachmentTest.setSha1(attachmentSha1);
+        attachmentTest.setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_XML);
+        attachmentTest.setCreatedOn("2016-12-18");
+        attachmentTest.setCreatedBy("admin@sw360.org");
+        attachmentTest.setFilename("CLI_filename.xml");
+        attachmentTest.setAttachmentContentId("attachmentId");
+        Set<Attachment> listAttachment = Collections.singleton(attachmentTest);
+        releaseWithAssessment.setAttachments(listAttachment);
+
+        Map<String, String> assessmentSummaryMap = new HashMap<>();
+        assessmentSummaryMap.put("GeneralAssessment", "General Assessment");
+        assessmentSummaryMap.put("CriticalFilesFound", "Critical Files Found");
+        assessmentSummaryMap.put("#text", "\n  ");
+        assessmentSummaryMap.put("AdditionalNotes", "Additional Notes");
+        assessmentSummaryMap.put("UsageRestrictionsFound", "None");
+        assessmentSummaryMap.put("ExportRestrictionsFound", "Export Restrictions Found");
+        assessmentSummaryMap.put("DependencyNotes", "Dependency Notes");
+
+        LicenseInfo licenseInfo = new LicenseInfo();
+        licenseInfo.setFilenames(Collections.singletonList("SPDX_filename.rdf"));
+        licenseInfo.setAssessmentSummary(assessmentSummaryMap);
+
+        LicenseInfoParsingResult licenseInfoParsingResult = new LicenseInfoParsingResult();
+        licenseInfoParsingResult.setStatus(LicenseInfoRequestStatus.SUCCESS);
+        licenseInfoParsingResult.setRelease(releaseWithAssessment);
+        licenseInfoParsingResult.setLicenseInfo(licenseInfo);
+
+        List<LicenseInfoParsingResult> licenseInfoResults = new ArrayList<>();
+        licenseInfoResults.add(licenseInfoParsingResult);
+
+        given(this.releaseServiceMock.getReleaseForUserById(eq(releaseWithAssessment.getId()), any())).willReturn(releaseWithAssessment);
+        given(this.licenseInfoMockService.getLicenseInfoForAttachment(any(), any(), any(), eq(true))).willReturn(licenseInfoResults);
+
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/releases/" + releaseWithAssessment.getId() + "/assessmentSummaryInfo")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
     }
 }
