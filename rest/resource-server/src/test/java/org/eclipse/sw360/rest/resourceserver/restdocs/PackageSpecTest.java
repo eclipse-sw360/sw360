@@ -217,6 +217,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("_embedded.sw360:packages.[]name").description("The name of the package"),
                                 fieldWithPath("_embedded.sw360:packages.[]version").description("The version of the package"),
+                                fieldWithPath("_embedded.sw360:packages.[]packageType").description("The package type, possible values are: " + Arrays.asList(CycloneDxComponentType.values())),
                                 fieldWithPath("_embedded.sw360:packages.[]createdOn").description("The date of creation of the package"),
                                 fieldWithPath("_embedded.sw360:packages.[]packageManager").description("The type of package manager"),
                                 fieldWithPath("_embedded.sw360:packages.[]purl").description("Package URL"),
@@ -250,6 +251,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("name").description("The name of the package"),
                                 fieldWithPath("version").description("The version of the package"),
+                                fieldWithPath("packageType").description("The package type, possible values are: " + Arrays.asList(CycloneDxComponentType.values())),
                                 fieldWithPath("createdOn").description("The date of creation of the package"),
                                 fieldWithPath("packageManager").description("The type of package manager"),
                                 fieldWithPath("purl").description("Package URL"),
@@ -349,6 +351,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
 
         pkg.put("name", "angular-sanitize");
         pkg.put("version", "1.8.2");
+        pkg.put("packageType", CycloneDxComponentType.LIBRARY);
         pkg.put("purl", "pkg:npm/angular-sanitize@1.8.2");
         pkg.put("vcs", "git+https://github.com/angular/angular.js.git");
         pkg.put("homepageUrl", "https://github.com/angular/angular-sanitize");
@@ -368,6 +371,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                         requestFields(
                                 fieldWithPath("name").description("The name of the package"),
                                 fieldWithPath("version").description("The version of the package"),
+                                fieldWithPath("packageType").description("The package type, possible values are: " + Arrays.asList(CycloneDxComponentType.values())),
                                 fieldWithPath("purl").description("Package URL"),
                                 fieldWithPath("vcs").description("VCS(Version Control System) is the URL of the source code"),
                                 fieldWithPath("homepageUrl").description("URL of the package website"),
@@ -378,6 +382,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("name").description("The name of the package"),
                                 fieldWithPath("version").description("The version of the package"),
+                                fieldWithPath("packageType").description("The package type, possible values are: " + Arrays.asList(CycloneDxComponentType.values())),
                                 fieldWithPath("createdOn").description("The date of creation of the package"),
                                 fieldWithPath("packageManager").description("The type of package manager"),
                                 fieldWithPath("purl").description("Package URL"),
@@ -411,6 +416,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("name").description("The name of the package"),
                                 fieldWithPath("version").description("The version of the package"),
+                                fieldWithPath("packageType").description("The package type, possible values are: " + Arrays.asList(CycloneDxComponentType.values())),
                                 fieldWithPath("createdOn").description("The date of creation of the package"),
                                 fieldWithPath("packageManager").description("The type of package manager"),
                                 fieldWithPath("purl").description("Package URL"),

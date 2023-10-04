@@ -579,7 +579,6 @@ public class JacksonCustomizations {
                 "setPackageManager",
                 "releaseId",
                 "setRelease",
-                "packageType",
                 "setPackageType"
         })
         static abstract class PackageMixin extends Package {
