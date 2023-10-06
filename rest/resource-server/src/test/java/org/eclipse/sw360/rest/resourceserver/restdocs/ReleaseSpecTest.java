@@ -189,6 +189,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
         given(this.sw360VendorService.getVendorById(any())).willReturn(new Vendor("TV", "Test Vendor", "http://testvendor.com"));
         given(this.attachmentServiceMock.isAttachmentExist(eq("1231231254"))).willReturn(true);
+        given(this.attachmentServiceMock.getAttachmentResourcesFromList(any())).willReturn(CollectionModel.of(attachmentResources));
 
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("mainline-id-component", new HashSet<>(Arrays.asList("1432", "4876")));
@@ -806,27 +807,22 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_get_release_attachment_info() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/releases/" + release3.getId() + "/attachments")
+        mockMvc.perform(get("/api/releases/" + release.getId() + "/attachments")
                 .header("Authorization", "Bearer " + accessToken)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         responseFields(
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes").description("An array of <<resources-attachment, Attachments resources>>"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]attachmentContentId").description("The attachment attachmentContentId"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]filename").description("The attachment filename"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]sha1").description("The attachment sha1"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]attachmentType").description("The attachment attachmentType"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdBy").description("The attachment createdBy"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdTeam").description("The attachment createdTeam"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdComment").description("The attachment createdComment"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdOn").description("The attachment createdOn"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]checkedComment").description("The attachment checkedComment"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]checkStatus").description("The attachment checkStatus"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment").description("The usages in project"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment.visible").description("The visible usages in project"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment.restricted").description("The restricted usages in project"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment.projectUsages").description("The name of project usages"),
+                                subsectionWithPath("_embedded.sw360:attachments").description("An array of <<resources-attachment, Attachments resources>>"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]filename").description("The attachment filename"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]sha1").description("The attachment sha1 value"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]attachmentType").description("The attachmentType value"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]createdBy").description("The attachment createdby value"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]createdTeam").description("The attachment createdteam value"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]createdComment").description("The attachment createdComment value"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]createdOn").description("The attachment createdon value"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]checkedComment").description("The attachment checkedComment value"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]checkStatus").description("The attachment checkStatus value"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
