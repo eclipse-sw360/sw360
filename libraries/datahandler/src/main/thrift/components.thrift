@@ -947,6 +947,11 @@ service ComponentService {
     RequestStatus updateReleasesWithSvmTrackingFeedback();
 
     /**
+     * uploads source code attachment to releases
+     **/
+    RequestStatus uploadSourceCodeAttachmentToReleases();
+
+    /**
      * Method to ensure uniqueness of identifiers, used by database sanitation portlet,
      * return map of name to ids
      **/

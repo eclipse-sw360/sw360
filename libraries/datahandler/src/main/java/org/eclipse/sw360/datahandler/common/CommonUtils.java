@@ -330,17 +330,31 @@ public class CommonUtils {
 
     @NotNull
     public static Attachment getNewAttachment(User user, String attachmentContentId, String fileName) {
+        return initializeAttachmentCommonFields(user, attachmentContentId, fileName);
+    }
+
+    @NotNull
+    public static Attachment getNewAttachment(String attachmentContentId, String fileName) {
+        return initializeAttachmentCommonFields(null, attachmentContentId, fileName);
+    }
+
+    @NotNull
+    private static Attachment initializeAttachmentCommonFields(User user, String attachmentContentId, String fileName) {
         Attachment attachment = new Attachment();
-        attachment.setCreatedBy(user.getEmail());
         attachment.setCreatedOn(SW360Utils.getCreatedOn());
         attachment.setCreatedComment("");
-        attachment.setCreatedTeam(user.getDepartment());
         attachment.setFilename(fileName);
         attachment.setAttachmentContentId(attachmentContentId);
         attachment.setAttachmentType(AttachmentType.DOCUMENT);
         attachment.setCheckStatus(CheckStatus.NOTCHECKED);
         attachment.setCheckedComment("");
         attachment.setSha1("");
+
+        if (user != null) {
+            attachment.setCreatedBy(user.getEmail());
+            attachment.setCreatedTeam(user.getDepartment());
+        }
+
         return attachment;
     }
 

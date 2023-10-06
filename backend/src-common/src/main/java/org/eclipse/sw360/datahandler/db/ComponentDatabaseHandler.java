@@ -15,6 +15,7 @@ import com.cloudant.client.api.model.Response;
 import com.google.common.collect.*;
 
 import org.eclipse.sw360.common.utils.BackendUtils;
+import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -68,11 +69,16 @@ import org.eclipse.sw360.spdx.SpdxBOMImporter;
 import org.eclipse.sw360.spdx.SpdxBOMImporterSink;
 import org.jetbrains.annotations.NotNull;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import org.spdx.library.InvalidSPDXAnalysisException;
+
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -112,6 +118,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private static final String NO_RELEASE = "Don't have Release created!";
     private static final List<String> listComponentName = new ArrayList<>();
     private static final Map<String, String> mapReleaseName = new HashMap<>();
+    public static final List<String> formats = new ArrayList<>(Arrays.asList(SW360Constants.URL_FORMATS.split(",")));
 
     /**
      * Connection to the couchDB database
@@ -124,7 +131,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     private final PackageRepository packageRepository;
     private DatabaseHandlerUtil dbHandlerUtil;
     private BulkDeleteUtil bulkDeleteUtil;
-    
+
     private final AttachmentConnector attachmentConnector;
     private SvmConnector svmConnector;
     private final SpdxDocumentDatabaseHandler spdxDocumentDatabaseHandler;
@@ -179,7 +186,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
-        
+
         this.bulkDeleteUtil = new BulkDeleteUtil(this, componentRepository, releaseRepository, projectRepository, moderator, releaseModerator,
                 attachmentConnector, attachmentDatabaseHandler, dbHandlerUtil);
 
@@ -391,6 +398,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             throw fail(403, "Could not fetch component because access is denied! id=" + id);
         }
         return component;
+    }
+
+    //Used by scheduled upload service to get releases of a component without user info
+    public Release getRelease(String id) {
+        return releaseRepository.get(id);
     }
 
     public Release getRelease(String id, User user) throws SW360Exception {
@@ -1460,11 +1472,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             updateReleaseDependentFieldsForComponent(component, containedRelease);
         }
     }
-    
+
     public BulkOperationNode deleteBulkRelease(String releaseId, User user, boolean isPreview) throws SW360Exception  {
         return bulkDeleteUtil.deleteBulkRelease(releaseId, user, isPreview);
     }
-    
+
     public BulkDeleteUtil getBulkDeleteUtil() {
         return bulkDeleteUtil;
     }
@@ -1998,6 +2010,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public Map<String, Component> getAllComponentsIdMap() {
         final List<Component> components = componentRepository.getAll();
         return ThriftUtils.getIdMap(components);
+    }
+
+    public List<Component> getAllComponentsWithVCS() {
+        final List<Component> components = componentRepository.getComponentsByVCS();
+        return components;
     }
 
     @NotNull
@@ -3038,5 +3055,135 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             log.error("Error when get Release: " + releaseNode.getReleaseId());
         }
         return releaseNode;
+    }
+
+    public RequestStatus uploadSourceCodeAttachmentToReleases() {
+        List<Component> components = getAllComponentsWithVCS();
+        Set<String> releasesWithoutSRC = new HashSet<>();
+        Set<String> updateReleases = new HashSet<>();
+        log.info(String.format("SRC Upload: Found %d components with VCS", components.size()));
+
+        components.forEach(c -> {
+            String VCS = c.getVcs();
+            log.info(String.format("SRC Upload: %s %s", c.getId(), VCS));
+            if (isValidURL(VCS)) {
+                for (String r_id : c.getReleaseIds()) {
+                    boolean isUploaded = false;
+                    Release r = getRelease(r_id);
+
+                    if (r.getClearingState() == ClearingState.NEW_CLEARING) {
+                        List<Attachment> sourceAttachments = (r.getAttachments() != null) ? r.getAttachments().stream()
+                                .filter(attachment -> AttachmentType.SOURCE.equals(attachment.getAttachmentType()))
+                                .collect(Collectors.toList()) : Collections.emptyList();
+
+                        if (sourceAttachments.size() == 0) {
+                            releasesWithoutSRC.add(r.getId());
+                            String version = r.getVersion();
+                            Release originalReleaseData = r.deepCopy();
+
+                            for (String format : formats) {
+                                String downloadURL = String.format(format, c.getVcs(), version);
+                                if (isValidURL(downloadURL)) {
+                                    try {
+                                        String destinationDirectory = SW360Constants.SRC_ATTACHMENT_DOWNLOAD_LOCATION;
+                                        File file = downloadFile(downloadURL, destinationDirectory);
+                                        Attachment attachment = new Attachment()
+                                                .setAttachmentType(AttachmentType.SOURCE);
+                                        Set<Attachment> src_attachment = new HashSet<>();
+                                        src_attachment.add(uploadAttachment(file, attachment));
+                                        r.setAttachments(src_attachment);
+                                        r.setSourceCodeDownloadurl(downloadURL);
+                                        releaseRepository.update(r);
+                                        isUploaded = true;
+                                        updateReleases.add(r.getId());
+                                        // Delete the SRC zip file after the release is updated
+                                        file.delete();
+                                        break;
+                                    } catch (IOException | TException e) {
+                                        log.error(
+                                                "SRC Upload: Error while downloading the source code zip file for release:"
+                                                        + r.getId() + " " + e);
+                                    }
+                                }
+                            }
+                            if (isUploaded) {
+                                dbHandlerUtil.addChangeLogs(r, originalReleaseData,
+                                        SW360Constants.SRC_ATTACHMENT_UPLOADER_EMAIL, Operation.UPDATE,
+                                        attachmentConnector, Lists.newArrayList(), null, null);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        if (updateReleases.size() == releasesWithoutSRC.size()) {
+            log.info(String.format("SRC Upload: updated %d releases", updateReleases.size()));
+            return RequestStatus.SUCCESS;
+        } else {
+            log.error("SRC Upload: Failed to upload SRC attachments for releases: "
+                    + Sets.difference(releasesWithoutSRC, updateReleases));
+            return RequestStatus.FAILURE;
+        }
+    }
+
+    private boolean isValidURL(String url) {
+        try {
+            URL urlObj = new URL(url);
+            HttpURLConnection connection = (HttpURLConnection) urlObj.openConnection();
+            connection.setRequestMethod("HEAD");
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (IOException e) {
+            log.error("Error while checking the validity of the URL " + url, e);
+            return false;
+        }
+    }
+
+    public File downloadFile(String url, String destinationDirectory) throws IOException {
+        URL fileUrl = new URL(url);
+        String regex = ".*/([^/]+)/archive/refs/tags/(?:v)?([\\d.]+)\\.zip$";
+        String fileName = url.replaceAll(regex, "$1-$2.zip");
+        Path destinationPath = Paths.get(destinationDirectory, fileName);
+
+        try (InputStream in = fileUrl.openStream()) {
+            Files.copy(in, destinationPath, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return destinationPath.toFile();
+    }
+
+    public Attachment uploadAttachment(File file, Attachment newAttachment) throws IOException, TException {
+        String fileName = file.getName();
+        String contentType = "application/zip";
+        final AttachmentContent attachmentContent = makeAttachmentContent(fileName, contentType);
+        FileInputStream inputStream = new FileInputStream(file);
+        Attachment attachment = new AttachmentFrontendUtils().uploadAttachmentContent(attachmentContent, inputStream, null);
+
+        attachment.setSha1(attachmentConnector.getSha1FromAttachmentContentId(attachmentContent.getId()));
+        attachment.setAttachmentType(AttachmentType.SOURCE);
+        attachment.setCheckStatus(CheckStatus.NOTCHECKED);
+        attachment.setCreatedComment("Uploaded by the SW360 scheduled service based on the VCS url of the component");
+        attachment.setCreatedBy(SW360Constants.SRC_ATTACHMENT_UPLOADER_EMAIL);
+        return attachment;
+    }
+
+    private AttachmentContent makeAttachmentContent(String filename, String contentType) {
+        AttachmentContent attachment = new AttachmentContent()
+                .setContentType(contentType)
+                .setFilename(filename)
+                .setOnlyRemote(false);
+        return makeAttachmentContent(attachment);
+    }
+
+    private AttachmentContent makeAttachmentContent(AttachmentContent content) {
+        try {
+            return new AttachmentFrontendUtils().makeAttachmentContent(content);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

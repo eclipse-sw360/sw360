@@ -321,4 +321,8 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         result.put(pageData, components);
         return result;
     }
+
+    public List<Component> getComponentsByVCS() {
+        return queryView("byVCS");
+    }
 }

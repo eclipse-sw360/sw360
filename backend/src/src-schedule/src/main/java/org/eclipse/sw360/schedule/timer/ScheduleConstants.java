@@ -52,6 +52,10 @@ public class ScheduleConstants {
     public static final String SVM_TRACKING_FEEDBACK_INTERVAL_PROPERTY_NAME = "schedule.trackingfeedback.interval.seconds";
     public static final String SVM_TRACKING_FEEDBACK_OFFSET_DEFAULT  = (4*60*60) + "" ; // default 04:00 am, in seconds
     public static final String SVM_TRACKING_FEEDBACK_INTERVAL_DEFAULT  = (24*60*60)+"" ; // default 24h, in seconds
+    public static final String SRC_UPLOAD_SERVICE_OFFSET_PROPERTY_NAME = "schedule.srcupload.firstOffset.seconds";
+    public static final String SRC_UPLOAD_SERVICE_OFFSET_DEFAULT = (22*60*60) + ""; //default 10:00 pm, in seconds
+    public static final String SRC_UPLOAD_SERVICE_INTERVAL_PROPERTY_NAME = "schedule.srcupload.interval.seconds";
+    public static final String SRC_UPLOAD_SERVICE_INTERVAL_DEFAULT = (24*60*60)+"" ; // default 24h, in seconds;
 
     public static final String DELETE_ATTACHMENT_OFFSET_DEFAULT  = "0"; // default 00:00 am, in seconds
     public static final String DELETE_ATTACHMENT_INTERVAL_DEFAULT  = (24*60*60) + "" ; // default 24h, in seconds
@@ -75,6 +79,7 @@ public class ScheduleConstants {
         loadScheduledServiceProperties(props, ThriftClients.SVMMATCH_SERVICE, SVMMATCH_OFFSET_PROPERTY_NAME, SVMMATCH_OFFSET_DEFAULT, SVMMATCH_INTERVAL_PROPERTY_NAME, SVMMATCH_INTERVAL_DEFAULT);
         loadScheduledServiceProperties(props, ThriftClients.SVM_LIST_UPDATE_SERVICE, SVM_LIST_UPDATE_OFFSET_PROPERTY_NAME, SVM_LIST_UPDATE_OFFSET_DEFAULT, SVM_LIST_UPDATE_INTERVAL_PROPERTY_NAME, SVM_LIST_UPDATE_INTERVAL_DEFAULT);
         loadScheduledServiceProperties(props, ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE, SVM_TRACKING_FEEDBACK_OFFSET_PROPERTY_NAME, SVM_TRACKING_FEEDBACK_OFFSET_DEFAULT, SVM_TRACKING_FEEDBACK_INTERVAL_PROPERTY_NAME, SVM_TRACKING_FEEDBACK_INTERVAL_DEFAULT);
+        loadScheduledServiceProperties(props, ThriftClients.SRC_UPLOAD_SERVICE, SRC_UPLOAD_SERVICE_OFFSET_PROPERTY_NAME, SRC_UPLOAD_SERVICE_OFFSET_DEFAULT, SRC_UPLOAD_SERVICE_INTERVAL_PROPERTY_NAME, SRC_UPLOAD_SERVICE_INTERVAL_DEFAULT);
 
         String autostartServicesString = props.getProperty(AUTOSTART_PROPERTY_NAME, "");
         autostartServices = autostartServicesString.split(",");

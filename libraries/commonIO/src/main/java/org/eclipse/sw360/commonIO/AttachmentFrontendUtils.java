@@ -121,7 +121,11 @@ public class AttachmentFrontendUtils {
         if (attachmentContent != null) {
             try {
                 attachmentStreamConnector.uploadAttachment(attachmentContent, fileStream);
-                return CommonUtils.getNewAttachment(sw360User, attachmentContent.getId(), attachmentContent.getFilename());
+                if (sw360User != null) {
+                    return CommonUtils.getNewAttachment(sw360User, attachmentContent.getId(), attachmentContent.getFilename());
+                } else {
+                    return CommonUtils.getNewAttachment(attachmentContent.getId(), attachmentContent.getFilename());
+                }
             } catch (TException e) {
                 log.error("Error saving attachment part", e);
             }
