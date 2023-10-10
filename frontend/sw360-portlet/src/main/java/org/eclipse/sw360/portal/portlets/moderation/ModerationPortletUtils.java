@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestType;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
@@ -131,6 +132,7 @@ public class ModerationPortletUtils {
                     String agreedDate = request.getParameter(ClearingRequest._Fields.AGREED_CLEARING_DATE.toString());
                     String status = request.getParameter(ClearingRequest._Fields.CLEARING_STATE.toString());
                     String priority = request.getParameter(ClearingRequest._Fields.PRIORITY.toString());
+                    String clearingType = request.getParameter(ClearingRequest._Fields.CLEARING_TYPE.toString());
                     if (CommonUtils.isNotNullEmptyOrWhitespace(agreedDate) && !agreedDate.equals(clearingRequest.getAgreedClearingDate())
                             && !SW360Utils.isValidDate(agreedDate, DateTimeFormatter.ISO_LOCAL_DATE, null)) {
                         log.warn("Invalid agreed clearing date: " + agreedDate + " is entered, by user: "+ user.getEmail());
@@ -139,6 +141,7 @@ public class ModerationPortletUtils {
                     clearingRequest.setAgreedClearingDate(CommonUtils.nullToEmptyString(agreedDate));
                     clearingRequest.setClearingState(ClearingRequestState.findByValue(parseInt(status)));
                     clearingRequest.setPriority(ClearingRequestPriority.findByValue(parseInt(priority)));
+                    clearingRequest.setClearingType(ClearingRequestType.findByValue(parseInt(clearingType)));
                 }
                 LiferayPortletURL projectUrl = getProjectPortletUrl(request, clearingRequest.getProjectId());
                 RequestStatus status = client.updateClearingRequest(clearingRequest, user, CommonUtils.nullToEmptyString(projectUrl));

@@ -19,6 +19,7 @@
 <%@page import="org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest"%>
 <%@page import="org.eclipse.sw360.datahandler.thrift.ClearingRequestState"%>
 <%@page import="org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority"%>
+<%@page import="org.eclipse.sw360.datahandler.thrift.ClearingRequestType"%>
 <%@page import="org.eclipse.sw360.portal.common.PortalConstants"%>
 
 <portlet:defineObjects/>
@@ -190,6 +191,26 @@
                                                     </core_rt:when>
                                                     <core_rt:otherwise>
                                                         <sw360:out value="${clearingRequest.projectBU}" bare="true"/>
+                                                    </core_rt:otherwise>
+                                                </core_rt:choose>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><label class="form-group"><liferay-ui:message key="clearing.type" />:</label></td>
+                                                <td>
+                                                <core_rt:choose>
+                                                    <core_rt:when test="${isEditableForClearingTeam}">
+                                                        <select class="form-control"
+                                                            name="<portlet:namespace/><%=ClearingRequest._Fields.CLEARING_TYPE%>">
+                                                            <sw360:DisplayEnumOptions type="<%=ClearingRequestType.class%>" selected="${clearingRequest.clearingType}"/>
+                                                        </select>
+                                                        <small class="form-text">
+                                                            <sw360:DisplayEnumInfo type="<%=ClearingRequestType.class%>"/>
+                                                            <liferay-ui:message key="learn.more.about.clearing.request.type" />
+                                                        </small>
+                                                    </core_rt:when>
+                                                    <core_rt:otherwise>
+                                                        <sw360:DisplayEnum value="${clearingRequest.clearingType}"/>
                                                     </core_rt:otherwise>
                                                 </core_rt:choose>
                                                 </td>
@@ -418,11 +439,28 @@
                     <p><liferay-ui:message key="please.enter.preferred.clearing.date.to.reopen.clearing.request" /></p>
                     <hr/>
                     <form id="reOpenClearingRequestForm" name="reOpenClearingRequestForm" action="<%=updateClearingRequestURL%>" method="post">
-                        <div class="form-group">
-                            <label for="requestedClearingDate" class="mandatory"><liferay-ui:message key="preferred.clearing.date" />:</label>
-                            <input class="datepicker form-control" id="requestedClearingDate" name="<portlet:namespace/><%=ClearingRequest._Fields.REQUESTED_CLEARING_DATE%>" type="text" pattern="\d{4}-\d{2}-\d{2}" placeholder="<liferay-ui:message key='preferred.clearing.date.yyyy.mm.dd' />" required/>
-                            <div class="invalid-feedback">
-                                <liferay-ui:message key="date.should.be.valid" />!
+                        <div class="row">
+                            <div class="form-group col-md-6">
+                                <label for="clearingType" class="mandatory"><liferay-ui:message
+                                        key="clearing.type" />:</label> <select id="clearingType" class="form-control" required
+                                    name="<portlet:namespace/><%=ClearingRequest._Fields.CLEARING_TYPE%>">
+                                    <sw360:DisplayEnumOptions type="<%=ClearingRequestType.class%>"
+                                        selected="${clearingRequest.clearingType}" />
+                                </select> <small class="form-text"> <sw360:DisplayEnumInfo
+                                        type="<%=ClearingRequestType.class%>" /> <liferay-ui:message
+                                        key="learn.more.about.clearing.request.type" />
+                                </small>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="requestedClearingDate" class="mandatory"><liferay-ui:message
+                                        key="preferred.clearing.date" />:</label> <input
+                                    class="datepicker form-control" id="requestedClearingDate"
+                                    type="text" pattern="\d{4}-\d{2}-\d{2}"
+                                    placeholder="<liferay-ui:message key='preferred.clearing.date.yyyy.mm.dd' />"
+                                    required />
+                                <div class="invalid-feedback">
+                                    <liferay-ui:message key="date.should.be.valid" />
+                                </div>
                             </div>
                         </div>
                         <core_rt:if test="${criticalCount lt 2}">
@@ -645,8 +683,12 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
         if ((isCritical && !validation.isValidDate(selectedDate, 0)) || (!isCritical && !validation.isValidDate(selectedDate, pcdLimit))) {
             $("#requestedClearingDate").addClass("is-invalid");
             callback();
+        } else if ($("#clearingType").val() == null){
+            $("#clearingTypeErrorMsg").addClass("is-invalid");
+            callback();
         } else {
             $("#requestedClearingDate").removeClass("is-invalid");
+            $("#clearingType").removeClass("is-invalid")
             $form.addClass('was-validated');
             $form.append('<input type="hidden" value="true" name="<portlet:namespace/><%=PortalConstants.RE_OPEN_REQUEST%>"/>');
             $form.submit();

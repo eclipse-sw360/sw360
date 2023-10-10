@@ -29,6 +29,7 @@ typedef sw360.ObligationStatus ObligationStatus
 typedef sw360.SW360Exception SW360Exception
 typedef sw360.ClearingRequestState ClearingState
 typedef sw360.ClearingRequestPriority ClearingPriority
+typedef sw360.ClearingRequestType ClearingType
 typedef sw360.Comment Comment
 typedef sw360.PaginationData PaginationData
 typedef components.Release Release
@@ -245,7 +246,8 @@ struct ClearingRequest {
     16: optional list<Comment> comments,
     17: optional i64 modifiedOn,
     18: optional list<i64> reOpenOn,
-    19: optional ClearingPriority priority
+    19: optional ClearingPriority priority,
+    20: optional ClearingType clearingType
 }
 
 struct ProjectDTO{
