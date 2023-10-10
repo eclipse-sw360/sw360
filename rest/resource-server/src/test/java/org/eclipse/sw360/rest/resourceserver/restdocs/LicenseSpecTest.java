@@ -11,6 +11,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
@@ -96,6 +97,11 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         licenseList.add(license2);
         
         requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+        LicenseType licensetype = new LicenseType();
+        licensetype.setId("1234");
+        licensetype.setLicenseType("wer");
+        licensetype.setLicenseTypeId(123);
+        licensetype.setType("xyz");
 
         given(this.licenseServiceMock.getLicenses()).willReturn(licenseList);
         given(this.licenseServiceMock.getLicenseById(eq(license.getId()))).willReturn(license);
@@ -105,6 +111,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         Mockito.doNothing().when(licenseServiceMock).getDownloadLicenseArchive(any(), any(), any());
         Mockito.doNothing().when(licenseServiceMock).uploadLicense(any(), any(), anyBoolean(), anyBoolean());
         given(this.licenseServiceMock.importOsadlInformation(any())).willReturn(requestSummary);
+        given(this.licenseServiceMock.addLicenseType(any(),any() , any())).willReturn(RequestStatus.SUCCESS);
         obligation1 = new Obligation();
         obligation1.setId("0001");
         obligation1.setTitle("Obligation 1");
@@ -252,15 +259,27 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/licenses/upload")
                 .file(file)
-                .header("Authorization", "Bearer " + accessToken);
-        this.mockMvc.perform(builder).andExpect(status().isOk());
+                .header("Authorization", "Bearer " + accessToken)
+                .queryParam("licenseFile", "Must need to attach file.");
+        this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
-        		
+
+    @Test   		
     public void should_document_import_osadl_info() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(post("/api/licenses/import/OSADL")
                 .header("Authorization", "Bearer " + accessToken)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_document_get_create_license_type() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(post("/api/licenses/" + "/addLicenseType")
+                .header("Authorization", "Bearer " + accessToken)
+                .param("licenseType", "wer")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
 }
