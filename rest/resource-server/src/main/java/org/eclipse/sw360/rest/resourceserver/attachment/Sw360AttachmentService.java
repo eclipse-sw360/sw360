@@ -297,6 +297,17 @@ public class Sw360AttachmentService {
         }
     }
 
+    public CollectionModel<EntityModel<Attachment>> getAttachmentResourcesFromList(Set<Attachment> attachmentList) {
+        final List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
+        if (CommonUtils.isNotEmpty(attachmentList)) {
+            for (final Attachment attachment : attachmentList) {
+                final EntityModel<Attachment> attachmentResource = EntityModel.of(attachment);
+                attachmentResources.add(attachmentResource);
+            }
+        }
+        return CollectionModel.of(attachmentResources);
+    }
+
     public CollectionModel<EntityModel<Attachment>> getResourcesFromList(Set<Attachment> attachmentList) {
         final List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
         if (CommonUtils.isNotEmpty(attachmentList)) {
