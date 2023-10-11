@@ -1330,4 +1330,26 @@ public class RestControllerHelper<T> {
             addEmbeddedFields("sw360:cotsDetail", cotsDetailsHalResource, halResource);
         }
     }
+
+    public void addEmbeddedProjectResponsible(HalResource<Project> halResource, String projectResponsible) {
+        User sw360User = getUserByEmail(projectResponsible);
+        if(sw360User!=null) {
+            addEmbeddedUser(halResource, sw360User, "projectResponsible");
+        }
+    }
+
+    public void addEmbeddedSecurityResponsibles (HalResource<Project> halResource, Set<String> securityResponsibles) {
+        for (String securityResponsible : securityResponsibles) {
+            User sw360User = getUserByEmail(securityResponsible);
+            if(sw360User!=null) {
+                addEmbeddedUser(halResource, sw360User, "securityResponsibles");
+            }
+        }
+    }
+
+    public void addEmbeddedClearingTeam(HalResource<Project> userHalResource, String clearingTeam, String resource) {
+        User sw360User = getUserByEmail(clearingTeam);
+        if(sw360User!=null)
+            addEmbeddedUser(userHalResource, sw360User, resource);
+    }
 }
