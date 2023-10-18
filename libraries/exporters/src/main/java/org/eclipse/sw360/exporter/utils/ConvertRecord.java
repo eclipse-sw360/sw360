@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.jetbrains.annotations.NotNull;
 
+import java.math.BigInteger;
 import java.util.*;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
@@ -350,13 +351,16 @@ public class ConvertRecord {
         for (CSVRecord record : records) {
             if(record.size()<2) break;
             String mainId = record.get(0);
-            int otherId = Integer.parseInt(record.get(1));
+            String otherId = record.get(1);
+            byte[] inputStringBytes = otherId.getBytes();
+            BigInteger bigIntValue = new BigInteger(inputStringBytes);
+            Integer acctualId = bigIntValue.intValue();
 
             if (map.containsKey(mainId)) {
-                map.get(mainId).add(otherId);
+                map.get(mainId).add(acctualId);
             } else {
                 Set<Integer> ids = new HashSet<>();
-                ids.add(otherId);
+                ids.add(acctualId);
                 map.put(mainId, ids);
             }
         }
