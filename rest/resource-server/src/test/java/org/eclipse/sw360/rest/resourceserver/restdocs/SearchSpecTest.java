@@ -87,7 +87,10 @@ public class SearchSpecTest extends TestRestDocsSpecBase {
                 .andDo(this.documentationHandler.document(
                         requestParameters(
                                 parameterWithName("searchText").description("The search text"),
-                                parameterWithName("typeMasks").description("The type of resource. Possible values are " +List.of("project", "component", "license", "release", "obligation", "user", "vendor")),
+                                parameterWithName("typeMasks").description("The type of resource. Possible values are " +List.of("project", "component", "license", "release", "obligation", "user", "vendor", "document") 
+                                + "\nNote: If document is excluded in typeMasks, then search will be restricted to " + "Name for Project, Component and Release, " 
+                                + "Fullname for License, User and Vendor, " 
+                                + "Title for Obligation"),
                                 parameterWithName("page").description("Page of search results"),
                                 parameterWithName("page_entries").description("Amount of search results per page"),
                                 parameterWithName("sort").description("Defines order of the search results")
