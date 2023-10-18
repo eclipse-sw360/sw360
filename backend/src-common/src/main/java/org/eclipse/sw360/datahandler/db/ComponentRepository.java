@@ -147,6 +147,18 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             "    }" +
             "}";
 
+    private static final String BY_VCS_LOWERCASE = "function(doc) {" +
+            "  if (doc.type == 'component') {" +
+            "    emit(doc.vcs.toLowerCase().trim(), doc._id);" +
+            "  } " +
+            "}";
+
+    private static final String BY_VCS = "function(doc) {" +
+            "  if (doc.type == 'component') {" +
+            "    emit(doc.vcs, doc._id);" +
+            "  } " +
+            "}";
+
     public ComponentRepository(DatabaseConnectorCloudant db, ReleaseRepository releaseRepository, VendorRepository vendorRepository) {
         super(Component.class, db, new ComponentSummary(releaseRepository, vendorRepository));
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
@@ -165,6 +177,8 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
         views.put("bynamelowercase", createMapReduce(BY_NAME_LOWERCASE, null));
         views.put("bymainlicense", createMapReduce(BY_MAIN_LICENSE, null));
         views.put("byvendor", createMapReduce(BY_VENDOR, null));
+        views.put("byVcs", createMapReduce(BY_VCS, null));
+        views.put("byVcsLowercase", createMapReduce(BY_VCS_LOWERCASE, null));
         initStandardDesignDocument(views, db);
     }
 
@@ -213,6 +227,13 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
             return queryForIdsAsValue("bynamelowercase", name.toLowerCase());
         }
         return queryForIdsAsValue("byname", name);
+    }
+
+    public Set<String> getComponentIdsByVCS(String vcs, boolean caseInsenstive){
+        if(caseInsenstive) {
+            return queryForIdsAsValue("byVcsLowercase", vcs.toLowerCase());
+        }
+        return queryForIdsAsValue("byVcs", vcs);
     }
 
     public List<Component> searchComponentByName(String name, boolean caseSensitive) {

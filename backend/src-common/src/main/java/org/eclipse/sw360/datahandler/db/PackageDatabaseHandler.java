@@ -204,15 +204,27 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         // Prepare package for database
         preparePackage(pkg);
-        List<Package> duplicatePackages = getPackageByNameAndVersion(name, version);
-        if (duplicatePackages.size() > 0) {
+        List<Package> duplicatePackagesByPurl = getPackageByPurl(pkg.getPurl());
+
+        if (duplicatePackagesByPurl.size() > 0) {
             final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
-            if (duplicatePackages.size() == 1) {
-                addDocumentRequestSummary.setId(duplicatePackages.get(0).getId());
+            if(duplicatePackagesByPurl.size() == 1){
+                addDocumentRequestSummary.setId(duplicatePackagesByPurl.get(0).getId());
             }
             return addDocumentRequestSummary;
+        }else{
+            List<Package> duplicatePackages = getPackageByNameAndVersion(name, version);
+            if(duplicatePackages.size() > 0){
+                final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
+                        .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
+                if(duplicatePackages.size() == 1) {
+                    addDocumentRequestSummary.setId(duplicatePackages.get(0).getId());
+                }
+                return addDocumentRequestSummary;
+            }
         }
+
         pkg.setCreatedBy(user.getEmail());
         pkg.setCreatedOn(SW360Utils.getCreatedOn());
         AddDocumentRequestSummary summary = new AddDocumentRequestSummary()
@@ -406,6 +418,13 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return Collections.emptyList();
         }
         return packageRepository.searchByNameAndVersion(pkgName, pkgVersion, true);
+    }
+
+    private List<Package> getPackageByPurl(String purl) {
+        if (purl == null) {
+            return Collections.emptyList();
+        }
+        return packageRepository.searchByPurl(purl, true);
     }
 
     private void copyImmutableFields(Package destination, Package source) {
