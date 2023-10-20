@@ -9,10 +9,12 @@
  */
 package org.eclipse.sw360.rest.resourceserver.obligation;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -32,6 +34,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 
@@ -44,6 +47,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @BasePathAwareController
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RestController
+@SecurityRequirement(name = "tokenAuth")
 public class ObligationController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String OBLIGATION_URL = "/obligations";
 
@@ -53,6 +58,11 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
+    @Operation(
+            summary = "Get all obligations.",
+            description = "List all of the service's obligations.",
+            tags = {"Obligations"}
+    )
     @RequestMapping(value = OBLIGATION_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligations() {
         List<Obligation> obligations = obligationService.getObligations();
@@ -67,9 +77,16 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Get an obligation by id.",
+            description = "Get an obligation by id.",
+            tags = {"Obligations"}
+    )
     @RequestMapping(value = OBLIGATION_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<Obligation>> getObligation(
-            @PathVariable("id") String id) {
+            @Parameter(description = "The id of the obligation to be retrieved.")
+            @PathVariable("id") String id
+    ) {
         try {
             Obligation sw360Obligation = obligationService.getObligationById(id);
             HalResource<Obligation> halResource = createHalObligation(sw360Obligation);
@@ -79,10 +96,17 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
         }
     }
 
+    @Operation(
+            summary = "Create an obligation.",
+            description = "Create an obligation.",
+            tags = {"Obligations"}
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = OBLIGATION_URL, method = RequestMethod.POST)
-    public ResponseEntity createObligation(
-            @RequestBody Obligation obligation) {
+    public ResponseEntity<HalResource<Obligation>> createObligation(
+            @Parameter(description = "The obligation to be created.")
+            @RequestBody Obligation obligation
+    ) {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         obligation = obligationService.createObligation(obligation, sw360User);
         HalResource<Obligation> halResource = createHalObligation(obligation);
@@ -94,10 +118,17 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
         return ResponseEntity.created(location).body(halResource);
     }
 
+    @Operation(
+            summary = "Delete existing obligations.",
+            description = "Delete existing obligations.",
+            tags = {"Obligations"}
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = OBLIGATION_URL + "/{ids}", method = RequestMethod.DELETE)
     public ResponseEntity<List<MultiStatus>> deleteObligations(
-            @PathVariable("ids") List<String> idsToDelete) throws TException {
+            @Parameter(description = "The ids of the obligations to be deleted.")
+            @PathVariable("ids") List<String> idsToDelete
+    ) {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         List<MultiStatus> results = new ArrayList<>();
         for(String id : idsToDelete) {

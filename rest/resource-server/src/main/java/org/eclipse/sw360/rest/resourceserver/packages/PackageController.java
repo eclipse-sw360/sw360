@@ -22,6 +22,13 @@ import java.util.function.Consumer;
 
 import javax.servlet.http.HttpServletRequest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -45,17 +52,12 @@ import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -66,6 +68,8 @@ import lombok.RequiredArgsConstructor;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RestController
+@SecurityRequirement(name = "tokenAuth")
 public class PackageController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String PACKAGES_URL = "/packages";
 
@@ -84,10 +88,18 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
 
-    //Create a Package
+    @Operation(
+            summary = "Create a new package.",
+            description = "Create a new package.",
+            tags = {"Packages"}
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PACKAGES_URL, method = RequestMethod.POST)
-    public ResponseEntity<EntityModel<Package>> createPackage(@RequestBody Map<String, Object> reqBodyMap) throws URISyntaxException, TException {
+    public ResponseEntity<EntityModel<Package>> createPackage(
+            @Parameter(description = "The package to be created.",
+                    schema = @Schema(implementation = Package.class))
+            @RequestBody Map<String, Object> reqBodyMap
+    ) throws TException {
         Package pkg = convertToPackage(reqBodyMap);
 
         User user = restControllerHelper.getSw360UserFromAuthentication();
@@ -103,9 +115,30 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     }
 
     //Edit a Package
+    @Operation(
+            summary = "Update a package.",
+            description = "Update a package.",
+            tags = {"Packages"},
+            responses = {@ApiResponse(
+                    responseCode = "200",
+                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
+                            schema = @Schema(implementation = Package.class))}
+            ), @ApiResponse(
+                    responseCode = "403",
+                    description = "User role not allowed",
+                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
+                            schema = @Schema(implementation = ResponseEntity.class))}
+            )}
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @PatchMapping(value = PACKAGES_URL + "/{id}")
-    public ResponseEntity<?> patchPackage(@PathVariable("id") String id, @RequestBody Map<String, Object> reqBodyMap) throws TException {
+    public ResponseEntity<?> patchPackage(
+            @Parameter(description = "The id of the package to be updated.")
+            @PathVariable("id") String id,
+            @Parameter(description = "The updated fields of package.",
+                    schema = @Schema(implementation = Package.class))
+            @RequestBody Map<String, Object> reqBodyMap
+    ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Package sw360Package = packageService.getPackageForUserById(id);
         Package updatePackage = convertToPackage(reqBodyMap);
@@ -113,16 +146,25 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         RequestStatus updatePackageStatus = packageService.updatePackage(sw360Package, user);
         HalResource<Package> halPackage = createHalPackage(sw360Package, user);
         if (updatePackageStatus == RequestStatus.ACCESS_DENIED) {
-            return new ResponseEntity<String>("Edit action is not allowed for the user. Minimum role required for editing is: "
-                + SW360Constants.PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, HttpStatus.FORBIDDEN);
+            return new ResponseEntity<String>("Edit action is not allowed for the user. " +
+                    "Minimum role required for editing is: " +
+                    SW360Constants.PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, HttpStatus.FORBIDDEN);
         }
         return new ResponseEntity<>(halPackage, HttpStatus.OK);
     }
 
     //Delete a package
+    @Operation(
+            summary = "Delete a package.",
+            description = "Delete a package.",
+            tags = {"Packages"}
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = PACKAGES_URL + "/{id}", method = RequestMethod.DELETE)
-    public ResponseEntity<?> deletePackage(@PathVariable("id") String id) throws TException {
+    public ResponseEntity<?> deletePackage(
+            @Parameter(description = "The id of the package to be deleted.")
+            @PathVariable("id") String id
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = packageService.deletePackage(id, sw360User);
         if(requestStatus == RequestStatus.SUCCESS) {
@@ -138,23 +180,50 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     }
 
     //Get a single package
+    @Operation(
+            summary = "Get a package by id.",
+            description = "Get a package by id.",
+            tags = {"Packages"}
+    )
     @GetMapping(value = PACKAGES_URL + "/{id}")
     public ResponseEntity<EntityModel<Package>> getPackage(
-            @PathVariable("id") String id) throws TException {
+            @Parameter(description = "The id of the package to be retrieved.")
+            @PathVariable("id") String id
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Package sw360Package = packageService.getPackageForUserById(id);
         HalResource<Package> halPackage = createHalPackage(sw360Package, sw360User);
         return new ResponseEntity<>(halPackage, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Get packages for user.",
+            description = "Get packages for user with filters.",
+            tags = {"Packages"},
+            responses = {@ApiResponse(
+                    responseCode = "200",
+                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
+                            array = @ArraySchema(schema = @Schema(implementation = Package.class)))}
+            ), @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid package manager type",
+                    content = {@Content(mediaType = MediaTypes.HAL_JSON_VALUE,
+                            schema = @Schema(implementation = ResponseEntity.class))}
+            )}
+    )
     @GetMapping(value = PACKAGES_URL)
     public ResponseEntity<?> getPackagesForUser(
             Pageable pageable,
+            @Parameter(description = "The name of the package.")
             @RequestParam(value = "name", required = false) String name,
+            @Parameter(description = "Type of the package manager.")
             @RequestParam(value = "packageManager", required = false) String packageManager,
+            @Parameter(description = "Get all details of the package.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            @Parameter(description = "If true, packages will be fetched by name exactly matching the search input.")
             @RequestParam(value = "exactMatch", required = false) boolean isExactMatch,
-            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+            HttpServletRequest request
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         boolean isSearchByName = name != null && !name.isEmpty();
         boolean isSearchByType = CommonUtils.isNotNullEmptyOrWhitespace(packageManager);
