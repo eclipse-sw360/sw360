@@ -144,6 +144,31 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return releaseById;
     }
 
+    public List<Release> setComponentDependentFieldsInRelease(List<Release> releases, User sw360User) {
+        Map<String, Component> componentIdMap;
+
+        try {
+            ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+            List<Component> components = sw360ComponentClient.getComponentSummary(sw360User);
+            componentIdMap = components.stream().collect(Collectors.toMap(Component::getId, c -> c));
+        } catch (TException e) {
+            throw new HttpMessageNotReadableException("No Components found");
+        }
+        
+        for (Release release : releases) {
+            String componentId = release.getComponentId();
+            if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
+                throw new HttpMessageNotReadableException("ComponentId must be present");
+            }
+            if (!componentIdMap.containsKey(componentId)) {
+            	throw new HttpMessageNotReadableException("No Component found with Id - " + componentId);
+            }
+            Component component = componentIdMap.get(componentId);
+            release.setComponentType(component.getComponentType());
+        }
+        return releases;
+    }
+    
     public List<Release> getReleaseSubscriptions(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.getSubscribedReleases(sw360User);
