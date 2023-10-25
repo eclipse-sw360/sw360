@@ -1295,6 +1295,20 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         return projects;
     }
+    
+    public Project fillClearingStateSummaryIncludingSubprojectsForSingleProject(Project project, User user) {
+        final Map<String, Project> allProjectsIdMap = getRefreshedAllProjectsIdMap();
+
+        Set<String> releaseIdsOfProjectTree = getReleaseIdsOfProjectTree(project, Sets.newHashSet(),
+                allProjectsIdMap, user, null);
+        List<Release> releasesForClearingStateSummary = componentDatabaseHandler
+                .getReleasesForClearingStateSummary(releaseIdsOfProjectTree);
+        final ReleaseClearingStateSummary releaseClearingStateSummary = ReleaseClearingStateSummaryComputer
+                .computeReleaseClearingStateSummary(releasesForClearingStateSummary, project.getClearingTeam());
+
+        project.setReleaseClearingStateSummary(releaseClearingStateSummary);
+        return project;
+    }
 
     /**
      * Synchronization is not really necessary, we could also remove it. Worst case

@@ -223,6 +223,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             }
         }
     }
+    
+    public Project getClearingInfo(Project sw360Project, User sw360User) throws TException {
+    	ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+    	return sw360ProjectClient.fillClearingStateSummaryIncludingSubprojectsForSingleProject(sw360Project, sw360User);
+    }
 
     public List<Project> searchProjectByName(String name, User sw360User) throws TException {
         final ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
