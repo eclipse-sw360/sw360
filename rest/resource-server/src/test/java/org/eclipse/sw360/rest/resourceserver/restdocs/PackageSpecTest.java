@@ -224,6 +224,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("_embedded.sw360:packages.[]vcs").description("VCS(Version Control System) is the URL of the source code"),
                                 fieldWithPath("_embedded.sw360:packages.[]homepageUrl").description("URL of the package website"),
                                 fieldWithPath("_embedded.sw360:packages.[]licenseIds").description("The associated licenses").optional(),
+                                fieldWithPath("_embedded.sw360:packages.[]releaseId").description("The associated release").optional(),
                                 fieldWithPath("_embedded.sw360:packages.[]description").description("Description of the package"),
                                 subsectionWithPath("_embedded.sw360:packages.[]_embedded.sw360:release").description("The release to which the package is linked").optional(),
                                 subsectionWithPath("_embedded.sw360:packages.[]_embedded.createdBy").description("The user who created this component"),
@@ -258,6 +259,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("vcs").description("VCS(Version Control System) is the URL of the source code"),
                                 fieldWithPath("homepageUrl").description("URL of the package website"),
                                 fieldWithPath("licenseIds").description("The associated licenses"),
+                                fieldWithPath("releaseId").description("The associated release"),
                                 fieldWithPath("description").description("Description of the package"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 subsectionWithPath("_embedded.sw360:release").description("The release to which the package is linked"),
@@ -356,7 +358,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
         pkg.put("vcs", "git+https://github.com/angular/angular.js.git");
         pkg.put("homepageUrl", "https://github.com/angular/angular-sanitize");
         pkg.put("licenseIds", licenseIds);
-        pkg.put("releaseId", "69da0e106074ab7b3856df5fbc3e");
+        pkg.put("releaseId", "98745");
         pkg.put("description", "Sanitizes a html string by stripping all potentially dangerous tokens.");
 
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
@@ -389,6 +391,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("vcs").description("VCS(Version Control System) is the URL of the source code"),
                                 fieldWithPath("homepageUrl").description("URL of the package website"),
                                 fieldWithPath("licenseIds").description("The associated licenses"),
+                                fieldWithPath("releaseId").description("The associated release"),
                                 fieldWithPath("description").description("Description of the package"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 subsectionWithPath("_embedded.sw360:release").description("The release to which the package is linked"),
@@ -423,6 +426,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("vcs").description("VCS(Version Control System) is the URL of the source code"),
                                 fieldWithPath("homepageUrl").description("URL of the package website"),
                                 fieldWithPath("licenseIds").description("The associated licenses"),
+                                fieldWithPath("releaseId").description("The associated release"),
                                 fieldWithPath("description").description("Description of the package"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 subsectionWithPath("_embedded.sw360:release").description("The release to which the package is linked"),

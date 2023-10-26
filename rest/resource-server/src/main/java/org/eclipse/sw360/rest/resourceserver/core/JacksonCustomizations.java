@@ -577,7 +577,6 @@ public class JacksonCustomizations {
                 "setHomepageUrl",
                 "setVcs",
                 "setPackageManager",
-                "releaseId",
                 "setRelease",
                 "setPackageType"
         })
