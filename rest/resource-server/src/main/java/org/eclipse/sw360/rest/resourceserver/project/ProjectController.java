@@ -1763,8 +1763,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project project = projectService.getProjectForUserById(id, sw360User);
         Set<String> packageIds = new HashSet<>();
-        packageIds = project.getPackageIds();
-
+        if (!CommonUtils.isNullOrEmptyCollection(project.getPackageIds())) {
+            packageIds = project.getPackageIds();
+        }
         if (link) {
             packageIds.addAll(packagesInRequestBody);
         } else {
