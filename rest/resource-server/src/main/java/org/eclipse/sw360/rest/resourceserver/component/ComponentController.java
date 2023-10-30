@@ -129,7 +129,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         Map<String, String> params = parseQueryString(queryString);
 
         if (name != null && !name.isEmpty()) {
-            allComponents.addAll(componentService.searchComponentByName(params.get("name")));
+            allComponents.addAll(componentService.searchComponentByName(params.get("name").replace("%20"," ")));
         } else {
             allComponents.addAll(componentService.getComponentsForUser(sw360User));
         }
