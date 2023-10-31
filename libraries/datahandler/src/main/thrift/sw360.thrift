@@ -82,6 +82,11 @@ enum ClearingRequestPriority {
     CRITICAL = 3,
 }
 
+enum ClearingRequestType {
+    DEEP = 0,
+    HIGH = 1
+}
+
 enum Visibility {
     PRIVATE = 0,
     ME_AND_MODERATORS = 1,

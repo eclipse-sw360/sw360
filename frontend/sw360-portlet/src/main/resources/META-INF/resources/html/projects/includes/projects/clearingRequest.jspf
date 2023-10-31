@@ -13,6 +13,7 @@
 
 <%@ page import="org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority"%>
+<%@ page import="org.eclipse.sw360.datahandler.thrift.ClearingRequestType"%>
 
 <jsp:useBean id="PreferredClearingDateLimit" class="java.lang.String" scope="request" />
 <jsp:useBean id="criticalCrCount" class="java.lang.Integer" scope="request" />
@@ -64,14 +65,31 @@
                                 <liferay-ui:message key="email.should.be.in.valid.format" />
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="requestedClearingDate" class="mandatory"><liferay-ui:message key="preferred.clearing.date" />:</label>
-                            <input class="datepicker form-control" id="requestedClearingDate" type="text" pattern="\d{4}-\d{2}-\d{2}" placeholder="<liferay-ui:message key='preferred.clearing.date.yyyy.mm.dd' />" required/>
-                            <div class="invalid-feedback">
-                                <liferay-ui:message key="date.should.be.valid" />
-                            </div>
-                        </div>
-                        <core_rt:if test="${criticalCrCount lt 2}">
+						<div class="row">
+							<div class="form-group col-md-6">
+								<label for="clearingType" class="mandatory"><liferay-ui:message
+										key="clearing.type" />:</label> <select id="clearingType" class="form-control" required
+									name="<portlet:namespace/><%=ClearingRequest._Fields.CLEARING_TYPE%>">
+									<sw360:DisplayEnumOptions type="<%=ClearingRequestType.class%>"
+										selected="${clearingRequest.clearingType}" />
+								</select> <small class="form-text"> <sw360:DisplayEnumInfo
+										type="<%=ClearingRequestType.class%>" /> <liferay-ui:message
+										key="learn.more.about.clearing.request.type" />
+								</small>
+							</div>
+							<div class="form-group col-md-6">
+								<label for="requestedClearingDate" class="mandatory"><liferay-ui:message
+										key="preferred.clearing.date" />:</label> <input
+									class="datepicker form-control" id="requestedClearingDate"
+									type="text" pattern="\d{4}-\d{2}-\d{2}"
+									placeholder="<liferay-ui:message key='preferred.clearing.date.yyyy.mm.dd' />"
+									required />
+								<div class="invalid-feedback">
+									<liferay-ui:message key="date.should.be.valid" />
+								</div>
+							</div>
+						</div>
+						<core_rt:if test="${criticalCrCount lt 2}">
                         <div class="form-group">
                             <div class="form-check">
                                 <input id="priority" type="checkbox" class="form-check-input" name="<portlet:namespace/><%=ClearingRequest._Fields.PRIORITY%>" >
@@ -217,7 +235,8 @@
                         requestedClearingDate : $("#requestedClearingDate").val(),
                         clearingTeam : $("#clearingTeamEmail").val(),
                         requestingUserComment : $("#clearingRequestComment").val(),
-                        priority : $("#priority:checked").val() ? "<%=ClearingRequestPriority.CRITICAL%>" : "<%=ClearingRequestPriority.LOW%>"
+                        priority : $("#priority:checked").val() != null ? "<%=ClearingRequestPriority.CRITICAL%>" : "<%=ClearingRequestPriority.LOW%>",
+                        clearingType: $("#clearingType").val()
                     };
                 dataObj[name] = JSON.stringify(crData);
                 jQuery.ajax({
@@ -299,15 +318,20 @@
                     $("#requestedClearingDate").addClass("is-invalid");
                     $("#clearingTeamEmail").removeClass("is-invalid");
                     callback();
+                } else if ($("#clearingType").val() == null) {
+                    $("#clearingTypeErrorMsg").addClass("is-invalid");
+                    callback();
                 } else {
                     $("#requestedClearingDate").removeClass("is-invalid");
                     $("#clearingTeamEmail").removeClass("is-invalid");
+                    $("#clearingType").removeClass("is-invalid")
                     createClearingRequestInternal(callback);
                 }
             }, function() {
                 $('#createClearingRequestDialog #createClearingRequestForm').removeClass('was-validated');
                 $("#requestedClearingDate").removeClass("is-invalid");
                 $("#clearingTeamEmail").removeClass("is-invalid");
+                $("#clearingType").removeClass("is-invalid")
                 $("#clearingTeamEmail").val("");
             });
         }
@@ -357,7 +381,8 @@
                             priority: resultData.priority,
                             closedOn: render.renderTimestamp(resultData.timestampOfDecision),
                             hideClosedOn: (resultData.timestampOfDecision) ? false : true,
-                            hidePriority: (resultData.timestampOfDecision) ? true : false
+                            hidePriority: (resultData.timestampOfDecision) ? true : false,
+                            clearingType: resultData.clearingType
                         }, undefined, undefined, undefined, true);
                     }
                 },

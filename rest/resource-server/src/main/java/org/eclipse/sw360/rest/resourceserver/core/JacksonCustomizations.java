@@ -1463,7 +1463,8 @@ public class JacksonCustomizations {
                 "commentsIterator",
                 "modifiedOn",
                 "commentsSize",
-                "setPriority"
+                "setPriority",
+                "setClearingType"
         })
         @JsonRootName(value = "clearingRequest")
         public static abstract class ClearingRequestMixin extends ClearingRequest {

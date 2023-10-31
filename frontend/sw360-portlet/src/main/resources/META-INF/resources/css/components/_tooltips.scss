@@ -451,6 +451,18 @@
     content: attr(data-content);
 }
 
+.sw360-tt-ClearingRequestType-HIGH:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-ClearingRequestType-DEEP:hover:after {
+    content: attr(data-content);
+}
+
+.sw360-tt-ClearingRequestType:hover:after {
+    content: attr(data-content);
+}
+
 /** ProjectRelationShip **/
 .sw360-tt-ProjectRelationship:hover:after {
     content: attr(data-content);

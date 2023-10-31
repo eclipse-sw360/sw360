@@ -356,6 +356,11 @@ public class ThriftEnumUtils {
             ClearingRequestPriority.CRITICAL, "Critical"
     );
 
+    private static final ImmutableMap<ClearingRequestType, String> MAP_CLEARING_REQUEST_TYPE_STRING = ImmutableMap.of(
+            ClearingRequestType.DEEP, "Deep CLX",
+            ClearingRequestType.HIGH, "High ISR"
+    );
+
     private static final ImmutableMap<UserAccess, String> MAP_USER_ACCESS_STRING = ImmutableMap.<UserAccess, String>builder()
             .put(UserAccess.READ, "Read")
             .put(UserAccess.READ_WRITE, "Read and Write")
@@ -448,6 +453,7 @@ public class ThriftEnumUtils {
             .put(UserAccess.class, MAP_USER_ACCESS_STRING)
             .put(PackageManager.class, MAP_PACKAGE_MANAGER_STRING)
             .put(CycloneDxComponentType.class, MAP_CYCLONE_DX_COMPONENT_TYPE_STRING)
+            .put(ClearingRequestType.class, MAP_CLEARING_REQUEST_TYPE_STRING)
             .build();
 
     public static String enumToString(TEnum value) {
