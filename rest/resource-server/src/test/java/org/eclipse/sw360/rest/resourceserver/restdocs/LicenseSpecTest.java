@@ -41,11 +41,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -65,7 +63,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
     @MockBean
     private Sw360LicenseService licenseServiceMock;
 
-    private License license;
+    private License license, license3;
     private Obligation obligation1, obligation2;
     private RequestSummary requestSummary = new RequestSummary();
 
@@ -83,6 +81,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         license.setExternalIds(externalIds);
         license.setAdditionalData(Collections.singletonMap("Key", "Value"));
         license.setNote("License's Note");
+        license.setExternalLicenseLink("https://spdx.org/licenses/Apache-2.0.html");
 
         License license2 = new License();
         license2.setId("MIT");
@@ -90,15 +89,22 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         license2.setShortname("MIT");
         license2.setText("placeholder for the MIT license text");
         license2.setNote("License2's Note");
+        license2.setExternalLicenseLink("https://spdx.org/licenses/MIT.html");
 
         List<License> licenseList = new ArrayList<>();
         licenseList.add(license);
         licenseList.add(license2);
+
+        license3 = new License();
+        license3.setId("Apache-3.0");
+        license3.setShortname("Apache 3.0");
+        license3.setFullname("Apache License 3.0");
         
         requestSummary.setRequestStatus(RequestStatus.SUCCESS);
 
         given(this.licenseServiceMock.getLicenses()).willReturn(licenseList);
         given(this.licenseServiceMock.getLicenseById(eq(license.getId()))).willReturn(license);
+        given(this.licenseServiceMock.createLicense(any(), any())).willReturn(license3);
         Mockito.doNothing().when(licenseServiceMock).deleteLicenseById(any(), any());
         Mockito.doNothing().when(licenseServiceMock).deleteAllLicenseInfo(any());
         Mockito.doNothing().when(licenseServiceMock).importSpdxInformation(any());
@@ -162,7 +168,9 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("fullName").description("The full name of the license"),
                                 fieldWithPath("shortName").description("The short name of the license, optional"),
                                 subsectionWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("externalLicenseLink").description("The external license link of the license"),
                                 subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
+                                subsectionWithPath("obligationDatabaseIds").description("The obligationDatabaseIds license link of the license"),
                                 fieldWithPath("text").description("The license's original text"),
                                 fieldWithPath("checked").description("The information, whether the license is already checked, optional and defaults to true"),
                                 subsectionWithPath("OSIApproved").description("The OSI aprroved information, possible values are: " + Arrays.asList(Quadratic.values())),
@@ -170,6 +178,32 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:obligations").description("An array of <<resources-obligations, Obligations obligations>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("note").description("The license's note")
+                        )));
+    }
+
+    @Test
+    public void should_document_create_license() throws Exception {
+        Map<String, String> licenseRequestBody = new HashMap<>();
+        licenseRequestBody.put("fullName", "Apache 3.0");
+        licenseRequestBody.put("shortName", "Apache License 3.0");
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(post("/api/licenses")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(licenseRequestBody))
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isCreated())
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("fullName").description("The fullName of the new license"),
+                                fieldWithPath("shortName").description("The shortname of the origin license")
+                        ),
+                        responseFields(
+                                fieldWithPath("fullName").description("The fullName of the license"),
+                                fieldWithPath("shortName").description("The shortname of the license"),
+                                fieldWithPath("checked").description("The information, whether the license is already checked, optional and defaults to true"),
+                                subsectionWithPath("OSIApproved").description("The OSI aprroved information, possible values are: " + Arrays.asList(Quadratic.values())),
+                                fieldWithPath("FSFLibre").description("The FSF libre information, possible values are: " + Arrays.asList(Quadratic.values())),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
 

@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
@@ -84,6 +85,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(ProjectUsage.class, Sw360Module.ProjectUsageMixin.class);
             setMixInAnnotation(Vendor.class, Sw360Module.VendorMixin.class);
             setMixInAnnotation(License.class, Sw360Module.LicenseMixin.class);
+            setMixInAnnotation(LicenseType.class, Sw360Module.LicenseTypeMixin.class);
             setMixInAnnotation(Obligation.class, Sw360Module.ObligationMixin.class);
             setMixInAnnotation(Vulnerability.class, Sw360Module.VulnerabilityMixin.class);
             setMixInAnnotation(VulnerabilityState.class, Sw360Module.VulnerabilityStateMixin.class);
@@ -922,12 +924,8 @@ public class JacksonCustomizations {
         @JsonIgnoreProperties({
                 "id",
                 "revision",
-                "licenseType",
-                "licenseTypeDatabaseId",
-                "externalLicenseLink",
                 "reviewdate",
                 "obligations",
-                "obligationDatabaseIds",
                 "obligationListId",
                 "osiapproved",
                 "fsflibre",
@@ -977,9 +975,22 @@ public class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
+                "revision",
+                "type",
+                "licenseTypeId",
+                "setRevision",
+                "setType",
+                "setLicenseType",
+                "setId",
+                "setLicenseTypeId",
+        })
+        static abstract class LicenseTypeMixin extends License {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
                 "id",
                 "revision",
-                "whitelist",
                 "whitelistSize",
                 "whitelistIterator",
                 "development",
