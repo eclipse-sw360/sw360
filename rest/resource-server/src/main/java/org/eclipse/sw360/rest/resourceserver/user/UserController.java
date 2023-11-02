@@ -18,6 +18,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -35,8 +39,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import org.springframework.data.domain.Pageable;
+import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,18 +76,29 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             tags = {"Users"}
     )
     @RequestMapping(value = USERS_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers() {
+    public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers(
+            Pageable pageable,
+            HttpServletRequest request
+            ) throws TException, URISyntaxException, PaginationParameterException,  ResourceClassNotFoundException {
         List<User> sw360Users = userService.getAllUsers();
 
+        PaginationResult<User> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Users, SW360Constants.TYPE_USER);
         List<EntityModel<User>> userResources = new ArrayList<>();
-        for (User sw360User : sw360Users) {
+        for (User sw360User : paginationResult.getResources()) {
             User embeddedUser = restControllerHelper.convertToEmbeddedGetUsers(sw360User);
             EntityModel<User> userResource = EntityModel.of(embeddedUser);
             userResources.add(userResource);
         }
 
-        CollectionModel<EntityModel<User>> resources = CollectionModel.of(userResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+        CollectionModel<EntityModel<User>> resources;
+        if (sw360Users.size() == 0) {
+            resources = restControllerHelper.emptyPageResource(User.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, userResources);
+        }
+
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
     }
 
     // '/users/{xyz}' searches by email, as opposed to by id, as is customary,
