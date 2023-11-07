@@ -18,6 +18,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -206,7 +207,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 	    }
        return ResponseEntity.ok(Series.SUCCESSFUL);
      }
-   
+
     @RequestMapping(value = LICENSES_URL + "/import/OSADL", method = RequestMethod.POST)
     public ResponseEntity<RequestSummary> importOsadlInfo() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -216,5 +217,13 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         requestSummary.unsetTotalElements();
         HttpStatus status = HttpStatus.OK;
         return new ResponseEntity<>(requestSummary,status);
+    }
+
+    @RequestMapping(value = LICENSES_URL + "/addLicenseType", method = RequestMethod.POST)
+    public ResponseEntity<RequestStatus> createLicenseType(@RequestParam(value = "licenseType", required = true) String licenseType, HttpServletRequest request) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus=licenseService.addLicenseType(sw360User, licenseType, request);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestStatus,status);
     }
 }
