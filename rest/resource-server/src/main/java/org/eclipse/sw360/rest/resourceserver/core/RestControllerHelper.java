@@ -692,6 +692,7 @@ public class RestControllerHelper<T> {
         embeddedProject.setVersion(project.getVersion());
         embeddedProject.setVisbility(project.getVisbility());
         embeddedProject.setBusinessUnit(project.getBusinessUnit());
+        embeddedProject.setEnableSvm(project.isEnableSvm());
         embeddedProject.setType(null);
         return embeddedProject;
     }
