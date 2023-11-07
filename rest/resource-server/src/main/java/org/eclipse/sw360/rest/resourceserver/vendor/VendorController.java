@@ -119,6 +119,11 @@ public class VendorController implements RepresentationModelProcessor<Repository
         return new HalResource<>(sw360Vendor);
     }
 
+    @Operation(
+            summary = "Export all vendors as Excel file.",
+            description = "Export all vendors as Excel file.",
+            tags = {"Vendor"}
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = VENDORS_URL + "/exportVendorDetails")
     public ResponseEntity<?> exportVendor(HttpServletResponse response) throws TException {
