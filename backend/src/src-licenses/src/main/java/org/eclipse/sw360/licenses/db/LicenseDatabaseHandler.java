@@ -461,7 +461,10 @@ public class LicenseDatabaseHandler {
                 validateNewLicense(inputLicense);
             } else {
                 validateExistingLicense(inputLicense);
-                oldObligationDatabaseIds = oldLicense.orElse(new License()).getObligationDatabaseIds();
+                License license = oldLicense.orElse(new License());
+                if (!CommonUtils.isNullOrEmptyCollection(license.getObligationDatabaseIds())) {
+                    oldObligationDatabaseIds = license.getObligationDatabaseIds();
+                }
                 oldLicenseForChangelogs = setLicenseForChangelogs(oldLicense.orElse(new License()));
                 oldLicenseForChangelogs.setShortname(inputLicense.getShortname());
             }
@@ -506,7 +509,7 @@ public class LicenseDatabaseHandler {
                         Lists.newArrayList(), null, null);
                 
                 LicenseObligationList oldObligationList = new LicenseObligationList();
-                if (!resultLicense.getObligationDatabaseIds().equals(oldObligationDatabaseIds)) {
+                if (!resultLicense.getObligationDatabaseIds().equals(oldObligationDatabaseIds) && CommonUtils.isNotNullEmptyOrWhitespace(resultLicense.getObligationListId())) {
                     resultObligationList.setId(resultLicense.getObligationListId());
                     LicenseObligationList baseObligationList = obligationListRepository
                             .get(resultLicense.getObligationListId());
@@ -569,7 +572,11 @@ public class LicenseDatabaseHandler {
                 .orElse(Quadratic.NA));
         license.setExternalLicenseLink(inputLicense.getExternalLicenseLink());
         license.setChecked(inputLicense.isChecked());
-        license.setObligationDatabaseIds(inputLicense.getObligationDatabaseIds());
+        if (CommonUtils.isNullOrEmptyCollection(inputLicense.getObligationDatabaseIds())) {
+            license.setObligationDatabaseIds(new HashSet<>());
+        } else {
+            license.setObligationDatabaseIds(inputLicense.getObligationDatabaseIds());
+        }
         license.setNote(inputLicense.getNote());
 
         return license;

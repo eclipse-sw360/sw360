@@ -11,6 +11,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.license;
 
+import com.google.common.collect.ImmutableMap;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -66,6 +67,9 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
+
+    private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
+            .put("message", "Moderation request is created").build();
 
     @Operation(
             summary = "List all of the service's licenses.",
@@ -138,6 +142,25 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
                 .buildAndExpand(license.getId()).toUri();
 
         return ResponseEntity.created(location).body(halResource);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = LICENSES_URL+ "/{id}", method = RequestMethod.PATCH)
+    public ResponseEntity<EntityModel<License>> updateLicense(
+            @PathVariable("id") String id,
+            @RequestBody License licenseRequestBody) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        License licenseUpdate = licenseService.getLicenseById(id);
+        if (licenseUpdate.isChecked() && !licenseRequestBody.isChecked()) {
+            return new ResponseEntity("Reject license update due to: an already checked license is not allowed to become unchecked again", HttpStatus.METHOD_NOT_ALLOWED);
+        }
+        licenseUpdate = restControllerHelper.mapLicenseRequestToLicense(licenseRequestBody, licenseUpdate);
+        RequestStatus requestStatus = licenseService.updateLicense(licenseUpdate, sw360User);
+        if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        }
+        HalResource<License> halResource = createHalLicense(licenseUpdate);
+        return new ResponseEntity<>(halResource, HttpStatus.OK);
     }
 
     @Operation(
