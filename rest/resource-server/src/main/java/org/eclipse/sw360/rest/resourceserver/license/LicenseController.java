@@ -11,6 +11,10 @@
  */
 package org.eclipse.sw360.rest.resourceserver.license;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,39 +30,34 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
-import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatus.Series;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.oauth2.provider.OAuth2Authentication;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RestController
+@SecurityRequirement(name = "tokenAuth")
 public class LicenseController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String LICENSES_URL = "/licenses";
 
@@ -68,6 +67,11 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
+    @Operation(
+            summary = "List all of the service's licenses.",
+            description = "List all of the service's licenses.",
+            tags = {"Licenses"}
+    )
     @RequestMapping(value = LICENSES_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<License>>> getLicenses() throws TException {
         List<License> sw360Licenses = licenseService.getLicenses();
@@ -83,27 +87,48 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Get a specific license.",
+            description = "Get a specific license.",
+            tags = {"Licenses"}
+    )
     @RequestMapping(value = LICENSES_URL + "/{id:.+}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<License>> getLicense(
-            @PathVariable("id") String id) throws TException {
+            @Parameter(description = "The id of the license.")
+            @PathVariable("id") String id
+    ) throws TException {
         License sw360License = licenseService.getLicenseById(id);
         HalResource<License> licenseHalResource = createHalLicense(sw360License);
         return new ResponseEntity<>(licenseHalResource, HttpStatus.OK);
     }
-    
+
+    @Operation(
+            summary = "Delete a specific license.",
+            description = "Delete a specific license.",
+            tags = {"Licenses"}
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL + "/{id:.+}", method = RequestMethod.DELETE)
     public ResponseEntity deleteLicense(
-            @PathVariable("id") String id) throws TException {
+            @Parameter(description = "The id of the license.")
+            @PathVariable("id") String id
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         licenseService.deleteLicenseById(id, sw360User);
         return new ResponseEntity<>(HttpStatus.OK);
     }
-    
+
+    @Operation(
+            summary = "Create a new license.",
+            description = "Create a new license.",
+            tags = {"Licenses"}
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL, method = RequestMethod.POST)
     public ResponseEntity<EntityModel<License>> createLicense(
-            @RequestBody License license) throws TException {
+            @Parameter(description = "The license to be created.")
+            @RequestBody License license
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         license = licenseService.createLicense(license, sw360User);
         HalResource<License> halResource = createHalLicense(license);
@@ -115,20 +140,36 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         return ResponseEntity.created(location).body(halResource);
     }
 
+    @Operation(
+            summary = "Link obligations to a license.",
+            description = "Link a set of obligations to a license.",
+            tags = {"Licenses"}
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.POST)
     public ResponseEntity linkObligation(
+            @Parameter(description = "The id of the license.")
             @PathVariable("id") String id,
-            @RequestBody Set<String> obligationIds) throws TException {
+            @Parameter(description = "The ids of the obligations to be linked.")
+            @RequestBody Set<String> obligationIds
+    ) throws TException {
         updateLicenseObligations(obligationIds, id, false);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @Operation(
+            summary = "Unlink obligations from a license.",
+            description = "Unlink a set of obligations from a license.",
+            tags = {"Licenses"}
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.PATCH)
     public ResponseEntity unlinkObligation(
+            @Parameter(description = "The id of the license.")
             @PathVariable("id") String id,
-            @RequestBody Set<String> obligationIds) throws TException {
+            @Parameter(description = "The ids of the obligations to be unlinked.")
+            @RequestBody Set<String> obligationIds
+    ) throws TException {
         updateLicenseObligations(obligationIds, id, true);
         return new ResponseEntity<>(HttpStatus.OK);
     }
@@ -147,7 +188,8 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
                 }
             }
             if (!obligationIdsIncorrect.isEmpty()) {
-                throw new HttpMessageNotReadableException("Obligation ids: " + obligationIdsIncorrect + " are not linked to license");
+                throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+                        "Obligation ids: " + obligationIdsIncorrect + " are not linked to license");
             }
             licenseObligationIds.removeAll(obligationIds);
             obligationIdsLink = licenseObligationIds;
@@ -170,6 +212,11 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         return halLicense;
     }
 
+    @Operation(
+            summary = "Delete all licenses.",
+            description = "Delete all licenses of the service.",
+            tags = {"Licenses"}
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL + "/deleteAll", method = RequestMethod.DELETE)
     public ResponseEntity deleteAllLicense() throws TException {
@@ -178,36 +225,67 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Import SPDX information.",
+            description = "Import SPDX information.",
+            tags = {"Licenses"}
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL + "/import/SPDX", method = RequestMethod.POST)
     public ResponseEntity importSPDX() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         licenseService.importSpdxInformation(sw360User);
         return new ResponseEntity<>(HttpStatus.OK);
-    }   
+    }
 
+    @Operation(
+            summary = "Download license archive.",
+            description = "Download license archive.",
+            tags = {"Licenses"},
+            parameters = {
+                    @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true, example = "application/zip"),
+            }
+    )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL + "/downloadLicenses", method = RequestMethod.GET, produces = "application/zip")
-    public void downloadLicenseArchive(HttpServletRequest request,HttpServletResponse response) throws TException,IOException  {
+    public void downloadLicenseArchive(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws TException, IOException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         licenseService.getDownloadLicenseArchive(sw360User,request,response);
 
     }
 
+    @Operation(
+            summary = "Upload license archive.",
+            description = "Upload license archive.",
+            tags = {"Licenses"}
+    )
     @RequestMapping(value = LICENSES_URL + "/upload", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<?> uploadLicenses(@RequestParam("licenseFile") MultipartFile file,
+    public ResponseEntity<?> uploadLicenses(
+            @Parameter(description = "The license archive file to be uploaded.")
+            @RequestParam("licenseFile") MultipartFile file,
+            @Parameter(description = "Overwrite if external id matches.")
             @RequestParam(value = "overwriteIfExternalIdMatches", required = false) boolean overwriteIfExternalIdMatches,
-            @RequestParam(value = "overwriteIfIdMatchesEvenWithoutExternalIdMatch", required = false) boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch) throws IOException, TException {
-
+            @Parameter(description = "Overwrite if id matches even without external id match.")
+            @RequestParam(value = "overwriteIfIdMatchesEvenWithoutExternalIdMatch", required = false) boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch
+    ) throws TException {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-            licenseService.uploadLicense(sw360User, file, overwriteIfExternalIdMatches, overwriteIfIdMatchesEvenWithoutExternalIdMatch);
+            licenseService.uploadLicense(sw360User, file, overwriteIfExternalIdMatches,
+                    overwriteIfIdMatchesEvenWithoutExternalIdMatch);
         } catch (Exception e) {
             throw new TException(e.getMessage());
 	    }
        return ResponseEntity.ok(Series.SUCCESSFUL);
      }
 
+    @Operation(
+            summary = "Import OSADL information.",
+            description = "Import OSADL information.",
+            tags = {"Licenses"}
+    )
     @RequestMapping(value = LICENSES_URL + "/import/OSADL", method = RequestMethod.POST)
     public ResponseEntity<RequestSummary> importOsadlInfo() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -219,11 +297,19 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(requestSummary,status);
     }
 
+    @Operation(
+            summary = "Create license type.",
+            description = "Create license type.",
+            tags = {"Licenses"}
+    )
     @RequestMapping(value = LICENSES_URL + "/addLicenseType", method = RequestMethod.POST)
-    public ResponseEntity<RequestStatus> createLicenseType(@RequestParam(value = "licenseType", required = true) String licenseType, HttpServletRequest request) throws TException {
+    public ResponseEntity<RequestStatus> createLicenseType(
+            @Parameter(description = "The license type name.")
+            @RequestParam(value = "licenseType", required = true) String licenseType,
+            HttpServletRequest request) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus=licenseService.addLicenseType(sw360User, licenseType, request);
         HttpStatus status = HttpStatus.OK;
-        return new ResponseEntity<>(requestStatus,status);
+        return new ResponseEntity<>(requestStatus, status);
     }
 }

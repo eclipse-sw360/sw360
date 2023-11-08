@@ -104,8 +104,8 @@ public class Sw360ModerationRequestService {
     public long getTotalCountOfRequests(User sw360User) throws TException {
         Map<String, Long> countInfo = getThriftModerationClient().getCountByModerationState(sw360User);
         long totalCount = 0;
-        totalCount += countInfo.get("OPEN");
-        totalCount += countInfo.get("CLOSED");
+        totalCount += countInfo.getOrDefault("OPEN", 0L);
+        totalCount += countInfo.getOrDefault("CLOSED", 0L);
         return totalCount;
     }
 
@@ -148,9 +148,9 @@ public class Sw360ModerationRequestService {
         PaginationData paginationData = moderationData.keySet().iterator().next();
         List<ModerationRequest> moderationRequests = moderationData.remove(paginationData);
         if (open) {
-            paginationData.setTotalRowCount(countInfo.get("OPEN"));
+            paginationData.setTotalRowCount(countInfo.getOrDefault("OPEN", 0L));
         } else {
-            paginationData.setTotalRowCount(countInfo.get("CLOSED"));
+            paginationData.setTotalRowCount(countInfo.getOrDefault("CLOSED", 0L));
         }
         moderationData.put(paginationData, moderationRequests);
         return moderationData;
