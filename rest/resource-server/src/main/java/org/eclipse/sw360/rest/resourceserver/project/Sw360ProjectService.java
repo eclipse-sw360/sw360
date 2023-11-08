@@ -265,14 +265,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         projectIdsInBranch.add(sw360Project.getId());
         Map<String, ProjectProjectRelationship> linkedProjects = sw360Project.getLinkedProjects();
 		List<String> keys = new ArrayList<>(linkedProjects.keySet());
-		System.out.println("keys " + keys.size());
         if (keys != null) {
         	keys.forEach(linkedProjectId -> wrapTException(() -> {
                 if (projectIdsInBranch.contains(linkedProjectId)) {
                     return;
                 }
                 Project linkedProject = getProjectForUserById(linkedProjectId, sw360User);
-                System.out.println("project " + linkedProject);
                 Project embeddedLinkedProject = rch.convertToEmbeddedLinkedProject(linkedProject);
                 HalResource<Project> halLinkedProject = new HalResource<>(embeddedLinkedProject);
                 Link projectLink = linkTo(ProjectController.class)

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
@@ -410,7 +411,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 		})).collect(Collectors.toList());
 
 		List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
-			final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(sw360Release);
+			final Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedRelease(sw360Release);
+			final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease);
 			return releaseResource;
 		})).collect(Collectors.toList());
 
@@ -461,9 +463,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 				.map(sw360Project -> wrapTException(() -> {
 					final Project embeddedProject = restControllerHelper.convertToEmbeddedLinkedProject(sw360Project);
 					final HalResource<Project> projectResource = new HalResource<>(embeddedProject);
-					System.out.println("before " + isTransitive);
 					if (isTransitive) {
-						System.out.println("after " + isTransitive);
 					    projectService.addEmbeddedLinkedProject(sw360Project, sw360User, projectResource,
 							projectIdsInBranch);
 					}
@@ -1360,10 +1360,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/attachmentUsage", method = RequestMethod.GET)
-    public @ResponseBody ResponseEntity<Map<String, Object>> getAttachmentUsage(
-            @Parameter(description = "Project ID.")
-            @PathVariable("id") String id
-    ) throws TException {
+    public ResponseEntity attachmentUsages(@Parameter(description = "Project ID.") @PathVariable("id") String id,  HttpServletRequest request)
+            throws URISyntaxException, TException {
+
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        boolean transitive = true;
+        final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
+        List<Release> releases = releaseIds.stream().map(relId -> wrapTException(() -> {
+                final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+                releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
+                return sw360Release;
+        })).collect(Collectors.toList());
+
+        List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
+                final Release embeddedRelease = restControllerHelper.convertToEmbeddedReleaseAttachments(sw360Release);
+                final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease);
+                return releaseResource;
+        })).collect(Collectors.toList());
+
         List<AttachmentUsage> attachmentUsages = attachmentService.getAllAttachmentUsage(id);
         String prefix = "{\"" + SW360_ATTACHMENT_USAGES + "\":[";
         String serializedUsages = attachmentUsages.stream()
@@ -1392,12 +1407,37 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
         }
 
-        if (listOfAttachmentUsages.isEmpty()) {
-            attachmentUsageMap = null;
-        }
+        HalResource userHalResource = attachmentUsageReleases(sw360Project, sw360User, releaseList, listOfAttachmentUsages);
+        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
 
-        HttpStatus status = attachmentUsageMap == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(attachmentUsageMap, status);
+    private HalResource attachmentUsageReleases(Project sw360Project, User sw360User, List<EntityModel<Release>> releases, List<Map<String, Object>> attachmentUsageMap)
+            throws TException {
+        ObjectMapper oMapper = new ObjectMapper();
+        Map<String, ProjectReleaseRelationship> releaseIdToUsages = sw360Project.getReleaseIdToUsage();
+        Map<String, Object> projectMap = oMapper.convertValue(sw360Project, Map.class);
+        Map<String, Object> resultMap = new HashMap<>();
+        resultMap.put("linkedProjects", (Map<String, Object>) projectMap.get("linkedProjects"));
+        resultMap.put("releaseIdToUsage", (Map<String, Object>) projectMap.get("releaseIdToUsage"));
+
+        Map<String, Object> releaseIdToUsage = (Map<String, Object>) resultMap.get("releaseIdToUsage");
+        final ImmutableSet<String> fieldsToRemove = ImmutableSet.of("setCreatedBy", "setCreatedOn", "setComment", "setReleaseRelation", "setMainlineState");
+        if (releaseIdToUsage != null) {
+            for (Map.Entry<String, Object> entry : releaseIdToUsage.entrySet()) {
+                Map<String, Object> originalValue = (Map<String, Object>) entry.getValue();
+                if (originalValue != null) {
+                    for (String field : fieldsToRemove) {
+                        originalValue.remove(field);
+                    }
+                }
+            }
+        }
+        HalResource halProject = new HalResource(resultMap);
+
+        if (releaseIdToUsages != null) {
+            restControllerHelper.addEmbeddedProjectAttachmentUsage(halProject, releases, attachmentUsageMap);
+        }
+        return halProject;
     }
 
     @PreAuthorize("hasAuthority('WRITE')")

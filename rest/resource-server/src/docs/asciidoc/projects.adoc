@@ -323,7 +323,7 @@ include::{snippets}/should_document_get_linked_projects/http-response.adoc[]
 include::{snippets}/should_document_get_linked_projects/links.adoc[]
 
 
-[[resources-project-get-linked-projects]]
+[[resources-project-get-linked-projects-transitive]]
 ==== Listing linked projects (transitive)
 
 A `GET` request will get linked projects of a single project. +
