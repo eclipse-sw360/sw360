@@ -406,6 +406,9 @@ include::{snippets}/should_document_get_project_releases_transitive/links.adoc[]
 A `GET` request will get all releases with ECC information of a single project.
 This works also with the transitive request parameter (&transitive=true)
 
+===== Request parameter
+include::{snippets}/should_document_get_project_releases_ecc_information/request-parameters.adoc[]
+
 ===== Response structure
 include::{snippets}/should_document_get_project_releases_ecc_information/response-fields.adoc[]
 
