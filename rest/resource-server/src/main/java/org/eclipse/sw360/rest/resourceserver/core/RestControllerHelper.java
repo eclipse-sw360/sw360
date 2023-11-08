@@ -720,6 +720,8 @@ public class RestControllerHelper<T> {
         embeddedProject.setVersion(project.getVersion());
         embeddedProject.setReleaseIdToUsage(project.getReleaseIdToUsage());
         embeddedProject.setLinkedProjects(project.getLinkedProjects());
+        embeddedProject.setEnableSvm(project.isEnableSvm());
+        embeddedProject.setEnableVulnerabilitiesDisplay(project.isEnableVulnerabilitiesDisplay());
         embeddedProject.setType(null);
         return embeddedProject;
     }

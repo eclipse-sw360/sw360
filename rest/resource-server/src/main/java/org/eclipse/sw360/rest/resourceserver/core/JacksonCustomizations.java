@@ -378,10 +378,6 @@ public class JacksonCustomizations {
         static abstract class EmbeddedProjectMixin extends ProjectMixin {
 
             @Override
-            @JsonIgnore
-            abstract public boolean isEnableVulnerabilitiesDisplay();
-
-            @Override
             abstract public ProjectState getState();
         }
 
