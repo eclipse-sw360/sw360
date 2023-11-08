@@ -424,7 +424,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         if (purl == null) {
             return Collections.emptyList();
         }
-        return packageRepository.searchByPurl(purl, true);
+        return packageRepository.searchByPurl(purl);
     }
 
     private void copyImmutableFields(Package destination, Package source) {
