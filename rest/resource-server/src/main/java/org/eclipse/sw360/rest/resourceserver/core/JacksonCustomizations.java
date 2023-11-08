@@ -118,51 +118,52 @@ public class JacksonCustomizations {
 
             // Make spring doc aware of the mixin(s)
             SpringDocUtils.getConfig()
-                    .replaceWithClass(Project.class, Sw360Module.ProjectMixin.class)
+                    .replaceWithClass(Project.class, ProjectMixin.class)
                     .replaceWithClass(MultiStatus.class, MultiStatusMixin.class)
-                    .replaceWithClass(User.class, Sw360Module.UserMixin.class)
-                    .replaceWithClass(Component.class, Sw360Module.ComponentMixin.class)
-                    .replaceWithClass(ComponentDTO.class, Sw360Module.ComponentDTOMixin.class)
-                    .replaceWithClass(Release.class, Sw360Module.ReleaseMixin.class)
-                    .replaceWithClass(ReleaseLink.class, Sw360Module.ReleaseLinkMixin.class)
-                    .replaceWithClass(ClearingReport.class, Sw360Module.ClearingReportMixin.class)
-                    .replaceWithClass(Attachment.class, Sw360Module.AttachmentMixin.class)
-                    .replaceWithClass(AttachmentDTO.class, Sw360Module.AttachmentDTOMixin.class)
-                    .replaceWithClass(UsageAttachment.class, Sw360Module.UsageAttachmentMixin.class)
-                    .replaceWithClass(ProjectUsage.class, Sw360Module.ProjectUsageMixin.class)
-                    .replaceWithClass(Vendor.class, Sw360Module.VendorMixin.class)
-                    .replaceWithClass(License.class, Sw360Module.LicenseMixin.class)
-                    .replaceWithClass(Obligation.class, Sw360Module.ObligationMixin.class)
-                    .replaceWithClass(Vulnerability.class, Sw360Module.VulnerabilityMixin.class)
-                    .replaceWithClass(VulnerabilityState.class, Sw360Module.VulnerabilityStateMixin.class)
-                    .replaceWithClass(ReleaseVulnerabilityRelationDTO.class, Sw360Module.ReleaseVulnerabilityRelationDTOMixin.class)
-                    .replaceWithClass(VulnerabilityDTO.class, Sw360Module.VulnerabilityDTOMixin.class)
-                    .replaceWithClass(VulnerabilityApiDTO.class, Sw360Module.VulnerabilityApiDTOMixin.class)
-                    .replaceWithClass(EccInformation.class, Sw360Module.EccInformationMixin.class)
-                    .replaceWithClass(EmbeddedProject.class, Sw360Module.EmbeddedProjectMixin.class)
-                    .replaceWithClass(ExternalToolProcess.class, Sw360Module.ExternalToolProcessMixin.class)
-                    .replaceWithClass(ExternalToolProcessStep.class, Sw360Module.ExternalToolProcessStepMixin.class)
-                    .replaceWithClass(COTSDetails.class, Sw360Module.COTSDetailsMixin.class)
-                    .replaceWithClass(ClearingInformation.class, Sw360Module.ClearingInformationMixin.class)
-                    .replaceWithClass(Repository.class, Sw360Module.RepositoryMixin.class)
-                    .replaceWithClass(SearchResult.class, Sw360Module.SearchResultMixin.class)
-                    .replaceWithClass(ChangeLogs.class, Sw360Module.ChangeLogsMixin.class)
-                    .replaceWithClass(ChangedFields.class, Sw360Module.ChangedFieldsMixin.class)
-                    .replaceWithClass(ReferenceDocData.class, Sw360Module.ReferenceDocDataMixin.class)
-                    .replaceWithClass(ClearingRequest.class, Sw360Module.ClearingRequestMixin.class)
-                    .replaceWithClass(Comment.class, Sw360Module.CommentMixin.class)
-                    .replaceWithClass(ProjectReleaseRelationship.class, Sw360Module.ProjectReleaseRelationshipMixin.class)
-                    .replaceWithClass(ReleaseVulnerabilityRelation.class, Sw360Module.ReleaseVulnerabilityRelationMixin.class)
-                    .replaceWithClass(VerificationStateInfo.class, Sw360Module.VerificationStateInfoMixin.class)
-                    .replaceWithClass(ProjectProjectRelationship.class, Sw360Module.ProjectProjectRelationshipMixin.class)
-                    .replaceWithClass(ModerationRequest.class, Sw360Module.ModerationRequestMixin.class)
-                    .replaceWithClass(EmbeddedModerationRequest.class, Sw360Module.EmbeddedModerationRequestMixin.class)
-                    .replaceWithClass(ImportBomRequestPreparation.class, Sw360Module.ImportBomRequestPreparationMixin.class)
-                    .replaceWithClass(ModerationPatch.class, Sw360Module.ModerationPatchMixin.class)
-                    .replaceWithClass(ProjectDTO.class, Sw360Module.ProjectDTOMixin.class)
-                    .replaceWithClass(EmbeddedProjectDTO.class, Sw360Module.EmbeddedProjectDTOMixin.class)
-                    .replaceWithClass(ReleaseNode.class, Sw360Module.ReleaseNodeMixin.class)
-                    .replaceWithClass(RestrictedResource.class, Sw360Module.RestrictedResourceMixin.class);
+                    .replaceWithClass(User.class, UserMixin.class)
+                    .replaceWithClass(Component.class, ComponentMixin.class)
+                    .replaceWithClass(ComponentDTO.class, ComponentDTOMixin.class)
+                    .replaceWithClass(Package.class, PackageMixin.class)
+                    .replaceWithClass(Release.class, ReleaseMixin.class)
+                    .replaceWithClass(ReleaseLink.class, ReleaseLinkMixin.class)
+                    .replaceWithClass(ClearingReport.class, ClearingReportMixin.class)
+                    .replaceWithClass(Attachment.class, AttachmentMixin.class)
+                    .replaceWithClass(AttachmentDTO.class, AttachmentDTOMixin.class)
+                    .replaceWithClass(UsageAttachment.class, UsageAttachmentMixin.class)
+                    .replaceWithClass(ProjectUsage.class, ProjectUsageMixin.class)
+                    .replaceWithClass(Vendor.class, VendorMixin.class)
+                    .replaceWithClass(License.class, LicenseMixin.class)
+                    .replaceWithClass(Obligation.class, ObligationMixin.class)
+                    .replaceWithClass(Vulnerability.class, VulnerabilityMixin.class)
+                    .replaceWithClass(VulnerabilityState.class, VulnerabilityStateMixin.class)
+                    .replaceWithClass(ReleaseVulnerabilityRelationDTO.class, ReleaseVulnerabilityRelationDTOMixin.class)
+                    .replaceWithClass(VulnerabilityDTO.class, VulnerabilityDTOMixin.class)
+                    .replaceWithClass(VulnerabilityApiDTO.class, VulnerabilityApiDTOMixin.class)
+                    .replaceWithClass(EccInformation.class, EccInformationMixin.class)
+                    .replaceWithClass(EmbeddedProject.class, EmbeddedProjectMixin.class)
+                    .replaceWithClass(ExternalToolProcess.class, ExternalToolProcessMixin.class)
+                    .replaceWithClass(ExternalToolProcessStep.class, ExternalToolProcessStepMixin.class)
+                    .replaceWithClass(COTSDetails.class, COTSDetailsMixin.class)
+                    .replaceWithClass(ClearingInformation.class, ClearingInformationMixin.class)
+                    .replaceWithClass(Repository.class, RepositoryMixin.class)
+                    .replaceWithClass(SearchResult.class, SearchResultMixin.class)
+                    .replaceWithClass(ChangeLogs.class, ChangeLogsMixin.class)
+                    .replaceWithClass(ChangedFields.class, ChangedFieldsMixin.class)
+                    .replaceWithClass(ReferenceDocData.class, ReferenceDocDataMixin.class)
+                    .replaceWithClass(ClearingRequest.class, ClearingRequestMixin.class)
+                    .replaceWithClass(Comment.class, CommentMixin.class)
+                    .replaceWithClass(ProjectReleaseRelationship.class, ProjectReleaseRelationshipMixin.class)
+                    .replaceWithClass(ReleaseVulnerabilityRelation.class, ReleaseVulnerabilityRelationMixin.class)
+                    .replaceWithClass(VerificationStateInfo.class, VerificationStateInfoMixin.class)
+                    .replaceWithClass(ProjectProjectRelationship.class, ProjectProjectRelationshipMixin.class)
+                    .replaceWithClass(ModerationRequest.class, ModerationRequestMixin.class)
+                    .replaceWithClass(EmbeddedModerationRequest.class, EmbeddedModerationRequestMixin.class)
+                    .replaceWithClass(ImportBomRequestPreparation.class, ImportBomRequestPreparationMixin.class)
+                    .replaceWithClass(ModerationPatch.class, ModerationPatchMixin.class)
+                    .replaceWithClass(ProjectDTO.class, ProjectDTOMixin.class)
+                    .replaceWithClass(EmbeddedProjectDTO.class, EmbeddedProjectDTOMixin.class)
+                    .replaceWithClass(ReleaseNode.class, ReleaseNodeMixin.class)
+                    .replaceWithClass(RestrictedResource.class, RestrictedResourceMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -619,7 +620,28 @@ public class JacksonCustomizations {
                 "setVcs",
                 "setPackageManager",
                 "setRelease",
-                "setPackageType"
+                "createdByIsSet",
+                "createdOnIsSet",
+                "versionIsSet",
+                "vendorIsSet",
+                "vendorIdIsSet",
+                "modifiedByIsSet",
+                "modifiedOnIsSet",
+                "releaseIdIsSet",
+                "idIsSet",
+                "revisionIsSet",
+                "vcsIsSet",
+                "nameIsSet",
+                "descriptionIsSet",
+                "releaseIsSet",
+                "licenseIdsIsSet",
+                "purlIsSet",
+                "setPackageType",
+                "packageTypeIsSet",
+                "homepageUrlIsSet",
+                "hashIsSet",
+                "packageManagerIsSet",
+                "typeIsSet"
         })
         static abstract class PackageMixin extends Package {
         }
@@ -833,7 +855,50 @@ public class JacksonCustomizations {
                 "setComponentType",
                 "packageIdsSize",
                 "setPackageIds",
-                "packageIdsIterator"
+                "packageIdsIterator",
+                "createdByIsSet",
+                "createdOnIsSet",
+                "releaseDateIsSet",
+                "cpeidIsSet",
+                "versionIsSet",
+                "componentIdIsSet",
+                "componentTypeIsSet",
+                "externalIdsIsSet",
+                "additionalDataIsSet",
+                "attachmentsIsSet",
+                "repositoryIsSet",
+                "mainlineStateIsSet",
+                "clearingStateIsSet",
+                "externalToolProcessesIterator",
+                "externalToolProcessesIsSet",
+                "creatorDepartmentIsSet",
+                "contributorsIsSet",
+                "subscribersIsSet",
+                "rolesIsSet",
+                "mainLicenseIdsIsSet",
+                "otherLicenseIdsIsSet",
+                "vendorIsSet",
+                "vendorIdIsSet",
+                "clearingInformationIsSet",
+                "languagesIsSet",
+                "operatingSystemsIsSet",
+                "cotsDetailsIsSet",
+                "eccInformationIsSet",
+                "softwarePlatformsIsSet",
+                "sourceCodeDownloadurlIsSet",
+                "binaryDownloadurlIsSet",
+                "releaseIdToRelationshipIsSet",
+                "packageIdsIsSet",
+                "spdxIdIsSet",
+                "modifiedByIsSet",
+                "modifiedOnIsSet",
+                "idIsSet",
+                "revisionIsSet",
+                "typeIsSet",
+                "documentStateIsSet",
+                "permissionsIsSet",
+                "moderatorsIsSet",
+                "nameIsSet"
         })
         static abstract class ReleaseMixin extends Release {
             @Override
@@ -1142,7 +1207,24 @@ public class JacksonCustomizations {
                 "setObligationLevel",
                 "setObligationType",
                 "setAdditionalData",
-                "setNode"
+                "setNode",
+                "externalIdsIsSet",
+                "additionalDataIsSet",
+                "idIsSet",
+                "revisionIsSet",
+                "typeIsSet",
+                "titleIsSet",
+                "textIsSet",
+                "whitelistIsSet",
+                "developmentIsSet",
+                "distributionIsSet",
+                "customPropertyToValueIsSet",
+                "developmentStringIsSet",
+                "distributionStringIsSet",
+                "commentsIsSet",
+                "obligationLevelIsSet",
+                "obligationTypeIsSet",
+                "nodeIsSet"
         })
         static abstract class ObligationMixin extends Obligation {
         }
@@ -1401,7 +1483,15 @@ public class JacksonCustomizations {
                 "setAssessorContactPerson",
                 "setAssessmentDate",
                 "setAssessorDepartment",
-                "setMaterialIndexNumber"
+                "setMaterialIndexNumber",
+                "eccStatusIsSet",
+                "alIsSet",
+                "eccnIsSet",
+                "assessorContactPersonIsSet",
+                "assessorDepartmentIsSet",
+                "eccCommentIsSet",
+                "materialIndexNumberIsSet",
+                "assessmentDateIsSet",
         })
         static abstract class EccInformationMixin extends EccInformation {
             @Override
@@ -1421,7 +1511,14 @@ public class JacksonCustomizations {
                 "setProcessStatus",
                 "processStepsIterator",
                 "setProcessSteps",
-                "processStepsSize"
+                "processStepsSize",
+                "externalToolIsSet",
+                "processStatusIsSet",
+                "processIdInToolIsSet",
+                "attachmentIdIsSet",
+                "attachmentHashIsSet",
+                "processStepsIsSet",
+                "idIsSet"
         })
         static abstract class ExternalToolProcessMixin extends ExternalToolProcess {
         }
@@ -1446,7 +1543,20 @@ public class JacksonCustomizations {
                 "setUserCredentialsInTool",
                 "setUserGroupInTool",
                 "setFinishedOn",
-                "setResult"
+                "setResult",
+                "stepNameIsSet",
+                "stepStatusIsSet",
+                "linkToStepIsSet",
+                "startedByIsSet",
+                "startedByGroupIsSet",
+                "startedOnIsSet",
+                "idIsSet",
+                "processStepIdInToolIsSet",
+                "userIdInToolIsSet",
+                "userCredentialsInToolIsSet",
+                "userGroupInToolIsSet",
+                "finishedOnIsSet",
+                "resultIsSet"
         })
         static abstract class ExternalToolProcessStepMixin extends ExternalToolProcessStep {
         }
@@ -1479,7 +1589,34 @@ public class JacksonCustomizations {
                 "setReadmeOssAvailable",
                 "setCountOfSecurityVn",
                 "setExternalUrl",
-                "setComment"
+                "setComment",
+                "externalSupplierIDIsSet",
+                "additionalRequestInfoIsSet",
+                "evaluatedIsSet",
+                "procStartIsSet",
+                "requestIDIsSet",
+                "requestorPersonIsSet",
+                "binariesOriginalFromCommunityIsSet",
+                "binariesSelfMadeIsSet",
+                "componentLicenseInformationIsSet",
+                "sourceCodeDeliveryIsSet",
+                "sourceCodeOriginalFromCommunityIsSet",
+                "sourceCodeToolMadeIsSet",
+                "sourceCodeSelfMadeIsSet",
+                "sourceCodeCotsAvailableIsSet",
+                "screenshotOfWebSiteIsSet",
+                "finalizedLicenseScanReportIsSet",
+                "licenseScanReportResultIsSet",
+                "legalEvaluationIsSet",
+                "licenseAgreementIsSet",
+                "scannedIsSet",
+                "componentClearingReportIsSet",
+                "clearingStandardIsSet",
+                "readmeOssAvailableIsSet",
+                "countOfSecurityVnIsSet",
+                "externalUrlIsSet",
+                "commentIsSet",
+                "clearingTeamIsSet"
         })
         public static abstract class ClearingInformationMixin extends ClearingInformation {
         }
@@ -1494,7 +1631,16 @@ public class JacksonCustomizations {
                 "setUsageRightAvailable",
                 "setCotsResponsible",
                 "setClearingDeadline",
-                "setSourceCodeAvailable"
+                "setSourceCodeAvailable",
+                "usedLicenseIsSet",
+                "licenseClearingReportURLIsSet",
+                "containsOSSIsSet",
+                "ossContractSignedIsSet",
+                "ossInformationURLIsSet",
+                "usageRightAvailableIsSet",
+                "cotsResponsibleIsSet",
+                "clearingDeadlineIsSet",
+                "sourceCodeAvailableIsSet"
         })
         public static abstract class COTSDetailsMixin extends COTSDetails {
         }
@@ -1502,7 +1648,9 @@ public class JacksonCustomizations {
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
                 "setUrl",
-                "setRepositorytype"
+                "setRepositorytype",
+                "urlIsSet",
+                "repositorytypeIsSet"
         })
         public static abstract class RepositoryMixin extends Repository {
         }
