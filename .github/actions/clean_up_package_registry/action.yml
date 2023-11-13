@@ -1,0 +1,52 @@
+# Copyright Helio Chissini de Castro, 2023
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+
+name: 'Delete old non-release packages from Github package registry'
+description: 'Delete older packages set by a minimal level input'
+author: 'The ORT Project Authors'
+
+inputs:
+  registry:
+    description: 'Github container registry'
+    default: 'ghcr.io'
+  token:
+    description: 'Github token'
+    required: true
+  keep:
+    description: 'Number of non-release packages to keep'
+    required: false
+    default: '3'
+  packages:
+    description: 'Name of the packages to be cleaned up'
+    required: true
+  dry-run:
+    description: 'Execute a dry run operation to check the execution is correct'
+    default: 'false'
+
+runs:
+  using: 'composite'
+
+  steps:
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: Execute the operation
+      id: check_image
+      shell: bash
+      env:
+        INPUT_REGISTRY: ${{ inputs.registry }}
+        INPUT_TOKEN: ${{ inputs.token }}
+        INPUT_KEEP: ${{ inputs.keep }}
+        INPUT_PACKAGES: ${{ inputs.packages }}
+        INPUT_DRY_RUN: ${{ inputs.dry-run}}
+      run: |
+        pip install -q -U pip requests rich
+        python ./.github/actions/clean_up_package_registry/clean_up_package_registry.py
