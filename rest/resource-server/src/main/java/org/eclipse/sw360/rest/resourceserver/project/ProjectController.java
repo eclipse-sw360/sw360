@@ -791,25 +791,38 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/releases/ecc", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getECCsOfReleases(
+            Pageable pageable,
+            HttpServletRequest request,
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
             @Parameter(description = "Get the transitive ECC")
             @RequestParam(value = "transitive", required = false) boolean transitive
-    ) throws TException {
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<Release> releases = new ArrayList<>();
         final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-
-        final List<EntityModel<Release>> releaseResources = new ArrayList<>();
         for (final String releaseId : releaseIds) {
-            final Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
-            Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release);
-            embeddedRelease.setEccInformation(sw360Release.getEccInformation());
+            Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
+            releases.add(sw360Release);
+        }
+
+        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, releases, SW360Constants.TYPE_RELEASE);
+        final List<EntityModel<Release>> releaseResources = new ArrayList<>();
+        for (Release rel : paginationResult.getResources()) {
+            Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(rel);
+            embeddedRelease.setEccInformation(rel.getEccInformation());
             final EntityModel<Release> releaseResource = EntityModel.of(embeddedRelease);
             releaseResources.add(releaseResource);
         }
 
-        final CollectionModel<EntityModel<Release>> resources = restControllerHelper.createResources(releaseResources);
+        CollectionModel<EntityModel<Release>> resources;
+        if (releaseIds.size() == 0) {
+            resources = restControllerHelper.emptyPageResource(Release.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
+        }
+
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
