@@ -8,6 +8,9 @@
 
 
 import os
+import sys
+from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 import requests
 from rich import print
@@ -34,41 +37,89 @@ headers = {
 pkg_url: str = f"https://api.github.com/orgs/{org}/packages"
 
 
+def get_last_page(headers: dict[str, Any]) -> int:
+    if "link" not in headers:
+        return 1
+
+    links = headers["link"].split(", ")
+
+    last_page = None
+    for link in links:
+        if 'rel="last"' in link:
+            last_page = link
+            break
+
+    if last_page:
+        parsed_url = urlparse(
+            last_page[last_page.index("<") + 1 : last_page.index(">")]
+        )
+        return int(parse_qs(parsed_url.query)["page"][0])
+
+    return 1
+
+
 def delete_packages():
     for package in packages:
         print(f":package: {package}")
-        url = f"{pkg_url}/container/{package.replace('/', '%2F')}/versions?per_page=100"
-        response = requests.get(url, headers=headers)
 
-        if response.status_code == 404:
-            print(f":cross_mark: Not found - {url}")
-            continue
+        # Start page is 1 as stated by documentation
+        url = f"{pkg_url}/container/{package.replace('/', '%2F')}/versions?page=1&per_page=50"
 
-        # Sort all images on id.
-        images = sorted(response.json(), key=lambda x: x["id"], reverse=True)
+        # Get the header
+        response = requests.head(url, headers=headers)
+        pages: int | None = get_last_page(response.headers)
 
-        # Slice and remove all
-        if len(images) > keep:
-            for image in images[keep + 1 :]:
-                url = f"{pkg_url}/container/{package.replace('/', '%2F')}/versions/{image['id']}"
+        for page in range(pages, 0, -1):
+            print(f"Page: {page}")
+            url = f"{pkg_url}/container/{package.replace('/', '%2F')}/versions?page={page}&per_page=50"
+            response = requests.get(url, headers=headers)
+            if response.status_code == 404:
+                print(f":cross_mark: Not found - {url}")
+                continue
+            elif response.status_code == 401:
+                print(f":cross_mark: Requires authentication - {url}")
+                sys.exit(1)
+            elif response.status_code == 403:
+                print(f":cross_mark: Forbidden - {url}")
+                sys.exit(1)
 
-                # Never remove latest or non snapshot tagged images
-                if restrict_delete_tags(image["metadata"]["container"]["tags"]):
-                    print(
-                        f":package: Skip tagged {package} id {image['id']} tags {image['metadata']['container']['tags']}"
-                    )
-                    continue
+            # Sort all images on id.
+            images = sorted(response.json(), key=lambda x: x["id"], reverse=True)
 
-                if not dry_run:
-                    response = requests.delete(url, headers=headers)
-                    if response.status_code != 204:
+            # Slice and remove all
+            if len(images) > keep:
+                for image in images if page != 1 else images[keep + 1 :]:
+                    url = f"{pkg_url}/container/{package.replace('/', '%2F')}/versions/{image['id']}"
+
+                    # Never remove latest or non snapshot tagged images
+                    if restrict_delete_tags(image["metadata"]["container"]["tags"]):
                         print(
-                            f":cross_mark: Failed to delete package {package} version id {image['id']}."
+                            f":package: Skip tagged {package} id {image['id']} tags {image['metadata']['container']['tags']}"
                         )
                         continue
-                print(
-                    f":white_heavy_check_mark: Deleted package {package} version id {image['id']}."
-                )
+
+                    if not dry_run:
+                        response = requests.delete(url, headers=headers)
+                        if response.status_code == 404:
+                            print(f":cross_mark: Failed to delete package {package} version id {image['id']}.")
+                            continue
+                        elif response.status_code == 401:
+                            print(f":cross_mark: Requires authentication - {url}")
+                            sys.exit(1)
+                        elif response.status_code == 403:
+                            print(f":cross_mark: Forbidden - {url}")
+                            sys.exit(1)
+
+                    tags = image["metadata"]["container"]["tags"]
+                    if tags:
+                        print(
+                            f":white_heavy_check_mark: Deleted tagged package {package} version id {image['id']}"
+                            f"with tags {tags}."
+                        )
+                    else:
+                        print(
+                            f":white_heavy_check_mark: Deleted untagged package {package} version id {image['id']}"
+                        )
 
 
 def restrict_delete_tags(tags: list) -> bool:
