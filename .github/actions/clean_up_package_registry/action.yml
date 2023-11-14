@@ -32,8 +32,8 @@ runs:
   using: 'composite'
 
   steps:
-    - name: Install Python
-      uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
         cache: 'pip'
@@ -48,5 +48,5 @@ runs:
         INPUT_PACKAGES: ${{ inputs.packages }}
         INPUT_DRY_RUN: ${{ inputs.dry-run}}
       run: |
-        pip install -q -U pip requests rich
+        pip install -r ./.github/actions/clean_up_package_registry/requirements.txt
         python ./.github/actions/clean_up_package_registry/clean_up_package_registry.py
