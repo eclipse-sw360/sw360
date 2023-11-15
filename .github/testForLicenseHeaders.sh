@@ -39,6 +39,7 @@ done <<< "$(git ls-files \
     | grep -v 'id_rsa' \
     | grep -v '.versions' \
     | grep -v 'default_secrets' \
+    | grep -v 'requirements.txt' \
     | grep -Ev 'third-party/couchdb-lucene/*' \
     | grep -Ev '*/asciidoc/*')"
 
