@@ -443,10 +443,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
      * Add new release to the database
      */
     public AddDocumentRequestSummary addComponent(Component component, String user) throws SW360Exception {
-        if(isDuplicateUsingVcs(component.getVcs(), true)){
+        if(isDuplicateUsingVcs(component.getVcs())){
             final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
-            Set<String> duplicates = componentRepository.getComponentIdsByVCS(component.getVcs(), true);
+            Set<String> duplicates = componentRepository.getComponentIdsByVCS(component.getVcs().toLowerCase());
             if (duplicates.size() == 1) {
                 duplicates.forEach(addDocumentRequestSummary::setId);
             }
@@ -593,11 +593,11 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return duplicates.size()>0;
     }
 
-    private boolean isDuplicateUsingVcs(String vcsUrl, boolean caseInsenstive){
+    private boolean isDuplicateUsingVcs(String vcsUrl){
         if (isNullEmptyOrWhitespace(vcsUrl)) {
             return false;
         }
-        Set<String> duplicates = componentRepository.getComponentIdsByVCS(vcsUrl, caseInsenstive);
+        Set<String> duplicates = componentRepository.getComponentIdsByVCS(vcsUrl.toLowerCase());
         return duplicates.size()>0;
     }
 
