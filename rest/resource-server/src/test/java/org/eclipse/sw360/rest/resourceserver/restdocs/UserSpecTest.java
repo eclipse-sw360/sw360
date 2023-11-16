@@ -41,6 +41,8 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class UserSpecTest extends TestRestDocsSpecBase {
@@ -109,11 +111,21 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/users")
                 .header("Authorization", "Bearer " + accessToken)
+                .param("page", "0")
+                .param("page_entries", "5")
+                .param("sort", "email,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("page").description("Page of users"),
+                                parameterWithName("page_entries").description("Amount of users per page"),
+                                parameterWithName("sort").description("Defines order of the users")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:users[]email").description("The user's email"),
@@ -123,7 +135,12 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:users[]givenName").description("The user's given name"),
                                 subsectionWithPath("_embedded.sw360:users[]lastName").description("The user's last name"),
                                 subsectionWithPath("_embedded.sw360:users").description("An array of <<resources-users, User resources>>"),
-                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of users per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing users"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 

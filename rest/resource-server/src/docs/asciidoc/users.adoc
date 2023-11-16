@@ -19,6 +19,9 @@ The Users resource is used to get and list users.
 
 A `GET` request will list all of the service's users.
 
+===== Request parameter
+include::{snippets}/should_document_get_users/request-parameters.adoc[]
+
 ===== Response structure
 include::{snippets}/should_document_get_users/response-fields.adoc[]
 
