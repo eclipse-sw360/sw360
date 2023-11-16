@@ -421,6 +421,16 @@ include::{snippets}/should_document_get_project_releases_ecc_information/http-re
 ===== Links
 include::{snippets}/should_document_get_project_releases_ecc_information/links.adoc[]
 
+[[resources-project-get-license-clearing-information-information]]
+==== Project's license clearing count
+
+A `GET` request will get license clearing count of a project.
+
+===== Example request
+include::{snippets}/should_document_get_license_clearing_information/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_license_clearing_information/http-response.adoc[]
 
 [[resources-projects-create]]
 ==== Creating a project

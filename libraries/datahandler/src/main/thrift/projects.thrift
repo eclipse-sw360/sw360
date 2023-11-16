@@ -526,6 +526,8 @@ service ProjectService {
      * Visibility of any of the projects in the tree for the given user is currently not considered.
      */
     list<Project> fillClearingStateSummaryIncludingSubprojects(1: list<Project> projects, 2: User user);
+    
+    Project fillClearingStateSummaryIncludingSubprojectsForSingleProject(1: Project project, 2: User user);
 
     /**
     * export all projects to SVM to create/update monitoring lists

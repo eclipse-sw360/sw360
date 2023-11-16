@@ -119,6 +119,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -1903,6 +1904,31 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             resultJson.addProperty("status", "success");
             resultJson.addProperty("count", projectService.getMyAccessibleProjectCounts(sw360User));
             response.getWriter().write(resultJson.toString());
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+    
+    @Operation(
+            description = "Get license clearing info for a project.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseClearingCount", method = RequestMethod.GET)
+    public void getlicenseClearingCount(HttpServletResponse response ,
+    		@Parameter(description = "Project ID", example = "376521")
+            @PathVariable("id") String id) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        
+        Project proj = projectService.getClearingInfo(sw360Project, sw360User);
+        ReleaseClearingStateSummary clearingInfo = proj.getReleaseClearingStateSummary();
+        int releaseCount = clearingInfo.newRelease + clearingInfo.sentToClearingTool + clearingInfo.underClearing + clearingInfo.reportAvailable + clearingInfo.scanAvailable + clearingInfo.approved;
+        int approvedCount = clearingInfo.approved;
+        try {
+        	JsonObject row = new JsonObject();
+            row.addProperty("Release Count", releaseCount);
+            row.addProperty("Approved Count", approvedCount);
+            response.getWriter().write(row.toString());
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }

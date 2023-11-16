@@ -54,6 +54,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerability
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
@@ -268,6 +269,15 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setDeliveryChannels("Lorem Ipsum");
         project.setVendor(new Vendor());
         project.setRemarksAdditionalRequirements("Lorem Ipsum");
+        ReleaseClearingStateSummary clearingCount = new ReleaseClearingStateSummary();
+        clearingCount.newRelease = 2;
+        clearingCount.sentToClearingTool = 1;
+        clearingCount.underClearing = 0;
+        clearingCount.reportAvailable = 0;
+        clearingCount.scanAvailable = 0;
+        clearingCount.internalUseScanAvailable = 1;
+        clearingCount.approved = 2;
+        project.setReleaseClearingStateSummary(clearingCount);
         linkedReleases.put("3765276512", projectReleaseRelationship);
         project.setReleaseIdToUsage(linkedReleases);
         linkedProjects.put("376570", new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(true));
@@ -456,6 +466,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(true))).willReturn(releaseIdsTransitive);
         given(this.projectServiceMock.deleteProject(eq(project.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(projectReleaseRelationshipResponseBody);
+        given(this.projectServiceMock.getClearingInfo(eq(project), any())).willReturn(project);
         given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(
                 new Project("Emerald Web")
                         .setVersion("1.0.2")
@@ -1925,6 +1936,21 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                        responseFields(
                                fieldWithPath("status").description("status of the API. Possible values are `<success|failure>`").optional(),
                                fieldWithPath("count").description("Count of projects for a user.").optional()
+                       )));
+    }
+
+    @Test
+    public void should_document_get_license_clearing_information() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/licenseClearingCount")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept(MediaTypes.HAL_JSON)
+                .contentType(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                       responseFields(
+                               fieldWithPath("Release Count").description("Total count of releases of a project including sub-projects releases"),
+                               fieldWithPath("Approved Count").description("Approved license clearing state releases")
                        )));
     }
 
