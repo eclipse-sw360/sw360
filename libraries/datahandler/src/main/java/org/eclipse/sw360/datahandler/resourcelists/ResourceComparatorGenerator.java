@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
@@ -37,6 +38,7 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<Project._Fields, Comparator<Project>> projectMap = generateProjectMap();
     private static final Map<User._Fields, Comparator<User>> userMap = generateUserMap();
     private static final Map<Release._Fields, Comparator<Release>> releaseMap = generateReleaseMap();
+    private static final Map<Vendor._Fields, Comparator<Vendor>> vendorMap = generateVendorMap();
     private static final Map<Package._Fields, Comparator<Package>> packageMap = generatePackageMap();
     private static final Map<SearchResult._Fields, Comparator<SearchResult>> searchResultMap = generateSearchResultMap();
     private static final Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = generateChangeLogMap();
@@ -75,6 +77,13 @@ public class ResourceComparatorGenerator<T> {
         releaseMap.put(Release._Fields.NAME, Comparator.comparing(Release::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         releaseMap.put(Release._Fields.CLEARING_STATE, Comparator.comparing(p -> Optional.ofNullable(p.getClearingState()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         return Collections.unmodifiableMap(releaseMap);
+    }
+
+    private static Map<Vendor._Fields, Comparator<Vendor>> generateVendorMap() {
+        Map<Vendor._Fields, Comparator<Vendor>> vendorMap = new HashMap<>();
+        vendorMap.put(Vendor._Fields.FULLNAME, Comparator.comparing(Vendor::getFullname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        vendorMap.put(Vendor._Fields.SHORTNAME, Comparator.comparing(Vendor::getShortname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(vendorMap);
     }
 
     private static Map<Package._Fields, Comparator<Package>> generatePackageMap() {
@@ -137,6 +146,8 @@ public class ResourceComparatorGenerator<T> {
                 return (Comparator<T>)defaultUserComparator();
             case SW360Constants.TYPE_RELEASE:
                 return (Comparator<T>)defaultReleaseComparator();
+            case SW360Constants.TYPE_VENDOR:
+                return (Comparator<T>)defaultVendorComparator();
             case SW360Constants.TYPE_SEARCHRESULT:
                 return (Comparator<T>)defaultSearchResultComparator();
             case SW360Constants.TYPE_CHANGELOG:
@@ -196,6 +207,15 @@ public class ResourceComparatorGenerator<T> {
                     }
                 }
                 return generateReleaseComparatorWithFields(type, releaeFields);
+            case SW360Constants.TYPE_VENDOR:
+                List<Vendor._Fields> vendorFields = new ArrayList<>();
+                for(String property:properties) {
+                    Vendor._Fields field = Vendor._Fields.findByName(property);
+                    if (field != null) {
+                        vendorFields.add(field);
+                    }
+                }
+                return generateVendorComparatorWithFields(type, vendorFields);
             case SW360Constants.TYPE_PACKAGE:
                 List<Package._Fields> packageFields = new ArrayList<>();
                 for (String property:properties) {
@@ -277,6 +297,15 @@ public class ResourceComparatorGenerator<T> {
         switch (type) {
             case SW360Constants.TYPE_RELEASE:
                 return (Comparator<T>)releaseComparator(fields);
+            default:
+                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+        }
+    }
+
+    public Comparator<T> generateVendorComparatorWithFields(String type, List<Vendor._Fields> fields) throws ResourceClassNotFoundException {
+        switch (type) {
+            case SW360Constants.TYPE_VENDOR:
+                return (Comparator<T>)vendorComparator(fields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -376,6 +405,18 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
+    private Comparator<Vendor> vendorComparator(List<Vendor._Fields> fields) {
+        Comparator<Vendor> comparator = Comparator.comparing(x -> true);
+        for (Vendor._Fields field:fields) {
+            Comparator<Vendor> fieldComparator = vendorMap.get(field);
+            if(fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultVendorComparator());
+        return comparator;
+    }
+
     private Comparator<Package> packageComparator(List<Package._Fields> fields) {
         Comparator<Package> comparator = Comparator.comparing(x -> true);
         for (Package._Fields field:fields) {
@@ -450,6 +491,10 @@ public class ResourceComparatorGenerator<T> {
 
     private Comparator<Release> defaultReleaseComparator() {
         return releaseMap.get(Release._Fields.NAME);
+    }
+
+    private Comparator<Vendor> defaultVendorComparator() {
+        return vendorMap.get(Vendor._Fields.FULLNAME);
     }
 
     private Comparator<SearchResult> defaultSearchResultComparator() {
