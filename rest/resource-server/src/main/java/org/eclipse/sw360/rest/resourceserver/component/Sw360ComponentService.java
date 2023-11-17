@@ -323,4 +323,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         Set<String> releaseIds = SW360Utils.getReleaseIds(component.getReleases());
         return projectService.countProjectsByReleaseIds(releaseIds);
     }
+
+    public List<Component> refineSearch(Map<String, Set<String>> filterMap, User sw360User) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.refineSearchAccessibleComponents(null, filterMap, sw360User);
+    }
 }
