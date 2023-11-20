@@ -4,6 +4,285 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-18.0.0-M1
+This tag covers many corrections/bug after the 17.0 release and multiple new endpoints to support sw360 UI project.
+
+### Migrations
+
+For existing installations, a data migration is required with PR 1963. Please go to the readme file in scripts/migrations to see more information:
+
+https://github.com/eclipse/sw360/blob/master/scripts/migrations/README.md
+
+For running the migrations scripts, you will need python and the couchdb package. Please note that you will need to change manually in the python file: the DRYRUN variable and the couchdb URL (if that is not on localhost or requires password or both).
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in alphabetical order):
+
+```
+> Abdul Kapti <abdul.kapti@siemens-healthineers.com>
+> afsahsyeda <afsah.syeda@siemens-healhtineers.com>
+> Anupam Ghosh <anupam.ghosh@siemens.com>
+> Dinesh Ravi <dineshr93@gmail.com>
+> Eldrin Sanctis <eldrin.sanctis@siemens.com>
+> Gaurav Mishra <gmishx@gmail.com>
+> Helio Chissini de Castro <heliocastro@gmail.com>
+> hoangnt2 <hoang2.nguyenthai@toshiba.co.jp>
+> Keerthi B L <keerthi.bl@siemens.com>
+> Kouki Hama <kouki1.hama@toshiba.co.jp>
+> Le Tien <tien1.le@toshiba.co.jp>
+> Muhammad Ali <alimuhammad@siemens.com>
+> Nguyen Nhu Tuan <tuan2.nguyennhu@toshiba.co.jp>
+> Nikesh kumar <kumar.nikesh@simens.com>
+> rudra-superrr <rudra.chopra@siemens.com>
+> Shi Qiu <shi1.qiu@toshiba.co.jp>
+> Smruti Prakash Sahoo <smruti.sahoo@siemens.com>
+> Tien Le <tien1.le@toshiba.co.jp>
+> tuannn2 <tuan2.nguyennhu@toshiba.co.jp>
+```
+
+Please note that also many other persons usually contribute to the project with reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `e9a9f308b` feat(rest): Adding pagination for ecc info of releases for a project.
+* `c0db06a68` feat(rest) : Adding pagination for listing users endpoint.
+* `acc553b14` feat(rest): endpoint to get attachmentUsages for a project.
+* `bb0d01fd5` feat(rest): endpoint to get license clearing count for a project.
+* `bc5ae7d1b` feat(rest) : Add enableSvm field in response to projects api
+* `130ed2585` feat(importCDX): enhanced sw360 CDX importer
+* `754ba96a7` feat(CreateCRandRequestsPortlet):Added new field Clearing Type for CR and Additional columns in Open CR table
+* `b89bde7b9` feat(Rest): Modifying the document for search endpoint
+* `ec750b824` feat(bug) : Download release attachment fail issue fix
+* `f629a0d3f` feat(rest) : End point for export vendor spreadsheet
+* `930ef1d13` feat(docker): Add option to specify cvesearch.host at build time
+* `f4febd954` feat(release): Fix response api get single release with costDetails
+* `70141590c` feat(rest): API to get vulnerability tracking status
+* `03aaa6985` feat(Rest): New endpoint allow load assessment summary information of release
+* `8c2e71b85` feat(ui):enable to bulk delete component/releases for admin SW360
+* `266aeac3d` feat(REST): Add restricted project counter for component and release usedBy API
+* `ca0ef31f2` feat(rest):Update API Create Release with Cost Detail
+* `1974005e2` feat(ui): Added collapse and expand icon for all the tabs
+* `16dae1a4a` feat(rest): API to get vulnerability tracking status
+* `afe118d96` feat(Rest): New endpoint allow load SPDX license info from attachment of release (ISR, CLX, CLI)
+* `a330fde1e` feat(rest): Update release with attachment info
+* `ba6c743f5` feat(ui) : Add changelogs for license pages
+* `d369c73e3` feat(rest): Update API create Release with Moderator, Contributor, CpeId
+* `c9c37b94d` feat(rest): Update API create Release with LinkedRelease
+* `d7b52f53e` feat(rest): Add Information Vendor to response Get release detail
+* `4449e6017` feat(liferay): Export private pages include package portlet
+* `7c57b8081` feat(rest): Add information user change status attachment when edit component by API
+* `d25d35ce3` feat(Project): New configuration make project and releases relationship more flexible
+* `de4125bb4` feat(debug): Add Tomcat manager to docker
+* `fd13d1943` feat(rest): listing license clearing info of a project.
+* `cc9291d68` feat(CycloneDX): support CPE in import and export
+* `42f44107f` feat(rest): Update Component with attachment
+* `d8c594628` feat(REST): New endpoint to write SPDX license info into release
+* `d356bc022` feat(UI): Package Portlet Signed-off-by: akapti <abdul.kapti@siemens-healhtineers.com>
+* `6aa0b8d7e` feat(rest) : asynchronous end point for report download
+* `4d4c863ad` feat(RequestsPortlet): Added On Hold value for request status and Next/Last 15 days filter
+* `fd159f302` feat(Components): Add a new field VCS/Repository URL for components
+* `be9e5f5bb` feat(rest): New Endpoint create attachment
+* `34e2d9e77` feat(Rest): Rest API allow to re-generate fossology report
+* `f4432c98b` feat(rest):Adding new fields to get list of project vulnerability
+* `efbe761f5` feat(ExportSpreadsheet): Add project and release ID to the exported excel
+* `b7740902b` feat(ProjectObligationsEdit): Save comment and status fields on edit
+* `a7bc2969c` feat(rest):New end point for my components
+* `a4e7f6808` feat(REST): New endpoint split components
+* `447143b8e` feat(rest): To list linked projects of sub-projects.
+* `ed7f4e237` feat(Department): New function for Department Management
+* `662a05977` feat(rest): new endpoint merge component
+* `1bf157600` feat(UI/REST): CycloneDX SBOM Importer & Exporter
+* `e8f6e6b26` feat(rest): update response API Get a single release
+* `57b02aa29` feat(REST): Update response endpoint get attachments by release
+* `410184928` feat(ECC):Added pagination to ECC release list
+* `b6d58b979` feat(ui): add note filed in license page
+* `f14f9b0e4` feat(rest): update response API Listing users
+* `c27a2fe35` feat(rest): update response API Listing vendors
+* `9bd7869f4` feat(update): update response api get single component
+* `90c59acb4` feat(rest): modify moderation requests
+* `8e71c959c` feat(ci): Use actions java setup instead of standard packages
+* `037acd41b` feat(ci): Use actions java setup instead of standard packages
+* `a7af308fa` feat(ci): Update build and test to accept dispatch
+* `669d6f98b` feat(rest) : api to get count of projects
+* `1c4b223f8` feat(update):update response api get attachment by component
+* `e6374e820` feat(api): create new endpoint import bom for component
+* `462675325` feat(api): create new endpoint update vulnerabilities of a release
+* `4dbc8705a` feat(api): create new endpoint update vulnerabilities of a component
+* `bc368f203` feat(REST): Endpoint for Download Attachment Bundle of Release
+* `764a24c6c` feat(api): Endpoint get release overview by component
+* `391c006e6` feat(REST): Endpoint for Download Attachment Bundle of Component
+* `96a032814` feat(api): endpoint get vulnerabilities of a component
+* `d10048956` feat(rest): new endpoint `/moderationrequest`
+* `e682a50fa` feat(spdx): Added support for pasring of SPDX-2.3 (ISR) generated via fossology
+* `b7710e630` feat(lucene): Modify pom to generate proper war from couchdb lucene
+* `53236b590` feat(libs): Add couchdb-lucene as third party
+* `84e098774` feat(project): Prepare to introduce thirdparty libraries
+* `c80f75908` feat(rest):Components with all details Rest Api doc updated
+* `b32e90154` feat(REST):Endpoint for sbom import
+* `249f48f49` feat(SPDX): Making new tab in component release pages for showing SPDX/SPDX Lite data #1240
+* `9d566af03` feat(rest):New end point for my components
+* `53c8d85da` feat(clearing): Improved cloud backend clearing
+* `2e0732a2b` feat(rest): Added basic username and password based authentication
+* `4f171a659` feat(rest): optimize fetch project
+* `729207997` feat(EditCR): Admin will be able to reassign/edit the Requesting User of CR
+* `56096f24a` feat(ProjectUI):ExternalIds and Additional Data fields in Export Excel
+* `7b84b0e4f` feat(api): get vulnerabilities from relase by api
+* `aafc95808` feat(rest) : Update data without moderation request And This features' a configurable setting
+* `73ba7012d` feat(docker): Use main Maven docker image
+* `d6555a370` feat(rest): endpoint for linked projects.
+* `e20d7bf06` feat(rest): new endpoint /releases/recentReleases
+* `c5aea6f4e` feat(rest): newendpoint /components/recentComponents.
+* `d707d7b53` feat(rest): new endpoint `/projects/myprojects`
+* `0f95fd368` feat(project): Added Email functionality for individual project spreadsheet export
+* `ff92cd956` feat(ProjectUi): Enable Release with only one non-approved CLI for 'Adding License Infor To Release' and 'Displaying Obligations' (#1764)
+* `f5daadb6e` feat(Search): Added restricted search (#1797)
+* `df0a6a123` feat(ui): Add banner to broadcast messages (#1830)
+* `d4cd90f67` feat(Project): Added Vulnerability Summary Tab in Projects.
+* `ca1da16fe` feat(ProjectsUI):Changed Expand All To Expand Next Level and added alert message
+* `b682060ae` feat(Advance Search): Provided an 'Exact Match' checkbox in Advance Search that inserts (") around  search keyword
+* `b0ccdc480` feat(ci): Add thrift binary to cache
+* `95009d35f` feat(project): Add pre-commit and spotless
+* `eabbb0053` feat(svm): Publish SVM codes to Community
+
+### Corrections
+* `5e48f83b2` fix(importCDX): Remove view BY_VCS_LOWERCASE and BY_PURL_LOWERCASE
+* `e94d9c729` fix(Moderation): Fix bug could not open Release and Component moderation request
+* `45b317d86` fix(rest): adding additional fields to rest response for linked projects.
+* `4e329b464` fix(license): Update Response api for single license and Add rest-docs api create license
+* `d261f70e5` fix(rest): Added new endpoint for LicenseType in admin tab
+* `41d735f9a` fix(package): Can't link project to package
+* `1debd1e2c` fix(REST):Get Component failing for names with space
+* `521835e38` fix(UI) : Added code to import the upload license in admin tab
+* `f748c7cba` fix(package): Create package by API can't link release
+* `eb7efb3f9` fix(rest): create new endpoint for import OSADL information in admin tab.
+* `23242daaf` fix(importCDX): Resolved unnecessary update of component fields
+* `976f0ffeb` fix(rest): Added new rest endpoint for upload license in admin tab.
+* `fbd924cdd` fix(Package): Can't create a new Package by API
+* `08962f93c` fix(rest): New endpoint to download archive files in admin page
+* `f49e6d372` fix(db): clean-up closed moderation requests.
+* `c0dbccfd5` fix(lar): Remove old lar files that are usable only for old releases
+* `67f8d9f5a` fix(OAuthClient): Fix Can't show OAuth Client page
+* `de67119ae` fix(rest): create new endpoint for import spdx information in admin tab
+* `c2a9ee24a` fix(GUI): Fix edit dependency network GUI broken
+* `91b768595` fix(rest): Removed the copyright text from RESTAPI docs
+* `9d37c4993` fix(rest) : Modifications to improve GET result speed
+* `3bf53a1a3` fix(docker): Use the recommend fix fro Liferay x Java
+* `5a1ba6145` fix(UI): Added code to load moderation documents in request tab
+* `5fcb2b303` fix(sw360Build): build failing because of invalid CEN header
+* `7c8f8d24b` fix(rest):new endpoint to delete all license information in admin tab
+* `9f7859184` fix(lucene): Use old javax.servlet
+* `5f1e3d0ce` fix(OSADL): Add missing obligation rules
+* `b70be52a6` fix(rest): API create component's businessUnit is always set as the user's department
+* `ec4c39e06` fix(doc): remove merge conflict notation
+* `7b0938a6b` fix(Export): component.visibility.restriction.enabled option works incorrectly with the Export feature in Cyclone DX
+* `c0df9334d` fix(Rest): Allowing search for components without encoding
+* `475b4b437` fix(UI):word correction of Initial use scan in attachment type
+* `f29de2b1c` fix(rest): show linked project in project summay tab
+* `f237ecdb6` fix(Rest): Allowing search for externalIds without encoding
+* `5cdd364eb` fix(rest): fix test rest api of component
+* `ded850d7c` fix(UI): Sorting release verions in drop down menu when inspecting component.
+* `c4079d9a0` fix(Rest): Add clearing information in release response
+* `04c64a580` fix(rest): Missing moderators field when creating component using API
+* `9d79b2896` fix(rest): Added endpoint url for summary and administration page info
+* `81b6ca3a7` fix(readme): Add Information of python2 to python3 change when running file migration scripts
+* `b02f90ec2` fix(update): Update the migration readme file
+* `3f7349f78` fix(db): Data Quality and reduction of storage.
+* `42ffce89d` fix(test): Add missing test deps
+* `b6303eccc` fix(deps): Normalize spring-web and spring-boot versions
+* `bada732d8` fix(rest): Add Description field for myProjects and myComponents in homepage.
+* `19325b333` fix(lucene): Restore original portlet naming and configs
+* `e3df30e53` fix(docker): Restore document_properties volume
+* `ed87dde0b` fix(docker): Enable cache deps downloads in volume
+* `5ce0d0788` fix(license): Fix attachment type when importing SBOM
+* `262d0cad6` fix(EditCR): Not able to edit CR
+* `2bcb6185e` fix(docker): Remove clucene build
+* `bd39f4fa5` fix(sw360): Add sw360 adapt patch by default
+* `53236b590` feat(libs): Add couchdb-lucene as third party
+* `9811edf59` fix(update): Updating sw360.propertiy file is missing when using SPDX Document Tab
+* `e1dd33f43` fix(rest): added endpoint for release subscriptions
+* `6479d8894` fix(libs): Normalize json versions
+* `c2844e30c` fix(deps): Revert httpcore and fix httpcore and spring-boot
+* `d4e4ac764` fix(deps): Update to current httpcore5 release
+* `96387f9c7` fix(cache): Key was invalid due file not exists and hash attempt fail
+* `43a07df64` fix(ci): Cache now use the right naming
+* `b42ea4fd3` fix(versions): Normalize javax.activation version
+* `61c0a1b7c` fix(docker): Remove couchdb-clucene from the slim jars
+* `fdbc8c360` fix(docker): Adjust config defaults
+* `c923fa847` fix(component_gui): Can not load component detail page with long additional data text
+* `d8b9d77f6` fix(UserSearch) : Modified the user search operation (#1858)
+* `b54169f09` fix(projectExporter): Added Project visibility in project exporter spreadsheet
+* `8c454efb6` fix(config): Couchdb configs not like double commas
+* `b7d2f7a46` fix(docker): Update docker-compose.yml
+* `470b70788` fix(docker): Move to the new Github org
+* `2a9bffa4f` fix(rest): componentType field  will show when allDetails true in release
+* `59ebfdcf0` fix(UI): Attachments tab not loading in UI
+* `f81243c40` fix(docker): Fix couchdb default setting
+* `48f688e1b` fix(docker): Change maven version from 3.8.7 to 3.8.8
+* `cd4293f97` fix(api): deletion project returns 500 error and API doc of link release to release makes ambiguous
+* `dd6f60218` fix(rest): disable URI encoding in search by external ids in release
+* `aecc19141` fix(rest): endpoint api/projects does not return all projects
+* `5514b4e38` fix(language): Fix the properties file and add some other needed files for Chinese language support
+* `3ff6f65bd` fix(rest): Added endpoint for mysubscriptions for component
+* `d6da8a919` fix(rest): Added endpoint for release subscriptions
+* `2a0395256` fix(ProjectUI):External Id not visible in Vulnerability Tracking Status
+* `c596d6094` fix(vulnerability): apache commons-text vulnerability CVE-2022-42889 #1864
+* `949288618` fix(project): Update Apache commons-text
+* `27d5fc011` fix(db): Deactivate email notification of user not belonging to a domain.
+* `1af7ecb1a` fix(LiferaySetup):Website not loading after removing BannerMessage Field
+* `63e2fef1d` fix(rest): Api endpoint /components/usedBy returns 500 when component not have any release.
+* `e66363183` fix(UI): Error when creating/editing duplicate project/component/release
+* `c28bac8e8` fix(ui): support Vietnamese language in Obligation page
+* `2d20226e7` fix(Script): Modified script such that it removes trailing and leading whitespaces of components and releases and additonally  link releases of duplicate components
+* `3b7269f6d` fix(vulnerability): Script to repair release vulnearability relations
+* `92b18eaaf` fix(UI): Added EnableSVM field in project exportspreadsheet
+* `9f277825b` fix(attachmentUploadModal):Progress bar will be visible only after clicking on the upload button
+* `0a59109e9` fix(rest): Reuse centrally created thrift client
+* `92f3c42f0` fix(pre-commit): Do not run clean/build
+* `3cc8b6293` fix(ci) : Change maven version from 3.8.7 to 3.8.7
+* `27e14e70b` fix(UI) : Added Created on in project export
+* `799d2f789` fix(UI): ISR which will make the SW360 Release status as Scan Available
+* `09c126967` fix(UI): unset few field while create a duplicate in project and component
+* `5d9c3024b` fix(UI):remove deactivated users from moderators list
+* `790c7ae9d` Fix(REST): Add COTS details information when fetch a single release that has component type COTS
+* `3cd88e009` Fix(Search): Fix bug can not show result with special character and can not search Obligation
+* `776c9b3ff` Fix(Rest): Add more information in get components response (support New GUI)
+* `ce6f9e616` Fix(Project): Can't disable CR based on Japanese group
+* `d80822818` Fix(Project GUI): Fix bug missing obligation text when change status or comment of component, project, organisation obligation in project edit
+* `67dff9e27` Fix (REST): Fix bug do not set businessUnit automatically when create component. Get all components always return visibility EVERYONE.
+* `b6bfa4258` Fix(REST): Fix bug update project without vendor information will remove vendor of project
+
+### Infrastructure
+* `265fb1953` ci(fix): Ignore requirements.txt files in testForLicenseHeaders
+* `6be2c6f79` build(deps): bump org.json:json from 20230227 to 20231013
+* `d630785b1` ci(fix): Missing code checkout on clean workflow
+* `0b713d8af` refactor(docker): Improve docker build and deployment
+* `9f71e11a7` docs(openapi): add OpenAPI doc for Obligation, Package and Report
+* `c315c0b7a` docs(openapi): add OpenAPI doc for License and Moderation
+* `8194286af` docs(openapi): add OpenAPI doc for ComponentController
+* `05a27600a` Update build_and_test.yml
+* `5410eefc5` Update README.md
+* `606d9b353` Update README_DOCKER.md
+* `1a534db4d` docs(openapi): add docs for attachment
+* `98e10d47f` docs(openapi): add docs for vendor, user, search
+* `ac8e9d10f` docs(rest): generate OpenAPI docs for Project
+* `561687678` chore(docker): update maven version
+* `c3492c322` chore(deps): bump guava from 31.1-jre to 32.0.0-jre
+* `a9821a634` chore(thrift): Prevent datahandler recompile all the times
+* `1d15e7741` chore(deps): Update thrift version
+* `f5c86b9d9` chore(deps): bump jose4j from 0.7.9 to 0.9.3 in /rest/resource-server
+* `1d3cd248b` chore(rest): Making endpoints configurable
+* `cd6d5cfed` ci(cache): Give GH_ACTIONS permissions to reach cache
+* `21833c85c` ci(cache): Give GH_ACTIONS permissions to reach cache
+* `baaa882f8` ci(docker): Improve cache mechanism
+* `ae2b667f7` ci(secrets): Fix the new secrets loading mechanism
+* `651c67680` ci(cache): Fix thrift cache miss
+* `f6d40b3e6` ci(project): Update pre-commit and ci hooks
+* `5081686ca` chore(action): Cache maven dependencies
+* `8937ec88b` Update(Vulnerability): Improve the function of API to delete vulnerability and relation of vulnerability with release
+* `b41273dec` chore(migration) Avoid null pointer on script 048_add_component_businessunit.py
+* `a49191fb7` upd(ci): Reduce the intermediary docker builds for Midnight daily
+
+
 ## sw360-17.0.0-M1
 This tag covers many corrections/bug fixes after the 16.0 release.
 
