@@ -77,6 +77,7 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -1988,21 +1989,21 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("preevaluationDeadline").description("The project preevaluation deadline"),
                                 fieldWithPath("systemTestStart").description("Date of the project system begin phase"),
                                 fieldWithPath("systemTestEnd").description("Date of the project system end phase"),
-                                fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
-                                fieldWithPath("projectResponsible").description("A user who is responsible for the project."),
                                 fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
                                 fieldWithPath("considerReleasesFromExternalList").description("Consider list of releases from existing external list"),
                                 fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                                 fieldWithPath("phaseOutSince").description("The project phase-out date"),
                                 fieldWithPath("clearingRequestId").description("Clearing Request id associated with project."),
-                                fieldWithPath("licenseInfoHeaderText").description("Display licenseInfoHeaderText info"),
                                 subsectionWithPath("externalUrls").description("A place to store additional data used by external URLs"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project"),
+                                subsectionWithPath("_embedded.projectResponsible").description("The project responsible displayed").type(JsonFieldType.OBJECT).optional(),
+                                subsectionWithPath("_embedded.securityResponsibles").description("An array of project securityResponsible will get displayed").type(JsonFieldType.ARRAY).optional(),
+                                subsectionWithPath("_embedded.projectOwner").description("The project owner").type(JsonFieldType.OBJECT).optional(),
+                                subsectionWithPath("_embedded.modifiedBy").description("The user who modified the project").type(JsonFieldType.OBJECT).optional(),
+                                subsectionWithPath("_embedded.leadArchitect").description("The user who leadArchitect of this project").type(JsonFieldType.OBJECT).optional(),
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
-                                subsectionWithPath("_embedded.sw360:packages").description("An array of linked <<resources-packages, Packages resources>>"),
                                 subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
-                                subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"))
                         		));
     }

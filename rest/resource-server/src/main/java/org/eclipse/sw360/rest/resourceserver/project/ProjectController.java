@@ -1949,11 +1949,45 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360Project.setExternalUrls(sortedExternalURLs);
         sw360Project.setReleaseIdToUsage(null);
         sw360Project.setLinkedProjects(null);
+        sw360Project.setAttachments(null);
+        sw360Project.setPackageIds(null);
         HalResource<Project> userHalResource = createHalProject(sw360Project, sw360User);
+        setAdditionalFieldsToHalResource(sw360Project,userHalResource);
         sw360Project.unsetLinkedProjects();
         sw360Project.unsetReleaseIdToUsage();
+        sw360Project.unsetProjectResponsible();
+        sw360Project.unsetSecurityResponsibles();
+        sw360Project.unsetLicenseInfoHeaderText();
 
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
+
+    private void setAdditionalFieldsToHalResource(Project sw360Project, HalResource<Project> userHalResource) throws TException {
+        try {
+            User projectModifier = restControllerHelper.getUserByEmail(sw360Project.getModifiedBy());
+            if (projectModifier != null) {
+                restControllerHelper.addEmbeddedUser(userHalResource, projectModifier, "modifiedBy");
+            }
+            User projectOwner = restControllerHelper.getUserByEmail(sw360Project.getProjectOwner());
+            if (projectOwner != null) {
+                restControllerHelper.addEmbeddedUser(userHalResource, projectOwner, "projectOwner");
+            }
+            if (sw360Project.getSecurityResponsibles() == null || sw360Project.getSecurityResponsibles().isEmpty()) {
+                sw360Project.setSecurityResponsibles(new HashSet<String>(){{add("");}});
+            }
+            Set<String> securityResponsibles = sw360Project.getSecurityResponsibles();
+            restControllerHelper.addEmbeddedSecurityResponsibles(userHalResource, securityResponsibles);
+            
+            String clearingTeam = sw360Project.getClearingTeam();
+            if (clearingTeam != null) {
+                restControllerHelper.addEmbeddedClearingTeam(userHalResource, clearingTeam, "clearingTeam");
+            }
+            if (sw360Project.getProjectResponsible() != null) {
+                restControllerHelper.addEmbeddedProjectResponsible(userHalResource,sw360Project.getProjectResponsible());
+            }
+        }catch (Exception e) {
+            throw new TException(e.getMessage());
+        }
     }
 
     private HalResource<ProjectDTO> createHalProjectDTO(Project sw360Project, User sw360User) throws TException {

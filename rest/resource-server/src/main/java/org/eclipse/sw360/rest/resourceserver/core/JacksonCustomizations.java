@@ -183,6 +183,7 @@ public class JacksonCustomizations {
                 "createdBy",
                 "visbility",
                 "clearingTeam",
+                "projectOwner",
                 "homepage",
                 "wiki",
                 "documentState",
