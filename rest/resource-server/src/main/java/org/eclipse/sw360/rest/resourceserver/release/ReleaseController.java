@@ -318,9 +318,12 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             String[] params = queryString.split("&");
             for (String param : params) {
                 String[] keyValue = param.split("=");
-                if (keyValue.length == 2) {
+                if (keyValue.length >= 1) {
                     String key = keyValue[0];
-                    String value = keyValue[1];
+                    String value = "";
+                    if(!(keyValue.length == 1)) {
+                        value = keyValue[1];
+                    }
                     parameters.add(key, value);
                 }
             }
