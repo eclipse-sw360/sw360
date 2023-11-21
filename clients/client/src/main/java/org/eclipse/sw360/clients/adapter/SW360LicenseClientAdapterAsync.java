@@ -73,7 +73,7 @@ public interface SW360LicenseClientAdapterAsync {
 
     /**
      * Deletes the license with the given ID. It
-     * inspects the {@link StatusCode} returned by SW360 and throws an
+     * inspects the StatusCode returned by SW360 and throws an
      * exception if the operation was not successful.
      *
      * @return status code of request
