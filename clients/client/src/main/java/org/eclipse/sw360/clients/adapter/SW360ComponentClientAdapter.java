@@ -60,6 +60,7 @@ public interface SW360ComponentClientAdapter {
      * matches the passed in string exactly. Result is an {@code Optional},
      * which is empty if no matching component can be found.
      *
+     * @param componentName the name of the Component
      * @return an {@code Optional} containing the resulting component
      */
     Optional<SW360Component> getComponentByName(String componentName);
