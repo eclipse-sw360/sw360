@@ -19,12 +19,30 @@
   <version>${revision}</version>
   <packaging>pom</packaging>
 
+  <name>Eclipse SW360</name>
+  <description>Eclipse SW360 compliance management application</description>
+  <url>https://eclipse.org/sw360</url>
   <licenses>
     <license>
       <name>Eclipse Public License 2.0</name>
       <url>https://www.eclipse.org/legal/epl-2.0/</url>
     </license>
   </licenses>
+  <organization>
+    <name>Eclipse SW360</name>
+    <url>https://eclipse.org/sw360</url>
+  </organization>
+  <developers>
+    <developer>
+      <name>SW360 Team</name>
+      <organization>SW360</organization>
+      <organizationUrl>https://eclipse.org/sw360</organizationUrl>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:https://github.com/eclipse-sw360/sw360</connection>
+    <url>https://github.com/eclipse-sw360/sw360.git</url>
+  </scm>
 
   <modules>
     <module>build-configuration</module>
@@ -36,10 +54,6 @@
     <module>rest</module>
     <module>clients</module>
   </modules>
-
-  <scm>
-    <connection>scm:git:https://github.com/eclipse/sw360</connection>
-  </scm>
 
   <distributionManagement>
     <repository>
@@ -62,7 +76,6 @@
     <!-- Plugin version properties -->
     <asciidoctor-maven-plugin.version>2.2.2</asciidoctor-maven-plugin.version>
     <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
-    <buildnumber-maven-plugin.version>3.0.0</buildnumber-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
     <maven-assembly-plugin.version>3.4.2</maven-assembly-plugin.version>
     <maven-bundle-plugin.version>5.1.8</maven-bundle-plugin.version>
@@ -133,6 +146,7 @@
     <liferay.util.bridges.version>9.0.6</liferay.util.bridges.version>
     <liferay.util.java.version>17.1.2</liferay.util.java.version>
     <liferay.util.taglib.version>8.4.8</liferay.util.taglib.version>
+    <maven-javadoc.version>3.6.2</maven-javadoc.version>
     <log4j2.version>2.19.0</log4j2.version>
     <lucene.version>6.6.6</lucene.version>
     <mockito.version>4.7.0</mockito.version>
@@ -326,9 +340,9 @@
         <version>7.3.2</version>
       </dependency>
       <dependency>
-          <groupId>org.apache.maven</groupId>
-          <artifactId>maven-model</artifactId>
-          <version>3.9.2</version>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-model</artifactId>
+        <version>3.9.2</version>
       </dependency>
       <!-- Runtime, com.sun.xml.bind module: java 11 compatibility  -->
       <dependency>
@@ -610,7 +624,19 @@
           <artifactId>maven-jar-plugin</artifactId>
           <version>${maven-jar-plugin.version}</version>
         </plugin>
-
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>3.3.0</version>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <goals>
+                <goal>jar-no-fork</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
@@ -619,11 +645,32 @@
             <overwrite>true</overwrite>
           </configuration>
         </plugin>
-
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${maven-javadoc.version}</version>
+          <configuration>
+            <nohelp>true</nohelp>
+          </configuration>
+          <executions>
+            <execution>
+              <id>attach-javadocs</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>buildnumber-maven-plugin</artifactId>
+          <version>${buildnumber-maven-plugin.version}</version>
         </plugin>
 
         <plugin>
@@ -639,12 +686,6 @@
               <phase>package</phase>
             </execution>
           </executions>
-        </plugin>
-
-        <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>buildnumber-maven-plugin</artifactId>
-          <version>${buildnumber-maven-plugin.version}</version>
         </plugin>
 
         <plugin>
@@ -868,36 +909,20 @@
       </build>
     </profile>
     <profile>
-      <id>eclipse-ci</id>
+      <id>sonatype</id>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
-
       <distributionManagement>
-        <repository>
-          <id>repo.eclipse.org</id>
-          <name>Project Repository - Releases</name>
-          <url>https://repo.eclipse.org/content/repositories/sw360-releases/</url>
-        </repository>
         <snapshotRepository>
-          <id>repo.eclipse.org</id>
-          <name>Project Repository - Snapshots</name>
-          <url>https://repo.eclipse.org/content/repositories/sw360-snapshots/</url>
+          <id>ossrh</id>
+          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
+        <repository>
+          <id>ossrh</id>
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
       </distributionManagement>
-
-      <pluginRepositories>
-        <pluginRepository>
-          <releases>
-            <enabled>true</enabled>
-          </releases>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-          <id>repo.eclipse.org</id>
-          <url>https://repo.eclipse.org/content/repositories/cbi</url>
-        </pluginRepository>
-      </pluginRepositories>
 
       <build>
         <pluginManagement>
@@ -911,21 +936,29 @@
         </pluginManagement>
         <plugins>
           <plugin>
-            <groupId>org.eclipse.cbi.maven.plugins</groupId>
-            <artifactId>eclipse-jarsigner-plugin</artifactId>
-            <configuration>
-              <resigningStrategy>OVERWRITE</resigningStrategy>
-              <excludeInnerJars>true</excludeInnerJars>
-            </configuration>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>3.1.0</version>
             <executions>
               <execution>
-                <id>sign</id>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
                 <goals>
                   <goal>sign</goal>
                 </goals>
-                <phase>verify</phase>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>1.6.7</version>
+            <extensions>true</extensions>
+            <configuration>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+            </configuration>
           </plugin>
         </plugins>
       </build>
