@@ -44,6 +44,7 @@ public class DatabaseSettings {
     public static final String COUCH_DB_USERS;
     public static final String COUCH_DB_VM;
     public static final String COUCH_DB_SPDX;
+    public static final boolean COUCH_DB_CACHE;
 
     public static final int LUCENE_SEARCH_LIMIT;
     public static final boolean LUCENE_LEADING_WILDCARD;
@@ -65,6 +66,7 @@ public class DatabaseSettings {
         COUCH_DB_USERS = props.getProperty("couchdb.usersdb", "sw360users");
         COUCH_DB_VM = props.getProperty("couchdb.vulnerability_management", "sw360vm");
         COUCH_DB_SPDX = props.getProperty("couchdb.sw360spdx", "sw360spdx");
+        COUCH_DB_CACHE = Boolean.parseBoolean(props.getProperty("couchdb.cache", "true"));
 
         LUCENE_SEARCH_LIMIT = Integer.parseInt(props.getProperty("lucenesearch.limit", "25"));
         LUCENE_LEADING_WILDCARD = Boolean.parseBoolean(props.getProperty("lucenesearch.leading.wildcard", "false"));
@@ -72,10 +74,13 @@ public class DatabaseSettings {
 
     public static Supplier<HttpClient> getConfiguredHttpClient() throws MalformedURLException {
         StdHttpClient.Builder httpClientBuilder = new StdHttpClient.Builder().url(COUCH_DB_URL);
-        if(! "".equals(COUCH_DB_USERNAME)) {
+        if (!COUCH_DB_CACHE) {
+            httpClientBuilder.caching(false);
+        }
+        if (!"".equals(COUCH_DB_USERNAME)) {
             httpClientBuilder.username(COUCH_DB_USERNAME);
         }
-        if (! "".equals(COUCH_DB_PASSWORD)) {
+        if (!"".equals(COUCH_DB_PASSWORD)) {
             httpClientBuilder.password(COUCH_DB_PASSWORD);
         }
         return httpClientBuilder::build;
