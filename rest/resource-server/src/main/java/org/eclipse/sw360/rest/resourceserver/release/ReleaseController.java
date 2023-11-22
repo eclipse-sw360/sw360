@@ -35,6 +35,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Sets;
+
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
@@ -43,6 +45,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -157,37 +160,45 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "sha1", required = false) String sha1,
             @RequestParam(value = "fields", required = false) List<String> fields,
             @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "allDetails", required = false) boolean allDetails, HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+            @Parameter(description = "luceneSearch parameter to filter the releases.")
+            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            @RequestParam(value = "allDetails", required = false) boolean allDetails, HttpServletRequest request) 
+            throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<Release> sw360Releases = new ArrayList<>();
 
-        if (sha1 != null && !sha1.isEmpty()) {
-            sw360Releases.addAll(searchReleasesBySha1(sha1, sw360User));
+        if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+            sw360Releases.addAll(releaseService.refineSearch(name, sw360User));
         } else {
-            sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
+            if (sha1 != null && !sha1.isEmpty()) {
+                sw360Releases.addAll(searchReleasesBySha1(sha1, sw360User));
+            } else {
+                sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
+                sw360Releases = sw360Releases.stream()
+                        .filter(release -> name == null || name.isEmpty() || release.getName().equalsIgnoreCase(name))
+                        .collect(Collectors.toList());
+            }
         }
 
-        sw360Releases = sw360Releases.stream()
-                .filter(release -> name == null || name.isEmpty() || release.getName().equalsIgnoreCase(name))
-                .collect(Collectors.toList());
         if (allDetails) {
-            for (Release release: sw360Releases) {
-                if(!CommonUtils.isNullEmptyOrWhitespace(release.getVendorId())) {
+            for (Release release : sw360Releases) {
+                if (!CommonUtils.isNullEmptyOrWhitespace(release.getVendorId())) {
                     release.setVendor(vendorService.getVendorById(release.getVendorId()));
                 }
             }
         }
-        
+
         if (CommonUtils.isNotNullEmptyOrWhitespace(sha1) || CommonUtils.isNotNullEmptyOrWhitespace(name)) {
-            for(Release release: sw360Releases) {
+            for (Release release : sw360Releases) {
                 releaseService.setComponentDependentFieldsInRelease(release, sw360User);
             }
         } else {
             releaseService.setComponentDependentFieldsInRelease(sw360Releases, sw360User);
         }
-        
-        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Releases, SW360Constants.TYPE_RELEASE);
+
+        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                sw360Releases, SW360Constants.TYPE_RELEASE);
 
         List<EntityModel> releaseResources = new ArrayList<>();
         for (Release sw360Release : paginationResult.getResources()) {
