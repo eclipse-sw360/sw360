@@ -17,7 +17,7 @@
         paths: {
 		"jquery-ui":              				[ contextPath + "/webjars/jquery-ui/jquery-ui.min" ],
             "jquery-treetable":       				[ contextPath + "/webjars/jquery-treetable/jquery.treetable" ],
-            /* Attention: validate needs .min as the dependency is referenced like that in additional-methods.min.js in webjars... */
+            /* Attention: validate needs .min as the dependency is referenced like that in additional-methods.min.js in webjars<%=request.getContextPath()%>. */
             "jquery.validate.min":					[ contextPath + "/webjars/jquery-validation/dist/jquery.validate.min" ],
             "jquery.validate-addon":  				[ contextPath + "/webjars/jquery-validation/dist/additional-methods.min" ],
             "datatables.net":         				[ contextPath + "/webjars/datatables.net/js/jquery.dataTables.min" ],
@@ -27,7 +27,32 @@
             "datatables.net-select":  				[ contextPath + "/webjars/datatables.net-select/js/dataTables.select.min" ],
             "datatables.net-select-bs4":            [ contextPath + "/webjars/datatables.net-select-bs4/js/select.bootstrap4.min" ],
             "datatables-plugins-sorting.natural":   [ contextPath + "/webjars/datatables-plugins/1.10.19/sorting/natural" ],
-            "resumable":              				[ contextPath + "/webjars/resumable.js/1.1.0/resumable" ]
+            "resumable":              				[ contextPath + "/webjars/resumable.js/1.1.0/resumable" ],
+            "d3":									["https://d3js.org/d3.v6", "https://d3js.org/d3.v6.min"],
+            "totalProj": "<%=request.getContextPath()%>/html/dashboard/js/totalProj",
+	        "totalComp": "<%=request.getContextPath()%>/html/dashboard/js/totalComp",
+	        "totalRel": "<%=request.getContextPath()%>/html/dashboard/js/totalRel",
+	        "attachmentDiskUsageTotal": "<%=request.getContextPath()%>/html/dashboard/js/attachmentDiskUsageTotal",
+	        "timeSeries": "<%=request.getContextPath()%>/html/dashboard/js/timeSeries",
+	        "attachmentUsage": "<%=request.getContextPath()%>/html/dashboard/js/attachmentUsage",
+	        "mostUsedComp": "<%=request.getContextPath()%>/html/dashboard/js/mostUsedComp",
+	        "tableDataComp": "<%=request.getContextPath()%>/html/dashboard/js/tableDataComp",
+	        "tableNotUsedComp": "<%=request.getContextPath()%>/html/dashboard/js/tableNotUsedComp",
+	        "componentType": "<%=request.getContextPath()%>/html/dashboard/js/componentType",
+	        "mostUsedLicense": "<%=request.getContextPath()%>/html/dashboard/js/mostUsedLicense",
+	        "releaseStatusBasedonType": "<%=request.getContextPath()%>/html/dashboard/js/releaseStatusBasedonType",
+	        "totalProjSI": "<%=request.getContextPath()%>/html/dashboard/js/SI/totalProj",
+	        "totalCompSI": "<%=request.getContextPath()%>/html/dashboard/js/SI/totalComp",
+	        "totalRelSI": "<%=request.getContextPath()%>/html/dashboard/js/SI/totalRel",
+	        "attachmentDiskUsageTotalSI": "<%=request.getContextPath()%>/html/dashboard/js/SI/attachmentDiskUsageTotal",
+	        "timeSeriesSI": "<%=request.getContextPath()%>/html/dashboard/js/SI/timeSeries",
+	        "attachmentUsageSI": "<%=request.getContextPath()%>/html/dashboard/js/SI/attachmentUsage",
+	        "mostUsedCompSI": "<%=request.getContextPath()%>/html/dashboard/js/SI/mostUsedComp",
+	        "tableDataCompSI": "<%=request.getContextPath()%>/html/dashboard/js/SI/tableDataComp",
+	        "tableNotUsedCompSI": "<%=request.getContextPath()%>/html/dashboard/js/SI/tableNotUsedComp",
+	        "componentTypeSI": "<%=request.getContextPath()%>/html/dashboard/js/SI/componentType",
+	        "mostUsedLicenseSI": "<%=request.getContextPath()%>/html/dashboard/js/SI/mostUsedLicense",
+	        "releaseStatusBasedonTypeSI": "<%=request.getContextPath()%>/html/dashboard/js/SI/releaseStatusBasedonType"
         },
         shim: {
             // only for libraries that do not support RequireJS out of the box
