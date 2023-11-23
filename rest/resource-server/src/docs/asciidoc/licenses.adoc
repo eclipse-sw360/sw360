@@ -209,4 +209,16 @@ include::{snippets}/should_document_get_create_license_type/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_get_create_license_type/http-response.adoc[]
 
+[[resources-licenses-download-report]]
+==== Downloading license report
 
+A `GET` request help to download the licenses report.
+
+===== Request parameter
+include::{snippets}/should_document_get_license_report/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_license_report/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_license_report/http-response.adoc[]

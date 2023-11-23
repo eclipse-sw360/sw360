@@ -20,6 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -45,6 +47,8 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -63,6 +67,9 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360LicenseService licenseServiceMock;
+
+    @MockBean
+    private SW360ReportService sw360ReportServiceMock;
 
     private License license, license3;
     private Obligation obligation1, obligation2;
@@ -119,6 +126,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         Mockito.doNothing().when(licenseServiceMock).uploadLicense(any(), any(), anyBoolean(), anyBoolean());
         given(this.licenseServiceMock.importOsadlInformation(any())).willReturn(requestSummary);
         given(this.licenseServiceMock.addLicenseType(any(),any() , any())).willReturn(RequestStatus.SUCCESS);
+        given(this.sw360ReportServiceMock.getLicenseBuffer()).willReturn(ByteBuffer.allocate(10000));
         obligation1 = new Obligation();
         obligation1.setId("0001");
         obligation1.setTitle("Obligation 1");
@@ -345,5 +353,19 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                 .param("licenseType", "wer")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk()).andDo(this.documentationHandler.document());
+    }
+
+    @Test
+    public void should_document_get_license_report() throws Exception{
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/reports")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("module", "licenses")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                    requestParameters(
+                            parameterWithName("module").description("module represent the licenses. Possible values are `<licenses>`")
+                    )));
     }
 }
