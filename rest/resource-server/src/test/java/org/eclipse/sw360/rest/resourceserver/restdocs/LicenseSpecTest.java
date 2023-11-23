@@ -111,6 +111,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         given(this.licenseServiceMock.getLicenses()).willReturn(licenseList);
         given(this.licenseServiceMock.getLicenseById(eq(license.getId()))).willReturn(license);
         given(this.licenseServiceMock.createLicense(any(), any())).willReturn(license3);
+        given(this.licenseServiceMock.updateLicense(any(),any())).willReturn(RequestStatus.SUCCESS);
         Mockito.doNothing().when(licenseServiceMock).deleteLicenseById(any(), any());
         Mockito.doNothing().when(licenseServiceMock).deleteAllLicenseInfo(any());
         Mockito.doNothing().when(licenseServiceMock).importSpdxInformation(any());
@@ -211,6 +212,35 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("OSIApproved").description("The OSI aprroved information, possible values are: " + Arrays.asList(Quadratic.values())),
                                 fieldWithPath("FSFLibre").description("The FSF libre information, possible values are: " + Arrays.asList(Quadratic.values())),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_update_license() throws Exception {
+        Map<String, String> licenseRequestBody = new HashMap<>();
+        licenseRequestBody.put("fullName", "Apache License 4.0");
+        licenseRequestBody.put("note", "Apache License");
+
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(MockMvcRequestBuilders.patch("/api/licenses/" + license.getId())
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(licenseRequestBody))
+                        .header("Authorization", "Bearer" + accessToken)
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("fullName").description("The full name of the license"),
+                                fieldWithPath("shortName").description("The short name of the license, optional"),
+                                subsectionWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("externalLicenseLink").description("The external license link of the license"),
+                                subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
+                                fieldWithPath("text").description("The license's original text"),
+                                fieldWithPath("checked").description("The information, whether the license is already checked, optional and defaults to true"),
+                                subsectionWithPath("OSIApproved").description("The OSI aprroved information, possible values are: " + Arrays.asList(Quadratic.values())),
+                                fieldWithPath("FSFLibre").description("The FSF libre information, possible values are: " + Arrays.asList(Quadratic.values())),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("note").description("The license's note")
                         )));
     }
 

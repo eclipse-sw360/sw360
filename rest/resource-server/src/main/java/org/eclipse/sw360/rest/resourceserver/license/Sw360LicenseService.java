@@ -19,6 +19,7 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -131,6 +132,23 @@ public class Sw360LicenseService {
             checkObligationLevel(obligations, sw360User);
             license.setObligationDatabaseIds(obligationIds);
             license.setObligations(obligations);
+        }
+        return sw360LicenseClient.updateLicense(license, sw360User, sw360User);
+    }
+
+    public RequestStatus updateLicense(License license, User sw360User) throws TException {
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        if (null != license){
+            Set<String> obligationIds = license.getObligationDatabaseIds();
+            if (CommonUtils.isNullOrEmptyCollection(obligationIds)) {
+                license.unsetObligations();
+            } else {
+                List<String> obligationIdList = new ArrayList<>(obligationIds);
+                List<Obligation> obligations = sw360LicenseClient.getObligationsByIds(obligationIdList);
+                checkObligationLevel(obligations, sw360User);
+                license.setObligationDatabaseIds(obligationIds);
+                license.setObligations(obligations);
+            }
         }
         return sw360LicenseClient.updateLicense(license, sw360User, sw360User);
     }
