@@ -319,7 +319,9 @@
                     $("#clearingTeamEmail").removeClass("is-invalid");
                     callback();
                 } else if ($("#clearingType").val() == null) {
-                    $("#clearingTypeErrorMsg").addClass("is-invalid");
+                    $("#clearingType").addClass("is-invalid");
+                    $("#clearingTeamEmail").removeClass("is-invalid");
+                    $("#requestedClearingDate").removeClass("is-invalid");
                     callback();
                 } else {
                     $("#requestedClearingDate").removeClass("is-invalid");

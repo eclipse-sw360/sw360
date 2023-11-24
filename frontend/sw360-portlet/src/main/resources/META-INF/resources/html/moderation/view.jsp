@@ -619,7 +619,7 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function createClearingRequestsTable(tableId, tableData) {
-            let hiddenCol = (tableId === '#clearingRequestsTable') ? [7, 8, 12, 13] : [3, 5, 7, 12, 14];
+            let hiddenCol = (tableId === '#clearingRequestsTable') ? [8, 12, 13] : [3, 5, 7, 12, 14];
             return datatables.create(tableId, {
                 searching: true,
                 deferRender: false, // do not change this value
@@ -628,11 +628,11 @@ AUI().use('liferay-portlet-url', function () {
                     {title: "<liferay-ui:message key="request.id" />", render: {display: renderClearingRequestUrl}, className: 'text-nowrap', width: "5%" },
                     {title: "<liferay-ui:message key="ba-bl.slash.group" />", className: 'text-nowrap', width: "7%" },
                     {title: "<liferay-ui:message key="project" />", width: "15%" },
-                    {title: "<liferay-ui:message key="open.components" />", width: "8%" },
+                    {title: "<liferay-ui:message key="open.releases" />", width: "8%" },
                     {title: "<liferay-ui:message key="status" />", width: "8%" },
                     {title: "<liferay-ui:message key="priority" />", width: "7%" },
                     {title: "<liferay-ui:message key="requesting.user" />", className: 'text-nowrap', width: "10%" },
-                    {title: "<liferay-ui:message key="clearing.progress" />", className: 'text-nowrap', width: "30%" },
+                    {title: "<liferay-ui:message key="clearing.progress" />", width: "15%" },
                     {title: "<liferay-ui:message key="clearing.team" />", className: 'text-nowrap', width: "15%" },
                     {title: "<liferay-ui:message key="created.on" />", className: 'text-nowrap', width: "8%" },
                     {title: "<liferay-ui:message key="preferred.clearing.date" />", width: "8%" },
@@ -735,7 +735,7 @@ AUI().use('liferay-portlet-url', function () {
                     $projCell.html('<liferay-ui:message key="loading" />');
                     if (isOpenCrTable) {
                         $compCell.html('<liferay-ui:message key="loading" />');
-                        //$progressCell.html('<liferay-ui:message key="loading" />');
+                        $progressCell.html('<liferay-ui:message key="loading" />');
                     }
                     value[15] = "";
                 } else {
@@ -773,14 +773,12 @@ AUI().use('liferay-portlet-url', function () {
                             $(pCell.node()).attr("title", progressText);
                         } else if (approvedCount === totalCount) {
                             let progressText = "("+totalCount+"/"+totalCount+") "+"<liferay-ui:message key="all.of.the.directly.linked.releases.are.cleared" />";
-                            $pBar.find('span').text("100%");
-                            $pBar.attr("aria-valuenow", "100").css("width", "100%").addClass("closed");
+                            $pBar.find('span').text("100%").removeClass('text-dark').addClass('text-success');;
                             $(pCell.node()).attr("title", progressText);
                         } else {
                             let progressPercentage = ((approvedCount / totalCount) * 100).toFixed(0),
                                 progressText = "("+ approvedCount +"/"+totalCount+") "+"<liferay-ui:message key="directly.linked.releases.are.cleared" />";
                             $pBar.find("span").text(progressPercentage + "%");
-                            $pBar.attr("aria-valuenow", progressPercentage).css("width", progressPercentage + "%").addClass("progress-bar-animated inProgress");
                             $(pCell.node()).attr("title", progressText);
                         }
                         return $pBar;
@@ -819,11 +817,11 @@ AUI().use('liferay-portlet-url', function () {
                             let clearing = response[i].clearing,
                                 totalCount = (!clearing) ? 0 : d(clearing.newRelease) + d(clearing.underClearing) + d(clearing.sentToClearingTool) + d(clearing.reportAvailable) + d(clearing.approved) + d(clearing.scanAvailable),
                                 approvedCount = (!clearing) ? 0 : d(clearing.reportAvailable) + d(clearing.approved);
-                            compCell.data(approvedCount+"/"+totalCount);
+                            compCell.data(totalCount - approvedCount);
                             if (!totalCount || $(table.cell('#'+crId, 4).node()).find('span.sw360-tt-ClearingRequestState-NEW').text()) {
                                 progressCell.data('<liferay-ui:message key="not.available" />');
                             } else {
-                                progressCell.data($progressBar.clone().append(setProgress(totalCount, approvedCount, $innerDiv.clone(), progressCell)[0].outerHTML)[0].outerHTML);
+                                progressCell.data(setProgress(totalCount, approvedCount, $innerDiv.clone(), progressCell)[0].outerHTML);
                             }
                         }
                         if (projName.length > maxTextLength) {

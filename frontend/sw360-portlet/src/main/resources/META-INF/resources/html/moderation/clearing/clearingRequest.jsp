@@ -236,7 +236,7 @@
                                                 <td><label class="form-group"><liferay-ui:message key="request.status" />:</label></td>
                                                 <td>
                                                 <core_rt:choose>
-                                                    <core_rt:when test="${isEditableForClearingTeam}">
+                                                    <core_rt:when test="${isEditableForClearingTeam or isEditableForRequestingUser}">
                                                         <select class="form-control"
                                                             name="<portlet:namespace/><%=ClearingRequest._Fields.CLEARING_STATE%>">
                                                             <sw360:DisplayEnumOptions type="<%=ClearingRequestState.class%>" selected="${clearingRequest.clearingState}"/>
@@ -436,10 +436,18 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <p><liferay-ui:message key="please.enter.preferred.clearing.date.to.reopen.clearing.request" /></p>
+                    <p><liferay-ui:message key="please.enter.preferred.clearing.date.and.clearing.request.type.to.reopen.clearing.request" /></p>
                     <hr/>
                     <form id="reOpenClearingRequestForm" name="reOpenClearingRequestForm" action="<%=updateClearingRequestURL%>" method="post">
                         <div class="row">
+                            <div class="form-group col-md-6">
+                                <label for="requestedClearingDate" class="mandatory"><liferay-ui:message key="preferred.clearing.date" />:</label>
+                                <input class="datepicker form-control" id="requestedClearingDate" name="<portlet:namespace/><%=ClearingRequest._Fields.REQUESTED_CLEARING_DATE%>" 
+                                    type="text" pattern="\d{4}-\d{2}-\d{2}" placeholder="<liferay-ui:message key='preferred.clearing.date.yyyy.mm.dd' />" required/>
+                                <div class="invalid-feedback">
+                                    <liferay-ui:message key="date.should.be.valid" />!
+                                </div>
+                            </div>
                             <div class="form-group col-md-6">
                                 <label for="clearingType" class="mandatory"><liferay-ui:message
                                         key="clearing.type" />:</label> <select id="clearingType" class="form-control" required
@@ -450,17 +458,6 @@
                                         type="<%=ClearingRequestType.class%>" /> <liferay-ui:message
                                         key="learn.more.about.clearing.request.type" />
                                 </small>
-                            </div>
-                            <div class="form-group col-md-6">
-                                <label for="requestedClearingDate" class="mandatory"><liferay-ui:message
-                                        key="preferred.clearing.date" />:</label> <input
-                                    class="datepicker form-control" id="requestedClearingDate"
-                                    type="text" pattern="\d{4}-\d{2}-\d{2}"
-                                    placeholder="<liferay-ui:message key='preferred.clearing.date.yyyy.mm.dd' />"
-                                    required />
-                                <div class="invalid-feedback">
-                                    <liferay-ui:message key="date.should.be.valid" />
-                                </div>
                             </div>
                         </div>
                         <core_rt:if test="${criticalCount lt 2}">
@@ -684,7 +681,8 @@ require(['jquery', 'modules/dialog', 'modules/validation', 'modules/button', 'br
             $("#requestedClearingDate").addClass("is-invalid");
             callback();
         } else if ($("#clearingType").val() == null){
-            $("#clearingTypeErrorMsg").addClass("is-invalid");
+            $("#clearingType").addClass("is-invalid");
+            $("#requestedClearingDate").removeClass("is-invalid");
             callback();
         } else {
             $("#requestedClearingDate").removeClass("is-invalid");
