@@ -61,6 +61,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
@@ -115,11 +116,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -484,12 +483,34 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Delete a single project.",
-            tags = {"Projects"}
+            tags = {"Projects"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200", description = "Project deleted."
+                    ),
+                    @ApiResponse(
+                            responseCode = "202", description = "Request sent for moderation.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            examples = @ExampleObject(
+                                                    value = "{\"message\": \"Moderation request is created\"}"
+                                            ))
+                            }
+                    ),
+                    @ApiResponse(
+                            responseCode = "409",
+                            description = "The project is used as a linked project. Cannot delete it."
+                    ),
+                    @ApiResponse(
+                            responseCode = "500", description = "Failed to delete project."
+                    )
+            }
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}", method = RequestMethod.DELETE)
     public ResponseEntity deleteProject(
             @Parameter(description = "Project ID")
-            @PathVariable("id") String id) throws TException {
+            @PathVariable("id") String id
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = projectService.deleteProject(id, sw360User);
         if (requestStatus == RequestStatus.SUCCESS) {
@@ -1908,7 +1929,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throw new SW360Exception(e.getMessage());
         }
     }
-    
+
     @Operation(
             description = "Get license clearing info for a project.",
             tags = {"Projects"}
@@ -1919,7 +1940,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        
+
         Project proj = projectService.getClearingInfo(sw360Project, sw360User);
         ReleaseClearingStateSummary clearingInfo = proj.getReleaseClearingStateSummary();
         int releaseCount = clearingInfo.newRelease + clearingInfo.sentToClearingTool + clearingInfo.underClearing + clearingInfo.reportAvailable + clearingInfo.scanAvailable + clearingInfo.approved;
@@ -1977,7 +1998,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
             Set<String> securityResponsibles = sw360Project.getSecurityResponsibles();
             restControllerHelper.addEmbeddedSecurityResponsibles(userHalResource, securityResponsibles);
-            
+
             String clearingTeam = sw360Project.getClearingTeam();
             if (clearingTeam != null) {
                 restControllerHelper.addEmbeddedClearingTeam(userHalResource, clearingTeam, "clearingTeam");
