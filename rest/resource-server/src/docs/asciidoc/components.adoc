@@ -48,6 +48,23 @@ include::{snippets}/should_document_get_components_with_all_details/curl-request
 ===== Example response
 include::{snippets}/should_document_get_components_with_all_details/http-response.adoc[]
 
+[[resources-components-list-with-lucenesearch]]
+==== Listing by lucene search
+
+A `GET` request will list all of the service's components by lucenesearch.
+
+===== Response structure
+include::{snippets}/should_document_get_components_by_lucene_search/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_components_by_lucene_search/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_components_by_lucene_search/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_components_by_lucene_search/links.adoc[]
+
 [[resources-recent-components-list]]
 ==== Listing recent components
 

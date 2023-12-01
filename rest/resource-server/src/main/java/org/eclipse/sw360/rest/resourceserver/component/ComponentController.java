@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -90,6 +91,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -141,6 +144,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @RequestParam(value = "fields", required = false) List<String> fields,
             @Parameter(description = "Flag to get components with all details.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            @Parameter(description = "lucenesearch parameter to filter the components.")
+            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
 
@@ -150,42 +155,73 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         String queryString = request.getQueryString();
         Map<String, String> params = parseQueryString(queryString);
 
-        if (name != null && !name.isEmpty()) {
-            allComponents.addAll(componentService.searchComponentByName(params.get("name").replace("%20"," ")));
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (luceneSearch) {
+            if (CommonUtils.isNotNullEmptyOrWhitespace(componentType)) {
+                Set<String> values = CommonUtils.splitToSet(componentType);
+                filterMap.put(Component._Fields.COMPONENT_TYPE.getFieldName(), values);
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+                Set<String> values = CommonUtils.splitToSet(name);
+                values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+                filterMap.put(Component._Fields.NAME.getFieldName(), values);
+            }
+            allComponents.addAll(componentService.refineSearch(filterMap, sw360User));
         } else {
-            allComponents.addAll(componentService.getComponentsForUser(sw360User));
+            if (name != null && !name.isEmpty()) {
+                allComponents.addAll(componentService.searchComponentByName(params.get("name").replace("%20", " ")));
+            } else {
+                allComponents.addAll(componentService.getComponentsForUser(sw360User));
+            }
         }
 
-        PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable, allComponents, SW360Constants.TYPE_COMPONENT);
+        PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                allComponents, SW360Constants.TYPE_COMPONENT);
 
+        CollectionModel resources = getFilteredComponentResources(componentType, fields, allDetails, luceneSearch,
+                sw360User, paginationResult);
+        return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
+    private CollectionModel getFilteredComponentResources(String componentType, List<String> fields, boolean allDetails,
+            boolean luceneSearch, User sw360User, PaginationResult<Component> paginationResult)
+            throws URISyntaxException {
         List<EntityModel<Component>> componentResources = new ArrayList<>();
-        paginationResult.getResources().stream()
-                .filter(component -> componentType == null || (component.isSetComponentType() && componentType.equals(component.componentType.name())))
-                .forEach(c -> {
-                    EntityModel<Component> embeddedComponentResource = null;
-                    if (!allDetails) {
-                        Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
-                        embeddedComponentResource = EntityModel.of(embeddedComponent);
-                    } else {
-                        try {
-                            embeddedComponentResource = createHalComponent(c, sw360User);
-                        } catch (TException e) {
-                            throw new RuntimeException(e);
-                        }
-                        if (embeddedComponentResource == null) {
-                            return;
-                        }
-                    }
-                    componentResources.add(embeddedComponentResource);
-                });
+        Consumer<Component> consumer = c -> {
+            EntityModel<Component> embeddedComponentResource = null;
+            if (!allDetails) {
+                Component embeddedComponent = restControllerHelper.convertToEmbeddedComponent(c, fields);
+                embeddedComponentResource = EntityModel.of(embeddedComponent);
+            } else {
+                try {
+                    embeddedComponentResource = createHalComponent(c, sw360User);
+                } catch (TException e) {
+                    throw new RuntimeException(e);
+                }
+                if (embeddedComponentResource == null) {
+                    return;
+                }
+            }
+            componentResources.add(embeddedComponentResource);
+        };
+
+        if (luceneSearch) {
+            paginationResult.getResources().stream().forEach(consumer);
+        } else {
+            paginationResult.getResources().stream()
+                    .filter(component -> componentType == null
+                            || (component.isSetComponentType() && componentType.equals(component.componentType.name())))
+                    .forEach(consumer);
+        }
 
         CollectionModel resources;
-        if (componentResources.size() == 0) {
+        if (componentResources.isEmpty()) {
             resources = restControllerHelper.emptyPageResource(Component.class, paginationResult);
         } else {
             resources = restControllerHelper.generatePagesResource(paginationResult, componentResources);
         }
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+        return resources;
     }
 
     private Map<String, String> parseQueryString(String queryString) {
