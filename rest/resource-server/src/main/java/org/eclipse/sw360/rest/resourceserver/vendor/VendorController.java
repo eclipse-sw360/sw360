@@ -31,8 +31,15 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.springframework.data.domain.Pageable;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -40,6 +47,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -52,7 +60,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
     private final Sw360VendorService vendorService;
 
     @NonNull
-    private final RestControllerHelper<?> restControllerHelper;
+    private final RestControllerHelper restControllerHelper;
 
     @Operation(
             summary = "List all of the service's vendors.",
@@ -60,17 +68,28 @@ public class VendorController implements RepresentationModelProcessor<Repository
             tags = {"Vendor"}
     )
     @RequestMapping(value = VENDORS_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<Vendor>>> getVendors() {
+    public ResponseEntity<CollectionModel<EntityModel<Vendor>>> getVendors(
+            Pageable pageable,
+            HttpServletRequest request
+            ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         List<Vendor> vendors = vendorService.getVendors();
 
+        PaginationResult<Vendor> paginationResult = restControllerHelper.createPaginationResult(request, pageable, vendors, SW360Constants.TYPE_VENDOR);
         List<EntityModel<Vendor>> vendorResources = new ArrayList<>();
-        vendors.forEach(v -> {
+        for (Vendor v: paginationResult.getResources()) {
             Vendor embeddedVendor = restControllerHelper.convertToEmbeddedVendor(v);
             vendorResources.add(EntityModel.of(embeddedVendor));
-        });
+        }
 
-        CollectionModel<EntityModel<Vendor>> resources = CollectionModel.of(vendorResources);
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+        CollectionModel<EntityModel<Vendor>> resources;
+        if (vendors.size() == 0) {
+            resources = restControllerHelper.emptyPageResource(Vendor.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, vendorResources);
+        }
+
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
     }
 
     @Operation(
