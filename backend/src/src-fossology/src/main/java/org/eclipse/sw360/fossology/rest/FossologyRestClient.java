@@ -160,6 +160,7 @@ public class FossologyRestClient {
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         headers.set("Authorization", "Bearer " + token);
         headers.set("folderId", folderId);
+        headers.set("uploadType", "file");
 
         if (CommonUtils.isNotNullEmptyOrWhitespace(uploadDescription)) {
             headers.set("uploadDescription", uploadDescription);
