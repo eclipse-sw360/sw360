@@ -50,6 +50,23 @@ include::{snippets}/should_document_get_release_all_details/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_get_release_all_details/links.adoc[]
 
+[[resources-releases-list-lucene-search]]
+==== Listing releases by lucene search
+
+A `GET` request will list all of the service's releases by lucene search.
+
+===== Response structure
+include::{snippets}/should_document_get_releases_by_lucene_search/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_by_lucene_search/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_by_lucene_search/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_releases_by_lucene_search/links.adoc[]
+
 
 [[resources-recent-releases-list]]
 ==== Listing recent releases
