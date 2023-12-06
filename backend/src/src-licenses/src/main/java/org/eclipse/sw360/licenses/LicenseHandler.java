@@ -28,6 +28,7 @@ import org.ektorp.http.HttpClient;
 import com.cloudant.client.api.CloudantClient;
 
 import org.apache.thrift.TException;
+import java.nio.ByteBuffer;
 
 import java.net.MalformedURLException;
 import java.util.List;
@@ -77,6 +78,16 @@ public class LicenseHandler implements LicenseService.Iface {
     @Override
     public List<License> getLicenseSummaryForExport() throws TException {
         return handler.getLicenseSummaryForExport();
+    }
+
+    @Override
+    public ByteBuffer downloadExcel(String token) throws TException {
+        return handler.downloadExcel(token);
+    }
+
+    @Override
+    public ByteBuffer getLicenseReportDataStream() throws TException {
+        return handler.getLicenseReportDataStream();
     }
 
     @Override

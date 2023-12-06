@@ -48,6 +48,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
 
     private static final String PROJECTS = "projects";
 
+    private static final String LICENSES = "licenses";
+
     public static final String REPORTS_URL = "/reports";
 
     private static final String CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -89,15 +91,17 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         try {
             if (validateMimeType(mimeType)) {
                 switch (module) {
-                case PROJECTS:
-                    getProjectReports(withLinkedReleases, mailRequest, response, request, sw360User, module);
-                    break;
-
-                case COMPONENTS:
-                    getComponentsReports(withLinkedReleases, mailRequest, response, request, sw360User, module);
-                    break;
-                default:
-                    break;
+                    case PROJECTS:
+                        getProjectReports(withLinkedReleases, mailRequest, response, request, sw360User, module);
+                        break;
+                    case COMPONENTS:
+                        getComponentsReports(withLinkedReleases, mailRequest, response, request, sw360User, module);
+                        break;
+                    case LICENSES:
+                        getLicensesReports(response, sw360User, module);
+                        break;
+                    default:
+                        break;
                 }
             } else {
                 throw new TException("Error : Mimetype either should be : xls/xlsx");
@@ -139,25 +143,41 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         }
     }
 
+    private void getLicensesReports(HttpServletResponse response, User sw360User, String module) throws TException {
+        try {
+            downloadExcelReport(false, response, sw360User, module);
+        } catch (Exception e) {
+            throw new TException(e.getMessage());
+        }
+    }
+
     private void downloadExcelReport(boolean withLinkedReleases, HttpServletResponse response, User user, String module)
             throws TException {
         try {
             ByteBuffer buffer = null;
             switch (module) {
-            case PROJECTS:
-                buffer = sw360ReportService.getProjectBuffer(user, withLinkedReleases);
-                break;
-            case COMPONENTS:
-                buffer = sw360ReportService.getComponentBuffer(user, withLinkedReleases);
-                break;
-            default:
-                break;
+                case PROJECTS:
+                    buffer = sw360ReportService.getProjectBuffer(user, withLinkedReleases);
+                    break;
+                case COMPONENTS:
+                    buffer = sw360ReportService.getComponentBuffer(user, withLinkedReleases);
+                    break;
+                case LICENSES:
+                    buffer = sw360ReportService.getLicenseBuffer();
+                    break;
+                default:
+                    break;
             }
             if (null == buffer) {
                 throw new TException("No data available for the user " + user.getEmail());
             }
             response.setContentType(CONTENT_TYPE);
-            String filename = String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
+            String filename;
+            if(module.equals(LICENSES)) {
+                filename = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
+            } else {
+                filename = String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
+            }
             response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
             copyDataStreamToResponse(response, buffer);
         } catch (Exception e) {
@@ -200,14 +220,17 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         try {
             ByteBuffer buffer = null;
             switch (module) {
-            case PROJECTS:
-                buffer = sw360ReportService.getReportStreamFromURl(user, extendedByReleases, token);
-                break;
-            case COMPONENTS:
-                buffer = sw360ReportService.getComponentReportStreamFromURl(user, extendedByReleases, token);
-                break;
-            default:
-                break;
+                case PROJECTS:
+                    buffer = sw360ReportService.getReportStreamFromURl(user, extendedByReleases, token);
+                    break;
+                case COMPONENTS:
+                    buffer = sw360ReportService.getComponentReportStreamFromURl(user, extendedByReleases, token);
+                    break;
+                case LICENSES:
+                    buffer = sw360ReportService.getLicenseReportStreamFromURl(token);
+                    break;
+                default:
+                    break;
             }
             if (null == buffer) {
                 throw new TException("No data available for the user " + user.getEmail());

@@ -10,6 +10,8 @@
  */
 package org.eclipse.sw360.licenses.db;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
@@ -30,6 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.licenses.tools.SpdxConnector;
+import org.eclipse.sw360.exporter.LicenseExporter;
 import org.eclipse.sw360.licenses.tools.OSADLObligationConnector;
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
@@ -44,6 +47,10 @@ import com.cloudant.client.api.model.Response;
 import com.google.common.collect.Sets;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.function.Function;
 import java.net.MalformedURLException;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -164,6 +171,51 @@ public class LicenseDatabaseHandler {
         fillLicenseForOrganisation(organisation, license);
 
         return license;
+    }
+
+    private LicenseExporter getLicenseExporterObject() {
+        ThriftClients thriftClients = new ThriftClients();
+        Function<Logger,List<LicenseType>> getLicenseTypes = log -> {
+            LicenseService.Iface client = thriftClients.makeLicenseClient();
+            try {
+                return client.getLicenseTypes();
+            } catch (TException e) {
+                log.error("Error getting license type list.", e);
+                return Collections.emptyList();
+            }
+        };
+        return new LicenseExporter(getLicenseTypes);
+    }
+
+    public ByteBuffer downloadExcel(String token) throws SW360Exception {
+        try {
+            ThriftClients thriftClients = new ThriftClients();
+            Function<Logger,List<LicenseType>> getLicenseTypes = log -> {
+                LicenseService.Iface client = thriftClients.makeLicenseClient();
+                try {
+                    return client.getLicenseTypes();
+                } catch (TException e) {
+                    log.error("Error getting license type list.", e);
+                    return Collections.emptyList();
+                }
+            };
+            LicenseExporter exporter = new LicenseExporter(getLicenseTypes);
+            InputStream stream = exporter.downloadExcelSheet(token);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    public ByteBuffer getLicenseReportDataStream() throws TException {
+        try {
+            List<License> licenses = getLicenseSummaryForExport();
+            LicenseExporter exporter = getLicenseExporterObject();
+            InputStream stream = exporter.makeExcelExport(licenses);
+            return ByteBuffer.wrap(IOUtils.toByteArray(stream));
+        }catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
     }
 
     public License getLicenseForOrganisationWithOwnModerationRequests(String id, String organisation, User user) throws SW360Exception {

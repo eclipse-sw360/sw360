@@ -13,6 +13,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ public class SW360ReportService {
     ThriftClients thriftClients = new ThriftClients();
     ProjectService.Iface projectclient = thriftClients.makeProjectClient();
     ComponentService.Iface componentclient = thriftClients.makeComponentClient();
+    LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
 
     public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases) throws TException {
         return projectclient.getReportDataStream(user, extendedByReleases);
@@ -80,9 +82,18 @@ public class SW360ReportService {
         return componentclient.getComponentReportDataStream(sw360User, withLinkedReleases);
     }
 
+    public ByteBuffer getLicenseBuffer() throws TException {
+        return licenseClient.getLicenseReportDataStream();
+    }
+
     public ByteBuffer getComponentReportStreamFromURl(User user, boolean extendedByReleases, String token)
             throws TException {
         return componentclient.downloadExcel(user, extendedByReleases, token);
+    }
+
+    public ByteBuffer getLicenseReportStreamFromURl(String token)
+            throws TException {
+        return licenseClient.downloadExcel(token);
     }
 
     public void sendComponentExportSpreadsheetSuccessMail(String emailURL, String email) throws TException {
