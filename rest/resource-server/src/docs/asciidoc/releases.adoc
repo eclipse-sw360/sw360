@@ -257,6 +257,20 @@ include::{snippets}/should_document_get_release_attachment_bundle/curl-request.a
 ===== Example response
 include::{snippets}/should_document_get_release_attachment_bundle/http-response.adoc[]
 
+[[resources-release-external-id]]
+==== Get releases by external IDs
+
+A `GET` request will allow you to get releases by external IDs.
+Put the external ID as query parameter and its value as parameter's value.
+
+===== Example request
+
+include::{snippets}/should_document_get_releases_by_externalIds/curl-request.adoc[]
+
+===== Example response
+
+include::{snippets}/should_document_get_releases_by_externalIds/http-response.adoc[]
+
 [[resources-release-attachment-delete]]
 ==== Delete attachments
 
