@@ -187,6 +187,12 @@
                     ],
                     "columnDefs": [
                         {
+                            "targets": [1],
+                            "createdCell": function(td, cellData, rowData, row, col) {
+                                $(td).css("word-break", "break-all");
+                            }
+                        },
+                        {
                             "targets": [ 6, 7 ],
                             "createdCell": function (td, cellData, rowData, row, col) {
                                 if (rowData.checkStatus === 'REJECTED') {
