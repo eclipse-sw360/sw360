@@ -108,11 +108,11 @@ To migrate it is recommended to do this in the following order:
 
 ### 17.0.0 -> 17.0.1
 
-- `054_repair_broken_releasevulnerability.py`
+- `059_repair_broken_releasevulnerability.py`
 
 ### 17.0.1 -> 18.0.0
 
-- `056_migrate_project_dependency_network.py`
+- `060_migrate_project_dependency_network.py`
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
