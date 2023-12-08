@@ -489,6 +489,20 @@ include::{snippets}/should_document_delete_project/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_delete_project/http-response.adoc[]
 
+[[resources-project-link-projects]]
+==== Link project to the projects
+
+A `POST` request is used to link project to the projects. Please pass an array of project ids as request body.
+
+===== Request structure 1
+Pass an array of project ids as request body.
+
+===== Example request 1
+include::{snippets}/should_document_link_projects/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_link_projects/http-response.adoc[]
+
 [[resources-project-link-releases]]
 ==== Link Releases to the project
 

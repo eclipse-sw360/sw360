@@ -128,6 +128,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
     }
 
+    public String getCyclicLinkedProjectPath(Project project, User user) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        String cyclicLinkedProjectPath = sw360ProjectClient.getCyclicLinkedProjectPath(project, user);
+        return cyclicLinkedProjectPath;
+    }
+
     public Set<Project> searchLinkingProjects(String projectId, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         return sw360ProjectClient.searchLinkingProjects(projectId, sw360User);

@@ -390,6 +390,17 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project6.setClearingState(ProjectClearingState.OPEN);
         project6.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
 
+        Project project7 = new Project();
+        project7.setId("345678");
+        project7.setName("project1");
+        project7.setVersion("1");
+        project7.setCreatedBy(testUserId);
+        project7.setProjectType(ProjectType.PRODUCT);
+        project7.setState(ProjectState.ACTIVE);
+        project7.setLinkedProjects(new HashMap<String, ProjectProjectRelationship>());
+        project7.setClearingState(ProjectClearingState.OPEN);
+        project7.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
+
         Release release5 = new Release();
         release5.setId("37652765121");
         release5.setName("Angular 2.3.1");
@@ -454,6 +465,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getProjectForUserById(eq(project4.getId()), any())).willReturn(project4);
         given(this.projectServiceMock.getProjectForUserById(eq(project5.getId()), any())).willReturn(project5);
         given(this.projectServiceMock.getProjectForUserById(eq(project6.getId()), any())).willReturn(project6);
+        given(this.projectServiceMock.getProjectForUserById(eq(project7.getId()), any())).willReturn(project7);
         given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(projectForAtt);
         given(this.projectServiceMock.getProjectForUserById(eq(SPDXProject.getId()), any())).willReturn(SPDXProject);
         given(this.projectServiceMock.getProjectForUserById(eq(cycloneDXProject.getId()), any())).willReturn(cycloneDXProject);
@@ -468,6 +480,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.deleteProject(eq(project.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(projectReleaseRelationshipResponseBody);
         given(this.projectServiceMock.getClearingInfo(eq(project), any())).willReturn(project);
+        given(this.projectServiceMock.getCyclicLinkedProjectPath(eq(project7), any())).willReturn("");
+        given(this.projectServiceMock.updateProject(eq(project7), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(
                 new Project("Emerald Web")
                         .setVersion("1.0.2")
@@ -1677,6 +1691,22 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         subsectionWithPath("_embedded.sw360:packages").description("An array of linked <<resources-packages, Packages resources>>"),
                         subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                         subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"))));
+    }
+
+    @Test
+    public void should_document_link_projects() throws Exception {
+        MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + "1234567" + "/linkProjects");
+        List<String> projectIds = Arrays.asList("345678");
+
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(projectIds))
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isCreated())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("Message regarding successfully linked project(s)").description("project linked to respective project ids").optional()
+                        )));
     }
 
     @Test
