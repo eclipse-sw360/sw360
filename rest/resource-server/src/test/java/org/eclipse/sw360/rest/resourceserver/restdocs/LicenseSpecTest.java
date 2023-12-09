@@ -121,7 +121,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         given(this.licenseServiceMock.updateLicense(any(),any())).willReturn(RequestStatus.SUCCESS);
         Mockito.doNothing().when(licenseServiceMock).deleteLicenseById(any(), any());
         Mockito.doNothing().when(licenseServiceMock).deleteAllLicenseInfo(any());
-        Mockito.doNothing().when(licenseServiceMock).importSpdxInformation(any());
+        given(this.licenseServiceMock.importSpdxInformation(any())).willReturn(requestSummary);
         Mockito.doNothing().when(licenseServiceMock).getDownloadLicenseArchive(any(), any(), any());
         Mockito.doNothing().when(licenseServiceMock).uploadLicense(any(), any(), anyBoolean(), anyBoolean());
         given(this.licenseServiceMock.importOsadlInformation(any())).willReturn(requestSummary);
@@ -319,7 +319,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_import_spdx_info() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(post("/api/licenses/" + "/import/SPDX")
+        mockMvc.perform(get("/api/licenses/" + "/import/SPDX")
                 .header("Authorization", "Bearer " + accessToken)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
@@ -339,7 +339,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
     @Test   		
     public void should_document_import_osadl_info() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(post("/api/licenses/import/OSADL")
+        mockMvc.perform(get("/api/licenses/import/OSADL")
                 .header("Authorization", "Bearer " + accessToken)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());

@@ -254,11 +254,15 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = LICENSES_URL + "/import/SPDX", method = RequestMethod.POST)
+    @RequestMapping(value = LICENSES_URL + "/import/SPDX", method = RequestMethod.GET)
     public ResponseEntity importSPDX() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        licenseService.importSpdxInformation(sw360User);
-        return new ResponseEntity<>(HttpStatus.OK);
+        RequestSummary requestSummary = licenseService.importSpdxInformation(sw360User);
+        requestSummary.setMessage("SPDX license has imported successfully");
+        requestSummary.unsetTotalAffectedElements();
+        requestSummary.unsetTotalElements();
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestSummary,status);
     }
 
     @Operation(
@@ -309,7 +313,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Import OSADL information.",
             tags = {"Licenses"}
     )
-    @RequestMapping(value = LICENSES_URL + "/import/OSADL", method = RequestMethod.POST)
+    @RequestMapping(value = LICENSES_URL + "/import/OSADL", method = RequestMethod.GET)
     public ResponseEntity<RequestSummary> importOsadlInfo() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary=licenseService.importOsadlInformation(sw360User);

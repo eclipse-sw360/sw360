@@ -193,10 +193,11 @@ public class Sw360LicenseService {
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new LicenseService.Client(protocol);
     }
-    public void importSpdxInformation(User sw360User) throws TException {
+    public RequestSummary importSpdxInformation(User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             RequestSummary allSPDXLicenseStatus = sw360LicenseClient.importAllSpdxLicenses(sw360User);
+            return allSPDXLicenseStatus;
         } else {
             throw new HttpMessageNotReadableException("Unable to import All Spdx license. User is not admin");
         }
@@ -258,7 +259,7 @@ public class Sw360LicenseService {
 
     public RequestSummary importOsadlInformation(User sw360User) throws TException {
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+        if (sw360LicenseClient != null && PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             RequestSummary osdlLicenseStatus = sw360LicenseClient.importAllOSADLLicenses(sw360User);
             return osdlLicenseStatus;
         } else {
