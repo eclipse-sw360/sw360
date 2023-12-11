@@ -106,6 +106,7 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
                         ),
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:obligations[]title").description("The title of the obligation"),
+                                subsectionWithPath("_embedded.sw360:obligations[]obligationType").description("The obligationType of the obligation"),
                                 subsectionWithPath("_embedded.sw360:obligations").description("An array of <<resources-obligations, Obligations resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
