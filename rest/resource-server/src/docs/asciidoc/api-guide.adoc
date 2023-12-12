@@ -306,4 +306,4 @@ include::clearingRequests.adoc[]
 include::obligations.adoc[]
 include::moderationRequests.adoc[]
 include::fossology.adoc[]
-
+include::schedule.adoc[]
