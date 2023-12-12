@@ -12,6 +12,7 @@
 package org.eclipse.sw360.rest.resourceserver.license;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -20,6 +21,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -38,6 +40,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatus.Series;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
@@ -48,10 +51,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -176,6 +177,43 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         }
         HalResource<License> halResource = createHalLicense(licenseUpdate);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = LICENSES_URL+ "/{id}/whitelist", method = RequestMethod.PATCH)
+    public ResponseEntity<EntityModel<License>> updateWhitelist(
+            @PathVariable("id") String licenseId,
+            @RequestBody Map<String, Boolean> reqBodyMaps) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        License license = licenseService.getLicenseById(licenseId);
+        Set<String> obligationIdsByLicense = new HashSet<>();
+        if (!CommonUtils.isNullOrEmptyCollection(license.getObligationDatabaseIds())) {
+            obligationIdsByLicense = license.getObligationDatabaseIds();
+        }
+        Map<String, Boolean> obligationIdsRequest = reqBodyMaps.entrySet().stream()
+                .collect(Collectors.toMap(reqBodyMap-> reqBodyMap.getKey(), reqBodyMap -> reqBodyMap.getValue()));
+        Set<String> obligationIds = obligationIdsRequest.keySet();
+
+        Set<String> commonExtIds = Sets.intersection(obligationIdsByLicense, obligationIds);
+        Set<String> diffIds = Sets.difference(obligationIdsByLicense, obligationIds);
+        if (commonExtIds.size() != obligationIds.size()) {
+            throw new HttpMessageNotReadableException("Obligation Ids not in license!" + license.getShortname());
+        }
+
+        Set<String> obligationIdTrue = licenseService.getIdObligationsContainWhitelist(sw360User, licenseId, diffIds);
+        obligationIdTrue.addAll(restControllerHelper.getObligationIdsFromRequestWithValueTrue(reqBodyMaps));
+
+        RequestStatus requestStatus = licenseService.updateWhitelist(obligationIdTrue, licenseId, sw360User);
+        HalResource<License> halResource;
+        if (requestStatus == RequestStatus.SENT_TO_MODERATOR) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        } else if (requestStatus == RequestStatus.SUCCESS) {
+            License licenseUpdate = licenseService.getLicenseById(licenseId);
+            halResource = createHalLicense(licenseUpdate);
+            return new ResponseEntity<>(halResource, HttpStatus.OK);
+        } else {
+            return new ResponseEntity("Update Whitelist to Obligation Fail!",HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @Operation(

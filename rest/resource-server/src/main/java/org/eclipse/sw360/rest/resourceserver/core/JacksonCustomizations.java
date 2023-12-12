@@ -1098,7 +1098,6 @@ public class JacksonCustomizations {
                 "id",
                 "revision",
                 "reviewdate",
-                "obligations",
                 "obligationListId",
                 "osiapproved",
                 "fsflibre",
