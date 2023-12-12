@@ -96,6 +96,20 @@ include::{snippets}/should_document_update_license/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_update_license/links.adoc[]
 
+[[resources-update-whitelist-license]]
+==== Update whitelist for license's obligations
+
+A `PATCH` request will update whitelist for license's obligations
+
+===== Response structure
+include::{snippets}/should_document_update_whitelist_license/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_whitelist_license/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_whitelist_license/http-response.adoc[]
+
 [[resources-license-link-obligation]]
 ==== Link obligations to license
 
