@@ -282,6 +282,11 @@ service LicenseService {
      **/
     list<Obligation> getObligationsByIds( 1: list<string> ids);
 
+    /**
+     * get obligations with license id
+     **/
+    list<Obligation> getObligationsByLicenseId( 1: string id);
+
     LicenseType getLicenseTypeById( 1: string id);
 
     /**

@@ -31,6 +31,23 @@ include::{snippets}/should_document_get_licenses/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_get_licenses/links.adoc[]
 
+[[resources-obligation-list]]
+==== Listing obligations
+
+A `GET` request will list obligations of license.
+
+===== Response structure
+include::{snippets}/should_document_get_obligations_by_license/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_obligations_by_license/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_obligations_by_license/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_obligations_by_license/links.adoc[]
+
 [[resources-license-get]]
 ==== Get a single license
 
