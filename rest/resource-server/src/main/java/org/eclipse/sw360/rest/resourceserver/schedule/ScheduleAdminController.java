@@ -17,6 +17,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -30,20 +31,20 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-
+    
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
-public class ScheduleAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
+public class ScheduleAdminController implements RepresentationModelProcessor<RepositoryLinksResource>  {
     public static final String SCHEDULE_URL = "/schedule";
-    
+
     @NonNull
     private final RestControllerHelper restControllerHelper;
-    
+
     @NonNull
     private Sw360ScheduleService scheduleService;
-    
+
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
@@ -55,6 +56,54 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
     public ResponseEntity<?> unscheduleAllServices()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelAllServices(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestStatus, status);
+    }
+    
+    @RequestMapping(value = SCHEDULE_URL + "/cveService", method = RequestMethod.POST)
+    public ResponseEntity<?> scheduleCve()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.scheduleCveSearch(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestSummary, status);
+    }
+    
+    @RequestMapping(value = SCHEDULE_URL + "/unscheduleCve", method = RequestMethod.DELETE)
+    public ResponseEntity<?> unscheduleCveSearch()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.cancelCveSearch(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestStatus, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/deleteAttachment", method = RequestMethod.POST)
+    public ResponseEntity<?> scheduleDeleteAttachment()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.deleteAttachmentService(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestSummary, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/unScheduleDeleteAttachment", method = RequestMethod.DELETE)
+    public ResponseEntity<?> unscheduleDeleteAttachment()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.cancelDeleteAttachment(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestStatus, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/DeleteOldAttachment", method = RequestMethod.DELETE)
+    public ResponseEntity<?> attachmentDeleteLocalFS()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.cancelAttachmentDeletionLocalFS(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestStatus, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/cveSearch", method = RequestMethod.POST)
+    public ResponseEntity<?> cveSearch()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.triggerCveSearch(sw360User);
         HttpStatus status = HttpStatus.OK;
         return new ResponseEntity<>(requestStatus, status);
     }
