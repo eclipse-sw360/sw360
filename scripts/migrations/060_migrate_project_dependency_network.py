@@ -16,10 +16,10 @@
 # example, server address and db name should be parameterized, the code
 # reorganized into a single class or function, etc.
 #
-#This script is used to enable the dependency management function.
-#To enable the function, you should also enable this function by setting
-#"enable.flexible.project.release.relationship" as "true"
-#in the "sw360.property" file.
+# This script is used to enable the dependency management function.
+# To enable the function, you should also enable this function by setting
+# "enable.flexible.project.release.relationship" as "true"
+# in the "sw360.property" file.
 #
 # ------------------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ get_projects_with_releaseIdToUsage_field_query = {"selector": {"type": {"$eq": "
 
 def get_children_node(id, createBy, createOn):
     get_release_by_id = {"selector":{"type": {"$eq":"release"}, "_id":{"$eq":id}}}
-    release_by_id = db.find(get_release_by_id)[0]
+    release_by_id = list(db.find(get_release_by_id))[0]
 
     children_nodes = []
     if len(release_by_id) > 0:
@@ -80,18 +80,18 @@ def applyTransferData(project, log):
     updatedDocId['id'] = project.get('_id')
     if not DRY_RUN:
         db.save(project)
-        print 'Add field ' + newFieldName + ' done for project ' + project.get('_id')
+        print ('Add field ' + newFieldName + ' done for project ' + project.get('_id'))
         log['Success updated project'].append(updatedDocId)
     else:
         log['Project will be update with DRY RUN'].append(updatedDocId)
 
 
 def run():
-    print 'Getting all project with field releaseIdToUsage'
+    print ('Getting all project with field releaseIdToUsage')
     project_with_releaseIdToUsage_field = db.find(get_projects_with_releaseIdToUsage_field_query)
 
     for project in project_with_releaseIdToUsage_field:
-        print 'migrating for project: ' + project["_id"]
+        print ('migrating for project: ' + project["_id"])
         dependency_network = []
         try:
             for release_id, relation_with_project in project.get(releaseIdToUsageFieldName).items():
@@ -127,5 +127,5 @@ def writeLog():
 startTime = time.time()
 run()
 writeLog()
-print '\nTime of migration: ' + "{0:.2f}".format(time.time() - startTime) + 's'
+print ('\nTime of migration: ' + "{0:.2f}".format(time.time() - startTime) + 's')
 
