@@ -44,6 +44,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
+import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
@@ -119,6 +120,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(EmbeddedProjectDTO.class, Sw360Module.EmbeddedProjectDTOMixin.class);
             setMixInAnnotation(ReleaseNode.class, Sw360Module.ReleaseNodeMixin.class);
             setMixInAnnotation(RestrictedResource.class, Sw360Module.RestrictedResourceMixin.class);
+            setMixInAnnotation(RestApiToken.class, Sw360Module.RestApiTokenMixin.class);
 
             // Make spring doc aware of the mixin(s)
             SpringDocUtils.getConfig()
@@ -2211,6 +2213,20 @@ public class JacksonCustomizations {
                 "setComponents"
         })
         public abstract static class RestrictedResourceMixin extends RestrictedResource {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setName",
+                "setCreatedOn",
+                "setToken",
+                "setNumberOfDaysValid",
+                "authoritiesIterator",
+                "authoritiesSize",
+                "setAuthorities",
+                "token"
+        })
+        public abstract static class RestApiTokenMixin extends RestApiToken {
         }
     }
 }

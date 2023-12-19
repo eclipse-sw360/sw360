@@ -10,14 +10,20 @@
 
 package org.eclipse.sw360.rest.resourceserver.user;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
@@ -27,14 +33,24 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
+import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
+import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_WRITE_ACCESS_USERGROUP;
 
 @Service
 public class Sw360UserService {
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
+    private static final String AUTHORITIES_READ = "READ";
+    private static final String AUTHORITIES_WRITE = "WRITE";
+    private static final String EXPIRATION_DATE_PROPERTY = "expirationDate";
 
     public List<User> getAllUsers() {
         try {
@@ -161,6 +177,86 @@ public class Sw360UserService {
             return sw360UserClient.searchUsersGroup(usergroup);
         } catch (TException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public RestApiToken convertToRestApiToken(Map<String, Object> requestBody, User sw360User) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        if (!requestBody.containsKey(EXPIRATION_DATE_PROPERTY)
+                || CommonUtils.isNullEmptyOrWhitespace(requestBody.get(EXPIRATION_DATE_PROPERTY).toString())) {
+            throw new IllegalArgumentException("expirationDate is a required field.");
+        }
+        if (!(requestBody.get(EXPIRATION_DATE_PROPERTY) instanceof String)) {
+            throw new IllegalArgumentException("expirationDate must be a string.");
+        }
+
+        RestApiToken restApiToken = mapper.convertValue(requestBody, RestApiToken.class);
+        int numberOfExpireDay = getNumberOfExpireDays(requestBody.get(EXPIRATION_DATE_PROPERTY).toString());
+        if (numberOfExpireDay < 0) {
+            throw new IllegalArgumentException("Token expiration days is not valid for user");
+        }
+        restApiToken.setNumberOfDaysValid(numberOfExpireDay);
+        restApiToken.setName(restApiToken.getName().trim());
+        validateRestApiToken(restApiToken, sw360User);
+        restApiToken.setCreatedOn(SW360Utils.getCreatedOnTime());
+
+
+        return restApiToken;
+    }
+
+    private int getNumberOfExpireDays(String requestExpirationDate) {
+        LocalDate expirationDate = LocalDate.parse(requestExpirationDate);
+        return (int) ChronoUnit.DAYS.between(LocalDate.now(), expirationDate);
+    }
+
+    public boolean isTokenNameExisted(User user, String tokenName) {
+        return CommonUtils.nullToEmptyList(user.getRestApiTokens()).stream().anyMatch(t -> t.getName().equals(tokenName));
+    }
+
+    private boolean isValidExpireDays(RestApiToken restApiToken) {
+        String configExpireDays = restApiToken.getAuthorities().contains(AUTHORITIES_WRITE) ?
+                API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS : API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
+
+        try {
+            return restApiToken.getNumberOfDaysValid() >= 0 &&
+                    restApiToken.getNumberOfDaysValid() <= Integer.parseInt(configExpireDays);
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private void validateRestApiToken(RestApiToken restApiToken, User sw360User) {
+        if (CommonUtils.isNullEmptyOrWhitespace(restApiToken.getName())) {
+            throw new IllegalArgumentException("Token name is required.");
+        }
+
+        if (isTokenNameExisted(sw360User, restApiToken.getName())) {
+            throw new IllegalArgumentException("Duplicate token name.");
+        }
+
+        if (!restApiToken.getAuthorities().contains(AUTHORITIES_READ)) {
+            throw new IllegalArgumentException("READ permission is required.");
+        }
+
+
+        if (restApiToken.getAuthorities().contains(AUTHORITIES_WRITE)) {
+            // User needs at least the role which is defined in sw360.properties (default admin)
+            if (!PermissionUtils.isUserAtLeast(API_WRITE_ACCESS_USERGROUP, sw360User))
+                throw new IllegalArgumentException("User permission [WRITE] is not allowed for user");
+            if (!isValidExpireDays(restApiToken)) {
+                throw new IllegalArgumentException("Token expiration days is not valid for user");
+            }
+        }
+
+        // Only READ and WRITE permission is allowed
+        Set<String> otherPermissions = restApiToken.getAuthorities()
+                .stream()
+                .filter(permission -> !permission.equals(AUTHORITIES_READ) && !permission.equals(AUTHORITIES_WRITE))
+                .collect(Collectors.toSet());
+        if (!otherPermissions.isEmpty()) {
+            throw new IllegalArgumentException("Invalid permissions: " + String.join(", ", otherPermissions) + ".");
         }
     }
 }

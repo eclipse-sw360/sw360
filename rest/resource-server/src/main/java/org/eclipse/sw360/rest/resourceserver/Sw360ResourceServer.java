@@ -61,6 +61,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public static final String API_TOKEN_HASH_SALT;
     public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
     public static final String API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
+    public static final UserGroup API_WRITE_ACCESS_USERGROUP;
     public static final Set<String> DOMAIN;
     public static final String REPORT_FILENAME_MAPPING;
     public static final String JWKS_ISSUER_URL;
@@ -80,6 +81,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");
         API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
+        API_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", UserGroup.ADMIN.name()));
         DOMAIN = CommonUtils.splitToSet(props.getProperty("domain",
                 "Application Software, Documentation, Embedded Software, Hardware, Test and Diagnostics"));
         REPORT_FILENAME_MAPPING = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templatemapping", "");

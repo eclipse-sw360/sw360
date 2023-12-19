@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import com.google.common.collect.Sets;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
@@ -19,6 +20,7 @@ import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
@@ -38,6 +40,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.delete;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -96,6 +99,21 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         notificationPreferences.put("projectPROJECT_RESPONSIBLE", true);
         notificationPreferences.put("releaseMODERATORS", true);
 
+        List<RestApiToken> restApiTokens = new ArrayList<>();
+        RestApiToken token1 = new RestApiToken();
+        token1.setName("Token1");
+        token1.setNumberOfDaysValid(10);
+        token1.setCreatedOn("2023-12-19 02:31:52");
+        token1.setAuthorities(Set.of("READ", "WRITE"));
+
+        RestApiToken token2 = new RestApiToken();
+        token2.setName("Token2");
+        token2.setNumberOfDaysValid(11);
+        token2.setCreatedOn("2023-12-19 02:31:52");
+        token2.setAuthorities(Set.of("READ"));
+        restApiTokens.add(token1);
+        restApiTokens.add(token2);
+
         user = new User();
         user.setEmail("admin@sw360.org");
         user.setId("4784587578e87989");
@@ -108,6 +126,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         user.setFormerEmailAddresses(Sets.newHashSet("admin_bachelor@sw360.org"));
         user.setSecondaryDepartmentsAndRoles(secondaryDepartmentsAndRoles);
         user.setNotificationPreferences(notificationPreferences);
+        user.setRestApiTokens(restApiTokens);
         userList.add(user);
 
         List<User> mockUserList = Collections.singletonList(user);
@@ -133,8 +152,15 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         userList.add(user2);
 
         given(this.userServiceMock.getAllUsers()).willReturn(userList);
-        User userWithTokens = new User("admin@sw360.org", "sw360").setId("123456789");
-        given(this.userServiceMock.getUserByEmailOrExternalId(any())).willReturn(user);
+
+        RestApiToken token3 = new RestApiToken();
+        token3.setName("Token3");
+        token3.setNumberOfDaysValid(10);
+        token3.setCreatedOn("2023-12-19 02:31:52");
+        token3.setAuthorities(Set.of("READ", "WRITE"));
+        token3.setToken("MockedToken");
+        given(this.userServiceMock.convertToRestApiToken(any(), any())).willReturn(token3);
+        given(this.userServiceMock.isTokenNameExisted(any(), any())).willReturn(true);
     }
 
     @Test
@@ -347,5 +373,50 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("notificationPreferences").description("User's notification preferences"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_list_all_user_tokens() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/users/tokens")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:restApiTokens[]name").description("The token's name"),
+                                fieldWithPath("_embedded.sw360:restApiTokens[]createdOn").description("The token's created date"),
+                                fieldWithPath("_embedded.sw360:restApiTokens[]numberOfDaysValid").description("The token's number of valid day"),
+                                fieldWithPath("_embedded.sw360:restApiTokens[]authorities").description("The token's authorities"),
+                                subsectionWithPath("_links").description("<<resources-user get,User>> to user resource")
+                        )));
+    }
+
+    @Test
+    public void should_document_create_user_token() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        Map<String, Object> tokenRequest = new HashMap<>();
+        tokenRequest.put("name", "Token3");
+        tokenRequest.put("expirationDate", "2023-12-29");
+        tokenRequest.put("authorities", List.of("READ", "WRITE"));
+        mockMvc.perform(post("/api/users/tokens")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(tokenRequest))
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    public void should_document_revoke_user_token() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(delete("/api/users/tokens")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("name", "Token1")
+                )
+                .andExpect(status().isNoContent());
     }
 }
