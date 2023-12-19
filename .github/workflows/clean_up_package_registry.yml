@@ -26,8 +26,4 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           packages: |-
-            sw360/thrift
-            sw360/clucene
-            sw360/base
-            sw360/binaries
             sw360
