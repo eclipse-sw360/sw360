@@ -22,7 +22,7 @@ from rich import print
 """
 
 dry_run: bool = True if os.getenv("INPUT_DRY_RUN") == "true" else False
-keep = int(os.getenv("INPUT_KEEP"))
+keep = int(os.getenv("INPUT_KEEP")) if os.getenv("INPUT_KEEP") else 5
 org = os.getenv("GITHUB_REPOSITORY_OWNER")
 packages = os.getenv("INPUT_PACKAGES").split("\n")
 token = os.getenv("INPUT_TOKEN")
