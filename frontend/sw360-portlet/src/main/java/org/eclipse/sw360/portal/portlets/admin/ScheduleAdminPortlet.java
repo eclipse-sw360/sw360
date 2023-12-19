@@ -72,6 +72,7 @@ public class ScheduleAdminPortlet extends Sw360Portlet {
             putServiceAttributesInRequest(request, user, scheduleClient, ThriftClients.SVMMATCH_SERVICE, PortalConstants.SVMMATCH_IS_SCHEDULED, PortalConstants.SVMMATCH_OFFSET, PortalConstants.SVMMATCH_INTERVAL, PortalConstants.SVMMATCH_NEXT_SYNC);
             putServiceAttributesInRequest(request, user, scheduleClient, ThriftClients.SVM_LIST_UPDATE_SERVICE, PortalConstants.SVM_LIST_UPDATE_IS_SCHEDULED, PortalConstants.SVM_LIST_UPDATE_OFFSET, PortalConstants.SVM_LIST_UPDATE_INTERVAL, PortalConstants.SVM_LIST_UPDATE_NEXT_SYNC);
             putServiceAttributesInRequest(request, user, scheduleClient, ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE, PortalConstants.SVM_TRACKING_FEEDBACK_IS_SCHEDULED, PortalConstants.SVM_TRACKING_FEEDBACK_OFFSET, PortalConstants.SVM_TRACKING_FEEDBACK_INTERVAL, PortalConstants.SVM_TRACKING_FEEDBACK_NEXT_SYNC);
+            putServiceAttributesInRequest(request, user, scheduleClient, ThriftClients.SRC_UPLOAD_SERVICE, PortalConstants.SRC_UPLOAD_SERVICE_IS_SCHEDULED, PortalConstants.SRC_UPLOAD_SERVICE_OFFSET, PortalConstants.SRC_UPLOAD_SERVICE_INTERVAL, PortalConstants.SRC_UPLOAD_SERVICE_NEXT_SYNC);
             int offsetInSeconds = scheduleClient.getFirstRunOffset(ThriftClients.CVESEARCH_SERVICE);
             request.setAttribute(PortalConstants.CVESEARCH_OFFSET, CommonUtils.formatTime(offsetInSeconds));
             int intervalInSeconds = scheduleClient.getInterval(ThriftClients.CVESEARCH_SERVICE);
@@ -318,5 +319,25 @@ public class ScheduleAdminPortlet extends Sw360Portlet {
             log.error("Unable to Manually trigger the  CVE search service. ", e);
             e.printStackTrace();
         }
+    }
+
+    @UsedAsLiferayAction
+    public void triggeSrcUpload(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+        try {
+            RequestStatus requestStatus = new ThriftClients().makeComponentClient().uploadSourceCodeAttachmentToReleases();
+            setSessionMessage(request, requestStatus, "Task", "performe");
+        } catch (TException e) {
+            log.error(e);
+        }
+    }
+
+    @UsedAsLiferayAction
+    public void scheduleSrcUpload(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+        scheduleService(ThriftClients.SRC_UPLOAD_SERVICE, request);
+    }
+
+    @UsedAsLiferayAction
+    public void unscheduleSrcUpload(ActionRequest request, ActionResponse response) throws PortletException, IOException {
+        unscheduleService(ThriftClients.SRC_UPLOAD_SERVICE, request);
     }
 }

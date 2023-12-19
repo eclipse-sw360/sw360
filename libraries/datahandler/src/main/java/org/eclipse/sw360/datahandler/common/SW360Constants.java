@@ -117,6 +117,9 @@ public class SW360Constants {
     public static final String TOOL_VENDOR;
     public static final UserGroup SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE;
     public static final boolean ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP;
+    public static final String URL_FORMATS;
+    public static final String SRC_ATTACHMENT_UPLOADER_EMAIL;
+    public static final String SRC_ATTACHMENT_DOWNLOAD_LOCATION;
 
     /**
      * Hashmap containing the name field for each type.
@@ -218,6 +221,9 @@ public class SW360Constants {
         SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE = UserGroup.valueOf(props.getProperty("sbom.import.export.access.usergroup", UserGroup.USER.name()));
         ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP = Boolean.parseBoolean(
                 System.getProperty("RunTestFlexibleRelationship", props.getProperty("enable.flexible.project.release.relationship", "false")));
+        URL_FORMATS = props.getProperty("source.download.formats","");
+        SRC_ATTACHMENT_UPLOADER_EMAIL = props.getProperty("source.code.attachment.uploader.email", "");
+        SRC_ATTACHMENT_DOWNLOAD_LOCATION = props.getProperty("src.attachment.download.location", "");
     }
 
     private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName){

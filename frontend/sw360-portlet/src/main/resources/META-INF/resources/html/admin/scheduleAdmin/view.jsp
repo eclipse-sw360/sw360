@@ -17,6 +17,10 @@
 <jsp:useBean id='cvesearchOffset' type="java.lang.String" scope="request"/>
 <jsp:useBean id='cvesearchInterval' type="java.lang.String" scope="request"/>
 <jsp:useBean id='cvesearchNextSync' type="java.lang.String" scope="request"/>
+<jsp:useBean id='srcUploadIsScheduled' type="java.lang.Boolean" scope="request"/>
+<jsp:useBean id='srcUploadOffset' type="java.lang.String" scope="request"/>
+<jsp:useBean id='srcUploadInterval' type="java.lang.String" scope="request"/>
+<jsp:useBean id='srcUploadNextSync' type="java.lang.String" scope="request"/>
 <jsp:useBean id='svmSyncIsScheduled' type="java.lang.Boolean" scope="request"/>
 <jsp:useBean id='svmSyncOffset' type="java.lang.String" scope="request"/>
 <jsp:useBean id='svmSyncInterval' type="java.lang.String" scope="request"/>
@@ -94,6 +98,15 @@
 <portlet:actionURL var="triggerCveSearchURL" name="triggerCveSearch">
 </portlet:actionURL>
 
+<portlet:actionURL var="scheduleSrcUploadURL" name="scheduleSrcUpload">
+</portlet:actionURL>
+
+<portlet:actionURL var="unscheduleSrcUploadURL" name="unscheduleSrcUpload">
+</portlet:actionURL>
+
+<portlet:actionURL var="triggeSrcUploadURL" name="triggeSrcUpload">
+</portlet:actionURL>
+
 <div class="container">
     <div class="row portlet-toolbar">
         <div class="col-auto">
@@ -129,6 +142,31 @@
                 <div class="form-group">
                     <button type="button" class="btn btn-primary" onclick="window.location.href='<%=scheduleCvesearchURL%>'" <core_rt:if test="${cveSearchIsScheduled}">disabled</core_rt:if>><liferay-ui:message key="schedule.cve.service" /></button>
                     <button type="button" class="btn btn-light" onclick="window.location.href='<%=unscheduleCvesearchURL%>'" <core_rt:if test="${not cveSearchIsScheduled}">disabled</core_rt:if>><liferay-ui:message key="cancel.cve.service" /></button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <h4><liferay-ui:message key="src.upload" /></h4>
+            <table class="table bordered-table">
+                <tr>
+                    <th><liferay-ui:message key="schedule.offset" /></th>
+                    <td>${srcUploadOffset} (hh:mm:ss)</td>
+                </tr>
+                <tr>
+                    <th><liferay-ui:message key="interval" /></th>
+                    <td>${srcUploadInterval} (hh:mm:ss)</td>
+                </tr>
+                <tr>
+                    <th><liferay-ui:message key="next.synchronization" /></th>
+                    <td>${srcUploadNextSync}</td>
+                </tr>
+            </table>
+            <form class="form mt-3">
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=scheduleSrcUploadURL%>'" <core_rt:if test="${srcUploadIsScheduled}">disabled</core_rt:if>><liferay-ui:message key="schedule.src.upload.service" /></button>
+                    <button type="button" class="btn btn-light" onclick="window.location.href='<%=unscheduleSrcUploadURL%>'" <core_rt:if test="${not srcUploadIsScheduled}">disabled</core_rt:if>><liferay-ui:message key="cancel.src.upload.service" /></button>
                 </div>
             </form>
         </div>
@@ -273,6 +311,9 @@
                 </core_rt:if>
                     <button type="button" class="btn btn-primary" onclick="window.location.href='<%=triggerDeleteAttachmentURL%>'"><liferay-ui:message key="attachment.deletion.from.local.fs" /></button>
                     <button type="button" class="btn btn-primary" onclick="window.location.href='<%=triggerCveSearchURL%>'"><liferay-ui:message key="cve.search" /></button>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='<%=triggeSrcUploadURL%>'"><liferay-ui:message key="src.upload" /></button>
                 </div>
             </form>
         </div>

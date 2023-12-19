@@ -464,6 +464,11 @@ public class PortalConstants {
     public static final String DELETE_ATTACHMENT_INTERVAL = "deleteAttachmentInterval";
     public static final String DELETE_ATTACHMENT_NEXT_SYNC = "deleteAttachmentNextSync";
 
+    public static final String SRC_UPLOAD_SERVICE_IS_SCHEDULED = "srcUploadIsScheduled";
+    public static final String SRC_UPLOAD_SERVICE_OFFSET = "srcUploadOffset";
+    public static final String SRC_UPLOAD_SERVICE_INTERVAL = "srcUploadInterval";
+    public static final String SRC_UPLOAD_SERVICE_NEXT_SYNC = "srcUploadNextSync";
+
     public static final String DEPARTMENT_IS_SCHEDULED = "departmentIsScheduled";
     public static final String DEPARTMENT_OFFSET = "departmentOffset";
     public static final String DEPARTMENT_INTERVAL = "departmentInterval";
@@ -766,7 +771,7 @@ public class PortalConstants {
     public static final String USER_CLIENT_ID_KEY = "userClientIdKey";
     public static final String USER_CLIENT_ID_ACCESS_VALUE = "userClientIdAccessValue";
     public static final String USER_CLIENT_ID_NAME_VALUE = "userClientIdNameValue";
-    
+
     // Bulk deleting
     public static final String BULK_DELETING_RESULT_REMAINED = "Remained";
     public static final String BULK_DELETING_RESULT_DELETED = "Deleted";
