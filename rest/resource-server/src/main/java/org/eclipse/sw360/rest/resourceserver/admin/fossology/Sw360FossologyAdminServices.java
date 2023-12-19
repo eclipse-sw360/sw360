@@ -49,6 +49,25 @@ public class Sw360FossologyAdminServices {
     public static Sw360FossologyAdminServices instance;
     private boolean fossologyConnectionEnabled;
 
+    String key;
+
+    public RequestStatus checkFossologyConnection() throws TException {
+
+        RequestStatus checkConnection = null;
+        try {
+            checkConnection = new ThriftClients().makeFossologyClient().checkConnection();
+        } catch (SW360Exception exp) {
+            if (exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException(exp.getWhy());
+            } else {
+                throw new RuntimeException(exp.getWhy());
+            }
+        }
+        fossologyConnectionEnabled = checkConnection.equals(RequestStatus.SUCCESS);
+        return checkConnection;
+
+    }
+
     public void saveConfig(User sw360User, String url, String folderId, String token) throws TException {
         FossologyService.Iface client = getThriftFossologyClient();
         ConfigContainer fossologyConfig = client.getFossologyConfig();
@@ -64,6 +83,8 @@ public class Sw360FossologyAdminServices {
             } else {
                 throw new HttpMessageNotReadableException("fossologyConfig value is null.");
             }
+            setKeyValuePair(configKeyToValues, key, url, folderId, token);
+            fossologyConfig.setConfigKeyToValues(configKeyToValues);
         } else {
             throw new HttpMessageNotReadableException("Unable to save the details. User is not admin");
         }
@@ -87,6 +108,34 @@ public class Sw360FossologyAdminServices {
         configKeyToValues.putIfAbsent(key, new HashSet<>());
         Set<String> values = configKeyToValues.get(key);
         values.add(value);
+    }
+
+    private void setKeyValuePair(Map<String, Set<String>> map, String key, String url, String folderId,
+            String token) {
+        map.computeIfAbsent(key, k -> new HashSet<>()).addAll(Set.of(url, folderId, token));
+    }
+
+    public void serverConnection(User sw360User) throws TException{
+        if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            serveCheckConnection();
+        } else {
+            throw new HttpMessageNotReadableException("User is not admin");
+        }
+
+    }
+
+    private void serveCheckConnection() throws TException{
+        FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
+        RequestStatus checkConnection = null;
+        try {
+            checkConnection = sw360FossologyClient.checkConnection();
+        } catch (TException exp) {
+            throw new RuntimeException("Connection to Fossology server Failed.");
+        }
+
+        if (checkConnection == RequestStatus.FAILURE) {
+            throw new RuntimeException("Connection to Fossology server Failed.");
+        }
     }
 
 }

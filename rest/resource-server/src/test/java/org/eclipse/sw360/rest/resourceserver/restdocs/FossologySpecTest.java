@@ -16,6 +16,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
@@ -73,6 +74,7 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
         when(fossologyAdminServices.getThriftFossologyClient()).thenReturn(fossologyClient);
         when(fossologyClient.getFossologyConfig()).thenReturn(fossologyConfig);
         Mockito.doNothing().when(fossologyAdminServices).saveConfig(any(), any(), any(), any());
+        Mockito.doNothing().when(fossologyAdminServices).serverConnection(any());
     }
     
     @Test
@@ -90,4 +92,12 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk());
     }
     
+    @Test
+    public void should_document_check_server_configuration() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/fossology/reServerConnection")
+                .contentType(MediaTypes.HAL_JSON)
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk());
+    }
 }

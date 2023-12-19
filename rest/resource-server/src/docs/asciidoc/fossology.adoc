@@ -1,4 +1,3 @@
-//
 // Copyright Siemens AG, 2023. Part of the SW360 Portal Project.
 //
 // This program and the accompanying materials are made
@@ -23,3 +22,14 @@ include::{snippets}/should_document_save_configuration/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_save_configuration/http-response.adoc[]
+
+[[re-server-configuration]]
+==== check the server configuration.
+
+A `GET` request will save the configuration.
+
+===== Example request
+include::{snippets}/should_document_check_server_configuration/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_check_server_configuration/http-response.adoc[]

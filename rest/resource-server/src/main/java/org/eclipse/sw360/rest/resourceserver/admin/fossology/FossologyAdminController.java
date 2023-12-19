@@ -16,8 +16,6 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import java.util.Map;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -30,6 +28,8 @@ import org.springframework.http.HttpStatus.Series;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.NonNull;
@@ -60,6 +60,17 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             String folderId = request.get("folderId");
             String token = request.get("token");
             sw360FossologyAdminServices.saveConfig(sw360User, url, folderId, token);
+        } catch (Exception e) {
+            throw new TException(e.getMessage());
+        }
+        return ResponseEntity.ok(Series.SUCCESSFUL);
+    }
+
+    @RequestMapping(value = FOSSOLOGY_URL + "/reServerConnection", method = RequestMethod.GET)
+    public ResponseEntity<?> checkServerConnection()throws TException {
+        try {
+            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+            sw360FossologyAdminServices.serverConnection(sw360User);
         } catch (Exception e) {
             throw new TException(e.getMessage());
         }
