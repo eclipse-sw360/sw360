@@ -450,7 +450,9 @@ public class ModerationPortlet extends FossologyAwarePortlet {
                     sessionMessage = LanguageUtil.get(resourceBundle,"you.have.postponed.the.previous.moderation.request");
                 } else if (ACTION_RENDER_NEXT_AFTER_UNSUBSCRIBE.equals(action)) {
                     sessionMessage = LanguageUtil.get(resourceBundle,"you.are.removed.from.the.list.of.moderators.for.the.previous.moderation.request");
-                } else {
+                }  else if (LAST_MODERATOR.equals(action)) {
+                    sessionMessage = LanguageUtil.get(resourceBundle,"you.are.the.last.moderator.for.this.request.you.are.not.allowed.to.unsubscribe");
+                }  else {
                    throw new PortletException("Unknown action");
                 }
 
@@ -650,6 +652,12 @@ public class ModerationPortlet extends FossologyAwarePortlet {
     private void renderNextModeration(RenderRequest request, RenderResponse response, final User user, String sessionMessage, ModerationService.Iface client, ModerationRequest moderationRequest) throws IOException, PortletException, TException {
         ResourceBundle resourceBundle = ResourceBundleUtil.getBundle("content.Language", request.getLocale(), getClass());
         if (ACTION_CANCEL.equals(request.getParameter(ACTION))) {
+            SessionMessages.add(request, "request_processed", sessionMessage);
+            renderStandardView(request, response);
+            return;
+        }
+
+        if (LAST_MODERATOR.equals(request.getParameter(ACTION))) {
             SessionMessages.add(request, "request_processed", sessionMessage);
             renderStandardView(request, response);
             return;
