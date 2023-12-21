@@ -428,4 +428,10 @@ public abstract class LinkedReleasesAndProjectsAwarePortlet extends AttachmentAw
         request.setAttribute(PROJECT_LIST, mappedProjectLinks);
         request.setAttribute(PortalConstants.PARENT_SCOPE_GROUP_ID, request.getParameter(PortalConstants.PARENT_SCOPE_GROUP_ID));
     }
+
+    protected List<ProjectLink> createLinkedProjectsWithAllReleases(Project project, Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep,
+                                                                    User user) {
+        final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsWithAllReleasesAsFlatList(project, deep, thriftClients, log, user);
+        return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
+    }
 }

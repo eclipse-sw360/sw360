@@ -694,4 +694,10 @@ service ProjectService {
      */
     list<ProjectLink> getLinkedProjectsOfProjectWithoutReleases(1: Project project, 2: bool deep, 3: User user);
 
+    /**
+     * get a list of project links of the project that matches the id `id`
+     * with each project get all release in dependency network
+     * is equivalent to `getLinkedProjectsOfProject(getProjectById(id, user))`
+     */
+    list<ProjectLink> getLinkedProjectsOfProjectWithAllReleases(1: Project project, 2: bool deep, 3: User user);
 }

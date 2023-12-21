@@ -1013,4 +1013,21 @@ public class SW360Utils {
         }
         project.setReleaseIdToUsage(releaseIdToUsage);
     }
+
+    public static Collection<ProjectLink> getLinkedProjectsWithAllReleasesAsFlatList(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+        return flattenProjectLinkTree(getLinkedProjectsWithAllReleases(project, deep, thriftClients, log, user));
+    }
+
+    public static Collection<ProjectLink> getLinkedProjectsWithAllReleases(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+        if (project != null) {
+            try {
+                ProjectService.Iface client = thriftClients.makeProjectClient();
+                return client.getLinkedProjectsOfProjectWithAllReleases(project, deep, user);
+            } catch (TException e) {
+                log.error("Could not get linked projects", e);
+            }
+        }
+        return Collections.emptyList();
+    }
+
 }
