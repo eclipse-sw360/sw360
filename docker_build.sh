@@ -70,8 +70,6 @@ image_build() {
 
     docker buildx build \
         --target "$target" \
-        --tag "${DOCKER_IMAGE_ROOT}/$name:$version" \
-        --tag "${DOCKER_IMAGE_ROOT}/$name:latest" \
         --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/$name:$version" \
         --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/$name:latest" \
         "$@" .

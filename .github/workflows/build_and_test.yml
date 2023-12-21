@@ -33,7 +33,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: webiny/action-conventional-commits@v1.1.0
+    - uses: webiny/action-conventional-commits@v1.2.0
 
     - name: Verify license headers
       run: |
@@ -84,14 +84,6 @@ jobs:
       run: |
         chmod +x scripts/install-thrift.sh
         bash scripts/install-thrift.sh
-
-    - name: Cache local Maven repository
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
 
     - name: Build SW360
       run: |
