@@ -64,3 +64,6 @@ tmp/**/*
 
 # Sometimes we do use vim
 .swp
+
+# DS_Store
+.DS_Store
