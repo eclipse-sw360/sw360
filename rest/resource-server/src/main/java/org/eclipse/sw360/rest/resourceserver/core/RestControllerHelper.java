@@ -159,6 +159,9 @@ public class RestControllerHelper<T> {
     private static final double MIN_CVSS = 0;
     private static final double MAX_CVSS = 10;
     public static final String PAGINATION_PARAM_PAGE_ENTRIES = "page_entries";
+
+    @NonNull
+    private final com.fasterxml.jackson.databind.Module sw360Module;
     public static final ImmutableSet<ProjectReleaseRelationship._Fields> SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE = ImmutableSet
             .of(ProjectReleaseRelationship._Fields.CREATED_ON, ProjectReleaseRelationship._Fields.CREATED_BY);
 
@@ -667,6 +670,17 @@ public class RestControllerHelper<T> {
             }
         }
         return releaseToUpdate;
+    }
+
+    public License convertLicenseFromRequest(Map<String, Object> reqBodyMap, License licenseUpdate) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(sw360Module);
+        License licenseRequestBody = mapper.convertValue(reqBodyMap, License.class);
+        if (null == reqBodyMap.get("checked") && !licenseUpdate.isChecked()) {
+            licenseRequestBody.setChecked(false);
+        }
+        return licenseRequestBody;
     }
 
     private void isLicenseValid(Set<String> licenses) {

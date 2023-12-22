@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -148,9 +149,10 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     @RequestMapping(value = LICENSES_URL+ "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<License>> updateLicense(
             @PathVariable("id") String id,
-            @RequestBody License licenseRequestBody) throws TException {
+            @RequestBody Map<String, Object> reqBodyMap) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         License licenseUpdate = licenseService.getLicenseById(id);
+        License licenseRequestBody = restControllerHelper.convertLicenseFromRequest(reqBodyMap, licenseUpdate);
         if (licenseUpdate.isChecked() && !licenseRequestBody.isChecked()) {
             return new ResponseEntity("Reject license update due to: an already checked license is not allowed to become unchecked again", HttpStatus.METHOD_NOT_ALLOWED);
         }
