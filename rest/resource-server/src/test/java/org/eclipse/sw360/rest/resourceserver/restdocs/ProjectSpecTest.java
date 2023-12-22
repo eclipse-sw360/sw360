@@ -447,7 +447,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
         given(this.projectServiceMock.importCycloneDX(any(),any(),any())).willReturn(requestSummaryForCycloneDX);
-        given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any())).willReturn(ByteBuffer.allocate(10000));
         given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
         given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(project2);
@@ -2032,7 +2032,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
-    public void should_document_get_project_report_without_mail_req() throws Exception{
+    public void should_document_get_project_report_without_mail_req() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/reports")
                         .header("Authorization", "Bearer " + accessToken)
@@ -2048,6 +2048,53 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
                                 parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`"),
                                 parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_project_licenseclearing_spreadsheet() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/reports")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("withlinkedreleases", "true")
+                        .param("mimetype", "xlsx")
+                        .param("mailrequest", "true")
+                        .param("module", "projects")
+                        .param("projectId", project.getId())
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
+                                parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
+                                parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`"),
+                                parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
+                                parameterWithName("projectId").description("Id of a project")
+                        ),responseFields(
+                                subsectionWithPath("response").description("The response message displayed").optional()
+                                )
+                        ));
+    }
+
+    @Test
+    public void should_document_get_project_licenseclearing_spreadsheet_without_mail_req() throws Exception{
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/reports")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("withlinkedreleases", "true")
+                        .param("mimetype", "xlsx")
+                        .param("mailrequest", "false")
+                        .param("module", "projects")
+                        .param("projectId", project.getId())
+                        .accept("application/xhtml+xml"))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
+                                parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
+                                parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`"),
+                                parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
+                                parameterWithName("projectId").description("Id of a project")
                         )));
     }
 

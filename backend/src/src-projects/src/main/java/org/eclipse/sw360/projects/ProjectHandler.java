@@ -528,15 +528,15 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
 	@Override
-	public ByteBuffer getReportDataStream(User user, boolean extendedByReleases)
+	public ByteBuffer getReportDataStream(User user, boolean extendedByReleases, String projectId)
 			throws TException {
-		return handler.getReportDataStream(user, extendedByReleases);
+		return handler.getReportDataStream(user, extendedByReleases, projectId);
 	}
 
 	@Override
-	public String getReportInEmail(User user, boolean extendedByReleases)
+	public String getReportInEmail(User user, boolean extendedByReleases, String projectId)
 			throws TException {
-		return handler.getReportInEmail(user, extendedByReleases);
+		return handler.getReportInEmail(user, extendedByReleases, projectId);
 	}
 
     @Override

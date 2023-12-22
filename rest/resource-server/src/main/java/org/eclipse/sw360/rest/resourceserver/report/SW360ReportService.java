@@ -11,9 +11,11 @@ import java.nio.ByteBuffer;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,14 +32,22 @@ public class SW360ReportService {
     ComponentService.Iface componentclient = thriftClients.makeComponentClient();
     LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
 
-    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases) throws TException {
-        return projectclient.getReportDataStream(user, extendedByReleases);
+    public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId) throws TException {
+        return projectclient.getReportDataStream(user, extendedByReleases, projectId);
     }
 
-    public void getUploadedProjectPath(User user, boolean withLinkedReleases, String base){
+    public String getDocumentName(User user, String projectId) throws TException {
+        if (projectId != null) {
+            Project project = projectclient.getProjectById(projectId, user);
+            return String.format("project-%s-%s-%s.xlsx", project.getName(), project.getVersion(), SW360Utils.getCreatedOn());
+        }
+        return String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
+    }
+
+    public void getUploadedProjectPath(User user, boolean withLinkedReleases, String base, String projectId){
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
-                String projectPath = projectclient.getReportInEmail(user, withLinkedReleases);
+                String projectPath = projectclient.getReportInEmail(user, withLinkedReleases, projectId);
                 String backendURL = base + "api/reports/download?user=" + user.getEmail() + "&module=projects"
                         + "&extendedByReleases=" + withLinkedReleases + "&token=";
                 URL emailURL = new URL(backendURL + projectPath);
