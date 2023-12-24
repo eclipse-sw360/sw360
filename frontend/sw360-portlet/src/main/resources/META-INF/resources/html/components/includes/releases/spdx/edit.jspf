@@ -146,7 +146,7 @@
         $('#spdxFullMode').removeClass('btn-info');
         $('.spdx-full').css('display', 'none');
     });
-    $('thead').on('click', function () {
+    $('.spdx-table thead').on('click', function () {
         if ($(this).next().css('display') == 'none') {
             $(this).next().css('display', '');
         } else {

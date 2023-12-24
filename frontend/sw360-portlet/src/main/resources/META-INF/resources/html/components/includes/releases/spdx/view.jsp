@@ -14,12 +14,20 @@
 	<button id="spdxLiteMode" class="btn btn-secondary">SPDX Lite</button>
 </div>
 <table class="table label-value-table spdx-table" id="DocumentCreationInformation">
-	<thead class="spdx-thead">
+	<thead class="spdx-thead" data-toggle="collapse" data-target="#DocumentCreationInformationBody" aria-expanded="true" aria-controls="DocumentCreationInformationBody">
 		<tr>
-			<th>6. Document Creation Information</th>
+			<th>
+                 <div class="d-flex justify-content-between">
+                     6. Document Creation Information
+                     <div>
+                         <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                         <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                     </div>
+                 </div>
+			</th>
 		</tr>
 	</thead>
-	<tbody>
+	<tbody id="DocumentCreationInformationBody" class="collapse show">
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1">6.1 SPDX version</div>
@@ -152,12 +160,20 @@
 	<core_rt:set var="package" value="${spdxPackageInfo.iterator().next()}" />
 </core_rt:if>
 <table class="table label-value-table spdx-table" id="PackageInformation">
-	<thead class="spdx-thead">
+	<thead class="spdx-thead" data-toggle="collapse" data-target="#PackageInformationBody" aria-expanded="true" aria-controls="PackageInformationBody">
 		<tr>
-			<th>7. Package Information</th>
+            <th>
+                 <div class="d-flex justify-content-between">
+                     7. Package Information
+                     <div>
+                         <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                         <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                     </div>
+                 </div>
+            </th>
 		</tr>
 	</thead>
-	<tbody class="section" data-size="23">
+	<tbody class="section collapse show" data-size="23" id="PackageInformationBody">
 		<tr>
 			<td class="spdx-flex-row" style="display:none;">
 					<div class="spdx-col-1 spdx-label-index">Index</div>
@@ -438,12 +454,20 @@
 
 <core_rt:set var="snippets" value="${spdxDocument.snippets}" />
 <table class="table label-value-table spdx-table spdx-full" id="SnippetInformation">
-	<thead class="spdx-thead">
+	<thead class="spdx-thead" data-toggle="collapse" data-target="#SnippetInformationBody" aria-expanded="true" aria-controls="SnippetInformationBody">
 		<tr>
-			<th>9. Snippet Information</th>
+			<th>
+                <div class="d-flex justify-content-between">
+                     9. Snippet Information
+                     <div>
+                         <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                         <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                     </div>
+                </div>
+            </th>
 		</tr>
 	</thead>
-	<tbody class="section" data-size="10">
+	<tbody class="section collapse show" data-size="10" id="SnippetInformationBody">
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1 spdx-label-index">Index</div>
@@ -558,12 +582,20 @@
 
 <core_rt:set var="otherLicensing" value="${spdxDocument.otherLicensingInformationDetecteds}" />
 <table class="table label-value-table spdx-table" id="OtherLicensingInformationDetected">
-	<thead class="spdx-thead">
+	<thead class="spdx-thead" data-toggle="collapse" data-target="#OtherLicensingInformationDetectedBody" aria-expanded="true" aria-controls="OtherLicensingInformationDetectedBody">
 		<tr>
-			<th>10. Other Licensing Information Detected</th>
+            <th>
+                <div class="d-flex justify-content-between">
+                     10. Other Licensing Information Detected
+                     <div>
+                         <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                         <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                     </div>
+                </div>
+            </th>
 		</tr>
 	</thead>
-	<tbody class="section" data-size="5">
+	<tbody class="section collapse show" data-size="5" id="OtherLicensingInformationDetectedBody">
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1 spdx-label-index">Index</div>
@@ -624,12 +656,20 @@
 	</core_rt:if>
 </core_rt:forEach>
 <table class="table label-value-table spdx-table spdx-full" id="RelationshipsbetweenSPDXElements">
-	<thead class="spdx-thead">
+	<thead class="spdx-thead" data-toggle="collapse" data-target="#RelationshipsbetweenSPDXElementsBody" aria-expanded="true" aria-controls="RelationshipsbetweenSPDXElementsBody">
 		<tr>
-			<th>11. Relationship between SPDX Elements Information</th>
+            <th>
+                <div class="d-flex justify-content-between">
+                     11. Relationship between SPDX Elements Information
+                     <div>
+                         <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                         <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                     </div>
+                </div>
+            </th>
 		</tr>
 	</thead>
-	<tbody class="section" data-size="3">
+	<tbody class="section collapse show" data-size="3" id="RelationshipsbetweenSPDXElementsBody">
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1 spdx-label-index">Source</div>
@@ -715,12 +755,20 @@
 	</core_rt:if>
 </core_rt:forEach>
 <table class="table label-value-table spdx-table spdx-full" id="Annotations">
-	<thead class="spdx-thead">
+	<thead class="spdx-thead" data-toggle="collapse" data-target="#AnnotationsBody" aria-expanded="true" aria-controls="AnnotationsBody">
 		<tr>
-			<th>12. Annotation Information</th>
+            <th>
+                <div class="d-flex justify-content-between">
+                     12. Annotation Information
+                     <div>
+                         <div title="<liferay-ui:message key="click.to.collapse"/>"><clay:icon class="collapse-icon" symbol="caret-top"/></div>
+                         <div title="<liferay-ui:message key="click.to.expand"/>"><clay:icon class="expand-icon" style="display: none;" symbol="caret-bottom"/></div>
+                     </div>
+                </div>
+            </th>
 		</tr>
 	</thead>
-	<tbody class="section" data-size="5">
+	<tbody class="section collapse show" data-size="5" id="AnnotationsBody">
 		<tr>
 			<td class="spdx-flex-row">
 				<div class="spdx-col-1 spdx-label-index">Source</div>
@@ -1038,15 +1086,6 @@
 			$('#spdxFullMode').removeClass('btn-info');
 
 			$('.spdx-full').css('display', 'none');
-		});
-
-		// Expand/collapse section when click on the header
-		$('thead').on('click', function () {
-			if ($(this).next().css('display') == 'none') {
-				$(this).next().css('display', '');
-			} else {
-				$(this).next().css('display', 'none');
-			}
 		});
 
 		$('.spdx-table select').each(function () {
