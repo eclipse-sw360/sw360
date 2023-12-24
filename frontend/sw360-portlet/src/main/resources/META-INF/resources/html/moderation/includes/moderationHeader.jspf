@@ -85,7 +85,8 @@ require(['jquery'], function($) {
                     window.location = portletURL.toString();
                 }
                 else if (data.result == 'LAST_MODERATOR') {
-                    $.alert('<liferay-ui:message key="you.are.the.last.moderator.for.this.request.you.are.not.allowed.to.unsubscribe" />');
+                    var portletUrl = getBaseURL().setParameter('<%=PortalConstants.ACTION%>', '<%=PortalConstants.LAST_MODERATOR%>');
+                    window.location = portletUrl.toString();
                 }
                 else {
                     $.alert('<liferay-ui:message key="updating.the.moderation.request.failed" />');
