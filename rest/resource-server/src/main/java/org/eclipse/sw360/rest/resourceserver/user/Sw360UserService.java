@@ -114,4 +114,9 @@ public class Sw360UserService {
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new UserService.Client(protocol);
     }
+
+    public void updateUser(User sw360User) throws TException {
+        UserService.Iface sw360UserClient = getThriftUserClient();
+        sw360UserClient.updateUser(sw360User);
+    }
 }

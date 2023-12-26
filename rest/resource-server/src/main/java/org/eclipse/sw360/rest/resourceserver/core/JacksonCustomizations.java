@@ -388,7 +388,6 @@ public class JacksonCustomizations {
                 "id",
                 "revision",
                 "setPassword",
-                "wantsMailNotification",
                 "setWantsMailNotification",
                 "setId",
                 "setRevision",

@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.user;
 
+import com.google.common.collect.ImmutableSet;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,6 +48,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -69,6 +71,10 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
+
+    private static final ImmutableSet<User._Fields> setOfUserProfileFields = ImmutableSet.<User._Fields>builder()
+            .add(User._Fields.WANTS_MAIL_NOTIFICATION)
+            .add(User._Fields.NOTIFICATION_PREFERENCES).build();
 
     @Operation(
             summary = "List all of the service's users.",
@@ -165,6 +171,33 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         return ResponseEntity.created(location).body(halResource);
     }
 
+    @Operation(
+            summary = "Get user's profile.",
+            description = "Get user's profile.",
+            tags = {"Users"}
+    )
+    @GetMapping(value = USERS_URL + "/profile")
+    public ResponseEntity<HalResource<User>> getUserProfile() {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        HalResource<User> halUserResource = new HalResource<>(sw360User);
+        return ResponseEntity.ok(halUserResource);
+    }
+
+    @Operation(
+            summary = "Update user's profile.",
+            description = "Update user's profile.",
+            tags = {"Users"}
+    )
+    @PatchMapping(value = USERS_URL + "/profile")
+    public ResponseEntity<HalResource<User>> updateUserProfile(
+            @RequestBody Map<String, Object> userProfile
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        sw360User = restControllerHelper.updateUserProfile(sw360User, userProfile, setOfUserProfileFields);
+        userService.updateUser(sw360User);
+        HalResource<User> halUserResource = new HalResource<>(sw360User);
+        return ResponseEntity.ok(halUserResource);
+    }
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(UserController.class).slash("api/users").withRel("users"));

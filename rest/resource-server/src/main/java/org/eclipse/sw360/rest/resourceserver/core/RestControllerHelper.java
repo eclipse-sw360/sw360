@@ -622,6 +622,32 @@ public class RestControllerHelper<T> {
         return packageToUpdate;
     }
 
+    public User updateUserProfile(User userToUpdate, Map<String, Object> requestBodyUser, ImmutableSet<User._Fields> setOfUserProfileFields) {
+        for (User._Fields field : setOfUserProfileFields) {
+            Object fieldValue = requestBodyUser.get(field.getFieldName());
+            if (fieldValue != null) {
+                switch (field) {
+                    case NOTIFICATION_PREFERENCES:
+                        Object wantNotification = requestBodyUser.get(User._Fields.WANTS_MAIL_NOTIFICATION.getFieldName());
+                        if (wantNotification == null) {
+                            if (userToUpdate.isWantsMailNotification()) {
+                                userToUpdate.setFieldValue(field, fieldValue);
+                            }
+                        } else {
+                            if (Boolean.TRUE.equals(wantNotification)) {
+                                userToUpdate.setFieldValue(field, fieldValue);
+                            }
+                        }
+                        break;
+                    default:
+                        userToUpdate.setFieldValue(field, fieldValue);
+                        break;
+                }
+            }
+        }
+        return userToUpdate;
+    }
+
     public Component convertToComponent(ComponentDTO componentDTO) {
         Component component = new Component();
 
