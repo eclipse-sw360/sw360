@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -22,6 +23,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -67,6 +69,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     }
 
     private final List<String> mimeTypeList = Arrays.asList("xls", "xlsx");
+    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
+    Properties props = CommonUtils.loadProperties(SW360ReportController.class, PROPERTIES_FILE_PATH);
 
     @Operation(
             summary = "Generate the reports.",
@@ -79,8 +83,6 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "withlinkedreleases", required = false, defaultValue = "false") boolean withLinkedReleases,
             @Parameter(description = "Report download format.", schema = @Schema(allowableValues = {"xls", "xlsx"}))
             @RequestParam(value = "mimetype", required = false, defaultValue = "xlsx") String mimeType,
-            @Parameter(description = "Downloading project report required mail link.")
-            @RequestParam(value = "mailrequest", required = false, defaultValue = "false") boolean mailRequest,
             @Parameter(description = "Module name.", schema = @Schema(allowableValues = {PROJECTS, COMPONENTS}))
             @RequestParam(value = "module", required = true) String module,
             HttpServletRequest request,
@@ -88,6 +90,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     ) throws TException {
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        boolean mailRequest = Boolean.parseBoolean(props.getProperty("send.project.spreadsheet.export.to.mail.enabled", "false"));
         try {
             if (validateMimeType(mimeType)) {
                 switch (module) {

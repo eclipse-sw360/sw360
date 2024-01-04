@@ -783,22 +783,8 @@ include::{snippets}/should_document_create_summary_administration/curl-request.a
 ===== Example response
 include::{snippets}/should_document_create_summary_administration/http-response.adoc[]
 
-[[resources-projects-download-report]]
-==== Downloading project report
-
-A `GET` request help to download the projects report with mail request false.
-
-===== Request parameter
-include::{snippets}/should_document_get_project_report_without_mail_req/request-parameters.adoc[]
-
-===== Example request
-include::{snippets}/should_document_get_project_report_without_mail_req/curl-request.adoc[]
-
-===== Example response
-include::{snippets}/should_document_get_project_report_without_mail_req/http-response.adoc[]
-
 [[resources-projects-download-report-mail-request]]
-==== Downloading project report with mail request
+==== Downloading project report
 
 A `GET` request help to download the projects report with mail request true.
 
