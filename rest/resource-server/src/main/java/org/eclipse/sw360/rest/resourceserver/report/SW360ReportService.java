@@ -33,23 +33,43 @@ public class SW360ReportService {
     LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
 
     public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId) throws TException {
+        if (projectId != null && validateProject(projectId, user)) {
+            throw new TException("No project record found for the project Id : " + projectId);
+        }
         return projectclient.getReportDataStream(user, extendedByReleases, projectId);
     }
 
+    private boolean validateProject(String projectId, User user) throws TException {
+        boolean validProject = true;
+        try {
+            Project project = projectclient.getProjectById(projectId, user);
+            if (project == null) {
+                return false;
+            }
+        } catch (Exception e) {
+            validProject = false;
+        }
+        return validProject;
+    }
+
     public String getDocumentName(User user, String projectId) throws TException {
-        if (projectId != null) {
+        if (projectId != null && !projectId.equalsIgnoreCase("null")) {
             Project project = projectclient.getProjectById(projectId, user);
             return String.format("project-%s-%s-%s.xlsx", project.getName(), project.getVersion(), SW360Utils.getCreatedOn());
         }
         return String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
     }
 
-    public void getUploadedProjectPath(User user, boolean withLinkedReleases, String base, String projectId){
+    public void getUploadedProjectPath(User user, boolean withLinkedReleases, String base, String projectId)
+            throws TException {
+        if (projectId!=null && !validateProject(projectId, user)) {
+            throw new TException("No project record found for the project Id : " + projectId);
+        }
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
                 String projectPath = projectclient.getReportInEmail(user, withLinkedReleases, projectId);
                 String backendURL = base + "api/reports/download?user=" + user.getEmail() + "&module=projects"
-                        + "&extendedByReleases=" + withLinkedReleases + "&token=";
+                        + "&extendedByReleases=" + withLinkedReleases + "&projectId=" + projectId + "&token=";
                 URL emailURL = new URL(backendURL + projectPath);
                 if (!CommonUtils.isNullEmptyOrWhitespace(projectPath)) {
                     sendExportSpreadsheetSuccessMail(emailURL.toString(), user.getEmail());
