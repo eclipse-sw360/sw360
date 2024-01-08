@@ -208,7 +208,8 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (duplicatePackagesByPurl.size() > 0) {
             final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
-                    .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
+                    .setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
+                    .setMessage(SW360Constants.DUPLICATE_PACKAGE_BY_PURL);
             if(duplicatePackagesByPurl.size() == 1){
                 addDocumentRequestSummary.setId(duplicatePackagesByPurl.get(0).getId());
             }

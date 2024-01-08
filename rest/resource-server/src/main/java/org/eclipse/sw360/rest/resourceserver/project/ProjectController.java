@@ -676,6 +676,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             )
             @RequestBody Set<String> packagesInRequestBody
     ) throws URISyntaxException, TException {
+        if(!packageService.validatePackageIds(packagesInRequestBody)){
+            return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
+        }
         RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true);
         if (linkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
@@ -702,6 +705,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             )
             @RequestBody Set<String> packagesInRequestBody
     ) throws URISyntaxException, TException {
+        if(!packageService.validatePackageIds(packagesInRequestBody)){
+            return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
+        }
         RequestStatus patchPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false);
         if (patchPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
