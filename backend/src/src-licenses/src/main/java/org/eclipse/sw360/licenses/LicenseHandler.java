@@ -165,6 +165,12 @@ public class LicenseHandler implements LicenseService.Iface {
         return handler.getObligationsByIds(ids);
     }
 
+    @Override
+    public List<Obligation> getObligationsByLicenseId(String id) throws TException {
+        assertNotEmpty(id);
+        return handler.getObligationsByLicenseId(id);
+    }
+
 
 
     ////////////////////////////

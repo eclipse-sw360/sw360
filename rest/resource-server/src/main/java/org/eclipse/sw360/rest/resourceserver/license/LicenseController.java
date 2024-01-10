@@ -91,6 +91,19 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
+    @RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligationsByLicenseId(
+            @PathVariable("id") String id) throws TException {
+        List<Obligation> obligations = licenseService.getObligationsByLicenseId(id);
+        List<EntityModel<Obligation>> obligationResources = new ArrayList<>();
+        obligations.forEach(o -> {
+            Obligation embeddedObligation = restControllerHelper.convertToEmbeddedObligation(o);
+            obligationResources.add(EntityModel.of(embeddedObligation));
+        });
+        CollectionModel<EntityModel<Obligation>> resources = CollectionModel.of(obligationResources);
+        return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
+
     @Operation(
             summary = "Get a specific license.",
             description = "Get a specific license.",
