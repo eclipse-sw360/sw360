@@ -23,7 +23,7 @@ public class ErrorMessages {
     public static final String PROJECT_NAMING_ERROR = "Name of project cannot contain only space characters.";
     public static final String CLOSED_UPDATE_NOT_ALLOWED = "User cannot edit a closed project";
     public static final String COMPONENT_NOT_ADDED = "Component could not be added.";
-    public static final String COMPONENT_DUPLICATE = "A component with the same name already exists.";
+    public static final String COMPONENT_DUPLICATE = "A component with the same name or VCS already exists.";
     public static final String COMPONENT_NAMING_ERROR = "Name and Categories of component cannot contain only space characters.";
     public static final String RELEASE_NOT_ADDED = "Release could not be added.";
     public static final String RELEASE_DUPLICATE = "A release with the same name and version already exists.";
