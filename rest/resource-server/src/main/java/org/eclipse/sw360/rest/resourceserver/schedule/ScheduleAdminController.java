@@ -15,9 +15,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -25,6 +25,8 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,7 +51,6 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
 
     @NonNull
     private Sw360ScheduleService scheduleService;
-
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
@@ -88,9 +89,17 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                                     example = "SUCCESS")))
     })
     @PostMapping(SCHEDULE_URL + "/cveService")
-    public ResponseEntity<?> scheduleCve()throws TException {
+    public ResponseEntity<?> scheduleCve() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = scheduleService.scheduleCveSearch(sw360User);
+        HttpStatus status = HttpStatus.ACCEPTED;
+        return new ResponseEntity<>(requestSummary, status);
+    }
+        
+    @RequestMapping(value = SCHEDULE_URL + "/scheduleSvmSync", method = RequestMethod.POST)
+    public ResponseEntity<?> scheduleSvmSync()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.svmSync(sw360User);
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestSummary, status);
     }
@@ -107,9 +116,16 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                                     example = "SUCCESS")))
     })
     @PostMapping(SCHEDULE_URL + "/unscheduleCve")
-    public ResponseEntity<?> unscheduleCveSearch()throws TException {
+    public ResponseEntity<?> unscheduleCveSearch() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelCveSearch(sw360User);
+        HttpStatus status = HttpStatus.ACCEPTED;
+        return new ResponseEntity<>(requestStatus, status);
+    }
+    @RequestMapping(value = SCHEDULE_URL + "/unscheduleSvmSync", method = RequestMethod.DELETE)
+    public ResponseEntity<?> unscheduleSvmSync() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.cancelSvmSync(sw360User);
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestStatus, status);
     }
@@ -126,12 +142,20 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                                     example = "SUCCESS")))
     })
     @PostMapping(SCHEDULE_URL + "/deleteAttachment")
-    public ResponseEntity<?> scheduleDeleteAttachment()throws TException {
+    public ResponseEntity<?> scheduleDeleteAttachment() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = scheduleService.deleteAttachmentService(sw360User);
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestSummary, status);
     }
+
+    @RequestMapping(value = SCHEDULE_URL + "/svmReverseMatch", method = RequestMethod.POST)
+    public ResponseEntity<?> svmReverseMatch() throws TException {
+            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+            RequestSummary requestSummary = scheduleService.scheduleSvmReverseMatch(sw360User);
+            HttpStatus status = HttpStatus.ACCEPTED;
+            return new ResponseEntity<>(requestSummary, status);
+        }
 
     @Operation(
             summary = "Unschedule the attachment deletion service.",
@@ -144,10 +168,19 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                             schema = @Schema(implementation = String.class,
                                     example = "SUCCESS")))
     })
+
     @PostMapping(SCHEDULE_URL + "/unScheduleDeleteAttachment")
     public ResponseEntity<?> unscheduleDeleteAttachment()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelDeleteAttachment(sw360User);
+        HttpStatus status = HttpStatus.ACCEPTED;
+        return new ResponseEntity<>(requestStatus, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/unscheduleSvmReverseMatch", method = RequestMethod.DELETE)
+    public ResponseEntity<?> unscheduleSvmReverseMatch()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.cancelSvmReverseMatch(sw360User);
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestStatus, status);
     }
@@ -164,9 +197,33 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                                     example = "SUCCESS")))
     })
     @PostMapping(SCHEDULE_URL + "/cancelAttachmentDeletion")
-    public ResponseEntity<?> attachmentDeleteLocalFS()throws TException {
+    public ResponseEntity<?> attachmentDeleteLocalFS() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelAttachmentDeletionLocalFS(sw360User);
+        HttpStatus status = HttpStatus.ACCEPTED;
+        return new ResponseEntity<>(requestStatus, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/trackingFeedback", method = RequestMethod.POST)
+    public ResponseEntity<?> svmTrackingFeedback()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.svmReleaseTrackingFeedback(sw360User);
+        HttpStatus status = HttpStatus.ACCEPTED;
+        return new ResponseEntity<>(requestSummary, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/monitoringListUpdate", method = RequestMethod.POST)
+    public ResponseEntity<?> monitoringListUpdate()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.svmMonitoringListUpdate(sw360User);
+        HttpStatus status = HttpStatus.ACCEPTED;
+        return new ResponseEntity<>(requestSummary, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/cancelMonitoringListUpdate", method = RequestMethod.DELETE)
+    public ResponseEntity<?> cancelMonitoringListUpdate()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.cancelSvmMonitoringListUpdate(sw360User);
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestStatus, status);
     }
@@ -186,6 +243,22 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
     public ResponseEntity<?> cveSearch()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.triggerCveSearch(sw360User);
+        HttpStatus status = HttpStatus.ACCEPTED;
+        return new ResponseEntity<>(requestStatus, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/srcUpload", method = RequestMethod.POST)
+    public ResponseEntity<?> srcUpload()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.triggeSrcUpload(sw360User);
+        HttpStatus status = HttpStatus.ACCEPTED;
+        return new ResponseEntity<>(requestSummary, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/cancelSrcUpload", method = RequestMethod.DELETE)
+    public ResponseEntity<?> cancelsrcUpload()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.unscheduleSrcUpload(sw360User);
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestStatus, status);
     }
