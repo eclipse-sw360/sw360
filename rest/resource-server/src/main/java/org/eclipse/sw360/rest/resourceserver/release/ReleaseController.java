@@ -90,6 +90,7 @@ import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -104,6 +105,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
@@ -360,23 +362,56 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @Operation(
             summary = "Get releases by external IDs.",
             description = "Get releases where provided external IDs match.",
-            tags = {"Releases"}
+            tags = {"Releases"},
+            parameters = {
+                    @Parameter(
+                            description = "The external IDs of the releases to filter.",
+                            example = "{\n" +
+                                    "\"mainline-id-component\": \"1432\",\n" +
+                                    "\"mainline-id-component\": \"4876\"\n" +
+                                    "}",
+                            in = ParameterIn.QUERY,
+                            name = "externalIds",
+                            explode = Explode.TRUE,
+                            schema = @Schema(implementation = LinkedMultiValueMap.class)
+                    )
+            }
     )
     @GetMapping(value = RELEASES_URL + "/searchByExternalIds")
     public ResponseEntity<Release> searchByExternalIds(
-            @Parameter(
-                    description = "The external IDs of the releases to filter.",
-                    example = "{\n" +
-                            "\"mainline-id-component\": \"1432\",\n" +
-                            "\"mainline-id-component\": \"4876\"\n" +
-                            "}",
-                    in = ParameterIn.QUERY,
-                    name = "externalIds",
-                    explode = Explode.TRUE
-            )
-            @RequestParam LinkedMultiValueMap<String, String> externalIdsMultiMap
+            HttpServletRequest request
     ) throws TException {
+        String queryString = request.getQueryString();
+        MultiValueMap<String, String> externalIdsMultiMap = parseQueryString(queryString);
         return restControllerHelper.searchByExternalIds(externalIdsMultiMap, releaseService, null);
+    }
+
+    /**
+     * Bypass spring query parser to distinguish between URL encoded and
+     * un-encoded ids.
+     *
+     * @param queryString Query from request
+     * @return Query parsed as a value map.
+     */
+    private @NotNull MultiValueMap<String, String> parseQueryString(String queryString) {
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+
+        if (queryString != null && !queryString.isEmpty()) {
+            String[] params = queryString.split("&");
+            for (String param : params) {
+                String[] keyValue = param.split("=");
+                if (keyValue.length >= 1) {
+                    String key = keyValue[0];
+                    String value = "";
+                    if (!(keyValue.length == 1)) {
+                        value = keyValue[1];
+                    }
+                    parameters.add(key, value);
+                }
+            }
+        }
+
+        return parameters;
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
