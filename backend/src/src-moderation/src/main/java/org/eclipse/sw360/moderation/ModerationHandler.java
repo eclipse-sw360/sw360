@@ -270,6 +270,13 @@ public class ModerationHandler implements ModerationService.Iface {
     }
 
     @Override
+    public List<ModerationRequest> getRequestsByRequestingUserWithPagination(User user, PaginationData pageData) throws TException {
+        assertUser(user);
+
+        return handler.getRequestsByRequestingUserWithPagination(user.getEmail(), pageData);
+    }
+
+    @Override
     public ClearingRequest getClearingRequestByProjectId(String projectId, User user) throws TException {
         assertId(projectId);
         assertUser(user);
@@ -370,6 +377,12 @@ public class ModerationHandler implements ModerationService.Iface {
     public Map<String, Long> getCountByModerationState(User user) throws TException {
         assertUser(user);
         return handler.getCountByModerationState(user.getEmail());
+    }
+
+    @Override
+    public Map<String, Long> getCountByRequester(User user) throws TException {
+        assertUser(user);
+        return handler.getCountByRequester(user.getEmail());
     }
 
     @Override

@@ -101,22 +101,14 @@ public class ModerationRequestController implements RepresentationModelProcessor
     ) throws TException, ResourceClassNotFoundException, URISyntaxException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<ModerationRequest> moderationRequests = sw360ModerationRequestService.getRequestsByModerator(sw360User, pageable);
-        int totalCount = (int) sw360ModerationRequestService.getTotalCountOfRequests(sw360User);
-        PaginationResult<ModerationRequest> paginationResult = restControllerHelper.paginationResultFromPaginatedList(request,
-                pageable, moderationRequests, SW360Constants.TYPE_MODERATION, totalCount);
 
-        List<EntityModel<ModerationRequest>> moderationRequestResources = new ArrayList<>();
-        paginationResult.getResources().forEach(m -> addModerationRequest(m, allDetails, moderationRequestResources));
+        Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
+                new HashMap<>();
+        PaginationData paginationData = new PaginationData();
+        paginationData.setTotalRowCount(sw360ModerationRequestService.getTotalCountOfRequests(sw360User));
+        modRequestsWithPageData.put(paginationData, moderationRequests);
 
-        CollectionModel<ModerationRequest> resources;
-        if (moderationRequestResources.isEmpty()) {
-            resources = restControllerHelper.emptyPageResource(ModerationRequest.class, paginationResult);
-        } else {
-            resources = restControllerHelper.generatePagesResource(paginationResult, moderationRequestResources);
-        }
-
-        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(resources, status);
+        return getModerationResponseEntity(pageable, request, allDetails, modRequestsWithPageData);
     }
 
     @Operation(
@@ -166,27 +158,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
         boolean stateOpen = stateOptions.get(0).equalsIgnoreCase(state);
         Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
                 sw360ModerationRequestService.getRequestsByState(sw360User, pageable, stateOpen, allDetails);
-        List<ModerationRequest> moderationRequests = new ArrayList<>();
-        int totalCount = 0;
-        if (!CommonUtils.isNullOrEmptyMap(modRequestsWithPageData)) {
-            PaginationData paginationData = modRequestsWithPageData.keySet().iterator().next();
-            moderationRequests = modRequestsWithPageData.get(paginationData);
-            totalCount = (int) paginationData.getTotalRowCount();
-        }
-
-        PaginationResult<ModerationRequest> paginationResult = restControllerHelper.paginationResultFromPaginatedList(request,
-                pageable, moderationRequests, SW360Constants.TYPE_MODERATION, totalCount);
-
-        List<EntityModel<ModerationRequest>> moderationRequestResources = new ArrayList<>();
-        paginationResult.getResources().forEach(m -> addModerationRequest(m, allDetails, moderationRequestResources));
-
-        CollectionModel<ModerationRequest> resources;
-        if (moderationRequestResources.isEmpty()) {
-            resources = restControllerHelper.emptyPageResource(ModerationRequest.class, paginationResult);
-        } else {
-            resources = restControllerHelper.generatePagesResource(paginationResult, moderationRequestResources);
-        }
-        return new ResponseEntity<>(resources, HttpStatus.OK);
+        return getModerationResponseEntity(pageable, request, allDetails, modRequestsWithPageData);
     }
 
     private @NotNull HalResource<ModerationRequest> createHalModerationRequestWithAllDetails(
@@ -316,5 +288,58 @@ public class ModerationRequestController implements RepresentationModelProcessor
             embeddedModerationRequestResource = createHalModerationRequest(moderationRequest);
         }
         moderationRequestResources.add(embeddedModerationRequestResource);
+    }
+
+    @Operation(
+            summary = "Get my submissions.",
+            description = "Get moderation requests submitted by the user. The responses are sortable by fields " +
+                    "\"timestamp\", \"documentName\" and \"moderationState\".",
+            tags = {"Moderation Requests"}
+    )
+    @GetMapping(value = MODERATION_REQUEST_URL + "/mySubmissions")
+    public ResponseEntity<CollectionModel<ModerationRequest>> getSubmissions(
+            Pageable pageable, HttpServletRequest request
+    ) throws TException, URISyntaxException, ResourceClassNotFoundException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
+                sw360ModerationRequestService.getRequestsByRequestingUser(sw360User, pageable);
+        return getModerationResponseEntity(pageable, request, false, modRequestsWithPageData);
+    }
+
+    /**
+     * Generate a Response Entity for paginated moderation request list.
+     * @param pageable   Pageable request
+     * @param request    HTTP Request
+     * @param allDetails Request with allDetails?
+     * @param modRequestsWithPageData Map of pagination data and moderation request list
+     * @return Returns the Response Entity with pagination data.
+     */
+    @NotNull
+    private ResponseEntity<CollectionModel<ModerationRequest>> getModerationResponseEntity(
+            Pageable pageable, HttpServletRequest request, boolean allDetails,
+            Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData
+    ) throws ResourceClassNotFoundException, URISyntaxException {
+        List<ModerationRequest> moderationRequests = new ArrayList<>();
+        int totalCount = 0;
+        if (!CommonUtils.isNullOrEmptyMap(modRequestsWithPageData)) {
+            PaginationData paginationData = modRequestsWithPageData.keySet().iterator().next();
+            moderationRequests = modRequestsWithPageData.get(paginationData);
+            totalCount = (int) paginationData.getTotalRowCount();
+        }
+
+        PaginationResult<ModerationRequest> paginationResult = restControllerHelper.paginationResultFromPaginatedList(
+                request, pageable, moderationRequests, SW360Constants.TYPE_MODERATION, totalCount);
+
+        List<EntityModel<ModerationRequest>> moderationRequestResources = new ArrayList<>();
+        paginationResult.getResources().forEach(m -> addModerationRequest(m, allDetails, moderationRequestResources));
+
+        CollectionModel<ModerationRequest> resources;
+        if (moderationRequestResources.isEmpty()) {
+            resources = restControllerHelper.emptyPageResource(ModerationRequest.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, moderationRequestResources);
+        }
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
     }
 }

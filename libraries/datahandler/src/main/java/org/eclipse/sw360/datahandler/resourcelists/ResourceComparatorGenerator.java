@@ -28,11 +28,11 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 
 public class ResourceComparatorGenerator<T> {
 
@@ -166,6 +166,10 @@ public class ResourceComparatorGenerator<T> {
                 Comparator.comparing(ModerationRequest::getRequestingUser, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         moderationRequestMap.put(ModerationRequest._Fields.DOCUMENT_TYPE,
                 Comparator.comparing(c -> Optional.ofNullable(c.getDocumentType()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        moderationRequestMap.put(ModerationRequest._Fields.DOCUMENT_NAME,
+                Comparator.comparing(ModerationRequest::getDocumentName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        moderationRequestMap.put(ModerationRequest._Fields.MODERATION_STATE,
+                Comparator.comparing(c -> Optional.ofNullable(c.getModerationState()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         return Collections.unmodifiableMap(moderationRequestMap);
     }
 
@@ -309,6 +313,15 @@ public class ResourceComparatorGenerator<T> {
                     }
                 }
                 return generateReleaseEccComparatorWithFields(type, releaseFields, eccInfoFields);
+            case SW360Constants.TYPE_MODERATION:
+                List<ModerationRequest._Fields> modFields = new ArrayList<>();
+                for (String property : properties) {
+                    ModerationRequest._Fields field = ModerationRequest._Fields.findByName(property);
+                    if (field != null) {
+                        modFields.add(field);
+                    }
+                }
+                return generateModerationRequestComparatorWithFields(type, modFields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -409,6 +422,16 @@ public class ResourceComparatorGenerator<T> {
         switch (type) {
             case SW360Constants.TYPE_VULNERABILITY:
                 return (Comparator<T>)vulnComparator(fields);
+            default:
+                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+        }
+    }
+
+    public Comparator<T> generateModerationRequestComparatorWithFields(
+            String type, List<ModerationRequest._Fields> fields) throws ResourceClassNotFoundException {
+        switch (type) {
+            case SW360Constants.TYPE_MODERATION:
+                return (Comparator<T>) moderationComparator(fields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -557,6 +580,18 @@ public class ResourceComparatorGenerator<T> {
             }
         }
         comparator = comparator.thenComparing(defaultVulComparator());
+        return comparator;
+    }
+
+    private Comparator<ModerationRequest> moderationComparator(List<ModerationRequest._Fields> fields) {
+        Comparator<ModerationRequest> comparator = Comparator.comparing(x -> true);
+        for (ModerationRequest._Fields field : fields) {
+            Comparator<ModerationRequest> fieldComparator = moderationRequestMap.get(field);
+            if (fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultModerationRequestComparator());
         return comparator;
     }
 

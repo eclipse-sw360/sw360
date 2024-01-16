@@ -75,12 +75,19 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
             "    }" +
             "}";
 
+    private static final String COUNTBYREQUESTER = "function(doc) {" +
+            "    if (doc.type == 'moderation') {" +
+            "        emit([doc.requestingUser], null);" +
+            "    }" +
+            "}";
+
     public ModerationRequestRepository(DatabaseConnectorCloudant db) {
         super(ModerationRequest.class, db, new ModerationRequestSummary());
         Map<String, MapReduce> views = new HashMap<String, MapReduce>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byRequestingUsersDeptView", createMapReduce(REQUESTING_USERS_VIEW, null));
         views.put("countByModerationState", createMapReduce(COUNTBYMODERATIONSTATE, "_count"));
+        views.put("countByRequester", createMapReduce(COUNTBYREQUESTER, "_count"));
         initStandardDesignDocument(views, db);
         createIndex("byModerators", new String[] {"moderators"}, db);
         createIndex("byDate", new String[] {"timestamp"}, db);
@@ -260,6 +267,29 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         return makeSummaryFromFullDocs(SummaryType.SHORT, mrs);
     }
 
+    public List<ModerationRequest> getRequestsByRequestingUserWithPagination(String user, PaginationData pageData) {
+        final int rowsPerPage = pageData.getRowsPerPage();
+        final boolean ascending = pageData.isAscending();
+        final int skip = pageData.getDisplayStart();
+        final Selector typeSelector = eq("type", "moderation");
+        final Selector filterByModeratorSelector = eq("requestingUser", user);
+        final Selector finalSelector = and(typeSelector, filterByModeratorSelector);
+        QueryBuilder qb = new QueryBuilder(finalSelector);
+        qb.limit(rowsPerPage);
+        qb.skip(skip);
+        qb.useIndex("byUsers");
+        qb = ascending ? qb.sort(Sort.asc("timestamp")) : qb.sort(Sort.desc("timestamp"));
+
+        List<ModerationRequest> modReqs = Lists.newArrayList();
+        try {
+            QueryResult<ModerationRequest> queryResult = getConnector().getQueryResult(qb.build(), ModerationRequest.class);
+            modReqs = queryResult.getDocs();
+        } catch (Exception e) {
+            log.error("Error getting moderation requests", e);
+        }
+        return modReqs;
+    }
+
     public Map<String, Long> getCountByModerationState(String moderator) {
         Map<String, Long> countByModerationState = Maps.newHashMap();
         List<ComplexKey> keys = prepareKeys(moderator, true);
@@ -275,6 +305,27 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
                     List<String> moderatorToModStatus = new ArrayList<String>(Arrays.asList(replace.split(",")));
                     return moderatorToModStatus.get(1);
                 }, val -> val.getValue()));
+            }
+        } catch (IOException e) {
+            log.error("Error getting count of moderation requests based on moderation state", e);
+        }
+        return countByModerationState;
+    }
+
+    public Map<String, Long> getCountByRequester(String user) {
+        Map<String, Long> countByModerationState = Maps.newHashMap();
+
+        List<ComplexKey> keys = prepareKeys(user, true);
+        ViewRequest<ComplexKey, Long> countReq = getConnector()
+                .createQuery(ModerationRequest.class, "countByRequester").newRequest(Key.Type.COMPLEX, Long.class)
+                .startKey(keys.get(0)).endKey(keys.get(1)).group(true).groupLevel(2).reduce(true).build();
+        try {
+            ViewResponse<ComplexKey, Long> response = countReq.getResponse();
+            if (null != response) {
+                countByModerationState = response.getRows().stream().collect(Collectors.toMap(key -> {
+                    String json = key.getKey().toJson();
+                    return json.replaceAll("[\\[\\]\"]", "");
+                }, ViewResponse.Row::getValue));
             }
         } catch (IOException e) {
             log.error("Error getting count of moderation requests based on moderation state", e);

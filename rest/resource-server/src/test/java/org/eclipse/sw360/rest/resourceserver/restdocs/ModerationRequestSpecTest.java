@@ -203,6 +203,7 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         given(this.moderationRequestServiceMock.getRequestsByState(any(), any(), eq(false), anyBoolean())).willReturn(requestsByState);
         given(this.moderationRequestServiceMock.acceptRequest(eq(moderationRequest), eq("Changes looks good."), any())).willReturn(ModerationState.APPROVED);
         given(this.moderationRequestServiceMock.assignRequest(eq(moderationRequest), any())).willReturn(ModerationState.INPROGRESS);
+        given(this.moderationRequestServiceMock.getRequestsByRequestingUser(any(), any())).willReturn(requestsByState);
     }
 
     @Test
@@ -446,6 +447,51 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("status").description("`" + ModerationState.PENDING + "` if unassigned, `" + ModerationState.INPROGRESS + "` if assigned. Exception thrown in case of errors."),
                                 subsectionWithPath("_links").description("Link to current <<resources-moderationRequest, ModerationRequest resource>>")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_moderationrequests_submission() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/moderationrequest/mySubmissions")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("page", "0")
+                        .param("page_entries", "5")
+                        .param("sort", "documentName,asc")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("page").description("Page of moderation requests"),
+                                parameterWithName("page_entries").description("Amount of requests per page"),
+                                parameterWithName("sort").description("Sort the result by the given field and order. " +
+                                        "Possible values are: `documentName`, `timestamp` and `moderationState`.")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:moderationRequests").description("An array of <<resources-moderationRequest, ModerationRequest>>."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]id").description("The id of the moderation request."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]timestamp").description("Timestamp (in unix epoch) when the request was created."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]timestampOfDecision").description("Timestamp (in unix epoch) when the decision on the request was made."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]documentId").description("The ID of the document for which the moderation request was made."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]documentType").description("Type of the document. Possible values are: " + Arrays.asList(DocumentType.values())),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]requestingUser").description("The user who created the moderation request."),
+                                subsectionWithPath("_embedded.sw360:moderationRequests.[]moderators.[]").description("List of users who are marked as moderators for the request."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]documentName").description("Name of the document for which the request was created."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]moderationState").description("The state of the moderation request. Possible values are: " + Arrays.asList(ModerationState.values())),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]requestingUserDepartment").description("The Business Unit / Group of the Project, for which clearing request is created."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]componentType").description("Type of the component for which the moderation request is created. Possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:moderationRequests.[]moderatorsSize").description("Number of users in moderators list."),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing moderation requests"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
 }
