@@ -165,27 +165,20 @@
                 <div class="card-body">
                 <form>
                     <div class="form-group">
-                        <label for="date_type"><liferay-ui:message key="select.date.type.and.range" />:</label>
-                        <select class="form-control form-control-sm cr_filter" id="date_type">
-                            <option value="" class="textlabel stackedLabel" ></option>
-                            <option value="<%=ClearingRequest._Fields.TIMESTAMP%>" class="textlabel stackedLabel"><liferay-ui:message key="created.on" /></option>
-                            <option value="<%=ClearingRequest._Fields.REQUESTED_CLEARING_DATE%>" class="textlabel stackedLabel"><liferay-ui:message key="preferred.clearing.date" /></option>
-                            <option value="<%=ClearingRequest._Fields.AGREED_CLEARING_DATE%>" class="textlabel stackedLabel"><liferay-ui:message key="agreed.clearing.date" /></option>
-                            <option value="<%=ClearingRequest._Fields.MODIFIED_ON%>" class="textlabel stackedLabel"><liferay-ui:message key="last.updated.on" /></option>
-                            <option value="<%=ClearingRequest._Fields.TIMESTAMP_OF_DECISION%>" class="textlabel stackedLabel"><liferay-ui:message key="request.closed.on" /></option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <select class="form-control form-control-sm cr_filter" id="date_range" >
-                            <option value="" class="textlabel stackedLabel" ></option>
-                            <option value="0" class="textlabel stackedLabel"><liferay-ui:message key="today" /></option>
-                            <option value="-30" class="textlabel stackedLabel"><liferay-ui:message key="last.30.days" /></option>
-                            <option value="-7" class="textlabel stackedLabel"><liferay-ui:message key="last.7.days" /></option>
-                            <option value="-15" class="textlabel stackedLabel"><liferay-ui:message key="last.15.days" /></option>
-                            <option value="15" class="textlabel stackedLabel"><liferay-ui:message key="next.15.days" /></option>
-                            <option value="7" class="textlabel stackedLabel"><liferay-ui:message key="next.7.days" /></option>
-                            <option value="30" class="textlabel stackedLabel"><liferay-ui:message key="next.30.days" /></option>
-                        </select>
+                        <span class="d-flex align-items-center mb-2">
+	                        <label class="mb-0 mr-auto" for="created_on_cr"><liferay-ui:message key="date" /></label>
+	                        <select class="form-control form-control-sm w-50" id="dateRangeCR" name="<portlet:namespace/><%=PortalConstants.DATE_RANGE%>">
+	                            <option value="<%=PortalConstants.NO_FILTER%>" class="textlabel stackedLabel"></option>
+	                            <sw360:DisplayEnumOptions type="<%=DateRange.class%>" selectedName="${date_range_type}" useStringValues="true"/>
+	                        </select>
+                        </span>
+                        <input id="created_on_cr" class="datepickerForCR form-control form-control-sm" autocomplete="off"
+                            name="<portlet:namespace/><%=ModerationRequest._Fields.TIMESTAMP%>" <core_rt:if test="${empty timestamp}"> style="display: none;" </core_rt:if>
+                            type="text" pattern="\d{4}-\d{2}-\d{2}" value="<sw360:out value="${timestamp}"/>" />
+                        <label id="toLabelCR" <core_rt:if test="${empty endDate}"> style="display: none;" </core_rt:if> ><liferay-ui:message key="to" /></label>
+                        <input type="text" id="endDateCR" class="datepickerForCR form-control form-control-sm ml-0" autocomplete="off"
+                            name="<portlet:namespace/><%=PortalConstants.END_DATE%>" <core_rt:if test="${empty endDate}"> style="display: none;" </core_rt:if>
+                            value="<sw360:out value="${endDate}"/>" pattern="\d{4}-\d{2}-\d{2}" />
                     </div>
                     <div class="form-group" id="cr_priority_div">
                         <label for="date_type"><liferay-ui:message key="priority" />:</label>
@@ -296,11 +289,12 @@ AUI().use('liferay-portlet-url', function () {
         });
 
         // Event listener to the two range filtering inputs to redraw on input
-        $('#date_type, #date_range, #cr_priority, #ba_bl, #cr_status, #cr_type').on('change', function(e) {
+        $('#cr_priority, #ba_bl, #cr_status, #cr_type').on('change', function(e) {
             filterChanged();
         });
 
         $('.datepicker').datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd", maxDate: new Date()}).change(dateChanged).on('changeDate', dateChanged);
+        $('.datepickerForCR').datepicker({changeMonth:true,changeYear:true,dateFormat: "yy-mm-dd", maxDate: new Date()}).change(dateChanged).on('changeDate', dateChanged);
 
         function dateChanged(ev) {
             let id = $(this).attr("id"),
@@ -309,6 +303,12 @@ AUI().use('liferay-portlet-url', function () {
                 $('#endDate').datepicker('option', 'minDate', dt);
             } else if (id === "endDate") {
                 $('#created_on').datepicker('option', 'maxDate', dt ? dt : new Date());
+            } else if(id === "created_on_cr"){
+                $('#endDateCR').datepicker('option', 'minDate', dt);
+                filterChanged();
+            } else if (id === "endDateCR") {
+                $('#created_on_cr').datepicker('option', 'maxDate', dt ? dt : new Date());
+                filterChanged();
             }
         }
 
@@ -332,7 +332,33 @@ AUI().use('liferay-portlet-url', function () {
                 $("#endDate").hide().val("");
             }
         });
+        
+        
+        $('#dateRangeCR').on('change', function (e) {
+            let selected = $("#dateRangeCR option:selected").text(),
+            	$datePkr = $(".datepickerForCR"),
+            	$toLabelCR = $("#toLabelCR")
+            	$created_on_cr = $("#created_on_cr")
+            	$endDateCR = $("#endDateCR")
 
+            if (!selected) {
+                $datePkr.hide().val("");
+                $toLabelCR.hide();
+                return;
+            }	
+
+            if (selected === 'Between') {
+                $created_on_cr.show();
+                $endDateCR.show();
+                $toLabelCR.show();
+            } else {
+                $created_on_cr.show();
+                $endDateCR.hide().val("");
+                $toLabelCR.hide();
+            }
+        });
+
+        
         function filterChanged() {
             let $priority = $('#cr_priority'),
                 $babl = $('#ba_bl'),
@@ -355,69 +381,43 @@ AUI().use('liferay-portlet-url', function () {
                 .column(1).search(babl)
                 .column(4).search(crStatus)
                 .draw();
-            }
-
-            let $dateType = $("#date_type"),
-                $dateRange = $('#date_range'),
-                dateType = $dateType.find(":selected").val();
-                if (dateType) {
-                    $dateRange.show();
-                    if ( dateType === "<%=ClearingRequest._Fields.TIMESTAMP%>" ||
-                            dateType === "<%=ClearingRequest._Fields.MODIFIED_ON%>" ||
-                            dateType === "<%=ClearingRequest._Fields.TIMESTAMP_OF_DECISION%>" ) {
-                          //iterate through each option
-                        $('#date_range option').each(function() {
-                            if ($(this).attr("value") > 0) {
-                                $(this).hide().prop("disabled", true);
-                            }
-                        });
-                    } else {
-                        $('#date_range option').each(function() {
-                            if ($(this).attr("value") > 0) {
-                                $(this).show().prop("disabled", false);
-                            }
-                        });
-                    }
-                } else {
-                    $dateRange.val("").hide();
-                }
+            }    
+                          
+            let created_on_cr = $("#created_on_cr").val();
+            let endDateCR = $("#endDateCR").val(); 
+            
             $.fn.dataTable.ext.search.push(
-                    function( settings, data, dataIndex ) {
-                        let today = new Date(),
-                            dateType = $dateType.find(":selected").val(),
-                            days = $dateRange.find(":selected").val(),
-                            dateRange = new Date();
-                        if (dateType && days) {
-                            (days >= 0) ? dateRange.setDate(dateRange.getDate() + Math.abs(days)) : dateRange.setDate(dateRange.getDate() - Math.abs(days));
-                            dateRange.setHours(0,0,0,0);
-                        } else {
-                            return true;
-                        }
-                        today.setHours(0,0,0,0);
-                        let filterDate = new Date("1970-01-01"); // use data for the date column
-                        if (dateType === "<%=ClearingRequest._Fields.TIMESTAMP%>" && data[9] && days <= 0) {
-                            filterDate = new Date( data[9] );
-                        } else if (dateType === "<%=ClearingRequest._Fields.REQUESTED_CLEARING_DATE%>" && data[10]) {
-                            filterDate = new Date( data[10] );
-                        } else if (dateType === "<%=ClearingRequest._Fields.AGREED_CLEARING_DATE%>" && data[11]) {
-                            filterDate = new Date( data[11] );
-                        } else if (dateType === "<%=ClearingRequest._Fields.MODIFIED_ON%>" && data[12] && days <= 0) {
-                            filterDate = new Date( data[12] );
-                        } else if (dateType === "<%=ClearingRequest._Fields.TIMESTAMP_OF_DECISION%>" && data[13] && days <= 0) {
-                            filterDate = new Date( data[13] );
-                        }
-                        filterDate.setHours(0,0,0,0);
-
-                        if ( ( !dateType && !days ) || ( dateType && !days ) ||
-                             ( days > 0 && filterDate >= today && filterDate <= dateRange ) ||
-                             ( days < 0 && filterDate <= today && filterDate >= dateRange ) ||
-                             ( days == 0 && filterDate.getTime() == today.getTime() && filterDate.getTime() == dateRange.getTime() ) )
-                        {
-                            return true;
-                        }
-                        return false;
+                function(settings, data, dataIndex) {
+                    let dateRangeCR = $("#dateRangeCR option:selected").text();
+                    let startDate = $("#created_on_cr").val();
+                    let endDate = $("#endDateCR").val();
+                    let timestamp = data[9];
+                    
+                    if (dateRangeCR === 'Between' && startDate && endDate) {
+                        let startDateTime = new Date(startDate).getTime();
+                        let endDateTime = new Date(endDate).getTime();
+                        let dateValue = new Date(timestamp).getTime();
+                        
+                        return dateValue >= startDateTime && dateValue <= endDateTime;
+                    } else if (dateRangeCR === '=') {
+                        let targetDate = new Date(startDate).getTime();
+                        let dateValue = new Date(timestamp).getTime();
+                        
+                        return dateValue === targetDate;
+                    } else if (dateRangeCR === '<=') {
+                        let targetDate = new Date(startDate).getTime();
+                        let dateValue = new Date(timestamp).getTime();
+                        
+                        return dateValue <= targetDate;
+                    } else if (dateRangeCR === '>=') {
+                        let targetDate = new Date(startDate).getTime();
+                        let dateValue = new Date(timestamp).getTime();
+                        
+                        return dateValue >= targetDate;
                     }
-                );
+                }
+            );
+    		
             if ($('.list-group .list-group-item.active').attr('href') === "#tab-OpenCR") {
                 clearingRequestsDataTable.draw();
             } else {
@@ -488,7 +488,6 @@ AUI().use('liferay-portlet-url', function () {
 
         $('a[data-toggle="list"]').on('shown.bs.tab', function (e) {
             changePortletToolBar(e.target.hash);
-            filterChanged();
         })
 
         function createModerationsTable(tableId, url) {
