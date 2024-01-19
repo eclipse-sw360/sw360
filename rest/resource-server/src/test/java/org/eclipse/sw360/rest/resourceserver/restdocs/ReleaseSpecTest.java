@@ -294,6 +294,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 .setDescription("Sanitizes an html string by stripping all potentially dangerous tokens.");
 
         given(this.packageServiceMock.getPackageForUserById(eq(package1.getId()))).willReturn(package1);
+        given(this.packageServiceMock.validatePackageIds(any())).willReturn(true);
 
         Set<String> linkedPackages = new HashSet<>();
         linkedPackages.add(package1.getId());

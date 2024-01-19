@@ -1085,6 +1085,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The package IDs to be linked.")
             @RequestBody Set<String> packagesInRequestBody
     ) throws URISyntaxException, TException {
+        if(!packageService.validatePackageIds(packagesInRequestBody)){
+            return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
+        }
         RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true);
         if (linkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
@@ -1123,6 +1126,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The package IDs to be linked.")
             @RequestBody Set<String> packagesInRequestBody
     ) throws URISyntaxException, TException {
+        if(!packageService.validatePackageIds(packagesInRequestBody)){
+            return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
+        }
         RequestStatus unlinkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false);
         if (unlinkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
@@ -1310,9 +1316,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             throws URISyntaxException, TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Release release = releaseService.getReleaseForUserById(id, sw360User);
-        Set<String> packageIds = new HashSet<>();
+        Set<String> packageIds;
         packageIds = release.getPackageIds();
-
+        if (CommonUtils.isNullOrEmptyCollection(packageIds)) {
+            packageIds = new HashSet<>();
+        }
         if (link) {
             packageIds.addAll(packagesInRequestBody);
         } else {

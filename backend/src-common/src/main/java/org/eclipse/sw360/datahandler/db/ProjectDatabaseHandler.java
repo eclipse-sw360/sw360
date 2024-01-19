@@ -805,7 +805,9 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 PackageService.Iface packageClient = new ThriftClients().makePackageClient();
                 List<Package> removedPackages = packageClient.getPackageWithReleaseByPackageIds(unlinkedPacakgeIds);
 
-                Map<String, Set<String>> releaseIdToPackageIdsMap = removedPackages.stream().map(Package::getRelease)
+                Map<String, Set<String>> releaseIdToPackageIdsMap = removedPackages.stream()
+                        .filter(packageFilter -> packageFilter.getRelease() != null)
+                        .map(Package::getRelease)
                         .filter(rel -> CommonUtils.isNotEmpty(rel.getPackageIds()))
                         .map(rel -> new AbstractMap.SimpleEntry<>(rel.getId(), rel.getPackageIds()))
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldVal, newVal) -> newVal));

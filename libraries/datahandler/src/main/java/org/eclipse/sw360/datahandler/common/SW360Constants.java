@@ -55,6 +55,7 @@ public class SW360Constants {
     public static final String NULL_STRING = "null";
     public static final String PACKAGE_URL = "package-url";
     public static final String PURL_ID = "purl.id";
+    public static final String DUPLICATE_PACKAGE_BY_PURL = "duplicatePackagesByPurl";
     public static final String XML_FILE_EXTENSION = "xml";
     public static final String JSON_FILE_EXTENSION = "json";
     public static final String PROJECT_IDS = "projectIds";
