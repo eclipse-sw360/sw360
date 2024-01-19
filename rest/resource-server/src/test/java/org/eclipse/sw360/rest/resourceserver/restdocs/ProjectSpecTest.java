@@ -39,8 +39,13 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
+import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
@@ -402,6 +407,70 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project7.setClearingState(ProjectClearingState.OPEN);
         project7.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
 
+        Map<String, ProjectReleaseRelationship> linkedReleases3 = new HashMap<>();
+        Set<Attachment> attachmentSet = new HashSet<Attachment>();
+        List<Obligation> obligationList = new ArrayList<>();
+        Set<String> licenseIds2 = new HashSet<>();
+        licenseIds2.add("MIT");
+
+        License license = new License();
+        license.setId("MIT");
+        license.setFullname("The MIT License (MIT)");
+        license.setShortname("MIT");
+
+        Obligation obligation = new Obligation();
+        obligation.setId("0001");
+        obligation.setTitle("obligation_title");
+        obligation.setText("This is text of Obligation");
+        obligation.setObligationType(ObligationType.PERMISSION);
+        obligation.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
+        obligationList.add(obligation);
+        license.setObligations(obligationList);
+
+        Attachment releaseAttachment = new Attachment("33312312533", "CLIXML_core-js.xml");
+        releaseAttachment.setSha1("d32a6dcbf27c61230d909515e69ecd0d");
+        releaseAttachment.setAttachmentType(AttachmentType.COMPONENT_LICENSE_INFO_XML);
+        releaseAttachment.setCheckStatus(CheckStatus.ACCEPTED);
+        attachmentSet.add(releaseAttachment);
+
+        Release release7 = new Release();
+        release7.setId("376527651233");
+        release7.setName("Angular_Obl");
+        release7.setVersion("2");
+
+        Project project8 = new Project();
+        project8.setId("123456733");
+        project8.setName("oblProject");
+        project8.setVersion("3");
+        linkedReleases3.put("376527651233", projectReleaseRelationship);
+        project8.setReleaseIdToUsage(linkedReleases3);
+
+        Source ownerSrc3 = Source.releaseId("376527651233");
+        Source usedBySrc3 = Source.projectId("123456733");
+        LicenseInfoUsage licenseInfoUsage3 = new LicenseInfoUsage(new HashSet<>());
+        licenseInfoUsage3.setProjectPath("123456733");
+        licenseInfoUsage3.setExcludedLicenseIds(Sets.newHashSet());
+        licenseInfoUsage3.setIncludeConcludedLicense(false);
+        UsageData usageData3 = new UsageData();
+        usageData3.setLicenseInfo(licenseInfoUsage3);
+        usageData3.setFieldValue(UsageData._Fields.LICENSE_INFO, licenseInfoUsage3);
+        AttachmentUsage attachmentUsage3 = new AttachmentUsage(ownerSrc3, "aa1122334455bb33", usedBySrc3);
+        attachmentUsage3.setUsageData(usageData3);
+        attachmentUsage3.setId("11223344889933");
+
+        Set<Release> releaseSet = new HashSet<>();
+        releaseSet.add(release7);
+        Map<String, AttachmentUsage> licenseInfoUsages = Map.of("aa1122334455bb33", attachmentUsage3);
+        Map<String, String> releaseIdToAcceptedCli = Map.of(release7.getId(), "aa1122334455bb33");
+        Map<String, Set<Release>> licensesFromAttachmentUsage = Map.of(license.getId(), releaseSet);
+        ObligationStatusInfo osi = new ObligationStatusInfo();
+        osi.setText(obligation.getText());
+        osi.setLicenseIds(licenseIds2);
+        osi.setReleaseIdToAcceptedCLI(releaseIdToAcceptedCli);
+        osi.setId(obligation.getId());
+        osi.setObligationType(obligation.getObligationType());
+        Map<String, ObligationStatusInfo> obligationStatusMap = Map.of(obligation.getTitle(), osi);
+
         Release release5 = new Release();
         release5.setId("37652765121");
         release5.setName("Angular 2.3.1");
@@ -467,6 +536,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getProjectForUserById(eq(project5.getId()), any())).willReturn(project5);
         given(this.projectServiceMock.getProjectForUserById(eq(project6.getId()), any())).willReturn(project6);
         given(this.projectServiceMock.getProjectForUserById(eq(project7.getId()), any())).willReturn(project7);
+        given(this.projectServiceMock.getProjectForUserById(eq(project8.getId()), any())).willReturn(project8);
+        given(this.projectServiceMock.getLicenseInfoAttachmentUsage(eq(project8.getId()))).willReturn(licenseInfoUsages);
+        given(this.projectServiceMock.getLicensesFromAttachmentUsage(eq(licenseInfoUsages), any())).willReturn(licensesFromAttachmentUsage);
+        given(this.projectServiceMock.getLicenseObligationData(eq(licensesFromAttachmentUsage), any())).willReturn(obligationStatusMap);
         given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(projectForAtt);
         given(this.projectServiceMock.getProjectForUserById(eq(SPDXProject.getId()), any())).willReturn(SPDXProject);
         given(this.projectServiceMock.getProjectForUserById(eq(cycloneDXProject.getId()), any())).willReturn(cycloneDXProject);
@@ -757,6 +830,34 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_get_obligations_from_license_db() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/" + "123456733" + "/licenseDbObligations")
+                .header("Authorization", "Bearer " + accessToken)
+                .param("page", "0")
+                .param("page_entries", "5")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects per page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("licenseDbObligations.obligation_title").description("Title of license obligation"),
+                                subsectionWithPath("licenseDbObligations.obligation_title.text").description("Text of license obligation"),
+                                subsectionWithPath("licenseDbObligations.obligation_title.licenseIds[]").description("List of licenseIds"),
+                                subsectionWithPath("licenseDbObligations.obligation_title.id").description("Id of the obligation"),
+                                subsectionWithPath("licenseDbObligations.obligation_title.releaseIdToAcceptedCLI").description("Releases having accepted attachments"),
+                                subsectionWithPath("licenseDbObligations.obligation_title.obligationType").description("Type of the obligation"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of obligations per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all license obligations"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page"))));
     }
 
     @Test

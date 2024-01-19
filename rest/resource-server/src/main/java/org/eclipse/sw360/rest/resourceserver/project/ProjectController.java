@@ -72,6 +72,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
@@ -136,6 +137,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.InvalidPropertiesFormatException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -2059,6 +2061,57 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
         }
+    }
+
+    @Operation(
+            description = "Get license obligations data from license database.",
+            tags = {"Project"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations", method = RequestMethod.GET)
+	public ResponseEntity<?> getLicObligations(@RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+			@Parameter(description = "Project ID.") @PathVariable("id") String id)
+			throws TException {
+
+		final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+		if (CommonUtils.isNullOrEmptyMap(sw360Project.getReleaseIdToUsage())) {
+			return new ResponseEntity<String>("No release linked to the project", HttpStatus.NO_CONTENT);
+        }
+		Map<String, AttachmentUsage> licenseInfoAttachmentUsage = projectService.getLicenseInfoAttachmentUsage(id);
+		if(licenseInfoAttachmentUsage.size() == 0) {
+			return new ResponseEntity<String>("No approved CLI or licenseInfo attachment usage present for the project", HttpStatus.NO_CONTENT);
+		}
+        Map<String, Set<Release>> licensesFromAttachmentUsage = projectService.getLicensesFromAttachmentUsage(
+                licenseInfoAttachmentUsage, sw360User);
+        Map<String, ObligationStatusInfo> licenseObligation = projectService.getLicenseObligationData(licensesFromAttachmentUsage, sw360User);
+
+        List<Map.Entry<String, ObligationStatusInfo>> entries = new ArrayList<>(licenseObligation.entrySet());
+        int startIndex = page * size;
+        int endIndex = Math.min(startIndex + size, entries.size());
+        entries = entries.subList(startIndex, endIndex);
+        Map<String, ObligationStatusInfo> paginatedMap = new LinkedHashMap<>();
+        for (Map.Entry<String, ObligationStatusInfo> entry : entries) {
+            paginatedMap.put(entry.getKey(), entry.getValue());
+        }
+
+        Map<String, Integer> paginationMetadata = createPaginationMetadata(page, size, licenseObligation.size());
+
+        Map<String, Object> responseBody = new LinkedHashMap<>();
+        responseBody.put("licenseDbObligations", paginatedMap);
+        responseBody.put("page", paginationMetadata);
+
+        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+    }
+
+    private Map<String, Integer> createPaginationMetadata(int page, int size, int totalElements) {
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+        return Map.of(
+            "size", size,
+            "totalElements", totalElements,
+            "totalPages", totalPages,
+            "number", page
+        );
     }
 
     @Operation(
