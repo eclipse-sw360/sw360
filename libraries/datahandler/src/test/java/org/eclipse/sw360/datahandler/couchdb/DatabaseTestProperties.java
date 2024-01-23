@@ -29,6 +29,7 @@ public class DatabaseTestProperties {
 
     private static final String COUCH_DB_URL;
     public static final String COUCH_DB_DATABASE;
+    public static final boolean COUCH_DB_CACHE;
 
     private static final Optional<String> COUCH_DB_USERNAME;
     private static final Optional<String> COUCH_DB_PASSWORD;
@@ -40,11 +41,15 @@ public class DatabaseTestProperties {
         COUCH_DB_DATABASE = props.getProperty("couchdb.database", "sw360_test_db");
         COUCH_DB_USERNAME = Optional.ofNullable(props.getProperty("couchdb.user", ""));
         COUCH_DB_PASSWORD = Optional.ofNullable(props.getProperty("couchdb.password", ""));
+        COUCH_DB_CACHE = Boolean.parseBoolean(props.getProperty("couchdb.cache", "true"));
     }
 
     public static HttpClient getConfiguredHttpClient() throws MalformedURLException {
         StdHttpClient.Builder httpClientBuilder = new StdHttpClient.Builder().url(COUCH_DB_URL);
-        if(COUCH_DB_USERNAME.isPresent() && COUCH_DB_PASSWORD.isPresent()) {
+        if (!COUCH_DB_CACHE) {
+            httpClientBuilder.caching(false);
+        }
+        if (COUCH_DB_USERNAME.isPresent() && COUCH_DB_PASSWORD.isPresent()) {
             httpClientBuilder.username(COUCH_DB_USERNAME.get());
             httpClientBuilder.password(COUCH_DB_PASSWORD.get());
         }
