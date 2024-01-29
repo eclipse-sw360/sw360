@@ -1524,6 +1524,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             if (requestSummary.getRequestStatus() == RequestStatus.FAILURE) {
                 return new ResponseEntity<String>(requestSummary.getMessage(), HttpStatus.BAD_REQUEST);
             }
+            else if(requestSummary.getRequestStatus() == RequestStatus.ACCESS_DENIED){
+                return new ResponseEntity<String>("You do not have sufficient permissions.", HttpStatus.UNAUTHORIZED);
+            }
+
             String jsonMessage = requestSummary.getMessage();
             messageMap = new Gson().fromJson(jsonMessage, Map.class);
             projectId = messageMap.get("projectId");
