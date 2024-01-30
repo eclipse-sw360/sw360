@@ -48,6 +48,10 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestType;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
@@ -72,6 +76,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
@@ -130,6 +135,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -2010,6 +2018,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return mapper.convertValue(requestBody, Project.class);
     }
 
+    private ClearingRequest convertToClearingRequest(Map<String, Object> requestBody) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(sw360Module);
+        return mapper.convertValue(requestBody, ClearingRequest.class);
+    }
+
     public static TSerializer getJsonSerializer() {
         try {
             return new TSerializer(new TSimpleJSONProtocol.Factory());
@@ -2271,5 +2286,88 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 releaseNode.setCreateBy(sw360User.getEmail());
             }
         }
+    }
+
+    private ClearingRequest convertToClearingRequest(Map<String, Object> requestBody, String projectId) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        ClearingRequest clearingRequest = mapper.convertValue(requestBody, ClearingRequest.class);
+        return clearingRequest;
+    }
+
+    /**
+     * Creates a clearing request for a project.
+     *
+     * @param id          The project ID.
+     * @param reqBodyMap  The clearing request
+     * @return            The response entity containing the result of the operation.
+     * @throws TException If an error occurs during the operation.
+     */
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Create a clearing request for a project.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/clearingRequest", method = RequestMethod.POST)
+    public ResponseEntity<?> createClearingRequest(
+            @Parameter(description = "Project ID", example = "376576")
+            @PathVariable("id") String id,
+            @Parameter(description = "Clearing request",
+                    schema = @Schema(implementation = ClearingRequest.class))
+            @RequestBody Map<String, Object> reqBodyMap
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        ClearingRequest clearingRequest = convertToClearingRequest(reqBodyMap, id);
+        clearingRequest.setProjectId(id);
+        clearingRequest.setRequestingUser(sw360User.getEmail());
+        clearingRequest.setClearingState(ClearingRequestState.NEW);
+
+        if (clearingRequest.getRequestingUserComment() == null) {
+            clearingRequest.setRequestingUserComment("");
+        }
+        if (clearingRequest.getClearingType() == null) {
+            return new ResponseEntity<String>("clearingType is a mandatory field. Possible values are:"
+                    + Arrays.asList(ClearingRequestType.values()), HttpStatus.BAD_REQUEST);
+        }
+
+        if (clearingRequest.getRequestedClearingDate() != null) {
+            try {
+                LocalDate today = LocalDate.now();
+                LocalDate requestedClearingDate = LocalDate.parse(clearingRequest.getRequestedClearingDate(),
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                if (requestedClearingDate.isBefore(today)) {
+                    return new ResponseEntity<String>("requestedClearingDate must be a current or future date",
+                            HttpStatus.BAD_REQUEST);
+                }
+            } catch (DateTimeParseException e) {
+                return new ResponseEntity<String>("requestedClearingDate must be in yyyy-MM-dd format",
+                        HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        if (clearingRequest.getClearingTeam() != null) {
+            User user = restControllerHelper.getUserByEmailOrNull(clearingRequest.getClearingTeam());
+            if (user == null) {
+                return new ResponseEntity<String>("clearingTeam is not a valid user", HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        AddDocumentRequestSummary addDocumentRequestSummary = projectService.createClearingRequest(clearingRequest, sw360User, id);
+
+        if (addDocumentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
+            return new ResponseEntity<String>(addDocumentRequestSummary.getMessage(), HttpStatus.CONFLICT);
+        } else if (addDocumentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.FAILURE) {
+            return new ResponseEntity<String>(addDocumentRequestSummary.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+        clearingRequest.setId(addDocumentRequestSummary.getId());
+
+        URI location = ServletUriComponentsBuilder
+            .fromCurrentRequest().path("/{id}")
+            .buildAndExpand(clearingRequest.getId()).toUri();
+
+        HalResource<ClearingRequest> halResource = new HalResource<>(clearingRequest);
+
+        return ResponseEntity.created(location).body(halResource);
     }
 }

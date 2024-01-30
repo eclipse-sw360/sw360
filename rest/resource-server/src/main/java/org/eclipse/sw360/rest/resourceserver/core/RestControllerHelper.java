@@ -315,6 +315,17 @@ public class RestControllerHelper<T> {
         return sw360User;
     }
 
+    public User getUserByEmailOrNull(String emailId) {
+        User sw360User;
+        try {
+            sw360User = userService.getUserByEmail(emailId);
+        } catch (RuntimeException e) {
+            LOGGER.debug("Could not get user object from backend with email: " + emailId);
+            return null;
+        }
+        return sw360User;
+    }
+
     public void addEmbeddedContributors(HalResource halResource, Set<String> contributors) {
         for (String contributorEmail : contributors) {
             User sw360User = getUserByEmail(contributorEmail);

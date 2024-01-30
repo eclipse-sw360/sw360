@@ -22,6 +22,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
@@ -229,7 +230,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             }
         }
     }
-    
+
     public Project getClearingInfo(Project sw360Project, User sw360User) throws TException {
     	ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
     	return sw360ProjectClient.fillClearingStateSummaryIncludingSubprojectsForSingleProject(sw360Project, sw360User);
@@ -572,4 +573,10 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             return 0;
         }
     }
+
+    public AddDocumentRequestSummary createClearingRequest(ClearingRequest clearingRequest, User sw360User, String projectId) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.createClearingRequest(clearingRequest, sw360User, projectId);
+    }
+
 }
