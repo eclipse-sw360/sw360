@@ -122,6 +122,7 @@ public class SW360Constants {
     public static final String URL_FORMATS;
     public static final String SRC_ATTACHMENT_UPLOADER_EMAIL;
     public static final String SRC_ATTACHMENT_DOWNLOAD_LOCATION;
+    public static final String PREFERRED_CLEARING_DATE_LIMIT;
 
     /**
      * Hashmap containing the name field for each type.
@@ -226,6 +227,7 @@ public class SW360Constants {
         URL_FORMATS = props.getProperty("source.download.formats","");
         SRC_ATTACHMENT_UPLOADER_EMAIL = props.getProperty("source.code.attachment.uploader.email", "");
         SRC_ATTACHMENT_DOWNLOAD_LOCATION = props.getProperty("src.attachment.download.location", "");
+        PREFERRED_CLEARING_DATE_LIMIT =  props.getProperty("preferred.clearing.date.limit","");
     }
 
     private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName){

@@ -15,6 +15,7 @@ import com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestType;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
@@ -22,6 +23,9 @@ import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -92,6 +96,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -537,6 +542,14 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         RequestSummary requestSummaryForCycloneDX = new RequestSummary();
         requestSummaryForCycloneDX.setMessage("{\"projectId\":\"" + cycloneDXProject.getId() + "\"}");
 
+        AddDocumentRequestSummary requestSummaryForCR = new AddDocumentRequestSummary();
+        requestSummaryForCR.setMessage("Clearing request created successfully");
+        requestSummaryForCR.setRequestStatus(AddDocumentRequestStatus.SUCCESS);
+        requestSummaryForCR.setId("CR-1");
+
+        given(this.projectServiceMock.createClearingRequest(any(),any(),any(),eq(project.getId()))).willReturn(requestSummaryForCR);
+        given(this.projectServiceMock.loadPreferredClearingDateLimit()).willReturn(Integer.valueOf(7));
+
         given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
         given(this.projectServiceMock.importCycloneDX(any(),any(),any())).willReturn(requestSummaryForCycloneDX);
         given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any())).willReturn(ByteBuffer.allocate(10000));
@@ -685,6 +698,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 new User("admin@sw360.org", "sw360").setId("123456789"));
         given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(
                 new User("jane@sw360.org", "sw360").setId("209582812"));
+        given(this.userServiceMock.getUserByEmail("clearingTeam@sw360.org")).willReturn(
+                new User("clearingTeam@sw360.org", "sw360").setId("2012312"));
         OutputFormatInfo outputFormatInfo = new OutputFormatInfo();
         outputFormatInfo.setFileExtension("html");
         given(this.licenseInfoMockService.getOutputFormatInfoForGeneratorClass(any()))
@@ -1637,6 +1652,48 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .accept("application/*"))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document());
+    }
+
+    @Test
+    public void should_document_create_clearing_request() throws Exception {
+        Map<String, Object> cr = new HashMap<>();
+        cr.put("clearingType", ClearingRequestType.DEEP.toString());
+        cr.put("clearingTeam", "clearingTeam@sw360.org");
+        LocalDate requestedClearingDate = LocalDate.now().plusDays(7);
+        cr.put("requestedClearingDate", requestedClearingDate.toString());
+        cr.put("requestingUserComment", "New clearing");
+        cr.put("priority", "HIGH");
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(post("/api/projects/" + project.getId() + "/clearingRequest")
+                .contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(cr))
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isCreated())
+                .andDo(this.documentationHandler.document(
+                        links(linkWithRel("self").description("The <<resources-projects,Projects resource>>")),
+                        requestFields(fieldWithPath("clearingTeam").description("Email of the clearing team. This is a mandatory field."),
+                                fieldWithPath("requestedClearingDate").description(
+                                        "Requested clearing date of the project. It should be in the format yyyy-MM-dd and requested after the "
+                                        + "configured clearing date limit. This is a mandatory field."),
+                                fieldWithPath("clearingType").description("Clearing type of the project. Possible values are: "
+                                        + Arrays.asList(ClearingRequestType.values()).toString() + ". This is a mandatory field."),
+                                fieldWithPath("requestingUserComment").description("Requesting user comment on the clearing of the project."),
+                                fieldWithPath("priority")
+                                        .description("Priority of the clearing request. Possible values are: "
+                                                + Arrays.asList(ClearingRequestPriority.values()).toString())
+                                ),
+                        responseFields(fieldWithPath("id").description("Clearing request id."),
+                                fieldWithPath("projectId").description("Project id associated with clearing request."),
+                                fieldWithPath("clearingState").description("Clearing state of the project."),
+                                fieldWithPath("clearingTeam").description("Clearing team of the project."),
+                                fieldWithPath("requestedClearingDate")
+                                        .description("Requested clearing date of the project."),
+                                fieldWithPath("clearingType").description("Clearing type of the project."),
+                                fieldWithPath("requestingUser").description("User requesting the clearing of the project."),
+                                fieldWithPath("requestingUserComment").description("Requesting user comment on the clearing of the project."),
+                                fieldWithPath("priority").description("Priority of the clearing request."),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                  )));
     }
 
     @Test

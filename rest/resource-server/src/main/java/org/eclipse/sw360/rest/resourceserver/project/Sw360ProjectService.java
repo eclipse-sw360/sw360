@@ -19,10 +19,12 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
@@ -547,7 +549,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             }
         }
     }
-    
+
     public Project getClearingInfo(Project sw360Project, User sw360User) throws TException {
     	ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
     	return sw360ProjectClient.fillClearingStateSummaryIncludingSubprojectsForSingleProject(sw360Project, sw360User);
@@ -890,4 +892,18 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             return 0;
         }
     }
-}
+
+    public AddDocumentRequestSummary createClearingRequest(ClearingRequest clearingRequest, User sw360User, String baseUrl, String projectId) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        String projectUrl = baseUrl + "/projects/-/project/detail/" + projectId;
+        return sw360ProjectClient.createClearingRequest(clearingRequest, sw360User, projectUrl);
+    }
+
+    public Integer loadPreferredClearingDateLimit() {
+        Integer limit = Optional.of(SW360Constants.PREFERRED_CLEARING_DATE_LIMIT).filter(s -> !s.isEmpty())
+                .map(Integer::parseInt).orElse(0);
+        // returning default value 7 (days) if variable is not set
+        return limit < 1 ? 7 : limit;
+    }
+ }
+

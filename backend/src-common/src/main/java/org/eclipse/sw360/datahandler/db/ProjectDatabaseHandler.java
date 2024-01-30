@@ -86,7 +86,6 @@ import static org.eclipse.sw360.datahandler.common.SW360Utils.getCreatedOn;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import org.apache.commons.io.IOUtils;
 import org.eclipse.sw360.exporter.ProjectExporter;
 import java.nio.ByteBuffer;
 
@@ -253,6 +252,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 clearingRequest.setId(crId);
                 updateProject(project, user);
                 sendMailForNewClearing(project, projectUrl, clearingRequest, user);
+                //set requestSummary message that creation of CR was successful
+                requestSummary.setMessage("Clearing request created successfully");
                 return requestSummary.setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(project.getClearingRequestId());
             } else {
                 log.error("Failed to create clearing request for project: " + project.getId());

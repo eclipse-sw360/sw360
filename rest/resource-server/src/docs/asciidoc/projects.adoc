@@ -957,3 +957,20 @@ include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/curl
 
 ===== Example response
 include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/http-response.adoc[]
+
+[[resources-clearing-request-create]]
+==== Creating a clearing request
+
+A `POST` request is used to create the clearing request for a project.
+
+===== Request structure
+include::{snippets}/should_document_create_clearing_request/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_create_clearing_request/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_clearing_request/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_clearing_request/http-response.adoc[]
