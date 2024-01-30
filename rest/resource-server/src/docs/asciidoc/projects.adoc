@@ -435,6 +435,20 @@ include::{snippets}/should_document_get_obligations_from_license_db/curl-request
 ===== Example response
 include::{snippets}/should_document_get_obligations_from_license_db/http-response.adoc[]
 
+[[resources-project-add-license-obligation-information]]
+==== Adding obligations from licenseDB to project
+
+A `POST` request will add the license obligations from licenseDB to project.
+
+===== Request structure
+Pass an array of license obligation ids to be added as request body.
+
+===== Example request
+include::{snippets}/should_document_add_obligations_from_license_db/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_add_obligations_from_license_db/http-response.adoc[]
+
 [[resources-project-get-license-clearing-information-information]]
 ==== Project's license clearing count
 
