@@ -568,4 +568,11 @@ public class ProjectHandler implements ProjectService.Iface {
         assertNotNull(project);
         return handler.getLinkedProjectsWithoutReleases(project, deep, user);
     }
+
+    @Override
+    public List<ProjectLink> getLinkedProjectsOfProjectWithAllReleases(Project project, boolean deep, User user) throws TException {
+        assertNotNull(project);
+        return handler.getLinkedProjectsWithAllReleases(project, deep, user);
+    }
+
 }
