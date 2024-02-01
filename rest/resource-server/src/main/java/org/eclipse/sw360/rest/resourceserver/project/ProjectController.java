@@ -44,6 +44,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -75,6 +76,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -119,6 +122,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -629,6 +633,98 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Link project to an array of projects.",
+            description = "Pass an array of project ids to be linked as request body.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/linkProjects", method = RequestMethod.POST)
+    public ResponseEntity linkToProjects(
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id,
+            @Parameter(description = "Array of project IDs",
+                    examples = {
+                            @ExampleObject(value = "[\"3765276512\",\"5578999\",\"3765276513\"]")
+                            // TODO: Add example for MAP value
+                    }
+            )
+            @RequestBody List<String> projectIdsInRequestBody
+    ) throws URISyntaxException, TException {
+
+    User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+    Project sourceProj = projectService.getProjectForUserById(id, sw360User);
+    Map<String, String> responseMap = new HashMap<>();
+    HttpStatus status = null;
+    Set<String> alreadyLinkedIds= new HashSet<>();
+    Set<String> idsSentToModerator = new HashSet<>();
+    Set<String> idsWithCyclicPath = new HashSet<>();
+    Set<String> linkedProjectIds = new HashSet<>();
+    int count = 0;
+
+    try {
+
+        for(String projId: projectIdsInRequestBody) {
+            Project proj = projectService.getProjectForUserById(projId, sw360User);
+            Map<String, ProjectProjectRelationship> linkedProject= proj.getLinkedProjects();
+
+            if (proj.getLinkedProjects().keySet().contains(id)) {
+                alreadyLinkedIds.add(projId);
+                continue;
+            }
+
+            linkedProject.put(id, new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(sourceProj.isEnableSvm()));
+            proj.setLinkedProjects(linkedProject);
+            String cyclicLinkedProjectPath = projectService.getCyclicLinkedProjectPath(proj, sw360User);
+            if (!CommonUtils.isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
+                idsWithCyclicPath.add(cyclicLinkedProjectPath);
+                continue;
+            }
+
+            RequestStatus updatedstatus = projectService.updateProject(proj, sw360User);
+            if (updatedstatus == RequestStatus.SUCCESS) {
+                linkedProjectIds.add(projId);
+            }
+
+            if (updatedstatus == RequestStatus.SENT_TO_MODERATOR) {
+                idsSentToModerator.add(projId);
+            }
+        }
+
+        if (!alreadyLinkedIds.isEmpty()) {
+            responseMap.put("Message regarding already linked project(s)", "Project ids are: " + alreadyLinkedIds);
+            status = HttpStatus.CONFLICT;
+            count ++;
+        }
+        if (!idsWithCyclicPath.isEmpty()) {
+            responseMap.put("Message regarding project(s) having cyclic path", "Cyclic linked project path: " + idsWithCyclicPath);
+            status = HttpStatus.CONFLICT;
+            count ++;
+        }
+        if (!idsSentToModerator.isEmpty()) {
+            responseMap.put("Message regarding project(s) sent to Moderator", "Project ids are: " + idsSentToModerator);
+            status = HttpStatus.ACCEPTED;
+            count ++;
+        }
+        if (!linkedProjectIds.isEmpty()) {
+            responseMap.put("Message regarding successfully linked project(s)", "Project ids are: " + linkedProjectIds);
+            status = HttpStatus.CREATED;
+            count ++;
+        }
+        if (count > 1) {
+            status = HttpStatus.CONFLICT;
+        }
+
+    } catch (TException e) {
+          responseMap.put("ErrorMsg: ", "Error fetching project");
+          status = HttpStatus.INTERNAL_SERVER_ERROR;
+          log.error("Error: ", e);
+    }
+
+    HalResource responseResource = new HalResource(responseMap);
+    return new ResponseEntity<>(responseResource, status);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
