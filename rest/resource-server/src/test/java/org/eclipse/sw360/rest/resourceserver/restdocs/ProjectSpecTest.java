@@ -17,6 +17,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
+import org.eclipse.sw360.datahandler.thrift.ObligationStatus;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -45,6 +46,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
@@ -157,6 +159,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     private SW360ReportService sw360ReportServiceMock;
 
     private Project project;
+    private Project project8;
     private Set<Project> projectList = new HashSet<>();
     private Attachment attachment;
 
@@ -424,6 +427,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         obligation.setText("This is text of Obligation");
         obligation.setObligationType(ObligationType.PERMISSION);
         obligation.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
+        Map<String, String> releaseIdToAcceptedCLI = Map.of("376527651233", "aa1122334455bb33");
         obligationList.add(obligation);
         license.setObligations(obligationList);
 
@@ -437,11 +441,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release7.setId("376527651233");
         release7.setName("Angular_Obl");
         release7.setVersion("2");
+        release7.setAttachments(attachmentSet);
 
-        Project project8 = new Project();
+        project8 = new Project();
         project8.setId("123456733");
         project8.setName("oblProject");
         project8.setVersion("3");
+        project8.setLinkedObligationId("0001");
         linkedReleases3.put("376527651233", projectReleaseRelationship);
         project8.setReleaseIdToUsage(linkedReleases3);
 
@@ -468,8 +474,15 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         osi.setLicenseIds(licenseIds2);
         osi.setReleaseIdToAcceptedCLI(releaseIdToAcceptedCli);
         osi.setId(obligation.getId());
+        osi.setComment("comment");
+        osi.setStatus(ObligationStatus.OPEN);
         osi.setObligationType(obligation.getObligationType());
         Map<String, ObligationStatusInfo> obligationStatusMap = Map.of(obligation.getTitle(), osi);
+
+        ObligationList obligationLists = new ObligationList();
+        obligationLists.setProjectId("123456733");
+        obligationLists.setId("009");
+        obligationLists.setLinkedObligationStatus(obligationStatusMap);
 
         Release release5 = new Release();
         release5.setId("37652765121");
@@ -540,6 +553,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getLicenseInfoAttachmentUsage(eq(project8.getId()))).willReturn(licenseInfoUsages);
         given(this.projectServiceMock.getLicensesFromAttachmentUsage(eq(licenseInfoUsages), any())).willReturn(licensesFromAttachmentUsage);
         given(this.projectServiceMock.getLicenseObligationData(eq(licensesFromAttachmentUsage), any())).willReturn(obligationStatusMap);
+        given(this.projectServiceMock.getObligationData(eq(project8.getLinkedObligationId()), any())).willReturn(obligationLists);
+        given(this.projectServiceMock.setLicenseInfoWithObligations(eq(obligationStatusMap), eq(releaseIdToAcceptedCLI), any(), any())).willReturn(obligationStatusMap);
         given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(projectForAtt);
         given(this.projectServiceMock.getProjectForUserById(eq(SPDXProject.getId()), any())).willReturn(SPDXProject);
         given(this.projectServiceMock.getProjectForUserById(eq(cycloneDXProject.getId()), any())).willReturn(cycloneDXProject);
@@ -663,6 +678,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         given(this.releaseServiceMock.getReleaseForUserById(eq(release.getId()), any())).willReturn(release);
         given(this.releaseServiceMock.getReleaseForUserById(eq(release2.getId()), any())).willReturn(release2);
+        given(this.releaseServiceMock.getReleaseForUserById(eq(release7.getId()), any())).willReturn(release7);
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
@@ -835,7 +851,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_get_obligations_from_license_db() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/projects/" + "123456733" + "/licenseDbObligations")
+        mockMvc.perform(get("/api/projects/" + project8.getId() + "/licenseDbObligations")
                 .header("Authorization", "Bearer " + accessToken)
                 .param("page", "0")
                 .param("page_entries", "5")
@@ -1051,6 +1067,24 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.totalElements").description("Total number of all existing projects"),
                                 fieldWithPath("page.totalPages").description("Total number of pages"),
                                 fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_license_obligations() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/projects/" + project8.getId() + "/licenseObligations")
+                .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(responseFields(
+                        subsectionWithPath("obligation_title").description("Title of license obligation"),
+                        subsectionWithPath("obligation_title.text").description("Text of license obligation"),
+                        subsectionWithPath("obligation_title.releaseIdToAcceptedCLI").description("Release Ids having accepted attachments"),
+                        subsectionWithPath("obligation_title.licenseIds[]").description("List of licenseIds"),
+                        subsectionWithPath("obligation_title.comment").description("Comment on the obligation"),
+                        subsectionWithPath("obligation_title.status").description("Status of the obligation"),
+                        subsectionWithPath("obligation_title.id").description("Id of the obligation"),
+                        subsectionWithPath("obligation_title.obligationType").description("Type of the obligation")
                         )));
     }
 

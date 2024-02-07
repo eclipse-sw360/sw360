@@ -1535,6 +1535,29 @@ public class JacksonCustomizations {
             abstract public ECCStatus getEccStatus();
         }
 
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setComment",
+                "setText",
+                "setObligationType",
+                "setObligationLevel",
+                "setModifiedBy",
+                "setModifiedOn",
+                "setId",
+                "setStatus",
+                "setAction",
+                "setLicenseIds",
+                "setReleaseIdToAcceptedCLI",
+                "releaseIdToAcceptedCLISize",
+                "releasesSize",
+                "releasesIterator",
+                "setReleases",
+                "licenseIdsSize",
+                "licenseIdsIterator"
+        })
+        public static abstract class ObligationStatusInfoMixin extends ObligationStatusInfo {
+        }
+
         @JsonInclude(JsonInclude.Include.NON_EMPTY)
         @JsonIgnoreProperties({
                 "id",
@@ -1809,29 +1832,6 @@ public class JacksonCustomizations {
                 "setSpdxId"
         })
         public static abstract class ProjectReleaseRelationshipMixin extends ProjectReleaseRelationship {
-        }
-
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        @JsonIgnoreProperties({
-                "setComment",
-                "setText",
-                "setObligationType",
-                "setObligationLevel",
-                "setModifiedBy",
-                "setModifiedOn",
-                "setId",
-                "setStatus",
-                "setAction",
-                "setLicenseIds",
-                "setReleaseIdToAcceptedCLI",
-                "releaseIdToAcceptedCLISize",
-                "releasesSize",
-                "releasesIterator",
-                "setReleases",
-                "licenseIdsSize",
-                "licenseIdsIterator"
-        })
-        public static abstract class ObligationStatusInfoMixin extends ObligationStatusInfo {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

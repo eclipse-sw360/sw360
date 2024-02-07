@@ -33,6 +33,9 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
@@ -40,6 +43,9 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseObligationsStatusInfo;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
@@ -64,6 +70,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import javax.annotation.PreDestroy;
@@ -310,7 +317,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 }
                 osi.setText(obl.getText());
                 osi.setId(obl.getId());
-                osi.setObligationLevel(obl.getObligationLevel());
+                osi.setObligationType(obl.getObligationType());
                 osi.setReleaseIdToAcceptedCLI(releaseIdToAcceptedCli);
                 Set<String> licenseIds = osi.getLicenseIds();
                 if (licenseIds == null) {
@@ -339,6 +346,76 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         return sw360ProjectClient.searchByReleaseId(releaseid, sw360User);
+    }
+
+    public ObligationList getObligationData(String linkedObligationId, User user) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.getLinkedObligations(linkedObligationId, user);
+    }
+
+    public Map<String, ObligationStatusInfo> setLicenseInfoWithObligations(Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, String> releaseIdToAcceptedCLI,
+            List<Release> releases, User user) {
+
+        final List<LicenseInfoParsingResult> licenseInfoWithObligations = Lists.newArrayList();
+        ThriftClients thriftClients = new ThriftClients();
+        LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
+
+        for (Release release : releases) {
+            List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
+            if (approvedCliAttachments.isEmpty()) {
+                approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
+            }
+            final String releaseId = release.getId();
+
+            if (approvedCliAttachments.size() == 1) {
+                final Attachment filteredAttachment = approvedCliAttachments.get(0);
+                final String attachmentContentId = filteredAttachment.getAttachmentContentId();
+
+                if (releaseIdToAcceptedCLI.containsKey(releaseId) && releaseIdToAcceptedCLI.get(releaseId).equals(attachmentContentId)) {
+                    releaseIdToAcceptedCLI.remove(releaseId);
+                }
+
+                try {
+                    List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(release, attachmentContentId, false, user);
+
+                    List<ObligationParsingResult> obligationResults = licenseClient.getObligationsForAttachment(release, attachmentContentId, user);
+
+                    if (CommonUtils.allAreNotEmpty(licenseResults, obligationResults) && obligationResults.get(0).getObligationsAtProjectSize() > 0) {
+                        licenseInfoWithObligations.add(licenseClient.createLicenseToObligationMapping(licenseResults.get(0), obligationResults.get(0)));
+                    }
+                } catch (TException exception) {
+                    log.error(String.format("Error fetchinig license Information for attachment: %s in release: %s",
+                            filteredAttachment.getFilename(), releaseId), exception);
+                }
+            }
+        }
+
+        try {
+            LicenseObligationsStatusInfo licenseObligation = licenseClient.getProjectObligationStatus(obligationStatusMap,
+                    licenseInfoWithObligations, releaseIdToAcceptedCLI);
+            Map<String, String> releaseIdToAcceptedCli = new HashMap<String, String>();
+            obligationStatusMap = licenseObligation.getObligationStatusMap();
+            for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
+                ObligationStatusInfo details = entry.getValue();
+                if (details.getReleaseIdToAcceptedCLI() == null) {
+                    Set<Release> releaseData = details.getReleases();
+                    for (Release rel : releaseData) {
+                        String releaseId = rel.getId();
+                        for (Attachment attachment : rel.getAttachments()) {
+                            if (CheckStatus.ACCEPTED.equals(attachment.getCheckStatus())) {
+                                String attachmentContentId = attachment.getAttachmentContentId();
+                                releaseIdToAcceptedCli.put(releaseId, attachmentContentId);
+                            }
+                        }
+                    }
+                    details.setReleaseIdToAcceptedCLI(releaseIdToAcceptedCli);
+                }
+                details.unsetReleases();
+            }
+        } catch (TException e) {
+            log.error("Failed to set obligation status for project!", e);
+        }
+        return obligationStatusMap;
     }
 
     public Project createProject(Project project, User sw360User) throws TException {
