@@ -467,7 +467,7 @@ AUI().use('liferay-portlet-url', function () {
                 } else {
                     $("#date_type option[value="+"<%=ClearingRequest._Fields.TIMESTAMP_OF_DECISION%>"+"]").show().removeAttr("disabled");
                     $("#cr_priority_div").hide();
-                    $("#cr_type_div").hide();
+                    $("#cr_type_div").show();
                     $('#cr_status option').each(function() {
                         let val = $(this).attr("value");
                         if (val === "" || val === "2" || val === "5") {
@@ -611,7 +611,7 @@ AUI().use('liferay-portlet-url', function () {
                         "12": '<fmt:formatDate value="${modifiedOn}" pattern="yyyy-MM-dd"/>',
                     </core_rt:if>
                     "13": '<fmt:formatDate value="${closedOn}" pattern="yyyy-MM-dd"/>',
-                    "14": '<sw360:out value="${request.clearingType}"/>',
+                    "14": "<sw360:DisplayEnum value="${request.clearingType}"/>",
                     "15": "${request.projectId}",
                 });
             </core_rt:forEach>
@@ -619,7 +619,7 @@ AUI().use('liferay-portlet-url', function () {
         }
 
         function createClearingRequestsTable(tableId, tableData) {
-            let hiddenCol = (tableId === '#clearingRequestsTable') ? [8, 12, 13] : [3, 5, 7, 12, 14];
+            let hiddenCol = (tableId === '#clearingRequestsTable') ? [8, 12, 13] : [3, 5, 7, 12];
             return datatables.create(tableId, {
                 searching: true,
                 deferRender: false, // do not change this value
