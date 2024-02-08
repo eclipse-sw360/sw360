@@ -62,8 +62,9 @@ public class ScheduleConstants {
     public static final String DELETE_ATTACHMENT_OFFSET_PROPERTY_NAME = "schedule.delete.attachment.firstOffset.seconds";
     public static final String DELETE_ATTACHMENT_INTERVAL_PROPERTY_NAME = "schedule.delete.attachment.interval.seconds";
     public static final String DEPARTMENT_OFFSET_PROPERTY_NAME = "schedule.department.firstOffset.seconds";
-    public static final String DEPARTMENT_INTERVAL_PROPERTY_NAME = "schedule.department.interval.seconds";
     public static final String DEPARTMENT_OFFSET_DEFAULT  = "0" ; // default 00:00 am, in seconds
+    public static final String DEPARTMENT_INTERVAL_PROPERTY_NAME = "schedule.department.interval.seconds";
+    public static final String DEPARTMENT_INTERVAL_DEFAULT  = (24*60*60) + "" ; // default 24h, in seconds
 
     // scheduler properties
     public static final ConcurrentHashMap<String, Integer> SYNC_FIRST_RUN_OFFSET_SEC = new ConcurrentHashMap<>();
@@ -143,7 +144,7 @@ public class ScheduleConstants {
         if(! props.containsKey(DEPARTMENT_INTERVAL_PROPERTY_NAME)){
             log.info("Property "+ DEPARTMENT_INTERVAL_PROPERTY_NAME + " not set. Using default value.");
         }
-        String departmentInterval  = props.getProperty(DEPARTMENT_INTERVAL_PROPERTY_NAME, DEPARTMENT_OFFSET_DEFAULT);
+        String departmentInterval  = props.getProperty(DEPARTMENT_INTERVAL_PROPERTY_NAME, DEPARTMENT_INTERVAL_DEFAULT);
         try {
             SYNC_INTERVAL_SEC.put(ThriftClients.IMPORT_DEPARTMENT_SERVICE, Integer.parseInt(departmentInterval));
         } catch (NumberFormatException nfe){
