@@ -137,3 +137,9 @@ A `GET` request will get vulnerability tracking status for project.
 
 ===== Example request
 include::{snippets}/should_document_get_vulnerabilities_tracking_status/curl-request.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_vulnerabilities_tracking_status/response-fields.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_vulnerabilities_tracking_status/http-response.adoc[]
