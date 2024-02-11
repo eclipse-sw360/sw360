@@ -18,9 +18,10 @@
 # -----------------------------------------------------------------------------
 
 set -e
+set -x
 
 BASEDIR="${BASEDIR:-/tmp}"
-THRIFT_VERSION=${THRIFT_VERSION:-0.16.0}
+THRIFT_VERSION=${THRIFT_VERSION:-0.18.1}
 UNINSTALL=false
 
 has() { type "$1" &> /dev/null; }
@@ -34,7 +35,7 @@ processThrift() {
   if [ -f "/var/cache/deps/thrift-$VERSION.tar.gz" ]; then
       tar -xzf "/var/cache/deps/thrift-$VERSION.tar.gz" -C "$BASEDIR/thrift" --strip-components=1
   else
-      curl "http://archive.apache.org/dist/thrift/$VERSION/thrift-$VERSION.tar.gz" | tar -xz -C "$BASEDIR/thrift" --strip-components=1
+      curl -L "http://archive.apache.org/dist/thrift/$VERSION/thrift-$VERSION.tar.gz" | tar -xz -C "$BASEDIR/thrift" --strip-components=1
   fi
 
   mkdir -p "${BASEDIR}/build"
