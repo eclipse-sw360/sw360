@@ -20,10 +20,10 @@ while [[ "$#" -gt 0 ]]; do
         --cvesearch-host)
             shift
             cvesearch_host="$1"
-            ;;
+        ;;
         *)
             other_args+=("$1")  # store other arguments
-            ;;
+        ;;
     esac
     shift
 done
@@ -32,7 +32,7 @@ done
 if [ ! -z "$cvesearch_host" ]; then
     if [[ $cvesearch_host =~ ^https?:// ]]; then
         sed -i "s@cvesearch.host=.*@cvesearch.host=$cvesearch_host@g"\
-            ./backend/src/src-cvesearch/src/main/resources/cvesearch.properties
+        ./backend/src/src-cvesearch/src/main/resources/cvesearch.properties
     else
         echo "Warning: CVE Search host is not a URL: $cvesearch_host"
     fi
@@ -47,7 +47,7 @@ set -e -o pipefail
 # shellcheck disable=SC1091
 . .versions
 
-DOCKER_IMAGE_ROOT="${DOCKER_IMAGE_ROOT:-eclipse-sw360}"
+DOCKER_IMAGE_ROOT="${DOCKER_IMAGE_ROOT:-ghcr.io/eclipse-sw360}"
 SECRETS=${SECRETS:-"$PWD/scripts/docker-config/default_secrets"}
 SW360_VERSION=${SW360_VERSION:-18-development}
 export DOCKER_PLATFORM DOCKER_IMAGE_ROOT GIT_REVISION SECRETS
@@ -67,22 +67,23 @@ image_build() {
     shift
     version="$1"
     shift
-
+    
     docker buildx build \
-        --target "$target" \
-        --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/$name:$version" \
-        --tag "ghcr.io/${DOCKER_IMAGE_ROOT}/$name:latest" \
-        "$@" .
+    --target "$target" \
+    --tag "${DOCKER_IMAGE_ROOT}/$name:$version" \
+    --tag "${DOCKER_IMAGE_ROOT}/$name:latest" \
+    --load \
+    "$@" .
 }
 
-image_build base base "$SW360_VERSION" --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE" "$@"
+image_build base sw360/base "$SW360_VERSION" --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE" "$@"
 
-image_build sw360thrift thrift "$THRIFT_VERSION" --build-arg THRIFT_VERSION="$THRIFT_VERSION" "$@"
+image_build sw360thrift sw360/thrift "$THRIFT_VERSION" --build-arg THRIFT_VERSION="$THRIFT_VERSION" "$@"
 
-image_build sw360 binaries "$SW360_VERSION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
-    --secret id=sw360,src="$SECRETS" \
-    --build-context "sw360thrift=docker-image://${DOCKER_IMAGE_ROOT}/thrift:latest" "$@"
+image_build sw360 sw360/binaries "$SW360_VERSION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
+--secret id=sw360,src="$SECRETS" \
+--build-context "sw360thrift=docker-image://${DOCKER_IMAGE_ROOT}/sw360/thrift:latest" "$@"
 
 image_build runtime sw360 "$SW360_VERSION" \
-    --build-context "base=docker-image://${DOCKER_IMAGE_ROOT}/base:latest" \
-    --build-context "sw360=docker-image://${DOCKER_IMAGE_ROOT}/binaries:latest" "$@"
+--build-context "base=docker-image://${DOCKER_IMAGE_ROOT}/sw360/base:latest" \
+--build-context "sw360=docker-image://${DOCKER_IMAGE_ROOT}/sw360/binaries:latest" "$@"
