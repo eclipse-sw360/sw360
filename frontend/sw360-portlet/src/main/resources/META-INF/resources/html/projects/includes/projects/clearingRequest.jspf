@@ -83,7 +83,13 @@
 									class="datepicker form-control" id="requestedClearingDate"
 									type="text" pattern="\d{4}-\d{2}-\d{2}"
 									placeholder="<liferay-ui:message key='preferred.clearing.date.yyyy.mm.dd' />"
-									required />
+									required /> <small class="form-text">
+									<span class="sw360-tt sw360-tt-ReloadInfo" data-content="<liferay-ui:message key='PreferredClearingRequestDate' />">
+                                   <svg class='lexicon-icon'> <use href='/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#info-circle-open' /></svg>
+                					</span>
+									<liferay-ui:message
+										key="learn.more.about.preferred.clearing.date" />
+									</small>
 								<div class="invalid-feedback">
 									<liferay-ui:message key="date.should.be.valid" />
 								</div>
@@ -99,8 +105,8 @@
                         </div>
                         </core_rt:if>
                         <div class="form-group">
-                            <label for="clearingRequestComment"><liferay-ui:message key="please.comment.your.request" />:</label>
-                            <textarea id="clearingRequestComment" class="form-control" data-name="comment" rows="4" placeholder="<liferay-ui:message key='comment.your.request' />"></textarea>
+                            <label for="clearingRequestComment"><liferay-ui:message key="comments" />:</label>
+                            <textarea id="clearingRequestComment" class="form-control" data-name="comment" rows="4" placeholder="<liferay-ui:message key='comments' />"></textarea>
                         </div>
                     </form>
                 </div>
