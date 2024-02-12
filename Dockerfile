@@ -98,6 +98,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     bison \
     build-essential \
+    ca-certificates \
     cmake \
     curl \
     flex \
