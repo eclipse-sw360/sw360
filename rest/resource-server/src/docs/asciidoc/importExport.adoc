@@ -1,4 +1,3 @@
-//
 // Copyright Siemens AG, 2024. Part of the SW360 Portal Project.
 //
 // This program and the accompanying materials are made
@@ -78,3 +77,58 @@ include::{snippets}/should_document_get_download_component_details/curl-request.
 
 ===== Example response
 include::{snippets}/should_document_get_download_component_details/http-response.adoc[]
+
+[[upload-component]]
+==== Upload component csv file.
+
+A `POST` request help to upload the component csv file.
+
+[red]#Request parameter#
+|===
+|Parameter |Description
+|componentFile |Upload the component CSV file.
+|===
+
+===== Example request
+include::{snippets}/should_document_upload_component_file/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_upload_component_file/http-response.adoc[]
+
+[[upload-release]]
+==== Upload release link csv file.
+
+A `POST` request help to upload the release csv file.
+
+[red]#Request parameter#
+|===
+|Parameter |Description
+
+|releaseFile
+|Upload the release link csv file.
+|===
+
+===== Example request
+include::{snippets}/should_document_upload_release_link_file/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_upload_release_link_file/http-response.adoc[]
+
+[[upload-component-attachment]]
+==== Upload component attachment file.
+
+A `POST` request help to upload the component attachment file.
+
+[red]#Request parameter#
+|===
+|Parameter |Description
+
+|component
+|Upload the component attachment file.
+|===
+
+===== Example request
+include::{snippets}/should_document_upload_component_attachment_file/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_upload_component_attachment_file/http-response.adoc[]
