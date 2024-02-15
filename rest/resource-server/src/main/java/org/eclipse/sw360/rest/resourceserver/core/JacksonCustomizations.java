@@ -269,7 +269,6 @@ public class JacksonCustomizations {
                 "setSpdxId",
                 "setModifiedOn",
                 "setModifiedBy",
-                "modifiedBy",
                 "packageIdsSize",
                 "setPackageIds",
                 "packageIdsIterator",
