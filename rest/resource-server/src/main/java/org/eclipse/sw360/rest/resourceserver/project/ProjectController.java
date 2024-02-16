@@ -2605,6 +2605,24 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Get a list view of dependency network for a project.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}/listView", method = RequestMethod.GET)
+    public ResponseEntity<?> getListViewDependencyNetwork(
+            @Parameter(description = "Project ID", example = "376576")
+            @PathVariable("id") String projectId
+    ) throws TException {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return new ResponseEntity<>(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<Map<String, String>> clearingStatusList = projectService.serveDependencyNetworkListView(projectId, sw360User);
+        return new ResponseEntity<>(clearingStatusList, HttpStatus.OK);
+    }
+
     private void setAdditionalFieldsToHalResource(Project sw360Project, HalResource<Project> userHalResource) throws TException {
         try {
             String modifiedByEmail = sw360Project.getModifiedBy();

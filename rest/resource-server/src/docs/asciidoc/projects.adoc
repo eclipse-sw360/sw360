@@ -1005,3 +1005,10 @@ include::{snippets}/should_document_create_clearing_request/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_create_clearing_request/http-response.adoc[]
 
+[[resources-projects-get-network-in-list-view]]
+==== Get list view of a project's dependencies network
+
+A `GET` request is used to get list view of a project's dependencies network
+
+===== Example response
+include::{snippets}/should_document_get_list_view_of_dependencies_network/http-response.adoc[]

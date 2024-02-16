@@ -670,7 +670,7 @@ service ProjectService {
     /**
     * get dependency network for list view
     */
-    list<map<string, string>> getAccessibleDependencyNetworkForListView(1: string projectId, 2: User user);
+    list<map<string, string>> getAccessibleDependencyNetworkForListView(1: string projectId, 2: User user) throws (1: SW360Exception exp);
 
 
     /**

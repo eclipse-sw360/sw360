@@ -979,5 +979,20 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         // returning default value 7 (days) if variable is not set
         return limit < 1 ? 7 : limit;
     }
-}
 
+    public List<Map<String, String>> serveDependencyNetworkListView(String projectId, User sw360User) throws TException {
+        try {
+            ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+            return sw360ProjectClient.getAccessibleDependencyNetworkForListView(projectId, sw360User);
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("Requested Project Not Found");
+            } else if (sw360Exp.getErrorCode() == 403) {
+                throw new AccessDeniedException(
+                        "Project or its Linked Projects are restricted and / or not accessible");
+            } else {
+                throw sw360Exp;
+            }
+        }
+    }
+}
