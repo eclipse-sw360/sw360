@@ -234,6 +234,10 @@ struct Release {
     // information from external data sources
     9: optional  map<string, string> externalIds,
     300: optional map<string, string> additionalData,
+    
+    // Urls for the project
+    70: optional string sourceCodeDownloadurl, // URL for download page for this release source code
+    71: optional string binaryDownloadurl, // URL for download page for this release binaries
 
     // Additional informations
     10: optional set<Attachment> attachments,
@@ -270,9 +274,6 @@ struct Release {
     55: optional EccInformation eccInformation,
     56: optional set<string> softwarePlatforms,
 
-    // Urls for the project
-    70: optional string sourceCodeDownloadurl, // URL for download page for this release source code
-    71: optional string binaryDownloadurl, // URL for download page for this release binaries
 
     80: optional map<string, ReleaseRelationship> releaseIdToRelationship,    //id, comment
     81: optional set<string> packageIds,

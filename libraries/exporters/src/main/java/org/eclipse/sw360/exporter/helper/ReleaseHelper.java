@@ -12,12 +12,15 @@ package org.eclipse.sw360.exporter.helper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedSW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -26,6 +29,7 @@ import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.eclipse.sw360.exporter.utils.SubTable;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
@@ -211,13 +215,28 @@ public class ReleaseHelper implements ExporterHelper<Release> {
                 addReleaseIdToRelationShipToRow(release.getReleaseIdToRelationship(), row);
                 break;
             case ATTACHMENTS:
-                String size = Integer.toString(release.isSetAttachments() ? release.getAttachments().size() : 0);
-                row.add(size);
+                if(isForProjectExport) {
+                	addSourceAttachmentsInformationToRow(release, row);
+                }else {
+                    String size = Integer.toString(release.isSetAttachments() ? release.getAttachments().size() : 0);
+                    row.add(size);
+                }
                 break;
             default:
                 Object fieldValue = release.getFieldValue(field);
                 row.add(fieldValueAsString(fieldValue));
         }
+    }    
+    
+    private void addSourceAttachmentsInformationToRow(Release release, List<String> row) throws SW360Exception{
+        Set<Attachment> attachments = CommonUtils.nullToEmptySet(release.getAttachments());
+        final Predicate<Attachment> isSourceAttachment = attachment -> AttachmentType.SOURCE.equals(attachment.getAttachmentType()) || AttachmentType.SOURCE_SELF.equals(attachment.getAttachmentType());
+        String result = attachments.stream()
+                .filter(isSourceAttachment)
+                .map(Attachment::getFilename)
+                .collect(Collectors.joining(", "));
+
+        row.add(result);
     }
 
     private void addInaccessibleFieldValueToRow(List<String> row, Release._Fields field, Release release, boolean isForProjectExport) throws SW360Exception {
