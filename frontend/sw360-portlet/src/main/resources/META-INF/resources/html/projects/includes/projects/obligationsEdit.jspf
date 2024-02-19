@@ -541,7 +541,7 @@ require(['jquery', 'bridges/datatables', 'utils/render', 'modules/button', 'modu
             if (rowData.added || rowData.level == "LICENSE_OBLIGATION") {
                 mapValue.obligationLevel = "<%=ObligationLevel.LICENSE_OBLIGATION%>";
                 if (rowData.type.trim().length > 0)
-                    mapValue.obligationType = rowData.type;
+                    mapValue.obligationType = $.parseHTML(rowData.type)[0].textContent.toUpperCase();
                 mapValue.id = rowData.id;
                 mapKey = rowData.obligation;
                 mapValue.text = $.parseHTML(rowData.text)[0].textContent;
