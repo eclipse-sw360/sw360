@@ -89,6 +89,7 @@ public class SW360Constants {
     public static final String TYPE_SPDX_DOCUMENT_CREATION_INFO = "documentCreationInformation";
     public static final String TYPE_SPDX_PACKAGE_INFO = "packageInformation";
     public static final String TYPE_PACKAGE = "package";
+    public static final String TYPE_ECC = "ecc";
     public static final String PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP = "Please enable flexible project " +
             "release relationship configuration to use this function (enable.flexible.project.release.relationship = true)";
 

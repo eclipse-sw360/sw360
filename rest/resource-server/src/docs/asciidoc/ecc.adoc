@@ -1,0 +1,25 @@
+// SPDX-FileCopyrightText: © 2023-2024 Siemens AG
+//SPDX-License-Identifier: EPL-2.0
+
+[[resources-ecc]]
+=== Ecc
+
+The ecc resource is used to list ecc information.
+
+
+[[resources-ecc-list]]
+==== Listing ecc details
+
+A `GET` request will list all of the service's ecc.
+
+===== Request parameter
+include::{snippets}/should_document_get_ecc/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_ecc/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_ecc/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_ecc/http-response.adoc[]
