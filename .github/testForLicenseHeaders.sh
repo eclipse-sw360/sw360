@@ -38,6 +38,9 @@ done <<< "$(git ls-files \
     | grep -v .pre-commit-config.yaml \
     | grep -v 'id_rsa' \
     | grep -v '.versions' \
+    | grep -v '.github/actions/docker_control/action.yml' \
+    | grep -v '.github/actions/docker_control/check_image.py' \
+    | grep -v 'sw360.code-workspace' \
     | grep -v 'default_secrets' \
     | grep -v 'requirements.txt' \
     | grep -Ev 'third-party/couchdb-lucene/*' \

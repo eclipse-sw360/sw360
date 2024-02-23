@@ -35,7 +35,7 @@ jgiven-reports/
 
 # Ignore VSCode files
 .vscode/
-*.code-workspace
+#*.code-workspace
 
 # Ignore backup files
 *.bak
