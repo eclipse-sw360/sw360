@@ -1839,7 +1839,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, this, componentDatabaseHandler);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-                return spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent);
+                return spdxBOMImporter.importSpdxBOMAsProject(inputStream, attachmentContent, user);
             }
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());
