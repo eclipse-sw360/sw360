@@ -20,6 +20,9 @@ on:
       invalidate-cache:
         description: 'Build all images disregarding exists same version'
         required: false
+      debug:
+        description: 'Debug docker build'
+        required: false
   push:
     tags:
       - 'sw360-*'
@@ -73,6 +76,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           version: ${{ env.JAVA_VERSION }}-jdk-${{ env.UBUNTU_VERSION }}
           invalidate-cache: ${{ inputs.invalidate-cache }}
+          debug: ${{ inputs.debug }}
           build-args: |
             LIFERAY_VERSION=${{ env.LIFERAY_VERSION }}
             LIFERAY_SOURCE=${{ env.LIFERAY_SOURCE }}
@@ -100,6 +104,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           version: ${{ env.THRIFT_VERSION }}
           invalidate-cache: ${{ inputs.invalidate-cache }}
+          debug: ${{ inputs.debug }}
           build-args: |
             THRIFT_VERSION=${{ env.THRIFT_VERSION }}
 
@@ -125,10 +130,11 @@ jobs:
           name: binaries
           version: ${{ needs.sw360_version.outputs.sw360_version }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          invalidate-cache: '1'
+          invalidate-cache: ${{ inputs.invalidate-cache }}
+          debug: ${{ inputs.debug }}
           build-args: |
             THRIFT_VERSION=${{ env.THRIFT_VERSION }}
-            SW360_VERSION=${{ needs.sw360_version.outputs.sw360_version }}
+            SW360_VERSION=${{ env.SHORT_SHA }}
           secret-files: |
             "sw360=./scripts/docker-config/default_secrets"
           build-contexts: |

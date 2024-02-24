@@ -31,6 +31,9 @@ inputs:
   secret-files:
     description: "Pass secrets as build info"
     required: false
+  debug:
+    description: "Debug check_image script"
+    required: false
 
 runs:
   using: "composite"
@@ -52,10 +55,10 @@ runs:
         INPUT_VERSION: ${{ inputs.version }}
         BUILD_ARGS: ${{ inputs.build-args }}
         INVALIDATE_CACHE: ${{ inputs.invalidate-cache }}
+        ACTION_DEBUG: ${{ inputs.debug }}
       run: |
-        pip install -q -U pip requests
-        result=$(python ./.github/actions/docker_control/check_image.py)
-        echo "result=$result" >> $GITHUB_OUTPUT
+        pip install -q -U pip requests rich
+        python ./.github/actions/docker_control/check_image.py
 
     - name: Set up Docker build
       if: steps.check_image.outputs.result != 'found'
@@ -77,8 +80,11 @@ runs:
         images: |
           ${{ env.REGISTRY }}/${{ github.repository }}/${{ inputs.name }}
         tags: |
+          type=schedule,pattern={{date 'YYYYMMDD'}}
+          type=schedule,pattern=snapshot
           type=raw,value=${{ inputs.version }}
           type=raw,value=${{ steps.check_image.outputs.result }}
+          type=ref,event=tag
 
     - name: Build image
       if: >
