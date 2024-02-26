@@ -934,6 +934,8 @@ public class RestControllerHelper<T> {
         embeddedUser.setGivenname(user.getGivenname());
         embeddedUser.setLastname(user.getLastname());
         embeddedUser.setDepartment(user.getDepartment());
+        embeddedUser.setUserGroup(user.getUserGroup());
+        embeddedUser.setSecondaryDepartmentsAndRoles(user.getSecondaryDepartmentsAndRoles());
         embeddedUser.setType(null);
         return embeddedUser;
     }

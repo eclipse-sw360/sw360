@@ -162,6 +162,8 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:users[]fullName").description("The user's full name"),
                                 subsectionWithPath("_embedded.sw360:users[]givenName").description("The user's given name"),
                                 subsectionWithPath("_embedded.sw360:users[]lastName").description("The user's last name"),
+                                subsectionWithPath("_embedded.sw360:users[]userGroup").description("The user's user Group"),
+                                subsectionWithPath("_embedded.sw360:users[]secondaryDepartmentsAndRoles").description("The user's secondaryDepartmentsAndRoles").optional(),
                                 subsectionWithPath("_embedded.sw360:users").description("An array of <<resources-users, User resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
                                 fieldWithPath("page").description("Additional paging information"),
