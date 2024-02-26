@@ -36,6 +36,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.security.InvalidParameterException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -92,6 +93,29 @@ public class Sw360ModerationRequestService {
     public List<ModerationRequest> getRequestsByModerator(User sw360User, Pageable pageable) throws TException {
         PaginationData pageData = pageableToPaginationData(pageable);
         return getThriftModerationClient().getRequestsByModeratorWithPaginationNoFilter(sw360User, pageData);
+    }
+
+    /**
+     * Get paginated list of moderation requests where user is the requester.
+     * @param sw360User Requester
+     * @param pageable  Pageable information from request
+     * @return Paginated list of moderation requests.
+     * @throws TException Exception in case of error.
+     */
+    public Map<PaginationData, List<ModerationRequest>> getRequestsByRequestingUser(
+            User sw360User, Pageable pageable
+    ) throws TException {
+        PaginationData pageData = pageableToPaginationData(pageable);
+        ModerationService.Iface client = getThriftModerationClient();
+
+        List<ModerationRequest> moderationList = client.
+                getRequestsByRequestingUserWithPagination(sw360User, pageData);
+        Map<String, Long> countInfo = client.getCountByRequester(sw360User);
+        pageData.setTotalRowCount(countInfo.getOrDefault(sw360User.getEmail(), 0L));
+
+        Map<PaginationData, List<ModerationRequest>> result = new HashMap<>();
+        result.put(pageData, moderationList);
+        return result;
     }
 
     /**

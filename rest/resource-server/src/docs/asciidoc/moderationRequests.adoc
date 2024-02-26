@@ -129,3 +129,20 @@ include::{snippets}/should_document_get_moderationrequests_assign/curl-request.a
 
 ===== Example response
 include::{snippets}/should_document_get_moderationrequests_assign/http-response.adoc[]
+
+[[resources-moderationRequest-submission]]
+==== Get Submitted Moderation Requests
+
+A `GET` will pull <<resources-moderationRequest, ModerationRequest>> which are created by the requesting user.
+
+===== Request parameter
+include::{snippets}/should_document_get_moderationrequests_submission/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_moderationrequests_submission/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_moderationrequests_submission/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_moderationrequests_submission/http-response.adoc[]

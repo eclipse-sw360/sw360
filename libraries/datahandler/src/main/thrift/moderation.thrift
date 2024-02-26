@@ -270,6 +270,11 @@ service ModerationService {
     list<ModerationRequest> getRequestsByRequestingUser(1: User user);
 
     /**
+     * get list of moderation requests where user is requesting user, paginated
+     **/
+    list<ModerationRequest> getRequestsByRequestingUserWithPagination(1: User user, 2: PaginationData pageData);
+
+    /**
      * delete moderation request specified by id if user is requesting user of moderation request
      **/
     RequestStatus deleteModerationRequest(1: string id, 2: User user);
@@ -333,6 +338,11 @@ service ModerationService {
      * get count of moderation requests by moderation state
      **/
     map<string, i64> getCountByModerationState(1: User user);
+
+    /**
+     * get count of moderation requests by a requester
+     **/
+    map<string, i64> getCountByRequester(1: User user);
 
     /**
      * get requesting users departments

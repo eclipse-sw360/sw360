@@ -148,6 +148,10 @@ public class ModerationDatabaseHandler {
         return repository.getRequestsByRequestingUser(user);
     }
 
+    public List<ModerationRequest> getRequestsByRequestingUserWithPagination(String user, PaginationData pageData) {
+        return repository.getRequestsByRequestingUserWithPagination(user, pageData);
+    }
+
     public ClearingRequest getClearingRequestByProjectId(String projectId, User user) throws SW360Exception {
         projectDatabaseHandler.getProjectById(projectId, user); // check if user have READ access to project.
         return clearingRequestRepository.getClearingRequestByProjectId(projectId);
@@ -888,6 +892,10 @@ public class ModerationDatabaseHandler {
 
     public Map<String, Long> getCountByModerationState(String moderator) {
         return repository.getCountByModerationState(moderator);
+    }
+
+    public Map<String, Long> getCountByRequester(String moderator) {
+        return repository.getCountByRequester(moderator);
     }
 
     public Set<String> getRequestingUserDepts() {
