@@ -6,11 +6,11 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 
-version: '3.8'
+version: "3.8"
 
 services:
   sw360:
-    image: 'ghcr.io/eclipse-sw360/sw360:latest'
+    image: "ghcr.io/eclipse-sw360/sw360:latest"
     restart: unless-stopped
     container_name: sw360
     depends_on:
@@ -27,7 +27,7 @@ services:
       - ./config:/app/sw360/config
 
   postgresdb:
-    image: 'postgres:14'
+    image: "postgres:16"
     restart: unless-stopped
     environment:
       - POSTGRES_USER=liferay
@@ -36,13 +36,17 @@ services:
     volumes:
       - postgres:/var/lib/postgresql/data/
     ports:
-      - '5438:5432'
+      - "5438:5432"
     logging:
       options:
         max-size: 10m
         max-file: "2"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready --dbname $$POSTGRES_DB --username $$POSTGRES_USER" ]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready --dbname $$POSTGRES_DB --username $$POSTGRES_USER",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -59,7 +63,7 @@ services:
     volumes:
       - couchdb:/opt/couchdb/data
     healthcheck:
-      test: [ "CMD-SHELL", "curl --fail -s http://couchdb:5984/_up" ]
+      test: ["CMD-SHELL", "curl --fail -s http://couchdb:5984/_up"]
       interval: 10s
       timeout: 5s
       retries: 5

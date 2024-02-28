@@ -189,4 +189,4 @@ jobs:
           labels: ${{ steps.meta_runtime.outputs.labels }}
           build-contexts: |
             base=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/base:${{ env.JAVA_VERSION }}-jdk-${{ env.UBUNTU_VERSION }}
-            sw360=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/binaries:${{ needs.sw360_version.outputs.sw360_version }}
+            binaries=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/binaries:${{ needs.sw360_version.outputs.sw360_version }}
