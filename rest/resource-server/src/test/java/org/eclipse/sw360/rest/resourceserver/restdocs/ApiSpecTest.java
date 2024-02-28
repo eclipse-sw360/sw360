@@ -185,6 +185,7 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("sw360:fossology").description("The <<resources-fossology,Fossology resource>>"),
                                 linkWithRel("sw360:schedule").description("The <<resources-schedule,Schedule resource>>"),
                                 linkWithRel("sw360:ecc").description("The <<resources-ecc,Ecc resource>>"),
+                                linkWithRel("sw360:attachmentCleanUp").description("The <<resources-attachmentCleanUp,attachmentCleanUp resource>>"),
                                 linkWithRel("curies").description("The Curies for documentation"),
                                 linkWithRel("profile").description("The profiles of the REST resources")
                         ),
