@@ -78,12 +78,12 @@ image_build() {
 
 image_build base sw360/base "$SW360_VERSION" --build-arg LIFERAY_VERSION="$LIFERAY_VERSION" --build-arg LIFERAY_SOURCE="$LIFERAY_SOURCE" "$@"
 
-image_build sw360thrift sw360/thrift "$THRIFT_VERSION" --build-arg THRIFT_VERSION="$THRIFT_VERSION" "$@"
+image_build thrift sw360/thrift "$THRIFT_VERSION" --build-arg THRIFT_VERSION="$THRIFT_VERSION" "$@"
 
-image_build sw360 sw360/binaries "$SW360_VERSION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
+image_build binaries sw360/binaries "$SW360_VERSION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
 --secret id=sw360,src="$SECRETS" \
---build-context "sw360thrift=docker-image://${DOCKER_IMAGE_ROOT}/sw360/thrift:latest" "$@"
+--build-context "thrift=docker-image://${DOCKER_IMAGE_ROOT}/sw360/thrift:latest" "$@"
 
-image_build runtime sw360 "$SW360_VERSION" \
+image_build sw360 sw360 "$SW360_VERSION" \
 --build-context "base=docker-image://${DOCKER_IMAGE_ROOT}/sw360/base:latest" \
---build-context "sw360=docker-image://${DOCKER_IMAGE_ROOT}/sw360/binaries:latest" "$@"
+--build-context "binaries=docker-image://${DOCKER_IMAGE_ROOT}/sw360/binaries:latest" "$@"
