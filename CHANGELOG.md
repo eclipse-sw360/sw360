@@ -4,6 +4,97 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-18.1.0-M1
+This tag covers important corrections and fixes after the 18.0 pre-release.
+
+### Migrations
+
+For existing installations, a data migration is required with PR 1963. Please go to the readme file in scripts/migrations to see more information:
+
+https://github.com/eclipse/sw360/blob/master/scripts/migrations/README.md
+
+Note: For running the migrations scripts, you will need python and the couchdb package. Please note that you will need to change manually in the python file: the DRYRUN variable and the couchdb URL (if that is not on localhost or requires password or both).
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in alphabetical order):
+
+```
+> Afsah Syeda <afsah.syeda@siemens-healthineers.com>
+> Anupam Ghosh <anupam.ghosh@siemens.com>
+> Akshit Joshi <akshit.joshi@siemens-healthineers.com>
+> Eldrin <eldrin.sanctis@siemens.com>
+> Gaurav Mishra <gmishx@gmail.com>
+> Helio Chissini de Castro <heliocastro@gmail.com>
+> hoangnt2 <hoang2.nguyenthai@toshiba.co.jp>
+> Keerthi B L <keerthi.bl@siemens.com>
+> Nikesh kumar <kumar.nikesh@simens.com>
+> rudra-superrr <rudra.chopra@siemens.com>
+> sameed.ahmad <sameed.ahmad@siemens-healthineers.com>
+> tuannn2 <tuan2.nguyennhu@toshiba.co.jp>
+```
+
+Please note that also many other persons usually contribute to the project with reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `9f9a1ffa1` feat(UI): Add an info button in the create CR page
+* `b98d346a4` feat(UI): Add clearing type column in closed clearing request tab
+* `b6aa50650` feat(Project): - Extract license from all releases in dependency network when download license information of a project - Generate source code bundle from all releases in dependency network when download Generate source code bundle for a project
+* `49f5486fa` feat(rest): endpoint to link sourceProject to list of projects.
+* `1ab14350b` feat(CR): Disable Clearing Request creation for the projects which have linked releases without SRC type attachment
+* `bcd600c26` feat(User): Add new endpoints to get/update requesting user profile
+* `3cb73c19f` feat(rest): Create new endpoint to unschedule all services.
+* `83a2b3a28` feat(license): Listing obligations by license
+* `8a9c407e8` feat(license): Fix Update License isChecked
+* `89a75f815` feat(project): Update ghactions workflows deps
+* `849e10a0c` feat(obligation): Add api listing obligations by ObligationLevel
+* `3ec2cb129` feat(rest) : Rest end point for releases by lucene search
+* `7ccba71d5` feat(project): Setup Sonatype publishing
+* `c0fb731c4` feat(license): Create API Export License
+* `141e24bab` feat(Release):Upload Source Code Attachment to Releases through a Scheduled Service
+* `c7c33c78f` feat(rest): adding pagination for listing vendors endpoint.
+* `c805ff90f` feat(rest) : Adding or Modifying fields to project summaryadminastration page
+* `6a89beabc` feat(Script): Delete MR's for a specific user
+* `adc862038` feat(license): Create new api update license
+
+### Corrections
+* `178813e5f` fix(docker): Adjust local naming for docker images
+* `b55372562` fix(thrift): Add proper version to build
+* `34765dd80` fix(thrift): Follow link download step
+* `ef5cc0142` fix(database): Restore reading environment database vars
+* `8aaf95734` fix(UI) : Issue fix for vulnerability not displaying for project
+* `c63023c4d` fix(release): modify the externalId query parsing
+* `6a6cb33b5` fix(docker): We have been using wrong Java version
+* `625ffcfa1` fix(release): revert external id query parsing
+* `222879a9e` fix(rest): error handling when user dont have sufficient import permission
+* `d619c5121` fix(Table): Fix error of hiding attachment table content when clicking sort
+* `ef83441df` fix(moderator): show message when only moderator choose remove me option.
+* `590a2b3ad` fix(docker): Remove deletion that invalidate image
+* `2fe147f09` fix(rest): create new enpoint to check server connection.
+* `47d14b158` fix(script): Fix migration script not working with python3
+* `0d535c386` fix(config): Correct file number
+* `0f9d9b85a` fix(rest): create a new endpoint for fossology in admin tab.
+* `5b9f10921` fix(script): Fix incorrect numbering for migration scripts
+* `0f9d31974` fix(couchdb): Add config entry to disable couchdb cache
+* `451948a79` fix(javadoc): Remove invalid link reference
+* `05c2445fa` fix(lib): Add meta information to enable publish
+* `b5f6cb469` fix(importCDX): Update failed component creation error message
+* `6e1964a40` fix(rest-fossology): applied changes for upload endpoint
+* `5a83fe2c9` fix(RequestsPortlet): Unable to reopen CR, Open Components to display open releases, clearing progress to show percentage
+* `2fdd5f4c5` fix(Rest): Allowing search for releases using externalIds
+* `d9fce216f` Fix(package): Fix issues api for package - Cannot unlink orphan packages from the project - Cannot link a package to a release without any package - Handle message when package with same purl already exists
+* `02d84be81` fix (rest) : rest api created for component search by lucene search
+
+### Infrastructure
+* `d9341ee28` chore(package-portlet): package-portlet enabled for default installation
+* `ecb30a34d` Update build status
+* `7d3511146` build(deps): bump com.jayway.jsonpath:json-path from 2.8.0 to 2.9.0
+* `8b5428d92` docs(api): add OpenAPI docs for /vulnerabilities
+* `27dc3d8bb` docs(api): add OpenAPI docs for releases
+* `72a99c897` docs(project): response codes DELETE /projects
+* `1c3f70f8e` chore(javadoc): Fix javadoc entries as requirements to publish in sonatype
+
+
 ## sw360-18.0.0-M1
 This tag covers many corrections/bug after the 17.0 release and multiple new endpoints to support sw360 UI project.
 
