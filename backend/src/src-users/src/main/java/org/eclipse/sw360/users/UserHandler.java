@@ -21,6 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.DepartmentConfigDTO;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
 import org.eclipse.sw360.users.util.FileUtil;
@@ -285,6 +286,16 @@ public class UserHandler implements UserService.Iface {
     @Override
     public List<User> getAllUserByEmails(List<String> emails) throws TException {
         return db.getAllUserByEmails(emails);
+    }
+
+    @Override
+    public List<User> searchDepartmentUsers(String department) throws TException {
+        return db.getAllDepartmentUser(department);
+    }
+
+    @Override
+    public List<User> searchUsersGroup(UserGroup userGroup) throws TException {
+        return db.getAllUsersGroup(userGroup);
     }
 
 }

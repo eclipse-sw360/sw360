@@ -26,7 +26,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class Sw360UserService {
@@ -118,5 +121,46 @@ public class Sw360UserService {
     public void updateUser(User sw360User) throws TException {
         UserService.Iface sw360UserClient = getThriftUserClient();
         sw360UserClient.updateUser(sw360User);
+    }
+
+    public List<User> refineSearch(Map<String, Set<String>> filterMap) throws TException {
+        UserService.Iface sw360UserClient = getThriftUserClient();
+        return sw360UserClient.refineSearch(null, filterMap);
+    }
+
+    public List<User> searchUserByName(String givenname) throws TException {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.searchUsers(givenname);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<User> searchUserByLastName(String lastname) throws TException {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.searchUsers(lastname);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<User> searchUserByDepartment(String department) throws TException {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.searchDepartmentUsers(department);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<User> searchUserByUserGroup(UserGroup usergroup) throws TException {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.searchUsersGroup(usergroup);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

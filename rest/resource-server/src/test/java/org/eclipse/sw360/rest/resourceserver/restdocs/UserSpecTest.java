@@ -26,6 +26,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -109,6 +110,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         user.setNotificationPreferences(notificationPreferences);
         userList.add(user);
 
+        List<User> mockUserList = Collections.singletonList(user);
         given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(user);
         given(this.userServiceMock.getUser("4784587578e87989")).willReturn(user);
         given(this.userServiceMock.getUser("4784587578e87989")).willReturn(user);
@@ -116,6 +118,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                 invocation -> new User("test@sw360.org", "DEPARTMENT").setId("1234567890").setFullname("FTest lTest")
                         .setGivenname("FTest").setLastname("lTest").setUserGroup(UserGroup.USER));
         given(this.userServiceMock.getUserByEmailOrExternalId(any())).willReturn(user);
+        when(userServiceMock.refineSearch(any())).thenReturn(mockUserList);
 
         User user2 = new User();
         user2.setEmail("jane@sw360.org");

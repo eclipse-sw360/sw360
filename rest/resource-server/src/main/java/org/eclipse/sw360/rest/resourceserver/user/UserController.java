@@ -20,10 +20,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,8 +49,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -84,11 +91,69 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     @RequestMapping(value = USERS_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers(
             Pageable pageable,
-            HttpServletRequest request
-            ) throws TException, URISyntaxException, PaginationParameterException,  ResourceClassNotFoundException {
-        List<User> sw360Users = userService.getAllUsers();
-
-        PaginationResult<User> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Users, SW360Constants.TYPE_USER);
+            HttpServletRequest request,
+            @Parameter(description = "fullName of the users")
+            @RequestParam(value = "givenname", required = false) String givenname,
+            @RequestParam(value = "email", required = false) String email,
+            @Parameter(description = "luceneSearch parameter to filter the users.")
+            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            @RequestParam(value = "lastname", required = false) String lastname,
+            @RequestParam(value = "department", required = false) String department,
+            @RequestParam(value = "usergroup", required = false) UserGroup usergroup
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+        PaginationResult<User> paginationResult = null;
+        List<User> sw360Users = new ArrayList<>();
+        boolean isSearchByName = givenname != null && !givenname.isEmpty();
+        boolean isSearchByLastName = lastname != null && !lastname.isEmpty();
+        boolean isSearchByDepartment = CommonUtils.isNotNullEmptyOrWhitespace(department);
+        boolean isUserGroup = usergroup != null && !Objects.equals(usergroup, "");
+        boolean isSearchEmail = CommonUtils.isNotNullEmptyOrWhitespace(email);
+        if (luceneSearch) {
+            Map<String, Set<String>> filterMap = new HashMap<>();
+            if (CommonUtils.isNotNullEmptyOrWhitespace(givenname)) {
+                Set<String> values = CommonUtils.splitToSet(givenname);
+                values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+                filterMap.put(User._Fields.GIVENNAME.getFieldName(), values);
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
+                Set<String> values = CommonUtils.splitToSet(email);
+                values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+                filterMap.put(User._Fields.EMAIL.getFieldName(), values);
+            }
+            if (CommonUtils.isNotNullEmptyOrWhitespace(department)) {
+                Set<String> values = CommonUtils.splitToSet(department);
+                filterMap.put(User._Fields.DEPARTMENT.getFieldName(), values);
+            }
+            if (isUserGroup) {
+                Set<String> values = CommonUtils.splitToSet(usergroup.toString());
+                filterMap.put(User._Fields.USER_GROUP.getFieldName(), values);
+            }
+           if (CommonUtils.isNotNullEmptyOrWhitespace(lastname)) {
+             Set<String> values = CommonUtils.splitToSet(lastname);
+              values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+                filterMap.put(User._Fields.LASTNAME.getFieldName(), values);
+            }
+            List<User> userByGivenName = userService.refineSearch(filterMap);
+            paginationResult = restControllerHelper.createPaginationResult(request, pageable, userByGivenName,
+                    SW360Constants.TYPE_USER);
+        } else {
+            if (isSearchByName) {
+                sw360Users.addAll(userService.searchUserByName(givenname));
+            } else if (isSearchByLastName) {
+                sw360Users.addAll(userService.searchUserByLastName(lastname));
+            } else if (isSearchByDepartment) {
+                sw360Users.addAll(userService.searchUserByDepartment(department));
+            } else if (isUserGroup) {
+                sw360Users.addAll(userService.searchUserByUserGroup(usergroup));
+            } else {
+                sw360Users = userService.getAllUsers();
+            }
+            paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Users,
+                    SW360Constants.TYPE_USER);
+        }
         List<EntityModel<User>> userResources = new ArrayList<>();
         for (User sw360User : paginationResult.getResources()) {
             User embeddedUser = restControllerHelper.convertToEmbeddedGetUsers(sw360User);
@@ -97,7 +162,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         }
 
         CollectionModel<EntityModel<User>> resources;
-        if (sw360Users.size() == 0) {
+        if (userResources.size() == 0) {
             resources = restControllerHelper.emptyPageResource(User.class, paginationResult);
         } else {
             resources = restControllerHelper.generatePagesResource(paginationResult, userResources);
