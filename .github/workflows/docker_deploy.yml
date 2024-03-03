@@ -70,7 +70,7 @@ jobs:
         run: |
           cat .versions >> $GITHUB_ENV
       - name: Build base image
-        uses: ./.github/actions/docker_control
+        uses: heliocastro/docker-build-control@v1
         with:
           name: base
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -98,7 +98,7 @@ jobs:
           cat .versions >> $GITHUB_ENV
 
       - name: Build thrift image
-        uses: ./.github/actions/docker_control
+        uses: heliocastro/docker-build-control@v1
         with:
           name: thrift
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -125,7 +125,7 @@ jobs:
           cat .versions >> $GITHUB_ENV
 
       - name: Build binary image
-        uses: ./.github/actions/docker_control
+        uses: heliocastro/docker-build-control@v1
         with:
           name: binaries
           version: ${{ needs.sw360_version.outputs.sw360_version }}
