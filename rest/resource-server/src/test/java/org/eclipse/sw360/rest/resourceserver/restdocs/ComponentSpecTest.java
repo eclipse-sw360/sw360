@@ -1355,7 +1355,6 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .header("Authorization", "Bearer " + accessToken)
                         .param("withlinkedreleases", "true")
                         .param("mimetype", "xlsx")
-                        .param("mailrequest", "false")
                         .param("module", "components")
                         .accept(MediaTypes.HAL_JSON))
              .andExpect(status().isOk())
@@ -1363,31 +1362,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                      requestParameters(
                              parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
                              parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
-                             parameterWithName("mailrequest").description("Downloading project report requirted mail link. Possible values are `<true|false>`"),
                              parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`")
                      )));
     }
 
-    @Test
-    public void should_document_get_component_report_with_mail_req() throws Exception{
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/reports")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .param("withlinkedreleases", "true")
-                        .param("mimetype", "xlsx")
-                        .param("mailrequest", "true")
-                        .param("module", "components")
-                        .accept(MediaTypes.HAL_JSON))
-             .andExpect(status().isOk())
-             .andDo(this.documentationHandler.document(
-                     requestParameters(
-                             parameterWithName("withlinkedreleases").description("components with linked releases. Possible values are `<true|false>`"),
-                             parameterWithName("mimetype").description("components download format. Possible values are `<xls|xlsx>`"),
-                             parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
-                             parameterWithName("mailrequest").description("Downloading components report requirted mail link. Possible values are `<true|false>`")
-                     ),responseFields(
-                             subsectionWithPath("response").description("The response message displayed").optional()
-                             )
-                     ));
-    }
 }
