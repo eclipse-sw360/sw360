@@ -780,7 +780,6 @@ public class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
-                "id",
                 "revision",
                 "permissions",
                 "subscribers",
