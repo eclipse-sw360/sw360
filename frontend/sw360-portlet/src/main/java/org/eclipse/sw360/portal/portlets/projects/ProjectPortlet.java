@@ -1861,7 +1861,7 @@ public class ProjectPortlet extends FossologyAwarePortlet {
                     licenseObligation.put(keyofObl, osi);
                 }
                 osi.setText(obl.getText());
-                osi.setObligationType(ThriftEnumUtils.enumByString(obl.getType(), ObligationType.class));
+                osi.setObligationType(obl.getObligationType());
                 Set<String> licenseIds = osi.getLicenseIds();
                 if (licenseIds == null) {
                     licenseIds = new HashSet<>();
