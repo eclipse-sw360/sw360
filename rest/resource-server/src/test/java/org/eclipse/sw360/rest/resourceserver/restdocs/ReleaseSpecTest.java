@@ -607,6 +607,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:releases.[]version").description("The version of the release"),
                                 subsectionWithPath("_embedded.sw360:releases.[]createdBy").description("Email of the release creator"),
                                 subsectionWithPath("_embedded.sw360:releases.[]cpeid").description("CpeId of the release"),
+                                subsectionWithPath("_embedded.sw360:releases.[]id").description("Id of the release"),
                                 subsectionWithPath("_embedded.sw360:releases.[]clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
                                 subsectionWithPath("_embedded.sw360:releases.[]releaseDate").description("The date of this release"),
                                 subsectionWithPath("_embedded.sw360:releases.[]createdOn").description("The creation date of the internal sw360 release"),
@@ -745,6 +746,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("curies").description("The curies for documentation")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The id of the release, optional"),
                                 fieldWithPath("name").description("The name of the release, optional"),
                                 fieldWithPath("version").description("The version of the release"),
                                 fieldWithPath("createdBy").description("Email of the release creator"),
@@ -819,6 +821,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_update_release() throws Exception {
         Map<String, Object> updateRelease = new HashMap<>();
+        updateRelease.put("id", "1234");
         updateRelease.put("name", "Updated release");
         updateRelease.put("componentType", ComponentType.OSS.toString());
 
@@ -1011,6 +1014,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("componentId").description("The componentId of the origin component")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The id of the release, optional"),
                                 fieldWithPath("name").description("The name of the release, optional"),
                                 fieldWithPath("version").description("The version of the release"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
@@ -1093,6 +1097,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         linkWithRel("curies").description("The curies for documentation")
                 ),
                 responseFields(
+                        fieldWithPath("id").description("The id of the release, optional"),
                         fieldWithPath("name").description("The name of the release, optional"),
                         fieldWithPath("version").description("The version of the release"),
                         fieldWithPath("createdBy").description("Email of the release creator"),
@@ -1238,6 +1243,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("version").description("The version of the release"),
                                 fieldWithPath("createdBy").description("Email of the release creator"),
                                 fieldWithPath("cpeid").description("CpeId of the release"),
+                                fieldWithPath("id").description("Id of the release"),
                                 fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
                                 fieldWithPath("releaseDate").description("The date of this release"),
                                 fieldWithPath("componentType").description("The componentType of the release, possible values are " + Arrays.asList(ComponentType.values())),
