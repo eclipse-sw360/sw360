@@ -231,15 +231,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     // CREATE CLEARING REQUEST //
     /////////////////////////////
 
-    public AddDocumentRequestSummary createClearingRequest(ClearingRequest clearingRequest, User user, String projectUrl) throws TException {
+    public AddDocumentRequestSummary createClearingRequest(ClearingRequest clearingRequest, User user, String projectUrl) throws SW360Exception {
         Project project = getProjectById(clearingRequest.getProjectId(), user);
         AddDocumentRequestSummary requestSummary = new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE);
-        int numReleaseWithoutSRC = doAllReleasesHaveSourceAttachment(project.id, user);
-        if(numReleaseWithoutSRC > 0) {
-        	log.error("Failed to create CR as " + numReleaseWithoutSRC + " releases do not have SRC type attachment");
-        	return requestSummary.setMessage("one.or.more.linked.releases.do.not.have.src.type.attachment");
-        }
-        
+
         if (!isWriteActionAllowedOnProject(project, user)) {
             return requestSummary.setMessage("You do not have WRITE access to the project");
         }
@@ -266,11 +261,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             log.error("Cannot create clearing request for closed or private project: " + project.getId());
         }
         return requestSummary.setMessage("Failed to create clearing request");
-    }
-    
-    private int doAllReleasesHaveSourceAttachment(String id, User user) throws TException {
-    	List<Release> releaseWithoutSource = componentDatabaseHandler.releasesWithoutSRC(id, user);
-    	return releaseWithoutSource.size();
     }
 
     private boolean isWriteActionAllowedOnProject(Project project, User user) {
