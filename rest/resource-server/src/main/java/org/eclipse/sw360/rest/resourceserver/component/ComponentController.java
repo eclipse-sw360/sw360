@@ -328,8 +328,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             resources.add(EntityModel.of(embeddedComponent));
         });
 
-        CollectionModel<EntityModel<Component>> finalResources = CollectionModel.of(resources);
-        return new ResponseEntity<>(finalResources, HttpStatus.OK);
+        CollectionModel<EntityModel<Component>> finalResources = restControllerHelper.createResources(resources);
+        HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(finalResources, status);
     }
 
     @Operation(
