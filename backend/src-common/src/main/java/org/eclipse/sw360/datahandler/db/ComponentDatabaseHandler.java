@@ -3025,22 +3025,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         getReleaseNodes(dependencyNetwork, user);
         return Collections.singletonList(dependencyNetwork);
     }
-    
-    public List<Release> releasesWithoutSRC(String id, User user) throws TException{
-    	ProjectService.Iface projectClient = new ThriftClients().makeProjectClient();
-    	Project project = projectClient.getProjectById(id, user);
-    	List<Release> releasesWithoutSRC = new ArrayList<>();
-    	Map<String, ProjectReleaseRelationship> releaseIdToUsage = project.getReleaseIdToUsage();
-    	List<String> releaseIdsList = new ArrayList<>(releaseIdToUsage.keySet());
-    	List<Release> releaseObjects = getReleaseByIds(releaseIdsList);
-    	for (Release release : releaseObjects) {
-    		Set<Attachment> srcAttachments = getSourceAttachments(release.id);
-            if(srcAttachments.size() == 0){
-                releasesWithoutSRC.add(release);
-            }
-    	}
-    	return releasesWithoutSRC;
-    }
 
     private ReleaseNode getReleaseNodes(ReleaseNode releaseNode, User user) {
         Release releaseById = null;
