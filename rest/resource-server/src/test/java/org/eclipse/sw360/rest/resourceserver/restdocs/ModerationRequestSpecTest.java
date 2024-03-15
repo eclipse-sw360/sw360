@@ -13,6 +13,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
@@ -66,6 +67,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -90,6 +92,7 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Project project;
+    private ModerationRequest moderationRequest;
 
     @Before
     public void before() throws TException, IOException {
@@ -136,7 +139,7 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         project2Deletions.setProjectType(ProjectType.CUSTOMER);
         project2Deletions.setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS);
 
-        ModerationRequest moderationRequest = new ModerationRequest();
+        moderationRequest = new ModerationRequest();
         moderationRequest.setId("MR-101");
         moderationRequest.setTimestamp(System.currentTimeMillis() / 1000L - 172800);
         moderationRequest.setDocumentId("R-101");
@@ -513,5 +516,34 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
             .andExpect(status().isOk())
             .andReturn();
+    }
+
+    @Test
+    public void should_document_delete_moderationrequests() throws Exception {
+        String accessToken = TestHelper.generateAuthHeader(testUserId, testUserPassword);
+        ModerationRequest mr3 = new ModerationRequest();
+        mr3.setId("MR-20443");
+        mr3.setRevision("1");
+        mr3.setTimestamp(System.currentTimeMillis() / 1000L - 172800);
+        mr3.setTimestampOfDecision(System.currentTimeMillis() / 1000L - 155000);
+        mr3.setDocumentId("P-102");
+        mr3.setDocumentType(DocumentType.PROJECT);
+        mr3.setRequestingUser("test.admin@sw360.org");
+        mr3.setDocumentName("Project 2");
+        mr3.setModerationState(ModerationState.REJECTED);
+        mr3.setReviewer("admin@sw360.org");
+        mr3.setRequestingUserDepartment("DEPT");
+        mr3.setComponentType(ComponentType.OSS);
+        mr3.setCommentRequestingUser("Update project version");
+
+        given(this.moderationRequestServiceMock.deleteModerationRequestInfo(any(), any(), any()))
+                .willReturn(RequestStatus.SUCCESS);
+
+        mockMvc.perform(delete("/api/moderationrequest/delete")
+                .content("[\"" + mr3.getId() + "\"]")
+                .header("Authorization", accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
     }
 }

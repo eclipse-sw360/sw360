@@ -15,12 +15,14 @@ package org.eclipse.sw360.rest.resourceserver.moderationrequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
@@ -37,6 +39,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentServic
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,6 +54,7 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -116,21 +120,34 @@ public class Sw360ModerationRequestService {
      * @return Moderation Request
      * @throws TException Appropriate exception if request does not exists or not accessible.
      */
-    public ModerationRequest getModerationRequestById(String requestId) throws TException {
+    public ModerationRequest getModerationRequestById(String requestId) throws TException, TApplicationException {
+        ModerationRequest moderationRequest = null;
         try {
-            return getThriftModerationClient().getModerationRequestById(requestId);
+            moderationRequest = getThriftModerationClient().getModerationRequestById(requestId);
+        } catch (TApplicationException tAppExp) {
+            log.error("TApplicationException while fetching moderation request by ID: {}. Exception: {}",
+                      requestId, tAppExp.getMessage(), tAppExp);
+            throw new ResourceNotFoundException("Requested ModerationRequest not found: " + requestId, tAppExp);
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
-                throw new ResourceNotFoundException("Requested ModerationRequest not found");
+                log.warn("ModerationRequest not found with ID: {}", requestId);
+                throw new ResourceNotFoundException("Requested ModerationRequest not found: " + requestId, sw360Exp);
             } else if (sw360Exp.getErrorCode() == 403) {
-                throw new AccessDeniedException(
-                        "ModerationRequest or its Linked Project are restricted and / or not accessible");
+                log.warn("Access denied for ModerationRequest or its linked project with ID: {}", requestId);
+                throw new AccessDeniedException("ModerationRequest or its Linked Project are restricted and/or not accessible", sw360Exp);
             } else {
-                log.error("Error fetching moderation request by id: " + sw360Exp.getMessage());
+                log.error("Unhandled SW360Exception while fetching moderation request by ID: {}. Exception: {}",
+                          requestId, sw360Exp.getMessage(), sw360Exp);
                 throw sw360Exp;
             }
+        } catch (Exception ex) {
+            log.error("Unexpected exception while fetching moderation request by ID: {}. Exception: {}",
+                      requestId, ex.getMessage(), ex);
+            throw new RuntimeException("An unexpected error occurred while fetching the ModerationRequest: " + requestId, ex);
         }
+        return moderationRequest;
     }
+
 
     /**
      * Get paginated list of moderation requests where user is one of the
@@ -446,5 +463,28 @@ public class Sw360ModerationRequestService {
             log.error("Error in getting open critical CR count by group: ", e);
             return 0;
         }
+    }
+
+    public RequestStatus deleteModerationRequestInfo(@NotNull User sw360User, @NotNull String id,
+			@NotNull ModerationRequest moderationRequest)
+            throws TTransportException, TException {
+        RequestStatus requestStatus = null;
+        Set<String> moderators = moderationRequest.getModerators();
+        String requestingUser = moderationRequest.getRequestingUser();
+        ModerationState moderationState = moderationRequest.getModerationState();
+
+        if (moderators.contains(sw360User.getEmail())) {
+            if (moderationState == ModerationState.REJECTED || moderationState == ModerationState.APPROVED) {
+                requestStatus = getThriftModerationClient().deleteModerationRequest(id, sw360User);
+            }
+        } else if (!sw360User.getEmail().equals(requestingUser)) {
+            if (moderationState == ModerationState.PENDING || moderationState == ModerationState.INPROGRESS) {
+                requestStatus = RequestStatus.FAILURE;
+            }
+        } else {
+            requestStatus = getThriftModerationClient().deleteModerationRequest(id, sw360User);
+        }
+
+        return requestStatus;
     }
 }
