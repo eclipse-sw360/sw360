@@ -224,12 +224,12 @@ public class CycloneDxBOMImporter {
 
                         String packages = messageMap.get(DUPLICATE_PACKAGE);
                         if (CommonUtils.isNotNullEmptyOrWhitespace(packages)) {
-                            duplicatePackages.addAll(Arrays.asList(packages.split(JOINER)));
+                            duplicatePackages.addAll(Arrays.asList(packages.split("\\|\\|")));
                             packages = "";
                         }
                         packages = messageMap.get(INVALID_PACKAGE);
                         if (CommonUtils.isNotNullEmptyOrWhitespace(packages)) {
-                            invalidPackages.addAll(Arrays.asList(packages.split(JOINER)));
+                            invalidPackages.addAll(Arrays.asList(packages.split("\\|\\|")));
                             packages = "";
                         }
                         Project project = projectDatabaseHandler.getProjectById(projId, user);
