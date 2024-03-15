@@ -163,3 +163,14 @@ include::{snippets}/should_document_check_user_message_moderationrequests/curl-r
 
 ===== Example response
 include::{snippets}/should_document_check_user_message_moderationrequests/http-response.adoc[]
+
+[[resources-moderationRequest-delete]]
+==== Delete Moderation Requests
+
+A `DELETE` method will delete list of moderation request.
+
+===== Example request
+include::{snippets}/should_document_delete_moderationrequests/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_moderationrequests/http-response.adoc[]

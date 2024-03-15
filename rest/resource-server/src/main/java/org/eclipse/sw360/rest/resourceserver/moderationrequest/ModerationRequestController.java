@@ -26,11 +26,14 @@ import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -52,6 +55,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
@@ -59,6 +63,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
@@ -70,6 +75,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
+
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Function;
@@ -383,6 +390,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
         return new ResponseEntity<>(resources, status);
     }
 
+
     /**
      * Filter moderation request to remove duplicate additions and deletions data.
      * @param moderationRequest Moderation request to filter
@@ -612,6 +620,77 @@ public class ModerationRequestController implements RepresentationModelProcessor
             }
         } catch (TTransportException e) {
             throw new RuntimeException("Unable to connect to the service. Please check the server status.", e);
+        }
+    }
+    @Operation(
+            summary = "Delete moderation request.",
+            description = "Delete delete moderation request of the service.",
+            tags = {"ModerationRequest"}
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = MODERATION_REQUEST_URL + "/delete", method = RequestMethod.DELETE)
+    public ResponseEntity<?> deleteModerationRequest(
+            HttpServletRequest request,
+            @Parameter(description = "List of moderation request IDs to delete")
+            @RequestBody List<String> ids) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<RequestStatus> requestStatusList = new ArrayList<>();
+        List<String> incorrectIds = new ArrayList<>();
+        List<String> correctIds = new ArrayList<>();
+        List<String> deletedIds = new ArrayList<>();
+
+        for (String id : ids) {
+            try {
+                ModerationRequest moderationRequest = sw360ModerationRequestService.getModerationRequestById(id);
+                RequestStatus requestStatus = sw360ModerationRequestService.deleteModerationRequestInfo(sw360User, id,
+                        moderationRequest);
+                requestStatusList.add(requestStatus);
+                if (requestStatus == RequestStatus.SUCCESS) {
+                    deletedIds.add(id);
+                } else {
+                    correctIds.add(id);
+                }
+            } catch (ResourceNotFoundException ex) {
+                incorrectIds.add(id);
+            }
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("deleted", deletedIds);
+        response.put("incorrect", incorrectIds);
+        response.put("correct", correctIds);
+
+        if (!requestStatusList.isEmpty()) {
+            if (requestStatusList.contains(RequestStatus.FAILURE)) {
+                response.put("message", "User doesn't have permission to delete.");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+            } else if (requestStatusList.contains(RequestStatus.SUCCESS) && requestStatusList.contains(null)) {
+                response.put("message", "Some requests were deleted, but some are in an open state.");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+            } else if (requestStatusList.contains(RequestStatus.SUCCESS) && incorrectIds.isEmpty() && correctIds.isEmpty()) {
+                response.put("message", "All specified moderation requests were successfully deleted.");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            } else if (requestStatusList.contains(null)) {
+                response.put("message", "MR is in open state or user don't have permission.");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+            }
+        }
+
+        if (!incorrectIds.isEmpty() && !correctIds.isEmpty()) {
+            response.put("message", "Some moderation requests are invalid or open.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        } else if (incorrectIds.isEmpty() && correctIds.isEmpty() && !deletedIds.isEmpty()) {
+            response.put("message", "All specified moderation requests were successfully deleted.");
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } else if (!incorrectIds.isEmpty()) {
+            response.put("message", "Some moderation requests are invalid.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        } else if (!correctIds.isEmpty()) {
+            response.put("message", "Some moderation requests are in an open state.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        } else {
+            response.put("message", "No valid moderation requests found.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
 }
