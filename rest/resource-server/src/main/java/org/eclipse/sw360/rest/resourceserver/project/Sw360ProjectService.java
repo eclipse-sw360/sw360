@@ -20,6 +20,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -28,12 +29,18 @@ import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
+import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
@@ -57,14 +64,19 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import com.google.common.collect.Sets;
+
 import javax.annotation.PreDestroy;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
@@ -74,8 +86,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.nullToEmpty;
@@ -132,6 +146,182 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         String cyclicLinkedProjectPath = sw360ProjectClient.getCyclicLinkedProjectPath(project, user);
         return cyclicLinkedProjectPath;
+    }
+
+    public Map<String, Set<Release>> getLicensesFromAttachmentUsage(
+            Map<String, AttachmentUsage> licenseInfoAttachmentUsage, User user) {
+        ThriftClients thriftClients = new ThriftClients();
+        LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        Map<String, Release> attachmentIdToReleaseMap = new HashMap<String, Release>();
+        Map<String, Set<Release>> licenseIdToReleasesMap = new HashMap<>();
+        licenseInfoAttachmentUsage.entrySet().stream()
+                .filter(entry -> entry.getKey() != null && entry.getValue() != null).forEach(entry -> {
+                    String releaseId = entry.getValue().getOwner().getReleaseId();
+                    Release releaseById = null;
+                    try {
+                        releaseById = componentClient.getReleaseById(releaseId, user);
+                    } catch (TException exp) {
+                        log.warn("Error fetching Release from backend! Release Id-" + releaseId, exp.getMessage());
+                        return;
+                    }
+                    if (CommonUtils.isNullOrEmptyCollection(releaseById.getAttachments()))
+                        return;
+
+                    Set<Attachment> attachmentFiltered = releaseById.getAttachments().stream().filter(Objects::nonNull)
+                            .filter(att -> entry.getKey().equals(att.getAttachmentContentId()))
+                            .filter(att -> att.getCheckStatus() != null && att.getCheckStatus() == CheckStatus.ACCEPTED)
+                            .collect(Collectors.toSet());
+
+                    if (CommonUtils.isNullOrEmptyCollection(attachmentFiltered))
+                        return;
+                    releaseById.setAttachments(attachmentFiltered);
+
+                    attachmentIdToReleaseMap.put(entry.getKey(), releaseById);
+                });
+
+        attachmentIdToReleaseMap.entrySet().stream().filter(entry -> entry.getKey() != null && entry.getValue() != null)
+                .forEach(entry -> wrapTException(() -> {
+                    List<LicenseInfoParsingResult> licenseInfoForAttachment = licenseInfoClient
+                            .getLicenseInfoForAttachment(entry.getValue(), entry.getKey(), false, user);
+                    Set<String> licenseIds = licenseInfoForAttachment.stream().filter(Objects::nonNull)
+                            .filter(lia -> lia.getLicenseInfo() != null)
+                            .filter(lia -> lia.getLicenseInfo().getLicenseNamesWithTexts() != null)
+                            .flatMap(lia -> lia.getLicenseInfo().getLicenseNamesWithTexts().stream())
+                            .filter(Objects::nonNull)
+                            .map(licenseNamesWithTexts -> CommonUtils.isNotNullEmptyOrWhitespace(
+                                    licenseNamesWithTexts.getLicenseSpdxId()) ? licenseNamesWithTexts.getLicenseSpdxId()
+                                            : licenseNamesWithTexts.getLicenseName())
+                            .filter(CommonUtils::isNotNullEmptyOrWhitespace).collect(Collectors.toSet());
+
+                    licenseIds.stream().forEach(licenseId -> {
+                        if (licenseIdToReleasesMap.containsKey(licenseId)) {
+                            licenseIdToReleasesMap.get(licenseId).add(entry.getValue());
+                        } else {
+                            Set<Release> listOfRelease = new HashSet<>();
+                            listOfRelease.add(entry.getValue());
+                            licenseIdToReleasesMap.put(licenseId, listOfRelease);
+                        }
+                    });
+                }));
+
+        return licenseIdToReleasesMap;
+    }
+
+    public Map<String, AttachmentUsage> getLicenseInfoAttachmentUsage(String projectId) {
+        Map<String, AttachmentUsage> licenseInfoUsages = new HashMap<>();
+        try {
+            ThriftClients thriftClients = new ThriftClients();
+            AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+
+            List<AttachmentUsage> attachmentUsages = wrapTException(
+                    () -> attachmentClient.getUsedAttachments(Source.projectId(projectId), null));
+            Collector<AttachmentUsage, ?, Map<String, AttachmentUsage>> attachmentUsageMapCollector = Collectors.toMap(
+                    AttachmentUsage::getAttachmentContentId, Function.identity(),
+                    Sw360ProjectService::mergeAttachmentUsages);
+            BiFunction<List<AttachmentUsage>, UsageData._Fields, Map<String, AttachmentUsage>> filterAttachmentUsages = (
+                    attUsages, type) -> attUsages.stream()
+                            .filter(attUsage -> attUsage.getUsageData().getSetField().equals(type))
+                            .collect(attachmentUsageMapCollector);
+
+            licenseInfoUsages = filterAttachmentUsages.apply(attachmentUsages, UsageData._Fields.LICENSE_INFO);
+
+        } catch (WrappedTException e) {
+            log.error("Error fetching AttachmentUsage from backend!", e);
+        }
+
+        return licenseInfoUsages;
+    }
+
+    static AttachmentUsage mergeAttachmentUsages(AttachmentUsage u1, AttachmentUsage u2) {
+        if (u1.getUsageData() == null) {
+            if (u2.getUsageData() == null) {
+                return u1;
+            } else {
+                throw new IllegalArgumentException("Cannot merge attachment usages of different usage types");
+            }
+        } else {
+            if (!u1.getUsageData().getSetField().equals(u2.getUsageData().getSetField())) {
+                throw new IllegalArgumentException("Cannot merge attachment usages of different usage types");
+            }
+        }
+        AttachmentUsage mergedUsage = u1.deepCopy();
+        switch (u1.getUsageData().getSetField()) {
+            case LICENSE_INFO:
+                mergedUsage.getUsageData().getLicenseInfo().setExcludedLicenseIds(
+                        Sets.union(Optional.of(u1)
+                                        .map(AttachmentUsage::getUsageData)
+                                        .map(UsageData::getLicenseInfo)
+                                        .map(LicenseInfoUsage::getExcludedLicenseIds)
+                                        .orElse(Collections.emptySet()),
+                                Optional.of(u2)
+                                        .map(AttachmentUsage::getUsageData)
+                                        .map(UsageData::getLicenseInfo)
+                                        .map(LicenseInfoUsage::getExcludedLicenseIds)
+                                        .orElse(Collections.emptySet())));
+                break;
+            case SOURCE_PACKAGE:
+            case MANUALLY_SET:
+                // do nothing
+                // source package and manual usages do not have any information to be merged
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected UsageData type: " + u1.getUsageData().getSetField());
+        }
+
+        return mergedUsage;
+    }
+
+    public Map<String, ObligationStatusInfo> getLicenseObligationData(Map<String, Set<Release>> licensesFromAttachmentUsage, User user) {
+        ThriftClients thriftClients = new ThriftClients();
+        LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+        Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<String, ObligationStatusInfo>();
+        licensesFromAttachmentUsage.entrySet().stream().forEach(entry -> wrapTException(() -> {
+            License lic = null;
+            Set<Release> releaseData = entry.getValue();
+            Map<String, String> releaseIdToAcceptedCli = new HashMap<String, String>();
+            for (Release rel : releaseData) {
+                String releaseId = rel.getId();
+                for (Attachment attachment : rel.getAttachments()) {
+                    if (CheckStatus.ACCEPTED.equals(attachment.getCheckStatus())) {
+                        String attachmentContentId = attachment.getAttachmentContentId();
+                        releaseIdToAcceptedCli.put(releaseId, attachmentContentId);
+                    }
+                }
+            }
+            try {
+                lic = licenseClient.getByID(entry.getKey(), user.getDepartment());
+            } catch (TException exp) {
+                log.warn("Error fetching license from backend! License Id-" + entry.getKey(), exp.getMessage());
+                return;
+            }
+            if (lic == null || CommonUtils.isNullOrEmptyCollection(lic.getObligations()))
+                return;
+
+            lic.getObligations().stream().filter(Objects::nonNull).forEach(obl -> {
+                String keyofObl = CommonUtils.isNotNullEmptyOrWhitespace(obl.getTitle()) ? obl.getTitle()
+                        : obl.getText();
+                ObligationStatusInfo osi = null;
+                if (obligationStatusMap.containsKey(keyofObl)) {
+                    osi = obligationStatusMap.get(keyofObl);
+                } else {
+                    osi = new ObligationStatusInfo();
+                    obligationStatusMap.put(keyofObl, osi);
+                }
+                osi.setText(obl.getText());
+                osi.setId(obl.getId());
+                osi.setObligationLevel(obl.getObligationLevel());
+                osi.setReleaseIdToAcceptedCLI(releaseIdToAcceptedCli);
+                Set<String> licenseIds = osi.getLicenseIds();
+                if (licenseIds == null) {
+                    licenseIds = new HashSet<>();
+                    osi.setLicenseIds(licenseIds);
+                }
+                licenseIds.add(entry.getKey());
+            });
+
+        }));
+        return obligationStatusMap;
     }
 
     public Set<Project> searchLinkingProjects(String projectId, User sw360User) throws TException {
