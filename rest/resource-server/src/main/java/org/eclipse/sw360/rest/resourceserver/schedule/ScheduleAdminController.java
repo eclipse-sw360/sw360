@@ -15,6 +15,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +44,6 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
     
     @NonNull
     private Sw360ScheduleService scheduleService;
-    
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
@@ -55,6 +55,78 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
     public ResponseEntity<?> unscheduleAllServices()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelAllServices(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestStatus, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/scheduleSvmSync", method = RequestMethod.POST)
+    public ResponseEntity<?> scheduleSvmSync()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.svmSync(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestSummary, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/unscheduleSvmSync", method = RequestMethod.DELETE)
+    public ResponseEntity<?> unscheduleSvmSync()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.cancelSvmSync(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestStatus, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/svmReverseMatch", method = RequestMethod.POST)
+    public ResponseEntity<?> svmReverseMatch()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.scheduleSvmReverseMatch(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestSummary, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/unscheduleSvmReverseMatch", method = RequestMethod.DELETE)
+    public ResponseEntity<?> unscheduleSvmReverseMatch()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.cancelSvmReverseMatch(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestStatus, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/trackingFeedback", method = RequestMethod.POST)
+    public ResponseEntity<?> svmTrackingFeedback()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.svmReleaseTrackingFeedback(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestSummary, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/monitoringListUpdate", method = RequestMethod.POST)
+    public ResponseEntity<?> monitoringListUpdate()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.svmMonitoringListUpdate(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestSummary, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/cancelMonitoringListUpdate", method = RequestMethod.DELETE)
+    public ResponseEntity<?> cancelMonitoringListUpdate()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.cancelSvmMonitoringListUpdate(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestStatus, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/srcUpload", method = RequestMethod.POST)
+    public ResponseEntity<?> srcUpload()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.triggeSrcUpload(sw360User);
+        HttpStatus status = HttpStatus.OK;
+        return new ResponseEntity<>(requestSummary, status);
+    }
+
+    @RequestMapping(value = SCHEDULE_URL + "/cancelSrcUpload", method = RequestMethod.DELETE)
+    public ResponseEntity<?> cancelsrcUpload()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.unscheduleSrcUpload(sw360User);
         HttpStatus status = HttpStatus.OK;
         return new ResponseEntity<>(requestStatus, status);
     }
