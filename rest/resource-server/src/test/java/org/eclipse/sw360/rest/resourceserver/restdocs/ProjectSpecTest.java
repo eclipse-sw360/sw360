@@ -28,13 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
@@ -368,6 +362,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         projectList.add(project2);
 
         Map<String, ProjectReleaseRelationship> linkedReleases2 = new HashMap<>();
+        Map<String, ProjectReleaseRelationship> linkedReleases3 = new HashMap<>();
+        Map<String, ProjectReleaseRelationship> linkedReleases4 = new HashMap<>();
         Map<String, ProjectProjectRelationship> linkedProjects2 = new HashMap<>();
         Map<String, ProjectProjectRelationship> linkedProjects3 = new HashMap<>();
         Project project4 = new Project();
@@ -414,7 +410,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project7.setClearingState(ProjectClearingState.OPEN);
         project7.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
 
-        Map<String, ProjectReleaseRelationship> linkedReleases3 = new HashMap<>();
         Set<Attachment> attachmentSet = new HashSet<Attachment>();
         List<Obligation> obligationList = new ArrayList<>();
         Set<String> licenseIds2 = new HashSet<>();
@@ -494,6 +489,32 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release5.setVersion("2.3.1");
         release5.setCreatedOn("2016-12-28");
 
+        Project project9 = new Project();
+        project9.setId("0000007");
+        project9.setName("attachUsages");
+        project9.setVersion("2");
+        project9.setCreatedBy(testUserId);
+        project9.setProjectType(ProjectType.PRODUCT);
+        project9.setState(ProjectState.ACTIVE);
+        project9.setClearingState(ProjectClearingState.OPEN);
+        linkedReleases4.put("00000071", projectReleaseRelationship);
+        project9.setReleaseIdToUsage(linkedReleases4);
+
+        Release release9 = new Release();
+        release9.setId("00000071");
+        release9.setName("docker");
+        release9.setCpeid("cpe:/a:Google:Angular:2.3.1:");
+        release9.setReleaseDate("2024-03-17");
+        release9.setVersion("2");
+        release9.setCreatedOn("2024-03-28");
+        release9.setAttachments(setOfAttachment);
+
+        List<AttachmentUsage> attachmentUsageNewList = new ArrayList<>();
+        List<AttachmentUsage> deselectedUsagesFromRequest = new ArrayList<>();
+        List<AttachmentUsage> selectedUsagesFromRequest = new ArrayList<>();
+        List<String> selectedUsages = Arrays.asList("00000071_sourcePackage_1234");
+
+        Set<String> releaseIds2 = new HashSet<>(Collections.singletonList("00000071"));
         Set<String> releaseIds = new HashSet<>(Collections.singletonList("3765276512"));
         Set<String> releaseIdsTransitive = new HashSet<>(Arrays.asList("3765276512", "5578999"));
 
@@ -571,6 +592,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.addLinkedObligations(any(), any(), eq(obligationStatusMap))).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.compareObligationStatusMap(any(), any(), any())).willReturn(obligationStatusMap);
         given(this.projectServiceMock.patchLinkedObligations(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.projectServiceMock.getProjectForUserById(eq(project9.getId()), any())).willReturn(project9);
+        given(this.projectServiceMock.getUsedAttachments(any(), any())).willReturn(attachmentUsageNewList);
+        given(this.projectServiceMock.validate(any(), any(), any(), any())).willReturn(true);
+        given(this.projectServiceMock.deselectedAttachmentUsagesFromRequest(any(), eq(selectedUsages), any(), any(), any())).willReturn(deselectedUsagesFromRequest);
+        given(this.projectServiceMock.selectedAttachmentUsagesFromRequest(any(), eq(selectedUsages), any(), any(), any())).willReturn(selectedUsagesFromRequest);
         given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(projectForAtt);
         given(this.projectServiceMock.getProjectForUserById(eq(SPDXProject.getId()), any())).willReturn(SPDXProject);
         given(this.projectServiceMock.getProjectForUserById(eq(cycloneDXProject.getId()), any())).willReturn(cycloneDXProject);
@@ -581,6 +607,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.searchProjectByGroup(any(), any())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.refineSearch(any(), any())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(false))).willReturn(releaseIds);
+        given(this.projectServiceMock.getReleaseIds(eq(project9.getId()), any(), eq(true))).willReturn(releaseIds2);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(true))).willReturn(releaseIdsTransitive);
         given(this.projectServiceMock.deleteProject(eq(project.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(projectReleaseRelationshipResponseBody);
@@ -1993,6 +2020,21 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("Message regarding successfully linked project(s)").description("project linked to respective project ids").optional()
                         )));
+    }
+
+    @Test
+    public void should_document_save_usages() throws Exception {
+        MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + "0000007" + "/saveAttachmentUsages");
+        Map<String, List<String>> usages = Map.of(
+            "selected", new ArrayList<>(List.of("00000071_sourcePackage_1234")),
+            "deselected", new ArrayList<>(List.of()),
+            "selectedConcludedUsages", new ArrayList<>(List.of()),
+            "deselectedConcludedUsages", new ArrayList<>(List.of()));
+
+        this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(usages))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isCreated());
     }
 
     @Test
