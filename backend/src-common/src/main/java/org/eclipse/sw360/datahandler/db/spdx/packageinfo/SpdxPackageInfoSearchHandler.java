@@ -10,39 +10,51 @@
  */
 package org.eclipse.sw360.datahandler.db.spdx.packageinfo;
 
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
-import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
-import org.ektorp.http.HttpClient;
-
 import com.cloudant.client.api.CloudantClient;
+import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 
 public class SpdxPackageInfoSearchHandler {
 
-    private static final LuceneSearchView luceneSearchView
-            = new LuceneSearchView("lucene", "packageInformation",
-            "function(doc) {" +
-                    "  if(doc.type == 'packageInformation') { " +
-                    "      var ret = new Document();" +
-                    "      ret.add(doc._id);  " +
-                    "      return ret;" +
-                    "  }" +
-                    "}");
+    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "/lucene";
 
-    private final LuceneAwareDatabaseConnector connector;
+    private static final NouveauIndexDesignDocument luceneSearchView
+        = new NouveauIndexDesignDocument("packageInformation",
+            new NouveauIndexFunction(
+                "function(doc) {" +
+                "  if(doc.type == 'packageInformation') { " +
+                "      index('text', 'id', doc._id, {'store': true});" +
+                "  }" +
+                "}"));
+
+    private final NouveauLuceneAwareDatabaseConnector connector;
 
     public SpdxPackageInfoSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
-        connector = new LuceneAwareDatabaseConnector(httpClient, cClient, dbName);
-        connector.addView(luceneSearchView);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, cClient, DDOC_NAME);
+        Gson gson = (new DatabaseInstanceCloudant(cClient)).getClient().getGson();
+        NouveauDesignDocument searchView = new NouveauDesignDocument();
+        searchView.setId(DDOC_NAME);
+        searchView.addNouveau(luceneSearchView, gson);
+        connector.addDesignDoc(searchView);
     }
 
     public List<PackageInformation> search(String searchText) {
-        return connector.searchView(PackageInformation.class, luceneSearchView, prepareWildcardQuery(searchText));
+        return connector.searchView(PackageInformation.class, luceneSearchView.getIndexName(),
+                prepareWildcardQuery(searchText));
     }
 }

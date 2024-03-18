@@ -9,17 +9,20 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
+import com.cloudant.client.api.CloudantClient;
+import com.google.gson.Gson;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 import org.ektorp.http.HttpClient;
-
-import com.cloudant.client.api.CloudantClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,7 +31,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 
 /**
  * Class for accessing the Lucene connector on the CouchDB database
@@ -40,75 +45,61 @@ public class ComponentSearchHandler {
 
     private static final Logger log = LogManager.getLogger(ComponentSearchHandler.class);
 
-    private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "components",
-            "function(doc) {" +
-                    "    var ret = new Document();" +
-                    "    if(!doc.type) return ret;" +
-                    "    if(doc.type != 'component') return ret;" +
-                    "    function idx(obj) {" +
-                    "        for (var key in obj) {" +
-                    "            switch (typeof obj[key]) {" +
-                    "                case 'object':" +
-                    "                    idx(obj[key]);" +
-                    "                    break;" +
-                    "                case 'function':" +
-                    "                    break;" +
-                    "                default:" +
-                    "                    ret.add(obj[key]);" +
-                    "                    break;" +
-                    "            }" +
-                    "        }" +
-                    "    };" +
-                    "    idx(doc);" +
-                    "    for(var i in doc.categories) {" +
-                    "      ret.add(doc.categories[i], {\"field\": \"categories\"} );" +
-                    "    }" +
-                    "    for(var i in doc.languages) {" +
-                    "      ret.add(doc.languages[i], {\"field\": \"languages\"} );" +
-                    "    }" +
-                    "    for(var i in doc.softwarePlatforms) {" +
-                    "      ret.add(doc.softwarePlatforms[i], {\"field\": \"softwarePlatforms\"} );" +
-                    "    }" +
-                    "    for(var i in doc.operatingSystems) {" +
-                    "      ret.add(doc.operatingSystems[i], {\"field\": \"operatingSystems\"} );" +
-                    "    }" +
-                    "    for(var i in doc.vendorNames) {" +
-                    "      ret.add(doc.vendorNames[i], {\"field\": \"vendorNames\"} );" +
-                    "    }" +
-                    "    for(var i in doc.mainLicenseIds) {" +
-                    "      ret.add(doc.mainLicenseIds[i], {\"field\": \"mainLicenseIds\"} );" +
-                    "    }" +
-                    "        ret.add(doc.componentType, {\"field\": \"componentType\"} );" +
-                    "    if(doc.name !== undefined && doc.name != null && doc.name.length >0) {  "+
-                    "      ret.add(doc.name, {\"field\": \"name\"} );" +
-                    "    }" +
-                    "    if(doc.createdBy && doc.createdBy.length) {  "+
-                    "      ret.add(doc.createdBy, {\"field\": \"createdBy\"} );" +
-                    "    }" +
-                    "    if(doc.createdOn && doc.createdOn.length) {  "+
-                    "      ret.add(doc.createdOn, {\"field\": \"createdOn\", \"type\": \"date\"} );" +
-                    "    }" +
-                    "    if(doc.businessUnit && doc.businessUnit.length) {  "+
-                    "      ret.add(doc.businessUnit, {\"field\": \"businessUnit\"} );" +
-                    "    }" +
-                    "    return ret;" +
-                    "}");
+    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "/lucene";
+
+    private static final NouveauIndexDesignDocument luceneSearchView
+        = new NouveauIndexDesignDocument("components",
+            new NouveauIndexFunction(
+                "function(doc) {" +
+                OBJ_ARRAY_TO_STRING_INDEX +
+                "    if(!doc.type || doc.type != 'component') return;" +
+                "    arrayToStringIndex(doc.categories, 'categories');" +
+                "    arrayToStringIndex(doc.languages, 'languages');" +
+                "    arrayToStringIndex(doc.softwarePlatforms, 'softwarePlatforms');" +
+                "    arrayToStringIndex(doc.operatingSystems, 'operatingSystems');" +
+                "    arrayToStringIndex(doc.vendorNames, 'vendorNames');" +
+                "    arrayToStringIndex(doc.mainLicenseIds, 'mainLicenseIds');" +
+                "    if(doc.componentType && typeof(doc.componentType) == 'string' && doc.componentType.length > 0) {" +
+                "      index('text', 'componentType', doc.componentType, {'store': true});" +
+                "    }" +
+                "    if(doc.name && typeof(doc.name) == 'string' && doc.name.length > 0) {" +
+                "      index('text', 'name', doc.name, {'store': true});"+
+                "    }" +
+                "    if(doc.createdBy && typeof(doc.createdBy) == 'string' && doc.createdBy.length > 0) {" +
+                "      index('text', 'createdBy', doc.createdBy, {'store': true});"+
+                "    }" +
+                "    if(doc.createdOn && doc.createdOn.length) {"+
+                "      var dt = new Date(doc.createdOn);"+
+                "      var formattedDt = `${dt.getFullYear()}${(dt.getMonth()+1).toString().padStart(2,'0')}${dt.getDate().toString().padStart(2,'0')}`;" +
+                "      index('double', 'createdOn', Number(formattedDt), {'store': true});"+
+                "    }" +
+                "    if(doc.businessUnit && typeof(doc.businessUnit) == 'string' && doc.businessUnit.length > 0) {" +
+                "      index('text', 'businessUnit', doc.businessUnit, {'store': true});"+
+                "    }" +
+                "}"));
 
 
-    private final LuceneAwareDatabaseConnector connector;
+    private final NouveauLuceneAwareDatabaseConnector connector;
 
     public ComponentSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
-        connector = new LuceneAwareDatabaseConnector(httpClient, cClient, dbName);
-        connector.addView(luceneSearchView);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, cClient, DDOC_NAME);
+        Gson gson = (new DatabaseInstanceCloudant(cClient)).getClient().getGson();
+        NouveauDesignDocument searchView = new NouveauDesignDocument();
+        searchView.setId(DDOC_NAME);
+        searchView.addNouveau(luceneSearchView, gson);
+        connector.addDesignDoc(searchView);
     }
 
-    public List<Component> search(String text, final Map<String , Set<String > > subQueryRestrictions ){
-        return connector.searchViewWithRestrictions(Component.class, luceneSearchView, text, subQueryRestrictions);
+    public List<Component> search(String text, final Map<String, Set<String>> subQueryRestrictions ){
+        return connector.searchViewWithRestrictions(Component.class, luceneSearchView.getIndexName(),
+                text, subQueryRestrictions);
     }
 
-    public List<Component> searchAccessibleComponents(String text, final Map<String , Set<String > > subQueryRestrictions, User user ){
-        List<Component> resultComponentList = connector.searchViewWithRestrictions(Component.class, luceneSearchView, text, subQueryRestrictions);
+    public List<Component> searchAccessibleComponents(String text, final Map<String,
+            Set<String>> subQueryRestrictions, User user ){
+        List<Component> resultComponentList = connector.searchViewWithRestrictions(Component.class,
+                luceneSearchView.getIndexName(), text, subQueryRestrictions);
         List<Component> componentList = new ArrayList<Component>();
         for (Component component : resultComponentList) {
             if (makePermission(component, user).isActionAllowed(RequestedAction.READ)) {
@@ -118,12 +109,13 @@ public class ComponentSearchHandler {
         return componentList;
     }
 
-    public List<Component> searchWithAccessibility(String text, final Map<String , Set<String > > subQueryRestrictions, User user ){
-        List<Component> resultComponentList = connector.searchViewWithRestrictions(Component.class, luceneSearchView, text, subQueryRestrictions);
+    public List<Component> searchWithAccessibility(String text, final Map<String, Set<String>> subQueryRestrictions,
+                                                   User user ){
+        List<Component> resultComponentList = connector.searchViewWithRestrictions(Component.class,
+                luceneSearchView.getIndexName(), text, subQueryRestrictions);
         for (Component component : resultComponentList) {
             makePermission(component, user).fillPermissionsInOther(component);
         }
         return resultComponentList;
     }
-
 }

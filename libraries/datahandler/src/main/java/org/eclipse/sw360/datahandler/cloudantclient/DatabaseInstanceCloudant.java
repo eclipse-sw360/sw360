@@ -44,4 +44,8 @@ public class DatabaseInstanceCloudant {
     public void deleteDatabase(String dbName) {
         client.deleteDB(dbName);
     }
+
+    public CloudantClient getClient() {
+        return client;
+    }
 }

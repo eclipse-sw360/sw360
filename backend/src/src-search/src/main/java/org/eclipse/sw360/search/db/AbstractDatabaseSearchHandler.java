@@ -11,23 +11,31 @@
 package org.eclipse.sw360.search.db;
 
 import com.cloudant.client.api.CloudantClient;
-import com.github.ldriscoll.ektorplucene.LuceneResult;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.FluentIterable;
+import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.nouveau.NouveauResult;
+import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 import org.ektorp.http.HttpClient;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_TO_DEFAULT_INDEX;
+import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 
 /**
  * Class for accessing the Lucene connector on the CouchDB database
@@ -36,75 +44,71 @@ import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseCo
  */
 public abstract class AbstractDatabaseSearchHandler {
 
-    private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "all",
+    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "/lucene";
+
+    private static final NouveauIndexDesignDocument luceneSearchView
+        = new NouveauIndexDesignDocument("all", new NouveauIndexFunction(
             "function(doc) {" +
-                    "    var ret = new Document();" +
-                    "    if(!doc.type) return ret;" +
-                    "    function idx(obj) {" +
-                    "        for (var key in obj) {" +
-                    "            switch (typeof obj[key]) {" +
-                    "                case 'object':" +
-                    "                    idx(obj[key]);" +
-                    "                    break;" +
-                    "                case 'function':" +
-                    "                    break;" +
-                    "                default:" +
-                    "                    ret.add(obj[key]);" +
-                    "                    break;" +
-                    "            }" +
-                    "        }" +
-                    "    };" +
-                    "    idx(doc);" +
-                    "    ret.add(doc.type, {\"field\": \"type\"} );" +
-                    "    return ret;" +
-                    "}");
-    private static final LuceneSearchView luceneFilteredSearchView = new LuceneSearchView("lucene", "restrictedSearch",
+            "  if(!doc.type) return;" +
+            OBJ_TO_DEFAULT_INDEX +
+            "  var objString = getObjAsString(doc);" +
+            "  if (objString && objString.length > 0) {" +
+            "    index('text', 'default', objString, {'store': true});" +
+            "  }" +
+            "  if (doc.type && typeof(doc.type) == 'string' && doc.type.length > 0) {" +
+            "    index('text', 'type', doc.type, {'store': true});" +
+            "  }" +
+            "}"));
+
+    private static final NouveauIndexDesignDocument luceneFilteredSearchView
+        = new NouveauIndexDesignDocument("restrictedSearch", new NouveauIndexFunction(
             "function(doc) {" +
-                    "    var ret = new Document();" +
-                    "    if(!doc.type) return ret;" +
-                    "    function idx(obj) {" +
-                    "        for (var key in obj) {" +
-                    "            switch (typeof obj[key]) {" +
-                    "                case 'object':" +
-                    "                    idx(obj[key]);" +
-                    "                    break;" +
-                    "                case 'function':" +
-                    "                    break;" +
-                    "                default:" +
-                    "                    ret.add(obj[key]);" +
-                    "                    break;" +
-                    "            }" +
-                    "        }" +
-                    "    };" +
-                    "    idx(doc);" +
-                    "    ret.add(doc.type, {\"field\": \"type\"} );" +
-                    "    if(doc.name && doc.name.length > 0) {  "+
-                    "      ret.add(doc.name, {\"field\": \"name\"} );" +
-                    "    }" +
-                    "    if (doc.fullname && doc.fullname.length > 0) {  "+
-                    "      ret.add(doc.fullname, {\"field\": \"fullname\"} );" +
-                    "    }" +
-                    "    if (doc.title && doc.title.length > 0) {  "+
-                    "      ret.add(doc.title, {\"field\": \"title\"} );" +
-                    "    }" +
-                    "    return ret;" +
-                    "}");
-    private final LuceneAwareDatabaseConnector connector;
+            "  if(!doc.type) return;" +
+            OBJ_TO_DEFAULT_INDEX +
+            "  var objString = getObjAsString(doc);" +
+            "  if (objString && objString.length > 0) {" +
+            "    index('text', 'default', objString, {'store': true});" +
+            "  }" +
+            "  if (doc.type && typeof(doc.type) == 'string' && doc.type.length > 0) {" +
+            "    index('text', 'type', doc.type, {'store': true});" +
+            "  }" +
+            "  if (doc.name && typeof(doc.name) == 'string' && doc.name.length > 0) {" +
+            "    index('text', 'name', doc.name, {'store': true});" +
+            "  }" +
+            "  if (doc.fullname && typeof(doc.fullname) == 'string' && doc.fullname.length > 0) {" +
+            "    index('text', 'fullname', doc.fullname, {'store': true});" +
+            "  }" +
+            "  if (doc.title && typeof(doc.title) == 'string' && doc.title.length > 0) {" +
+            "    index('text', 'title', doc.title, {'store': true});" +
+            "  }" +
+            "}"));
+    private final NouveauLuceneAwareDatabaseConnector connector;
 
     public AbstractDatabaseSearchHandler(String dbName) throws IOException {
+        Supplier<CloudantClient> cClient = DatabaseSettings.getConfiguredClient();
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         // Create the database connector and add the search view to couchDB
-        connector = new LuceneAwareDatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), dbName);
-        connector.addView(luceneSearchView);
-        connector.addView(luceneFilteredSearchView);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, cClient, DDOC_NAME);
+        Gson gson = (new DatabaseInstanceCloudant(cClient)).getClient().getGson();
+        NouveauDesignDocument searchView = new NouveauDesignDocument();
+        searchView.setId(DDOC_NAME);
+        searchView.addNouveau(luceneSearchView, gson);
+        searchView.addNouveau(luceneFilteredSearchView, gson);
         connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+        connector.addDesignDoc(searchView);
     }
 
-    public AbstractDatabaseSearchHandler(Supplier<HttpClient> client, Supplier<CloudantClient> cclient, String dbName) throws IOException {
+    public AbstractDatabaseSearchHandler(Supplier<HttpClient> client, Supplier<CloudantClient> cClient, String dbName) throws IOException {
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         // Create the database connector and add the search view to couchDB
-        connector = new LuceneAwareDatabaseConnector(client, cclient, dbName);
-        connector.addView(luceneSearchView);
-        connector.addView(luceneFilteredSearchView);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, cClient, DDOC_NAME);
+        Gson gson = (new DatabaseInstanceCloudant(cClient)).getClient().getGson();
+        NouveauDesignDocument searchView = new NouveauDesignDocument();
+        searchView.setId(DDOC_NAME);
+        searchView.addNouveau(luceneSearchView, gson);
+        searchView.addNouveau(luceneFilteredSearchView, gson);
         connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+        connector.addDesignDoc(searchView);
     }
 
     /**
@@ -177,22 +181,22 @@ public abstract class AbstractDatabaseSearchHandler {
         return getFilteredSearchResults(query, user);
     }
 
-    private List<SearchResult> getSearchResults(String queryString, User user) {
-        LuceneResult queryLucene = connector.searchView(luceneSearchView, queryString);
+    private @NotNull List<SearchResult> getSearchResults(String queryString, User user) {
+        NouveauResult queryLucene = connector.searchView(luceneSearchView.getIndexName(), queryString);
         return convertLuceneResultAndFilterForVisibility(queryLucene, user);
     }
     
-    private List<SearchResult> getFilteredSearchResults(String queryString, User user) {
-        LuceneResult queryLucene = connector.searchView(luceneFilteredSearchView, queryString);
+    private @NotNull List<SearchResult> getFilteredSearchResults(String queryString, User user) {
+        NouveauResult queryLucene = connector.searchView(luceneFilteredSearchView.getIndexName(), queryString);
         return convertLuceneResultAndFilterForVisibility(queryLucene, user);
     }
 
-    private List<SearchResult> convertLuceneResultAndFilterForVisibility(LuceneResult queryLucene, User user) {
+    private @NotNull List<SearchResult> convertLuceneResultAndFilterForVisibility(NouveauResult queryLucene, User user) {
         List<SearchResult> results = new ArrayList<>();
         if (queryLucene != null) {
-            for (LuceneResult.Row row : queryLucene.getRows()) {
-                SearchResult result = makeSearchResult(row);
-                if (result != null && !result.getName().isEmpty() && isVisibleToUser(result, user)) {
+            for (NouveauResult.Hits hit : queryLucene.getHits()) {
+                SearchResult result = makeSearchResult(hit);
+                if (!result.getName().isEmpty() && isVisibleToUser(result, user)) {
                     results.add(result);
                 }
             }
@@ -205,15 +209,15 @@ public abstract class AbstractDatabaseSearchHandler {
     /**
      * Transforms a LuceneResult row into a Thrift SearchResult object
      */
-    private static SearchResult makeSearchResult(LuceneResult.Row row) {
+    private static @NotNull SearchResult makeSearchResult(@NotNull NouveauResult.Hits hit) {
         SearchResult result = new SearchResult();
 
         // Set row properties
-        result.id = row.getId();
-        result.score = row.getScore();
+        result.id = hit.getId();
+        result.score = hit.getScore();
 
         // Get document and
-        SearchDocument parser = new SearchDocument(row.getDoc());
+        SearchDocument parser = new SearchDocument(hit.getDoc());
 
         // Get basic search results information
         result.type = parser.getType();
@@ -221,5 +225,4 @@ public abstract class AbstractDatabaseSearchHandler {
 
         return result;
     }
-
 }
