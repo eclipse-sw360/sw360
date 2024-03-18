@@ -28,6 +28,7 @@
         <module>commonIO</module>
         <module>importers</module>
         <module>exporters</module>
+        <module>nouveau-handler</module>
     </modules>
 
     <build>

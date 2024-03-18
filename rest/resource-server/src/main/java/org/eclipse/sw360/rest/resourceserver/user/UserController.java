@@ -22,7 +22,7 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
@@ -119,13 +119,13 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             Map<String, Set<String>> filterMap = new HashMap<>();
             if (CommonUtils.isNotNullEmptyOrWhitespace(givenname)) {
                 Set<String> values = CommonUtils.splitToSet(givenname);
-                values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
+                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
                 filterMap.put(User._Fields.GIVENNAME.getFieldName(), values);
             }
             if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
                 Set<String> values = CommonUtils.splitToSet(email);
-                values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
+                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
                 filterMap.put(User._Fields.EMAIL.getFieldName(), values);
             }
@@ -139,7 +139,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             }
            if (CommonUtils.isNotNullEmptyOrWhitespace(lastname)) {
              Set<String> values = CommonUtils.splitToSet(lastname);
-              values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
+              values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
                 filterMap.put(User._Fields.LASTNAME.getFieldName(), values);
             }

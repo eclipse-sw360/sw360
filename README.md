@@ -35,14 +35,14 @@ This is a multi module maven file. please consider that we have the following mo
 ### Issues
 
 If you run in any issues with documentation or software, please be kind and report to our
-[Github issues area](https://github.com/eclipse/sw360/issues).
+[GitHub issues area](https://github.com/eclipse/sw360/issues).
 
 ### Deployment
 
 Is recommended using the docker based setup,
 [described here](https://github.com/eclipse/sw360/blob/main/README_DOCKER.md).
 
-If you intend to install in a bare metal machine or use in your own virtualizaed system, [bare metal instructions are provided here](https://www.eclipse.org/sw360/docs/deployment/baremetal/deploy-natively/).
+If you intend to install in a bare metal machine or use in your own virtualized system, [bare metal instructions are provided here](https://www.eclipse.org/sw360/docs/deployment/baremetal/deploy-natively/).
 
 ### Development
 
@@ -89,7 +89,7 @@ mvn package -P deploy \
     -Dbackend.deploy.dir=webapps
 ```
 
-If you want run the the tests, we need start a local couchdb server and Docker is required:
+If you want to run the tests, we need start a local couchdb server and Docker is required:
 
 ### License
 

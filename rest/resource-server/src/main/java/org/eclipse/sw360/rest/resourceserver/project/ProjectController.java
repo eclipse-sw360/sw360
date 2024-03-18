@@ -45,8 +45,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -290,7 +289,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
             if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
                 Set<String> values = CommonUtils.splitToSet(name);
-                values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
+                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
                 filterMap.put(Project._Fields.NAME.getFieldName(), values);
             }

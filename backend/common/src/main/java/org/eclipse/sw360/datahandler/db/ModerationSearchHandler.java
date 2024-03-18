@@ -9,76 +9,75 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import com.cloudant.client.api.CloudantClient;
+import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
+import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.ektorp.http.HttpClient;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
-import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
-import org.ektorp.http.HttpClient;
-
-import com.cloudant.client.api.CloudantClient;
+import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 
 public class ModerationSearchHandler {
-    private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "moderations",
-            "function(doc) {" +
-                    "    var ret = new Document();" +
-                    "    if(!doc.type) return ret;" +
-                    "    if(doc.type != 'moderation') return ret;" +
-                    "	 if(!doc.documentId) return ret;" +
-                    "    function idx(obj) {" +
-                    "        for (var key in obj) {" +
-                    "            switch (typeof obj[key]) {" +
-                    "                case 'object':" +
-                    "                    idx(obj[key]);" +
-                    "                    break;" +
-                    "                case 'function':" +
-                    "                    break;" +
-                    "                default:" +
-                    "                    ret.add(obj[key]);" +
-                    "                    break;" +
-                    "            }" +
-                    "        }" +
-                    "    };" +
-                    "    idx(doc);" +
-                    "    for(var i in doc.moderators) {  "+
-                    "      ret.add(doc.moderators[i], {\"field\": \"moderators\"} );" +
-                    "    }" +
-                    "    if(doc.documentName) {  "+
-                    "      ret.add(doc.documentName, {\"field\": \"documentName\"} );" +
-                    "    }" +
-                    "    if(doc.componentType) {  "+
-                    "      ret.add(doc.componentType, {\"field\": \"componentType\"} );" +
-                    "    }" +
-                    "    if(doc.requestingUser) {  "+
-                    "      ret.add(doc.requestingUser, {\"field\": \"requestingUser\"} );" +
-                    "    }" +
-                    "    if(doc.requestingUserDepartment) {  "+
-                    "      ret.add(doc.requestingUserDepartment, {\"field\": \"requestingUserDepartment\"} );" +
-                    "    }" +
-                    "    if(doc.moderationState) {  "+
-                    "      ret.add(doc.moderationState, {\"field\": \"moderationState\"} );" +
-                    "    }" +
-                    "    if(doc.timestamp) {  "+
-                    "      var dt = new Date(doc.timestamp); "+
-                    "      var formattedDt = dt.getFullYear()+'-'+(dt.getMonth()+1)+'-'+dt.getDate(); "+
-                    "      ret.add(formattedDt, {\"field\": \"timestamp\", \"type\": \"date\"} );" +
-                    "    }" +
-                    "    return ret;" +
-                    "}");
-    private final LuceneAwareDatabaseConnector connector;
+
+    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "/lucene";
+
+    private static final NouveauIndexDesignDocument luceneSearchView
+        = new NouveauIndexDesignDocument("moderations",
+            new NouveauIndexFunction(
+                "function(doc) {" +
+                OBJ_ARRAY_TO_STRING_INDEX +
+                "    if(!doc.type || doc.type != 'moderation' || !doc.documentId) return;" +
+                "    arrayToStringIndex(doc.moderators, 'moderators');" +
+                "    if(doc.documentName && typeof(doc.documentName) == 'string' && doc.documentName.length > 0) {" +
+                "      index('text', 'documentName', doc.documentName, {'store': true});" +
+                "    }" +
+                "    if(doc.documentType && typeof(doc.documentType) == 'string' && doc.documentType.length > 0) {" +
+                "      index('text', 'documentType', doc.documentType, {'store': true});" +
+                "    }" +
+                "    if(doc.componentType && typeof(doc.componentType) == 'string' && doc.componentType.length > 0) {" +
+                "      index('text', 'componentType', doc.componentType, {'store': true});" +
+                "    }" +
+                "    if(doc.requestingUser && typeof(doc.requestingUser) == 'string' && doc.requestingUser.length > 0) {" +
+                "      index('text', 'requestingUser', doc.requestingUser, {'store': true});" +
+                "    }" +
+                "    if(doc.requestingUserDepartment && typeof(doc.requestingUserDepartment) == 'string' && doc.requestingUserDepartment.length > 0) {" +
+                "      index('text', 'requestingUserDepartment', doc.requestingUserDepartment, {'store': true});" +
+                "    }" +
+                "    if(doc.moderationState && typeof(doc.moderationState) == 'string' && doc.moderationState.length > 0) {" +
+                "      index('text', 'moderationState', doc.moderationState, {'store': true});" +
+                "    }" +
+                "    if(doc.timestamp) {"+
+                "      var dt = new Date(doc.timestamp); "+
+                "      var formattedDt = `${dt.getFullYear()}${(dt.getMonth()+1).toString().padStart(2,'0')}${dt.getDate().toString().padStart(2,'0')}`;" +
+                "      index('double', 'timestamp', Number(formattedDt), {'store': true});"+
+                "    }" +
+                "}"));
+    private final NouveauLuceneAwareDatabaseConnector connector;
 
     public ModerationSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
-        connector = new LuceneAwareDatabaseConnector(httpClient, cClient, dbName);
-        connector.addView(luceneSearchView);
-        connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, cClient, DDOC_NAME);
+        Gson gson = (new DatabaseInstanceCloudant(cClient)).getClient().getGson();
+        NouveauDesignDocument searchView = new NouveauDesignDocument();
+        searchView.setId(DDOC_NAME);
+        searchView.addNouveau(luceneSearchView, gson);
+        connector.addDesignDoc(searchView);
     }
 
-    public List<ModerationRequest> search(String text, final Map<String , Set<String > > subQueryRestrictions ) {
-        return connector.searchViewWithRestrictions(ModerationRequest.class, luceneSearchView, text, subQueryRestrictions);
+    public List<ModerationRequest> search(String text, final Map<String, Set<String>> subQueryRestrictions ) {
+        return connector.searchViewWithRestrictions(ModerationRequest.class, luceneSearchView.getIndexName(),
+                text, subQueryRestrictions);
     }
 }

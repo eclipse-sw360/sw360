@@ -9,18 +9,23 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
-import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-
 import com.cloudant.client.api.CloudantClient;
+import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
+import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 
 /**
  * Lucene search for the Vendor class
@@ -31,32 +36,44 @@ import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseCo
  */
 public class VendorSearchHandler {
 
-    private static final LuceneSearchView luceneSearchView
-            = new LuceneSearchView("lucene", "vendors",
-            "function(doc) {" +
-                    "  if(doc.type == 'vendor') { " +
-                    "      var ret = new Document();" +
-                    "      ret.add(doc.shortname);  " +
-                    "      ret.add(doc.fullname);  " +
-                    "      return ret;" +
-                    "  }" +
-                    "}");
+    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "/lucene";
 
-    private final LuceneAwareDatabaseConnector connector;
+    private static final NouveauIndexDesignDocument luceneSearchView
+        = new NouveauIndexDesignDocument("vendors",
+            new NouveauIndexFunction(
+                "function(doc) {" +
+                "  if(doc.type == 'vendor') {" +
+                "    if (typeof(doc.shortname) == 'string' && doc.shortname.length > 0) {" +
+                "      index('text', 'shortname', doc.shortname, {'store': true});" +
+                "    }" +
+                "    if (typeof(doc.fullname) == 'string' && doc.fullname.length > 0) {" +
+                "      index('text', 'fullname', doc.fullname, {'store': true});" +
+                "    }" +
+                "  }" +
+                "}"));
+
+    private final NouveauLuceneAwareDatabaseConnector connector;
 
     public VendorSearchHandler(DatabaseConnector databaseConnector, Supplier<CloudantClient> cClient) throws IOException {
         // Creates the database connector and adds the lucene search view
-        connector = new LuceneAwareDatabaseConnector(databaseConnector, cClient);
-        connector.addView(luceneSearchView);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, databaseConnector.getDbName());
+        connector = new NouveauLuceneAwareDatabaseConnector(db, cClient, DDOC_NAME);
+        Gson gson = (new DatabaseInstanceCloudant(cClient)).getClient().getGson();
+        NouveauDesignDocument searchView = new NouveauDesignDocument();
+        searchView.setId(DDOC_NAME);
+        searchView.addNouveau(luceneSearchView, gson);
+        connector.addDesignDoc(searchView);
     }
 
     public List<Vendor> search(String searchText) {
         // Query the search view for the provided text
-        return connector.searchView(Vendor.class, luceneSearchView, prepareWildcardQuery(searchText));
+        return connector.searchView(Vendor.class, luceneSearchView.getIndexName(),
+                prepareWildcardQuery(searchText));
     }
 
     public List<String> searchIds(String searchText) {
         // Query the search view for the provided text
-        return connector.searchIds(Vendor.class, luceneSearchView, prepareWildcardQuery(searchText));
+        return connector.searchIds(Vendor.class, luceneSearchView.getIndexName(),
+                prepareWildcardQuery(searchText));
     }
 }

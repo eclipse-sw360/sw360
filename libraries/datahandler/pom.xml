@@ -209,6 +209,7 @@
         <dependency>
             <groupId>com.cloudant</groupId>
             <artifactId>cloudant-client</artifactId>
+            <version>${cloudant.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -265,6 +266,12 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>nouveau-handler</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

@@ -55,7 +55,6 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
