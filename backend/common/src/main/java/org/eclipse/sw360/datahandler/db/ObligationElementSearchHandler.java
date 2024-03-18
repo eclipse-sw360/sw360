@@ -10,44 +10,62 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
-import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
-import org.ektorp.http.HttpClient;
-
 import com.cloudant.client.api.CloudantClient;
+import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
+import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationElement;
+import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 
 public class ObligationElementSearchHandler {
 
-    private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "obligationelements",
-        "function(doc) {" +
-        "  if(doc.type == 'obligationElement') { " +
-        "      var ret = new Document();" +
-        "      ret.add(doc.langElement);  " +
-        "      ret.add(doc.action);  " +
-        "      ret.add(doc.object);  " +
-        "      return ret;" +
-        "  }" +
-        "}");
+    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "/lucene";
 
-    private final LuceneAwareDatabaseConnector connector;
+    private static final NouveauIndexDesignDocument luceneSearchView
+        = new NouveauIndexDesignDocument("obligationelements",
+            new NouveauIndexFunction(
+                "function(doc) {" +
+                "  if(doc.type == 'obligationElement') {" +
+                "    if (doc.langElement && typeof(doc.langElement) == 'string' && doc.langElement.length > 0) {" +
+                "      index('text', 'langElement', doc.langElement, {'store': true});" +
+                "    }" +
+                "    if (doc.action && typeof(doc.action) == 'string' && doc.action.length > 0) {" +
+                "      index('text', 'action', doc.action, {'store': true});" +
+                "    }" +
+                "    if (doc.object && typeof(doc.object) == 'string' && doc.object.length > 0) {" +
+                "      index('text', 'object', doc.object, {'store': true});" +
+                "    }" +
+                "  }" +
+                "}"));
 
-    public ObligationElementSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cCLient, String dbName) throws IOException {
+    private final NouveauLuceneAwareDatabaseConnector connector;
+
+    public ObligationElementSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         // Creates the database connector and adds the lucene search view
-        connector = new LuceneAwareDatabaseConnector(httpClient, cCLient, dbName);
-        connector.addView(luceneSearchView);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, cClient, DDOC_NAME);
+        Gson gson = (new DatabaseInstanceCloudant(cClient)).getClient().getGson();
+        NouveauDesignDocument searchView = new NouveauDesignDocument();
+        searchView.setId(DDOC_NAME);
+        searchView.addNouveau(luceneSearchView, gson);
+        connector.addDesignDoc(searchView);
         connector.setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
     }
 
     public List<ObligationElement> search(String searchText) {
-        return connector.searchView(ObligationElement.class, luceneSearchView, prepareWildcardQuery(searchText));
+        return connector.searchView(ObligationElement.class, luceneSearchView.getIndexName(),
+                prepareWildcardQuery(searchText));
     }
-
 }

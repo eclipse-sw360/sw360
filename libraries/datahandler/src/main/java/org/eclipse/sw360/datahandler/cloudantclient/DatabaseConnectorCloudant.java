@@ -329,4 +329,8 @@ public class DatabaseConnectorCloudant {
             return Collections.emptyList();
         }
     }
+
+    public Database getDatabase() {
+        return database;
+    }
 }

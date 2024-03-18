@@ -9,12 +9,16 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneSearchView;
-import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.ektorp.http.HttpClient;
-
 import com.cloudant.client.api.CloudantClient;
+import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
+import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
+import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,77 +26,72 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
+import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
+import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
 
 public class PackageSearchHandler {
 
-    private static final LuceneSearchView luceneSearchView = new LuceneSearchView("lucene", "packages",
-            "function(doc) {" +
-                    "    var ret = new Document();" +
-                    "    if (!doc.type) return ret;" +
-                    "    if (doc.type != 'package') return ret;" +
-                    "    function idx(obj) {" +
-                    "        for (var key in obj) {" +
-                    "            switch (typeof obj[key]) {" +
-                    "                case 'object':" +
-                    "                    idx(obj[key]);" +
-                    "                    break;" +
-                    "                case 'function':" +
-                    "                    break;" +
-                    "                default:" +
-                    "                    ret.add(obj[key]);" +
-                    "                    break;" +
-                    "            }" +
-                    "        }" +
-                    "    };" +
-                    "    idx(doc);" +
-                    "    if (doc.name) {  "+
-                    "      ret.add(doc.name, {\"field\": \"name\"} );" +
-                    "    }" +
-                    "    if (doc.version) {  "+
-                    "      ret.add(doc.version, {\"field\": \"version\"} );" +
-                    "    }" +
-                    "    if (doc.purl) {  "+
-                    "         ret.add(doc.purl, {\"field\": \"purl\"} );" +
-                    "    }" +
-                    "    if (doc.releaseId) {  "+
-                    "      ret.add(doc.releaseId, {\"field\": \"releaseId\"} );" +
-                    "    }" +
-                    "    if (doc.vcs) {  "+
-                    "      ret.add(doc.vcs, {\"field\": \"vcs\"} );" +
-                    "    }" +
-                    "    if (doc.packageManager) {  "+
-                    "      ret.add(doc.packageManager, {\"field\": \"packageManager\"} );" +
-                    "    }" +
-                    "    if (doc.packageType) {  "+
-                    "      ret.add(doc.packageType, {\"field\": \"packageType\"} );" +
-                    "    }" +
-                    "    if (doc.createdBy) {  "+
-                    "      ret.add(doc.createdBy, {\"field\": \"createdBy\"} );" +
-                    "    }" +
-                    "    if (doc.createdOn) {  "+
-                    "      ret.add(doc.createdOn, {\"field\": \"createdOn\", \"type\": \"date\"} );" +
-                    "    }" +
-                    "    for (var i in doc.licenseIds) {" +
-                    "      ret.add(doc.licenseIds[i], {\"field\": \"licenseIds\"} );" +
-                    "    }" +
-                    "    return ret;" +
-                    "}");
+    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "/lucene";
+
+    private static final NouveauIndexDesignDocument luceneSearchView
+        = new NouveauIndexDesignDocument("packages",
+            new NouveauIndexFunction(
+                "function(doc) {" +
+                OBJ_ARRAY_TO_STRING_INDEX +
+                "    if (!doc.type || doc.type != 'package') return;" +
+                "    if (doc.name && typeof(doc.name) == 'string' && doc.name.length > 0) {" +
+                "      index('text', 'name', doc.name, {'store': true});"+
+                "    }" +
+                "    if (doc.version && typeof(doc.version) == 'string' && doc.version.length > 0) {" +
+                "      index('text', 'version', doc.version, {'store': true});"+
+                "    }" +
+                "    if (doc.purl && typeof(doc.purl) == 'string' && doc.purl.length > 0) {" +
+                "      index('text', 'purl', doc.purl, {'store': true});"+
+                "    }" +
+                "    if (doc.releaseId && typeof(doc.releaseId) == 'string' && doc.releaseId.length > 0) {" +
+                "      index('text', 'releaseId', doc.releaseId, {'store': true});"+
+                "    }" +
+                "    if (doc.vcs && typeof(doc.vcs) == 'string' && doc.vcs.length > 0) {" +
+                "      index('text', 'vcs', doc.vcs, {'store': true});"+
+                "    }" +
+                "    if (doc.packageManager && typeof(doc.packageManager) == 'string' && doc.packageManager.length > 0) {" +
+                "      index('text', 'packageManager', doc.packageManager, {'store': true});"+
+                "    }" +
+                "    if (doc.packageType && typeof(doc.packageType) == 'string' && doc.packageType.length > 0) {" +
+                "      index('text', 'packageType', doc.packageType, {'store': true});"+
+                "    }" +
+                "    if (doc.createdBy && typeof(doc.createdBy) == 'string' && doc.createdBy.length > 0) {" +
+                "      index('text', 'createdBy', doc.createdBy, {'store': true});"+
+                "    }" +
+                "    if(doc.createdOn && doc.createdOn.length) {"+
+                "      var dt = new Date(doc.createdOn);"+
+                "      var formattedDt = `${dt.getFullYear()}${(dt.getMonth()+1).toString().padStart(2,'0')}${dt.getDate().toString().padStart(2,'0')}`;" +
+                "      index('double', 'createdOn', Number(formattedDt), {'store': true});"+
+                "    }" +
+                "    arrayToStringIndex(doc.licenseIds, 'licenseIds');" +
+                "}"));
 
 
-    private final LuceneAwareDatabaseConnector connector;
+    private final NouveauLuceneAwareDatabaseConnector connector;
 
-    public PackageSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cloudantClient, String dbName) throws IOException {
-        connector = new LuceneAwareDatabaseConnector(httpClient, cloudantClient, dbName);
-        connector.addView(luceneSearchView);
+    public PackageSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, cClient, DDOC_NAME);
+        Gson gson = (new DatabaseInstanceCloudant(cClient)).getClient().getGson();
+        NouveauDesignDocument searchView = new NouveauDesignDocument();
+        searchView.setId(DDOC_NAME);
+        searchView.addNouveau(luceneSearchView, gson);
+        connector.addDesignDoc(searchView);
     }
 
     public List<Package> searchPackagesWithRestrictions(String text, final Map<String , Set<String>> subQueryRestrictions) {
-        return connector.searchViewWithRestrictions(Package.class, luceneSearchView, text, subQueryRestrictions);
+        return connector.searchViewWithRestrictions(Package.class, luceneSearchView.getIndexName(),
+                text, subQueryRestrictions);
     }
 
     public List<Package> searchPackages(String searchText) {
-        return connector.searchView(Package.class, luceneSearchView, prepareWildcardQuery(searchText));
+        return connector.searchView(Package.class, luceneSearchView.getIndexName(),
+                prepareWildcardQuery(searchText));
     }
-
 }

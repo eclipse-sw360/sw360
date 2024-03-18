@@ -75,15 +75,15 @@ public class UserDatabaseHandler {
         dbConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
         repository = new UserRepository(db);
         readFileDepartmentConfig = new ReadFileDepartmentConfig();
-        userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
+        userSearchHandler = new UserSearchHandler(DatabaseSettings.getConfiguredClient(), dbName);
     }
 
-    public UserDatabaseHandler(Supplier<CloudantClient> httpClient,Supplier<HttpClient> client, String dbName) throws IOException {
+    public UserDatabaseHandler(Supplier<CloudantClient> httpClient, Supplier<HttpClient> client, String dbName) throws IOException {
         // Create the connector
         db = new DatabaseConnectorCloudant(httpClient, dbName);
         dbConnector = new DatabaseConnector(client, dbName);
         repository = new UserRepository(db);
-        userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
+        userSearchHandler = new UserSearchHandler(httpClient, dbName);
     }
 
     public User getByEmail(String email) {
