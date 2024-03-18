@@ -63,6 +63,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
@@ -1554,6 +1555,87 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "save attachment usages",
+			description = "Pass an array of string in request body.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/saveAttachmentUsages", method = RequestMethod.POST)
+    public ResponseEntity<?> saveAttachmentUsages(
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id,
+			@Parameter(description = "Map of key-value pairs where each key is associated with a list of strings.",
+                    example = "{\"selected\": [\"4427a8e723ad405db63f75170ef240a2_sourcePackage_5c5d6f54ac6a4b33bcd3c5d3a8fefc43\", \"value2\"],"
+                            + " \"deselected\": [\"de213309ba0842ac8a7251bf27ea8f36_manuallySet_eec66c3465f64f0292dfc2564215c681\", \"value2\"],"
+                            + " \"selectedConcludedUsages\": [\"de213309ba0842ac8a7251bf27ea8f36_licenseInfo_eec66c3465f64f0292dfc2564215c681\", \"value2\"],"
+                            + " \"deselectedConcludedUsages\": [\"ade213309ba0842ac8a7251bf27ea8f36_licenseInfo_aeec66c3465f64f0292dfc2564215c681\", \"value2\"]}"
+            )
+			@RequestBody Map<String,List<String>> allUsages
+    ) throws TException {
+        final User user = restControllerHelper.getSw360UserFromAuthentication();
+	    final Project project = projectService.getProjectForUserById(id, user);
+	    try {
+            if (PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE)) {
+                Source usedBy = Source.projectId(id);
+                List<String> selectedUsages = new ArrayList<>();
+                List<String> deselectedUsages = new ArrayList<>();
+                List<String> selectedConcludedUsages = new ArrayList<>();
+                List<String> deselectedConcludedUsages = new ArrayList<>();
+                List<String> changedUsages = new ArrayList<>();
+                for (Map.Entry<String, List<String>> entry : allUsages.entrySet()) {
+                    String key = entry.getKey();
+                    List<String> list = entry.getValue();
+                    if (key.equals("selected")) {
+                        selectedUsages.addAll(list);
+                    } else if (key.equals("deselected")) {
+                        deselectedUsages.addAll(list);
+                    } else if (key.equals("selectedConcludedUsages")) {
+                        selectedConcludedUsages.addAll(list);
+                    } else if (key.equals("deselectedConcludedUsages")) {
+                        deselectedConcludedUsages.addAll(list);
+                    }
+                }
+                Set<String> totalReleaseIds = projectService.getReleaseIds(id, user, true);
+                changedUsages.addAll(selectedUsages);
+                changedUsages.addAll(deselectedUsages);
+                boolean valid = projectService.validate(changedUsages, user, releaseService, totalReleaseIds);
+                if (!valid) {
+                    return new ResponseEntity<>("Not a valid attachment type OR release does not belong to project", HttpStatus.CONFLICT);
+                }
+                List<AttachmentUsage> allUsagesByProject = projectService.getUsedAttachments(usedBy, null);
+                List<String> savedUsages = projectService.savedUsages(allUsagesByProject);
+                savedUsages.removeAll(deselectedUsages);
+                deselectedUsages.addAll(selectedUsages);
+                selectedUsages.addAll(savedUsages);
+                deselectedConcludedUsages.addAll(selectedConcludedUsages);
+                List<AttachmentUsage> deselectedUsagesFromRequest = projectService.deselectedAttachmentUsagesFromRequest(deselectedUsages, selectedUsages, deselectedConcludedUsages, selectedConcludedUsages, id);
+                List<AttachmentUsage> selectedUsagesFromRequest = projectService.selectedAttachmentUsagesFromRequest(deselectedUsages, selectedUsages, deselectedConcludedUsages, selectedConcludedUsages, id);
+                List<AttachmentUsage> usagesToDelete = allUsagesByProject.stream()
+                        .filter(usage -> deselectedUsagesFromRequest.stream()
+                                .anyMatch(projectService.isUsageEquivalent(usage)))
+                        .collect(Collectors.toList());
+                if (!usagesToDelete.isEmpty()) {
+                    projectService.deleteAttachmentUsages(usagesToDelete);
+                }
+                List<AttachmentUsage> allUsagesByProjectAfterCleanUp = projectService.getUsedAttachments(usedBy, null);
+                List<AttachmentUsage> usagesToCreate = selectedUsagesFromRequest.stream()
+                        .filter(usage -> allUsagesByProjectAfterCleanUp.stream()
+                                .noneMatch(projectService.isUsageEquivalent(usage)))
+                        .collect(Collectors.toList());
+
+                if (!usagesToCreate.isEmpty()) {
+                    projectService.makeAttachmentUsages(usagesToCreate);
+                }
+                return new ResponseEntity<>("AttachmentUsages Saved Successfully", HttpStatus.CREATED);
+            } else {
+                return new ResponseEntity<>("No write permission for project", HttpStatus.FORBIDDEN);
+            }
+        } catch (TException e) {
+            return new ResponseEntity<>("Saving attachment usages for project " + id + " failed", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+	}
 
     @Operation(
             description = "Get all attachmentUsages of the projects.",

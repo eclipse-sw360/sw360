@@ -729,6 +729,30 @@ include::{snippets}/should_document_get_attachment_usage_for_project/curl-reques
 ===== Example response
 include::{snippets}/should_document_get_attachment_usage_for_project/http-response.adoc[]
 
+[[resources-project-save-attachmentUsages]]
+==== Save attachmentUsages of the project
+
+A `POST` request is used to save attachmentUsages of the project. Please pass a Map<String, List<String>> having string as key and list<string> as value in request body.
+
+===== Request structure 1
+Pass a Map<String, List<String>> in request body.
+
+Keys can be selected, deselected, selectedConcludedUsages or deselectedConcludedUsages.
+
+Format of String inside list varies according to the usageFields (sourcePackage, licenseInfo, manuallySet) :
+
+for `sourcePackage`, releaseId_sourcePakage_attachmentContentId
+
+for `licenseInfo`, projectId-releaseId_licenseInfo_attachmentContentId (for directly linked project) OR projectPath-releaseId_licenseInfo_attachmentContentId (for nested projects)
+
+for `manuallySet`, releaseId_manuallySet_attachmentContentId
+
+===== Example request 1
+include::{snippets}/should_document_save_usages/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_save_usages/http-response.adoc[]
+
 [[resources-project-get-project-vulnerabilities]]
 ==== Listing project vulnerabilities
 
