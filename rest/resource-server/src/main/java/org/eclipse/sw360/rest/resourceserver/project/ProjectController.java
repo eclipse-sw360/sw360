@@ -19,6 +19,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -72,6 +73,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
@@ -2070,20 +2072,18 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations", method = RequestMethod.GET)
 	public ResponseEntity<?> getLicObligations(@RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
-			@Parameter(description = "Project ID.") @PathVariable("id") String id)
-			throws TException {
-
-		final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-		final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-		if (CommonUtils.isNullOrEmptyMap(sw360Project.getReleaseIdToUsage())) {
-			return new ResponseEntity<String>("No release linked to the project", HttpStatus.NO_CONTENT);
+            @Parameter(description = "Project ID.") @PathVariable("id") String id)
+            throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+   	    final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+   	    if (CommonUtils.isNullOrEmptyMap(sw360Project.getReleaseIdToUsage())) {
+            return new ResponseEntity<String>("No release linked to the project", HttpStatus.NO_CONTENT);
         }
-		Map<String, AttachmentUsage> licenseInfoAttachmentUsage = projectService.getLicenseInfoAttachmentUsage(id);
-		if(licenseInfoAttachmentUsage.size() == 0) {
-			return new ResponseEntity<String>("No approved CLI or licenseInfo attachment usage present for the project", HttpStatus.NO_CONTENT);
-		}
-        Map<String, Set<Release>> licensesFromAttachmentUsage = projectService.getLicensesFromAttachmentUsage(
-                licenseInfoAttachmentUsage, sw360User);
+        Map<String, AttachmentUsage> licenseInfoAttachmentUsage = projectService.getLicenseInfoAttachmentUsage(id);
+        if(licenseInfoAttachmentUsage.size() == 0) {
+            return new ResponseEntity<String>("No approved CLI or licenseInfo attachment usage present for the project", HttpStatus.NO_CONTENT);
+        }
+        Map<String, Set<Release>> licensesFromAttachmentUsage = projectService.getLicensesFromAttachmentUsage(licenseInfoAttachmentUsage, sw360User);
         Map<String, ObligationStatusInfo> licenseObligation = projectService.getLicenseObligationData(licensesFromAttachmentUsage, sw360User);
 
         List<Map.Entry<String, ObligationStatusInfo>> entries = new ArrayList<>(licenseObligation.entrySet());
@@ -2094,13 +2094,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         for (Map.Entry<String, ObligationStatusInfo> entry : entries) {
             paginatedMap.put(entry.getKey(), entry.getValue());
         }
-
         Map<String, Integer> paginationMetadata = createPaginationMetadata(page, size, licenseObligation.size());
-
         Map<String, Object> responseBody = new LinkedHashMap<>();
         responseBody.put("licenseDbObligations", paginatedMap);
         responseBody.put("page", paginationMetadata);
-
         return new ResponseEntity<>(responseBody, HttpStatus.OK);
     }
 
@@ -2112,6 +2109,39 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             "totalPages", totalPages,
             "number", page
         );
+    }
+
+    @Operation(
+            description = "Get license obligation data of project tab.",
+            tags = {"Project"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligations", method = RequestMethod.GET)
+	public ResponseEntity<HalResource> getLicenseObligations(
+            @Parameter(description = "Project ID.") @PathVariable("id") String id)
+            throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
+        List<Release> releases = new ArrayList<>();;
+        ObligationList obligation = new ObligationList();
+        Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
+        List<String> releaseIds = new ArrayList<>(sw360Project.getReleaseIdToUsage().keySet());
+        for (final String releaseId : releaseIds) {
+            Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
+            if (sw360Release.getAttachmentsSize() > 0) {
+                releases.add(sw360Release);
+            }
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getLinkedObligationId())) {
+            obligation = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+            obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
+            releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
+        }
+
+        obligationStatusMap = projectService.setLicenseInfoWithObligations(obligationStatusMap, releaseIdToAcceptedCLI, releases, sw360User);
+
+        HalResource<Map<String, ObligationStatusInfo>> halObligation = new HalResource<>(obligationStatusMap);
+        return new ResponseEntity<>(halObligation, HttpStatus.OK);
     }
 
     @Operation(
