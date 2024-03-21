@@ -53,7 +53,7 @@ def migrateAndUpdateClearingRequestStatus(logFile, docs):
     for cr in docs:
         crState = cr.get("clearingState")
         print "CR Id: " + cr.get("_id")
-        cr["clearingState"] = "AWAITING_RESPONSE"
+        cr["clearingState"] = "PENDING_INPUT"
         if DRY_RUN:
             updateDocId_Dry_Run = {}
             updateDocId_Dry_Run['crId'] = cr.get('_id')

@@ -426,7 +426,7 @@
 .sw360-tt-ClearingRequestState-CLOSED:hover:after {
     content: attr(data-content);
 }
-.sw360-tt-ClearingRequestState-AWAITING_RESPONSE:hover:after {
+.sw360-tt-ClearingRequestState-PENDING_INPUT:hover:after {
     content: attr(data-content);
 }
 
