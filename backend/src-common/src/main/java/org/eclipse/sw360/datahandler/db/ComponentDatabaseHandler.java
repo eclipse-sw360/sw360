@@ -3066,7 +3066,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         components.forEach(c -> {
             String VCS = c.getVcs();
             log.info(String.format("SRC Upload: %s %s", c.getId(), VCS));
-            if (isValidURL(VCS)) {
+            // Add more domains in the future and include the download logic accordingly
+            if (VCS.toLowerCase().contains("github.com")) {
                 for (String r_id : c.getReleaseIds()) {
                     boolean isUploaded = false;
                     Release r = getRelease(r_id);
@@ -3146,10 +3147,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     public File downloadFile(String url, String destinationDirectory) throws IOException {
         URL fileUrl = new URL(url);
-        String regex = ".*/([^/]+)/archive/refs/tags/(?:v)?([\\d.]+)\\.zip$";
+        String regex = ".*/([^/]+)/archive/refs/tags/(?:v)?(.*).zip$";
         String fileName = url.replaceAll(regex, "$1-$2.zip");
-        Path destinationPath = Paths.get(destinationDirectory, fileName);
-
+        Path destinationPath = Paths.get(destinationDirectory, fileName.replace("/","-"));
         try (InputStream in = fileUrl.openStream()) {
             Files.copy(in, destinationPath, StandardCopyOption.REPLACE_EXISTING);
         }
