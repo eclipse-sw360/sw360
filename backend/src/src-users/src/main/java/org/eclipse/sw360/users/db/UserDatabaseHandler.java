@@ -455,4 +455,30 @@ public class UserDatabaseHandler {
     public User getByOidcClientId(String clientId) {
         return repository.getByOidcClientId(clientId);
     }
+
+    public List<User> getAllDepartmentUser(String department) {
+        List<User> users = repository.getAll();
+        List<User> departmentUsers = new ArrayList<>();
+        for (User user : users) {
+            if (user.getDepartment() != null) {
+                if (user.getDepartment().contains(department)) {
+                    departmentUsers.add(user);
+                }
+            }
+        }
+        return departmentUsers;
+    }
+
+    public List<User> getAllUsersGroup(UserGroup userGroup) {
+        List<User> users = repository.getAll();
+        List<User> userGroups = new ArrayList<>();
+        for (User user : users) {
+            if (user.getUserGroup() != null) {
+                if (user.getUserGroup().equals(userGroup)) {
+                    userGroups.add(user);
+                }
+            }
+        }
+        return userGroups;
+    }
 }
