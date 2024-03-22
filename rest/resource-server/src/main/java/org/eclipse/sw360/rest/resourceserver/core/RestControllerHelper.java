@@ -445,7 +445,7 @@ public class RestControllerHelper<T> {
         return embeddedRelease;
     }
 
-    public void addEmbeddedProjectAttachmentUsage(HalResource halResource, List<EntityModel<Release>> releases, List<Map<String, Object>> attachmentUsageMap) {
+    public void addEmbeddedProjectAttachmentUsage(HalResource halResource, List<Map<String, Object>> releases, List<Map<String, Object>> attachmentUsageMap) {
         halResource.addEmbeddedResource("sw360:release", releases);
         halResource.addEmbeddedResource("sw360:attachmentUsages", attachmentUsageMap);
     }

@@ -96,6 +96,7 @@ import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
+import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
@@ -163,6 +164,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 public class ProjectController implements RepresentationModelProcessor<RepositoryLinksResource> {
+    private static final String CREATED_BY = "createdBy";
+    private static final String ATTACHMENT_TYPE = "attachmentType";
+    private static final String ATTACHMENTS = "attachments";
     public static final String PROJECTS_URL = "/projects";
     public static final String SW360_ATTACHMENT_USAGES = "sw360:attachmentUsages";
     private static final Logger log = LogManager.getLogger(ProjectController.class);
@@ -347,7 +351,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectsFilteredForUser(
             Pageable pageable,
             @Parameter(description = "Projects with current user as creator.")
-            @RequestParam(value = "createdBy", required = false, defaultValue = "true") boolean createdBy,
+            @RequestParam(value = CREATED_BY, required = false, defaultValue = "true") boolean createdBy,
             @Parameter(description = "Projects with current user as moderator.")
             @RequestParam(value = "moderator", required = false, defaultValue = "true") boolean moderator,
             @Parameter(description = "Projects with current user as contributor.")
@@ -1548,11 +1552,67 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
         }
 
-        HalResource userHalResource = attachmentUsageReleases(sw360Project, sw360User, releaseList, listOfAttachmentUsages);
+        List<Map<String, Object>> releaseObjMap = getReleaseObjectMapper(releaseList);
+        HalResource userHalResource = attachmentUsageReleases(sw360Project, releaseObjMap, listOfAttachmentUsages);
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
-    private HalResource attachmentUsageReleases(Project sw360Project, User sw360User, List<EntityModel<Release>> releases, List<Map<String, Object>> attachmentUsageMap)
+	private List<Map<String, Object>> getReleaseObjectMapper(List<EntityModel<Release>> releaseList) {
+		ObjectMapper oMapper = new ObjectMapper();
+		List<Map<String, Object>> modifiedList = new ArrayList<>();
+		for (EntityModel<Release> rel : releaseList) {
+			Map<String, Object> relMap = (Map<String, Object>) oMapper.convertValue(rel, Map.class);
+			if (relMap.get(ATTACHMENTS) != null) {
+				for (Object attach : (ArrayList<?>) relMap.get(ATTACHMENTS)) {
+					Map<String, Object> attachmentMap = (Map<String, Object>) attach;
+					AttachmentType type = AttachmentType.valueOf((String) attachmentMap.get(ATTACHMENT_TYPE));
+					attachmentMap.replace(ATTACHMENT_TYPE, attachmentMap.get(ATTACHMENT_TYPE),
+							ThriftEnumUtils.MAP_ATTACHMENT_TYPE_SHORT_STRING.get(type));
+				}
+			}
+			final ImmutableSet<String> fieldsToKeep = ImmutableSet.of("name", "version", ATTACHMENTS);
+			Map<String, Object> valueToKeep = new LinkedHashMap<>();
+			Link releaseLink = null;
+			if (relMap != null) {
+				for (Map.Entry<String, Object> entry : relMap.entrySet()) {
+					if (entry != null && entry.getKey().equals("id")) {
+						releaseLink = linkTo(ReleaseController.class).slash("api/releases/" + entry.getValue())
+								.withSelfRel();
+					} else if (entry != null && fieldsToKeep.contains(entry.getKey())) {
+                        if (entry.getKey().equals(ATTACHMENTS) && null != entry.getValue()) {
+                            List<Map<String, Object>> attList = new ArrayList<>();
+                            for (LinkedHashMap att : ((List<LinkedHashMap>) entry.getValue())) {
+                                Map<String, Object> map = new LinkedHashMap<>();
+                                map.put("attachmentContentId", att.get("attachmentContentId"));
+                                map.put("filename", att.get("filename"));
+                                map.put("sha1", att.get("sha1"));
+                                map.put(ATTACHMENT_TYPE, att.get(ATTACHMENT_TYPE));
+                                map.put(CREATED_BY, att.get(CREATED_BY));
+                                map.put("createdTeam", att.get("createdTeam"));
+                                map.put("createdOn", att.get("createdOn"));
+                                map.put("checkStatus", att.get("checkStatus"));
+                                map.put("createdComment", att.get("createdComment"));
+                                map.put("checkedBy", att.get("checkedBy"));
+                                map.put("checkedTeam", att.get("checkedTeam"));
+                                map.put("checkedComment", att.get("checkedComment"));
+                                map.put("checkedOn", att.get("checkedOn"));
+                                attList.add(map);
+                            }
+                            valueToKeep.put(entry.getKey(), attList);
+                        } else {
+                            valueToKeep.put(entry.getKey(), entry.getValue());
+                        }
+
+                    }
+				}
+			}
+			valueToKeep.put("_links", releaseLink);
+			modifiedList.add(valueToKeep);
+		}
+		return modifiedList;
+	}
+
+    private HalResource attachmentUsageReleases(Project sw360Project, List<Map<String, Object>> releases, List<Map<String, Object>> attachmentUsageMap)
             throws TException {
         ObjectMapper oMapper = new ObjectMapper();
         Map<String, ProjectReleaseRelationship> releaseIdToUsages = sw360Project.getReleaseIdToUsage();
@@ -1850,7 +1910,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     private HalResource<Project> createHalProject(Project sw360Project, User sw360User) throws TException {
         HalResource<Project> halProject = new HalResource<>(sw360Project);
         User projectCreator = restControllerHelper.getUserByEmail(sw360Project.getCreatedBy());
-        restControllerHelper.addEmbeddedUser(halProject, projectCreator, "createdBy");
+        restControllerHelper.addEmbeddedUser(halProject, projectCreator, CREATED_BY);
 
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = sw360Project.getReleaseIdToUsage();
         if (releaseIdToUsage != null) {
@@ -1963,7 +2023,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     private HalResource<Project> createHalProjectResourceWithAllDetails(Project sw360Project, User sw360User) {
         HalResource<Project> halProject = new HalResource<>(sw360Project);
-        halProject.addEmbeddedResource("createdBy", sw360Project.getCreatedBy());
+        halProject.addEmbeddedResource(CREATED_BY, sw360Project.getCreatedBy());
 
         Set<String> packageIds = sw360Project.getPackageIds();
 
@@ -2218,7 +2278,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         HalResource<ProjectDTO> halProject = new HalResource<>(projectDTO);
 
         User projectCreator = restControllerHelper.getUserByEmail(projectDTO.getCreatedBy());
-        restControllerHelper.addEmbeddedUser(halProject, projectCreator, "createdBy");
+        restControllerHelper.addEmbeddedUser(halProject, projectCreator, CREATED_BY);
 
         Map<String, ProjectProjectRelationship> linkedProjects = projectDTO.getLinkedProjects();
         if (linkedProjects != null) {
