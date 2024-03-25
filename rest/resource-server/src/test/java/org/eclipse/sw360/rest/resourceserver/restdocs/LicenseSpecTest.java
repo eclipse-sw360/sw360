@@ -119,6 +119,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         given(this.licenseServiceMock.getLicenseById(eq(license.getId()))).willReturn(license);
         given(this.licenseServiceMock.createLicense(any(), any())).willReturn(license3);
         given(this.licenseServiceMock.updateLicense(any(),any())).willReturn(RequestStatus.SUCCESS);
+        given(this.licenseServiceMock.updateWhitelist(any(),any(),any())).willReturn(RequestStatus.SUCCESS);
         Mockito.doNothing().when(licenseServiceMock).deleteLicenseById(any(), any());
         Mockito.doNothing().when(licenseServiceMock).deleteAllLicenseInfo(any());
         Mockito.doNothing().when(licenseServiceMock).importSpdxInformation(any());
@@ -131,6 +132,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         obligation1.setId("0001");
         obligation1.setTitle("Obligation 1");
         obligation1.setText("This is text of Obligation 1");
+        obligation1.setWhitelist(Collections.singleton("Department"));
         obligation1.setObligationType(ObligationType.PERMISSION);
         obligation1.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
 
@@ -138,6 +140,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         obligation2.setId("0002");
         obligation2.setTitle("Obligation 2");
         obligation2.setText("This is text of Obligation 2");
+        obligation2.setWhitelist(Collections.singleton("Department2"));
         obligation2.setObligationType(ObligationType.OBLIGATION);
         obligation2.setObligationLevel(ObligationLevel.LICENSE_OBLIGATION);
 
@@ -162,6 +165,48 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:licenses").description("An array of <<resources-licenses, Licenses resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_update_whitelist_license() throws Exception {
+        List<Obligation> obligationList = new ArrayList<>();
+        obligationList.add(obligation1);
+        obligationList.add(obligation2);
+        license.setObligations(obligationList);
+
+        Set<String> obligationIds = new HashSet<String>();
+        obligationIds.add(obligation1.getId());
+        obligationIds.add(obligation2.getId());
+        license.setObligationDatabaseIds(obligationIds);
+
+        Map<String, Boolean> requestBody = new HashMap<>();
+        requestBody.put("0001",true);
+        requestBody.put("0002",true);
+
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(MockMvcRequestBuilders.patch("/api/licenses/" + license.getId() +"/whitelist")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(requestBody))
+                        .header("Authorization", "Bearer" + accessToken)
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("fullName").description("The full name of the license"),
+                                fieldWithPath("shortName").description("The short name of the license, optional"),
+                                subsectionWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
+                                fieldWithPath("externalLicenseLink").description("The external license link of the license"),
+                                subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
+                                subsectionWithPath("obligations").description("The obligations license link of the license"),
+                                subsectionWithPath("obligationDatabaseIds").description("The obligationDatabaseIds license link of the license"),
+                                fieldWithPath("text").description("The license's original text"),
+                                fieldWithPath("checked").description("The information, whether the license is already checked, optional and defaults to true"),
+                                subsectionWithPath("OSIApproved").description("The OSI aprroved information, possible values are: " + Arrays.asList(Quadratic.values())),
+                                fieldWithPath("FSFLibre").description("The FSF libre information, possible values are: " + Arrays.asList(Quadratic.values())),
+                                subsectionWithPath("_embedded.sw360:obligations").description("An array of <<resources-obligations, Obligations obligations>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("note").description("The license's note")
                         )));
     }
 
@@ -192,6 +237,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("externalIds").description("When releases are imported from other tools, the external ids can be stored here"),
                                 fieldWithPath("externalLicenseLink").description("The external license link of the license"),
                                 subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
+                                subsectionWithPath("obligations").description("The obligations license link of the license"),
                                 subsectionWithPath("obligationDatabaseIds").description("The obligationDatabaseIds license link of the license"),
                                 fieldWithPath("text").description("The license's original text"),
                                 fieldWithPath("checked").description("The information, whether the license is already checked, optional and defaults to true"),
