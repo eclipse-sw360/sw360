@@ -71,6 +71,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import javax.annotation.PreDestroy;
@@ -286,6 +287,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         licensesFromAttachmentUsage.entrySet().stream().forEach(entry -> wrapTException(() -> {
             License lic = null;
             Set<Release> releaseData = entry.getValue();
+            Set<Release> limitedSet = new HashSet<>();
             Map<String, String> releaseIdToAcceptedCli = new HashMap<String, String>();
             for (Release rel : releaseData) {
                 String releaseId = rel.getId();
@@ -295,6 +297,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                         releaseIdToAcceptedCli.put(releaseId, attachmentContentId);
                     }
                 }
+                Release limitedRelease = new Release();
+                limitedRelease.setId(rel.getId());
+                limitedRelease.setComponentId(rel.getComponentId());
+                limitedRelease.setName(rel.getName());
+                limitedRelease.setVersion(rel.getVersion());
+                limitedSet.add(limitedRelease);
             }
             try {
                 lic = licenseClient.getByID(entry.getKey(), user.getDepartment());
@@ -306,14 +314,14 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 return;
 
             lic.getObligations().stream().filter(Objects::nonNull).forEach(obl -> {
-                String keyofObl = CommonUtils.isNotNullEmptyOrWhitespace(obl.getTitle()) ? obl.getTitle()
+                String keyOfObl = CommonUtils.isNotNullEmptyOrWhitespace(obl.getTitle()) ? obl.getTitle()
                         : obl.getText();
                 ObligationStatusInfo osi = null;
-                if (obligationStatusMap.containsKey(keyofObl)) {
-                    osi = obligationStatusMap.get(keyofObl);
+                if (obligationStatusMap.containsKey(keyOfObl)) {
+                    osi = obligationStatusMap.get(keyOfObl);
                 } else {
                     osi = new ObligationStatusInfo();
-                    obligationStatusMap.put(keyofObl, osi);
+                    obligationStatusMap.put(keyOfObl, osi);
                 }
                 osi.setText(obl.getText());
                 osi.setId(obl.getId());
@@ -325,27 +333,54 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                     osi.setLicenseIds(licenseIds);
                 }
                 licenseIds.add(entry.getKey());
+                Set<Release> releases = osi.getReleases();
+                if (releases == null) {
+                    releases = new HashSet<>();
+                    osi.setReleases(releases);
+                }
+                releases.addAll(limitedSet);
             });
 
         }));
         return obligationStatusMap;
     }
 
-    public Set<Project> searchLinkingProjects(String projectId, User sw360User) throws TException {
-        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.searchLinkingProjects(projectId, sw360User);
-    }
+    public RequestStatus updateLinkedObligations(Project project, User user, Map<String, ObligationStatusInfo> licenseObligation) {
+        try {
+            ThriftClients thriftClients = new ThriftClients();
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            final boolean isObligationPresent = CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId());
+            final String email = user.getEmail();
+            final String createdOn = SW360Utils.getCreatedOn();
+            final ObligationList obligation = isObligationPresent
+                    ? client.getLinkedObligations(project.getLinkedObligationId(), user)
+                    : new ObligationList().setProjectId(project.getId());
 
-    public Set<Project> getProjectsByReleaseIds(Set<String> releaseids, User sw360User)
-            throws TException {
-        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.searchByReleaseIds(releaseids, sw360User);
-    }
+            Map<String, ObligationStatusInfo> obligationStatusInfo = isObligationPresent
+                    && obligation.getLinkedObligationStatusSize() > 0 ? obligation.getLinkedObligationStatus() : Maps.newHashMap();
 
-    public Set<Project> getProjectsByRelease(String releaseid, User sw360User)
-            throws TException {
-        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.searchByReleaseId(releaseid, sw360User);
+            for (Map.Entry<String, ObligationStatusInfo> entry : licenseObligation.entrySet()) {
+                ObligationStatusInfo newOsi = entry.getValue();
+                ObligationStatusInfo currentOsi = obligationStatusInfo.get(entry.getKey());
+                if (newOsi.isSetModifiedOn()) {
+                    newOsi.setModifiedBy(email);
+                    newOsi.setModifiedOn(createdOn);
+                    obligationStatusInfo.put(entry.getKey(), newOsi);
+                } else if (null != currentOsi) {
+                    if (newOsi.getReleaseIdToAcceptedCLISize() > 0)
+                        currentOsi.setReleaseIdToAcceptedCLI(newOsi.getReleaseIdToAcceptedCLI());
+                    obligationStatusInfo.put(entry.getKey(), currentOsi);
+                }
+
+                obligationStatusInfo.computeIfAbsent(entry.getKey(), e -> newOsi);
+            }
+            obligation.unsetLinkedObligationStatus();
+            obligation.setLinkedObligationStatus(obligationStatusInfo);
+            return isObligationPresent ? client.updateLinkedObligations(obligation, user) : client.addLinkedObligations(obligation, user);
+        } catch (TException exception) {
+            log.error("Failed to add/update obligation for project: " + project.getId(), exception);
+        }
+        return RequestStatus.FAILURE;
     }
 
     public ObligationList getObligationData(String linkedObligationId, User user) throws TException {
@@ -416,6 +451,23 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             log.error("Failed to set obligation status for project!", e);
         }
         return obligationStatusMap;
+    }
+
+    public Set<Project> searchLinkingProjects(String projectId, User sw360User) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.searchLinkingProjects(projectId, sw360User);
+    }
+
+    public Set<Project> getProjectsByReleaseIds(Set<String> releaseids, User sw360User)
+            throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.searchByReleaseIds(releaseids, sw360User);
+    }
+
+    public Set<Project> getProjectsByRelease(String releaseid, User sw360User)
+            throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.searchByReleaseId(releaseid, sw360User);
     }
 
     public Project createProject(Project project, User sw360User) throws TException {

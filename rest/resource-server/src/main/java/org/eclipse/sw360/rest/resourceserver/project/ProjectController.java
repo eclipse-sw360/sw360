@@ -2204,6 +2204,66 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(halObligation, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Add licenseObligations from license DB",
+			description = "Pass an array of obligation ids in request body.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligation", method = RequestMethod.POST)
+    public ResponseEntity<?> addLicenseObligations(
+            @Parameter(description = "License Obligation ID.")
+            @PathVariable("id") String id,
+			@Parameter(description = "Set of license obligation IDs to be added.",
+                    example = "[\"3765276512\",\"5578999\",\"3765276513\"]"
+            )
+			@RequestBody List<String> obligationIds
+    ) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+	    final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+	    Map<String, AttachmentUsage> licenseInfoAttachmentUsage = projectService.getLicenseInfoAttachmentUsage(id);
+        Map<String, Set<Release>> licensesFromAttachmentUsage = projectService.getLicensesFromAttachmentUsage(
+                licenseInfoAttachmentUsage, sw360User);
+        Map<String, ObligationStatusInfo> licenseObligation = projectService.getLicenseObligationData(licensesFromAttachmentUsage, sw360User);
+        Map<String, ObligationStatusInfo> selectedLicenseObligation = new HashMap<String, ObligationStatusInfo>();
+
+        ObligationList obligation = new ObligationList();
+		Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
+		Map<String, ObligationStatusInfo> obligationStatusMapFromReport = Maps.newHashMap();
+		final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
+		List<Release> releases = new ArrayList<>();
+		List<String> releaseIds = new ArrayList<>(sw360Project.getReleaseIdToUsage().keySet());
+		for (final String releaseId : releaseIds) {
+			Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
+			if (sw360Release.getAttachmentsSize() > 0) {
+				releases.add(sw360Release);
+			}
+		}
+        if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getLinkedObligationId())) {
+			obligation = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+			obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
+			releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
+		} else {
+			obligationStatusMapFromReport = projectService.setLicenseInfoWithObligations(obligationStatusMap, releaseIdToAcceptedCLI, releases, sw360User);
+		}
+
+        if (licenseObligation.size() == 0) {
+            return new ResponseEntity<>("No License Obligations Present", HttpStatus.NO_CONTENT);
+        }
+        for (Map.Entry<String, ObligationStatusInfo> entry : licenseObligation.entrySet()) {
+            String oblId = entry.getValue().getId();
+            if (obligationIds.contains(oblId)) {
+                selectedLicenseObligation.put(entry.getKey(), entry.getValue());
+            }
+        }
+        selectedLicenseObligation.putAll(obligationStatusMapFromReport);
+        RequestStatus requestStatus= projectService.updateLinkedObligations(sw360Project, sw360User, selectedLicenseObligation);
+        if (requestStatus == RequestStatus.SUCCESS) {
+            return new ResponseEntity<>("License Obligation Added Successfully", HttpStatus.CREATED);
+        }
+        return new ResponseEntity<>("Failed to add/update obligation for project", HttpStatus.NOT_FOUND);
+	}
+        
     @Operation(
             description = "Get summary and administration page of project tab.",
             tags = {"Projects"}
