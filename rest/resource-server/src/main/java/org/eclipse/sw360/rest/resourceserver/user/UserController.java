@@ -11,12 +11,14 @@ package org.eclipse.sw360.rest.resourceserver.user;
 
 import com.google.common.collect.ImmutableSet;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -24,6 +26,7 @@ import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -38,6 +41,7 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -55,8 +59,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_HASH_SALT;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -263,6 +269,78 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         HalResource<User> halUserResource = new HalResource<>(sw360User);
         return ResponseEntity.ok(halUserResource);
     }
+
+    @Operation(
+            summary = "List all of rest api tokens.",
+            description = "List all of rest api tokens of current user.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "List of tokens.")
+            },
+            tags = {"Users"}
+    )
+    @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<RestApiToken>>> getUserRestApiTokens() {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<RestApiToken> restApiTokens = sw360User.getRestApiTokens();
+
+        if (restApiTokens == null) {
+            return new ResponseEntity<>(CollectionModel.of(Collections.emptyList()), HttpStatus.OK);
+        }
+
+        List<EntityModel<RestApiToken>> restApiResources = restApiTokens.stream()
+                .map(EntityModel::of)
+                .collect(Collectors.toList());
+        return new ResponseEntity<>(CollectionModel.of(restApiResources), HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Create rest api token.",
+            description = "Create rest api token for current user.",
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Create token successfully."),
+                    @ApiResponse(responseCode = "500", description = "Create token failure.")
+            },
+            tags = {"Users"}
+    )
+    @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.POST)
+    public ResponseEntity<String> createUserRestApiToken(
+            @RequestBody Map<String, Object> requestBody
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RestApiToken restApiToken = userService.convertToRestApiToken(requestBody, sw360User);
+        String token = RandomStringUtils.random(20, true, true);
+        restApiToken.setToken(BCrypt.hashpw(token, API_TOKEN_HASH_SALT));
+        sw360User.addToRestApiTokens(restApiToken);
+        userService.updateUser(sw360User);
+
+        return new ResponseEntity<>(token, HttpStatus.CREATED);
+    }
+
+    @Operation(
+            summary = "Delete rest api token.",
+            description = "Delete rest api token by name for current user.",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "Revoke token successfully."),
+                    @ApiResponse(responseCode = "404", description = "Token name not found.")
+            },
+            tags = {"Users"}
+    )
+    @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.DELETE)
+    public ResponseEntity<String> revokeUserRestApiToken(
+            @Parameter(description = "Name of token to be revoked.", example = "MyToken")
+            @RequestParam("name") String tokenName
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+        if (!userService.isTokenNameExisted(sw360User, tokenName)) {
+            return new ResponseEntity<>("Token not found: " + tokenName, HttpStatus.NOT_FOUND);
+        }
+
+        sw360User.getRestApiTokens().removeIf(t -> t.getName().equals(tokenName));
+        userService.updateUser(sw360User);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(UserController.class).slash("api/users").withRel("users"));

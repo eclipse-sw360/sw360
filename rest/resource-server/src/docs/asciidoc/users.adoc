@@ -100,3 +100,40 @@ include::{snippets}/should_document_update_user_profile/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_update_user_profile/http-response.adoc[]
+
+[[resources-user-token-get]]
+==== List all of rest api tokens of current user.
+
+A `GET` request will list all of rest api tokens of current user.
+
+===== Response structure
+include::{snippets}/should_document_list_all_user_tokens/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_list_all_user_tokens/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_list_all_user_tokens/http-response.adoc[]
+
+
+[[resources-user-token-create]]
+==== Create a new rest api token for current user.
+
+A `POST` request will create a new rest api token for current user.
+
+===== Example request
+include::{snippets}/should_document_create_user_token/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_user_token/http-response.adoc[]
+
+[[resources-user-token-delete]]
+==== Delete rest api token for current user by token's name.
+
+A `DELETE` request will delete rest api token for current user by token's name
+
+===== Example request
+include::{snippets}/should_document_revoke_user_token/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_revoke_user_token/http-response.adoc[]
