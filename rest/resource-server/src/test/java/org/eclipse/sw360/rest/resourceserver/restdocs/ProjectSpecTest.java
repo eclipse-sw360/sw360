@@ -540,6 +540,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
         given(this.projectServiceMock.importCycloneDX(any(),any(),any())).willReturn(requestSummaryForCycloneDX);
         given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.downloadSourceCodeBundle(any(), any(), any())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.getSourceCodeBundleName(any(), any())).willReturn("SourceCodeBundle-ProjectName");
         given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
         given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(project2);
@@ -2547,5 +2549,23 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                     subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                     subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"))));
         }
+    }
+
+    @Test
+    public void should_document_get_resource_source_bundle() throws Exception{
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/reports")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("module", "licenseResourceBundle")
+                        .param("projectId", project.getId())
+                        .param("isAllAttachmentSelected", "true")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("projectId").description("Project id"),
+                                parameterWithName("isAllAttachmentSelected").description("All attachment selected to download source code bundle. Possible values are `<true|false>`"),
+                                parameterWithName("module").description("module represent the type oa document. Possible values are `<licenseResourceBundle>`")
+                        )));
     }
 }

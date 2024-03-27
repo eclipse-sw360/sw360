@@ -951,3 +951,18 @@ include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/curl
 
 ===== Example response
 include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/http-response.adoc[]
+
+[[resources-projects-download-sourcebundle]]
+==== Downloading resource sourcebundle
+
+A `GET` request help to download the projects license clearing resource bundle.
+
+===== Request parameter
+include::{snippets}/should_document_get_resource_source_bundle/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_resource_source_bundle/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_resource_source_bundle/http-response.adoc[]
+
