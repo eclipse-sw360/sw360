@@ -675,6 +675,7 @@ public class RestControllerHelper<T> {
         component.setMailinglist(componentDTO.getMailinglist());
         component.setWiki(componentDTO.getWiki());
         component.setBlog(componentDTO.getBlog());
+        component.setVcs(componentDTO.getVcs());
 
         return component;
     }
