@@ -8,6 +8,7 @@
 // SPDX-License-Identifier: EPL-2.0
 //
 
+
 [[resources-schedule]]
 === Schedule
 
@@ -23,3 +24,69 @@ include::{snippets}/should_document_cancel_all_schedule/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_cancel_all_schedule/http-response.adoc[]
+
+[[schedule-cve]]
+==== Schedule cve service
+
+A `POST` request will schedule the cve service.
+
+===== Example request
+include::{snippets}/should_document_schedule_cve_service/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_schedule_cve_service/http-response.adoc[]
+
+[[unschedule-cve]]
+==== Unschedule cve search
+
+A `DELETE` request will unschedule the cve search.
+
+===== Example request
+include::{snippets}/should_document_unschedule_cve_search/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_unschedule_cve_search/http-response.adoc[]
+
+[[schedule-service]]
+==== Schedule service for attachment deletion from local FS.
+
+A `POST` request will schedule attachment deletion.
+
+===== Example request
+include::{snippets}/should_document_schedule_service_from_local/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_schedule_service_from_local/http-response.adoc[]
+
+[[cancel-schedule]]
+==== Cancel schedule attachment from local fs.
+
+A `DELETE` request will schedule attachment deletion.
+
+===== Example request
+include::{snippets}/should_document_cancel_schedule_attachment/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_cancel_schedule_attachment/http-response.adoc[]
+
+[[delete-attachment]]
+==== Delete attachment from local fs.
+
+A `DELETE` request will schedule attachment deletion.
+
+===== Example request
+include::{snippets}/should_document_delete_old_attachment_from_local/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_old_attachment_from_local/http-response.adoc[]
+
+[[cve-search]]
+==== Schedule cve search.
+
+A `POST` request will schedule the cve search.
+
+===== Example request
+include::{snippets}/should_document_schedule_cve_search/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_schedule_cve_search/http-response.adoc[]
