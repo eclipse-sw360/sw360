@@ -17,8 +17,6 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligationList;
 
-import org.ektorp.support.View;
-
 import com.cloudant.client.api.model.DesignDocument.MapReduce;
 
 /**

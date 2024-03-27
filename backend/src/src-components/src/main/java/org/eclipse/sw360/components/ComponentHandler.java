@@ -24,7 +24,6 @@ import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import org.ektorp.http.HttpClient;
 
 import com.cloudant.client.api.CloudantClient;
 
@@ -50,24 +49,24 @@ public class ComponentHandler implements ComponentService.Iface {
     private final ReleaseSearchHandler releaseSearchHandler;
 
     public ComponentHandler() throws IOException {
-        this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS);
+        this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS);
     }
 
-    public ComponentHandler(Supplier<CloudantClient> cClient, Supplier<HttpClient> hclient, String dbName, String changeLogsDBName, String attachmentDbName) throws IOException {
+    public ComponentHandler(Supplier<CloudantClient> cClient, String dbName, String changeLogsDBName, String attachmentDbName) throws IOException {
         handler = new ComponentDatabaseHandler(cClient, dbName, changeLogsDBName, attachmentDbName);
-        componentSearchHandler = new ComponentSearchHandler(hclient, cClient, dbName);
-        releaseSearchHandler = new ReleaseSearchHandler(hclient, cClient, dbName);
+        componentSearchHandler = new ComponentSearchHandler(cClient, dbName);
+        releaseSearchHandler = new ReleaseSearchHandler(cClient, dbName);
     }
 
     // TODO use dependency injection instead of this constructors mess
     public ComponentHandler(ThriftClients thriftClients) throws IOException {
-        this(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS, thriftClients);
+        this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS, thriftClients);
     }
 
-    public ComponentHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> client, String dbName, String changeLogsDBName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
+    public ComponentHandler(Supplier<CloudantClient> client, String dbName, String changeLogsDBName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
         handler = new ComponentDatabaseHandler(client, dbName, changeLogsDBName, attachmentDbName, thriftClients);
-        componentSearchHandler = new ComponentSearchHandler(httpClient, client, dbName);
-        releaseSearchHandler = new ReleaseSearchHandler(httpClient, client, dbName);
+        componentSearchHandler = new ComponentSearchHandler(client, dbName);
+        releaseSearchHandler = new ReleaseSearchHandler(client, dbName);
     }
 
     /////////////////////

@@ -14,7 +14,6 @@ import com.cloudant.client.api.Database;
 import com.cloudant.client.internal.DatabaseURIHelper;
 import com.cloudant.client.org.lightcouch.CouchDbException;
 import com.cloudant.client.org.lightcouch.internal.CouchDbUtil;
-import com.cloudant.http.HttpConnection;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
