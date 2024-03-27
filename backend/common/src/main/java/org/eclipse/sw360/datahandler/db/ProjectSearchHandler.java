@@ -20,7 +20,6 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
-import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -83,7 +82,7 @@ public class ProjectSearchHandler {
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
-    public ProjectSearchHandler(Supplier<HttpClient> httpClient, Supplier<CloudantClient> cClient, String dbName) throws IOException {
+    public ProjectSearchHandler(Supplier<CloudantClient> cClient, String dbName) throws IOException {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         connector = new NouveauLuceneAwareDatabaseConnector(db, cClient, DDOC_NAME);
         Gson gson = (new DatabaseInstanceCloudant(cClient)).getClient().getGson();

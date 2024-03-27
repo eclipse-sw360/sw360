@@ -23,14 +23,12 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ObligationElementSearchHandler;
-import org.ektorp.http.HttpClient;
 
 import com.cloudant.client.api.CloudantClient;
 
 import org.apache.thrift.TException;
 import java.nio.ByteBuffer;
 
-import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -49,13 +47,13 @@ public class LicenseHandler implements LicenseService.Iface {
     ObligationElementSearchHandler searchHandler;
     ObligationSearchHandler obligationSearchHandler;
 
-    LicenseHandler() throws MalformedURLException, IOException {
+    LicenseHandler() throws IOException {
         handler = new LicenseDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
-        searchHandler = new ObligationElementSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
-        obligationSearchHandler = new ObligationSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        searchHandler = new ObligationElementSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        obligationSearchHandler = new ObligationSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 
-    LicenseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException, IOException {
+    LicenseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
         handler = new LicenseDatabaseHandler(httpClient, dbName);
     }
 

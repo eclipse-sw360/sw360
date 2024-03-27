@@ -13,7 +13,6 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.ComponentRepository;
 import org.eclipse.sw360.datahandler.db.ProjectRepository;
 import org.eclipse.sw360.datahandler.db.ReleaseRepository;
@@ -26,7 +25,6 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.ektorp.http.HttpClient;
 
 import com.cloudant.client.api.CloudantClient;
 
@@ -52,8 +50,8 @@ public class Sw360dbDatabaseSearchHandler extends AbstractDatabaseSearchHandler 
         componentRepository = new ComponentRepository(db, releaseRepository, vendorRepository);
     }
 
-    public Sw360dbDatabaseSearchHandler(Supplier<HttpClient> client, Supplier<CloudantClient> cclient, String dbName) throws IOException {
-        super(client, cclient, dbName);
+    public Sw360dbDatabaseSearchHandler(Supplier<CloudantClient> cclient, String dbName) throws IOException {
+        super(cclient, dbName);
 
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cclient, dbName);
         

@@ -13,7 +13,6 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.search.db.AbstractDatabaseSearchHandler;
-import org.ektorp.http.HttpClient;
 
 import com.cloudant.client.api.CloudantClient;
 
@@ -26,8 +25,8 @@ public class Sw360usersDatabaseSearchHandler extends AbstractDatabaseSearchHandl
         super(DatabaseSettings.COUCH_DB_USERS);
     }
 
-    public Sw360usersDatabaseSearchHandler(Supplier<HttpClient> hclient, Supplier<CloudantClient> client, String dbName) throws IOException {
-        super(hclient, client, dbName);
+    public Sw360usersDatabaseSearchHandler(Supplier<CloudantClient> client, String dbName) throws IOException {
+        super(client, dbName);
     }
 
     @Override

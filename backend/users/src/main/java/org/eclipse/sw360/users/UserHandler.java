@@ -26,10 +26,8 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
-import org.ektorp.http.HttpClient;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Supplier;
@@ -56,8 +54,8 @@ public class UserHandler implements UserService.Iface {
         readFileDepartmentConfig = new ReadFileDepartmentConfig();
     }
 
-    public UserHandler(Supplier<CloudantClient> client, Supplier<HttpClient> httpclient, String userDbName) throws IOException {
-        db = new UserDatabaseHandler(client, httpclient, userDbName);
+    public UserHandler(Supplier<CloudantClient> client, String userDbName) throws IOException {
+        db = new UserDatabaseHandler(client, userDbName);
     }
 
     @Override

@@ -84,7 +84,7 @@ public class ComponentSearchHandlerTest {
         }
 
         // Prepare the handler
-        searchHandler = new ComponentSearchHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.getConfiguredClient(), dbName);
+        searchHandler = new ComponentSearchHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @After
