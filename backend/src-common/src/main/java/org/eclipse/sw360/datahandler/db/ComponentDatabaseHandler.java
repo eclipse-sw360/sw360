@@ -3145,11 +3145,10 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public File downloadFile(String url, String destinationDirectory) throws IOException {
-        URL fileUrl = new URL(url);
-        String regex = ".*/([^/]+)/archive/refs/tags/(?:v)?([\\d.]+)\\.zip$";
+    	URL fileUrl = new URL(url);
+    	String regex = ".*/([^/]+)/archive/refs/tags/(?:v)?(.*).zip$";
         String fileName = url.replaceAll(regex, "$1-$2.zip");
-        Path destinationPath = Paths.get(destinationDirectory, fileName);
-
+        Path destinationPath = Paths.get(destinationDirectory, fileName.replace("/","-"));
         try (InputStream in = fileUrl.openStream()) {
             Files.copy(in, destinationPath, StandardCopyOption.REPLACE_EXISTING);
         }
