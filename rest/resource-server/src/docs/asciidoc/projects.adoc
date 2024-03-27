@@ -683,6 +683,9 @@ include::{snippets}/should_document_get_usedbyresource_for_project/http-response
 
 A `GET` request will display all attachmentUsages of the projects.
 
+===== Request parameter
+include::{snippets}/should_document_get_attachment_usage_for_project/request-parameters.adoc[]
+
 ===== Response structure
 include::{snippets}/should_document_get_attachment_usage_for_project/response-fields.adoc[]
 

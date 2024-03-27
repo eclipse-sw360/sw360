@@ -890,13 +890,20 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     public void should_document_get_attachment_usage_for_project() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/projects/" + project.getId() + "/attachmentUsage")
-                .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .header("Authorization", "Bearer " + accessToken)
+                .param("transitive", "true")
+                .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
-                .andDo(this.documentationHandler.document(responseFields(
-                        subsectionWithPath("releaseIdToUsage").description("The relationship between linked releases of the project"),
-                        subsectionWithPath("linkedProjects").description("The linked projects"),
-                        subsectionWithPath("_embedded.sw360:release").description("An array of linked releases"),
-                        subsectionWithPath("_embedded.sw360:attachmentUsages").description("An array of project's attachment usages"))));
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("transitive").description("Get the transitive releases")
+                        ),
+                        responseFields(
+                                subsectionWithPath("releaseIdToUsage").description("The relationship between linked releases of the project"),
+                                subsectionWithPath("linkedProjects").description("The linked projects"),
+                                subsectionWithPath("_embedded.sw360:release").description("An array of linked releases"),
+                                subsectionWithPath("_embedded.sw360:attachmentUsages").description("An array of project's attachment usages")
+                        )));
     }
 
     @Test
