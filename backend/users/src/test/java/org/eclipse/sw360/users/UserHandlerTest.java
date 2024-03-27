@@ -40,7 +40,7 @@ public class UserHandlerTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Create the connector
-        handler = new UserHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        handler = new UserHandler(DatabaseSettingsTest.getConfiguredClient(), dbName);
     }
 
     @After

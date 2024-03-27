@@ -23,7 +23,7 @@ public class SearchHandlerTest {
 
     @Before
     public void setUp() throws Exception {
-        handler = new SearchHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
+        handler = new SearchHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
     }
 
     @Test(expected = TException.class)

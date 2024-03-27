@@ -75,7 +75,7 @@ public class ProjectHandlerTest {
         }
 
         // Create the connector
-        handler = new ProjectHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.getConfiguredHttpClient(), dbName, changeLogDbName, attachmentDbName);
+        handler = new ProjectHandler(DatabaseSettingsTest.getConfiguredClient(), dbName, changeLogDbName, attachmentDbName);
     }
 
     @After

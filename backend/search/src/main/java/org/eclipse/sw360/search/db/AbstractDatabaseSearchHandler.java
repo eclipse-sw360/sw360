@@ -25,7 +25,6 @@ import org.eclipse.sw360.nouveau.NouveauResult;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexDesignDocument;
 import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
-import org.ektorp.http.HttpClient;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -98,7 +97,7 @@ public abstract class AbstractDatabaseSearchHandler {
         connector.addDesignDoc(searchView);
     }
 
-    public AbstractDatabaseSearchHandler(Supplier<HttpClient> client, Supplier<CloudantClient> cClient, String dbName) throws IOException {
+    public AbstractDatabaseSearchHandler(Supplier<CloudantClient> cClient, String dbName) throws IOException {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         // Create the database connector and add the search view to couchDB
         connector = new NouveauLuceneAwareDatabaseConnector(db, cClient, DDOC_NAME);
