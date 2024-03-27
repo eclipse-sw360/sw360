@@ -446,6 +446,20 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.licenseServiceMock.getLicenseById("ML2")).willReturn(
                 new License("Main license 2 name").setText("Main license 2 Text")
                         .setShortname("ML2").setId("ML2"));
+
+        given(this.licenseServiceMock.getLicenseById("MIT")).willReturn(
+                new License("MIT").setText("MIT")
+                        .setShortname("MIT").setId("MIT"));
+        given(this.licenseServiceMock.getLicenseById("BSD-3-Clause")).willReturn(
+                new License("BSD-3-Clause").setText("BSD-3-Clause")
+                        .setShortname("BSD-3-Clause").setId("BSD-3-Clause"));
+        given(this.licenseServiceMock.getLicenseById("OL1")).willReturn(
+                new License("Other license 1 name").setText("Other license 1 Text")
+                        .setShortname("OL1").setId("OL1"));
+        given(this.licenseServiceMock.getLicenseById("OL2")).willReturn(
+                new License("Other license 2 name").setText("Other license 2 Text")
+                        .setShortname("OL2").setId("OL2"));
+
         ExternalToolProcess fossologyProcess = new ExternalToolProcess();
         fossologyProcess.setAttachmentId("5345ab789");
         fossologyProcess.setAttachmentHash("535434657567");
@@ -776,6 +790,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:createdBy").description("A release createdBy with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
                                 subsectionWithPath("_embedded.sw360:cotsDetail").description("Cots detail information of release has component type = COTS "),
+                                subsectionWithPath("_embedded.sw360:otherLicenses").description("An array of all other release's licenses and link to their <<resources-license-get,License resource>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -1123,6 +1138,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
                         subsectionWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                        subsectionWithPath("_embedded.sw360:otherLicenses").description("An array of all other release's licenses and link to their <<resources-license-get,License resource>>"),
                         subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                 )
         );
@@ -1265,6 +1281,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
                                 subsectionWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
                                 subsectionWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                                subsectionWithPath("_embedded.sw360:otherLicenses").description("An array of all other release's licenses and link to their <<resources-license-get,License resource>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }

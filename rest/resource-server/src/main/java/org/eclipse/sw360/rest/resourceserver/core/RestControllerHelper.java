@@ -1430,4 +1430,11 @@ public class RestControllerHelper<T> {
         if(sw360User!=null)
             addEmbeddedUser(userHalResource, sw360User, resource);
     }
+
+    public void addEmbeddedOtherLicenses(HalResource<Release> halComponent, Set<String> licenseIds) {
+        for (String licenseId : licenseIds) {
+            HalResource<License> licenseHalResource = addEmbeddedLicense(licenseId);
+            halComponent.addEmbeddedResource("sw360:otherLicenses", licenseHalResource);
+        }
+    }
 }
