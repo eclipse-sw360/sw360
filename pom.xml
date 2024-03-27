@@ -172,7 +172,7 @@
     <springframework.version>5.3.27</springframework.version>
     <thrift.version>0.18.1</thrift.version>
     <tika.version>1.28.5</tika.version>
-    <wiremock.version>2.26.0</wiremock.version>
+    <wiremock.version>2.35.1</wiremock.version>
     <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
 
     <!--  User must provide below property configuration based on his/her liferay deployment
