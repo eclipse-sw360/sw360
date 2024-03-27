@@ -14,8 +14,11 @@ package org.eclipse.sw360.rest.resourceserver.release;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -182,6 +185,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<Release> sw360Releases = new ArrayList<>();
+        String queryString = request.getQueryString();
+        Map<String, String> params = restControllerHelper.parseQueryString(queryString);
 
         if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(name)) {
             sw360Releases.addAll(releaseService.refineSearch(name, sw360User));
@@ -191,7 +196,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             } else {
                 sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
                 sw360Releases = sw360Releases.stream()
-                        .filter(release -> name == null || name.isEmpty() || release.getName().equalsIgnoreCase(name))
+                        .filter(release -> name == null || name.isEmpty() || release.getName().equalsIgnoreCase(params.get("name")))
                         .collect(Collectors.toList());
             }
         }
@@ -376,42 +381,14 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                             schema = @Schema(implementation = LinkedMultiValueMap.class)
                     )
             }
+
     )
     @GetMapping(value = RELEASES_URL + "/searchByExternalIds")
     public ResponseEntity<Release> searchByExternalIds(
             HttpServletRequest request
     ) throws TException {
         String queryString = request.getQueryString();
-        MultiValueMap<String, String> externalIdsMultiMap = parseQueryString(queryString);
-        return restControllerHelper.searchByExternalIds(externalIdsMultiMap, releaseService, null);
-    }
-
-    /**
-     * Bypass spring query parser to distinguish between URL encoded and
-     * un-encoded ids.
-     *
-     * @param queryString Query from request
-     * @return Query parsed as a value map.
-     */
-    private @NotNull MultiValueMap<String, String> parseQueryString(String queryString) {
-        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
-
-        if (queryString != null && !queryString.isEmpty()) {
-            String[] params = queryString.split("&");
-            for (String param : params) {
-                String[] keyValue = param.split("=", 2);
-                if (keyValue.length >= 1) {
-                    String key = keyValue[0];
-                    String value = "";
-                    if (!(keyValue.length == 1)) {
-                        value = keyValue[1];
-                    }
-                    parameters.add(key, value);
-                }
-            }
-        }
-
-        return parameters;
+        return restControllerHelper.searchByExternalIds(queryString, releaseService, null);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")

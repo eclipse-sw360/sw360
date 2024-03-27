@@ -225,13 +225,15 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        String queryString = request.getQueryString();
+        Map<String, String> params = restControllerHelper.parseQueryString(queryString);
         boolean isSearchByName = name != null && !name.isEmpty();
         boolean isSearchByType = CommonUtils.isNotNullEmptyOrWhitespace(packageManager);
         boolean isNoFilter = false;
         List<Package> sw360Packages = new ArrayList<>();
 
         if (isSearchByName) {
-            sw360Packages.addAll(packageService.searchPackage("name", name, isExactMatch));
+            sw360Packages.addAll(packageService.searchPackage("name", params.get("name"), isExactMatch));
         } else if (isSearchByType) {
             packageManager = packageManager.toUpperCase();
 

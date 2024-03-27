@@ -80,6 +80,8 @@ include::{snippets}/should_document_get_projects_by_lucene_search/links.adoc[]
 
 A `GET` request will list all of the service's projects by project name.
 
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
 ===== Request parameter
 include::{snippets}/should_document_get_projects_by_name/request-parameters.adoc[]
 
@@ -143,6 +145,8 @@ include::{snippets}/should_document_get_projects_by_group/links.adoc[]
 
 A `GET` request will list all of the service's projects by tag.
 
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
 ===== Request parameter
 include::{snippets}/should_document_get_projects_by_tag/request-parameters.adoc[]
 
@@ -165,6 +169,8 @@ include::{snippets}/should_document_get_projects_by_tag/links.adoc[]
 A `GET` request will get all projects corresponding to external ids +
 The request parameter supports MultiValueMap (allows to add duplicate keys with different values) +
 It's possible to search for projects only by the external id key by leaving the value.
+
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_external-ids/response-fields.adoc[]

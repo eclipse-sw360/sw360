@@ -107,6 +107,8 @@ include::{snippets}/should_document_get_components_with_fields/links.adoc[]
 A `GET` request will list all of the service's components by component name. +
 Please set the request parameter `&name=<NAME>`.
 
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
 ===== Response structure
 include::{snippets}/should_document_get_components_by_name/response-fields.adoc[]
 
@@ -163,6 +165,8 @@ include::{snippets}/should_document_get_component/links.adoc[]
 A `GET` request will get all components corresponding to external ids +
 The request parameter supports MultiValueMap (allows to add duplicate keys with different values) +
 It's possible to search for components only by the external id key by leaving the value.
+
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
 
 ===== Response structure
 include::{snippets}/should_document_get_components_by_external-ids/response-fields.adoc[]
