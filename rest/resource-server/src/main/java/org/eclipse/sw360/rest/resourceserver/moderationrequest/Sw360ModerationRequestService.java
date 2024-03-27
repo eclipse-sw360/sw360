@@ -15,6 +15,7 @@ package org.eclipse.sw360.rest.resourceserver.moderationrequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TApplicationException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -23,6 +24,7 @@ import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
@@ -49,7 +51,7 @@ public class Sw360ModerationRequestService {
     private String thriftServerUrl;
 
     public static boolean isOpenModerationRequest(@NotNull ModerationRequest moderationRequest) {
-        return moderationRequest.getModerationState() == ModerationState.PENDING || moderationRequest.getModerationState() == ModerationState.INPROGRESS;
+        return moderationRequest.getModerationState() == ModerationState.PENDING || moderationRequest.getModerationState() == ModerationState.INPROGRESS || moderationRequest.getModerationState() == ModerationState.APPROVED;
     }
 
     private ModerationService.Iface getThriftModerationClient() throws TTransportException {
@@ -65,9 +67,12 @@ public class Sw360ModerationRequestService {
      * @return Moderation Request
      * @throws TException Appropriate exception if request does not exists or not accessible.
      */
-    public ModerationRequest getModerationRequestById(String requestId) throws TException {
+    public ModerationRequest getModerationRequestById(String requestId) throws TException, TApplicationException {
         try {
             return getThriftModerationClient().getModerationRequestById(requestId);
+        } catch (TApplicationException tAppExp) {
+            log.error("Error fetching moderation request by id: " + tAppExp.getMessage());
+            throw new ResourceNotFoundException("Requested ModerationRequest not found", tAppExp);
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
                 throw new ResourceNotFoundException("Requested ModerationRequest not found");
@@ -252,5 +257,16 @@ public class Sw360ModerationRequestService {
         }
         getThriftModerationClient().setInProgress(request.getId(), reviewer);
         return ModerationState.INPROGRESS;
+    }
+
+    public RequestStatus deleteModerationRequestInfo(@NotNull User sw360User, @NotNull String id, @NotNull ModerationRequest moderationRequest)
+            throws TTransportException, TException {
+        if (moderationRequest.getModerators().contains(sw360User.getEmail())) {
+            throw new AccessDeniedException("User is not assigned as a moderator for the request.");
+        } else if (!isOpenModerationRequest(moderationRequest)) {
+            throw new InvalidParameterException("Moderation request is not in open state.");
+        } else {
+            return getThriftModerationClient().deleteModerationRequest(id,sw360User);
+        }
     }
 }

@@ -28,6 +28,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
@@ -52,6 +53,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -341,5 +343,33 @@ public class ModerationRequestController implements RepresentationModelProcessor
         }
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
+    }
+
+    @Operation(
+            summary = "Delete moderation request.",
+            description = "Delete delete moderation request of the service.",
+            tags = {"ModerationRequest"}
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = MODERATION_REQUEST_URL + "/delete", method = RequestMethod.DELETE)
+    public ResponseEntity deleteModerationRequest(HttpServletRequest request, @RequestBody List<String> ids,
+            ModerationRequest moderationRequest) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        HttpStatus status;
+        List<RequestStatus> requestStatusList = new ArrayList<>();
+        for (String id : ids) {
+            moderationRequest = sw360ModerationRequestService.getModerationRequestById(id);
+            RequestStatus requestStatus = sw360ModerationRequestService.deleteModerationRequestInfo(sw360User, id,
+                    moderationRequest);
+            requestStatusList.add(requestStatus);
+        }
+        for (RequestStatus requestStatus : requestStatusList) {
+            if (requestStatus != RequestStatus.SUCCESS) {
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+                return new ResponseEntity<>("Some requests failed", status);
+            }
+        }
+        status = HttpStatus.OK;
+        return new ResponseEntity<>(requestStatusList, status);
     }
 }
