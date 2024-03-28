@@ -572,6 +572,8 @@ public class CycloneDxBOMImporter {
 
                 if (CommonUtils.isNotNullEmptyOrWhitespace(compAddSummary.getId())) {
                     comp.setId(compAddSummary.getId());
+                    String existingCompName = getComponetNameById(comp.getId(), user);
+                    comp.setName(existingCompName);
                 } else {
                     // in case of more than 1 duplicate found, then continue and show error message in UI.
                     log.warn("found multiple components: " + comp.getName());
@@ -963,5 +965,10 @@ public class CycloneDxBOMImporter {
             pckg.setLicenseIds(licenses);
         }
         return pckg;
+    }
+
+    public String getComponetNameById(String id, User user) throws SW360Exception {
+        Component comp = componentDatabaseHandler.getComponent(id, user);
+        return comp.getName();
     }
 }
