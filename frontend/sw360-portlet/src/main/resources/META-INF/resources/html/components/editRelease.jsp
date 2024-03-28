@@ -69,6 +69,9 @@
 <c:set var="hasWritePermissions" value="${release.permissions[WRITE]}"/>
 <%@include file="/html/utils/includes/logError.jspf" %>
 
+<%! String objBeforeEdit=""; %>
+<%! String objAfterEdit=""; %>
+
 <core_rt:if test="${empty attributeNotFoundException}">
     <div class="container" style="display: none;">
         <div class="row">
@@ -241,6 +244,7 @@
         autocomplete.prepareForMultipleHits('programminglanguages', ${programmingLanguages});
         autocomplete.prepareForMultipleHits('op_systems', ${operatingSystemsAutoC});
         autocomplete.prepareForMultipleHits('platformsTB', ${platformsAutoC});
+
         $('#formSubmit').click(
             function() {
                 if (("${addMode}" == "false") && ("${isSpdxDocument }" == "true")) {
@@ -279,7 +283,13 @@
                 $(document).find(".checkedComment input").attr("disabled", false);
                 <core_rt:choose>
                     <core_rt:when test="${addMode || release.permissions[WRITE]}">
-                        $('#releaseEditForm').submit();
+                    objAfterEdit = $('#releaseEditForm').serialize();
+                    if(JSON.stringify(objAfterEdit) == JSON.stringify(objBeforeEdit)){
+                    	var $dialog;
+                    	$dialog = dialog.info('Warning','<div>No data changes were made</div>');
+                    	return;
+                    }
+                     $('#releaseEditForm').submit();
                     </core_rt:when>
                     <core_rt:otherwise>
                         showCommentDialog();
@@ -367,10 +377,19 @@
             $('#<%=Release._Fields.VENDOR_ID.toString()%>').val(beforeComma.trim());
             $('#<%=Release._Fields.VENDOR_ID.toString()%>Display').val(afterComma.trim());
         }
+        
+        function setObjBeforeEdit(){
+        	objBeforeEdit = $('#releaseEditForm').serialize();
+        }
 
         $("#clearVendor").click(function() {
             $('#<%=Release._Fields.VENDOR_ID.toString()%>').val("");
             $('#<%=Release._Fields.VENDOR_ID.toString()%>Display').val("").attr("placeholder", "Click to set vendor");
         });
+        
+        $(document).ready(function () {
+        	setTimeout(setObjBeforeEdit, 3000);
+        });
+        
     });
 </script>
