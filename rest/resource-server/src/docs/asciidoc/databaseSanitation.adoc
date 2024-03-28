@@ -1,0 +1,25 @@
+//
+// Copyright Siemens AG, 2023. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+[[resources-databaseSanitation]]
+===  DatabaseSanitation
+
+The Database sanitation is used to fetch duplicate identifiers.
+
+[[search-duplicate]]
+==== Search duplicate identifiers
+
+A `GET` request will fetch the duplicate identifiers.
+
+===== Example request
+include::{snippets}/should_document_search_duplicate/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_search_duplicate/http-response.adoc[]
