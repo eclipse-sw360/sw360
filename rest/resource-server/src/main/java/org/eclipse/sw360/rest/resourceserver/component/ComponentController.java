@@ -88,8 +88,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -170,7 +173,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             allComponents.addAll(componentService.refineSearch(filterMap, sw360User));
         } else {
             if (name != null && !name.isEmpty()) {
-                allComponents.addAll(componentService.searchComponentByName(params.get("name").replace("%20", " ")));
+                allComponents.addAll(componentService.searchComponentByName(params.get("name")));
             } else {
                 allComponents.addAll(componentService.getComponentsForUser(sw360User));
             }
@@ -226,19 +229,22 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
     private Map<String, String> parseQueryString(String queryString) {
         Map<String, String> parameters = new HashMap<>();
-
         if (queryString != null && !queryString.isEmpty()) {
             String[] params = queryString.split("&");
             for (String param : params) {
                 String[] keyValue = param.split("=");
                 if (keyValue.length == 2) {
-                    String key = keyValue[0];
-                    String value = keyValue[1];
-                    parameters.put(key, value);
+                    try {
+                        String key = keyValue[0];
+                        String value = URLDecoder.decode(keyValue[1], StandardCharsets.UTF_8.name());
+                        parameters.put(key, value);
+                    }
+                    catch(UnsupportedEncodingException e) {
+                        throw new AssertionError("UTF-8 charset not supported!");
+                    }
                 }
             }
         }
-
         return parameters;
     }
 
