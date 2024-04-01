@@ -415,7 +415,7 @@
                                     var cpBtn = $(copyBtn).clone();
                                     $(cpBtn).attr('id', 'copyToClipboard_ics');
                                     statusDiv.append("<div class='alert alert-info'><liferay-ui:message key="list.of.packages.without.vcs.information" />: <b>" + $(invalidCompList).find('li').length +
-                                        "</b> <small>(<liferay-ui:message key="not.linked.to.any.release" />)</small> " + cpBtn[0].outerHTML + " " + invalidCompList[0].outerHTML + "</div>")
+                                        "</b> " + cpBtn[0].outerHTML + " " + invalidCompList[0].outerHTML + "</div>")
                                 }
                                 if (data.dupComp && data.dupComp.length) {
                                     compList = $('<ul/>');

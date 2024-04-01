@@ -260,8 +260,8 @@ public class CycloneDxBOMImporter {
                                             pkgReuseCount++;
                                             Package dupPkg = packageDatabaseHandler.getPackageById(pkgAddSummary.getId());
                                             if (CommonUtils.isNotNullEmptyOrWhitespace(dupPkg.getReleaseId())) {
-                                                if (!CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).containsKey(pkgAddSummary.getId())) {
-                                                    project.putToReleaseIdToUsage(pkgAddSummary.getId(), getDefaultRelation());
+                                                if (!CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).containsKey(dupPkg.getReleaseId())) {
+                                                    project.putToReleaseIdToUsage(dupPkg.getReleaseId(), getDefaultRelation());
                                                 }
                                                 relReuseCount++;
                                             }
