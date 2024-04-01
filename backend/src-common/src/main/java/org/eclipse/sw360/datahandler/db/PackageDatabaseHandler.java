@@ -422,10 +422,10 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private List<Package> getPackageByPurl(String purl) {
-        if (purl == null) {
+        if (isNullEmptyOrWhitespace(purl)) {
             return Collections.emptyList();
         }
-        return packageRepository.searchByPurl(purl);
+        return packageRepository.searchByPurl(purl, true);
     }
 
     private void copyImmutableFields(Package destination, Package source) {
