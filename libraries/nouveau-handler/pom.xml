@@ -16,7 +16,7 @@
     <parent>
         <artifactId>libraries</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>${revision}</version>
+        <version>18.99.1</version>
     </parent>
 
     <name>nouveau-handler</name>
@@ -24,20 +24,75 @@
     <packaging>jar</packaging>
 
     <properties>
-        <artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
+        <artifact.deploy.dir>${jars.deploy.dir}</artifact.deploy.dir>
     </properties>
 
     <build>
         <finalName>org.eclipse.sw360.nouveau-handler-${project.version}</finalName>
         <plugins>
             <plugin>
+                <groupId>org.apache.thrift.tools</groupId>
+                <artifactId>maven-thrift-plugin</artifactId>
+                <version>0.1.11</version>
+                <configuration>
+                    <thriftExecutable>thrift</thriftExecutable>
+                    <generator>java:generated_annotations=suppress</generator>
+                    <checkStaleness>true</checkStaleness>
+                </configuration>
+                <executions>
+                    <execution>
+                        <?m2e execute onConfiguration,onIncremental?>
+                        <id>thrift-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <?m2e execute onConfiguration,onIncremental?>
+                        <id>thrift-test-sources</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>${build-helper-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>thrift-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>target/generated-sources/thrift</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>thrift-test-sources</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>target/generated-test-sources/thrift</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>${maven-source-plugin.version}</version>
-            </plugin>
-            <plugin>
-                <groupId>biz.aQute.bnd</groupId>
-                <artifactId>bnd-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -52,7 +107,10 @@
                 </executions>
                 <configuration>
                     <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>org.eclipse.sw360.nouveau</mainClass>
+                        </manifest>
                     </archive>
                 </configuration>
             </plugin>

@@ -1,8 +1,9 @@
 /*
  * Copyright Siemens AG, 2021. Part of the SW360 Portal Project.
  *
- * This program and the accompanying materials are made available under the terms of the Eclipse
- * Public License 2.0 which is available at https://www.eclipse.org/legal/epl-2.0/
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
  */
@@ -34,7 +35,6 @@ public class DatabaseSettingsTest {
 
 
     public static final String COUCH_DB_URL;
-    public static final String COUCH_DB_LUCENE_URL;
     public static final String COUCH_DB_DATABASE;
     public static final String COUCH_DB_ATTACHMENTS;
     public static final String COUCH_DB_CONFIG;
@@ -63,8 +63,6 @@ public class DatabaseSettingsTest {
                 System.getenv("COUCHDB_PASSWORD") != null ? System.getenv("COUCHDB_PASSWORD")
                         : props.getProperty("couchdb.password", ""));
 
-        COUCH_DB_LUCENE_URL =
-                props.getProperty("couchdb.lucene.url", "http://localhost:8080/couchdb-lucene");
         COUCH_DB_DATABASE = props.getProperty("couchdb.database", "sw360_test_db");
         COUCH_DB_ATTACHMENTS = props.getProperty("couchdb.attachments", "sw360_test_attachments");
         COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360_test_config");
