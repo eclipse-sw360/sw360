@@ -189,10 +189,6 @@
             <artifactId>annotations</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.ldriscoll</groupId>
-            <artifactId>ektorplucene</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.ektorp</groupId>
             <artifactId>org.ektorp</artifactId>
         </dependency>

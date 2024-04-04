@@ -10,7 +10,6 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
 import org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -47,9 +46,6 @@ public class SecurityConfig {
 
     @Autowired
     Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
-
-    @Autowired
-    Sw360ClientDetailsService sw360ClientDetailsService;
 
     @Bean
     @Order(1)
