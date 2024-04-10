@@ -46,6 +46,7 @@
     <module>libraries</module>
     <module>backend</module>
     <module>rest</module>
+    <module>keycloak</module>
   </modules>
   <distributionManagement>
     <repository>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ SPDX-FileCopyrightText: © 2022 Siemens AG
+  ~ SPDX-License-Identifier: EPL-2.0
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <name>Keycloak Providers</name>
+    <description>Keycloak Providers for Custom User Storage</description>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.eclipse.sw360</groupId>
+    <version>23.0.4</version>
+    <artifactId>keycloak</artifactId>
+    <packaging>pom</packaging>
+    
+    <parent>
+        <groupId>org.eclipse.sw360</groupId>
+        <artifactId>sw360</artifactId>
+        <version>18.99.1</version>
+    </parent>
+    
+    <modules>
+        <module>user-storage-provider</module>
+        <module>event-listeners</module>
+    </modules>
+</project>
