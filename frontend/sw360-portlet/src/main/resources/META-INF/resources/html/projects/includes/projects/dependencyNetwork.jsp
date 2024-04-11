@@ -76,7 +76,7 @@
                 <tr>
                     <th style="width:36%; cursor: pointer" class="sort">
                         <div id="expandAllWarning" class="alert alert-warning alert-dismissible mb-0 p-2" style="display:none">
-                            <button type="button" class="close pb-3" data-dismiss="alert">�</button>
+                            <button type="button" class="close pb-3" data-dismiss="alert">x</button>
                              <liferay-ui:message key="all.the.levels.are.expanded" />
                         </div>
                         <div class="row px-2">

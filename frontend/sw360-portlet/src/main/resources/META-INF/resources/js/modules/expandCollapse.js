@@ -12,11 +12,15 @@ define('modules/expandCollapse', [ 'jquery' ], function($) {
         toggleIcon: function toggleIcon(element){
 
             if (element.closest('thead').hasClass('collapsed')) {
-                element.find("div").eq(3).children().css('display', 'none');
-                element.find("div").eq(2).children().css('display', 'inline');
+                element.find('.lexicon-icon-caret-bottom').hide();
+                element.find('.lexicon-icon-caret-bottom').parent().hide();
+                element.find('.lexicon-icon-caret-top').show();
+                element.find('.lexicon-icon-caret-top').parent().show();
             }else{
-                element.find("div").eq(3).children().css('display', 'inline');
-                element.find("div").eq(2).children().css('display', 'none');
+                element.find('.lexicon-icon-caret-bottom').show();
+                element.find('.lexicon-icon-caret-bottom').parent().show();
+                element.find('.lexicon-icon-caret-top').hide();
+                element.find('.lexicon-icon-caret-top').parent().hide();
             }
         }
     }
