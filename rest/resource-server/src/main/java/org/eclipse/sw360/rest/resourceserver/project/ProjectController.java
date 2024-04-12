@@ -2130,8 +2130,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Project"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations", method = RequestMethod.GET)
-	public ResponseEntity<?> getLicObligations(@RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size,
+	public ResponseEntity<?> getLicObligations(Pageable pageable,
             @Parameter(description = "Project ID.") @PathVariable("id") String id)
             throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -2146,29 +2145,32 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<String, Set<Release>> licensesFromAttachmentUsage = projectService.getLicensesFromAttachmentUsage(licenseInfoAttachmentUsage, sw360User);
         Map<String, ObligationStatusInfo> licenseObligation = projectService.getLicenseObligationData(licensesFromAttachmentUsage, sw360User);
 
+        Map<String, Object> responseBody = createPaginationMetadata(pageable, licenseObligation);
+        return new ResponseEntity<>(responseBody, HttpStatus.OK);
+    }
+
+    private Map<String, Object> createPaginationMetadata(Pageable pageable, Map<String, ObligationStatusInfo> licenseObligation) {
         List<Map.Entry<String, ObligationStatusInfo>> entries = new ArrayList<>(licenseObligation.entrySet());
-        int startIndex = page * size;
-        int endIndex = Math.min(startIndex + size, entries.size());
-        entries = entries.subList(startIndex, endIndex);
+        int pageSize = pageable.getPageSize();
+        int pageNumber = pageable.getPageNumber();
+        int start = pageNumber * pageSize;
+        int end = Math.min(start + pageSize, entries.size());
+        entries = entries.subList(start, end);
+        int totalPages = (int) Math.ceil((double) licenseObligation.size()/ pageSize);
         Map<String, ObligationStatusInfo> paginatedMap = new LinkedHashMap<>();
         for (Map.Entry<String, ObligationStatusInfo> entry : entries) {
             paginatedMap.put(entry.getKey(), entry.getValue());
         }
-        Map<String, Integer> paginationMetadata = createPaginationMetadata(page, size, licenseObligation.size());
-        Map<String, Object> responseBody = new LinkedHashMap<>();
-        responseBody.put("licenseDbObligations", paginatedMap);
-        responseBody.put("page", paginationMetadata);
-        return new ResponseEntity<>(responseBody, HttpStatus.OK);
-    }
-
-    private Map<String, Integer> createPaginationMetadata(int page, int size, int totalElements) {
-        int totalPages = (int) Math.ceil((double) totalElements / size);
-        return Map.of(
-            "size", size,
-            "totalElements", totalElements,
+        Map<String, Integer> pagination =  Map.of(
+            "size", pageSize,
+            "totalElements", licenseObligation.size(),
             "totalPages", totalPages,
-            "number", page
+            "number", pageNumber
         );
+        Map<String, Object> responseBody = new HashMap<>();
+        responseBody.put("page", pagination);
+        responseBody.put("licenseObligations", paginatedMap);
+        return responseBody;
     }
 
     @Operation(
@@ -2176,7 +2178,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Project"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligations", method = RequestMethod.GET)
-	public ResponseEntity<HalResource> getLicenseObligations(
+	public ResponseEntity<HalResource> getLicenseObligations(Pageable pageable,
             @Parameter(description = "Project ID.") @PathVariable("id") String id)
             throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -2199,8 +2201,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         obligationStatusMap = projectService.setLicenseInfoWithObligations(obligationStatusMap, releaseIdToAcceptedCLI, releases, sw360User);
+        for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
+            ObligationStatusInfo statusInfo = entry.getValue();
+            Set<Release> limitedSet = releaseService.getReleasesForUserByIds(statusInfo.getReleaseIdToAcceptedCLI().keySet());
+            statusInfo.setReleases(limitedSet);
+        }
 
-        HalResource<Map<String, ObligationStatusInfo>> halObligation = new HalResource<>(obligationStatusMap);
+        Map<String, Object> responseBody = createPaginationMetadata(pageable, obligationStatusMap);
+        HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
         return new ResponseEntity<>(halObligation, HttpStatus.OK);
     }
 
