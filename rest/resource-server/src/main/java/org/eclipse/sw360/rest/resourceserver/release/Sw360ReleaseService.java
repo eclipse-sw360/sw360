@@ -115,6 +115,28 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         return releaseById;
     }
 
+    public Set<Release> getReleasesForUserByIds(Set<String> releaseIds) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        Set<Release> limitedSet = new HashSet<>();
+        try {
+            List<Release> releases = sw360ComponentClient.getReleasesByIdsForExport(releaseIds);
+            for(Release rel: releases) {
+                Release limitedRelease = new Release();
+                limitedRelease.setId(rel.getId());
+                limitedRelease.setName(rel.getName());
+                limitedRelease.setVersion(rel.getVersion());
+                limitedSet.add(limitedRelease);
+            }
+        } catch (SW360Exception sw360Exp) {
+                if (sw360Exp.getErrorCode() == 404) {
+                    throw new ResourceNotFoundException("Release does not exists!");
+                } else {
+                    throw sw360Exp;
+                }
+            }
+        return limitedSet;
+    }
+
     public List<ReleaseLink> getLinkedReleaseRelations(Release release, User user) throws TException {
         List<ReleaseLink> linkedReleaseRelations = getLinkedReleaseRelationsWithAccessibility(release, user);
         linkedReleaseRelations = linkedReleaseRelations.stream().filter(Objects::nonNull).sorted(Comparator.comparing(

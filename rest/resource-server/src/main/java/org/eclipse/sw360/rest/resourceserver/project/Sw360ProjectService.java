@@ -299,7 +299,6 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 }
                 Release limitedRelease = new Release();
                 limitedRelease.setId(rel.getId());
-                limitedRelease.setComponentId(rel.getComponentId());
                 limitedRelease.setName(rel.getName());
                 limitedRelease.setVersion(rel.getVersion());
                 limitedSet.add(limitedRelease);

@@ -862,12 +862,12 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("page_entries").description("Amount of projects per page")
                         ),
                         responseFields(
-                                subsectionWithPath("licenseDbObligations.obligation_title").description("Title of license obligation"),
-                                subsectionWithPath("licenseDbObligations.obligation_title.text").description("Text of license obligation"),
-                                subsectionWithPath("licenseDbObligations.obligation_title.licenseIds[]").description("List of licenseIds"),
-                                subsectionWithPath("licenseDbObligations.obligation_title.id").description("Id of the obligation"),
-                                subsectionWithPath("licenseDbObligations.obligation_title.releaseIdToAcceptedCLI").description("Releases having accepted attachments"),
-                                subsectionWithPath("licenseDbObligations.obligation_title.obligationType").description("Type of the obligation"),
+                                subsectionWithPath("licenseObligations.obligation_title").description("Title of license obligation"),
+                                subsectionWithPath("licenseObligations.obligation_title.text").description("Text of license obligation"),
+                                subsectionWithPath("licenseObligations.obligation_title.licenseIds[]").description("List of licenseIds"),
+                                subsectionWithPath("licenseObligations.obligation_title.id").description("Id of the obligation"),
+                                subsectionWithPath("licenseObligations.obligation_title.releaseIdToAcceptedCLI").description("Releases having accepted attachments"),
+                                subsectionWithPath("licenseObligations.obligation_title.obligationType").description("Type of the obligation"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of obligations per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all license obligations"),
@@ -1084,17 +1084,30 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     public void should_document_get_license_obligations() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/projects/" + project8.getId() + "/licenseObligations")
-                .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .header("Authorization", "Bearer " + accessToken)
+                .param("page", "0")
+                .param("page_entries", "5")
+                .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
-                .andDo(this.documentationHandler.document(responseFields(
-                        subsectionWithPath("obligation_title").description("Title of license obligation"),
-                        subsectionWithPath("obligation_title.text").description("Text of license obligation"),
-                        subsectionWithPath("obligation_title.releaseIdToAcceptedCLI").description("Release Ids having accepted attachments"),
-                        subsectionWithPath("obligation_title.licenseIds[]").description("List of licenseIds"),
-                        subsectionWithPath("obligation_title.comment").description("Comment on the obligation"),
-                        subsectionWithPath("obligation_title.status").description("Status of the obligation"),
-                        subsectionWithPath("obligation_title.id").description("Id of the obligation"),
-                        subsectionWithPath("obligation_title.obligationType").description("Type of the obligation")
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects per page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("licenseObligations.obligation_title").description("Title of license obligation"),
+                                subsectionWithPath("licenseObligations.obligation_title.text").description("Text of license obligation"),
+                                subsectionWithPath("licenseObligations.obligation_title.releaseIdToAcceptedCLI").description("Release Ids having accepted attachments"),
+                                subsectionWithPath("licenseObligations.obligation_title.licenseIds[]").description("List of licenseIds"),
+                                subsectionWithPath("licenseObligations.obligation_title.comment").description("Comment on the obligation"),
+                                subsectionWithPath("licenseObligations.obligation_title.status").description("Status of the obligation"),
+                                subsectionWithPath("licenseObligations.obligation_title.id").description("Id of the obligation"),
+                                subsectionWithPath("licenseObligations.obligation_title.obligationType").description("Type of the obligation"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of obligations per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all license obligations"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
