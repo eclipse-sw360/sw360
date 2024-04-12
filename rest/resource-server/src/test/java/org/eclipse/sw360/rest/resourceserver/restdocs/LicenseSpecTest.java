@@ -145,11 +145,47 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         license2.setObligationDatabaseIds(obligationIds);
         license2.setObligations(obligations);
         given(this.licenseServiceMock.getObligationsByLicenseId(any())).willReturn(obligations);
+
+        LicenseType licenseType = new LicenseType(1,"Public domain");
+        licenseType.setId("0443dda0b9ef420fa1f200e497efc98f");
+        LicenseType licenseType1 = new LicenseType(2,"Proprietary license");
+        licenseType1.setId("9e86774d0769e77bdf5902f936cb55c3");
+        List<LicenseType> licenseTypes = new ArrayList<>(Arrays.asList(licenseType,licenseType1));
+        given(this.licenseServiceMock.getLicenseTypes()).willReturn(licenseTypes);
     }
 
     @Test
     public void should_document_get_licenses() throws Exception {
         mockMvc.perform(get("/api/licenses")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .param("page", "0")
+                .param("page_entries", "5")
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("page").description("Page of licenses"),
+                                parameterWithName("page_entries").description("Amount of licenses per page")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:licenses").description("An array of <<resources-licenses, Licenses resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of licenses per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing licenses"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_license_types() throws Exception {
+        mockMvc.perform(get("/api/licenseTypes")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
@@ -158,7 +194,7 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("curies").description("Curies are used for online documentation")
                         ),
                         responseFields(
-                                subsectionWithPath("_embedded.sw360:licenses").description("An array of <<resources-licenses, Licenses resources>>"),
+                                subsectionWithPath("_embedded.sw360:licenseTypes").description("An array of <<resources-licenses, licenseTypes resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
