@@ -12,15 +12,9 @@ package org.eclipse.sw360.cyclonedx;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.URI;
 import java.nio.charset.Charset;
-import java.util.AbstractMap;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -93,7 +87,6 @@ public class CycloneDxBOMImporter {
     private static final String DOT_GIT = ".git";
     private static final String SLASH = "/";
     private static final String DOT = ".";
-    private static final String HASH = "#";
     private static final String HYPHEN = "-";
     private static final String JOINER = "||";
     private static final Pattern THIRD_SLASH_PATTERN = Pattern.compile("[^/]*(/[^/]*){2}");
@@ -142,13 +135,13 @@ public class CycloneDxBOMImporter {
      * @return Map<String, List<org.cyclonedx.model.Component>>
      */
     private Map<String, List<org.cyclonedx.model.Component>> getVcsToComponentMap(List<org.cyclonedx.model.Component> components) {
-        return components.stream().filter(Objects::nonNull)
+        return components.parallelStream().filter(Objects::nonNull)
                 .flatMap(comp -> CommonUtils.nullToEmptyList(comp.getExternalReferences()).stream()
                         .filter(Objects::nonNull)
                         .filter(ref -> ExternalReference.Type.VCS.equals(ref.getType()))
                         .map(ExternalReference::getUrl)
-                        .map(String::toLowerCase)
-                        .map(url -> StringUtils.removeEnd(url, DOT_GIT))
+                        .map(url -> sanitizeVCS(url))
+                        .filter(url -> CommonUtils.isValidUrl(url))
                         .map(url -> new AbstractMap.SimpleEntry<>(url, comp)))
                 .collect(Collectors.groupingBy(e -> e.getKey(),
                         Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
@@ -186,8 +179,7 @@ public class CycloneDxBOMImporter {
             // Getting List of org.cyclonedx.model.Component from the Bom
             List<org.cyclonedx.model.Component> components = CommonUtils.nullToEmptyList(bom.getComponents());
 
-            long vcsCount = components.stream().map(org.cyclonedx.model.Component::getExternalReferences)
-                    .filter(Objects::nonNull).flatMap(List::stream).map(ExternalReference::getType).filter(typeFilter).count();
+            long vcsCount = getVcsToComponentMap(components).size();
             long componentsCount = components.size();
             org.cyclonedx.model.Component compMetadata = bomMetadata.getComponent();
             Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap = new HashMap<>();
@@ -196,7 +188,6 @@ public class CycloneDxBOMImporter {
                 vcsToComponentMap.put("", components);
                 requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent);
             } else {
-
                 vcsToComponentMap = getVcsToComponentMap(components);
                 if (componentsCount == vcsCount) {
 
@@ -236,7 +227,8 @@ public class CycloneDxBOMImporter {
 
                         for (org.cyclonedx.model.Component comp : components) {
                             if (CommonUtils.isNullOrEmptyCollection(comp.getExternalReferences())
-                                    || comp.getExternalReferences().stream().map(ExternalReference::getType).filter(typeFilter).count() == 0) {
+                                    || comp.getExternalReferences().stream().map(ExternalReference::getType).filter(typeFilter).count() == 0
+                                    || !containsComp(vcsToComponentMap, comp)) {
 
                                 final var fullName = SW360Utils.getVersionedName(comp.getName(), comp.getVersion());
                                 final var licenses = getLicenseFromBomComponent(comp);
@@ -282,6 +274,7 @@ public class CycloneDxBOMImporter {
                                 }
                             }
                         }
+
                         RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user);
                         if (RequestStatus.SUCCESS.equals(updateStatus)) {
                             log.info("linking packages to project successfull: " + projId);
@@ -411,7 +404,6 @@ public class CycloneDxBOMImporter {
                     summary.setMessage("Invalid Projct metadata present in SBOM or Multiple project with same name and version is already present in SW360!");
                     return summary;
                 }
-
             }
         } catch (SW360Exception e) {
             log.error("An error occured while importing project from SBOM: " + e.getMessage());
@@ -583,7 +575,6 @@ public class CycloneDxBOMImporter {
                 }
 
                 for (org.cyclonedx.model.Component bomComp : entry.getValue()) {
-
                     Set<String> licenses = getLicenseFromBomComponent(bomComp);
                     release = createRelease(bomComp.getVersion(), comp, licenses);
                     if (CommonUtils.isNullEmptyOrWhitespace(release.getVersion()) ) {
@@ -595,6 +586,7 @@ public class CycloneDxBOMImporter {
 
                     try {
                         AddDocumentRequestSummary relAddSummary = componentDatabaseHandler.addRelease(release, user);
+
                         if (CommonUtils.isNotNullEmptyOrWhitespace(relAddSummary.getId())) {
                             release.setId(relAddSummary.getId());
                             if (AddDocumentRequestStatus.SUCCESS.equals(relAddSummary.getRequestStatus())) {
@@ -625,6 +617,17 @@ public class CycloneDxBOMImporter {
                         comp.getMainLicenseIds().addAll(licenses);
                     } else {
                         comp.setMainLicenseIds(licenses);
+                    }
+                    if (CommonUtils.isNullEmptyOrWhitespace(comp.getVcs())) {
+                        for (ExternalReference extRef : CommonUtils.nullToEmptyList(bomComp.getExternalReferences())) {
+                            if (Type.VCS.equals(extRef.getType())) {
+                                comp.setVcs(entry.getKey());
+                            } else if (Type.MAILING_LIST.equals(extRef.getType())) {
+                                comp.setMailinglist(CommonUtils.nullToEmptyString(extRef.getUrl()));
+                            } else if (Type.SUPPORT.equals(extRef.getType())) {
+                                comp.setWiki(CommonUtils.nullToEmptyString(extRef.getUrl()));
+                            }
+                        }
                     }
 
                     RequestStatus updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
@@ -874,7 +877,7 @@ public class CycloneDxBOMImporter {
         }
         for (ExternalReference extRef : CommonUtils.nullToEmptyList(componentFromBom.getExternalReferences())) {
             if (Type.VCS.equals(extRef.getType())) {
-                String repoUrl = CommonUtils.nullToEmptyString(extRef.getUrl());
+                String repoUrl = CommonUtils.nullToEmptyString(StringUtils.removeEnd(extRef.getUrl(), DOT_GIT));
                 Repository repo = new Repository(repoUrl);
                 if (repoUrl.toLowerCase().contains("github")) {
                     repo.setRepositorytype(RepositoryType.GIT);
@@ -913,8 +916,10 @@ public class CycloneDxBOMImporter {
             Matcher firstSlashMatcher = FIRST_SLASH_PATTERN.matcher(compName);
             if (firstSlashMatcher.find()) {
                 compName = firstSlashMatcher.group(1);
-                compName = StringUtils.substringBefore(compName, HASH);
                 compName = compName.replaceAll(SLASH, ".");
+                if (vcsUrl.toLowerCase().contains("github.com")) {
+                    compName = compName.replaceAll("\\.git.*", "").replaceAll("#.*", "");
+                }
             }
         }
 
@@ -975,5 +980,35 @@ public class CycloneDxBOMImporter {
     public String getComponetNameById(String id, User user) throws SW360Exception {
         Component comp = componentDatabaseHandler.getComponent(id, user);
         return comp.getName();
+    }
+
+    /*
+     * Sanitize different repository URLS based on their defined schema
+     */
+    public String sanitizeVCS(String vcs) {
+        // GitHub repository URL Format: https://github.com/supplier/name
+        if (vcs.toLowerCase().contains("github.com")) {
+            URI uri = URI.create(vcs);
+            String[] urlParts = uri.getPath().split("/");
+            if (urlParts.length >= 3) {
+                String firstSegment = urlParts[1];
+                String secondSegment = urlParts[2].replaceAll("\\.git.*", "").replaceAll("#.*", "");
+                vcs = "https://github.com/" + firstSegment + "/" + secondSegment;
+                return vcs;
+            } else {
+                log.error("Invalid GitHub repository URL: " + vcs);
+            }
+        }
+        // Other formats yet to be defined
+        return vcs;
+    }
+
+    public static boolean containsComp(Map<String, List<org.cyclonedx.model.Component>> map, org.cyclonedx.model.Component element) {
+        for (List<org.cyclonedx.model.Component> list : map.values()) {
+            if (list.contains(element)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
