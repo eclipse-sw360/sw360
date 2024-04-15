@@ -452,7 +452,7 @@
                         cache: false,
                         data: {
                             <portlet:namespace/>componentid: id,
-                            "<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>": btoa($("#moderationDeleteCommentField").val())
+                            "<portlet:namespace/><%=PortalConstants.MODERATION_REQUEST_COMMENT%>": btoa(unescape(encodeURIComponent($("#moderationDeleteCommentField").val())))
                         },
                         success: function (data) {
                             callback();
