@@ -86,7 +86,7 @@ public class SearchController implements RepresentationModelProcessor<Repository
                             type = "array"
                     )
             )
-            @RequestParam Optional<List<String>> typeMasks,
+            @RequestParam(value = "typeMasks") Optional<List<String>> typeMasks,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         log.debug("SearchText = {} typeMasks = {}", searchText, typeMasks);
