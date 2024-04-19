@@ -67,6 +67,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
@@ -156,6 +157,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -506,6 +508,44 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 		HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
 		return new ResponseEntity<>(resources, status);
 	}
+
+    @Operation(
+            description = "Get releases of linked projects of a single project.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/linkedProjects/releases", method = RequestMethod.GET)
+	public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleasesOfLinkedProject(@Parameter(description = "Project ID", example = "376576")
+            @PathVariable("id") String id, HttpServletRequest request, Pageable pageable)
+			throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<Map<String, String>> result = new ArrayList<>();
+        final Set<String> directReleaseIds = projectService.getReleaseIds(id, sw360User, false);
+        final Set<String> allReleaseIds = projectService.getReleaseIds(id, sw360User, true);
+        allReleaseIds.removeAll(directReleaseIds);
+
+        List<Release> releases = allReleaseIds.stream().map(relId -> wrapTException(() -> {
+            final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+            return sw360Release;
+        })).collect(Collectors.toList());
+
+        if (releases.isEmpty()) {
+            CollectionModel<EntityModel<Release>> emptyModel = CollectionModel.empty();
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(emptyModel);
+        }
+        PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable, releases, SW360Constants.TYPE_RELEASE);
+
+        final List<EntityModel<Release>> releaseResources = paginationResult.getResources().stream()
+            .map(sw360Release -> wrapTException(() -> {
+                final Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedProjectsReleases(sw360Release);
+                final HalResource<Release> releaseResource = new HalResource<>(embeddedRelease);
+                return releaseResource;
+            })).collect(Collectors.toList());
+
+        CollectionModel resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);;
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
+    }
 
     @Operation(
             description = "Delete a single project.",

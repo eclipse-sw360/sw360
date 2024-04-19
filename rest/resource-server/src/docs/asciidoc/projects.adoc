@@ -405,6 +405,19 @@ include::{snippets}/should_document_get_project_releases_transitive/http-respons
 ===== Links
 include::{snippets}/should_document_get_project_releases_transitive/links.adoc[]
 
+[[resources-project-get-linked-project-releases]]
+==== Listing linked project's releases
+
+A `GET` request will get all releases of linked projects for a project.
+
+===== Response structure
+include::{snippets}/should_document_get_linked_project_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_project_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_project_releases/http-response.adoc[]
 
 [[resources-project-get-project-releases-ecc-information]]
 ==== Listing releases with ECC
