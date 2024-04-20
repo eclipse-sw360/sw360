@@ -74,12 +74,14 @@ RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
 
 # Unpack liferay as sw360 and link current tomcat version
 # to tomcat to make future proof updates
+# Patch common-compress due vulnerability
 RUN --mount=type=cache,target=/var/cache/deps \
     mkdir -p /app/sw360 \
     && if [ ! -f /var/cache/deps/"$LIFERAY_SOURCE" ]; then \
     curl -o /var/cache/deps/"$LIFERAY_SOURCE" -JL https://github.com/liferay/liferay-portal/releases/download/"$LIFERAY_VERSION"/"$LIFERAY_SOURCE"; \
     fi \
     && tar -xzf /var/cache/deps/"$LIFERAY_SOURCE" -C /app/sw360 --strip-components=1 \
+    && curl -o /app/sw360/tomcat-9.0.56/webapps/ROOT/WEB-INF/shielded-container-lib/commons-compress.jar -JL https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.26.1/commons-compress-1.26.1.jar \
     && chown -R $USERNAME:$USERNAME /app \
     && ln -s /app/sw360/tomcat-* /app/sw360/tomcat
 
