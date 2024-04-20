@@ -80,6 +80,8 @@ image_build base sw360/base "$SW360_VERSION" --build-arg LIFERAY_VERSION="$LIFER
 
 image_build thrift sw360/thrift "$THRIFT_VERSION" --build-arg THRIFT_VERSION="$THRIFT_VERSION" "$@"
 
+image_build sw360test sw360/test "$SW360_VERSION" "$@"
+
 image_build binaries sw360/binaries "$SW360_VERSION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
 --secret id=sw360,src="$SECRETS" \
 --build-context "thrift=docker-image://${DOCKER_IMAGE_ROOT}/sw360/thrift:latest" "$@"
