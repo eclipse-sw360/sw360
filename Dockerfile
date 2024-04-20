@@ -117,6 +117,32 @@ FROM scratch AS thrift
 COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
 
 #--------------------------------------------------------------------------------------------------
+# SW360 Build Test image
+# Base image to build with test
+
+FROM maven:3-eclipse-temurin-11 as sw360test
+
+COPY --from=thrift /usr/local/bin/thrift /usr/bin
+
+# Thanks to Liferay, we need fix the java version
+ENV _JAVA_OPTIONS='-Djdk.util.zip.disableZip64ExtraFieldValidation=true'
+
+SHELL ["/bin/bash", "-c"]
+
+# Install mkdocs to generate documentation
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update -qq \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
+    gettext-base \
+    git \
+    python3-pip \
+    python3-wheel \
+    zip \
+    unzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install mkdocs-material
+
+#--------------------------------------------------------------------------------------------------
 # SW360
 # We build sw360 and create real image after everything is ready
 # So when decide to use as development, only this last stage
