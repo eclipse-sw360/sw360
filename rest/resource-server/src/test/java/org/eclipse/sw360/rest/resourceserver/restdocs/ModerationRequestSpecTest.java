@@ -272,7 +272,6 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:moderationRequests").description("An array of <<resources-moderationRequest, ModerationRequest>>."),
                                 fieldWithPath("_embedded.sw360:moderationRequests.[]id").description("The id of the moderation request."),
-                                fieldWithPath("_embedded.sw360:moderationRequests.[]revision").description("The revision of the moderation request."),
                                 fieldWithPath("_embedded.sw360:moderationRequests.[]timestamp").description("Timestamp (in unix epoch) when the request was created."),
                                 fieldWithPath("_embedded.sw360:moderationRequests.[]timestampOfDecision").description("Timestamp (in unix epoch) when the decision on the request was made."),
                                 fieldWithPath("_embedded.sw360:moderationRequests.[]documentId").description("The ID of the document for which the moderation request was made."),
@@ -319,7 +318,6 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                         ),
                         responseFields(
                                 fieldWithPath("id").description("The id of the moderation request."),
-                                fieldWithPath("revision").description("The revision number of the request."),
                                 fieldWithPath("timestamp").description("Timestamp (in unix epoch) when the request was created."),
                                 fieldWithPath("timestampOfDecision").description("Timestamp (in unix epoch) when the decision on the request was made."),
                                 fieldWithPath("documentId").description("The ID of the document for which the moderation request was made."),
