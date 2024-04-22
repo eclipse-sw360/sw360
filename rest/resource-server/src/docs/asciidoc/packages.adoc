@@ -76,6 +76,8 @@ include::{snippets}/should_document_get_package/links.adoc[]
 
 A `GET` request will list all of the service's packages by name. Use the 'exactMatch' parameter to get packages by name exactly matching the search input.
 
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
 ===== Request parameter
 include::{snippets}/should_document_get_packages_by_name/request-parameters.adoc[]
 

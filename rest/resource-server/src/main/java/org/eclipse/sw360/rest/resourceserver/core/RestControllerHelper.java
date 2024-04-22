@@ -66,6 +66,7 @@ import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRe
 import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
+import org.jetbrains.annotations.NotNull;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -104,14 +105,18 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1188,12 +1193,47 @@ public class RestControllerHelper<T> {
     }
 
     /**
+     * Bypass spring query parser to distinguish between URL encoded and
+     * un-encoded ids.
+     *
+     * @param queryString Query from request
+     * @return Query parsed as a value map.
+     */
+    public @NotNull MultiValueMap<String, String> parseQueryStringForExtIds(String queryString) {
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+        if (queryString != null && !queryString.isEmpty()) {
+            UriComponentsBuilder builder = UriComponentsBuilder.newInstance().query(queryString);
+            builder.build().getQueryParams().forEach((key, values) -> values.forEach(value -> parameters.add(key, urlDecode(value))));
+        }
+        return parameters;
+    }
+
+    public Map<String, String> parseQueryString(String queryString) {
+        Map<String, String> parameters = new HashMap<>();
+        if (queryString != null && !queryString.isEmpty()) {
+            UriComponentsBuilder builder = UriComponentsBuilder.newInstance().query(queryString);
+            builder.build().getQueryParams().forEach((key, values) -> parameters.put(key, urlDecode(values.get(0))));
+        }
+        return parameters;
+    }
+
+    public static String urlDecode(String str) {
+        if (str == null) {
+            return null;
+        }
+        try {
+            return URLDecoder.decode(str, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            // This exception occurs if the specified encoding is not supported
+            throw new IllegalArgumentException("Unsupported encoding: " + e.getMessage());
+        }
+    }
+    /**
      * Generic Entity response method to get externalIds (projects, components, releases)
      */
-    public <T> ResponseEntity searchByExternalIds(MultiValueMap<String, String> externalIdsMultiMap,
-                                                  AwareOfRestServices<T> service,
-                                                  User user) throws TException {
+    public <T> ResponseEntity searchByExternalIds(String queryString, AwareOfRestServices<T> service, User user) throws TException {
 
+        MultiValueMap<String, String> externalIdsMultiMap = parseQueryStringForExtIds(queryString);
         Map<String, Set<String>> externalIds = getExternalIdsFromMultiMap(externalIdsMultiMap);
         Set<T> sw360Objects = service.searchByExternalIds(externalIds, user);
         List<EntityModel> resourceList = new ArrayList<>();

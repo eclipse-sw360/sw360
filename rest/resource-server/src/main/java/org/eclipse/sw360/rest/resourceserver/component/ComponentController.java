@@ -88,8 +88,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -153,7 +156,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
         List<Component> allComponents = new ArrayList<>();
         String queryString = request.getQueryString();
-        Map<String, String> params = parseQueryString(queryString);
+        Map<String, String> params = restControllerHelper.parseQueryString(queryString);
 
         Map<String, Set<String>> filterMap = new HashMap<>();
         if (luceneSearch) {
@@ -170,7 +173,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             allComponents.addAll(componentService.refineSearch(filterMap, sw360User));
         } else {
             if (name != null && !name.isEmpty()) {
-                allComponents.addAll(componentService.searchComponentByName(params.get("name").replace("%20", " ")));
+                allComponents.addAll(componentService.searchComponentByName(params.get("name")));
             } else {
                 allComponents.addAll(componentService.getComponentsForUser(sw360User));
             }
@@ -222,24 +225,6 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             resources = restControllerHelper.generatePagesResource(paginationResult, componentResources);
         }
         return resources;
-    }
-
-    private Map<String, String> parseQueryString(String queryString) {
-        Map<String, String> parameters = new HashMap<>();
-
-        if (queryString != null && !queryString.isEmpty()) {
-            String[] params = queryString.split("&");
-            for (String param : params) {
-                String[] keyValue = param.split("=");
-                if (keyValue.length == 2) {
-                    String key = keyValue[0];
-                    String value = keyValue[1];
-                    parameters.put(key, value);
-                }
-            }
-        }
-
-        return parameters;
     }
 
     @Operation(
@@ -344,9 +329,10 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                     description = "The external IDs of the components to be retrieved.",
                     example = "component-id-key=1831A3&component-id-key=c77321"
             )
-            @RequestParam MultiValueMap<String, String> externalIdsMultiMap
+            HttpServletRequest request
     ) throws TException {
-        return restControllerHelper.searchByExternalIds(externalIdsMultiMap, componentService, null);
+        String queryString = request.getQueryString();
+        return restControllerHelper.searchByExternalIds(queryString, componentService, null);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
