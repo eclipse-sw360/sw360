@@ -177,6 +177,7 @@
     <wiremock.version>2.26.0</wiremock.version>
     <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
     <jcl-over-slf4j.version>1.8.0-beta4</jcl-over-slf4j.version>
+    <joda-time.version>2.10.5</joda-time.version>
 
     <!--  User must provide below property configuration based on his/her liferay deployment
     environment -->
@@ -605,6 +606,12 @@
         <version>${javax.servlet-api.version}</version>
         <scope>provided</scope>
       </dependency>
+      <dependency>
+        <groupId>joda-time</groupId>
+        <artifactId>joda-time</artifactId>
+        <version>${joda-time.version}</version>
+    </dependency>
+    
 
     </dependencies>
   </dependencyManagement>
