@@ -176,6 +176,7 @@
     <tika.version>1.28.5</tika.version>
     <wiremock.version>2.26.0</wiremock.version>
     <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
+    <jcl-over-slf4j.version>1.8.0-beta4</jcl-over-slf4j.version>
 
     <!--  User must provide below property configuration based on his/her liferay deployment
     environment -->
@@ -557,6 +558,11 @@
         <artifactId>slf4j-simple</artifactId>
         <version>${slf4j.version}</version>
         <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jcl-over-slf4j</artifactId>
+        <version>${jcl-over-slf4j.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.commons</groupId>
