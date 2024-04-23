@@ -242,6 +242,9 @@ COPY --chown=$USERNAME:$USERNAME --from=binaries /sw360_tomcat_webapps/slim-wars
 COPY --chown=$USERNAME:$USERNAME --from=binaries /sw360_tomcat_webapps/*.jar /app/sw360/tomcat/webapps/
 # Shared streamlined jar libs
 COPY --chown=$USERNAME:$USERNAME --from=binaries /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
+COPY scripts/deduplicate-shared.sh /bin/dedup.sh
+ARG SHARED_DIR=/app/sw360/tomcat/shared
+RUN bash /bin/dedup.sh
 
 # Make catalina understand shared directory
 RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \

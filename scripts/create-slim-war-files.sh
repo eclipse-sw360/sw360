@@ -1,5 +1,6 @@
 #!/bin/bash
-#
+
+# -----------------------------------------------------------------------------
 # Copyright Bosch Software Innovations GmbH, 2019.
 # Copyright Helio Chissini de CAstro, 2022
 #
