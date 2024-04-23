@@ -101,7 +101,7 @@
     <!-- Dependencies version properties -->
     <byte-buddy.version>1.12.13</byte-buddy.version>
     <cloudant.version>2.19.1</cloudant.version>
-    <commons-codec.version>1.15</commons-codec.version>
+    <commons-codec.version>1.16.1</commons-codec.version>
     <commons-collection4.version>4.4</commons-collection4.version>
     <commons-compress.version>1.26.1</commons-compress.version>
     <commons-configuration.version>1.10</commons-configuration.version>
