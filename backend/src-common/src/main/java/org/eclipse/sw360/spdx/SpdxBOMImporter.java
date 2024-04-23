@@ -410,14 +410,14 @@ public class SpdxBOMImporter {
             String licenseId = spdxExtractedLicense.getLicenseId();
             String extractedText = spdxExtractedLicense.getExtractedText();
             String name = spdxExtractedLicense.getName();
-            Set<String> crossRef = new HashSet<>(Arrays.asList(verifyOrSetDefault(spdxExtractedLicense.getCrossRef().toArray(new String[spdxExtractedLicense.getCrossRef().size()]))));
+            //Set<String> crossRef = new HashSet<>(Arrays.asList(verifyOrSetDefault(spdxExtractedLicense.getCrossRef().toArray(new String[spdxExtractedLicense.getCrossRef().size()]))));
             String comment = spdxExtractedLicense.getComment();
 
             OtherLicensingInformationDetected otherLicense = new OtherLicensingInformationDetected();
             otherLicense.setLicenseId(verifyOrSetDefault(licenseId))
                     .setExtractedText(verifyOrSetDefault(extractedText))
                     .setLicenseName(verifyOrSetDefault(name))
-                    .setLicenseCrossRefs(crossRef)
+                    //.setLicenseCrossRefs(crossRef)
                     .setLicenseComment(verifyOrSetDefault(comment))
                     .setIndex(index);
 
