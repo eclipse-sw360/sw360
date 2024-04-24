@@ -64,12 +64,7 @@ Import-Package: \
 	org.apache.logging.log4j, \
 	org.apache.log4j, \
 	org.apache.thrift.*, \
-	org.eclipse.sw360.commonIO.*, \
-	org.eclipse.sw360.datahandler.*, \
-	org.eclipse.sw360.exporter.*, \
-	org.eclipse.sw360.importer.*, \
 	org.ektorp.*, \
-	com.cloudant.*, \
 	org.osgi.service.cm, \
 	org.osgi.service.component.*, \
 	org.slf4j, \
