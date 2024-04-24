@@ -460,7 +460,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         CTRPr ctrpr = ctr.addNewRPr();
         CTColor colour = CTColor.Factory.newInstance();
         colour.setVal("0000FF");
-        ctrpr.setColor(colour);
+        // TODO: POI moved this functions. Need to be fixed for the next reafactor
+        // ctrpr.setColor(colour);
         ctrpr.addNewU().setVal(STUnderline.SINGLE);
         ctrpr.addNewSz().setVal(new BigInteger("18"));
     }

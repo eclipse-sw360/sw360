@@ -181,7 +181,8 @@ public class DocxUtils {
         CTRPr rpr = ctr.addNewRPr();
         CTColor colour = CTColor.Factory.newInstance();
         colour.setVal("0000FF");
-        rpr.setColor(colour);
+        // TODO: POI moved this functions. Need to be fixed for the next reafactor
+        // rpr.setColor(colour);
         CTRPr rpr1 = ctr.addNewRPr();
         rpr1.addNewU().setVal(STUnderline.SINGLE);
 
