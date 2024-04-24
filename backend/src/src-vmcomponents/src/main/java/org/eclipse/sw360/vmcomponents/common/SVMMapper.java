@@ -15,8 +15,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VendorAdvisory;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import com.github.cliftonlabs.json_simple.JsonArray;
+import com.github.cliftonlabs.json_simple.JsonObject;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -58,7 +58,7 @@ public class SVMMapper {
         return oldElement;
     }
 
-    public static VMAction updateActionByJSON(VMAction oldElement, JSONObject json){
+    public static VMAction updateActionByJSON(VMAction oldElement, JsonObject json){
         if (oldElement != null && json != null){
             String text = (String) json.get(SVMConstants.ACTION_TEXT);
 
@@ -84,7 +84,7 @@ public class SVMMapper {
         return oldElement;
     }
 
-    public static VMPriority updatePriorityByJSON(VMPriority oldElement, JSONObject json){
+    public static VMPriority updatePriorityByJSON(VMPriority oldElement, JsonObject json){
         if (oldElement != null && json != null){
             String shortText = (String) json.get(SVMConstants.PRIORITY_SHORT);
             String longText = (String) json.get(SVMConstants.PRIORITY_LONG);
@@ -119,7 +119,7 @@ public class SVMMapper {
         return oldElement;
     }
 
-    public static VMComponent updateComponentByJSON(VMComponent oldElement, JSONObject json){
+    public static VMComponent updateComponentByJSON(VMComponent oldElement, JsonObject json){
         if (oldElement != null && json != null){
             String vendor = (String) json.get(SVMConstants.COMPONENT_VENDOR);
             String name = (String) json.get(SVMConstants.COMPONENT_NAME);
@@ -142,7 +142,7 @@ public class SVMMapper {
         return oldElement;
     }
 
-    public static Vulnerability updateVulnerabilityByJSON(Vulnerability oldElement, JSONObject json){
+    public static Vulnerability updateVulnerabilityByJSON(Vulnerability oldElement, JsonObject json){
         if (oldElement != null && json != null){
             String title = (String) json.get(SVMConstants.VULNERABILITY_TITLE);
             String description = (String) json.get(SVMConstants.VULNERABILITY_DESCRIPTION);
@@ -150,12 +150,12 @@ public class SVMMapper {
             String lastUpdate = mapSVMDate((String) json.get(SVMConstants.VULNERABILITY_LAST_UPDATE));
             Long priority = (Long) json.get(SVMConstants.VULNERABILITY_PRIORITY);
             Long action = (Long) json.get(SVMConstants.VULNERABILITY_ACTION);
-            Set<String> compVmids = mapJSONStringArray((JSONArray) json.get(SVMConstants.VULNERABILITY_COMPONENTS));
-            Set<VendorAdvisory> vas = mapJSONVendorAdvisories((JSONArray) json.get(SVMConstants.VULNERABILITY_VENDOR_ADVISORIES));
+            Set<String> compVmids = mapJSONStringArray((JsonArray) json.get(SVMConstants.VULNERABILITY_COMPONENTS));
+            Set<VendorAdvisory> vas = mapJSONVendorAdvisories((JsonArray) json.get(SVMConstants.VULNERABILITY_VENDOR_ADVISORIES));
             String legalNotice = (String) json.get(SVMConstants.VULNERABILITY_LEGAL_NOTICE);
             String extendedDescription = (String) json.get(SVMConstants.VULNERABILITY_EXTENDED_DISC);
-            Set<CVEReference> cveReferences = mapJSONCVEReferences((JSONArray) json.get(SVMConstants.VULNERABILITY_CVE_REFERENCES));
-            Set<String> references = mapJSONStringArray((JSONArray) json.get(SVMConstants.VULNERABILITY_REFERENCES));
+            Set<CVEReference> cveReferences = mapJSONCVEReferences((JsonArray) json.get(SVMConstants.VULNERABILITY_CVE_REFERENCES));
+            Set<String> references = mapJSONStringArray((JsonArray) json.get(SVMConstants.VULNERABILITY_REFERENCES));
 
             return new Vulnerability(oldElement)
                     .setTitle(title)
@@ -188,7 +188,7 @@ public class SVMMapper {
         }
     }
 
-    private static Set<String> mapJSONStringArray(JSONArray stringArray){
+    private static Set<String> mapJSONStringArray(JsonArray stringArray){
         if (stringArray == null || stringArray.size() == 0){
             return Collections.EMPTY_SET;
         }
@@ -199,13 +199,13 @@ public class SVMMapper {
         return set;
     }
 
-    private static Set<CVEReference> mapJSONCVEReferences(JSONArray cveReferences){
+    private static Set<CVEReference> mapJSONCVEReferences(JsonArray cveReferences){
         if (cveReferences == null || cveReferences.size() == 0){
             return Collections.EMPTY_SET;
         }
         Set<CVEReference> set = new HashSet<>();
         for (Object cve : cveReferences) {
-            JSONObject cveReference = (JSONObject) cve;
+            JsonObject cveReference = (JsonObject) cve;
             Long cveYear = (Long) cveReference.get(SVMConstants.VULNERABILITY_CVE_YEAR);
             Long cveNumber = (Long) cveReference.get(SVMConstants.VULNERABILITY_CVE_NUMBER);
             set.add(new CVEReference(cveYear==null?null:cveYear.toString(), cveNumber==null?null:cveNumber.toString()));
@@ -213,13 +213,13 @@ public class SVMMapper {
         return set;
     }
 
-    private static Set<VendorAdvisory> mapJSONVendorAdvisories(JSONArray vendorAdvisories){
+    private static Set<VendorAdvisory> mapJSONVendorAdvisories(JsonArray vendorAdvisories){
         if (vendorAdvisories == null || vendorAdvisories.size() == 0){
             return Collections.EMPTY_SET;
         }
         Set<VendorAdvisory> set = new HashSet<>();
         for (Object va : vendorAdvisories) {
-            JSONObject vendorAdvisory = (JSONObject) va;
+            JsonObject vendorAdvisory = (JsonObject) va;
             String vendor = (String) vendorAdvisory.get(SVMConstants.VULNERABILITY_VA_VENDOR);
             String name = (String) vendorAdvisory.get(SVMConstants.VULNERABILITY_VA_NAME);
             String url = (String) vendorAdvisory.get(SVMConstants.VULNERABILITY_VA_URL);

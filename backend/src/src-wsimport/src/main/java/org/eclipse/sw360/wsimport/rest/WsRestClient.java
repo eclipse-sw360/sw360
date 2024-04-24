@@ -25,7 +25,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONObject;
+import com.github.cliftonlabs.json_simple.JsonObject;
 
 import java.io.IOException;
 
@@ -40,10 +40,10 @@ public class WsRestClient {
     }
 
     private String generateRequestBody(String requestType, String userKey, WsTokenType tokenType, String token) {
-        JSONObject json = new JSONObject();
+        JsonObject json = new JsonObject();
         json.put("requestType", requestType);
         json.put("userKey", userKey);
-        json.put(tokenType, token);
+        json.put(tokenType.toString(), token);
         return json.toString();
     }
 
