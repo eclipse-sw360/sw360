@@ -156,6 +156,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-expression</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.liferay.portal</groupId>
             <artifactId>com.liferay.util.bridges</artifactId>
             <version>${liferay.util.bridges.version}</version>

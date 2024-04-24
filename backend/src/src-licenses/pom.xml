@@ -42,6 +42,10 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.liferay</groupId>
             <artifactId>com.liferay.petra.function</artifactId>
             <version>${liferay.petra.function.version}</version>

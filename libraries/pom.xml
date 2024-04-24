@@ -28,7 +28,6 @@
         <module>commonIO</module>
         <module>importers</module>
         <module>exporters</module>
-        <module>log4j-osgi-support</module>
     </modules>
 
     <build>
