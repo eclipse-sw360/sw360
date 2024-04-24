@@ -18,7 +18,7 @@ on:
     paths-ignore:
       - "**.md"
       - ".github/workflows/docker_deploy.yml"
-  workflow_dispatch: 
+  workflow_dispatch:
 
 permissions: write-all
 
@@ -32,8 +32,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: webiny/action-conventional-commits@v1.2.0
+    - uses: actions/checkout@v4
+    - uses: webiny/action-conventional-commits@v1.3.0
 
     - name: Verify license headers
       run: |
@@ -42,7 +42,7 @@ jobs:
 
     - name: Set environment variables
       run: |
-        echo _JAVA_OPTIONS= '-Djdk.util.zip.disableZip64ExtraFieldValidation=true' >> $GITHUB_ENV      
+        echo _JAVA_OPTIONS= '-Djdk.util.zip.disableZip64ExtraFieldValidation=true' >> $GITHUB_ENV
         cat .versions >> $GITHUB_ENV
 
     - name: Setup CouchDB
@@ -56,21 +56,23 @@ jobs:
         sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
         sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
 
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-
     - name: Prepare build environment
       run: |
         sudo apt-get update -qq
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git temurin-11-jdk maven cmake
-        pip install mkdocs==1.5.3 mkdocs-material
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git cmake
+        pip install mkdocs mkdocs-material
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        check-latest: true
+        cache: 'maven'
 
     - name: Cache Thrift
       id: cache-thrift
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           /usr/local/bin/thrift
