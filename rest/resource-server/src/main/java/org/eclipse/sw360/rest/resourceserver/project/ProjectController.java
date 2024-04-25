@@ -1755,7 +1755,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         if (requestSummary.getRequestStatus() == RequestStatus.FAILURE) {
             return new ResponseEntity<String>(requestSummary.getMessage(), HttpStatus.BAD_REQUEST);
+        }else if(requestSummary.getRequestStatus() == RequestStatus.ACCESS_DENIED){
+            return new ResponseEntity<String>("You do not have sufficient permissions.", HttpStatus.UNAUTHORIZED);
         }
+
         String jsonMessage = requestSummary.getMessage();
         messageMap = new Gson().fromJson(jsonMessage, Map.class);
         projectId = messageMap.get("projectId");
@@ -1764,6 +1767,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             return new ResponseEntity<String>(
                     "A project with same name and version already exists. The projectId is: " + projectId,
                     HttpStatus.CONFLICT);
+        }else if (requestSummary.getRequestStatus() == RequestStatus.FAILED_SANITY_CHECK){
+            return new ResponseEntity<String>(
+                    "Project name or version present in SBOM metadata tag is not same as the current SW360 project!",
+                    HttpStatus.BAD_REQUEST);
         }
 
         Project project = projectService.getProjectForUserById(projectId, sw360User);
