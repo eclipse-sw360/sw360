@@ -12,10 +12,11 @@
  */
 package org.eclipse.sw360.datahandler.thrift;
 
-import org.apache.http.HttpHost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
+import org.apache.hc.core5.http.HttpHost;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.routing.DefaultProxyRoutePlanner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TConfiguration;
@@ -142,7 +143,7 @@ public class ThriftClients {
         try {
             if (BACKEND_PROXY_URL != null) {
                 URL proxyUrl = new URL(BACKEND_PROXY_URL);
-                HttpHost proxy = new HttpHost(proxyUrl.getHost(), proxyUrl.getPort(), proxyUrl.getProtocol());
+                HttpHost proxy = new HttpHost(proxyUrl.getProtocol(), proxyUrl.getHost(), proxyUrl.getPort());
                 DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
                 CloseableHttpClient httpClient = HttpClients.custom().setRoutePlanner(routePlanner).build();
                 thriftClient = new THttpClient(thriftConfigure, destinationAddress, httpClient);
