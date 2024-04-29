@@ -62,7 +62,7 @@
   </distributionManagement>
 
   <properties>
-    <revision>18.1.${patchlevel}</revision>
+    <revision>18.99.${patchlevel}</revision>
     <patchlevel>0</patchlevel>
     <rest.version>1.0.0</rest.version>
 
@@ -72,8 +72,8 @@
     <jars.deploy.dir>${base.deploy.dir}/jars</jars.deploy.dir>
 
     <!-- Build version properties -->
-    <java_source.version>11</java_source.version>
-    <java_target.version>11</java_target.version>
+    <java_source.version>17</java_source.version>
+    <java_target.version>17</java_target.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -85,7 +85,7 @@
     <maven-bundle-plugin.version>5.1.8</maven-bundle-plugin.version>
     <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
-    <maven-enforcer-plugin.version>3.1.0</maven-enforcer-plugin.version>
+    <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
     <maven-failsafe-plugin.version>3.0.0-M7</maven-failsafe-plugin.version>
     <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
     <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
@@ -848,6 +848,9 @@
                       <regexMessage>You must set at least the property
                         'base.deploy.dir'!</regexMessage>
                     </requireProperty>
+                    <requireJavaVersion>
+                      <version>[17,18)</version>
+                    </requireJavaVersion>
                   </rules>
                   <fail>true</fail>
                 </configuration>
