@@ -254,16 +254,17 @@ public class CycloneDxBOMImporter {
                                     componentsWithoutVcs.add(fullName);
 
                                     if (CommonUtils.isNotNullEmptyOrWhitespace(pkgAddSummary.getId())) {
-                                        project.addToPackageIds(pkgAddSummary.getId());
                                         pkg.setId(pkgAddSummary.getId());
                                         if (AddDocumentRequestStatus.DUPLICATE.equals(pkgAddSummary.getRequestStatus())) {
-                                            pkgReuseCount++;
+                                            if(!CommonUtils.nullToEmptySet(project.getPackageIds()).contains(pkgAddSummary.getId())){
+                                                pkgReuseCount++;
+                                            }
                                             Package dupPkg = packageDatabaseHandler.getPackageById(pkgAddSummary.getId());
                                             if (CommonUtils.isNotNullEmptyOrWhitespace(dupPkg.getReleaseId())) {
                                                 if (!CommonUtils.nullToEmptyMap(project.getReleaseIdToUsage()).containsKey(dupPkg.getReleaseId())) {
                                                     project.putToReleaseIdToUsage(dupPkg.getReleaseId(), getDefaultRelation());
+                                                    relReuseCount++;
                                                 }
-                                                relReuseCount++;
                                             }
                                         } else {
                                             pkgCreationCount++;
@@ -274,11 +275,11 @@ public class CycloneDxBOMImporter {
                                         duplicatePackages.add(fullName);
                                         continue;
                                     }
+                                    project.addToPackageIds(pkgAddSummary.getId());
                                 } catch (SW360Exception e) {
                                     log.error("An error occured while creating/adding package from SBOM: " + e.getMessage());
                                     continue;
                                 }
-
                             }
                         }
                         RequestStatus updateStatus = projectDatabaseHandler.updateProject(project, user);
@@ -651,7 +652,9 @@ public class CycloneDxBOMImporter {
                                     dupPkg.setReleaseId(release.getId());
                                     packageDatabaseHandler.updatePackage(dupPkg, user);
                                 }
-                                pkgReuseCount++;
+                                if(!CommonUtils.nullToEmptySet(project.getPackageIds()).contains(pkg.getId())){
+                                    pkgReuseCount++;
+                                }
                             } else {
                                 pkgCreationCount++;
                             }
