@@ -2078,13 +2078,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 URI releaseURI = new URI(release.toString());
                 String path = releaseURI.getPath();
                 String releaseId = path.substring(path.lastIndexOf('/') + 1);
+                Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
                 releaseIdToUsage.put(releaseId,
-                        new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
+                        new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN).setReleaseName(sw360Release.getName()).setVersion(sw360Release.getVersion()));
             }
         } else if (releasesInRequestBody instanceof Map) {
             Map<String, Map> releaseAsMap = (Map<String, Map>) releasesInRequestBody;
             for (Entry<String, Map> entry : releaseAsMap.entrySet()) {
                 String releaseId = entry.getKey();
+                Release sw360Release = releaseService.getReleaseForUserById(releaseId, sw360User);
                 ObjectMapper mapper = new ObjectMapper();
                 mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 mapper.registerModule(sw360Module);
@@ -2097,7 +2099,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 } else {
                     actualProjectReleaseRelationship = new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED,
                             MainlineState.OPEN).setCreatedBy(sw360User.getEmail())
-                                    .setCreatedOn(SW360Utils.getCreatedOn());
+                                    .setCreatedOn(SW360Utils.getCreatedOn()).setReleaseName(sw360Release.getName()).setVersion(sw360Release.getVersion());
                 }
 
                 restControllerHelper.updateProjectReleaseRelationship(actualProjectReleaseRelationship,

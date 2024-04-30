@@ -114,6 +114,7 @@ To migrate it is recommended to do this in the following order:
 
 - `060_migrate_project_dependency_network.py`
 - `061_add_modifiedBy_modifiedOn_project.py`
+- `062_add_release_info_in_proj_doc.py`
 
 ## Optional usage
 - `009_overwrite_release_name_with_component_name.py`
