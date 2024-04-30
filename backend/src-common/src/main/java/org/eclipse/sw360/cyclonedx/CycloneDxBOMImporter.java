@@ -646,10 +646,12 @@ public class CycloneDxBOMImporter {
                             pkg.setId(pkgAddSummary.getId());
                             if (AddDocumentRequestStatus.DUPLICATE.equals(pkgAddSummary.getRequestStatus())) {
                                 Package dupPkg = packageDatabaseHandler.getPackageById(pkg.getId());
-                                if (!release.getId().equals(dupPkg.getReleaseId())) {
-                                    log.error("Release Id of Package from BOM: '%s' and Database: '%s' is not equal!", release.getId(), dupPkg.getReleaseId());
-                                    dupPkg.setReleaseId(release.getId());
+                                String dupPkgReleaseId = dupPkg.getReleaseId();
+                                String releaseId = release.getId();
+                                if (!releaseId.equals(dupPkgReleaseId) && CommonUtils.isNullEmptyOrWhitespace(dupPkgReleaseId)) {
+                                    dupPkg.setReleaseId(releaseId);
                                     packageDatabaseHandler.updatePackage(dupPkg, user);
+                                    log.error("Release Id of Package from BOM: '%s' and Database: '%s' is not equal!", releaseId, dupPkgReleaseId);
                                 }
                                 pkgReuseCount++;
                             } else {
