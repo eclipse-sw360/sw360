@@ -2053,6 +2053,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throws URISyntaxException, TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project project = projectService.getProjectForUserById(id, sw360User);
+        Map<String, ProjectReleaseRelationship> allReleaseIdToUsages = project.getReleaseIdToUsage();
         Map<String, ProjectReleaseRelationship> releaseIdToUsage = new HashMap<>();
         if (patch) {
             releaseIdToUsage = project.getReleaseIdToUsage();
@@ -2067,6 +2068,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 releaseIdToUsage.put(releaseId,
                         new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
             }
+            releaseIdToUsage.putAll(allReleaseIdToUsages);
         } else if (releasesInRequestBody instanceof Map) {
             Map<String, Map> releaseAsMap = (Map<String, Map>) releasesInRequestBody;
             for (Entry<String, Map> entry : releaseAsMap.entrySet()) {
@@ -2090,6 +2092,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                         requestBodyProjectReleaseRelationship);
                 releaseIdToUsage.put(releaseId, actualProjectReleaseRelationship);
             }
+            releaseIdToUsage.putAll(allReleaseIdToUsages);
         } else {
             throw new HttpMessageNotReadableException(
                     "Request body should be List of valid release id or map of release id to usage");
