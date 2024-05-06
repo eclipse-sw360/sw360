@@ -43,10 +43,8 @@ import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
@@ -553,6 +551,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.importCycloneDX(any(),any(),any())).willReturn(requestSummaryForCycloneDX);
         given(this.sw360ReportServiceMock.getDocumentName(any(), any())).willReturn(projectName);
         given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.getLicenseInfoBuffer(any(), any(), any(), any(), any(), any())).willReturn(ByteBuffer.allocate(10000));
         given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
         given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(project2);
@@ -2057,20 +2056,24 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
-    public void should_document_get_download_license_info() throws Exception {
-        this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/licenseinfo?generatorClassName=XhtmlGenerator&variant=DISCLOSURE&externalIds=portal-id,main-project-id")
-                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                .accept("application/xhtml+xml"))
+    public void should_document_get_download_license_info() throws Exception{
+        mockMvc.perform(get("/api/reports")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .param("module", "licenseInfo")
+                        .param("projectId", project.getId())
+                        .param("generatorClassName", "XhtmlGenerator")
+                        .param("variant", "DISCLOSURE")
+                        .param("externalIds", "portal-id,main-project-id")
+                        .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
-                .andDo(this.documentationHandler
-                        .document(queryParameters(
-                                parameterWithName("generatorClassName")
-                                        .description("All possible values for output generator class names are "
-                                                + Arrays.asList("DocxGenerator", "XhtmlGenerator", "TextGenerator")),
-                                parameterWithName("variant").description("All the possible values for variants are "
-                                        + Arrays.asList(OutputFormatVariant.values())),
-                                parameterWithName("externalIds").description("The external Ids of the project")
-                                )));
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("projectId").description("Id for the project."),
+                                parameterWithName("generatorClassName").description("Projects download format. Possible values are `<DocxGenerator|XhtmlGenerator|TextGenerator>`"),
+                                parameterWithName("variant").description("All the possible values for variants are `<REPORT|DISCLOSURE>`"),
+                                parameterWithName("externalIds").description("The external Ids of the project"),
+                                parameterWithName("module").description("module represent the project or component. Possible values are `<licenseInfo>`")
+                        )));
     }
 
     @Test
@@ -2362,6 +2365,27 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
                                 parameterWithName("projectId").description("Id of a project"))
                         ));
+    }
+
+    @Test
+    public void should_document_get_export_project_create_clearing_request() throws Exception{
+        mockMvc.perform(get("/api/reports")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .param("module", "exportCreateProjectClearingReport")
+                        .param("projectId", project.getId())
+                        .param("generatorClassName", "DocxGenerator")
+                        .param("variant", "REPORT")
+                        .param("externalIds", "portal-id,main-project-id")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("projectId").description("Id for the project."),
+                                parameterWithName("generatorClassName").description("Projects download format. Possible values are `<DocxGenerator>`"),
+                                parameterWithName("variant").description("The possible values for variants are `<REPORT>`"),
+                                parameterWithName("externalIds").description("The external Ids of the project"),
+                                parameterWithName("module").description("module possible values are `<exportCreateProjectClearingReport>`")
+                        )));
     }
 
     @Test
