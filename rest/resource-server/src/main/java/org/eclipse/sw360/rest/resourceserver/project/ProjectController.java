@@ -1508,19 +1508,27 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/attachmentUsage", method = RequestMethod.GET)
-    public ResponseEntity attachmentUsages(@Parameter(description = "Project ID.") @PathVariable("id") String id,  HttpServletRequest request)
-            throws URISyntaxException, TException {
+    public ResponseEntity attachmentUsages(@Parameter(description = "Project ID.") @PathVariable("id") String id,
+            @Parameter(description = "filtering attachmentUsages")
+            @RequestParam(value = "filter", required = false) String filter,
+            @Parameter(description = "Get the transitive releases.")
+            @RequestParam(value = "transitive", required = true) String transitive)
+            throws TException {
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        boolean transitive = true;
-        final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-        List<Release> releases = releaseIds.stream().map(relId -> wrapTException(() -> {
+        boolean isTransitive = Boolean.parseBoolean(transitive);
+        final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, isTransitive);
+        List<Release> releases = null;
+        if (filter != null) {
+            releases = filterReleases(sw360User, filter, releaseIds);
+        } else {
+            releases = releaseIds.stream().map(relId -> wrapTException(() -> {
                 final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
                 releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
                 return sw360Release;
-        })).collect(Collectors.toList());
-
+            })).collect(Collectors.toList());
+        }
         List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
                 final Release embeddedRelease = restControllerHelper.convertToEmbeddedReleaseAttachments(sw360Release);
                 final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease);
@@ -1614,6 +1622,83 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 		}
 		return modifiedList;
 	}
+
+    public List<Release> filterReleases(User sw360User, String filter, Set<String> releaseIds) {
+        List<Release> releasesSrc = new ArrayList<>();
+
+        switch (filter) {
+            case "withSourceAttachment":
+                releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
+                    final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+                    releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
+                    List<Attachment> sourceAttachments = sw360Release.getAttachments().stream()
+                        .filter(attachment -> attachment.getAttachmentType() == AttachmentType.SOURCE || attachment.getAttachmentType() == AttachmentType.SOURCE_SELF)
+                        .collect(Collectors.toList());
+                    Set<Attachment> sourceAttachmentsSet = new HashSet<>(sourceAttachments);
+                    sw360Release.setAttachments(sourceAttachmentsSet);
+                    return sourceAttachmentsSet.isEmpty() ? null : sw360Release;
+                }))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+                break;
+            case "withoutSourceAttachment":
+                releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
+                    final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+                    releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
+                    List<Attachment> withoutSourceAttachments = sw360Release.getAttachments().stream()
+                        .filter(attachment -> attachment.getAttachmentType() != AttachmentType.SOURCE && attachment.getAttachmentType() != AttachmentType.SOURCE_SELF)
+                        .collect(Collectors.toList());
+                    Set<Attachment> withoutSourceAttachmentsSet = new HashSet<>(withoutSourceAttachments);
+                    sw360Release.setAttachments(withoutSourceAttachmentsSet);
+                    return withoutSourceAttachmentsSet.isEmpty() ? null : sw360Release;
+                }))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+                break;
+            case "withoutAttachment":
+                releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
+                    final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+                    releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
+                    return sw360Release.getAttachments().isEmpty() ? sw360Release : null;
+                }))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+                break;
+            case "withAttachment":
+                releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
+                    final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+                    releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
+                    return sw360Release.getAttachments().isEmpty() ? null : sw360Release;
+                }))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+                break;
+            case "withCliAttachment":
+                releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
+                    final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+                    releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
+                    List<Attachment> cliAttachments = sw360Release.getAttachments().stream()
+                        .filter(attachment -> attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_XML)
+                        .collect(Collectors.toList());
+                    Set<Attachment> cliAttachmentsSet = new HashSet<>(cliAttachments);
+                    sw360Release.setAttachments(cliAttachmentsSet);
+                    return cliAttachmentsSet.isEmpty() ? null : sw360Release;
+                }))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+                break;
+            default:
+                releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
+                    final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+                    releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
+                    return sw360Release;
+                }))
+                .collect(Collectors.toList());
+                break;
+        }
+
+        return releasesSrc;
+    }
 
     private HalResource attachmentUsageReleases(Project sw360Project, List<Map<String, Object>> releases, List<Map<String, Object>> attachmentUsageMap)
             throws TException {
