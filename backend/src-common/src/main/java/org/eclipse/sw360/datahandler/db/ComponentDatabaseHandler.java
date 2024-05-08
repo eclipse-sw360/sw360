@@ -3143,7 +3143,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             } else {
                 return false;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Error while checking the validity of the URL " + url, e);
             return false;
         }
