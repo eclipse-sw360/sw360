@@ -407,6 +407,10 @@
     content: attr(data-content);
 }
 
+.sw360-tt-ClearingRequestState-SANITY_CHECK:hover:after {
+    content: attr(data-content);
+}
+
 .sw360-tt-ClearingRequestState-ACCEPTED:hover:after {
     content: attr(data-content);
 }
@@ -429,6 +433,11 @@
 .sw360-tt-ClearingRequestState-AWAITING_RESPONSE:hover:after {
     content: attr(data-content);
 }
+
+.sw360-tt-ClearingRequestState-PENDING_INPUT:hover:after {
+    content: attr(data-content);
+}
+
 
 /** Clearing Request Priority **/
 .sw360-tt-ClearingRequestPriority:hover:after {
