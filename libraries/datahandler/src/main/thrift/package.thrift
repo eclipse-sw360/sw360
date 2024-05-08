@@ -163,5 +163,25 @@ service PackageService {
      * total number of packages in the DB
      **/
     i32 getTotalPackagesCount();
+    
+    /**
+     * list of packages which match the `name`
+     */
+    list<Package> searchByName(1: string name);
+    
+    /**
+     * list of packages which match the `packageManager`
+     */
+    list<Package> searchByPackageManager(1: string pkgManager);
+    
+    /**
+     * list of packages which match the `version`
+     */
+    list<Package> searchByVersion(1: string version);
+    
+    /**
+     * list of packages which match the `purl`
+     */
+    list<Package> searchByPurl(1: string purl);
 
 }

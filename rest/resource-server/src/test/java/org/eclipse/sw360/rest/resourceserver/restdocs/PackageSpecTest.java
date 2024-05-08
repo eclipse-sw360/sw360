@@ -81,6 +81,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
 
     private Package package1;
     private Package package2;
+    private Package package3;
     private Set<String> licenseIds;
 
     @Before
@@ -105,8 +106,12 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
         licenseIds.add("MIT");
         licenseIds.add("GPL");
 
-        package1 = new Package("angular-sanitize", "1.8.2", "pkg:npm/angular-sanitize@1.8.2", CycloneDxComponentType.FRAMEWORK)
+        package1 = new Package()
                         .setId("122357345")
+                        .setName("angular-sanitize")
+                        .setVersion("1.8.2")
+                        .setPackageType(CycloneDxComponentType.LIBRARY)
+                        .setPurl("pkg:npm/angular-sanitize@1.8.2")
                         .setCreatedBy("admin@sw360.org")
                         .setCreatedOn("2023-01-02")
                         .setVcs("git+https://github.com/angular/angular.js.git")
@@ -129,6 +134,21 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                         .setHomepageUrl("https://github.com/microsoft/ApplicationInsights-JS#readme")
                         .setDescription("Application Insights is an extension of Azure Monitor and provides application performance monitoring (APM) features");
 
+        package3 = new Package()
+                .setId("1223573425")
+                .setName("angular-sanitize")
+                .setVersion("1.8.0")
+                .setPackageType(CycloneDxComponentType.LIBRARY)
+                .setPurl("pkg:npm/angular-sanitize@1.8.0")
+                .setCreatedBy("admin@sw360.org")
+                .setCreatedOn("2023-01-02")
+                .setVcs("git+https://github.com/angular/angular.js.git")
+                .setHomepageUrl("http://angularjs.org")
+                .setLicenseIds(licenseIds)
+                .setReleaseId(testRelease.getId())
+                .setPackageManager(PackageManager.NPM)
+                .setDescription("Sanitizes an html string by stripping all potentially dangerous tokens.");
+
         when(this.packageServiceMock.createPackage(any(), any())).then(invocation ->
         new Package(package1));
 
@@ -136,12 +156,18 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
         packageList.add(package1);
         packageList.add(package2);
 
+        List<Package> packageListByName = new ArrayList<>();
+        packageListByName.add(package1);
+        packageListByName.add(package3);
+
         given(this.packageServiceMock.getPackageForUserById(eq(package1.getId()))).willReturn(package1);
         given(this.packageServiceMock.getPackageForUserById(eq(package2.getId()))).willReturn(package2);
         given(this.packageServiceMock.deletePackage(eq(package1.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.packageServiceMock.getPackagesForUser()).willReturn(packageList);
-        given(this.packageServiceMock.searchPackage(eq("name"), any(), eq(true))).willReturn(List.of(package1));
-        given(this.packageServiceMock.searchPackage(eq("packageManager"), any(), eq(false))).willReturn(packageList);
+        given(this.packageServiceMock.searchPackageByName(any())).willReturn(packageListByName);
+        given(this.packageServiceMock.searchByPackageManager(any())).willReturn(List.of(package1));
+        given(this.packageServiceMock.searchPackageByVersion(any())).willReturn(List.of(package1));
+        given(this.packageServiceMock.searchPackageByPurl(any())).willReturn(List.of(package1));
         given(this.packageServiceMock.getTotalPackagesCounts()).willReturn(packageList.size());
 
 
@@ -270,12 +296,14 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
-    public void should_document_get_packages_by_name() throws Exception {
+    public void should_document_search_packages() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/packages")
                 .header("Authorization", "Bearer " + accessToken)
                 .param("name", package1.getName())
-                .param("exactMatch", "true")
+                .param("version", package1.getVersion())
+                .param("packageManager", package1.getPackageManager().toString())
+                .param("purl", package1.getPurl())
                 .param("page", "0")
                 .param("page_entries", "5")
                 .param("sort", "name,desc")
@@ -284,8 +312,9 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                 .andDo(this.documentationHandler.document(
                         requestParameters(
                                 parameterWithName("name").description("The name of the package"),
-                                parameterWithName("exactMatch").description("If the exactMatch parameter is set to true, "
-                                        + "packages will be fetched by name exactly matching the search input"),
+                                parameterWithName("version").description("The version of the package"),
+                                parameterWithName("packageManager").description("The package manager type. Possible values are: " + Arrays.asList(PackageManager.values())),
+                                parameterWithName("purl").description("The package URL"),
                                 parameterWithName("page").description("Page of packages"),
                                 parameterWithName("page_entries").description("Amount of packages per page"),
                                 parameterWithName("sort").description("Defines order of the packages")
@@ -310,11 +339,11 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
-    public void should_document_get_packages_by_package_manager() throws Exception {
+    public void should_document_search_packages_by_name() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/packages")
                 .header("Authorization", "Bearer " + accessToken)
-                .param("packageManager", PackageManager.NPM.toString())
+                .param("name", package1.getName())
                 .param("page", "0")
                 .param("page_entries", "5")
                 .param("sort", "name,desc")
@@ -322,7 +351,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         requestParameters(
-                                parameterWithName("packageManager").description("Type of the package manager"),
+                                parameterWithName("name").description("The name of the package"),
                                 parameterWithName("page").description("Page of packages"),
                                 parameterWithName("page_entries").description("Amount of packages per page"),
                                 parameterWithName("sort").description("Defines order of the packages")
@@ -345,7 +374,6 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
-
 
     @Test
     public void should_document_create_package() throws Exception {

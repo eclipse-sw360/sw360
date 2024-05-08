@@ -216,7 +216,11 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             Pageable pageable,
             @Parameter(description = "The name of the package.")
             @RequestParam(value = "name", required = false) String name,
-            @Parameter(description = "Type of the package manager.")
+            @Parameter(description = "The version of the package.")
+            @RequestParam(value = "version", required = false) String version,
+            @Parameter(description = "The pURL of the package.")
+            @RequestParam(value = "purl", required = false) String purl,
+            @Parameter(description = "The package manager of the package.")
             @RequestParam(value = "packageManager", required = false) String packageManager,
             @Parameter(description = "Get all details of the package.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
@@ -227,26 +231,32 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         String queryString = request.getQueryString();
         Map<String, String> params = restControllerHelper.parseQueryString(queryString);
-        boolean isSearchByName = name != null && !name.isEmpty();
-        boolean isSearchByType = CommonUtils.isNotNullEmptyOrWhitespace(packageManager);
+        boolean isSearchByName = CommonUtils.isNotNullEmptyOrWhitespace(name);
+        boolean isSearchByPackageManager = CommonUtils.isNotNullEmptyOrWhitespace(packageManager);
+        boolean isSearchByVersion = CommonUtils.isNotNullEmptyOrWhitespace(version);
+        boolean isSearchByPurl = CommonUtils.isNotNullEmptyOrWhitespace(purl);
         boolean isNoFilter = false;
         List<Package> sw360Packages = new ArrayList<>();
 
         if (isSearchByName) {
-            sw360Packages.addAll(packageService.searchPackage("name", params.get("name"), isExactMatch));
-        } else if (isSearchByType) {
+            sw360Packages.addAll(packageService.searchPackageByName(params.get("name")));
+        } else if (isSearchByPackageManager) {
             packageManager = packageManager.toUpperCase();
 
             if (!EnumUtils.isValidEnum(PackageManager.class, packageManager)) {
                return new ResponseEntity<String>("Invalid package manager type. Possible values are "
                         +Arrays.asList(PackageManager.values()), HttpStatus.BAD_REQUEST);
             }
-            sw360Packages.addAll(packageService.searchPackage("packageManager", packageManager, isExactMatch));
+            sw360Packages.addAll(packageService.searchByPackageManager(packageManager));
+        } else if (isSearchByVersion) {
+            sw360Packages.addAll(packageService.searchPackageByVersion(params.get("version")));
+        } else if (isSearchByPurl) {
+            sw360Packages.addAll(packageService.searchPackageByPurl(params.get("purl")));
         } else {
             sw360Packages.addAll(packageService.getPackagesForUser());
             isNoFilter = true;
         }
-        return getPackageResponse(pageable, allDetails, request, sw360User, sw360Packages, isNoFilter);
+        return getPackageResponse(version, purl, packageManager, pageable, allDetails, request, sw360User, sw360Packages, isNoFilter);
     }
 
     private Package convertToPackage(Map<String, Object> requestBody) {
@@ -278,7 +288,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     }
 
     @NotNull
-    private ResponseEntity<CollectionModel<EntityModel<Package>>> getPackageResponse(Pageable pageable,
+    private ResponseEntity<CollectionModel<EntityModel<Package>>> getPackageResponse(String version, String purl, String packageManager, Pageable pageable,
             boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages,
             boolean isNoFilter)
             throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException, TException {
@@ -314,7 +324,11 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             packageResources.add(embeddedPackageResource);
         };
 
-        paginationResult.getResources().stream().forEach(consumer);
+        paginationResult.getResources().stream()
+        .filter(pkg -> packageManager == null || packageManager.equals(pkg.getPackageManager().toString()))
+        .filter(pkg -> version == null || version.isEmpty() || version.equals(pkg.getVersion()))
+        .filter(pkg -> purl == null || purl.isEmpty() || purl.equals(pkg.getPurl())).forEach(consumer);
+
         CollectionModel<EntityModel<Package>> resources;
         if (packageResources.isEmpty()) {
             resources = restControllerHelper.emptyPageResource(Package.class, paginationResult);

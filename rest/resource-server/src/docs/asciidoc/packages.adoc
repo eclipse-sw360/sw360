@@ -71,47 +71,31 @@ include::{snippets}/should_document_get_package/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_get_package/links.adoc[]
 
-[[resources-packages-list-by-name]]
-==== List packages by name
+[[resources-search-packages]]
+==== Search packages
 
-A `GET` request will list all of the service's packages by name. Use the 'exactMatch' parameter to get packages by name exactly matching the search input.
-
-Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+A `GET` request will filter and list all of the service's packages by name, version, purl and packageManager.
 
 ===== Request parameter
-include::{snippets}/should_document_get_packages_by_name/request-parameters.adoc[]
+include::{snippets}/should_document_search_packages/request-parameters.adoc[]
 
 ===== Response structure
-include::{snippets}/should_document_get_packages_by_name/response-fields.adoc[]
+include::{snippets}/should_document_search_packages/response-fields.adoc[]
 
-===== Example request
-include::{snippets}/should_document_get_packages_by_name/curl-request.adoc[]
+===== Example request 1
+include::{snippets}/should_document_search_packages_by_name/curl-request.adoc[]
 
-===== Example response
-include::{snippets}/should_document_get_packages_by_name/http-response.adoc[]
+===== Example response 1
+include::{snippets}/should_document_search_packages_by_name/http-response.adoc[]
 
-===== Links
-include::{snippets}/should_document_get_packages_by_name/links.adoc[]
+===== Example request 2
+include::{snippets}/should_document_search_packages/curl-request.adoc[]
 
-[[resources-packages-list-by-packageManager]]
-==== List packages by packageManager
-
-A `GET` request will list all of the service's packages by packageManager.
-
-===== Request parameter
-include::{snippets}/should_document_get_packages_by_package_manager/request-parameters.adoc[]
-
-===== Response structure
-include::{snippets}/should_document_get_packages_by_package_manager/response-fields.adoc[]
-
-===== Example request
-include::{snippets}/should_document_get_packages_by_package_manager/curl-request.adoc[]
-
-===== Example response
-include::{snippets}/should_document_get_packages_by_package_manager/http-response.adoc[]
+===== Example response 2
+include::{snippets}/should_document_search_packages/http-response.adoc[]
 
 ===== Links
-include::{snippets}/should_document_get_packages_by_package_manager/links.adoc[]
+include::{snippets}/should_document_search_packages/links.adoc[]
 
 [[resources-packages-create]]
 ==== Creating a package

@@ -135,4 +135,32 @@ public class PackageHandler implements PackageService.Iface {
     public int getTotalPackagesCount() {
         return handler.getTotalPackageCount();
     }
+
+    @Override
+    public List<Package> searchByName(String name) throws TException {
+        assertNotEmpty(name);
+
+        return handler.searchByName(name);
+    }
+
+    @Override
+    public List<Package> searchByPackageManager(String pkgManager) throws TException {
+        assertNotEmpty(pkgManager);
+
+        return handler.searchByPackageManager(pkgManager);
+    }
+
+    @Override
+    public List<Package> searchByVersion(String version) throws TException {
+        assertNotEmpty(version);
+
+        return handler.searchByVersion(version);
+    }
+
+    @Override
+    public List<Package> searchByPurl(String purl) throws TException {
+        assertNotEmpty(purl);
+
+        return handler.getPackageByPurl(purl);
+    }
 }
