@@ -13,6 +13,7 @@ package org.eclipse.sw360.rest.resourceserver.license;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
@@ -48,12 +49,7 @@ import java.io.ByteArrayOutputStream;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -151,6 +147,26 @@ public class Sw360LicenseService {
             }
         }
         return sw360LicenseClient.updateLicense(license, sw360User, sw360User);
+    }
+
+    public Set<String> getIdObligationsContainWhitelist(User sw360User, String licenseId, Set<String> diffIds) throws TException {
+        Set<String> obligationIdTrue = new HashSet<>();
+        String organisation = sw360User.getDepartment();
+        String businessUnit = SW360Utils.getBUFromOrganisation(organisation);
+        List<Obligation> obligations = getObligationsByLicenseId(licenseId);
+        for (Obligation obligation : obligations) {
+            String obligationId = obligation.getId();
+            Set<String> currentWhitelist = obligation.whitelist != null ? obligation.whitelist : new HashSet<>();
+            if (diffIds.contains(obligationId) && currentWhitelist.contains(businessUnit)) {
+                obligationIdTrue.add(obligationId);
+            }
+        }
+        return obligationIdTrue;
+    }
+
+    public RequestStatus updateWhitelist(Set<String> obligationIds, String licenseId, User user) throws TException {
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        return sw360LicenseClient.updateWhitelist(licenseId, ImmutableSet.copyOf(obligationIds), user);
     }
 
     public List<Obligation> getObligationsByLicenseId(String id) throws TException {
