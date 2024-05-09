@@ -1026,3 +1026,38 @@ A `GET` request is used to get list view of a project's dependencies network
 
 ===== Example response
 include::{snippets}/should_document_get_list_view_of_dependencies_network/http-response.adoc[]
+
+[[resources-project-get-linked-resources-in-dependency-network]]
+==== Get linked resources (projects, releases) in dependency network of a project
+
+A `GET` request will get linked resources (projects, releases) in dependency network of a project
+
+===== Request parameters
+include::{snippets}/should_document_get_linked_resources_of_project_in_dependency_network/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_linked_resources_of_project_in_dependency_network/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_resources_of_project_in_dependency_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_resources_of_project_in_dependency_network/http-response.adoc[]
+
+[[resources-project-get-indirect-linked-release-of-project-in-dependency-network-by-index-path]]
+
+==== Get indirect linked releases of a project in dependency network by release's index path
+
+A `GET` request will get indirect linked releases of a project in dependency network by release's index path
+
+===== Request parameters
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/http-response.adoc[]

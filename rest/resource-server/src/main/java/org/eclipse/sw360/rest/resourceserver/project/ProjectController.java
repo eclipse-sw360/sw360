@@ -118,6 +118,7 @@ import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
@@ -2623,6 +2624,58 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<Map<String, String>> clearingStatusList = projectService.serveDependencyNetworkListView(projectId, sw360User);
         return new ResponseEntity<>(clearingStatusList, HttpStatus.OK);
+    }
+
+    @Operation(
+            description = "Get linked resources (projects, releases) of a project",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}/linkedResources", method = RequestMethod.GET)
+    public ResponseEntity<?> getLinkedResourcesOfProjectForDependencyNetwork(
+            @Parameter(description = "Project ID", example = "376576")
+            @PathVariable("id") String id,
+            @Parameter(description = "Get linked releases transitively (default is false)", example = "true")
+            @RequestParam(value = "transitive", required = false, defaultValue = "false") boolean transitive) throws TException {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return new ResponseEntity<>(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        ProjectLink projectLink = projectService.serveLinkedResourcesOfProjectInDependencyNetwork(id, transitive, sw360User);
+        return new ResponseEntity<>(projectLink, HttpStatus.OK);
+    }
+
+    @Operation(
+            description = "Get indirect linked releases of a project in dependency network by release's index path",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}/releases", method = RequestMethod.GET)
+    public ResponseEntity<?> getLinkedReleasesInDependencyNetworkByIndexPath(
+        @Parameter(description = "Project ID", example = "376576")
+        @PathVariable("id") String projectId,
+        @Parameter(description = "Index path", example = "0->1")
+        @RequestParam(value = "path", required = false) String releaseIndexPath
+    ) throws TException {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return new ResponseEntity<>(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (!CommonUtils.isNotNullEmptyOrWhitespace(releaseIndexPath)) {
+            ProjectLink projectLink = projectService.serveLinkedResourcesOfProjectInDependencyNetwork(projectId, false, sw360User);
+            return new ResponseEntity<>(CollectionModel.of(projectLink.getLinkedReleases()), HttpStatus.OK);
+        }
+
+        List<String> indexPath = Arrays.asList(releaseIndexPath.split("->"));
+        try {
+            List<ReleaseLink> releaseLinks = projectService.serveLinkedReleasesInDependencyNetworkByIndexPath(projectId, indexPath, sw360User);
+            CollectionModel<ReleaseLink> resources = CollectionModel.of(releaseLinks);
+            return new ResponseEntity<>(resources, HttpStatus.OK);
+        } catch (SW360Exception exception) {
+            if (exception.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("Requested project not found: " + projectId);
+            }
+            throw new RuntimeException(exception.getWhy());
+        }
     }
 
     private void setAdditionalFieldsToHalResource(Project sw360Project, HalResource<Project> userHalResource) throws TException {
