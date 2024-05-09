@@ -1,31 +1,22 @@
+[//]: # (Copyright Bosch.IO GmbH 2020)
+[//]: # (This program and the accompanying materials are made)
+[//]: # (available under the terms of the Eclipse Public License 2.0)
+[//]: # (which is available at https://www.eclipse.org/legal/epl-2.0/)
+[//]: # (SPDX-License-Identifier: EPL-2.0)
 
----
-name: Bug report
-about: Create a report to help us improve
-labels: bug
----
+> Please provide a summary of your changes here.
+> * Which issue is this pull request belonging to and how is it solving it? (*Refer to issue here*)
+> * Did you add or update any new dependencies that are required for your change?
 
-<!-- Before filling this issue, please read the wiki (https://eclipse.org/sw360)
-and search if the bug do not already exists in the issues (https://github.com//eclipse-sw360/sw360/issues). -->
+Issue: 
 
-### Description
+### Suggest Reviewer
+> You can suggest reviewers here with an @mention.
 
-Please describe your issue in few words here.
+### How To Test?
+> How should these changes be tested by the reviewer?
+> Have you implemented any additional tests?
 
-#### How to reproduce
-
-Describe the bug and list the steps you used when the issue occurred.
-
-#### Screenshots ( if applicable )
-
-Add screenshots to help explain your problem.
-
-### Versions
-
-* Docker version OR
-* Last commit id on main
-
-#### SW360 logs
-
-* With docker through `docker logs sw360`
-* From bare metal / vm install system under /var/log/sw360/sw360.log and /var/log/tomcat/error.log
+### Checklist
+Must:
+- [ ] All related issues are referenced in commit messages and in PR
