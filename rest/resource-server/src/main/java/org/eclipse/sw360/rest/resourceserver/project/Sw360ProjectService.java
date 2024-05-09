@@ -979,5 +979,21 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         // returning default value 7 (days) if variable is not set
         return limit < 1 ? 7 : limit;
     }
-}
 
+    public ProjectLink serveLinkedResourcesOfProjectInDependencyNetwork(String projectId, boolean transitive, User sw360User) throws TException {
+        Project project = getProjectForUserById(projectId, sw360User);
+        final Collection<ProjectLink> linkedProjects = (!transitive)
+                ? SW360Utils.getLinkedProjectsAsFlatList(project, false, new ThriftClients(), log, sw360User)
+                : SW360Utils.getLinkedProjectsWithAllReleasesAsFlatList(project, false, new ThriftClients(), log, sw360User);
+        if (linkedProjects.isEmpty()) {
+            throw new AccessDeniedException(
+                    "Project or its Linked Projects are restricted and / or not accessible");
+        }
+        return new ArrayList<>(linkedProjects).get(0);
+    }
+
+    public List<ReleaseLink> serveLinkedReleasesInDependencyNetworkByIndexPath(String projectId, List<String> indexPath, User sw360User) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.getReleaseLinksOfProjectNetWorkByIndexPath(projectId, indexPath, sw360User);
+    }
+}
