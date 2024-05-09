@@ -32,8 +32,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.security.InvalidParameterException;
 import java.util.HashMap;
@@ -227,7 +229,8 @@ public class Sw360ModerationRequestService {
             log.error("Error in Moderation ", e);
         }
         if (status == RemoveModeratorRequestStatus.LAST_MODERATOR) {
-            throw new InvalidParameterException("You are the last moderator for this request - " +
+            throw new HttpClientErrorException(HttpStatus.CONFLICT,
+                    "You are the last moderator for this request - " +
                     "you are not allowed to unsubscribe.");
         } else if (status == RemoveModeratorRequestStatus.FAILURE) {
             throw new SW360Exception("Failed to remove from moderator list.");
