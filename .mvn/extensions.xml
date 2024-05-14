@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2024. Helio Chissini de Castro.
+    ~
+  ~ This program and the accompanying materials are made
+  ~ available under the terms of the Eclipse Public License 2.0
+  ~ which is available at https://www.eclipse.org/legal/epl-2.0/
+  ~
+  ~ SPDX-License-Identifier: EPL-2.0
+  -->
+
+<extensions xmlns="http://maven.apache.org/EXTENSIONS/1.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/EXTENSIONS/1.0.0 http://maven.apache.org/xsd/core-extensions-1.0.0.xsd">
+
+    <extension>
+        <groupId>me.qoomon</groupId>
+        <artifactId>maven-git-versioning-extension</artifactId>
+        <version>9.6.6</version>
+    </extension>
+
+</extensions>

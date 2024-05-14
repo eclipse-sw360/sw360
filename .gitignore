@@ -67,3 +67,6 @@ tmp/**/*
 
 # DS_Store
 .DS_Store
+
+# Git versioned
+.git-versioned-pom.xml

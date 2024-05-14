@@ -17,7 +17,7 @@
     <parent>
         <artifactId>libraries</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>${revision}</version>
+        <version>${sw360.version}</version>
     </parent>
 
     <name>exporters</name>

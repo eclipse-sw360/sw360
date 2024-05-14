@@ -16,7 +16,7 @@
 
   <groupId>org.eclipse.sw360</groupId>
   <artifactId>sw360</artifactId>
-  <version>${revision}</version>
+  <version>${sw360.version}</version>
   <packaging>pom</packaging>
 
   <name>Eclipse SW360</name>
@@ -39,10 +39,6 @@
       <organizationUrl>https://eclipse.org/sw360</organizationUrl>
     </developer>
   </developers>
-  <scm>
-    <connection>scm:git:https://github.com/eclipse-sw360/sw360</connection>
-    <url>https://github.com/eclipse-sw360/sw360.git</url>
-  </scm>
 
   <modules>
     <module>build-configuration</module>
@@ -61,8 +57,7 @@
   </distributionManagement>
 
   <properties>
-    <revision>18.99.${patchlevel}</revision>
-    <patchlevel>0</patchlevel>
+    <sw360.version>18.99</sw360.version>
     <rest.version>1.0.0</rest.version>
 
     <base.deploy.dir>${session.executionRootDirectory}/deploy</base.deploy.dir>
@@ -643,13 +638,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-scm-plugin</artifactId>
-        <version>1.9.4</version>
-        <configuration>
-          <tag>${project.artifactId}-${project.version}</tag>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

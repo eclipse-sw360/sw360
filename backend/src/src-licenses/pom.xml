@@ -16,7 +16,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-src</artifactId>
-        <version>${revision}</version>
+        <version>${sw360.version}</version>
     </parent>
 
     <artifactId>src-licenses</artifactId>
