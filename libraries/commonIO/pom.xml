@@ -11,8 +11,8 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>libraries</artifactId>
         <groupId>org.eclipse.sw360</groupId>
@@ -20,28 +20,27 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-	<name>commonIO</name>
+    <name>commonIO</name>
     <artifactId>commonIO</artifactId>
     <packaging>jar</packaging>
 
     <properties>
-        <artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
+        <artifact.deploy.dir>${jars.deploy.dir}</artifact.deploy.dir>
     </properties>
 
     <build>
-	<finalName>org.eclipse.sw360.common-io-${project.version}</finalName>
+        <finalName>org.eclipse.sw360.common-io-${project.version}</finalName>
         <plugins>
-            <plugin>
-                <groupId>biz.aQute.bnd</groupId>
-                <artifactId>bnd-maven-plugin</artifactId>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${maven-jar-plugin.version}</version>
                 <configuration>
-			<archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>org.eclipse.sw360.commonIO</mainClass>
+                        </manifest>
                     </archive>
                 </configuration>
             </plugin>
