@@ -36,16 +36,15 @@
 				<version>${maven-source-plugin.version}</version>
 			</plugin>
 			<plugin>
-				<groupId>biz.aQute.bnd</groupId>
-				<artifactId>bnd-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>${maven-jar-plugin.version}</version>
 				<configuration>
 					<archive>
-						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<mainClass>org.eclipse.sw360.importers</mainClass>
+						</manifest>
 					</archive>
 				</configuration>
 			</plugin>
