@@ -138,7 +138,6 @@
     <jquery.treetable.version>3.2.0</jquery.treetable.version>
     <jquery.ui.version>1.12.1</jquery.ui.version>
     <jquery.validation.version>1.19.0</jquery.validation.version>
-    <json.version>20230227</json.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>4.13.2</junit.version>
     <maven-javadoc.version>3.6.2</maven-javadoc.version>
