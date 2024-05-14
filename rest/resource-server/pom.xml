@@ -312,28 +312,6 @@
                             </resources>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>copy-resources2</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/static/mkdocs</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>../../frontend/sw360-portlet/src/documentation</directory>
-                                    <includes>
-                                        <include>index.html</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>
-                                        ../../frontend/sw360-portlet/target/mkdocs/generate-mkdocs</directory>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
