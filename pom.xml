@@ -607,11 +607,6 @@
         </plugin>
 
         <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>buildnumber-maven-plugin</artifactId>
-          <version>${buildnumber-maven-plugin.version}</version>
-        </plugin>
-        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-war-plugin</artifactId>
           <version>${maven-war-plugin.version}</version>
@@ -682,22 +677,6 @@
         <configuration>
           <tag>${project.artifactId}-${project.version}</tag>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
-        <version>1.4</version>
-        <configuration>
-          <shortRevisionLength>7</shortRevisionLength>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>create</goal>
-            </goals>
-            <phase>validate</phase>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
