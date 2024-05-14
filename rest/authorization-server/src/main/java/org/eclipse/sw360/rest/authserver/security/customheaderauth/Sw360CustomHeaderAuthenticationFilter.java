@@ -30,8 +30,8 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import org.springframework.web.filter.GenericFilterBean;
 
 import javax.annotation.PostConstruct;
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 
@@ -251,6 +251,11 @@ public class Sw360CustomHeaderAuthenticationFilter extends GenericFilterBean {
         public Authentication currentUser;
         public String customHeaderEmail;
         public String customHeaderExtId;
+
+        public CustomHeaderAuthRequestDetails() {
+            super(); // Explicitly invoke the constructor of the superclass Object
+            // Add any initialization code here if needed
+        }
     }
 
     private static class CustomHeaderRestRequestDetails extends CustomHeaderAuthRequestDetails {

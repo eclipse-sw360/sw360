@@ -163,7 +163,7 @@
     <thrift.version>0.20.0</thrift.version>
     <tika.version>1.28.5</tika.version>
     <wiremock.version>2.26.0</wiremock.version>
-    <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
+    <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
   </properties>
 
   <dependencyManagement>
@@ -213,7 +213,6 @@
         <artifactId>packageurl-java</artifactId>
         <version>${package-url.version}</version>
       </dependency>
-      <!-- javax.annotation: java 11 compatibility -->
       <dependency>
         <groupId>javax.annotation</groupId>
         <artifactId>javax.annotation-api</artifactId>
@@ -545,12 +544,11 @@
         <version>${springframework.version}</version>
       </dependency>
       <dependency>
-        <groupId>javax.servlet</groupId>
-        <artifactId>javax.servlet-api</artifactId>
-        <version>${javax.servlet-api.version}</version>
+        <groupId>jakarta.servlet</groupId>
+        <artifactId>jakarta.servlet-api</artifactId>
+        <version>${jakarta.servlet-api.version}</version>
         <scope>provided</scope>
-      </dependency>
-
+    </dependency>
     </dependencies>
   </dependencyManagement>
 

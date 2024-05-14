@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 

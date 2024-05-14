@@ -16,7 +16,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import javax.servlet.*;
+import jakarta.servlet.*;
 import java.io.IOException;
 
 @Profile("SECURITY_MOCK")
