@@ -10,81 +10,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 
-#-----------------------------------------------------------------------------------
-# Base image
-# We need use JDK, JRE is not enough as Liferay do runtime changes and require javac
-ARG JAVA_VERSION=11
-ARG UBUNTU_VERSION=jammy
-
-# Use OpenJDK Eclipe Temurin Ubuntu LTS
-FROM eclipse-temurin:$JAVA_VERSION-jdk-$UBUNTU_VERSION as base
-
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US:en
-ENV LC_ALL=en_US.UTF-8
-
-# Set versions as arguments
-ARG LIFERAY_VERSION
-ARG LIFERAY_SOURCE
-
-ENV LIFERAY_HOME=/app/sw360
-ENV LIFERAY_INSTALL=/app/sw360
-
-ARG USERNAME=sw360
-ARG USER_ID=1000
-ARG USER_GID=$USER_ID
-ARG HOMEDIR=/workspace
-ENV HOME=$HOMEDIR
-
-# Base system
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update -qq \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    dos2unix \
-    gnupg2 \
-    iproute2 \
-    iputils-ping \
-    less \
-    libarchive-tools \
-    locales \
-    lsof \
-    netbase \
-    openssl \
-    procps \
-    tzdata \
-    sudo \
-    unzip \
-    zip \
-    && rm -rf /var/lib/apt/lists/*
-
-# Prepare system for non-priv user
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd \
-    --uid $USER_ID \
-    --gid $USER_GID \
-    --shell /bin/bash \
-    --home-dir $HOMEDIR \
-    --create-home $USERNAME
-
-# sudo support
-RUN echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME
-
-# Unpack liferay as sw360 and link current tomcat version
-# to tomcat to make future proof updates
-RUN --mount=type=cache,target=/var/cache/deps \
-    mkdir -p /app/sw360 \
-    && if [ ! -f /var/cache/deps/"$LIFERAY_SOURCE" ]; then \
-    curl -o /var/cache/deps/"$LIFERAY_SOURCE" -JL https://github.com/liferay/liferay-portal/releases/download/"$LIFERAY_VERSION"/"$LIFERAY_SOURCE"; \
-    fi \
-    && tar -xzf /var/cache/deps/"$LIFERAY_SOURCE" -C /app/sw360 --strip-components=1 \
-    && chown -R $USERNAME:$USERNAME /app \
-    && ln -s /app/sw360/tomcat-* /app/sw360/tomcat
-
-WORKDIR /app/sw360
-ENTRYPOINT [ "/bin/bash" ]
+ARG TOMCAT_VERSION=10-jre17-temurin-jammy
 
 #--------------------------------------------------------------------------------------------------
 # Thrift
@@ -113,19 +39,15 @@ RUN --mount=type=tmpfs,target=/build \
     --mount=type=cache,target=/var/cache/deps \
     ./build_thrift.sh
 
-FROM scratch AS thrift
+FROM scratch AS localthrift
 COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
 
 #--------------------------------------------------------------------------------------------------
 # SW360 Build Test image
-# Base image to build with test
 
-FROM maven:3-eclipse-temurin-11 as sw360test
+FROM maven:3-eclipse-temurin-17 as sw360test
 
-COPY --from=thrift /usr/local/bin/thrift /usr/bin
-
-# Thanks to Liferay, we need fix the java version
-ENV _JAVA_OPTIONS='-Djdk.util.zip.disableZip64ExtraFieldValidation=true'
+COPY --from=localthrift /usr/local/bin/thrift /usr/bin
 
 SHELL ["/bin/bash", "-c"]
 
@@ -148,7 +70,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-FROM maven:3.9-eclipse-temurin-11 as sw360build
+FROM maven:3-eclipse-temurin-17 as sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -178,7 +100,7 @@ COPY scripts/docker-config/set_proxy.sh /usr/local/bin/setup_maven_proxy
 RUN chmod a+x /usr/local/bin/setup_maven_proxy \
     && setup_maven_proxy
 
-COPY --from=thrift /usr/local/bin/thrift /usr/bin
+COPY --from=localthrift /usr/local/bin/thrift /usr/bin
 
 RUN --mount=type=bind,target=/build/sw360,rw \
     --mount=type=cache,target=/root/.m2 \
@@ -187,7 +109,6 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     && set -a \
     && source /run/secrets/sw360 \
     && envsubst < scripts/docker-config/couchdb.properties.template | tee scripts/docker-config/etc_sw360/couchdb.properties \
-    && envsubst < scripts/docker-config/couchdb-lucene.ini | tee third-party/couchdb-lucene/src/main/resources/couchdb-lucene.ini \
     && set +a \
     && cp scripts/docker-config/etc_sw360/couchdb.properties build-configuration/resources/ \
     && cp -a scripts/docker-config/etc_sw360 /etc/sw360 \
@@ -199,7 +120,6 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     -Dsurefire.failIfNoSpecifiedTests=false \
     -Dbase.deploy.dir=. \
     -Djars.deploy.dir=/sw360_deploy \
-    -Dliferay.deploy.dir=/sw360_deploy \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
     -Drest.deploy.dir=/sw360_tomcat_webapps \
     -Dhelp-docs=true
@@ -218,50 +138,26 @@ COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 
 #--------------------------------------------------------------------------------------------------
 # Runtime image
-FROM base AS sw360
+FROM tomcat:$TOMCAT_VERSION
 
-ARG DEBUG
-ARG USERNAME=sw360
-
-WORKDIR /app/
-
-# Make sw360 dir owned byt the user
-RUN chown -R $USERNAME:$USERNAME /app/sw360
-
-USER $USERNAME
+ARG DEBUG=1
+ARG TOMCAT_DIR=/usr/local/tomcat
 
 # Modified etc
-COPY --chown=$USERNAME:$USERNAME --from=binaries /etc/sw360 /etc/sw360
-# Downloaded jar dependencies
-COPY --chown=$USERNAME:$USERNAME --from=binaries /sw360_deploy/* /app/sw360/deploy
+COPY --from=binaries /etc/sw360 /etc/sw360
 # Streamlined wars
-COPY --chown=$USERNAME:$USERNAME --from=binaries /sw360_tomcat_webapps/slim-wars/*.war /app/sw360/tomcat/webapps/
+COPY --from=binaries /sw360_tomcat_webapps/slim-wars/*.war ${TOMCAT_DIR}/webapps/
 # org.eclipse.sw360 jar artifacts
-COPY --chown=$USERNAME:$USERNAME --from=binaries /sw360_tomcat_webapps/*.jar /app/sw360/tomcat/webapps/
+COPY --from=binaries /sw360_tomcat_webapps/*.jar ${TOMCAT_DIR}/webapps/
 # Shared streamlined jar libs
-COPY --chown=$USERNAME:$USERNAME --from=binaries /sw360_tomcat_webapps/libs/*.jar /app/sw360/tomcat/shared/
-
-# Make catalina understand shared directory
-RUN dos2unix /app/sw360/tomcat/conf/catalina.properties \
-    && sed -i "s,shared.loader=,shared.loader=/app/sw360/tomcat/shared/*.jar,g" /app/sw360/tomcat/conf/catalina.properties
-
-# Copy liferay/sw360 config files
-COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/portal-ext.properties /app/sw360/portal-ext.properties
-COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/entry_point.sh /app/entry_point.sh
+COPY --from=binaries /sw360_tomcat_webapps/libs/*.jar ${TOMCAT_DIR}/lib/
 
 # Tomcat manager for debugging portlets
-COPY --chown=$USERNAME:$USERNAME --from=tomcat:9.0.56-jdk11 /usr/local/tomcat/webapps.dist/manager /app/sw360/tomcat/webapps/manager
 RUN --mount=type=bind,target=/build/sw360,rw \
     if [  DEBUG ]; then \
-    cp /etc/sw360/manager/tomcat-users.xml /app/sw360/tomcat/conf/tomcat-users.xml ; \
-    cp /build/sw360/scripts/docker-config/manager/context.xml /app/sw360/tomcat/webapps/manager/META-INF/context.xml ; \
-    else \
-    mv /app/sw360/tomcat/webapps/manager /app/sw360/tomcat/webapps/manager.disabled ; \
+    mv ${TOMCAT_DIR}/webapps.dist/manager ${TOMCAT_DIR}/webapps/manager \
+    cp /etc/sw360/manager/tomcat-users.xml ${TOMCAT_DIR}/conf/tomcat-users.xml ; \
+    cp /build/sw360/scripts/docker-config/manager/context.xml ${TOMCAT_DIR}/webapps/manager/META-INF/context.xml ; \
     fi
 
-STOPSIGNAL SIGINT
-
-WORKDIR /app/sw360
-
-ENTRYPOINT [ "/app/entry_point.sh" ]
-
+WORKDIR ${TOMCAT_DIR}
