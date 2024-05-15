@@ -930,7 +930,15 @@ include::{snippets}/should_document_import_cyclonedx/http-response.adoc[]
 [[resources-import-sbom-on-project]]
 ==== Import SBOM on project
 
-A `POST` request is used to import a SBOM on a project. Currently only CycloneDX(.xml/.json) files are supported.
+A `POST` request is used to import a SBOM on a project. The project’s releases and packages will be replaced with the latest data from the SBOM. Currently only CycloneDX(.xml/.json) files are supported.
+
+[red]#Request parameter#
+|===
+|Parameter |Description
+
+|doNotReplacePackageAndRelease
+|When importing an SBOM into an existing project, the project’s releases and packages will be replaced with the latest data from the SBOM. Use the parameter `doNotReplacePackageAndRelease=true` to import new data without replacing the existing releases and packages.
+|===
 
 [red]#Request body#
 |===

@@ -1150,9 +1150,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      * @return RequestSummary
      * @throws TException
      */
-    public RequestSummary importCycloneDX(User user, String attachmentContentId, String projectId) throws TException {
+    public RequestSummary importCycloneDX(User user, String attachmentContentId, String projectId, boolean doNotReplacePackageAndRelease) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.importCycloneDxFromAttachmentContent(user, attachmentContentId, CommonUtils.nullToEmptyString(projectId));
+        return sw360ProjectClient.importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(user, attachmentContentId, CommonUtils.nullToEmptyString(projectId), doNotReplacePackageAndRelease);
     }
 
     /**

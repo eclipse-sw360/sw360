@@ -575,7 +575,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.loadPreferredClearingDateLimit()).willReturn(Integer.valueOf(7));
 
         given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
-        given(this.projectServiceMock.importCycloneDX(any(),any(),any())).willReturn(requestSummaryForCycloneDX);
+        given(this.projectServiceMock.importCycloneDX(any(),any(),any(),anyBoolean())).willReturn(requestSummaryForCycloneDX);
         given(this.sw360ReportServiceMock.getDocumentName(any(), any())).willReturn(projectName);
         given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any())).willReturn(ByteBuffer.allocate(10000));
         given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
@@ -2504,6 +2504,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/projects/"+project.getId()+"/import/SBOM")
                 .content(file.getBytes())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
+                .queryParam("doNotReplacePackageAndRelease", "false")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
