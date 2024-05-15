@@ -144,7 +144,7 @@ public class CycloneDxBOMImporter {
     }
 
     @SuppressWarnings("unchecked")
-    public RequestSummary importFromBOM(InputStream inputStream, AttachmentContent attachmentContent, String projectId, User user) {
+    public RequestSummary importFromBOM(InputStream inputStream, AttachmentContent attachmentContent, String projectId, User user, boolean doNotReplacePackageAndRelease) {
         RequestSummary requestSummary = new RequestSummary();
         Map<String, String> messageMap = new HashMap<>();
         requestSummary.setRequestStatus(RequestStatus.FAILURE);
@@ -182,15 +182,14 @@ public class CycloneDxBOMImporter {
 
             if (!IS_PACKAGE_PORTLET_ENABLED) {
                 vcsToComponentMap.put("", components);
-                requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent);
+                requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent, doNotReplacePackageAndRelease);
             } else {
                 vcsToComponentMap = getVcsToComponentMap(components);
                 if (componentsCount == vcsCount) {
 
-                    requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent);
+                    requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent, doNotReplacePackageAndRelease);
                 } else if (componentsCount > vcsCount) {
-
-                    requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent);
+                    requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent, doNotReplacePackageAndRelease);
 
                     if (requestSummary.requestStatus.equals(RequestStatus.SUCCESS)) {
 
@@ -355,7 +354,7 @@ public class CycloneDxBOMImporter {
     }
 
     public RequestSummary importSbomAsProject(org.cyclonedx.model.Component compMetadata,
-            Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap, String projectId, AttachmentContent attachmentContent)
+            Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap, String projectId, AttachmentContent attachmentContent, boolean doNotReplacePackageAndRelease)
                     throws SW360Exception {
         final RequestSummary summary = new RequestSummary();
         summary.setRequestStatus(RequestStatus.FAILURE);
@@ -408,7 +407,7 @@ public class CycloneDxBOMImporter {
         }
 
         if (IS_PACKAGE_PORTLET_ENABLED) {
-            messageMap = importAllComponentsAsPackages(vcsToComponentMap, project);
+            messageMap = importAllComponentsAsPackages(vcsToComponentMap, project, doNotReplacePackageAndRelease);
         } else {
             messageMap = importAllComponentsAsReleases(vcsToComponentMap, project);
         }
@@ -538,8 +537,7 @@ public class CycloneDxBOMImporter {
         return messageMap;
     }
 
-    private Map<String, String> importAllComponentsAsPackages(Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap, Project project) {
-
+    private Map<String, String> importAllComponentsAsPackages(Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap, Project project, boolean doNotReplacePackageAndRelease) throws SW360Exception {
         final var countMap = new HashMap<String, Integer>();
         final Set<String> duplicateComponents = new HashSet<>();
         final Set<String> duplicateReleases = new HashSet<>();
@@ -547,9 +545,16 @@ public class CycloneDxBOMImporter {
         final Set<String> invalidReleases = new HashSet<>();
         final Set<String> invalidPackages = new HashSet<>();
         final Map<String, ProjectReleaseRelationship> releaseRelationMap = CommonUtils.isNullOrEmptyMap(project.getReleaseIdToUsage()) ? new HashMap<>() : project.getReleaseIdToUsage();
+        final Set<String> projectPkgIds = CommonUtils.isNullOrEmptyCollection(project.getPackageIds()) ? new HashSet<>() : project.getPackageIds();
         countMap.put(REL_CREATION_COUNT_KEY, 0); countMap.put(REL_REUSE_COUNT_KEY, 0);
         countMap.put(PKG_CREATION_COUNT_KEY, 0); countMap.put(PKG_REUSE_COUNT_KEY, 0);
         int relCreationCount = 0, relReuseCount = 0, pkgCreationCount = 0, pkgReuseCount = 0;
+
+        if (!doNotReplacePackageAndRelease) {
+            releaseRelationMap.clear();
+            projectPkgIds.clear();
+            log.info("Cleared existing releases and packages for project: " + project.getName());
+        }
 
         for (Map.Entry<String, List<org.cyclonedx.model.Component>> entry : vcsToComponentMap.entrySet()) {
             Component comp = createComponent(entry.getKey());

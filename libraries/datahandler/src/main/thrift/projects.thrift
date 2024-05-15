@@ -611,6 +611,12 @@ service ProjectService {
     RequestSummary importCycloneDxFromAttachmentContent(1: User user, 2: string attachmentContentId, 3: string projectId) throws (1: SW360Exception exp);
 
     /**
+    * Parse a CycloneDx SBoM file (XML or JSON) during re-import on a project and write the information to SW360 as Project / Component / Release / Package
+    * with replaceReleaseAndPackageFlag
+    */
+    RequestSummary importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(1: User user, 2: string attachmentContentId, 3: string projectId, 4: bool doNotReplacePackageAndRelease) throws (1: SW360Exception exp);
+
+    /**
      * Export a CycloneDx SBoM file (XML or JSON) for a Project
      */
     RequestSummary exportCycloneDxSbom(1: string projectId, 2: string bomType, 3: bool includeSubProjReleases, 4: User user) throws (1: SW360Exception exp);

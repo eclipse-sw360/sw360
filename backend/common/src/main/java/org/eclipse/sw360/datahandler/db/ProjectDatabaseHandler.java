@@ -1853,6 +1853,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestSummary importCycloneDxFromAttachmentContent(User user, String attachmentContentId, String projectId) throws SW360Exception {
+        return importCycloneDxFromAttachmentContent(user, attachmentContentId, projectId, false);
+    }
+
+    public RequestSummary importCycloneDxFromAttachmentContent(User user, String attachmentContentId, String projectId, boolean doNotReplacePackageAndRelease) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
@@ -1861,7 +1865,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     .unsafeGetAttachmentStream(attachmentContent)) {
                 final CycloneDxBOMImporter cycloneDxBOMImporter = new CycloneDxBOMImporter(this,
                         componentDatabaseHandler, packageDatabaseHandler, attachmentConnector, user);
-                return cycloneDxBOMImporter.importFromBOM(inputStream, attachmentContent, projectId, user);
+                return cycloneDxBOMImporter.importFromBOM(inputStream, attachmentContent, projectId, user, doNotReplacePackageAndRelease);
             }
         } catch (IOException e) {
             log.error("Error while importing / parsing CycloneDX SBOM! ", e);

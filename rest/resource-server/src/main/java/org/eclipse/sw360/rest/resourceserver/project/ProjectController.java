@@ -2010,7 +2010,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
             projectId = requestSummary.getMessage();
         } else {
-            requestSummary = projectService.importCycloneDX(sw360User, attachment.getAttachmentContentId(), "");
+            requestSummary = projectService.importCycloneDX(sw360User, attachment.getAttachmentContentId(), "", true);
 
             if (requestSummary.getRequestStatus() == RequestStatus.FAILURE) {
                 return new ResponseEntity<String>(requestSummary.getMessage(), HttpStatus.BAD_REQUEST);
@@ -2064,7 +2064,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable(value = "id", required = true) String id,
             @Parameter(description = "SBOM file")
-            @RequestBody MultipartFile file
+            @RequestBody MultipartFile file,
+            @Parameter(description = "Don't overwrite existing project releases and packages while re-importing SBOM")
+            @RequestParam(value = "doNotReplacePackageAndRelease", required = false) boolean doNotReplacePackageAndRelease
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Attachment attachment = null;
@@ -2079,7 +2081,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throw new RuntimeException("failed to upload attachment", e);
         }
 
-        requestSummary = projectService.importCycloneDX(sw360User, attachment.getAttachmentContentId(), id);
+        requestSummary = projectService.importCycloneDX(sw360User, attachment.getAttachmentContentId(), id, doNotReplacePackageAndRelease);
 
         if (requestSummary.getRequestStatus() == RequestStatus.FAILURE) {
             return new ResponseEntity<String>(requestSummary.getMessage(), HttpStatus.BAD_REQUEST);
