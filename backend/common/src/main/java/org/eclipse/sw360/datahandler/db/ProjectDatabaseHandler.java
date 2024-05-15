@@ -828,7 +828,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                  */
                 for (Map.Entry<String, Set<String>> entry : releaseIdToPackageIdsMap.entrySet()) {
                     if (targetMap.containsKey(entry.getKey()) &&
-                            CommonUtils.isNotEmpty(CommonUtils.nullToEmptySet(Sets.intersection(entry.getValue(), unlinkedPacakgeIds)))) {
+                            !CommonUtils.isNotEmpty(CommonUtils.nullToEmptySet(Sets.intersection(entry.getValue(), unlinkedPacakgeIds)))) {
                         targetMap.remove(entry.getKey());
                     }
                 }
@@ -1845,6 +1845,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestSummary importCycloneDxFromAttachmentContent(User user, String attachmentContentId, String projectId) throws SW360Exception {
+        return importCycloneDxFromAttachmentContent(user, attachmentContentId, projectId, true);
+    }
+
+    public RequestSummary importCycloneDxFromAttachmentContent(User user, String attachmentContentId, String projectId, boolean replacePackageFlag) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
@@ -1853,7 +1857,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     .unsafeGetAttachmentStream(attachmentContent)) {
                 final CycloneDxBOMImporter cycloneDxBOMImporter = new CycloneDxBOMImporter(this,
                         componentDatabaseHandler, packageDatabaseHandler, attachmentConnector, user);
-                return cycloneDxBOMImporter.importFromBOM(inputStream, attachmentContent, projectId, user);
+                return cycloneDxBOMImporter.importFromBOM(inputStream, attachmentContent, projectId, user, replacePackageFlag);
             }
         } catch (IOException e) {
             log.error("Error while importing / parsing CycloneDX SBOM! ", e);
