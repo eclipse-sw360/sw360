@@ -801,6 +801,14 @@ include::{snippets}/should_document_import_cyclonedx/http-response.adoc[]
 
 A `POST` request is used to import a SBOM on a project. Currently only CycloneDX(.xml/.json) files are supported.
 
+[red]#Request parameter#
+|===
+|Parameter |Description
+
+|replacePackageFlag
+|When true, it replaces existing packages and release with the latest versions; when false, it adds new packages alongside existing versions without replacing them.
+|===
+
 [red]#Request body#
 |===
 Type |Description
