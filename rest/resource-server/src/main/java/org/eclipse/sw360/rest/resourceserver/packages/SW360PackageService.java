@@ -142,6 +142,26 @@ public class SW360PackageService {
         return sw360PackageClient.searchPackagesWithFilter(searchQuery, queryMap);
     }
 
+    public List<Package> searchPackageByName(String name) throws TException {
+        final PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        return sw360PackageClient.searchByName(name);
+    }
+
+    public List<Package> searchByPackageManager(String pkgManager) throws TException {
+        final PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        return sw360PackageClient.searchByPackageManager(pkgManager);
+    }
+
+    public List<Package> searchPackageByVersion(String version) throws TException {
+        final PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        return sw360PackageClient.searchByVersion(version);
+    }
+
+    public List<Package> searchPackageByPurl(String purl) throws TException {
+        final PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        return sw360PackageClient.searchByPurl(purl);
+    }
+
     public int getTotalPackagesCounts() throws TException {
         PackageService.Iface sw360PackageClient = getThriftPackageClient();
         return sw360PackageClient.getTotalPackagesCount();

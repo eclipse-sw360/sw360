@@ -1,8 +1,8 @@
 /*
  * Copyright Siemens Healthineers GmBH, 2023. Part of the SW360 Portal Project.
  *
- * This program and the accompanying materials are made 
- * available under the terms of the Eclipse Public License 2.0 
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
@@ -414,6 +414,18 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return duplicates.size() > 0;
     }
 
+    public List<Package> searchByName(String name) {
+        return packageRepository.searchByName(name);
+    }
+
+    public List<Package> searchByVersion(String version) {
+        return packageRepository.searchByVersion(version);
+    }
+
+    public List<Package> searchByPackageManager(String packageManager) {
+        return packageRepository.searchByPackageManager(packageManager);
+    }
+
     private List<Package> getPackageByNameAndVersion(String pkgName, String pkgVersion) {
         if (isNullEmptyOrWhitespace(pkgName)) {
             return Collections.emptyList();
@@ -421,7 +433,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return packageRepository.searchByNameAndVersion(pkgName, pkgVersion, true);
     }
 
-    private List<Package> getPackageByPurl(String purl) {
+    public List<Package> getPackageByPurl(String purl) {
         if (isNullEmptyOrWhitespace(purl)) {
             return Collections.emptyList();
         }
