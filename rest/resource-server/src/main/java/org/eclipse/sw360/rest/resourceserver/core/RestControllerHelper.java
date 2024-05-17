@@ -65,22 +65,14 @@ import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationRequest
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
 import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
-import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
 import org.jetbrains.annotations.NotNull;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.Quadratic;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.resourceserver.obligation.ObligationController;
 import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
-import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
-import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
@@ -100,8 +92,6 @@ import org.springframework.hateoas.server.core.EmbeddedWrapper;
 import org.springframework.hateoas.server.core.EmbeddedWrappers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -316,6 +306,17 @@ public class RestControllerHelper<T> {
             sw360User = new User();
             sw360User.setId(emailId).setEmail(emailId);
             LOGGER.debug("Could not get user object from backend with email: " + emailId);
+        }
+        return sw360User;
+    }
+
+    public User getUserByEmailOrNull(String emailId) {
+        User sw360User;
+        try {
+            sw360User = userService.getUserByEmail(emailId);
+        } catch (RuntimeException e) {
+            LOGGER.debug("Could not get user object from backend with email: " + emailId);
+            return null;
         }
         return sw360User;
     }
@@ -1484,5 +1485,10 @@ public class RestControllerHelper<T> {
             HalResource<License> licenseHalResource = addEmbeddedLicense(licenseId);
             halRelease.addEmbeddedResource("sw360:otherLicenses", licenseHalResource);
         }
+    }
+
+    public String getBaseUrl(HttpServletRequest request) {
+        String requestURL = request.getRequestURL().toString();
+        return requestURL.substring(0, requestURL.indexOf(request.getRequestURI()));
     }
 }

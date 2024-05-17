@@ -253,4 +253,20 @@ public class Sw360ModerationRequestService {
         getThriftModerationClient().setInProgress(request.getId(), reviewer);
         return ModerationState.INPROGRESS;
     }
+
+    /**
+     * Get open critical CR count by user department
+     *
+     * @param department Department of user
+     * @return Count of open critical CRs
+     * @throws TException Throws exception in case of errors.
+     */
+    public Integer getOpenCriticalCrCountByGroup(String group) {
+        try {
+            return getThriftModerationClient().getOpenCriticalCrCountByGroup(group);
+        } catch (TException e) {
+            log.error("Error in getting open critical CR count by group: ", e);
+            return 0;
+        }
+    }
 }

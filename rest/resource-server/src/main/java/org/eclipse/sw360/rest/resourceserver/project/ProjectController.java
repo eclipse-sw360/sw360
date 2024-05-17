@@ -49,6 +49,11 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestType;
 import org.eclipse.sw360.datahandler.thrift.MainlineState;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
@@ -82,6 +87,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
@@ -94,6 +100,7 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
+import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
 import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
@@ -134,6 +141,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -219,6 +227,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final Sw360ComponentService componentService;
+
+    @NonNull
+    private final Sw360ModerationRequestService moderationRequestService;
 
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
@@ -1572,7 +1583,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 		ObjectMapper oMapper = new ObjectMapper();
 		List<Map<String, Object>> modifiedList = new ArrayList<>();
 		for (EntityModel<Release> rel : releaseList) {
-			Map<String, Object> relMap = (Map<String, Object>) oMapper.convertValue(rel, Map.class);
+			Map<String, Object> relMap = oMapper.convertValue(rel, Map.class);
 			if (relMap.get(ATTACHMENTS) != null) {
 				for (Object attach : (ArrayList<?>) relMap.get(ATTACHMENTS)) {
 					Map<String, Object> attachmentMap = (Map<String, Object>) attach;
@@ -1706,8 +1717,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<String, ProjectReleaseRelationship> releaseIdToUsages = sw360Project.getReleaseIdToUsage();
         Map<String, Object> projectMap = oMapper.convertValue(sw360Project, Map.class);
         Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("linkedProjects", (Map<String, Object>) projectMap.get("linkedProjects"));
-        resultMap.put("releaseIdToUsage", (Map<String, Object>) projectMap.get("releaseIdToUsage"));
+        resultMap.put("linkedProjects", projectMap.get("linkedProjects"));
+        resultMap.put("releaseIdToUsage", projectMap.get("releaseIdToUsage"));
 
         Map<String, Object> releaseIdToUsage = (Map<String, Object>) resultMap.get("releaseIdToUsage");
         final ImmutableSet<String> fieldsToRemove = ImmutableSet.of("setCreatedBy", "setCreatedOn", "setComment", "setReleaseRelation", "setMainlineState");
@@ -2366,7 +2377,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
         return new ResponseEntity<>("Failed to add/update obligation for project", HttpStatus.NOT_FOUND);
 	}
-        
+
     @Operation(
             description = "Get summary and administration page of project tab.",
             tags = {"Projects"}
@@ -2577,5 +2588,84 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 releaseNode.setCreateBy(sw360User.getEmail());
             }
         }
+    }
+
+    private ClearingRequest convertToClearingRequest(Map<String, Object> requestBody) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        ClearingRequest clearingRequest = mapper.convertValue(requestBody, ClearingRequest.class);
+        return clearingRequest;
+    }
+
+    /**
+     * Creates a clearing request for a project.
+     *
+     * @param id          The project ID.
+     * @param reqBodyMap  The clearing request
+     * @return            The response entity containing the result of the operation.
+     * @throws TException If an error occurs during the operation.
+     */
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Create a clearing request for a project.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/clearingRequest", method = RequestMethod.POST)
+    public ResponseEntity<?> createClearingRequest(
+            @Parameter(description = "Project ID", example = "376576")
+            @PathVariable("id") String id,
+            @Parameter(description = "Clearing request",
+                    schema = @Schema(implementation = ClearingRequest.class))
+            @RequestBody Map<String, Object> reqBodyMap,
+            HttpServletRequest request
+    ) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Project sw360Project = projectService.getProjectForUserById(id, user);
+        ClearingRequest clearingRequest = convertToClearingRequest(reqBodyMap);
+        clearingRequest.setProjectId(id);
+        clearingRequest.setRequestingUser(user.getEmail());
+        clearingRequest.setClearingState(ClearingRequestState.NEW);
+
+        if (clearingRequest.getRequestingUserComment() == null) {
+            clearingRequest.setRequestingUserComment("");
+        }
+
+        if (clearingRequest.getClearingType() == null) {
+            return new ResponseEntity<String>("clearingType is a mandatory field. Possible values are "
+                     +Arrays.asList(ClearingRequestType.values()), HttpStatus.BAD_REQUEST);
+         }
+
+        Integer criticalCount = moderationRequestService.getOpenCriticalCrCountByGroup(user.getDepartment());
+        clearingRequest.setPriority(criticalCount > 1 ? null : clearingRequest.getPriority());
+        Integer dateLimit = projectService.loadPreferredClearingDateLimit();
+        dateLimit = (ClearingRequestPriority.CRITICAL.equals(clearingRequest.getPriority()) && criticalCount < 2) ? 0 : (dateLimit < 1) ? 7 : dateLimit;
+        if (!SW360Utils.isValidDate(clearingRequest.getRequestedClearingDate(), DateTimeFormatter.ISO_LOCAL_DATE, Long.valueOf(dateLimit))) {
+            log.warn("Invalid requested clearing date: " + clearingRequest.getRequestedClearingDate() + " is entered, by user: "+ user.getEmail());
+            return new ResponseEntity<String>("Invalid clearing date requested", HttpStatus.BAD_REQUEST);
+        }
+
+        if (clearingRequest.getClearingTeam() != null) {
+            User clearingTeam = restControllerHelper.getUserByEmailOrNull(clearingRequest.getClearingTeam());
+            if (clearingTeam == null) {
+                return new ResponseEntity<String>("clearingTeam is not a valid user", HttpStatus.BAD_REQUEST);
+            }
+        }
+        String baseURL = restControllerHelper.getBaseUrl(request);
+        AddDocumentRequestSummary addDocumentRequestSummary = projectService.createClearingRequest(clearingRequest, user, baseURL, id);
+
+        if (addDocumentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
+            return new ResponseEntity<String>(addDocumentRequestSummary.getMessage(), HttpStatus.CONFLICT);
+        } else if (addDocumentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.FAILURE) {
+            return new ResponseEntity<String>(addDocumentRequestSummary.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+        clearingRequest.setId(addDocumentRequestSummary.getId());
+
+        URI location = ServletUriComponentsBuilder
+            .fromCurrentRequest().path("/{id}")
+            .buildAndExpand(clearingRequest.getId()).toUri();
+
+        HalResource<ClearingRequest> halResource = new HalResource<>(clearingRequest);
+
+        return ResponseEntity.created(location).body(halResource);
     }
 }
