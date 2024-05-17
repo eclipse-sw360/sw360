@@ -30,9 +30,13 @@ import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.moderation.DocumentType;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -58,6 +62,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.function.Function;
 
 import static org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService.isOpenModerationRequest;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -123,7 +128,8 @@ public class ModerationRequestController implements RepresentationModelProcessor
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
-        ModerationRequest moderationRequest = sw360ModerationRequestService.getModerationRequestById(id);
+        ModerationRequest moderationRequest = filterModerationRequestNoDuplicates(
+                sw360ModerationRequestService.getModerationRequestById(id));
         HalResource<ModerationRequest> halModerationRequest = createHalModerationRequestWithAllDetails(moderationRequest,
                 sw360User);
         HttpStatus status = halModerationRequest.getContent() == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
@@ -331,7 +337,15 @@ public class ModerationRequestController implements RepresentationModelProcessor
                 request, pageable, moderationRequests, SW360Constants.TYPE_MODERATION, totalCount);
 
         List<EntityModel<ModerationRequest>> moderationRequestResources = new ArrayList<>();
-        paginationResult.getResources().forEach(m -> addModerationRequest(m, allDetails, moderationRequestResources));
+        paginationResult.getResources().forEach(m -> {
+            ModerationRequest filteredModerationRequest;
+            if (allDetails) {
+                filteredModerationRequest = filterModerationRequestNoDuplicates(m);
+            } else {
+                filteredModerationRequest = m;
+            }
+            addModerationRequest(filteredModerationRequest, allDetails, moderationRequestResources);
+        });
 
         CollectionModel<ModerationRequest> resources;
         if (moderationRequestResources.isEmpty()) {
@@ -341,5 +355,122 @@ public class ModerationRequestController implements RepresentationModelProcessor
         }
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
+    }
+
+    /**
+     * Filter moderation request to remove duplicate additions and deletions data.
+     * @param moderationRequest Moderation request to filter
+     * @return Filtered moderation request
+     */
+    private @NotNull ModerationRequest filterModerationRequestNoDuplicates(@NotNull ModerationRequest moderationRequest) {
+        ModerationRequest filteredModerationRequest = new ModerationRequest(moderationRequest);
+        if (filteredModerationRequest.getProjectAdditions() != null &&
+                filteredModerationRequest.getProjectDeletions() != null) {
+            handleDuplicates(
+                    filteredModerationRequest, ModerationRequest::getProjectAdditions,
+                    ModerationRequest::getProjectDeletions, filteredModerationRequest::setProjectAdditions,
+                    filteredModerationRequest::setProjectDeletions, Project._Fields.values(),
+                    Project._Fields.ID
+            );
+        }
+        if (filteredModerationRequest.getReleaseAdditions() != null &&
+                filteredModerationRequest.getReleaseDeletions() != null) {
+            handleDuplicates(
+                    filteredModerationRequest, ModerationRequest::getReleaseAdditions,
+                    ModerationRequest::getReleaseDeletions, filteredModerationRequest::setReleaseAdditions,
+                    filteredModerationRequest::setReleaseDeletions, Release._Fields.values(),
+                    Release._Fields.ID
+            );
+        }
+        if (filteredModerationRequest.getComponentAdditions() != null &&
+                filteredModerationRequest.getComponentDeletions() != null) {
+            handleDuplicates(
+                    filteredModerationRequest, ModerationRequest::getComponentAdditions,
+                    ModerationRequest::getComponentDeletions, filteredModerationRequest::setComponentAdditions,
+                    filteredModerationRequest::setComponentDeletions, Component._Fields.values(),
+                    Component._Fields.ID
+            );
+        }
+        if (filteredModerationRequest.getLicenseAdditions() != null &&
+                filteredModerationRequest.getLicenseDeletions() != null) {
+            handleDuplicates(
+                    filteredModerationRequest, ModerationRequest::getLicenseAdditions,
+                    ModerationRequest::getLicenseDeletions, filteredModerationRequest::setLicenseAdditions,
+                    filteredModerationRequest::setLicenseDeletions, License._Fields.values(),
+                    License._Fields.ID
+            );
+        }
+        if (filteredModerationRequest.getPackageInfoAdditions() != null &&
+                filteredModerationRequest.getPackageInfoDeletions() != null) {
+            handleDuplicates(
+                    filteredModerationRequest, ModerationRequest::getPackageInfoAdditions,
+                    ModerationRequest::getPackageInfoDeletions, filteredModerationRequest::setPackageInfoAdditions,
+                    filteredModerationRequest::setPackageInfoDeletions, PackageInformation._Fields.values(),
+                    PackageInformation._Fields.ID
+            );
+        }
+        if (filteredModerationRequest.getSPDXDocumentAdditions() != null &&
+                filteredModerationRequest.getSPDXDocumentDeletions() != null) {
+            handleDuplicates(
+                    filteredModerationRequest, ModerationRequest::getSPDXDocumentAdditions,
+                    ModerationRequest::getSPDXDocumentDeletions, filteredModerationRequest::setSPDXDocumentAdditions,
+                    filteredModerationRequest::setSPDXDocumentDeletions, SPDXDocument._Fields.values(),
+                    SPDXDocument._Fields.ID
+            );
+        }
+        if (filteredModerationRequest.getDocumentCreationInfoAdditions() != null &&
+                filteredModerationRequest.getDocumentCreationInfoDeletions() != null) {
+            handleDuplicates(
+                    filteredModerationRequest, ModerationRequest::getDocumentCreationInfoAdditions,
+                    ModerationRequest::getDocumentCreationInfoDeletions,
+                    filteredModerationRequest::setDocumentCreationInfoAdditions,
+                    filteredModerationRequest::setDocumentCreationInfoDeletions,
+                    DocumentCreationInformation._Fields.values(),
+                    DocumentCreationInformation._Fields.ID
+            );
+        }
+        return filteredModerationRequest;
+    }
+
+    /**
+     * Go through all fields and set null if values are duplicate in additions and deletions. The function will ignore
+     * the field with idField.
+     * @param moderationRequest Moderation request to filter
+     * @param getAddition       Function to get additions data in MR
+     * @param getDeletion       Function to get deletions data in MR
+     * @param setAddition       Function to set additions data in MR
+     * @param setDeletion       Function to set deletions data in MR
+     * @param fields            Fields of the object
+     * @param idField           Field to ignore
+     * @param <T>               Type of object
+     * @param <F>               Type of field
+     */
+    private <T extends org.apache.thrift.TBase<T, F>, F extends org.apache.thrift.TFieldIdEnum> void handleDuplicates(
+            @NotNull ModerationRequest moderationRequest,
+            @NotNull Function<ModerationRequest, T> getAddition,
+            @NotNull Function<ModerationRequest, T> getDeletion,
+            @NotNull Function<T, ModerationRequest> setAddition,
+            @NotNull Function<T, ModerationRequest> setDeletion,
+            F @NotNull [] fields,
+            F idField
+    ) {
+        T addition = getAddition.apply(moderationRequest);
+        T deletion = getDeletion.apply(moderationRequest);
+
+        for (F field : fields) {
+            if (field == idField) {
+                continue;
+            }
+
+            if ((addition.isSet(field) || deletion.isSet(field)) &&
+                    (addition.getFieldValue(field) != null) &&
+                    addition.getFieldValue(field).equals(deletion.getFieldValue(field))) {
+                addition.setFieldValue(field, null);
+                deletion.setFieldValue(field, null);
+            }
+        }
+
+        setAddition.apply(addition);
+        setDeletion.apply(deletion);
     }
 }

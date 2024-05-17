@@ -945,6 +945,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
+                                subsectionWithPath("_embedded.sw360:projects.[]id").description("The id of the project"),
                                 subsectionWithPath("_embedded.sw360:projects.[]name").description("The name of the project"),
                                 subsectionWithPath("_embedded.sw360:projects.[]version").description("The project version"),
                                 subsectionWithPath("_embedded.sw360:projects.[]createdOn").description("The date the project was created"),
@@ -1012,6 +1013,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-projects,Projects resource>>")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The id of the project"),
                                 fieldWithPath("name").description("The name of the project"),
                                 fieldWithPath("version").description("The project version"),
                                 fieldWithPath("createdOn").description("The date the project was created"),
@@ -1746,6 +1748,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("phaseOutSince").description("The project phase-out date")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The project id"),
                                 fieldWithPath("name").description("The name of the project"),
                                 fieldWithPath("version").description("The project version"),
                                 fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
@@ -1806,6 +1809,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("phaseOutSince").description("The project phase-out date")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The project id"),
                                 fieldWithPath("name").description("The name of the project"),
                                 fieldWithPath("version").description("The project version"),
                                 fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
@@ -1855,7 +1859,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                         fieldWithPath("phaseOutSince").description("The project phase-out date"),
                         fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag.")),
-                responseFields(fieldWithPath("name").description("The name of the project"),
+                responseFields(
+                        fieldWithPath("id").description("The project id"),
+                        fieldWithPath("name").description("The name of the project"),
                         fieldWithPath("version").description("The project version"),
                         fieldWithPath("createdOn").description("The date the project was created"),
                         fieldWithPath("description").description("The project description"),
@@ -2218,6 +2224,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         responseFields(
+                                fieldWithPath("id").description("The project id"),
                                 fieldWithPath("name").description("The name of the project"),
                                 fieldWithPath("version").description("The project version"),
                                 fieldWithPath("createdOn").description("The date the project was created"),
