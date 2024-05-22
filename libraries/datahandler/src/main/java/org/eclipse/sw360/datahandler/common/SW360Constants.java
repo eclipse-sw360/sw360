@@ -123,6 +123,8 @@ public class SW360Constants {
     public static final String SRC_ATTACHMENT_UPLOADER_EMAIL;
     public static final String SRC_ATTACHMENT_DOWNLOAD_LOCATION;
     public static final String PREFERRED_CLEARING_DATE_LIMIT;
+    public static final Boolean MAIL_REQUEST_FOR_PROJECT_REPORT;
+    public static final Boolean MAIL_REQUEST_FOR_COMPONENT_REPORT;
 
     /**
      * Hashmap containing the name field for each type.
@@ -228,6 +230,8 @@ public class SW360Constants {
         SRC_ATTACHMENT_UPLOADER_EMAIL = props.getProperty("source.code.attachment.uploader.email", "");
         SRC_ATTACHMENT_DOWNLOAD_LOCATION = props.getProperty("src.attachment.download.location", "");
         PREFERRED_CLEARING_DATE_LIMIT =  props.getProperty("preferred.clearing.date.limit","");
+        MAIL_REQUEST_FOR_PROJECT_REPORT = Boolean.parseBoolean(props.getProperty("send.project.spreadsheet.export.to.mail.enabled", "false"));
+        MAIL_REQUEST_FOR_COMPONENT_REPORT = Boolean.parseBoolean(props.getProperty("send.component.spreadsheet.export.to.mail.enabled", "false"));
     }
 
     private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName){

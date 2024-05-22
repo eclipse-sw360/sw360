@@ -560,20 +560,3 @@ include::{snippets}/should_document_get_component_report/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_get_component_report/http-response.adoc[]
-
-[[resources-components-download-report-mail_req]]
-==== Downloading component report with mail request
-
-A `GET` request help to download the components report with mail request.
-
-===== Request parameter
-include::{snippets}/should_document_get_component_report_with_mail_req/request-parameters.adoc[]
-
-===== Response structure
-include::{snippets}/should_document_get_component_report_with_mail_req/response-fields.adoc[]
-
-===== Example request
-include::{snippets}/should_document_get_component_report_with_mail_req/curl-request.adoc[]
-
-===== Example response
-include::{snippets}/should_document_get_component_report_with_mail_req/http-response.adoc[]

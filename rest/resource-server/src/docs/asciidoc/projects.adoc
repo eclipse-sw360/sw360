@@ -851,27 +851,10 @@ include::{snippets}/should_document_create_summary_administration/http-response.
 [[resources-projects-download-report]]
 ==== Downloading project report
 
-A `GET` request help to download the projects report with mail request false.
-
-===== Request parameter
-include::{snippets}/should_document_get_project_report_without_mail_req/request-parameters.adoc[]
-
-===== Example request
-include::{snippets}/should_document_get_project_report_without_mail_req/curl-request.adoc[]
-
-===== Example response
-include::{snippets}/should_document_get_project_report_without_mail_req/http-response.adoc[]
-
-[[resources-projects-download-report-mail-request]]
-==== Downloading project report with mail request
-
-A `GET` request help to download the projects report with mail request true.
+A `GET` request help to download the projects report.
 
 ===== Request parameter
 include::{snippets}/should_document_get_project_report/request-parameters.adoc[]
-
-===== Response structure
-include::{snippets}/should_document_get_project_report/response-fields.adoc[]
 
 ===== Example request
 include::{snippets}/should_document_get_project_report/curl-request.adoc[]
@@ -932,28 +915,10 @@ include::{snippets}/should_document_update_project_with_network/http-response.ad
 [[resources-projects-download-licenseclearing-report]]
 ==== Downloading project license clearing report
 
-A `GET` request help to download the projects report with mail request false.
-
-===== Request parameter
-include::{snippets}/should_document_get_project_licenseclearing_spreadsheet_without_mail_req/request-parameters.adoc[]
-
-===== Example request
-include::{snippets}/should_document_get_project_licenseclearing_spreadsheet_without_mail_req/curl-request.adoc[]
-
-===== Example response
-include::{snippets}/should_document_get_project_licenseclearing_spreadsheet_without_mail_req/http-response.adoc[]
-
-
-[[resources-projects-download-licenseclearing-report-mail-request]]
-==== Downloading project license clearing report with mail request
-
-A `GET` request help to download the projects report with mail request true.
+A `GET` request help to download project license clearing report.
 
 ===== Request parameter
 include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/request-parameters.adoc[]
-
-===== Response structure
-include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/response-fields.adoc[]
 
 ===== Example request
 include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/curl-request.adoc[]
@@ -977,3 +942,4 @@ include::{snippets}/should_document_create_clearing_request/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_create_clearing_request/http-response.adoc[]
+
