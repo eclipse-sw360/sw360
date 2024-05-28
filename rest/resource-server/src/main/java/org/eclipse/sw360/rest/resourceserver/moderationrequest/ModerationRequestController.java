@@ -206,7 +206,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
 
     @Operation(
             summary = "Action on moderation request.",
-            description = "Accept or reject the moderation request, save the comment by the reviewer and send email " +
+            description = "Perform actions on the moderation request, save the comment by the reviewer and send email " +
                     "notifications.",
             tags = {"Moderation Requests"},
             responses = {@ApiResponse(
@@ -255,6 +255,9 @@ public class ModerationRequestController implements RepresentationModelProcessor
                 break;
             case ASSIGN:
                 moderationStatus = sw360ModerationRequestService.assignRequest(moderationRequest, sw360User);
+                break;
+            case POSTPONE:
+                moderationStatus = sw360ModerationRequestService.postponeRequest(moderationRequest, patch.getComment());
                 break;
             default:
                 throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
