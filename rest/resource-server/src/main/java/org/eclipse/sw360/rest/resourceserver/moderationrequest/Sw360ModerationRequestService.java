@@ -213,6 +213,21 @@ public class Sw360ModerationRequestService {
     }
 
     /**
+     * Update the moderation request with the new comment when POSTPONE action is performed.
+     *
+     * @param request          Moderation request to postpone
+     * @param moderatorComment Comment from moderator
+     * @return Current status of the moderation request
+     * @throws TException Exception in case of error.
+     */
+    public ModerationState postponeRequest(@NotNull ModerationRequest request, String moderatorComment) throws TException {
+
+        request.setCommentDecisionModerator(moderatorComment);
+        getThriftModerationClient().updateModerationRequest(request);
+        return ModerationState.INPROGRESS;
+    }
+
+    /**
      * Remove the user from moderator list of the moderation request.
      *
      * @param request  Moderation request to edit
