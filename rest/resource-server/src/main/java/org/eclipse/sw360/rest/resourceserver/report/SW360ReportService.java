@@ -6,18 +6,29 @@ package org.eclipse.sw360.rest.resourceserver.report;
 
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import jakarta.servlet.http.HttpServletRequest;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -104,7 +115,11 @@ public class SW360ReportService {
     AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
 
     public ByteBuffer getProjectBuffer(User user, boolean extendedByReleases, String projectId) throws TException {
-        if (projectId != null && validateProject(projectId, user)) {
+        /*
+            * If projectId is not null, then validate the project record for the given projectId
+            * If the projectId is null, then fetch the project details which are assigned with user
+         */
+        if (projectId != null && !validateProject(projectId, user)) {
             throw new TException("No project record found for the project Id : " + projectId);
         }
         return projectclient.getReportDataStream(user, extendedByReleases, projectId);
@@ -123,12 +138,30 @@ public class SW360ReportService {
         return validProject;
     }
 
-    public String getDocumentName(User user, String projectId) throws TException {
-        if (projectId != null && !projectId.equalsIgnoreCase("null")) {
-            Project project = projectclient.getProjectById(projectId, user);
-            return String.format("project-%s-%s-%s.xlsx", project.getName(), project.getVersion(), SW360Utils.getCreatedOn());
+    public String getDocumentName(User user, String projectId, String module) throws TException {
+        String documentName = String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
+        switch (module) {
+        case SW360Constants.PROJECTS:
+            if (projectId != null && !projectId.equalsIgnoreCase("null")) {
+                Project project = projectclient.getProjectById(projectId, user);
+                documentName = String.format("project-%s-%s-%s.xlsx", project.getName(), project.getVersion(),
+                        SW360Utils.getCreatedOn());
+            }
+            break;
+        case SW360Constants.LICENSES:
+            documentName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
+            break;
+        case SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO:
+            if (projectId != null && !projectId.equalsIgnoreCase("null")) {
+                Project project = projectclient.getProjectById(projectId, user);
+                documentName = String.format("releases-%s-%s-%s.xlsx", project.getName(), project.getVersion(),
+                        SW360Utils.getCreatedOn());
+            }
+            break;
+        default:
+            break;
         }
-        return String.format("projects-%s.xlsx", SW360Utils.getCreatedOn());
+        return documentName;
     }
 
     public void getUploadedProjectPath(User user, boolean withLinkedReleases, String base, String projectId)
@@ -437,5 +470,23 @@ public class SW360ReportService {
         } else {
             return attachmentStreamConnector.getAttachmentBundleStream(new HashSet<>(attachments), sw360User, context);
         }
+    }
+
+    public ByteBuffer getProjectReleaseSpreadSheetWithEcc(User user, String projectId) throws TException, IOException {
+        if (projectId == null || projectId.isEmpty() || !validateProject(projectId, user)) {
+            throw new TException("No project record found for the project Id : " + projectId);
+        }
+        ReleaseExporter exporter = null;
+        List<Release> releases = null;
+        try {
+            List<ReleaseClearingStatusData> releaseStringMap = projectclient
+                    .getReleaseClearingStatusesWithAccessibility(projectId, user);
+            releases = releaseStringMap.stream().map(ReleaseClearingStatusData::getRelease)
+                    .sorted(Comparator.comparing(SW360Utils::printFullname)).collect(Collectors.toList());
+            exporter = new ReleaseExporter(componentclient, releases, user, releaseStringMap);
+        } catch (Exception e) {
+            throw new TException(e.getMessage());
+        }
+        return ByteBuffer.wrap(IOUtils.toByteArray(exporter.makeExcelExport(releases)));
     }
 }

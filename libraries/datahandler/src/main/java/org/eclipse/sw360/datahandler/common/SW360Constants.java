@@ -130,6 +130,13 @@ public class SW360Constants {
     public static final Boolean MAIL_REQUEST_FOR_PROJECT_REPORT;
     public static final Boolean MAIL_REQUEST_FOR_COMPONENT_REPORT;
 
+    public static final String COMPONENTS = "components";
+    public static final String PROJECTS = "projects";
+    public static final String LICENSES = "licenses";
+    public static final String REPORTS_URL = "/reports";
+    public static final String PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO = "projectReleaseSpreadSheetWithEcc";
+    public static final String CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
     /**
      * Hashmap containing the name field for each type.
      * Used by the search service to fill the search results
