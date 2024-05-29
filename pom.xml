@@ -63,8 +63,8 @@
   </distributionManagement>
 
   <properties>
-    <revision>18.0.${patchlevel}</revision>
-    <patchlevel>0-SNAPSHOT</patchlevel>
+    <revision>18.1.${patchlevel}</revision>
+    <patchlevel>0</patchlevel>
     <rest.version>1.0.0</rest.version>
 
     <!-- Build version properties -->
