@@ -455,6 +455,21 @@ include::{snippets}/should_document_add_obligations_from_license_db/curl-request
 ===== Example response
 include::{snippets}/should_document_add_obligations_from_license_db/http-response.adoc[]
 
+[[resources-project-update-license-obligation-information]]
+==== Update License Obligations for a project
+
+A `PATCH` request will update the license obligations for the given project id.
+
+===== Request structure
+Pass a map having key as Obligation Title and value as Obligation Status and Obligation Comment which you want to update.
+Possible Obligation Status values are [FULFILLED_AND_PARENT_MUST_ALSO_FULFILL, ESCALATED, WILL_BE_FULFILLED_BEFORE_RELEASE, DEFERRED_TO_PARENT_PROJECT, ACKNOWLEDGED_OR_FULFILLED, NOT_APPLICABLE, OPEN]
+
+===== Example request
+include::{snippets}/should_document_update_license_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_license_obligations/http-response.adoc[]
+
 [[resources-project-get-license-clearing-information-information]]
 ==== Project's license clearing count
 
