@@ -28,8 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SimpleAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response,
-            AuthenticationException authException) throws IOException, ServletException {
+    public void commence(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response, AuthenticationException authException) throws IOException, javax.servlet.ServletException {
         HashMap<String, Object> map = new LinkedHashMap<>();
         map.put("status", HttpServletResponse.SC_UNAUTHORIZED);
         map.put("message", authException.getMessage());

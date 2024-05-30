@@ -34,41 +34,6 @@ public class EndpointsFilter extends OncePerRequestFilter {
     @Value("${blacklist.sw360.rest.api.endpoints}")
     String endpointsTobeBlackListed;
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-
-        String requestURI = request.getRequestURI();
-        String method = request.getMethod();
-
-        String[] endpointMethodPairs = endpointsTobeBlackListed.split(",");
-        Map<String, Set<String>> endpointHttpMethods = getMapOfEndpointToHttpMethods(endpointMethodPairs);
-        boolean isAMatch = verifyMatchingOfRequestURIToEndpoints(requestURI, endpointHttpMethods);
-
-        if (!isAMatch) {
-            filterChain.doFilter(request, response);
-        } else {
-            Set<String> httpMethodsToBeBlocked = new HashSet<>();
-            Optional<Entry<String, Set<String>>> matchedEndpointToHttpMethods = endpointHttpMethods.entrySet().stream().filter(es -> {
-                String endpointURI = es.getKey();
-                return getRequestURIMatcher().test(endpointURI, requestURI);
-            }).findFirst();
-            if (matchedEndpointToHttpMethods.isPresent()) {
-                httpMethodsToBeBlocked = matchedEndpointToHttpMethods.get().getValue();
-            }
-
-            if (CommonUtils.isNullOrEmptyCollection(httpMethodsToBeBlocked)) {
-                response.sendError(HttpStatus.SERVICE_UNAVAILABLE.value());
-            } else {
-                if (httpMethodsToBeBlocked.contains(method)) {
-                    response.sendError(HttpStatus.SERVICE_UNAVAILABLE.value());
-                } else {
-                    filterChain.doFilter(request, response);
-                }
-            }
-        }
-    }
-
     private boolean verifyMatchingOfRequestURIToEndpoints(String requestURI,
             Map<String, Set<String>> endpointHttpMethods) {
         long count = endpointHttpMethods.entrySet().stream().filter(es -> {
@@ -101,5 +66,40 @@ public class EndpointsFilter extends OncePerRequestFilter {
             Matcher requestUriMatcher = endpointPattern.matcher(requestURI);
             return requestUriMatcher.matches();
         };
+    }
+
+    @Override
+    protected void doFilterInternal(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response, javax.servlet.FilterChain filterChain) throws javax.servlet.ServletException, IOException {
+
+
+        String requestURI = request.getRequestURI();
+        String method = request.getMethod();
+
+        String[] endpointMethodPairs = endpointsTobeBlackListed.split(",");
+        Map<String, Set<String>> endpointHttpMethods = getMapOfEndpointToHttpMethods(endpointMethodPairs);
+        boolean isAMatch = verifyMatchingOfRequestURIToEndpoints(requestURI, endpointHttpMethods);
+
+        if (!isAMatch) {
+            filterChain.doFilter(request, response);
+        } else {
+            Set<String> httpMethodsToBeBlocked = new HashSet<>();
+            Optional<Entry<String, Set<String>>> matchedEndpointToHttpMethods = endpointHttpMethods.entrySet().stream().filter(es -> {
+                String endpointURI = es.getKey();
+                return getRequestURIMatcher().test(endpointURI, requestURI);
+            }).findFirst();
+            if (matchedEndpointToHttpMethods.isPresent()) {
+                httpMethodsToBeBlocked = matchedEndpointToHttpMethods.get().getValue();
+            }
+
+            if (CommonUtils.isNullOrEmptyCollection(httpMethodsToBeBlocked)) {
+                response.sendError(HttpStatus.SERVICE_UNAVAILABLE.value());
+            } else {
+                if (httpMethodsToBeBlocked.contains(method)) {
+                    response.sendError(HttpStatus.SERVICE_UNAVAILABLE.value());
+                } else {
+                    filterChain.doFilter(request, response);
+                }
+            }
+        }
     }
 }

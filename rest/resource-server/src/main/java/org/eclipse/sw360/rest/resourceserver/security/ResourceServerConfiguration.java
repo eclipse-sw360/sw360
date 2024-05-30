@@ -36,6 +36,8 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.R
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
+import javax.servlet.Filter;
+
 @Profile("!SECURITY_MOCK")
 @Configuration
 @EnableWebSecurity
@@ -87,7 +89,7 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
         // Use Sw360GrantedAuthority from authorization server
         SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
         http
-                .addFilterBefore(filter, BasicAuthenticationFilter.class)
+                .addFilterBefore((Filter) filter, BasicAuthenticationFilter.class)
                 .authenticationProvider(authProvider)
                 .userDetailsService(userDetailsService)
                 .httpBasic()

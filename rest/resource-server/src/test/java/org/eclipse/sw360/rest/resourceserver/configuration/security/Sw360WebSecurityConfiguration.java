@@ -24,6 +24,8 @@ import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
+import javax.servlet.Filter;
+
 @Configuration
 @EnableWebSecurity
 @Order(101)
@@ -44,7 +46,7 @@ public class Sw360WebSecurityConfiguration extends WebSecurityConfigurerAdapter 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-                .addFilterBefore(new Sw360AuthenticationFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore((Filter) new Sw360AuthenticationFilter(), BasicAuthenticationFilter.class)
                 .authenticationProvider(sw360AuthenticationProvider)
                 .httpBasic()
                 .and()
