@@ -690,9 +690,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         for(String projId: projectIdsInRequestBody) {
             Project proj = projectService.getProjectForUserById(projId, sw360User);
-            Map<String, ProjectProjectRelationship> linkedProject= proj.getLinkedProjects();
+            Map<String, ProjectProjectRelationship> linkedProject = Optional.ofNullable(proj.getLinkedProjects()).orElse(new HashMap<>());
 
-            if (proj.getLinkedProjects().keySet().contains(id)) {
+            if (linkedProject.keySet().contains(id)) {
                 alreadyLinkedIds.add(projId);
                 continue;
             }
