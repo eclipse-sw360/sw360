@@ -8,7 +8,7 @@
 
 A software component catalogue application.
 
-SW360 is a server with a REST interface and a Liferay CE portal application
+SW360 is a a Java backend server with a REST interface and a NextJS Frontend
 to maintain your projects / products and the software components within.
 
 It can manage SPDX files for maintaining the license conditions and maintain
@@ -18,7 +18,7 @@ license information.
 
 It is comprised of one frontend (portal) part, backend (services) part and additionally a REST API:
 
-* Frontend: Liferay-CE-(Tomcat-)based portal application using portlets.
+* Frontend: NextJS based interface.
 * Backend: Tomcat-based thrift services for being called by different applications.
 * Database: we store software components and metadata about them in CouchDB.
 * Rest: this REST API provides access to project resources for external integration.
@@ -29,7 +29,6 @@ The reference platform is the Ubuntu server 22.04 (which is an LTS version).
 
 This is a multi module maven file. please consider that we have the following modules:
 
-* frontend: For portlets, themes and layouts, the liferay part.
 * backend: For the thrift based services.
 * libraries: For general stuff that is reused among the above, for example, couchdb access.
 * scripts: Auxiliary scripts to help build, deploy and config system
@@ -86,7 +85,7 @@ mvn package -P deploy \
     -DskipTests \
     -Djars.deploy.dir=deploy \
     -Drest.deploy.dir=webapps \
-    -Dliferay.deploy.dir=webapps \
+    -Djars.deploy.dir=webapps \
     -Dbackend.deploy.dir=webapps
 ```
 
@@ -100,7 +99,7 @@ pip install mkdocs-material
 mvn package -P deploy \
     -Djars.deploy.dir=deploy \
     -Drest.deploy.dir=webapps \
-    -Dliferay.deploy.dir=webapps \
+    -Djars.deploy.dir=webapps \
     -Dbackend.deploy.dir=webapps
 ```
 
