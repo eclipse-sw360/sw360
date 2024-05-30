@@ -220,7 +220,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(
             summary = "Create a new user.",
-            description = "Create a user (not in Liferay).",
+            description = "Create a user.",
             tags = {"Users"}
     )
     @PostMapping(value = USERS_URL)
