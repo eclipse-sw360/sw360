@@ -46,7 +46,6 @@
     <module>libraries</module>
     <module>backend</module>
     <module>rest</module>
-    <module>clients</module>
   </modules>
 
   <distributionManagement>
