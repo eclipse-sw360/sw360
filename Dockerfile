@@ -74,9 +74,6 @@ FROM maven:3-eclipse-temurin-17 as sw360build
 
 ARG COUCHDB_HOST=localhost
 
-# Thanks to Liferay, we need fix the java version
-ENV _JAVA_OPTIONS='-Djdk.util.zip.disableZip64ExtraFieldValidation=true'
-
 WORKDIR /build
 
 SHELL ["/bin/bash", "-c"]
@@ -138,9 +135,8 @@ COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 
 #--------------------------------------------------------------------------------------------------
 # Runtime image
-FROM tomcat:$TOMCAT_VERSION
+FROM tomcat:$TOMCAT_VERSION as sw360
 
-ARG DEBUG=1
 ARG TOMCAT_DIR=/usr/local/tomcat
 
 # Modified etc
@@ -154,10 +150,8 @@ COPY --from=binaries /sw360_tomcat_webapps/libs/*.jar ${TOMCAT_DIR}/lib/
 
 # Tomcat manager for debugging portlets
 RUN --mount=type=bind,target=/build/sw360,rw \
-    if [  DEBUG ]; then \
     mv ${TOMCAT_DIR}/webapps.dist/manager ${TOMCAT_DIR}/webapps/manager \
-    cp /etc/sw360/manager/tomcat-users.xml ${TOMCAT_DIR}/conf/tomcat-users.xml ; \
-    cp /build/sw360/scripts/docker-config/manager/context.xml ${TOMCAT_DIR}/webapps/manager/META-INF/context.xml ; \
-    fi
+    && cp /etc/sw360/manager/tomcat-users.xml ${TOMCAT_DIR}/conf/tomcat-users.xml \
+    && cp /build/sw360/scripts/docker-config/manager/context.xml ${TOMCAT_DIR}/webapps/manager/META-INF/context.xml
 
 WORKDIR ${TOMCAT_DIR}
