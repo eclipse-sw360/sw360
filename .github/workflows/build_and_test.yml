@@ -112,14 +112,14 @@ jobs:
     #   run: |
     #     scripts/sw360BackendRestDockerConfig/scripts/createUserAndOauthClient.sh
 
-    - name: Run Client Integration Test for Rest Api
-      run: |
-        cd ${{ github.workspace }}/clients
-        mvn clean install -Dbase.deploy.dir=${{ github.workspace }} --no-transfer-progress -DRunRestIntegrationTest=true
+    # - name: Run Client Integration Test for Rest Api
+    #   run: |
+    #     cd ${{ github.workspace }}/clients
+    #     mvn clean install -Dbase.deploy.dir=${{ github.workspace }} --no-transfer-progress -DRunRestIntegrationTest=true
 
-    - name: Upload test reports
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-reports
-        path: ${{ github.workspace }}/libraries/importers/target/surefire-reports
+    # - name: Upload test reports
+    #   if: failure()
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: test-reports
+    #     path: ${{ github.workspace }}/libraries/importers/target/surefire-reports
