@@ -58,7 +58,6 @@
   <properties>
     <sw360.version>18.99.0</sw360.version>
     <rest.version>1.0.0</rest.version>
-    <base.deploy.dir>${project.basedir}/deploy</base.deploy.dir>
     <backend.deploy.dir>${base.deploy.dir}/webapps</backend.deploy.dir>
     <rest.deploy.dir>${base.deploy.dir}/webapps</rest.deploy.dir>
     <jars.deploy.dir>${base.deploy.dir}</jars.deploy.dir>

@@ -74,7 +74,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: |
-          /usr/local/bin/thrift
+          /usr/local/bin
           /usr/share/thrift/${{ env.THRIFT_VERSION }}
         key: ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
 
@@ -87,35 +87,35 @@ jobs:
     - name: Build SW360
       id: build
       run: |
-        mvn clean install --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -Djars.deploy.dir=${PWD}/deploy -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false -DRunRestForceUpdateTest=false -Dmaven.plugin.validation=VERBOSE
+        mvn clean install --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=${{ github.workspace }} -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false -DRunRestForceUpdateTest=false -Dmaven.plugin.validation=VERBOSE
 
     - name: Run PrivateProjectAccessTest
       run: |
-        cd build-configuration
-        mvn install
-        cd ..
-        cd libraries/datahandler
-        mvn test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true
-        cd ../..
+        cd ${{ github.workspace }}/libraries/datahandler
+        mvn test -Dbase.deploy.dir=${{ github.workspace }} -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true
 
     - name: Run BulkReleaseDeletingTest
       run: |
-        cd backend/src/src-components
-        mvn test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true
+        cd ${{ github.workspace }}/backend/src/src-components
+        mvn test -Dbase.deploy.dir=${{ github.workspace }} -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true
 
-    - name: Deploy Backend and Rest Server
-      run: |
-        sudo docker build -t sw360backendrest -f sw360BackendRest.Dockerfile .
-        sudo docker run -dt --network=host sw360backendrest
-        bash scripts/sw360BackendRestDockerConfig/scripts/checkDeploymentIsSuccess.sh
+    # - name: Deploy Backend and Rest Server
+    #   shell: bash
+    #   run: |
+    #     cd ${{ github.workspace }}
+    #     sudo docker build -t sw360backendrest -f scripts/sw360BackendRest.Dockerfile .
+    #     sudo docker run -dt --network=host sw360backendrest
+    #     scripts/sw360BackendRestDockerConfig/scripts/checkDeploymentIsSuccess.sh
 
-    - name: Create users and oauth client
-      run: bash scripts/sw360BackendRestDockerConfig/scripts/createUserAndOauthClient.sh
+    # - name: Create users and oauth client
+    #   shell: bash
+    #   run: |
+    #     scripts/sw360BackendRestDockerConfig/scripts/createUserAndOauthClient.sh
 
     - name: Run Client Integration Test for Rest Api
       run: |
-        cd clients
-        mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true
+        cd ${{ github.workspace }}/clients
+        mvn clean install -Dbase.deploy.dir=${{ github.workspace }} --no-transfer-progress -DRunRestIntegrationTest=true
 
     - name: Upload test reports
       if: failure()

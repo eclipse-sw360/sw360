@@ -113,9 +113,9 @@ RUN --mount=type=bind,target=/build/sw360,rw \
     && envsubst < scripts/docker-config/manager/tomcat-users.xml | tee /etc/sw360/manager/tomcat-users.xml \
     && mvn clean package \
     -P deploy \
+    -Dbase.deploy.dir="${PWD}" \
     -Dtest=org.eclipse.sw360.rest.resourceserver.restdocs.* \
     -Dsurefire.failIfNoSpecifiedTests=false \
-    -Dbase.deploy.dir=. \
     -Djars.deploy.dir=/sw360_deploy \
     -Dbackend.deploy.dir=/sw360_tomcat_webapps \
     -Drest.deploy.dir=/sw360_tomcat_webapps \
