@@ -39,12 +39,12 @@ import org.springframework.data.domain.Pageable;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponse;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;

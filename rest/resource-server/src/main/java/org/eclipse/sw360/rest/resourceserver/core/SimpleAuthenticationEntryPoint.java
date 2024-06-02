@@ -16,9 +16,9 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
@@ -28,7 +28,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SimpleAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
-    public void commence(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response, AuthenticationException authException) throws IOException, javax.servlet.ServletException {
+    public void commence(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationException authException) throws IOException, ServletException {
         HashMap<String, Object> map = new LinkedHashMap<>();
         map.put("status", HttpServletResponse.SC_UNAUTHORIZED);
         map.put("message", authException.getMessage());
