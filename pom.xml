@@ -16,7 +16,7 @@
 
   <groupId>org.eclipse.sw360</groupId>
   <artifactId>sw360</artifactId>
-  <version>${sw360.version}</version>
+  <version>18.99.0</version>
   <packaging>pom</packaging>
 
   <name>Eclipse SW360</name>
@@ -56,12 +56,12 @@
   </distributionManagement>
 
   <properties>
-    <sw360.version>18.99</sw360.version>
+    <sw360.version>18.99.0</sw360.version>
     <rest.version>1.0.0</rest.version>
-
-    <backend.deploy.dir>${base.deploy.dir}/tomcat</backend.deploy.dir>
-    <rest.deploy.dir>${base.deploy.dir}/tomcat</rest.deploy.dir>
-    <jars.deploy.dir>${base.deploy.dir}/jars</jars.deploy.dir>
+    <base.deploy.dir>${project.basedir}/deploy</base.deploy.dir>
+    <backend.deploy.dir>${base.deploy.dir}/webapps</backend.deploy.dir>
+    <rest.deploy.dir>${base.deploy.dir}/webapps</rest.deploy.dir>
+    <jars.deploy.dir>${base.deploy.dir}</jars.deploy.dir>
 
     <!-- Build version properties -->
     <java_source.version>17</java_source.version>
