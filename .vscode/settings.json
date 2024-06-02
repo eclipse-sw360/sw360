@@ -1,0 +1,5 @@
+{
+  "files.exclude": {
+    "**/.git-versioned-pom.xml": true
+  }
+}

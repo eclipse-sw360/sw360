@@ -33,10 +33,6 @@ jgiven-reports/
 .settings
 .factorypath
 
-# Ignore VSCode files
-.vscode/
-#*.code-workspace
-
 # Ignore backup files
 *.bak
 *.orig
@@ -70,3 +66,6 @@ tmp/**/*
 
 # Git versioned
 .git-versioned-pom.xml
+
+# Python local pyenv
+.python-version
