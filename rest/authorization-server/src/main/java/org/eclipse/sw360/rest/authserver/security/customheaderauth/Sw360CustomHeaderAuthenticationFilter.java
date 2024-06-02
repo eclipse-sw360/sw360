@@ -30,8 +30,8 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import org.springframework.web.filter.GenericFilterBean;
 
 import javax.annotation.PostConstruct;
-import jakarta.servlet.*;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 
@@ -125,6 +125,25 @@ public class Sw360CustomHeaderAuthenticationFilter extends GenericFilterBean {
             log.info("AuthenticationFilter is active!");
             active = true;
         }
+    }
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+
+        if (active) {
+            CustomHeaderAuthRequestDetails requestDetails = extractRequestDetails((HttpServletRequest) request);
+            if (canAuthenticate(requestDetails)) {
+
+                ServletRequest wrappedRequest = doAuthenticate((HttpServletRequest) request, requestDetails);
+                if (wrappedRequest != null) {
+                    chain.doFilter(wrappedRequest, response);
+                    return;
+                }
+            }
+        }
+
+        chain.doFilter(request, response);
     }
 
     private CustomHeaderAuthRequestDetails extractRequestDetails(HttpServletRequest request) {
@@ -228,32 +247,10 @@ public class Sw360CustomHeaderAuthenticationFilter extends GenericFilterBean {
         return requestResult;
     }
 
-    @Override
-    public void doFilter(javax.servlet.ServletRequest request, javax.servlet.ServletResponse response, javax.servlet.FilterChain chain) throws IOException, javax.servlet.ServletException {
-            if (active) {
-                CustomHeaderAuthRequestDetails requestDetails = extractRequestDetails((HttpServletRequest) request);
-                if (canAuthenticate(requestDetails)) {
-
-                    ServletRequest wrappedRequest = doAuthenticate((HttpServletRequest) request, requestDetails);
-                    if (wrappedRequest != null) {
-                        chain.doFilter((javax.servlet.ServletRequest) wrappedRequest, response);
-                        return;
-                    }
-                }
-            }
-
-            chain.doFilter(request, response);
-    }
-
     private abstract static class CustomHeaderAuthRequestDetails {
         public Authentication currentUser;
         public String customHeaderEmail;
         public String customHeaderExtId;
-
-        public CustomHeaderAuthRequestDetails() {
-            super(); // Explicitly invoke the constructor of the superclass Object
-            // Add any initialization code here if needed
-        }
     }
 
     private static class CustomHeaderRestRequestDetails extends CustomHeaderAuthRequestDetails {

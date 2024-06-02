@@ -47,7 +47,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import org.springframework.data.domain.Pageable;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -220,7 +220,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     @Operation(
             summary = "Create a new user.",
-            description = "Create a user.",
+            description = "Create a user (not in Liferay).",
             tags = {"Users"}
     )
     @PostMapping(value = USERS_URL)

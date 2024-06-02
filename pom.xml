@@ -59,7 +59,6 @@
     <sw360.version>18.99</sw360.version>
     <rest.version>1.0.0</rest.version>
 
-    <base.deploy.dir>${session.executionRootDirectory}/deploy</base.deploy.dir>
     <backend.deploy.dir>${base.deploy.dir}/tomcat</backend.deploy.dir>
     <rest.deploy.dir>${base.deploy.dir}/tomcat</rest.deploy.dir>
     <jars.deploy.dir>${base.deploy.dir}/jars</jars.deploy.dir>
@@ -144,11 +143,11 @@
     <require.js.version>2.3.6</require.js.version>
     <resumable.js.version>1.1.0</resumable.js.version>
     <slf4j.version>1.7.30</slf4j.version>
-    <spring-boot.version>2.7.6</spring-boot.version>
+    <spring-boot.version>2.7.18</spring-boot.version>
     <spring-restdocs-asciidoctor.version>2.0.6.RELEASE</spring-restdocs-asciidoctor.version>
     <spring-restdocs.version>2.0.6.RELEASE</spring-restdocs.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
-    <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
+    <spring-security-oauth2.version>2.5.2.RELEASE</spring-security-oauth2.version>
     <springdoc-openapi-hateos.version>1.7.0</springdoc-openapi-hateos.version>
     <springdoc-openapi-ui.version>1.7.0</springdoc-openapi-ui.version>
     <springdoc-openapi-security.version>1.7.0</springdoc-openapi-security.version>

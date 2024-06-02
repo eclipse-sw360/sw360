@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
