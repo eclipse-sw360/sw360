@@ -8,7 +8,7 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 
-FROM tomcat:9-jdk11-temurin-jammy
+FROM tomcat:10-jre17-temurin-jammy
 
 COPY ./scripts/sw360BackendRestDockerConfig/etc_sw360/ /etc/sw360/
 
