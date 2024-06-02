@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-src</artifactId>
-        <version>${sw360.version}</version>
+        <version>18.99.0</version>
     </parent>
 
     <artifactId>src-attachments</artifactId>
