@@ -15,7 +15,7 @@
 	<parent>
 		<artifactId>libraries</artifactId>
 		<groupId>org.eclipse.sw360</groupId>
-		<version>${sw360.version}</version>
+		<version>18.99.0</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 

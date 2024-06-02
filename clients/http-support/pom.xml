@@ -16,7 +16,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>clients</artifactId>
-        <version>${sw360.version}</version>
+        <version>18.99.0</version>
     </parent>
 
     <artifactId>http-support</artifactId>
