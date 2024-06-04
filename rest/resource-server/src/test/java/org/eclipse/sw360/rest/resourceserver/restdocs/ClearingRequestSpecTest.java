@@ -15,9 +15,13 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
-import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
+import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
@@ -56,6 +60,7 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360ClearingRequestService clearingRequestServiceMock;
+
     ClearingRequest clearingRequest = new ClearingRequest();
     ClearingRequest cr1 = new ClearingRequest();
     ClearingRequest cr2 = new ClearingRequest();
@@ -63,6 +68,7 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @Before
     public void before() throws TException, IOException {
+
         clearingRequest.setId("CR-101");
         clearingRequest.setAgreedClearingDate("12-07-2020");
         clearingRequest.setClearingState(ClearingRequestState.ACCEPTED);
@@ -398,5 +404,49 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )
                 ));
+    }
+
+    @Test
+    public void should_document_patch_clearingrequest () throws Exception {
+        ClearingRequest updateClearingRequest = new ClearingRequest()
+                .setClearingTeam("clearing.team@sw60.org")
+                .setClearingState(ClearingRequestState.SANITY_CHECK);
+
+        mockMvc.perform(patch("/api/clearingrequest/" + clearingRequest.getId())
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(updateClearingRequest))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("clearingTeam").description("The clearing team email id."),
+                                fieldWithPath("clearingState").description("The clearing state of request")
+                        ),
+                        responseFields(
+                                fieldWithPath("id").description("The id of the clearing request"),
+                                fieldWithPath("agreedClearingDate").description("The agreed clearing date of the request, on / before which CR should be cleared"),
+                                fieldWithPath("clearingState").description("The clearing state of the request. Possible values are: " + Arrays.asList(ClearingRequestState.values())),
+                                fieldWithPath("clearingTeam").description("The clearing team email id."),
+                                fieldWithPath("projectBU").description("The Business Unit / Group of the Project, for which the clearing request is created"),
+                                fieldWithPath("projectId").description("The id of the Project, for which the clearing request is created"),
+                                fieldWithPath("requestedClearingDate").description("The requested clearing date of releases"),
+                                fieldWithPath("requestingUser").description("The user who created the clearing request"),
+                                fieldWithPath("requestingUserComment").description("The comment from the requesting user"),
+                                fieldWithPath("priority").description("The priority of the clearing request. Possible values are: " + Arrays.asList(ClearingRequestPriority.values())),
+                                subsectionWithPath("comments").description("The clearing request comments"),
+                                subsectionWithPath("comments[].text").description("The clearing request comment text"),
+                                subsectionWithPath("comments[].commentedBy").description("The user who added the comment on the clearing request"),
+                                subsectionWithPath("_embedded.sw360:project").description("The Project associated with the ClearingRequest"),
+                                subsectionWithPath("_embedded.clearingTeam").description("Clearing team user detail"),
+                                subsectionWithPath("_embedded.requestingUser").description("Requesting user detail"),
+                                subsectionWithPath("_links").description("Links to other resources"),
+                                fieldWithPath("clearingType").description("The type of clearing, e.g., DEEP"),
+                                fieldWithPath("_embedded.totalRelease").description("Total number of releases"),
+                                fieldWithPath("_embedded.openRelease").description("Number of open releases"),
+                                fieldWithPath("_embedded.lastUpdatedOn").description("Last updated date for the clearing request"),
+                                fieldWithPath("_embedded.createdOn").description("Creation date for the clearing request")
+
+                        )));
     }
 }
