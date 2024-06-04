@@ -144,7 +144,10 @@ public class SW360Constants {
                     .put(TYPE_PACKAGE, "name version")
                     .build();
 
-    public static final Collection<AttachmentType> LICENSE_INFO_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.COMPONENT_LICENSE_INFO_XML, AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
+    public static final Collection<AttachmentType> LICENSE_INFO_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.COMPONENT_LICENSE_INFO_XML,
+            AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
+    public static final Collection<AttachmentType> INITIAL_LICENSE_INFO_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.COMPONENT_LICENSE_INFO_XML,
+            AttachmentType.COMPONENT_LICENSE_INFO_COMBINED, AttachmentType.INITIAL_SCAN_REPORT);
     public static final Collection<AttachmentType> SOURCE_CODE_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.SOURCE, AttachmentType.SOURCE_SELF);
     public static final String CONTENT_TYPE_OPENXML_SPREADSHEET = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 

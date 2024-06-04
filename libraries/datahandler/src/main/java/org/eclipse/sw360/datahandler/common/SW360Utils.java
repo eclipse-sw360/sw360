@@ -512,7 +512,7 @@ public class SW360Utils {
         }
         return Collections.emptyList();
     }
-    
+
     public static List<ReleaseLink> getLinkedReleaseRelations(Release release, ThriftClients thriftClients, Logger log) {
         if (release != null && release.getReleaseIdToRelationship() != null) {
             try {
@@ -536,7 +536,7 @@ public class SW360Utils {
         }
         return Collections.emptyList();
     }
-    
+
     public static Predicate<String> startsWith(final String prefix) {
         return new Predicate<String>() {
             @Override
@@ -684,7 +684,7 @@ public class SW360Utils {
         }
         return releaseNamesMap;
     }
-    
+
     public static <T> Map<String, T> putProjectNamesInMap(Map<String, T> map, List<Project> projects) {
         if(map == null || projects == null) {
             return Collections.emptyMap();

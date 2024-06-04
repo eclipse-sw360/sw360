@@ -241,7 +241,7 @@ public class SPDXParserTools {
      * Get license name of spdx:ExtractedLicensingInfo and spdx:ListedLicense.
      */
     private static String getExtractedLicenseName(Node extractedLicenseInfo) {
-        String[] tagNames = { SPDX_NAME, SPDX_LICENSE_NAME_VERSION_1, SPDX_LICENSE_ID };
+        String[] tagNames = {SPDX_LICENSE_ID, SPDX_NAME, SPDX_LICENSE_NAME_VERSION_1};
         for (String tagName : tagNames) {
             String name = findFirstSpdxNodeContent(extractedLicenseInfo, tagName);
             if (!isNullEmptyOrWhitespace(name)) {

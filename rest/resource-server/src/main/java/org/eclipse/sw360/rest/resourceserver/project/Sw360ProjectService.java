@@ -713,6 +713,32 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 .collect(Collectors.toList())));
     }
 
+    public Function<ProjectLink, ProjectLink> filterAndSortAllAttachments(Collection<AttachmentType> attachmentTypes) {
+        Predicate<Attachment> filter = att -> attachmentTypes.contains(att.getAttachmentType());
+        return createProjectLinkMapper(rl -> {
+            List<Attachment> attachments = nullToEmptyList(rl.getAttachments()).stream()
+                .filter(filter)
+                .collect(Collectors.toList());
+
+            if (attachments.size() > 1) {
+                Optional<Attachment> acceptedAttachment = attachments.stream()
+                        .filter(att -> att.getCheckStatus() == CheckStatus.ACCEPTED).findFirst();
+
+                if (acceptedAttachment.isPresent()) {
+                    attachments = List.of(acceptedAttachment.get());
+                } else {
+                    attachments = attachments.stream()
+                        .filter(att -> SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES.contains(att.getAttachmentType()))
+                        .limit(1)
+                        .collect(Collectors.toList());
+                }
+            }
+
+            rl.setAttachments(attachments);
+            return rl;
+        });
+    }
+
     public Function<ProjectLink, ProjectLink> createProjectLinkMapper(Function<ReleaseLink, ReleaseLink> releaseLinkMapper){
         return (projectLink) -> {
             List<ReleaseLink> mappedReleaseLinks = nullToEmptyList(projectLink
