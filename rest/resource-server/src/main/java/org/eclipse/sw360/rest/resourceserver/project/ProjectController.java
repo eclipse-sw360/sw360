@@ -1556,6 +1556,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<String, Object> attachmentUsageMap = parser.parseMap(serializedUsages);
         List<Map<String, Object>> listOfAttachmentUsages = (List<Map<String, Object>>) attachmentUsageMap
                 .get(SW360_ATTACHMENT_USAGES);
+        listOfAttachmentUsages.removeIf(item -> item == null);
         for (Map<String, Object> attachmentUsage : listOfAttachmentUsages) {
             attachmentUsage.remove("revision");
             attachmentUsage.remove("type");
@@ -1625,11 +1626,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                         } else {
                             valueToKeep.put(entry.getKey(), entry.getValue());
                         }
-
                     }
 				}
 			}
-			valueToKeep.put("_links", releaseLink);
+			Map<String, Object> linksValeToKeep = new LinkedHashMap<>();
+			linksValeToKeep.put("self", releaseLink);
+			valueToKeep.put("_links", linksValeToKeep);
 			modifiedList.add(valueToKeep);
 		}
 		return modifiedList;
