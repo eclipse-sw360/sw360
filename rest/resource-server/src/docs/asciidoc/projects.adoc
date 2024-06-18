@@ -1042,6 +1042,16 @@ include::{snippets}/should_document_update_project_with_network/curl-request.ado
 ===== Example response
 include::{snippets}/should_document_update_project_with_network/http-response.adoc[]
 
+[[resources-linked-releases-in-dependency-network-of-project]]
+==== Get linked releases in dependency network of a project
+
+A `GET` request is used to get linked releases in dependency network of a project.
+
+===== Example request
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_of_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_of_project/http-response.adoc[]
 
 [[resources-projects-download-licenseclearing-report]]
 ==== Downloading project license clearing report

@@ -706,4 +706,8 @@ service ProjectService {
     */
     list<ReleaseLink> getReleaseLinksOfProjectNetWorkByIndexPath(1: string projectId, 2: list<string> indexPath, 3: User user) throws (1: SW360Exception exp);
 
+    /**
+    * Get linked releases information in dependency network of a project
+    */
+    list<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(1: string projectId, 2: User sw360User) throws (1: SW360Exception exp);
 }

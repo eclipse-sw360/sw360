@@ -41,6 +41,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
@@ -1194,6 +1195,29 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 .map(Integer::parseInt).orElse(0);
         // returning default value 7 (days) if variable is not set
         return limit < 1 ? 7 : limit;
+    }
+
+    /**
+     * Get linked releases information in dependency network of a project
+     * @param projectId              Ids of Releases
+     * @param sw360User              Sw360 user
+     * @return List<ReleaseNode>     linked releases information in recursive structure
+     * @throws TException
+     */
+    public List<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(String projectId, User sw360User) throws TException {
+        try {
+            ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+            return sw360ProjectClient.getLinkedReleasesInDependencyNetworkOfProject(projectId, sw360User);
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("Requested Project Not Found");
+            } else if (sw360Exp.getErrorCode() == 403) {
+                throw new AccessDeniedException(
+                        "Project or its Linked Projects are restricted and / or not accessible");
+            } else {
+                throw sw360Exp;
+            }
+        }
     }
 
     public List<Map<String, String>> serveDependencyNetworkListView(String projectId, User sw360User) throws TException {
