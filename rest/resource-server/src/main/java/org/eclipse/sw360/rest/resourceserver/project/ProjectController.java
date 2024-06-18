@@ -3131,4 +3131,20 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         return ResponseEntity.created(location).body(halResource);
     }
+
+    @Operation(
+            description = "Get linked releases information in project's dependency network.",
+            tags = {"Project"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}/linkedReleases", method = RequestMethod.GET)
+    public ResponseEntity<?> getLinkedReleasesInNetwork(
+            @Parameter(description = "Project ID.") @PathVariable("id") String projectId
+        ) throws TException {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return new ResponseEntity<>(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        return new ResponseEntity<>(projectService.getLinkedReleasesInDependencyNetworkOfProject(projectId, sw360User), HttpStatus.OK);
+    }
 }

@@ -480,13 +480,16 @@ struct ClearingReport{
 }
 
 struct ReleaseNode {
-     1: required string releaseId,
-     2: optional string releaseRelationship,
-     3: optional string mainlineState,
-     4: optional string comment,
-     5: optional string createOn,
-     6: optional string createBy,
-     7: optional list<ReleaseNode> releaseLink,
+    1: required string releaseId,
+    2: optional string releaseRelationship,
+    3: optional string mainlineState,
+    4: optional string comment,
+    5: optional string createOn,
+    6: optional string createBy,
+    7: optional list<ReleaseNode> releaseLink,
+    8: optional string releaseName, // This field is used to view data, is not stored in db
+    9: optional string releaseVersion, // This field is used to view data, is not stored in db
+    10: optional string componentId, // This field is used to view data, is not stored in db
 }
 
 service ComponentService {
