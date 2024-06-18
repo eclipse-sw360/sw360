@@ -12,6 +12,7 @@ package org.eclipse.sw360.datahandler.db;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.cloudant.client.api.CloudantClient;
 import com.google.common.annotations.VisibleForTesting;
@@ -84,6 +85,7 @@ import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getCreatedOn;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import org.eclipse.sw360.exporter.ProjectExporter;
@@ -2497,5 +2499,43 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             releaseLink.setComponentType(componentById.getComponentType());
         }
         return releaseLink;
+    }
+
+    public List<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(String projectId, User sw360User) throws SW360Exception {
+        final Project projectById = getProjectById(projectId, sw360User);
+        if (projectById.getReleaseRelationNetwork() == null) {
+            return new ArrayList<>();
+        }
+        List<ReleaseNode> releaseNodes;
+        try {
+            releaseNodes = mapper.readValue(projectById.getReleaseRelationNetwork(), new TypeReference<>() {
+            });
+        } catch (JsonProcessingException e) {
+            log.error("Error while parsing JSON data");
+            return new ArrayList<>();
+        }
+
+        return releaseNodes.stream()
+                .map(releaseNode -> wrapSW360Exception(() -> createReleaseNodeWithDetail(releaseNode, sw360User)))
+                .collect(Collectors.toList());
+    }
+
+    public ReleaseNode createReleaseNodeWithDetail(ReleaseNode releaseNode, User sw360User) throws SW360Exception {
+        Release releaseById = componentDatabaseHandler.getRelease(releaseNode.getReleaseId(), sw360User);
+        boolean isActionAllowed = componentDatabaseHandler.isReleaseActionAllowed(releaseById, sw360User, RequestedAction.READ);
+        ReleaseNode detailReleaseNode = new ReleaseNode();
+        detailReleaseNode.setReleaseId(releaseNode.getReleaseId());
+        detailReleaseNode.setReleaseRelationship(releaseNode.getReleaseRelationship());
+        detailReleaseNode.setMainlineState(releaseNode.getMainlineState());
+        detailReleaseNode.setComment(releaseNode.getComment());
+        detailReleaseNode.setReleaseVersion(isActionAllowed ? releaseById.getVersion() : "");
+        detailReleaseNode.setReleaseName(isActionAllowed ? releaseById.getName() : "");
+        detailReleaseNode.setComponentId(isActionAllowed ? releaseById.getComponentId() : "");
+        detailReleaseNode.setReleaseLink(
+                releaseNode.getReleaseLink().stream()
+                        .map(node -> wrapSW360Exception(() -> createReleaseNodeWithDetail(node, sw360User)))
+                        .collect(Collectors.toList())
+        );
+        return detailReleaseNode;
     }
 }

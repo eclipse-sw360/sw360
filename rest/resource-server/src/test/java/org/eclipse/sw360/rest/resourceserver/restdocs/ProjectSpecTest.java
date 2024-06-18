@@ -41,6 +41,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
@@ -2630,6 +2631,42 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                     subsectionWithPath("_embedded.sw360:projectDTOs").description("An array of <<resources-projects, Projects resources>>"),
                                     subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                     subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"))));
+        }
+    }
+
+    @Test
+    public void should_document_get_linked_releases_in_dependency_network_of_project() throws Exception {
+        ReleaseNode subRelease = new ReleaseNode();
+        subRelease.setReleaseId("98765");
+        subRelease.setReleaseName("Component2");
+        subRelease.setReleaseVersion("v2");
+        subRelease.setComponentId("888888");
+        subRelease.setReleaseRelationship(CONTAINED.toString());
+        subRelease.setMainlineState(OPEN.toString());
+        subRelease.setComment("Comment");
+
+        ReleaseNode release = new ReleaseNode();
+        release.setReleaseId("12345");
+        release.setReleaseName("Component1");
+        release.setReleaseVersion("v1");
+        release.setComponentId("777777777");
+        release.setReleaseRelationship(CONTAINED.toString());
+        release.setMainlineState(OPEN.toString());
+        release.setComment("Comment");
+        release.setReleaseLink(List.of(subRelease));
+
+        given(this.projectServiceMock.getLinkedReleasesInDependencyNetworkOfProject(any(), any())).willReturn(List.of(release));
+
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            mockMvc.perform(get("/api/projects/network/888888/linkedReleases")
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            mockMvc.perform(get("/api/projects/network/888888/linkedReleases")
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isOk());
         }
     }
 }
