@@ -481,7 +481,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         osi.setStatus(ObligationStatus.OPEN);
         osi.setObligationType(obligation.getObligationType());
         Map<String, ObligationStatusInfo> obligationStatusMap = Map.of(obligation.getTitle(), osi);
-        
+
         ObligationList obligationLists = new ObligationList();
         obligationLists.setProjectId("123456733");
         obligationLists.setId("009");
@@ -541,7 +541,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         RequestSummary requestSummaryForCycloneDX = new RequestSummary();
         requestSummaryForCycloneDX.setMessage("{\"projectId\":\"" + cycloneDXProject.getId() + "\"}");
-        
+
         String projectName="project_name_version_createdOn.xlsx";
 
         AddDocumentRequestSummary requestSummaryForCR = new AddDocumentRequestSummary();
@@ -2023,6 +2023,25 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                         + Arrays.asList(OutputFormatVariant.values())),
                                 parameterWithName("externalIds").description("The external Ids of the project")
                                 )));
+    }
+
+    @Test
+    public void should_document_get_download_license_info_with_all_attachemnts() throws Exception {
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/licenseinfo?generatorClassName=XhtmlGenerator&variant=DISCLOSURE&includeAllAttachments=true")
+                .header("Authorization", "Bearer " + accessToken)
+                .accept("application/xhtml+xml"))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler
+                        .document(requestParameters(
+                                parameterWithName("generatorClassName")
+                                        .description("All possible values for output generator class names are "
+                                                + Arrays.asList("DocxGenerator", "XhtmlGenerator", "TextGenerator")),
+                                parameterWithName("variant").description("All the possible values for variants are "
+                                        + Arrays.asList(OutputFormatVariant.values())),
+                                parameterWithName("includeAllAttachments").description("Set this option to `true` to include all attachments from linked releases. "
+                                        + "Note that only one attachment per release will be parsed for "
+                                        + "license information, and if available, a CLX file will be preferred over an ISR file."))));
     }
 
     @Test
