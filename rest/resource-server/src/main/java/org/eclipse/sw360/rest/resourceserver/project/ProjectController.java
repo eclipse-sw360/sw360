@@ -65,6 +65,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -1601,22 +1602,41 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public ResponseEntity<HalResource> addAttachmentToProject(
             @Parameter(description = "Project ID.")
             @PathVariable("projectId") String projectId,
-            @Parameter(description = "File to attach")
-            @RequestPart("file") MultipartFile file,
-            @Parameter(description = "Attachment description")
-            @RequestPart("attachment") Attachment newAttachment
-    ) throws TException {
+            @Parameter(description = "Files to attach")
+            @RequestParam("file") MultipartFile[] files,
+            @Parameter(description = "Attachments descriptions")
+            @RequestParam("attachments") String attachments
+    ) throws TException, IOException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project project = projectService.getProjectForUserById(projectId, sw360User);
-        Attachment attachment = null;
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<Map<String, Object>> attachmentsList;
         try {
-            attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
-        } catch (IOException e) {
-            log.error("failed to upload attachment", e);
-            throw new RuntimeException("failed to upload attachment", e);
+            attachmentsList = objectMapper.readValue(attachments, new TypeReference<List<Map<String, Object>>>() {
+            });
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse attachments JSON", e);
+            throw new SW360Exception(e.getMessage());
+        }
+        for (int i = 0; i < files.length; i++) {
+            try {
+                Attachment attachment = new Attachment();
+                Map<String, Object> attachmentMap = attachmentsList.get(i);
+                attachment.setFilename((String) attachmentMap.get("filename"));
+                attachment.setAttachmentContentId((String) attachmentMap.get("attachmentContentId"));
+                attachment.setAttachmentType(AttachmentType.valueOf((String) attachmentMap.get("attachmentType")));
+                attachment.setCheckStatus(CheckStatus.valueOf((String) attachmentMap.get("checkStatus")));
+                attachment.setCreatedComment((String) attachmentMap.get("createdComment"));
+
+                attachment = attachmentService.uploadAttachment(files[i], attachment, sw360User);
+                project.addToAttachments(attachment);
+            } catch (IOException e) {
+                log.error("Failed to upload attacchment", e);
+                throw new SW360Exception(e.getMessage());
+            }
         }
 
-        project.addToAttachments(attachment);
         RequestStatus updateProjectStatus = projectService.updateProject(project, sw360User);
         HttpStatus status = HttpStatus.OK;
         HalResource<Project> halResource = createHalProject(project, sw360User);
