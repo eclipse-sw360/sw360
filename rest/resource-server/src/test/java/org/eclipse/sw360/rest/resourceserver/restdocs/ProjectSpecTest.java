@@ -618,6 +618,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.deleteProject(eq(project.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(projectReleaseRelationshipResponseBody);
         given(this.projectServiceMock.getClearingInfo(eq(project), any())).willReturn(project);
+        given(this.projectServiceMock.updateProjectForAttachment(eq(project7), any(), any(), any(), eq(projectName))).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.getCyclicLinkedProjectPath(eq(project7), any())).willReturn("");
         given(this.projectServiceMock.updateProject(eq(project7), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(
@@ -2078,8 +2079,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_upload_attachment_to_project() throws Exception {
-        testAttachmentUpload("/api/projects/", project.getId());
+        testAttachmentUploadProject("/api/projects/", project.getId());
     }
+
 
     @Test
     public void should_document_link_releases() throws Exception {
