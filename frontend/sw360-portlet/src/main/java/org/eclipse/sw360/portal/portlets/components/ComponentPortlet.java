@@ -2320,11 +2320,13 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                 RequestStatus requestStatus = client.updateComponent(component, user);
                 setSessionMessage(request, requestStatus, "Component", "update", component.getName());
                 if (RequestStatus.DUPLICATE.equals(requestStatus) || RequestStatus.DUPLICATE_ATTACHMENT.equals(requestStatus) ||
-                        RequestStatus.NAMINGERROR.equals(requestStatus)) {
+                        RequestStatus.NAMINGERROR.equals(requestStatus) || RequestStatus.INVALID_INPUT.equals(requestStatus) ) {
                     if(RequestStatus.DUPLICATE.equals(requestStatus))
                         setSW360SessionError(request, ErrorMessages.COMPONENT_DUPLICATE);
                     else if (RequestStatus.NAMINGERROR.equals(requestStatus))
                         setSW360SessionError(request, ErrorMessages.COMPONENT_NAMING_ERROR);
+                    else if (RequestStatus.INVALID_INPUT.equals(requestStatus))
+                        setSW360SessionError(request, ErrorMessages.INVALID_VCS_OR_LINKED_DOCUMENT);
                     else
                         setSW360SessionError(request, ErrorMessages.DUPLICATE_ATTACHMENT);
                     response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
@@ -2359,6 +2361,11 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                         break;
                     case NAMINGERROR:
                         setSW360SessionError(request, ErrorMessages.COMPONENT_NAMING_ERROR);
+                        response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
+                        prepareRequestForEditAfterDuplicateOrNamingError(request, component);
+                        break;
+                    case INVALID_INPUT:
+                        setSW360SessionError(request, ErrorMessages.INVALID_VCS_OR_LINKED_DOCUMENT);
                         response.setRenderParameter(PAGENAME, PAGENAME_EDIT);
                         prepareRequestForEditAfterDuplicateOrNamingError(request, component);
                         break;
@@ -2419,6 +2426,8 @@ public class ComponentPortlet extends FossologyAwarePortlet {
                             setSW360SessionError(request, ErrorMessages.RELEASE_DUPLICATE);
                         else if (RequestStatus.NAMINGERROR.equals(requestStatus))
                             setSW360SessionError(request, ErrorMessages.RELEASE_NAME_VERSION_ERROR);
+                        else if (RequestStatus.INVALID_INPUT.equals(requestStatus))
+                            setSW360SessionError(request, ErrorMessages.INVALID_VCS_OR_LINKED_DOCUMENT);
                         else
                             setSW360SessionError(request, ErrorMessages.DUPLICATE_ATTACHMENT);
                         response.setRenderParameter(PAGENAME, PAGENAME_EDIT_RELEASE);
