@@ -52,6 +52,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     private static final String PROJECTS = "projects";
     private static final String LICENSES = "licenses";
     private static final String LICENSE_INFO = "licenseInfo";
+    private static final String EXPORT_CREATE_PROJ_CLEARING_REPORT = "exportCreateProjectClearingReport";
 
     public static final String REPORTS_URL = "/reports";
 
@@ -107,6 +108,9 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                     break;
                 case LICENSE_INFO:
                     getLicensesInfoReports(request, response, sw360User, module, projectId);
+                    break;
+                case EXPORT_CREATE_PROJ_CLEARING_REPORT:
+                    exportProjectCreateClearingRequest(request, response, sw360User, module, projectId);
                     break;
                 default:
                     break;
@@ -167,6 +171,14 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         }
     }
 
+    private void exportProjectCreateClearingRequest(HttpServletRequest request, HttpServletResponse response, User sw360User, String module, String projectId) throws TException {
+        try {
+            downloadExcelReport(false, request, response, sw360User, module, projectId);
+        }catch (Exception e) {
+            throw new TException(e.getMessage());
+        }
+    }
+
     private void downloadExcelReport(boolean withLinkedReleases, HttpServletRequest request , HttpServletResponse response, User user, String module, String projectId)
             throws TException {
         try {
@@ -182,6 +194,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                     buffer = sw360ReportService.getLicenseBuffer();
                     break;
                 case LICENSE_INFO:
+                case EXPORT_CREATE_PROJ_CLEARING_REPORT:
                     final String generatorClassName = request.getParameter("generatorClassName");
                     final String variant = request.getParameter("variant");
                     final String template = request.getParameter("template");
@@ -200,7 +213,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 fileName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
             } else if(module.equals(PROJECTS)) {
                 fileName = sw360ReportService.getDocumentName(user, projectId);
-            } else if(module.equals(LICENSE_INFO)) {
+            } else if(module.equals(LICENSE_INFO) || module.equals(EXPORT_CREATE_PROJ_CLEARING_REPORT)) {
                 fileName = sw360ReportService.getGenericLicInfoFileName(request, user);
             }else {
                 fileName = sw360ReportService.getDocumentName(user, null);

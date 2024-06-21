@@ -2379,7 +2379,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        queryParameters(
+                        requestParameters(
                                 parameterWithName("projectId").description("Id for the project."),
                                 parameterWithName("generatorClassName").description("Projects download format. Possible values are `<DocxGenerator>`"),
                                 parameterWithName("variant").description("The possible values for variants are `<REPORT>`"),
