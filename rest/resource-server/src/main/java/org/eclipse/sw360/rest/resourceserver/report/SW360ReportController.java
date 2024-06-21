@@ -50,6 +50,11 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     private static final String LICENSES_RESOURCE_BUNDLE = "licenseResourceBundle";
     private static final String ZIP_CONTENT_TYPE = "application/zip";
     private ByteBuffer defaultByteBufferVal = null;
+    private static final String EXPORT_CREATE_PROJ_CLEARING_REPORT = "exportCreateProjectClearingReport";
+
+    public static final String REPORTS_URL = "/reports";
+
+    private static final String CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     @NonNull
     private final RestControllerHelper restControllerHelper;
@@ -102,13 +107,16 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                     getLicensesReports(request, response, sw360User, module, excludeReleaseVersion);
                     break;
                 case LICENSE_INFO:
-                        getLicensesInfoReports(request, response, sw360User, module, projectId, excludeReleaseVersion);
+                    getLicensesInfoReports(request, response, sw360User, module, projectId, excludeReleaseVersion);
                     break;
                 case LICENSES_RESOURCE_BUNDLE:
                     getLicenseResourceBundleReports(projectId, request, response, sw360User, module, excludeReleaseVersion);
                     break;
                 case SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO:
                     getProjectReleaseWithEccSpreadSheet(response, sw360User, module, projectId, request, excludeReleaseVersion);
+                    break;
+                case EXPORT_CREATE_PROJ_CLEARING_REPORT:
+                    exportProjectCreateClearingRequest(request, response, sw360User, module, projectId, excludeReleaseVersion);
                     break;
                 default:
                     break;
@@ -171,6 +179,15 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         }
     }
 
+    private void exportProjectCreateClearingRequest(HttpServletRequest request, HttpServletResponse response, User sw360User,
+                                                    String module, String projectId, boolean excludeReleaseVersion) throws TException {
+        try {
+            downloadExcelReport(false, request, response, sw360User, module, projectId, excludeReleaseVersion, defaultByteBufferVal);
+        }catch (Exception e) {
+            throw new TException(e.getMessage());
+        }
+    }
+
     private void downloadExcelReport(boolean withLinkedReleases, HttpServletRequest request,
                                      HttpServletResponse response, User user, String module,
                                      String projectId, boolean excludeReleaseVersion, ByteBuffer buffer)
@@ -191,6 +208,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                     buff = buffer;
                     break;
                 case LICENSE_INFO:
+                case EXPORT_CREATE_PROJ_CLEARING_REPORT:
                     final String generatorClassName = request.getParameter("generatorClassName");
                     final String variant = request.getParameter("variant");
                     final String template = request.getParameter("template");
@@ -213,6 +231,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             } else if (module.equals(LICENSES_RESOURCE_BUNDLE)) {
                 response.setContentType(ZIP_CONTENT_TYPE);
                 fileName = sw360ReportService.getSourceCodeBundleName(projectId, user);
+            } else if(module.equals(LICENSE_INFO) || module.equals(EXPORT_CREATE_PROJ_CLEARING_REPORT)) {
+                fileName = sw360ReportService.getGenericLicInfoFileName(request, user);
             } else if ( module.equals(SW360Constants.PROJECTS) || module.equals(SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO) ) {
                 fileName = sw360ReportService.getDocumentName(user, projectId, module);
             } else {

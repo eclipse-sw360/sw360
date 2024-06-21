@@ -1219,3 +1219,17 @@ include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/cur
 ===== Example response
 include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/http-response.adoc[]
 
+
+[[resources-project-get-download-project-clearing-report]]
+==== Export Create Project Clearing Report
+
+A `GET` request is used to export Create Project Clearing Report.
+
+===== Request parameter
+include::{snippets}/should_document_get_export_project_create_clearing_request/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_export_project_create_clearing_request/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_export_project_create_clearing_request/http-response.adoc[]
