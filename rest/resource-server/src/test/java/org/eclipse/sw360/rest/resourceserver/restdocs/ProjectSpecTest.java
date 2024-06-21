@@ -2314,6 +2314,28 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_export_project_create_clearing_request() throws Exception{
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+        mockMvc.perform(get("/api/reports")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("module", "exportCreateProjectClearingReport")
+                        .param("projectId", project.getId())
+                        .param("generatorClassName", "DocxGenerator")
+                        .param("variant", "REPORT")
+                        .param("externalIds", "portal-id,main-project-id")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("projectId").description("Id for the project."),
+                                parameterWithName("generatorClassName").description("Projects download format. Possible values are `<DocxGenerator>`"),
+                                parameterWithName("variant").description("The possible values for variants are `<REPORT>`"),
+                                parameterWithName("externalIds").description("The external Ids of the project"),
+                                parameterWithName("module").description("module possible values are `<exportCreateProjectClearingReport>`")
+                        )));
+    }
+
+    @Test
     public void should_document_import_cyclonedx() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file","file=@/sampleBOM.xml".getBytes());
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
