@@ -597,7 +597,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return isDuplicate(release.getName(), release.getVersion());
     }
 
-    private boolean isDuplicate(String componentName, boolean caseInsenstive) {
+    public boolean isDuplicate(String componentName, boolean caseInsenstive) {
         if (isNullEmptyOrWhitespace(componentName)) {
             return false;
         }

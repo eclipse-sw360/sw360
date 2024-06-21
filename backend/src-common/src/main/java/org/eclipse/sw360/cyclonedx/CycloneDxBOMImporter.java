@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -93,11 +91,8 @@ public class CycloneDxBOMImporter {
     private static final String DOT_GIT = ".git";
     private static final String SLASH = "/";
     private static final String DOT = ".";
-    private static final String HASH = "#";
     private static final String HYPHEN = "-";
     private static final String JOINER = "||";
-    private static final Pattern THIRD_SLASH_PATTERN = Pattern.compile("[^/]*(/[^/]*){2}");
-    private static final Pattern FIRST_SLASH_PATTERN = Pattern.compile("/(.*)");
     private static final String VCS_HTTP_REGEX = "^[^:]+://";
     private static final String COLON_REGEX = "[:,\\s]";
     private static final String HTTPS_SCHEME = "https://";
@@ -569,6 +564,10 @@ public class CycloneDxBOMImporter {
             String relName = "";
             AddDocumentRequestSummary compAddSummary;
             try {
+                if (componentDatabaseHandler.isDuplicate(comp.getName(), true)) {
+                    comp.setName(getComponentNameFromVCS(entry.getKey(), true));
+                }
+
                 compAddSummary = componentDatabaseHandler.addComponent(comp, user.getEmail());
 
                 if (CommonUtils.isNotNullEmptyOrWhitespace(compAddSummary.getId())) {
@@ -625,6 +624,17 @@ public class CycloneDxBOMImporter {
                         comp.getMainLicenseIds().addAll(licenses);
                     } else {
                         comp.setMainLicenseIds(licenses);
+                    }
+                    if (CommonUtils.isNullEmptyOrWhitespace(comp.getVcs())) {
+                        for (ExternalReference extRef : CommonUtils.nullToEmptyList(bomComp.getExternalReferences())) {
+                            if (Type.VCS.equals(extRef.getType())) {
+                                comp.setVcs(CommonUtils.nullToEmptyString(extRef.getUrl()));
+                            } else if (Type.MAILING_LIST.equals(extRef.getType())) {
+                                comp.setMailinglist(CommonUtils.nullToEmptyString(extRef.getUrl()));
+                            } else if (Type.SUPPORT.equals(extRef.getType())) {
+                                comp.setWiki(CommonUtils.nullToEmptyString(extRef.getUrl()));
+                            }
+                        }
                     }
 
                     RequestStatus updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
@@ -785,7 +795,7 @@ public class CycloneDxBOMImporter {
 
     // Create Component for Package
     private Component createComponent(String vcsUrl) {
-        String name = getComponentNameFromVCS(vcsUrl);
+        String name = getComponentNameFromVCS(vcsUrl, false);
         Component component = new Component();
         component.setName(CommonUtils.nullToEmptyString(name.trim()));
         component.setComponentType(ComponentType.OSS);
@@ -893,32 +903,17 @@ public class CycloneDxBOMImporter {
 
     private String getPackageName(PackageURL packageURL, org.cyclonedx.model.Component comp, String delimiter) {
         String name = CommonUtils.nullToEmptyString(packageURL.getName());
+        String pkgManager = CommonUtils.isNullEmptyOrWhitespace(packageURL.getType()) ? "" : packageURL.getType();
         if (CommonUtils.isNotNullEmptyOrWhitespace(packageURL.getNamespace())) {
-            return new StringBuilder(packageURL.getNamespace()).append(delimiter).append(name).toString();
+            return new StringBuilder(pkgManager).append(delimiter).append(packageURL.getNamespace()).append(delimiter).append(name).toString();
         } else if (CommonUtils.isNotNullEmptyOrWhitespace(comp.getGroup())) {
-            return new StringBuilder(comp.getGroup()).append(delimiter).append(name).toString();
+            return new StringBuilder(pkgManager).append(delimiter).append(comp.getGroup()).append(delimiter).append(name).toString();
         } else if (CommonUtils.isNotNullEmptyOrWhitespace(comp.getPublisher())) {
             //.replaceAll(CLEAN_PUBLISHER_REGEX, StringUtils.EMPTY) --> Use this to remove Publisher email id.
-            return new StringBuilder(comp.getPublisher()).append(delimiter).append(name).toString();
+            return new StringBuilder(pkgManager).append(delimiter).append(comp.getPublisher()).append(delimiter).append(name).toString();
         } else {
-            return name;
+            return pkgManager + delimiter + name;
         }
-    }
-
-    private String getComponentNameFromVCS(String vcsUrl){
-        String compName = vcsUrl.replaceAll(SCHEMA_PATTERN, "$1");
-        Matcher thirdSlashMatcher = THIRD_SLASH_PATTERN.matcher(compName);
-        if (thirdSlashMatcher.find()) {
-            compName = thirdSlashMatcher.group();
-            Matcher firstSlashMatcher = FIRST_SLASH_PATTERN.matcher(compName);
-            if (firstSlashMatcher.find()) {
-                compName = firstSlashMatcher.group(1);
-                compName = StringUtils.substringBefore(compName, HASH);
-                compName = compName.replaceAll(SLASH, ".");
-            }
-        }
-
-        return compName;
     }
 
     private Package createPackage(org.cyclonedx.model.Component componentFromBom, Release release, Set<String> licenses) {
@@ -929,12 +924,10 @@ public class CycloneDxBOMImporter {
                 purl = purl.toLowerCase().trim();
                 PackageURL packageURL = new PackageURL(purl);
                 pckg.setPurl(purl);
-                String packageName;
-                if (PackageManager.NPM.toString().equalsIgnoreCase(packageURL.getType())
-                        || PackageManager.GOLANG.toString().equalsIgnoreCase(packageURL.getType())) {
+                String packageName = packageURL.getName();
+                boolean isDuplicatePackageName = packageDatabaseHandler.getPackageByNameAndVersion(packageName, packageURL.getVersion()).size() > 0;
+                if (isDuplicatePackageName) {
                     packageName = getPackageName(packageURL, componentFromBom, SLASH).trim();
-                } else {
-                    packageName = getPackageName(packageURL, componentFromBom, DOT).replaceAll(SLASH, DOT).trim();
                 }
                 pckg.setName(packageName);
                 pckg.setVersion(packageURL.getVersion());
@@ -975,5 +968,19 @@ public class CycloneDxBOMImporter {
     public String getComponetNameById(String id, User user) throws SW360Exception {
         Component comp = componentDatabaseHandler.getComponent(id, user);
         return comp.getName();
+    }
+
+    private String getComponentNameFromVCS(String vcsUrl, boolean isGetVendorandName) {
+        String compName = vcsUrl.replaceAll(SCHEMA_PATTERN, "$1");
+        String[] parts = compName.split("/");
+
+        if (parts.length >= 2) {
+            if (isGetVendorandName) {
+                return String.join("/", Arrays.copyOfRange(parts, 1, parts.length));
+            } else {
+                return parts[parts.length - 1];
+            }
+        }
+        return compName;
     }
 }
