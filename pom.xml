@@ -87,7 +87,8 @@
     <json-path.version>2.9.0</json-path.version>
     <json-smart.version>2.4.10</json-smart.version>
     <json-simple.version>4.0.1</json-simple.version>
-    <jackson.version>2.14.2</jackson.version>
+    <jackson.version>2.17.1</jackson.version>
+
     <!-- Dependencies version properties -->
     <byte-buddy.version>1.12.13</byte-buddy.version>
     <cloudant.version>2.19.1</cloudant.version>
@@ -278,7 +279,7 @@
       <dependency>
         <groupId>org.cyclonedx</groupId>
         <artifactId>cyclonedx-core-java</artifactId>
-        <version>7.3.2</version>
+        <version>9.0.4</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
