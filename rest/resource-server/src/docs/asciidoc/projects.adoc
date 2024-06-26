@@ -1085,3 +1085,20 @@ include::{snippets}/should_document_get_linked_releases_in_dependency_network_by
 
 ===== Example response
 include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/http-response.adoc[]
+
+[[resources-projects-download-sourcebundle]]
+==== Downloading resource sourcebundle
+
+A `GET` request help to download the projects license clearing resource bundle.
+
+===== Request parameter
+include::{snippets}/should_document_get_resource_source_bundle/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_resource_source_bundle/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_resource_source_bundle/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_resource_source_bundle/http-response.adoc[]

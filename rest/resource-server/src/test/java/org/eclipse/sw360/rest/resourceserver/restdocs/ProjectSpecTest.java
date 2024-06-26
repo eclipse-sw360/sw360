@@ -584,6 +584,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getProjectForUserById(eq(project6.getId()), any())).willReturn(project6);
         given(this.projectServiceMock.getProjectForUserById(eq(project7.getId()), any())).willReturn(project7);
         given(this.projectServiceMock.getProjectForUserById(eq(project8.getId()), any())).willReturn(project8);
+        given(this.sw360ReportServiceMock.downloadSourceCodeBundle(any(), any(), any())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.getSourceCodeBundleName(any(), any())).willReturn("SourceCodeBundle-ProjectName");
         given(this.projectServiceMock.getLicenseInfoAttachmentUsage(eq(project8.getId()))).willReturn(licenseInfoUsages);
         given(this.projectServiceMock.getObligationData(eq(project8.getLinkedObligationId()), any())).willReturn(obligationLists);
         given(this.projectServiceMock.setLicenseInfoWithObligations(eq(obligationStatusMap), eq(releaseIdToAcceptedCLI), any(), any())).willReturn(obligationStatusMap);
@@ -2909,4 +2911,18 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                     ));
         }
     }
+
+    @Test
+    public void should_document_get_resource_source_bundle() throws Exception {
+        mockMvc.perform(get("/api/reports").header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .param("module", "licenseResourceBundle").param("projectId", project.getId())
+                .param("isAllAttachmentSelected", "true").accept(MediaTypes.HAL_JSON)).andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(queryParameters(
+                        parameterWithName("projectId").description("Project id"),
+                        parameterWithName("isAllAttachmentSelected").description(
+                                "All attachment selected to download source code bundle. Possible values are `<true|false>`"),
+                        parameterWithName("module").description(
+                                "module represent the type oa document. Possible values are `<licenseResourceBundle>`"))));
+    }
+
 }
