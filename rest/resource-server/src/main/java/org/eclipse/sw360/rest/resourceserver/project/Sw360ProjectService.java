@@ -1198,6 +1198,27 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
     }
 
+    public List<Release> getLinkedReleasesOfSubProjects(String projectId, User sw360User) throws TException {
+        Project projectById = getProjectForUserById(projectId, sw360User);
+        ComponentService.Iface sw360ComponentClient = new ThriftClients().makeComponentClient();
+        Map<String, ProjectProjectRelationship> linkedProjects = CommonUtils.nullToEmptyMap(projectById.getLinkedProjects());
+        Set<String> releaseIdsFromLinkedProjects = new HashSet<>();
+
+        for (String linkedProjectId : linkedProjects.keySet()) {
+            Project linkedProject = getProjectForUserById(linkedProjectId, sw360User);
+
+            if (linkedProject != null) {
+                if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+                    Map<String, ProjectReleaseRelationship> releaseIdToUsage = CommonUtils.nullToEmptyMap(linkedProject.getReleaseIdToUsage());
+                    releaseIdsFromLinkedProjects.addAll(releaseIdToUsage.keySet());
+                } else {
+                    releaseIdsFromLinkedProjects.addAll(SW360Utils.getReleaseIdsLinkedWithProject(linkedProject));
+                }
+            }
+        }
+        return sw360ComponentClient.getAccessibleReleasesById(releaseIdsFromLinkedProjects, sw360User);
+    }
+
     public List<Map<String, String>> serveDependencyNetworkListView(String projectId, User sw360User) throws TException {
         try {
             ProjectService.Iface sw360ProjectClient = getThriftProjectClient();

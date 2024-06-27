@@ -844,6 +844,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.vulnerabilityMockService.fillVulnerabilityMetadata(any(), any())).willReturn(vulIdToRelIdToRatings);
         given(this.vulnerabilityMockService.updateProjectVulnerabilityRating(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.getReleasesFromProjectIds(any(), anyBoolean(), any(), any())).willReturn(Set.of(rel));
+        given(this.projectServiceMock.getLinkedReleasesOfSubProjects(any(), any())).willReturn(List.of(release, release2));
     }
 
     @Test
@@ -2995,4 +2996,19 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 "module represent the type oa document. Possible values are `<licenseResourceBundle>`"))));
     }
 
+    @Test
+    public void should_document_get_linked_releases_of_linked_projects() throws Exception {
+        mockMvc.perform(get("/api/projects/888888/subProjects/releases")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
 }
