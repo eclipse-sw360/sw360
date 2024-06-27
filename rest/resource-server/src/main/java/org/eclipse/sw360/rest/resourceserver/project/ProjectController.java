@@ -3192,4 +3192,21 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         return new ResponseEntity<>(projectService.getLinkedReleasesInDependencyNetworkOfProject(projectId, sw360User), HttpStatus.OK);
     }
+
+    @Operation(
+            description = "Get linked releases information of linked projects.",
+            tags = {"Project"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/subProjects/releases", method = RequestMethod.GET)
+    public ResponseEntity<?> getLinkedReleasesOfLinkedProjects(
+            @Parameter(description = "Project ID.") @PathVariable("id") String projectId
+    ) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<Release> linkedReleases = projectService.getLinkedReleasesOfSubProjects(projectId, sw360User);
+        List<HalResource> halResources = linkedReleases.stream()
+                .map(rel -> restControllerHelper.createHalReleaseResourceWithAllDetails(rel))
+                .collect(Collectors.toList());
+        CollectionModel<HalResource> collectionModel = CollectionModel.of(halResources);
+        return new ResponseEntity<>(collectionModel, HttpStatus.OK);
+    }
 }

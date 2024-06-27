@@ -1143,3 +1143,17 @@ include::{snippets}/should_document_get_resource_source_bundle/curl-request.adoc
 
 ===== Example response
 include::{snippets}/should_document_get_resource_source_bundle/http-response.adoc[]
+
+[[resources-get-linked-releases-of-linked-projects]]
+==== Get linked releases of linked projects
+
+A `GET` request is used to Get linked releases of linked projects.
+
+===== Response structure
+include::{snippets}/should_document_get_linked_releases_of_linked_projects/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_releases_of_linked_projects/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_releases_of_linked_projects/http-response.adoc[]
