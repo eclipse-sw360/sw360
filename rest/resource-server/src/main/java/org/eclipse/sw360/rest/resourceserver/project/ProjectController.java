@@ -3209,4 +3209,24 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         CollectionModel<HalResource> collectionModel = CollectionModel.of(halResources);
         return new ResponseEntity<>(collectionModel, HttpStatus.OK);
     }
+
+    @Operation(
+            description = "Compare dependency network with default network (relationships between releases).",
+            tags = {"Project"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/network/compareDefaultNetwork", method = RequestMethod.POST)
+    public ResponseEntity<?> compareDependencyNetworkWithDefaultNetwork(
+            @RequestBody List<ReleaseNode> dependencyNetwork
+    ) {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return new ResponseEntity<>(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        if (CommonUtils.isNullOrEmptyCollection(dependencyNetwork)) {
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
+        }
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<Map<String, Object>> comparedNetwork = projectService.compareWithDefaultNetwork(dependencyNetwork, sw360User);
+        return new ResponseEntity<>(comparedNetwork, HttpStatus.OK);
+    }
 }
