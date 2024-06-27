@@ -3011,4 +3011,53 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
+
+    @Test
+    public void should_document_compare_dependency_network_with_default_releases_relationship() throws Exception {
+        ReleaseNode subRelease = new ReleaseNode();
+        subRelease.setReleaseId("98765");
+        subRelease.setReleaseName("Component2");
+        subRelease.setReleaseVersion("v2");
+        subRelease.setComponentId("888888");
+        subRelease.setReleaseRelationship(CONTAINED.toString());
+        subRelease.setMainlineState(OPEN.toString());
+        subRelease.setComment("Comment");
+        subRelease.setReleaseLink(Collections.emptyList());
+
+        ReleaseNode release = new ReleaseNode();
+        release.setReleaseId("12345");
+        release.setReleaseName("Component1");
+        release.setReleaseVersion("v1");
+        release.setComponentId("777777777");
+        release.setReleaseRelationship(CONTAINED.toString());
+        release.setMainlineState(OPEN.toString());
+        release.setComment("Comment");
+        release.setReleaseLink(List.of(subRelease));
+
+        Map<String, Object> comparedChild = (Map<String, Object>) objectMapper.convertValue(subRelease, Map.class);
+        comparedChild.put("isDiff", true);
+        comparedChild.put("releaseLink", Collections.emptyList());
+        Map<String, Object> comparedRoot = (Map<String, Object>) objectMapper.convertValue(release, Map.class);
+        comparedRoot.put("isDiff", false);
+        comparedRoot.put("releaseLink", List.of(comparedChild));
+
+        String jsonData = this.objectMapper.writeValueAsString(List.of(release));
+        given(projectServiceMock.compareWithDefaultNetwork(any(), any())).willReturn(List.of(comparedRoot));
+
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            mockMvc.perform(post("/api/projects/network/compareDefaultNetwork")
+                            .contentType(MediaTypes.HAL_JSON)
+                            .accept(MediaTypes.HAL_JSON_VALUE)
+                            .content(jsonData)
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            mockMvc.perform(post("/api/projects/network/compareDefaultNetwork")
+                            .contentType(MediaTypes.HAL_JSON)
+                            .accept(MediaTypes.HAL_JSON_VALUE)
+                            .content(jsonData)
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                    .andExpect(status().isOk());
+        }
+    }
 }

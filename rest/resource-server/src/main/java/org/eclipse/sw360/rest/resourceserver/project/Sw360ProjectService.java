@@ -1219,6 +1219,67 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return sw360ComponentClient.getAccessibleReleasesById(releaseIdsFromLinkedProjects, sw360User);
     }
 
+    public List<Map<String, Object>> compareWithDefaultNetwork(List<ReleaseNode> dependencyNetwork, User sw360User) {
+        ComponentService.Iface releaseClient = new ThriftClients().makeComponentClient();
+        List<Map<String, Object>> comparedNetwork = new ArrayList<>();
+        for (ReleaseNode releaseNode : dependencyNetwork) {
+            Map<String, Object> comparedNode = setFlagForNode(releaseNode, false);
+            List<Map<String, Object>> comparedSubNodes = compareSubNodes(releaseNode, sw360User, releaseClient);
+            comparedNode.put("releaseLink", comparedSubNodes);
+            comparedNetwork.add(comparedNode);
+        }
+        return comparedNetwork;
+    }
+
+    private List<Map<String, Object>> compareSubNodes(ReleaseNode releaseNode, User sw360User, ComponentService.Iface releaseClient) {
+        List<Map<String, Object>> comparedSubNodes = new ArrayList<>();
+        try {
+            Release releaseById = releaseClient.getReleaseById(releaseNode.getReleaseId(), sw360User);
+            Map<String, ReleaseRelationship> linkedReleases = releaseById.getReleaseIdToRelationship();
+            List<String> releaseIdsInRelationShip = (linkedReleases != null) ? new ArrayList<>(linkedReleases.keySet()) : Collections.emptyList();
+            if (!CommonUtils.isNullOrEmptyCollection(releaseNode.getReleaseLink())) {
+                for (ReleaseNode subNode : releaseNode.getReleaseLink()) {
+                    Map<String, Object> comparedSubNode;
+                    if (!releaseIdsInRelationShip.contains(subNode.getReleaseId())) {
+                        comparedSubNode = setBranchOfNodeIsDiff(subNode);
+                    } else {
+                        comparedSubNode = setFlagForNode(subNode, false);
+                        comparedSubNode.put("releaseLink", compareSubNodes(subNode, sw360User, releaseClient));
+                    }
+                    comparedSubNodes.add(comparedSubNode);
+                }
+            }
+        } catch (TException e) {
+            log.error("Could not fetch release: " + releaseNode.getReleaseId(), e);
+        }
+        return comparedSubNodes;
+    }
+
+    private Map<String, Object> setBranchOfNodeIsDiff(ReleaseNode releaseNode) {
+        Map<String, Object> comparedNode = setFlagForNode(releaseNode, true);
+        List<Map<String, Object>> comparedSubNodes = new ArrayList<>();
+        if (!CommonUtils.isNullOrEmptyCollection(releaseNode.getReleaseLink())) {
+            for (ReleaseNode subNode : releaseNode.getReleaseLink()) {
+                comparedSubNodes.add(setBranchOfNodeIsDiff(subNode));
+            }
+        }
+        comparedNode.put("releaseLink", comparedSubNodes);
+        return comparedNode;
+    }
+
+    private Map<String, Object> setFlagForNode(ReleaseNode releaseNode, boolean isDiff) {
+        Map<String, Object> setFlagNode = new HashMap<>();
+        for (ReleaseNode._Fields field : ReleaseNode._Fields.values()) {
+            Object fieldValue = releaseNode.getFieldValue(field);
+            if (fieldValue != null) {
+                String fieldName = field.getFieldName();
+                setFlagNode.put(fieldName, fieldValue);
+            }
+        }
+        setFlagNode.put("isDiff", isDiff);
+        return setFlagNode;
+    }
+
     public List<Map<String, String>> serveDependencyNetworkListView(String projectId, User sw360User) throws TException {
         try {
             ProjectService.Iface sw360ProjectClient = getThriftProjectClient();

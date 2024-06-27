@@ -1143,3 +1143,14 @@ include::{snippets}/should_document_get_linked_releases_of_linked_projects/curl-
 
 ===== Example response
 include::{snippets}/should_document_get_linked_releases_of_linked_projects/http-response.adoc[]
+
+[[resources-compare-dependency-network-with-relationship-between-releases]]
+==== Compare dependency network with default network (relationships between releases)
+
+A `POST` request is used to compare dependency network with default network (relationships between releases).
+
+===== Example request
+include::{snippets}/should_document_compare_dependency_network_with_default_releases_relationship/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_compare_dependency_network_with_default_releases_relationship/http-response.adoc[]
