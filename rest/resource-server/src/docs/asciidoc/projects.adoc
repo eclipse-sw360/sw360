@@ -701,7 +701,7 @@ include::{snippets}/should_document_get_download_license_info/http-response.adoc
 [[resources-project-get-download-licenseinfo-with-all-attachments]]
 ==== Download License Info with all attachments
 
-A `GET` request is used to download the project's license information. The resulting file will include findings from either the CLX or ISR attachment of a linked release.
+A `GET` request is used to download the project's license information. The resulting file will include findings from the CLX, and if not available, the ISR attachment of a linked release.
 
 ===== Request parameter
 include::{snippets}/should_document_get_download_license_info_with_all_attachemnts/request-parameters.adoc[]
@@ -711,6 +711,20 @@ include::{snippets}/should_document_get_download_license_info_with_all_attachemn
 
 ===== Example response
 include::{snippets}/should_document_get_download_license_info_with_all_attachemnts/http-response.adoc[]
+
+[[resources-project-get-download-licenseinfo-without-release-version]]
+==== Download License Info without component versions
+
+A `GET` request is used to download license info for the project. If the `excludeReleaseVersion` parameter is set to true, the component versions will be omitted from the output file.
+
+===== Request parameter
+include::{snippets}/should_document_get_download_license_info_without_release_version/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_download_license_info_without_release_version/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_license_info_without_release_version/http-response.adoc[]
 
 [[resources-project-usedby-list]]
 ==== Resources using the project
