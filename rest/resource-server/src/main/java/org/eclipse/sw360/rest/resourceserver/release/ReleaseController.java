@@ -1428,6 +1428,107 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(assessmentSummaryMap, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "Check cyclic hierarchy of a release with other releases.",
+            description = "Check cyclic hierarchy of a release with other releases.",
+            tags = {"Releases"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "207",
+                            content = {@Content(mediaType = "application/hal+json",
+                                    schema = @Schema(
+                                            type = "object",
+                                            example = """
+                                                [
+                                                    {
+                                                        "message": "release1(1) -> release1(1)",
+                                                        "status": 409
+                                                    },
+                                                    {
+                                                        "message": "There are no cyclic link between 3765276512 and 12121212",
+                                                        "status": 200
+                                                    }
+                                                ]
+                                            """
+                                    ))}
+                    )
+            }
+    )
+    @RequestMapping(value = RELEASES_URL + "/{id}/checkCyclicLink", method = RequestMethod.POST)
+    public ResponseEntity<?> checkForCyclicReleaseLink(
+            @Parameter(description = "The ID of the checking release.")
+            @PathVariable("id") String releaseId,
+            @Parameter(description = "Release ids to check",
+                schema = @Schema(example = """
+                        {
+                          "linkedReleases": ["3765276512"],
+                          "linkedToReleases": ["12121212"]
+                        }
+                    """
+                )
+            )
+            @RequestBody Map<String, Set<String>> relationshipReleaseIds
+    ) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        List<ImmutableMap<String, Object>> results = new ArrayList<>();
+        Release checkingRelease = releaseService.getReleaseForUserById(releaseId, user);
+        if (!CommonUtils.isNullOrEmptyCollection(relationshipReleaseIds.get("linkedToReleases"))) {
+            for (String parentReleaseId : relationshipReleaseIds.get("linkedToReleases")) {
+                String cyclicPath;
+                try {
+                    Release parentRelease = releaseService.getReleaseForUserById(parentReleaseId, user);
+                    cyclicPath = releaseService.checkForCyclicLinkedReleases(parentRelease, checkingRelease, user);
+                } catch (ResourceNotFoundException notFoundException) {
+                    results.add(ImmutableMap.<String, Object>builder()
+                            .put("message", notFoundException.getMessage())
+                            .put("status", 404)
+                            .build());
+                    continue;
+                }
+                if (CommonUtils.isNotNullEmptyOrWhitespace(cyclicPath.trim())) {
+                    results.add(ImmutableMap.<String, Object>builder()
+                            .put("message", cyclicPath)
+                            .put("status", 409)
+                            .build());
+                } else {
+                    results.add(ImmutableMap.<String, Object>builder()
+                            .put("message", "There are no cyclic link between " + parentReleaseId + " and " + releaseId)
+                            .put("status", 200)
+                            .build());
+                }
+            }
+        }
+
+        if (!CommonUtils.isNullOrEmptyCollection(relationshipReleaseIds.get("linkedReleases"))) {
+            for (String linkedReleaseId : relationshipReleaseIds.get("linkedReleases")) {
+                String cyclicPath;
+                try {
+                    Release linkedRelease = releaseService.getReleaseForUserById(linkedReleaseId, user);
+                    cyclicPath = releaseService.checkForCyclicLinkedReleases(checkingRelease, linkedRelease, user);
+                } catch (ResourceNotFoundException notFoundException) {
+                    results.add(ImmutableMap.<String, Object>builder()
+                            .put("message", notFoundException.getMessage())
+                            .put("status", 404)
+                            .build());
+                    continue;
+                }
+                if (CommonUtils.isNotNullEmptyOrWhitespace(cyclicPath.trim())) {
+                    results.add(ImmutableMap.<String, Object>builder()
+                            .put("message", cyclicPath)
+                            .put("status", 409)
+                            .build());
+                } else {
+                    results.add(ImmutableMap.<String, Object>builder()
+                            .put("message", "There are no cyclic link between " + releaseId + " and " + linkedReleaseId)
+                            .put("status", 200)
+                            .build());
+                }
+            }
+        }
+
+        return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
+    }
+
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ReleaseController.class).slash("api" + RELEASES_URL).withRel("releases"));

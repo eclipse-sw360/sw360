@@ -615,3 +615,13 @@ include::{snippets}/should_document_get_linked_releases_transitively/http-respon
 
 ===== Links
 include::{snippets}/should_document_get_linked_releases_transitively/links.adoc[]
+
+[[resources-check-cyclic-hierarchy-of-a-release]]
+==== Check cyclic hierarchy of a release with other releases
+A `POST` request will check cyclic hierarchy of a release with other releases.
+
+===== Example request
+include::{snippets}/should_document_check_cyclic_hierarchy_of_a_release_with_other_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_check_cyclic_hierarchy_of_a_release_with_other_releases/http-response.adoc[]

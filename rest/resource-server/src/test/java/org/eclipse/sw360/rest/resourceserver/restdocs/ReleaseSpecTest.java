@@ -41,6 +41,7 @@ import java.util.UUID;
 
 import com.google.common.collect.Sets;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
@@ -1461,5 +1462,23 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_document_check_cyclic_hierarchy_of_a_release_with_other_releases() throws Exception {
+        Map<String, List<String>> exampleBody = new HashMap<>();
+        exampleBody.put("linkedReleases", List.of(release.getId(), release3.getId()));
+        exampleBody.put("linkedToReleases", List.of(releaseTest.getId()));
+
+        given(this.releaseServiceMock.checkForCyclicLinkedReleases(any(), any(), any()))
+                .willReturn(SW360Utils.printName(release) + " -> " + SW360Utils.printName(releaseTest) + " -> " + SW360Utils.printName(release))
+                .willReturn(SW360Utils.printName(release) + " -> " + SW360Utils.printName(release))
+                .willReturn("");
+        mockMvc.perform(post("/api/releases/" + release.getId() + "/checkCyclicLink")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(exampleBody))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isMultiStatus());
     }
 }
