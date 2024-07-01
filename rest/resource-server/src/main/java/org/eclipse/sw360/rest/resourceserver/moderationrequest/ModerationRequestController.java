@@ -61,6 +61,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 
 import jakarta.servlet.http.HttpServletRequest;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Function;
@@ -75,6 +80,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @SecurityRequirement(name = "basic")
 public class ModerationRequestController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
+    private static final String REVIEWER = "reviewer";
+    private static final String REQUESTING_USER = "requestingUser";
     public static final String MODERATION_REQUEST_URL = "/moderationrequest";
 
     @Autowired
@@ -124,18 +131,31 @@ public class ModerationRequestController implements RepresentationModelProcessor
             tags = {"Moderation Requests"}
     )
     @RequestMapping(value = MODERATION_REQUEST_URL + "/{id}", method = RequestMethod.GET)
-    public ResponseEntity<HalResource<ModerationRequest>> getModerationRequestById(
-            @Parameter(description = "The id of the moderation request to be retrieved.")
-            @PathVariable String id
-    ) throws TException {
+    public ResponseEntity<HalResource<Map<String, Object>>> getModerationRequestById(
+            @Parameter(description = "The id of the moderation request to be retrieved.") @PathVariable String id)
+            throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-
         ModerationRequest moderationRequest = filterModerationRequestNoDuplicates(
                 sw360ModerationRequestService.getModerationRequestById(id));
-        HalResource<ModerationRequest> halModerationRequest = createHalModerationRequestWithAllDetails(moderationRequest,
-                sw360User);
+        Map<String, Object> modObjectMapper = getModObjectMapper(moderationRequest);
+        Link modLink = linkTo(ReleaseController.class).slash("api/moderationrequest/" + moderationRequest.getId())
+                .withSelfRel();
+        Map<String, Object> modLinkMap = new LinkedHashMap<>();
+        modLinkMap.put("self", modLink);
+        modObjectMapper.put("_links", modLinkMap);
+        HalResource<Map<String, Object>> halModerationRequest = createHalModerationRequestWithAllDetails(
+                modObjectMapper, sw360User);
         HttpStatus status = halModerationRequest.getContent() == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(halModerationRequest, status);
+    }
+
+    private Map<String, Object> getModObjectMapper(ModerationRequest moderationRequest) {
+        ObjectMapper oMapper = new ObjectMapper();
+        oMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        oMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        oMapper.setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE); // but only public getters
+        oMapper.setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE); // and none of "is-setters"
+        return oMapper.convertValue(moderationRequest, Map.class);
     }
 
     @Operation(
@@ -169,38 +189,35 @@ public class ModerationRequestController implements RepresentationModelProcessor
         return getModerationResponseEntity(pageable, request, allDetails, modRequestsWithPageData);
     }
 
-    private @NotNull HalResource<ModerationRequest> createHalModerationRequestWithAllDetails(
-            ModerationRequest moderationRequest, User sw360User) throws TException {
-        HalResource<ModerationRequest> halModerationRequest = new HalResource<>(moderationRequest);
-        User requestingUser = restControllerHelper.getUserByEmail(moderationRequest.getRequestingUser());
-        restControllerHelper.addEmbeddedUser(halModerationRequest, requestingUser, "requestingUser");
-
-        if (CommonUtils.isNotNullEmptyOrWhitespace(moderationRequest.getReviewer())) {
-            User reviewer = restControllerHelper.getUserByEmail(moderationRequest.getReviewer());
-            restControllerHelper.addEmbeddedUser(halModerationRequest, reviewer, "reviewer");
+    private @NotNull HalResource<Map<String, Object>> createHalModerationRequestWithAllDetails(
+            Map<String, Object> modObjectMapper, User sw360User) throws TException {
+        HalResource<Map<String, Object>> halModerationRequest = new HalResource<>(modObjectMapper);
+        User requestingUser = restControllerHelper.getUserByEmail(modObjectMapper.get(REQUESTING_USER).toString());
+        restControllerHelper.addEmbeddedUser(halModerationRequest, requestingUser, REQUESTING_USER);
+        if (modObjectMapper.get(REVIEWER) != null
+                && CommonUtils.isNotNullEmptyOrWhitespace(modObjectMapper.get(REVIEWER).toString())) {
+            User reviewer = restControllerHelper.getUserByEmail(modObjectMapper.get(REVIEWER).toString());
+            restControllerHelper.addEmbeddedUser(halModerationRequest, reviewer, REVIEWER);
         }
-
-        DocumentType documentType = moderationRequest.getDocumentType();
-        String documentId = moderationRequest.getDocumentId();
-        if (documentType.equals(DocumentType.PROJECT)) {
+        String documentType = modObjectMapper.get("documentType").toString();
+        String documentId = modObjectMapper.get("documentId").toString();
+        if (documentType.equals((DocumentType.PROJECT).toString())) {
             Project project = projectService.getProjectForUserById(documentId, sw360User);
             restControllerHelper.addEmbeddedProject(halModerationRequest, project, true);
-        } else if (documentType.equals(DocumentType.RELEASE)) {
+        } else if (documentType.equals((DocumentType.RELEASE).toString())) {
             Release release = releaseService.getReleaseForUserById(documentId, sw360User);
             restControllerHelper.addEmbeddedRelease(halModerationRequest, release);
-        } else if (documentType.equals(DocumentType.COMPONENT)) {
+        } else if (documentType.equals((DocumentType.COMPONENT).toString())) {
             Component component = componentService.getComponentForUserById(documentId, sw360User);
             restControllerHelper.addEmbeddedComponent(halModerationRequest, component);
         }
-
         return halModerationRequest;
     }
 
     private @NotNull HalResource<ModerationRequest> createHalModerationRequest(ModerationRequest moderationRequest) {
         HalResource<ModerationRequest> halModerationRequest = new HalResource<>(moderationRequest);
         User requestingUser = restControllerHelper.getUserByEmail(moderationRequest.getRequestingUser());
-        restControllerHelper.addEmbeddedUser(halModerationRequest, requestingUser, "requestingUser");
-
+        restControllerHelper.addEmbeddedUser(halModerationRequest, requestingUser, REQUESTING_USER);
         return halModerationRequest;
     }
 
