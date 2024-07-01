@@ -184,7 +184,6 @@ public class JacksonCustomizations {
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
                 "revision",
-                "attachments",
                 "createdBy",
                 "visbility",
                 "clearingTeam",
