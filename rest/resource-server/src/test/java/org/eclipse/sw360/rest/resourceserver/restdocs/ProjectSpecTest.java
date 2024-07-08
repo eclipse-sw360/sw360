@@ -3060,4 +3060,76 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                     .andExpect(status().isOk());
         }
     }
+
+    @Test
+    public void should_document_duplicate_project_with_dependency_network() throws Exception {
+        ReleaseNode release = new ReleaseNode();
+        release.setReleaseId("3765276512");
+        release.setReleaseRelationship(CONTAINED.toString());
+        release.setMainlineState(OPEN.toString());
+        release.setComment("Test Comment");
+        release.setReleaseLink(new ArrayList<>());
+        release.setCreateBy("admin@sw360.org");
+        release.setCreateOn("2024-07-04");
+
+        Map<String, Object> newProject = new HashMap<>();
+        newProject.put("name", "Test Project");
+        newProject.put("description", "This is the description of my Test Project");
+        newProject.put("version", "1.0");
+        newProject.put("dependencyNetwork", List.of(release));
+
+        when(this.projectServiceMock.createProject(any(), any())).
+                thenReturn(
+                        new Project("Test Project")
+                                .setId("1234567890")
+                                .setDescription("This is the description of my Test Project")
+                                .setProjectType(ProjectType.PRODUCT)
+                                .setVersion("1.0")
+                                .setCreatedBy("admin@sw360.org")
+                                .setPhaseOutSince("2020-06-25")
+                                .setState(ProjectState.ACTIVE)
+                                .setReleaseRelationNetwork("[{\"comment\":\"Test Comment\",\"releaseLink\":[],\"createBy\":\"admin@sw360.org\",\"createOn\":\"2024-07-04\",\"mainlineState\":\"OPEN\",\"releaseId\":\"3765276512\",\"releaseRelationship\":\"CONTAINED\"}]")
+                                .setVendor((new Vendor("Test", "Test short", "http://testvendoraddress.com").setId("987567468")))
+                                .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            this.mockMvc
+                    .perform(post("/api/projects/network/duplicate/376576").contentType(MediaTypes.HAL_JSON)
+                            .content(this.objectMapper.writeValueAsString(newProject))
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            this.mockMvc
+                    .perform(post("/api/projects/network/duplicate/376576").contentType(MediaTypes.HAL_JSON)
+                            .content(this.objectMapper.writeValueAsString(newProject))
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isCreated())
+                    .andDo(this.documentationHandler.document(
+                            requestFields(
+                                    fieldWithPath("name").description("The name of the project"),
+                                    fieldWithPath("version").description("The version of new project"),
+                                    fieldWithPath("description").description("The description of new project"),
+                                    subsectionWithPath("dependencyNetwork").description("Dependency network")
+                            ),
+                            responseFields(
+                                    fieldWithPath("name").description("The name of the project"),
+                                    fieldWithPath("version").description("The project version"),
+                                    fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
+                                    fieldWithPath("createdOn").description("The date the project was created"),
+                                    fieldWithPath("description").description("The project description"),
+                                    fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                    fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
+                                    fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                                    fieldWithPath("considerReleasesFromExternalList").description("Consider list of releases from existing external list"),
+                                    fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
+                                    fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
+                                    fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                    subsectionWithPath("dependencyNetwork").description("Dependency network"),
+                                    subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                    subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
+                                    subsectionWithPath("_embedded.createdBy").description("The user who created this project")
+                            )));
+        }
+    }
 }
