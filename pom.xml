@@ -68,25 +68,27 @@
     <rest.version>1.0.0</rest.version>
 
     <!-- Build version properties -->
-    <java_source.version>11</java_source.version>
-    <java_target.version>11</java_target.version>
+    <java_source.version>17</java_source.version>
+    <java_target.version>17</java_target.version>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!-- Plugin version properties -->
     <asciidoctor-maven-plugin.version>2.2.2</asciidoctor-maven-plugin.version>
     <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
-    <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
+    <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
     <maven-assembly-plugin.version>3.4.2</maven-assembly-plugin.version>
     <maven-bundle-plugin.version>5.1.8</maven-bundle-plugin.version>
     <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
-    <maven-enforcer-plugin.version>3.1.0</maven-enforcer-plugin.version>
-    <maven-failsafe-plugin.version>3.0.0-M7</maven-failsafe-plugin.version>
+    <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
+    <maven-failsafe-plugin.version>3.3.0</maven-failsafe-plugin.version>
     <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
     <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
+    <maven-surefire-plugin.version>3.3.0</maven-surefire-plugin.version>
     <maven-war-plugin.version>3.3.2</maven-war-plugin.version>
     <versions-maven-plugin.version>2.12.0</versions-maven-plugin.version>
 
@@ -201,6 +203,7 @@
     <!-- some mem optimization here -->
     <argLine>-Dcatalina.home=${project.build.directory}/home -Xms128m -Xmx256m -XX:MaxPermSize=512m</argLine>
   </properties>
+
 
   <dependencyManagement>
     <dependencies>
@@ -587,7 +590,6 @@
         <version>${javax.servlet-api.version}</version>
         <scope>provided</scope>
       </dependency>
-
     </dependencies>
   </dependencyManagement>
 
@@ -665,6 +667,12 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin.version}</version>
+          <configuration>
+                <argLine>-Xms512m -Xmx1024m -XX:MaxPermSize=512m</argLine>
+                <forkCount>0</forkCount>
+                <reuseForks>false</reuseForks>
+                <reportFormat>plain</reportFormat>
+          </configuration>
         </plugin>
 
         <plugin>
@@ -830,7 +838,7 @@
             </markdown>
           </configuration>
           <java>
-            <eclipse></eclipse>
+            <eclipse/>
           </java>
         </configuration>
       </plugin>
@@ -899,6 +907,9 @@
                       <regexMessage>You must set at least the property
                         'base.deploy.dir'!</regexMessage>
                     </requireProperty>
+                    <requireJavaVersion>
+                      <version>[17,18)</version>
+                    </requireJavaVersion>
                   </rules>
                   <fail>true</fail>
                 </configuration>

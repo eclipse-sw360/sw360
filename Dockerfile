@@ -13,7 +13,7 @@
 #-----------------------------------------------------------------------------------
 # Base image
 # We need use JDK, JRE is not enough as Liferay do runtime changes and require javac
-ARG JAVA_VERSION=11
+ARG JAVA_VERSION=17
 ARG UBUNTU_VERSION=jammy
 
 # Use OpenJDK Eclipe Temurin Ubuntu LTS
@@ -120,7 +120,7 @@ COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
 # SW360 Build Test image
 # Base image to build with test
 
-FROM maven:3-eclipse-temurin-11 as sw360test
+FROM maven:3-eclipse-temurin-17 as sw360test
 
 COPY --from=thrift /usr/local/bin/thrift /usr/bin
 
@@ -148,7 +148,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-FROM maven:3.9-eclipse-temurin-11 as sw360build
+FROM maven:3.9-eclipse-temurin-17 as sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -250,7 +250,7 @@ COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/portal-ext.properties /
 COPY --chown=$USERNAME:$USERNAME ./scripts/docker-config/entry_point.sh /app/entry_point.sh
 
 # Tomcat manager for debugging portlets
-COPY --chown=$USERNAME:$USERNAME --from=tomcat:9.0.56-jdk11 /usr/local/tomcat/webapps.dist/manager /app/sw360/tomcat/webapps/manager
+COPY --chown=$USERNAME:$USERNAME --from=tomcat:9.0.56-jdk17 /usr/local/tomcat/webapps.dist/manager /app/sw360/tomcat/webapps/manager
 RUN --mount=type=bind,target=/build/sw360,rw \
     if [  DEBUG ]; then \
     cp /etc/sw360/manager/tomcat-users.xml /app/sw360/tomcat/conf/tomcat-users.xml ; \
