@@ -11,7 +11,7 @@
 package org.eclipse.sw360.rest.resourceserver.security.apiToken;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
