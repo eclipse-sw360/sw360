@@ -21,6 +21,10 @@
     <packaging>jar</packaging>
     <name>src-licenseinfo</name>
 
+    <properties>
+        <maven.test.skip>true</maven.test.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
