@@ -3232,4 +3232,61 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         List<Map<String, Object>> comparedNetwork = projectService.compareWithDefaultNetwork(dependencyNetwork, sw360User);
         return new ResponseEntity<>(comparedNetwork, HttpStatus.OK);
     }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            description = "Create a duplicate project with dependency network.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/network/duplicate/{id}", method = RequestMethod.POST)
+    public ResponseEntity<?> createDuplicateProjectWithDependencyNetwork(
+            @Parameter(description = "Project ID to copy.")
+            @PathVariable("id") String id,
+            @Parameter(schema = @Schema(implementation = Project.class))
+            @RequestBody Map<String, Object> reqBodyMap
+    ) throws TException {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return new ResponseEntity<>(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        if (!reqBodyMap.containsKey("name") && !reqBodyMap.containsKey("version")) {
+            throw new HttpMessageNotReadableException(
+                    "Field name or version should be present in request body to create duplicate of a project");
+        }
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Project duplicatedProject = projectService.getProjectForUserById(id, sw360User);
+        Project projectFromRequest = convertToProject(reqBodyMap);
+        duplicatedProject.unsetReleaseIdToUsage();
+        projectFromRequest.unsetReleaseIdToUsage();
+        duplicatedProject = this.restControllerHelper.updateProject(duplicatedProject, projectFromRequest, reqBodyMap,
+                mapOfProjectFieldsToRequestBody);
+
+        if (reqBodyMap.get("dependencyNetwork") != null) {
+            try {
+                addOrPatchDependencyNetworkToProject(duplicatedProject, reqBodyMap, ProjectOperation.CREATE);
+            } catch (JsonProcessingException | NoSuchElementException | InvalidPropertiesFormatException e) {
+                log.error(e.getMessage());
+                return ResponseEntity.badRequest().body(e.getMessage());
+            }
+        }
+
+        projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(duplicatedProject, sw360User);
+        duplicatedProject.unsetId();
+        duplicatedProject.unsetRevision();
+        duplicatedProject.unsetAttachments();
+        duplicatedProject.unsetClearingRequestId();
+        duplicatedProject.setClearingState(ProjectClearingState.OPEN);
+        String linkedObligationId = duplicatedProject.getLinkedObligationId();
+        duplicatedProject.unsetLinkedObligationId();
+
+        Project createdProject = projectService.createProject(duplicatedProject, sw360User);
+        createdProject.setLinkedObligationId(linkedObligationId);
+        projectService.copyLinkedObligationsForClonedProject(createdProject, duplicatedProject, sw360User);
+
+        HalResource<ProjectDTO> projectDTOHalResource = createHalProjectDTO(createdProject, sw360User);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+                .buildAndExpand(createdProject.getId()).toUri();
+
+        return ResponseEntity.created(location).body(projectDTOHalResource);
+    }
 }

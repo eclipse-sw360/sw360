@@ -1042,6 +1042,20 @@ include::{snippets}/should_document_update_project_with_network/curl-request.ado
 ===== Example response
 include::{snippets}/should_document_update_project_with_network/http-response.adoc[]
 
+[[resources-projects-duplicate-with-network]]
+==== Duplicate a project with dependencies network
+
+A `POST` request is used to duplicate a project with dependencies network
+
+===== Request structure
+include::{snippets}/should_document_duplicate_project_with_dependency_network/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_duplicate_project_with_dependency_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_duplicate_project_with_dependency_network/http-response.adoc[]
+
 [[resources-linked-releases-in-dependency-network-of-project]]
 ==== Get linked releases in dependency network of a project
 
