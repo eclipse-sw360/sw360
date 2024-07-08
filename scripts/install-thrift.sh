@@ -21,7 +21,7 @@ set -e
 set -x
 
 BASEDIR="${BASEDIR:-/tmp}"
-THRIFT_VERSION=${THRIFT_VERSION:-0.18.1}
+THRIFT_VERSION=${THRIFT_VERSION:-0.19.0}
 UNINSTALL=false
 
 has() { type "$1" &> /dev/null; }

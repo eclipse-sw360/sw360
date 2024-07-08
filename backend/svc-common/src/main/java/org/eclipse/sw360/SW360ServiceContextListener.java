@@ -13,8 +13,8 @@ package org.eclipse.sw360;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseInstanceTracker;
 import org.ektorp.http.IdleConnectionMonitor;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 /**
  * @author daniele.fognini@tngtech.com

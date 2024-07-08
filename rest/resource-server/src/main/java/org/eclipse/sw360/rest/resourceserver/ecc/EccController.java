@@ -11,7 +11,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
