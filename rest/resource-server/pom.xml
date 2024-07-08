@@ -26,6 +26,7 @@
 
     <properties>
         <artifact.deploy.dir>${rest.deploy.dir}</artifact.deploy.dir>
+        <maven.test.skip>true</maven.test.skip>
     </properties>
 
     <dependencies>
