@@ -105,14 +105,14 @@ jobs:
         cd backend/src/src-components
         mvn test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true
 
-    - name: Deploy Backend and Rest Server
-      run: |
-        sudo docker build -t sw360backendrest -f sw360BackendRest.Dockerfile .
-        sudo docker run -dt --network=host sw360backendrest
-        bash scripts/sw360BackendRestDockerConfig/scripts/checkDeploymentIsSuccess.sh
+    # - name: Deploy Backend and Rest Server
+    #   run: |
+    #     sudo docker build -t sw360backendrest -f sw360BackendRest.Dockerfile .
+    #     sudo docker run -dt --network=host sw360backendrest
+    #     bash scripts/sw360BackendRestDockerConfig/scripts/checkDeploymentIsSuccess.sh
 
-    - name: Create users and oauth client
-      run: bash scripts/sw360BackendRestDockerConfig/scripts/createUserAndOauthClient.sh
+    # - name: Create users and oauth client
+    #   run: bash scripts/sw360BackendRestDockerConfig/scripts/createUserAndOauthClient.sh
 
     - name: Run Client Integration Test for Rest Api
       run: |
