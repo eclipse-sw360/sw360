@@ -69,7 +69,7 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -527,7 +527,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        formParameters(
                                 parameterWithName("page").description("Page of components"),
                                 parameterWithName("page_entries").description("Amount of components per page"),
                                 parameterWithName("sort").description("Defines order of the components")
@@ -557,7 +557,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .param("name", angularComponent.getName()).param("luceneSearch", "true").param("sort", "name,desc")
                 .param("page", "0").param("page_entries", "5").accept(MediaTypes.HAL_JSON)).andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(parameterWithName("name").description("name of components"),
+                        formParameters(parameterWithName("name").description("name of components"),
                                 parameterWithName("luceneSearch").description("Defines whether luceneSearch is required while searching the component"),
                                 parameterWithName("page").description("Page of components"),
                                 parameterWithName("page_entries").description("Amount of components per page"),
@@ -592,7 +592,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        formParameters(
                                 parameterWithName("allDetails").description("Flag to get components with all details. Possible values are `<true|false>`"),
                                 parameterWithName("page").description("Page of components"),
                                 parameterWithName("page_entries").description("Amount of components per page"),
@@ -748,7 +748,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        formParameters(
                                 parameterWithName("fields").description("Properties which should be present for each component in the result"),
                                 parameterWithName("page").description("Page of components"),
                                 parameterWithName("page_entries").description("Amount of components per page"),
@@ -868,7 +868,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        formParameters(
                                 parameterWithName("type").description("Filter for type"),
                                 parameterWithName("page").description("Page of components"),
                                 parameterWithName("page_entries").description("Amount of components per page"),
@@ -903,7 +903,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        formParameters(
                                 parameterWithName("name").description("Filter for name"),
                                 parameterWithName("page").description("Page of components"),
                                 parameterWithName("page_entries").description("Amount of components per page"),
@@ -960,7 +960,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        formParameters(
                                 parameterWithName("mergeSourceId").description("Id of a source component to merge"),
                                 parameterWithName("mergeTargetId").description("Id of a target component to merge")
                         ),
@@ -1359,11 +1359,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .accept(MediaTypes.HAL_JSON))
              .andExpect(status().isOk())
              .andDo(this.documentationHandler.document(
-                     requestParameters(
+                     formParameters(
                              parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
                              parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
                              parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`")
                      )));
     }
-
 }

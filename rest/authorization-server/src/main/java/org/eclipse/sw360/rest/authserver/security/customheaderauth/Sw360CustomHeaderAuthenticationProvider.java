@@ -9,14 +9,19 @@
  */
 package org.eclipse.sw360.rest.authserver.security.customheaderauth;
 
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.authserver.StringTransformer;
-import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthoritiesCalculator;
-import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.authserver.StringTransformer;
+import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthoritiesCalculator;
+import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -24,17 +29,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.oauth2.common.util.OAuth2Utils;
-import org.springframework.security.oauth2.provider.ClientDetails;
-import org.springframework.security.oauth2.provider.ClientDetailsService;
-import org.springframework.security.oauth2.provider.ClientRegistrationException;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
-
-import javax.annotation.PostConstruct;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This {@link AuthenticationProvider} is specialized on requests where the
@@ -49,6 +46,7 @@ import java.util.Map;
  * (that have nothing to do with clients). And in fact he uses for this task the
  * {@link Sw360GrantedAuthoritiesCalculator}.
  */
+//@Component
 public class Sw360CustomHeaderAuthenticationProvider implements AuthenticationProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass());
@@ -63,7 +61,7 @@ public class Sw360CustomHeaderAuthenticationProvider implements AuthenticationPr
     private Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider;
 
     @Autowired
-    private ClientDetailsService clientDetailsService;
+    private RegisteredClientRepository clientDetailsService;
 
     @Autowired
     private Sw360GrantedAuthoritiesCalculator sw360UserAndClientAuthoritiesCalculator;
@@ -138,14 +136,14 @@ public class Sw360CustomHeaderAuthenticationProvider implements AuthenticationPr
     }
 
     private List<GrantedAuthority> handleOAuthAuthentication(Map<?, ?> authDetails, User userDetails) {
-        String clientId = StringTransformer.transformIntoString(authDetails.get(OAuth2Utils.CLIENT_ID));
+        String clientId = StringTransformer.transformIntoString(authDetails.get("client_id"));
         try {
-            ClientDetails clientDetails = clientDetailsService.loadClientByClientId(clientId);
+            RegisteredClient clientDetails = clientDetailsService.findByClientId(clientId);
 
             log.debug("Found client " + clientDetails + " for id " + clientId + " in authentication details.");
 
             return sw360UserAndClientAuthoritiesCalculator.mergedAuthoritiesOf(userDetails, clientDetails);
-        } catch (ClientRegistrationException e) {
+        } catch (Exception e) {
             log.warn("No valid client for id " + clientId + " could be found. It is possible that it is locked,"
                     + " expired, disabled, or invalid for any other reason. So absolutely no authorities granted!");
 

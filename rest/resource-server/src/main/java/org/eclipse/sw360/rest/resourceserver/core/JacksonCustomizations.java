@@ -58,6 +58,7 @@ import org.springdoc.core.SpringDocUtils;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import java.util.Map;
 import java.util.Set;
@@ -65,6 +66,7 @@ import java.util.Set;
 @Configuration
 public class JacksonCustomizations {
     @Bean
+    @Primary
     public Module sw360Module() {
         return new Sw360Module();
     }

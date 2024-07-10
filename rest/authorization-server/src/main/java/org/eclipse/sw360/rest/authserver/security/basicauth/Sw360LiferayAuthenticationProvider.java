@@ -9,15 +9,20 @@
  */
 package org.eclipse.sw360.rest.authserver.security.basicauth;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthoritiesCalculator;
 import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -31,6 +36,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -43,6 +49,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * and cutting the user authorities to those of the client in such case by using
  * the {@link Sw360GrantedAuthoritiesCalculator}.
  */
+//@Component
 public class Sw360LiferayAuthenticationProvider implements AuthenticationProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass());
@@ -59,13 +66,18 @@ public class Sw360LiferayAuthenticationProvider implements AuthenticationProvide
     private RestTemplateBuilder restTemplateBuilder;
 
     @Autowired
-    private ClientDetailsService clientDetailsService;
+    private RegisteredClientRepository clientDetailsService;
 
     @Autowired
     private Sw360UserDetailsProvider sw360CustomHeaderUserDetailsProvider;
+    
+    @Autowired
+    private RegisteredClientRepository regClientRepo;
 
     @Autowired
     private Sw360GrantedAuthoritiesCalculator sw360UserAndClientAuthoritiesCalculator;
+    
+    private @Autowired HttpServletRequest httpServletRequest;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -75,13 +87,15 @@ public class Sw360LiferayAuthenticationProvider implements AuthenticationProvide
             return null;
         }
         String password = possiblePassword.toString();
-
+        
         if (isValidString(sw360PortalServerURL) && isValidString(sw360LiferayCompanyId)) {
+            
+//            RegisteredClient client = regClientRepo.findByClientId(userIdentifier);
             // Verify if the user exists in sw360 and set the corresponding authority (read, write)
             if (isAuthorized(userIdentifier, password)) {
                 User user = sw360CustomHeaderUserDetailsProvider.provideUserDetails(userIdentifier, userIdentifier);
                 if (!Objects.isNull(user)) {
-                    ClientDetails clientDetails = extractClient(authentication);
+                    RegisteredClient clientDetails = extractClient(authentication);
                     return new UsernamePasswordAuthenticationToken(userIdentifier, password,
                             sw360UserAndClientAuthoritiesCalculator.mergedAuthoritiesOf(user, clientDetails));
                 }
@@ -133,16 +147,16 @@ public class Sw360LiferayAuthenticationProvider implements AuthenticationProvide
         return true;
     }
 
-    private ClientDetails extractClient(Authentication authentication) {
-        ClientDetails clientDetails = null;
+    private RegisteredClient extractClient(Authentication authentication) {
+        RegisteredClient clientDetails = null;
 
         // check if the request contained a grant type to be more sure that is has been
         // an oauth request
         if (authentication.getDetails() instanceof Map<?, ?>
-                && ((Map<?, ?>) authentication.getDetails()).containsKey(OAuth2Utils.GRANT_TYPE)) {
+                && ((Map<?, ?>) authentication.getDetails()).containsKey("grant_type")) {
             Map<?, ?> authDetails = ((Map<?, ?>) authentication.getDetails());
 
-            Object grantTypes = authDetails.get(OAuth2Utils.GRANT_TYPE);
+            Object grantTypes = authDetails.get("grant_type");
             String grantType;
             if (grantTypes != null && grantTypes instanceof String[]) {
                 grantType = ((String[]) grantTypes)[0];
@@ -162,10 +176,10 @@ public class Sw360LiferayAuthenticationProvider implements AuthenticationProvide
                     String clientId = ((org.springframework.security.core.userdetails.User) clientAuthentication
                             .getPrincipal()).getUsername();
                     try {
-                        clientDetails = clientDetailsService.loadClientByClientId(clientId);
+                        clientDetails = clientDetailsService.findByClientId(clientId);
                         log.debug("Found client " + clientDetails + " for id " + clientId
                                 + " in authentication details.");
-                    } catch (ClientRegistrationException e) {
+                    } catch (Exception e) {
                         log.warn("No valid client for id " + clientId + " could be found. It is possible that it is "
                                 + "locked, expired, disabled, or invalid for any other reason.");
                     }

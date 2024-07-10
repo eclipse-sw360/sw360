@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2019. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2019-2024. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -9,52 +9,61 @@
  */
 package org.eclipse.sw360.rest.authserver.client.persistence;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.Collection;
+import java.util.Set;
 
 import org.ektorp.support.CouchDbDocument;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.oauth2.provider.ClientDetails;
-import org.springframework.security.oauth2.provider.client.BaseClientDetails;
-import org.springframework.security.oauth2.provider.client.Jackson2ArrayOrStringDeserializer;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-public class OAuthClientEntity extends CouchDbDocument implements ClientDetails {
+public class OAuthClientEntity extends CouchDbDocument {
 
-    private BaseClientDetails delegate;
-
+    private static final long serialVersionUID = 1L;
+    private String clientId;
+    private String clientSecret;
     private String description;
+    private Set<String> resourceIds;
+    private Set<String> authorizedGrantTypes;
+    private Collection<GrantedAuthority> authorities;
+    private Set<String> scope;
+    private boolean secretRequired;
+    private boolean scoped;
+    private Set<String> registeredRedirectUri;
+    private Integer accessTokenValiditySeconds;
+    private Integer refreshTokenValiditySeconds;
+    private Set<String> autoApproveScopes;
 
-    public OAuthClientEntity() {
-        this.delegate = new BaseClientDetails();
+    @JsonProperty("secretRequired")
+    public void setSecretRequired(boolean secretRequired) {
+        this.secretRequired = secretRequired;
     }
 
-    @Override
+    @JsonProperty("scoped")
+    public void setScoped(boolean scoped) {
+        this.scoped = scoped;
+    }
+
     @JsonProperty("client_id")
     public String getClientId() {
-        return delegate.getClientId();
+        return clientId;
     }
 
     @JsonProperty("client_id")
     public void setClientId(String clientId) {
-        delegate.setClientId(clientId);
+        this.clientId=clientId;
     }
 
-    @Override
     @JsonProperty("client_secret")
     public String getClientSecret() {
-        return delegate.getClientSecret();
+        return clientSecret;
     }
 
     @JsonProperty("client_secret")
     public void setClientSecret(String clientSecret) {
-        delegate.setClientSecret(clientSecret);
+        this.clientSecret = clientSecret;
     }
 
     @JsonProperty("description")
@@ -67,130 +76,124 @@ public class OAuthClientEntity extends CouchDbDocument implements ClientDetails 
         this.description = description;
     }
 
-    @Override
     @JsonProperty("resource_ids")
-    @JsonDeserialize(using = Jackson2ArrayOrStringDeserializer.class)
+    @JsonDeserialize()
     public Set<String> getResourceIds() {
-        return delegate.getResourceIds();
+        return resourceIds;
     }
 
     @JsonProperty("resource_ids")
-    public void setResourceIds(Set<String> clientSecret) {
-        delegate.setResourceIds(clientSecret);
+    public void setResourceIds(Set<String> resourceIds) {
+        this.resourceIds = resourceIds;
     }
 
-    @Override
     @JsonProperty("authorized_grant_types")
-    @JsonDeserialize(using = Jackson2ArrayOrStringDeserializer.class)
+    @JsonDeserialize()
     public Set<String> getAuthorizedGrantTypes() {
-        return delegate.getAuthorizedGrantTypes();
+        return authorizedGrantTypes;
     }
 
     @JsonProperty("authorized_grant_types")
     public void setAuthorizedGrantTypes(Set<String> authorizedGrantTypes) {
-        delegate.setAuthorizedGrantTypes(authorizedGrantTypes);
+        this.authorizedGrantTypes=authorizedGrantTypes;
     }
 
-    @Override
     public Collection<GrantedAuthority> getAuthorities() {
-        return delegate.getAuthorities();
+        return authorities;
     }
 
     public void setAuthorities(Collection<GrantedAuthority> authorities) {
-        delegate.setAuthorities(authorities);
+        this.authorities=authorities;
     }
 
     @JsonProperty("authorities")
     public Set<String> getAuthoritiesAsStrings() {
-        return AuthorityUtils.authorityListToSet(delegate.getAuthorities());
+        return AuthorityUtils.authorityListToSet(this.authorities);
     }
 
     @JsonProperty("authorities")
-    @JsonDeserialize(using = Jackson2ArrayOrStringDeserializer.class)
+    @JsonDeserialize()
     public void setAuthoritiesAsStrings(Set<String> values) {
-        delegate.setAuthorities(AuthorityUtils.createAuthorityList(values.toArray(new String[values.size()])));
+        this.setAuthorities(AuthorityUtils.createAuthorityList(values.toArray(new String[values.size()])));
     }
 
-    @Override
     @JsonProperty("scope")
-    @JsonDeserialize(using = Jackson2ArrayOrStringDeserializer.class)
+    @JsonDeserialize()
     public Set<String> getScope() {
-        return delegate.getScope();
+        return this.scope;
     }
 
     @JsonProperty("scope")
     public void setScope(Set<String> scope) {
-        delegate.setScope(scope);
+        this.scope=scope;
     }
 
-    @Override
     @JsonProperty("redirect_uri")
-    @JsonDeserialize(using = Jackson2ArrayOrStringDeserializer.class)
+    @JsonDeserialize()
     public Set<String> getRegisteredRedirectUri() {
-        return delegate.getRegisteredRedirectUri();
+        return this.registeredRedirectUri;
     }
 
     @JsonProperty("redirect_uri")
     public void setRegisteredRedirectUri(Set<String> registeredRedirectUri) {
-        delegate.setRegisteredRedirectUri(registeredRedirectUri);
+        this.registeredRedirectUri = registeredRedirectUri;
     }
 
-    @Override
     @JsonProperty("access_token_validity")
     public Integer getAccessTokenValiditySeconds() {
-        return delegate.getAccessTokenValiditySeconds();
+        return this.accessTokenValiditySeconds;
     }
 
     @JsonProperty("access_token_validity")
     public void setAccessTokenValiditySeconds(Integer accessTokenValiditySeconds) {
-        delegate.setAccessTokenValiditySeconds(accessTokenValiditySeconds);
+        this.accessTokenValiditySeconds = accessTokenValiditySeconds;
     }
 
-    @Override
     @JsonProperty("refresh_token_validity")
     public Integer getRefreshTokenValiditySeconds() {
-        return delegate.getRefreshTokenValiditySeconds();
+        return this.refreshTokenValiditySeconds;
     }
 
     @JsonProperty("refresh_token_validity")
     public void setRefreshTokenValiditySeconds(Integer refreshTokenValiditySeconds) {
-        delegate.setRefreshTokenValiditySeconds(refreshTokenValiditySeconds);
+        this.refreshTokenValiditySeconds = refreshTokenValiditySeconds;
     }
 
     @JsonProperty("autoapprove")
     public Set<String> getAutoApproveScopes() {
-        return delegate.getAutoApproveScopes();
+        return this.autoApproveScopes;
     }
 
     @JsonProperty("autoapprove")
     public void setAutoApproveScopes(Set<String> autoApproveScopes) {
-        delegate.setAutoApproveScopes(autoApproveScopes);
+        this.autoApproveScopes = autoApproveScopes;
     }
 
-    @Override
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalInformation() {
-        return delegate.getAdditionalInformation();
-    }
 
-    @JsonAnySetter
-    public void addAdditionalInformation(String key, Object value) {
-        delegate.addAdditionalInformation(key, value);
-    }
-
-    @Override
     public boolean isSecretRequired() {
-        return delegate.isSecretRequired();
+        return this.secretRequired;
     }
 
-    @Override
     public boolean isScoped() {
-        return delegate.isScoped();
+        return this.scoped;
     }
 
     @Override
-    public boolean isAutoApprove(String scope) {
-        return delegate.isAutoApprove(scope);
+    public String toString() {
+        return "OAuthClientEntity{" +
+                "clientId='" + clientId + '\'' +
+                ", clientSecret='" + clientSecret + '\'' +
+                ", description='" + description + '\'' +
+                ", resourceIds=" + resourceIds +
+                ", authorizedGrantTypes=" + authorizedGrantTypes +
+                ", authorities=" + authorities +
+                ", scope=" + scope +
+                ", secretRequired=" + secretRequired +
+                ", scoped=" + scoped +
+                ", registeredRedirectUri=" + registeredRedirectUri +
+                ", accessTokenValiditySeconds=" + accessTokenValiditySeconds +
+                ", refreshTokenValiditySeconds=" + refreshTokenValiditySeconds +
+                ", autoApproveScopes=" + autoApproveScopes +
+                '}';
     }
-
 }

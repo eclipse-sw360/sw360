@@ -63,6 +63,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
     
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        log.info("Authenticating for the user with authentication {}", authentication);
         if (authentication.isAuthenticated()) {
             log.trace("Authentication already authenticated");
             return authentication;

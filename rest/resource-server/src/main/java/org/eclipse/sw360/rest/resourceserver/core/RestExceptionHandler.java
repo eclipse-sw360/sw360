@@ -67,7 +67,7 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(HttpClientErrorException.class)
     public ResponseEntity<ErrorMessage> handleClientError(HttpClientErrorException e) {
-        return new ResponseEntity<>(new ErrorMessage(e, e.getStatusCode()), e.getStatusCode());
+        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.valueOf(e.getStatusCode().value())), HttpStatus.valueOf(e.getStatusCode().value()));
     }
 
     @ExceptionHandler({OptimisticLockingFailureException.class, DataIntegrityViolationException.class})

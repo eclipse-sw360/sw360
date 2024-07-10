@@ -60,18 +60,15 @@ public class ComponentAndAttachmentAwareDBTest {
     }
 
     protected static FluentIterable<ComponentCSVRecord> getCompCSVRecordsFromTestFile(String fileName) throws IOException {
-        InputStream testStream = spy(ComponentImportUtilsTest.class.getResourceAsStream(fileName));
-
+        InputStream testStream = ComponentImportUtilsTest.class.getResourceAsStream(fileName);
         List<CSVRecord> testRecords = ImportCSV.readAsCSVRecords(testStream);
-        verify(testStream).close();
         return convertCSVRecordsToCompCSVRecords(testRecords);
     }
 
     protected static FluentIterable<ComponentAttachmentCSVRecord> getCompAttachmentCSVRecordsFromTestFile(String fileName) throws IOException {
-        InputStream testStream = spy(ComponentImportUtilsTest.class.getResourceAsStream(fileName));
+        InputStream testStream = ComponentImportUtilsTest.class.getResourceAsStream(fileName);
 
         List<CSVRecord> testRecords = ImportCSV.readAsCSVRecords(testStream);
-        verify(testStream).close();
         return convertCSVRecordsToComponentAttachmentCSVRecords(testRecords);
     }
 

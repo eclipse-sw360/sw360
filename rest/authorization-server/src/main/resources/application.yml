@@ -55,3 +55,16 @@ security:
   oauth2:
     resource:
       id: sw360-REST-API
+  accesstoken:
+    validity: 30
+
+#logging:
+#  level:
+#    org.springframework.security: DEBUG
+#    org.springframework.security.oauth2: DEBUG
+#    org.springframework.security.oauth2.provider.endpoint: DEBUG
+#    org.springframework.security.oauth2.provider.error: DEBUG
+#    org.springframework.security.oauth2.provider.token: DEBUG
+#    org.springframework.security.oauth2.provider.token.store: DEBUG
+#    org.springframework.security.oauth2.provider.token.store.jwk: DEBUG
+

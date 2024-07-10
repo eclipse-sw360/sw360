@@ -54,6 +54,9 @@ public class ApiTokenAuthenticationFilter implements Filter {
                 if (token.length == 2 && token[0].equalsIgnoreCase("token")) {
                     Authentication auth = new ApiTokenAuthentication(token[1]);
                     SecurityContextHolder.getContext().setAuthentication(auth);
+                } else if(token.length == 2 && token[0].equalsIgnoreCase("Bearer")) {
+                    Authentication auth = new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS);
+                    SecurityContextHolder.getContext().setAuthentication(auth);
                 }
             } else if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED && !headers.isEmpty()
                     && headers.containsKey(OIDC_AUTHENTICATION_TOKEN_PARAMETER)) {
