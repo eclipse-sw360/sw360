@@ -15,33 +15,30 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
-import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer;
-import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurer;
-import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @Profile("!SECURITY_MOCK")
 @Configuration
 @EnableWebSecurity
-@EnableResourceServer
-@EnableGlobalMethodSecurity(prePostEnabled = true, proxyTargetClass = true)
-public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter implements ResourceServerConfigurer {
+@EnableMethodSecurity
+public class ResourceServerConfiguration {
 
     private final Logger log = LogManager.getLogger(this.getClass());
 
@@ -52,57 +49,43 @@ public class ResourceServerConfiguration extends WebSecurityConfigurerAdapter im
     private ApiTokenAuthenticationProvider authProvider;
 
     @Autowired
-    private Sw360CustomUserDetailsService userDetailsService;
+    Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
+
+    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+    String issuerUri;
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring().requestMatchers("/", "/*/*/.html/", "/*/*.css/", "/*/*.js/", "/*/*.json/", "/*/*.png/", "/*/*.gif/", "/*/*.ico/", "/*/*.woff/*", "/*/*.ttf/");
+    }
+
+    @Bean
+    @Order(1)
+    public SecurityFilterChain securityFilterChainRS1(HttpSecurity http) throws Exception {
+        return http.authorizeRequests(auth -> auth.anyRequest().authenticated()).oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwkSetUri(issuerUri))).httpBasic(Customizer.withDefaults()).csrf(csrf -> csrf.disable()).build();
+    }
+
+    @Bean
+    @Order(2)
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
+        return http.addFilterBefore(filter, BasicAuthenticationFilter.class).authorizeRequests(auth -> {
+            auth.requestMatchers(HttpMethod.GET, "/health").permitAll();
+            auth.requestMatchers(HttpMethod.GET, "/info").hasAuthority("WRITE");
+            auth.requestMatchers(HttpMethod.GET, "/api").permitAll();
+            auth.requestMatchers(HttpMethod.GET, "/api/reports/download").permitAll();
+            auth.requestMatchers(HttpMethod.GET, "/api/**").hasAuthority("READ");
+            auth.requestMatchers(HttpMethod.POST, "/api/**").hasAuthority("WRITE");
+            auth.requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority("WRITE");
+            auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE");
+            auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE");
+        }).csrf(csrf -> csrf.disable()).exceptionHandling(x -> x.authenticationEntryPoint(saep)).httpBasic(Customizer.withDefaults()).build();
+
+    }
 
     @Autowired
-    private ResourceServerProperties resourceServerProperties;
-
-    public ResourceServerConfiguration(ResourceServerProperties resourceServerProperties) {
-        this.resourceServerProperties = resourceServerProperties;
-    }
-
-    @Override
-    protected void configure(AuthenticationManagerBuilder authenticationManagerBuilder) {
-        authenticationManagerBuilder.authenticationProvider(this.authProvider);
-        try {
-            authenticationManagerBuilder.userDetailsService(userDetailsService);
-        } catch (Exception e) {
-            log.error("Error in Authentication", e);
-        }
-    }
-
-    @Override
-    public void configure(ResourceServerSecurityConfigurer resources) {
-        resources.resourceId(resourceServerProperties.getResourceId());
-    }
-
-    @Override
-    public void configure(WebSecurity web) {
-        web.ignoring().antMatchers("/", "/**/*.html", "/**/*.css", "/**/*.js", "/**/*.json", "/**/*.png", "/**/*.gif", "/**/*.ico", "/**/*.woff*", "/**/*.ttf");
-    }
-
-    @Override
-    public void configure(HttpSecurity http) throws Exception {
-        // TODO Thomas Maier 15-12-2017
-        // Use Sw360GrantedAuthority from authorization server
-        SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
-        http
-                .addFilterBefore(filter, BasicAuthenticationFilter.class)
-                .authenticationProvider(authProvider)
-                .userDetailsService(userDetailsService)
-                .httpBasic()
-                .and()
-                .authorizeRequests()
-                .antMatchers(HttpMethod.GET, "/health").permitAll()
-                .antMatchers(HttpMethod.GET, "/info").hasAuthority("WRITE")
-                .antMatchers(HttpMethod.GET, "/api").permitAll()
-                .antMatchers(HttpMethod.GET, "/api/reports/download").permitAll()
-                .antMatchers(HttpMethod.GET, "/api/**").hasAuthority("READ")
-                .antMatchers(HttpMethod.POST, "/api/**").hasAuthority("WRITE")
-                .antMatchers(HttpMethod.PUT, "/api/**").hasAuthority("WRITE")
-                .antMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE")
-                .antMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE").and()
-                .csrf().disable().exceptionHandling().authenticationEntryPoint(saep);
+    public void authenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
+        authenticationManagerBuilder.authenticationProvider(authProvider).authenticationProvider(sw360UserAuthenticationProvider);
     }
 
     @Bean

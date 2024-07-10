@@ -25,7 +25,6 @@
     <packaging>war</packaging>
 
     <properties>
-        <artifact.deploy.dir>${rest.deploy.dir}</artifact.deploy.dir>
         <maven.test.skip>true</maven.test.skip>
     </properties>
 
@@ -33,7 +32,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
-            <version>${spring-boot.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
@@ -57,34 +55,20 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-tomcat</artifactId>
             <scope>provided</scope>
-            <version>${spring-boot.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>${spring-boot.version}</version>
             <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>log4j-over-slf4j</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>spring-boot-starter-logging</artifactId>
-                    <groupId>org.springframework.boot</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
-            <version>${spring-boot.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-rest</artifactId>
-            <version>${spring-boot.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -126,7 +110,15 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.springframework.security.oauth</groupId>
+            <artifactId>spring-security-oauth2</artifactId>
+            <version>2.5.2.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-jose</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -172,11 +164,6 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
-            <artifactId>commonIO</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.sw360</groupId>
             <artifactId>rest-common</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -191,6 +178,7 @@
         <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
+            <version>${javax-annotation.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.activation</groupId>
@@ -205,7 +193,11 @@
         <dependency>
             <groupId>org.bitbucket.b_c</groupId>
             <artifactId>jose4j</artifactId>
-            <version>0.9.4</version>
+            <version>0.9.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>
@@ -239,7 +231,6 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
     <profiles>
         <profile>
             <id>fatjar</id>
@@ -360,19 +351,16 @@
                     </execution>
                 </executions>
             </plugin>
-        </plugins>
-    </build>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>spring-snapshots</id>
-            <url>https://repo.spring.io/snapshot</url>
-        </pluginRepository>
-        <pluginRepository>
-            <id>spring-milestones</id>
-            <url>https://repo.spring.io/milestone</url>
-        </pluginRepository>
-    </pluginRepositories>
-
-
+		</plugins>
+	</build>
+	<pluginRepositories>
+            <pluginRepository>
+                <id>spring-snapshots</id>
+                <url>https://repo.spring.io/snapshot</url>
+            </pluginRepository>
+            <pluginRepository>
+                <id>spring-milestones</id>
+                <url>https://repo.spring.io/milestone</url>
+            </pluginRepository>
+	</pluginRepositories>
 </project>

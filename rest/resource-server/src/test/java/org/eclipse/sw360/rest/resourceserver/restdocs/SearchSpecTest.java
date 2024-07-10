@@ -17,7 +17,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWit
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -85,7 +85,7 @@ public class SearchSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        formParameters(
                                 parameterWithName("searchText").description("The search text"),
                                 parameterWithName("typeMasks").description("The type of resource. Possible values are " +List.of("project", "component", "license", "release", "obligation", "user", "vendor", "document") 
                                 + "\nNote: If document is excluded in typeMasks, then search will be restricted to " + "Name for Project, Component and Release, " 

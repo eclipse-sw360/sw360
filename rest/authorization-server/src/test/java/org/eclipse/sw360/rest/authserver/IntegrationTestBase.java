@@ -9,10 +9,21 @@
  */
 package org.eclipse.sw360.rest.authserver;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Sets;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -32,28 +43,17 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.jwt.Jwt;
 import org.springframework.security.jwt.JwtHelper;
-import org.springframework.security.oauth2.provider.ClientDetails;
-import org.springframework.security.oauth2.provider.client.BaseClientDetails;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Sw360AuthorizationServer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -86,7 +86,7 @@ public abstract class IntegrationTestBase {
 
     protected User normalTestUser;
 
-    protected ClientDetails testClient;
+    protected RegisteredClient testClient;
 
     protected ResponseEntity<String> responseEntity;
 
@@ -100,7 +100,7 @@ public abstract class IntegrationTestBase {
         when(thriftClients.makeUserClient()).thenReturn(mockedUserService);
 
         setupTestClient();
-        when(sw360ClientDetailsService.loadClientByClientId(anyString())).thenReturn(testClient);
+        when(sw360ClientDetailsService.findByClientId(anyString())).thenReturn(testClient);
 
         setupLiferayMocks();
     }
@@ -122,11 +122,10 @@ public abstract class IntegrationTestBase {
     }
 
     private void setupTestClient() {
-        testClient = new BaseClientDetails("trusted-sw360-client", "sw360-REST-API",
-                Sw360GrantedAuthority.READ.getAuthority(), "client_credentials,password",
-                Sw360GrantedAuthority.BASIC.getAuthority());
-        ((BaseClientDetails) testClient).setClientSecret("sw360-secret");
-        ((BaseClientDetails) testClient).setAutoApproveScopes(Sets.newHashSet("true"));
+        testClient = RegisteredClient.withId("trusted-sw360-client").clientId("trusted-sw360-client")
+                .clientSecret("sw360-REST-API").authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .authorizationGrantType(AuthorizationGrantType.PASSWORD)
+                .scope(Sw360GrantedAuthority.READ.getAuthority()).build();
     }
 
     @SuppressWarnings("unchecked")

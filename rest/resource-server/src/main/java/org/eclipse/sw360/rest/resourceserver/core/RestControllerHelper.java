@@ -81,6 +81,7 @@ import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -154,6 +155,7 @@ public class RestControllerHelper<T> {
     private static final double MIN_CVSS = 0;
     private static final double MAX_CVSS = 10;
     public static final String PAGINATION_PARAM_PAGE_ENTRIES = "page_entries";
+    private static final String JWT_SUBJECT = "sub";
 
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
@@ -162,9 +164,22 @@ public class RestControllerHelper<T> {
 
     public User getSw360UserFromAuthentication() {
         try {
-            String userId;
+            String userId = null;
             Object principle = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if (principle instanceof String) {
+            if (principle instanceof Jwt jwt) {
+                if (jwt.getClaims().containsKey("resource_access") || !jwt.getClaims().containsKey("user_name")) {
+                    userId = jwt.getClaim("email");
+                    if (userId == null) {
+                        userId = jwt.getClaim("mapped_user_email");
+                    }
+                } else {
+                    String clientId = jwt.getClaim(JWT_SUBJECT);
+                    if (clientId == null) {
+                        userId = jwt.getClaim("user_name");
+                        return userService.getUserByEmailOrExternalId(userId);
+                    }
+                }
+            } else if (principle instanceof String) {
                 userId = principle.toString();
             } else {
                 org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) principle;

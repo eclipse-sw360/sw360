@@ -1,0 +1,126 @@
+/*
+SPDX-FileCopyrightText: © 2024 Siemens AG
+SPDX-License-Identifier: EPL-2.0
+*/
+package org.eclipse.sw360.rest.authserver.security;
+
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
+import org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
+import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
+import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
+import java.util.UUID;
+
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Autowired
+    Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
+
+    @Autowired
+    Sw360ClientDetailsService sw360ClientDetailsService;
+
+    @Bean
+    @Order(1)
+    public SecurityFilterChain webFilterChainForOauth(HttpSecurity httpSecurity) throws Exception {
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(httpSecurity);
+        httpSecurity.getConfigurer(OAuth2AuthorizationServerConfigurer.class).oidc(Customizer.withDefaults());
+        httpSecurity.exceptionHandling(e -> e.authenticationEntryPoint(new LoginUrlAuthenticationEntryPoint("/login")));
+        return httpSecurity.build();
+    }
+
+    @Order(2)
+    @Bean
+    public SecurityFilterChain appSecurtiy(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity.authorizeRequests(request -> request.anyRequest().authenticated()).formLogin(Customizer.withDefaults());
+        return httpSecurity.csrf(csrf->csrf.disable()).build();
+    }
+
+
+    @Bean
+    public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
+        return (context) -> {
+            if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
+                context.getClaims().claims((claims) -> {
+                    claims.put("user_name", claims.get("sub"));
+                    claims.remove("sub");
+                    claims.put("client_id", claims.get("aud"));
+                    claims.remove("aud");
+                    claims.put("aud", Arrays.asList("sw360-REST-API"));
+                });
+            }
+        };
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthorizationServerSettings authorizationServerSettings() {
+        return AuthorizationServerSettings.builder().build();
+    }
+
+    @Bean
+    public JWKSource<SecurityContext> jwkSource() throws NoSuchAlgorithmException {
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        keyPairGenerator.initialize(2048);
+
+        var keys = keyPairGenerator.generateKeyPair();
+        var publicKey = (RSAPublicKey) keys.getPublic();
+        var privateKey = keys.getPrivate();
+        var rsaKey = new RSAKey.Builder(publicKey)
+                .privateKey(privateKey)
+                .keyID(UUID.randomUUID().toString())
+                .build();
+        JWKSet jwkSet = new JWKSet(rsaKey);
+        return new ImmutableJWKSet<>(jwkSet);
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
+        return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+    }
+
+    @Autowired
+    public void authenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder) {
+        authenticationManagerBuilder.authenticationProvider(sw360UserAuthenticationProvider);
+    }
+
+    @Bean
+    public ThriftClients thriftClients() {
+        return new ThriftClients();
+    }
+
+}

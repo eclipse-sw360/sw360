@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class VendorSpecTest extends TestRestDocsSpecBase {
@@ -93,7 +93,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        formParameters(
                                 parameterWithName("page").description("Page of vendors"),
                                 parameterWithName("page_entries").description("Amount of vendors per page")
                         ),

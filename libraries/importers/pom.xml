@@ -25,7 +25,6 @@
 
 	<properties>
 		<artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
-		<maven.test.skip>true</maven.test.skip>
 	</properties>
 
 	<build>
