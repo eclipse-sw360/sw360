@@ -25,7 +25,7 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
-import jakarta.servlet.DispatcherType;
+import javax.servlet.DispatcherType;
 import java.io.File;
 import java.util.EnumSet;
 
