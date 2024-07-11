@@ -14,10 +14,11 @@ name: SW360 Build and Test
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths-ignore:
       - "**.md"
       - ".github/workflows/docker_deploy.yml"
+      - ".github/workflows/scorecard.yml"
   workflow_dispatch:
 
 permissions: write-all
@@ -32,93 +33,93 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: webiny/action-conventional-commits@v1.3.0
+      - uses: actions/checkout@v4
+      - uses: webiny/action-conventional-commits@v1.3.0
 
-    - name: Verify license headers
-      run: |
-        chmod +x .github/testForLicenseHeaders.sh
-        bash .github/testForLicenseHeaders.sh
+      - name: Verify license headers
+        run: |
+          chmod +x .github/testForLicenseHeaders.sh
+          bash .github/testForLicenseHeaders.sh
 
-    - name: Set environment variables
-      run: |
-        echo _JAVA_OPTIONS= '-Djdk.util.zip.disableZip64ExtraFieldValidation=true' >> $GITHUB_ENV
-        cat .versions >> $GITHUB_ENV
+      - name: Set environment variables
+        run: |
+          echo _JAVA_OPTIONS= '-Djdk.util.zip.disableZip64ExtraFieldValidation=true' >> $GITHUB_ENV
+          cat .versions >> $GITHUB_ENV
 
-    - name: Setup CouchDB
-      run: scripts/startCouchdbForTests.sh
+      - name: Setup CouchDB
+        run: scripts/startCouchdbForTests.sh
 
-    - name: Update properties with DB credentials
-      run: |
-        sudo mkdir -p /etc/sw360
-        sudo cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/
-        sudo cp ./scripts/sw360BackendRestDockerConfig/etc_sw360/rest-test.properties /etc/sw360/
-        sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
-        sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
+      - name: Update properties with DB credentials
+        run: |
+          sudo mkdir -p /etc/sw360
+          sudo cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/
+          sudo cp ./scripts/sw360BackendRestDockerConfig/etc_sw360/rest-test.properties /etc/sw360/
+          sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
+          sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
 
-    - name: Prepare build environment
-      run: |
-        sudo apt-get update -qq
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git cmake
-        pip install mkdocs mkdocs-material
+      - name: Prepare build environment
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git cmake
+          pip install mkdocs mkdocs-material
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        check-latest: true
-        cache: 'maven'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          check-latest: true
+          cache: "maven"
 
-    - name: Cache Thrift
-      id: cache-thrift
-      uses: actions/cache@v4
-      with:
-        path: |
-          /usr/local/bin/thrift
-          /usr/share/thrift/${{ env.THRIFT_VERSION }}
-        key: ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
-        restore-keys: |
-          ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
+      - name: Cache Thrift
+        id: cache-thrift
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/bin/thrift
+            /usr/share/thrift/${{ env.THRIFT_VERSION }}
+          key: ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
 
-    - name: Install Thrift
-      if: steps.cache-thrift.outputs.cache-hit != 'true'
-      run: |
-        chmod +x scripts/install-thrift.sh
-        bash scripts/install-thrift.sh
+      - name: Install Thrift
+        if: steps.cache-thrift.outputs.cache-hit != 'true'
+        run: |
+          chmod +x scripts/install-thrift.sh
+          bash scripts/install-thrift.sh
 
-    - name: Build SW360
-      run: |
-        mvn clean install --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false -DRunRestForceUpdateTest=false -fae
+      - name: Build SW360
+        run: |
+          mvn clean install --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false -DRunRestForceUpdateTest=false -fae
 
-    - name: Run PrivateProjectAccessTest
-      run: |
-        cd build-configuration
-        mvn install
-        cd ..
-        cd libraries/datahandler
-        mvn test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true
-        cd ../..
+      - name: Run PrivateProjectAccessTest
+        run: |
+          cd build-configuration
+          mvn install
+          cd ..
+          cd libraries/datahandler
+          mvn test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true
+          cd ../..
 
-    - name: Run BulkReleaseDeletingTest
-      run: |
-        cd backend/src/src-components
-        mvn test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true
+      - name: Run BulkReleaseDeletingTest
+        run: |
+          cd backend/src/src-components
+          mvn test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true
 
-    # - name: Deploy Backend and Rest Server
-    #   run: |
-    #     sudo docker build -t sw360backendrest -f sw360BackendRest.Dockerfile .
-    #     sudo docker run -dt --network=host sw360backendrest
-    #     bash scripts/sw360BackendRestDockerConfig/scripts/checkDeploymentIsSuccess.sh
+      # - name: Deploy Backend and Rest Server
+      #   run: |
+      #     sudo docker build -t sw360backendrest -f sw360BackendRest.Dockerfile .
+      #     sudo docker run -dt --network=host sw360backendrest
+      #     bash scripts/sw360BackendRestDockerConfig/scripts/checkDeploymentIsSuccess.sh
 
-    # - name: Create users and oauth client
-    #   run: bash scripts/sw360BackendRestDockerConfig/scripts/createUserAndOauthClient.sh
+      # - name: Create users and oauth client
+      #   run: bash scripts/sw360BackendRestDockerConfig/scripts/createUserAndOauthClient.sh
 
-    - name: Run Client Integration Test for Rest Api
-      run: |
-        cd clients
-        mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true
+      - name: Run Client Integration Test for Rest Api
+        run: |
+          cd clients
+          mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true
 
-    - name: Publish Test Report
-      if: success() || failure()
-      uses: scacap/action-surefire-report@v1
+      - name: Publish Test Report
+        if: success() || failure()
+        uses: scacap/action-surefire-report@v1
