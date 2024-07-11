@@ -527,6 +527,11 @@ public class PortalConstants {
     public static final String TYPE_MASK = "typeMask";
     public static final String SEARCH_PORTLET_NAME = PORTLET_NAME_PREFIX + "search";
     public static final String IS_SEARCH_TRUNCATED = "isSearchTruncated";
+    
+    //Key for Dashboard
+    public static final String DASHBOARD_PORTLET_NAME = PORTLET_NAME_PREFIX + "dashboard";
+    public static final String PAGENAME_SI_DASHBOARD = "viewSI";
+    public static final String PAGENAME_DASHBOARD = "view";
 
     //! Keys for Preferences
     public static final String PREFERENCES_PORTLET_NAME = PORTLET_NAME_PREFIX + "preferences";

@@ -42,6 +42,13 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-auto">
+                    <div class="btn-toolbar" role="toolbar">
+                        <div class="btn-group" role="group">
+                            <a href="<%=request.getContextPath()%>/html/dashboard/view.jsp" target="_blank">Dashboard</a>
+                        </div>
+                    </div>
+                </div>
 				<div class="col portlet-title text-truncate" title="<liferay-ui:message key="user.preferences" />">
 					<liferay-ui:message key="user.preferences" />
 				</div>
