@@ -24,10 +24,12 @@ import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -49,6 +51,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
@@ -56,8 +59,12 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
+
+import com.google.common.collect.ImmutableMap;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URISyntaxException;
@@ -72,7 +79,6 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RestController
 @SecurityRequirement(name = "tokenAuth")
 public class ModerationRequestController implements RepresentationModelProcessor<RepositoryLinksResource> {
-
     public static final String MODERATION_REQUEST_URL = "/moderationrequest";
 
     @Autowired
@@ -357,6 +363,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
         return new ResponseEntity<>(resources, status);
     }
 
+
     /**
      * Filter moderation request to remove duplicate additions and deletions data.
      * @param moderationRequest Moderation request to filter
@@ -473,4 +480,77 @@ public class ModerationRequestController implements RepresentationModelProcessor
         setAddition.apply(addition);
         setDeletion.apply(deletion);
     }
+
+    @Operation(
+            summary = "Delete moderation request.",
+            description = "Delete delete moderation request of the service.",
+            tags = {"ModerationRequest"}
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = MODERATION_REQUEST_URL + "/delete", method = RequestMethod.DELETE)
+    public ResponseEntity<?> deleteModerationRequest(HttpServletRequest request, @RequestBody List<String> ids,
+			ModerationRequest moderationRequest, ModerationState moderationState) throws TException {
+		User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		List<RequestStatus> requestStatusList = new ArrayList<>();
+		List<String> incorrectIds = new ArrayList<>();
+		List<String> correctIds = new ArrayList<>();
+		List<String> deletedIds = new ArrayList<>();
+
+		for (String id : ids) {
+			try {
+				moderationRequest = sw360ModerationRequestService.getModerationRequestById(id);
+				RequestStatus requestStatus = sw360ModerationRequestService.deleteModerationRequestInfo(sw360User, id,
+						moderationRequest, moderationState);
+				requestStatusList.add(requestStatus);
+				if (requestStatus == RequestStatus.SUCCESS) {
+					deletedIds.add(id);
+				} else {
+					correctIds.add(id);
+				}
+			} catch (ResourceNotFoundException ex) {
+				incorrectIds.add(id);
+			}
+		}
+
+		Map<String, Object> response = new HashMap<>();
+
+		if (!requestStatusList.isEmpty()) {
+			if (requestStatusList.contains(RequestStatus.FAILURE)) {
+				response.put("message", "User doesn't have permission to delete.");
+				response.put("Incorrect moderation request Id/Ids", incorrectIds);
+				response.put("Deleted moderation request Id/Ids", deletedIds);
+				response.put("Moderation request Id/Ids", correctIds);
+				return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+			} else if (requestStatusList.contains(RequestStatus.SUCCESS) && requestStatusList.contains(null)) {
+				response.put("message", "Some requests were deleted, but some are in an open state.");
+				response.put("Incorrect moderation request Id/Ids", incorrectIds);
+				response.put("Deleted moderation request Id/Ids", deletedIds);
+				response.put("Open moderation request Id/Ids", correctIds);
+				return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+			} else if (requestStatusList.contains(RequestStatus.SUCCESS)) {
+				response.put("message", "Deleted moderation request Id/Ids.");
+				response.put("Deleted moderation request Id/Ids", deletedIds);
+				return ResponseEntity.status(HttpStatus.OK).body(response);
+			} else if (requestStatusList.contains(null)) {
+				response.put("message", "MR is in open state and can be deleted by requesting user only.");
+				response.put("Incorrect moderation request Id/Ids", incorrectIds);
+				response.put("Open moderation request Id/Ids", correctIds);
+				return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+			}
+		}
+
+		if (!incorrectIds.isEmpty() && !correctIds.isEmpty()) {
+			response.put("Incorrect moderation request Id/Ids", incorrectIds);
+			response.put("Open moderation request Id/Ids", correctIds);
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+		} else if (incorrectIds.isEmpty() && correctIds.isEmpty()) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+		} else if (!incorrectIds.isEmpty()) {
+			response.put("Incorrect moderation request Id/Ids", incorrectIds);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+		} else {
+			response.put("Open moderation request Id/Ids", correctIds);
+			return ResponseEntity.status(HttpStatus.OK).body(response);
+		}
+	}
 }
