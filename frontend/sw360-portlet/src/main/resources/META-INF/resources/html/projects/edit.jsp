@@ -387,7 +387,7 @@ require(['jquery', 'modules/autocomplete', 'modules/dialog', 'modules/listgroup'
 
         function deleteProjectInternal() {
             var baseUrl = data.deleteUrl,
-                deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter(data.commentParameterName, btoa($("#moderationDeleteCommentField").val()));
+                deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter(data.commentParameterName, btoa(unescape(encodeURIComponent($("#deleteProjectDialogComment").val()))));
             window.location.href = deleteURL;
         }
 

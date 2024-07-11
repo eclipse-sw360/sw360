@@ -282,7 +282,7 @@
 
             function deleteComponentInternal() {
                 var baseUrl = data.deleteUrl,
-                    deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter(data.commentParameterName, btoa($("#moderationDeleteCommentField").val()));
+                    deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter(data.commentParameterName, btoa(unescape(encodeURIComponent($("#deleteComponentDialogComment").val()))));
                 window.location.href = deleteURL;
             }
 

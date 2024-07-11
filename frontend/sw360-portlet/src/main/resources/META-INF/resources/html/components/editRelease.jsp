@@ -319,7 +319,7 @@
 
             function deleteReleaseInternal() {
                 var baseUrl = data.deleteUrl,
-                    deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter(data.commentParameterName, btoa($("#moderationDeleteCommentField").val()));
+                    deleteURL = Liferay.PortletURL.createURL( baseUrl ).setParameter("<%=PortalConstants.MODERATION_REQUEST_COMMENT%>", btoa(unescape(encodeURIComponent($("#deleteReleaseDialogComment").val()))));
                 window.location.href = deleteURL;
             }
 
