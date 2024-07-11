@@ -41,7 +41,7 @@ import static org.mockito.Mockito.when;
 public class TestHelper {
 
     public static InputStream makeAttachmentContentStream(String filename){
-        return ClassLoader.getSystemResourceAsStream(filename);
+        return TestHelper.class.getClassLoader().getResourceAsStream(filename);
     }
 
     public static AttachmentContent makeAttachmentContent(String filename){
