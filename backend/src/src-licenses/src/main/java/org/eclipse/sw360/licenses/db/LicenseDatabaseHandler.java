@@ -1023,6 +1023,9 @@ public class LicenseDatabaseHandler {
 
                 final Optional<License> spdxLicenseAsSW360License = SpdxConnector.getSpdxLicenseAsSW360License(spdxId);
                 if(spdxLicenseAsSW360License.isPresent()){
+                    if(CommonUtils.isNullOrEmptyCollection(spdxLicenseAsSW360License.get().getObligationDatabaseIds())) {
+                        spdxLicenseAsSW360License.get().setObligationDatabaseIds(new HashSet<>());
+                    }
                     newLicenses.add(spdxLicenseAsSW360License.get());
                 }else{
                     log.error("Failed to find SpdxListedLicense with id=" + spdxId);

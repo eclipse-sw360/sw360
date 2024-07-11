@@ -16,6 +16,11 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -23,6 +28,7 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.EntityModel;
@@ -35,7 +41,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -62,8 +70,8 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             tags = {"Obligations"}
     )
     @RequestMapping(value = OBLIGATION_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligations(
-            @RequestParam(value = "obligationLevel", required = false) String obligationLevel) {
+    public ResponseEntity<CollectionModel> getObligations(Pageable pageable, HttpServletRequest request,
+                                                          @RequestParam(value = "obligationLevel", required = false) String obligationLevel) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
 
         List<Obligation> obligations;
         if (!CommonUtils.isNullEmptyOrWhitespace(obligationLevel)) {
@@ -74,13 +82,20 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             obligations = obligationService.getObligations();
         }
 
+        PaginationResult<Obligation> paginationResult = restControllerHelper.createPaginationResult(request, pageable, obligations, SW360Constants.TYPE_OBLIGATION);
         List<EntityModel<Obligation>> obligationResources = new ArrayList<>();
-        obligations.forEach(o -> {
-            Obligation embeddedObligation = restControllerHelper.convertToEmbeddedObligation(o);
-            obligationResources.add(EntityModel.of(embeddedObligation));
-        });
-
-        CollectionModel<EntityModel<Obligation>> resources = CollectionModel.of(obligationResources);
+        paginationResult.getResources().stream()
+                .forEach(obligation -> {
+                    Obligation embeddedObligation = restControllerHelper.convertToEmbeddedObligation(obligation);
+                    EntityModel<Obligation> licenseResource = EntityModel.of(embeddedObligation);
+                    obligationResources.add(licenseResource);
+                });
+        CollectionModel resources;
+        if (obligationResources.size() == 0) {
+            resources = restControllerHelper.emptyPageResource(License.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, obligationResources);
+        }
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 

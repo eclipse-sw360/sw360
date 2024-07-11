@@ -178,6 +178,15 @@ public class Sw360LicenseService {
         return obligations;
     }
 
+    public List<LicenseType> getLicenseTypes() throws TException  {
+        LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+        List<LicenseType> licenseTypes = sw360LicenseClient.getLicenseTypes();
+        if (CommonUtils.isNullOrEmptyCollection(licenseTypes)) {
+            return Collections.emptyList();
+        }
+        return licenseTypes;
+    }
+
     public void checkObligationIds(Set<String> obligationIds) throws TException {
         if (obligationIds.isEmpty()) {
             throw new HttpMessageNotReadableException("Cannot update because no obliagtion id input");

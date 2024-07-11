@@ -31,6 +31,23 @@ include::{snippets}/should_document_get_licenses/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_get_licenses/links.adoc[]
 
+[[resources-licenseTypes-list]]
+==== Listing licenseTypes
+
+A `GET` request will list all of the service's licenseTypes.
+
+===== Response structure
+include::{snippets}/should_document_get_license_types/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_license_types/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_license_types/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_license_types/links.adoc[]
+
 [[resources-obligation-list]]
 ==== Listing obligations
 

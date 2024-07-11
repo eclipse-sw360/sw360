@@ -43,6 +43,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ObligationSpecTest extends TestRestDocsSpecBase {
@@ -97,18 +99,31 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
     public void should_document_get_obligations() throws Exception {
         String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/obligations")
-                .header("Authorization", "Bearer " + accessToken)
-                .accept(MediaTypes.HAL_JSON))
+                        .header("Authorization", "Bearer " + accessToken)
+                        .param("page", "0")
+                        .param("page_entries", "5")
+                        .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
+                        requestParameters(
+                                parameterWithName("page").description("Page of obligations"),
+                                parameterWithName("page_entries").description("Amount of obligations per page")
+                        ),
                         links(
-                                linkWithRel("curies").description("Curies are used for online documentation")
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:obligations[]title").description("The title of the obligation"),
                                 subsectionWithPath("_embedded.sw360:obligations[]obligationType").description("The obligationType of the obligation"),
                                 subsectionWithPath("_embedded.sw360:obligations").description("An array of <<resources-obligations, Obligations resources>>"),
-                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of obligations per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing obligations"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
                         )));
     }
 
