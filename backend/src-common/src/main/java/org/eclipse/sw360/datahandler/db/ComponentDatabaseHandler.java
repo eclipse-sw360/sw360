@@ -76,6 +76,7 @@ import org.spdx.library.InvalidSPDXAnalysisException;
 
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.*;
@@ -455,27 +456,35 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
      * Add new release to the database
      */
     public AddDocumentRequestSummary addComponent(Component component, String user) throws SW360Exception {
-        if(isDuplicateUsingVcs(component, true)){
-            final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
-                    .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
-            Set<String> duplicates = componentRepository.getComponentIdsByVCS(component.getVcs(), true);
-            if (duplicates.size() == 1) {
-                duplicates.forEach(addDocumentRequestSummary::setId);
+        if (isNotNullEmptyOrWhitespace(component.getVcs())) {
+            String vcsUrl = component.getVcs();
+            if (isDuplicateUsingVcs(vcsUrl, true)){
+                final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
+                        .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
+                Set<String> duplicates = componentRepository.getComponentIdsByVCS(component.getVcs(), true);
+                if (duplicates.size() == 1) {
+                    duplicates.forEach(addDocumentRequestSummary::setId);
+                }
+                return addDocumentRequestSummary;
             }
-            return addDocumentRequestSummary;
+            if (!CommonUtils.isValidUrl(vcsUrl)) {
+                log.error("Invalid VCS URL: " + vcsUrl);
+                return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.INVALID_INPUT);
+            }
+       }
 
-        }else if(isDuplicate(component, true)) {
-            final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
-                    .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
-            Set<String> duplicates = componentRepository.getComponentIdsByName(component.getName(), true);
-            if (duplicates.size() == 1) {
-                duplicates.forEach(addDocumentRequestSummary::setId);
+        if (component.getName().trim().length() == 0) {
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.NAMINGERROR);
+        } else {
+            if (isDuplicate(component.getName(), true)) {
+                final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
+                        .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
+                Set<String> duplicates = componentRepository.getComponentIdsByName(component.getName(), true);
+                if (duplicates.size() == 1) {
+                    duplicates.forEach(addDocumentRequestSummary::setId);
+                }
+                return addDocumentRequestSummary;
             }
-            return addDocumentRequestSummary;
-        }
-        if(component.getName().trim().length() == 0) {
-            return new AddDocumentRequestSummary()
-                    .setRequestStatus(AddDocumentRequestStatus.NAMINGERROR);
         }
 
         if (!isDependenciesExistInComponent(component)) {
@@ -589,31 +598,31 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 .setId(id);
     }
 
-    private boolean isDuplicate(Component component, boolean caseInsenstive){
-        return isDuplicate(component.getName(), caseInsenstive);
+    private boolean isDuplicate(Component component, boolean caseInsensitive){
+        if (isNotNullEmptyOrWhitespace(component.getVcs())) {
+            return isDuplicate(component.getName(), caseInsensitive) && isDuplicateUsingVcs(component.getVcs(), caseInsensitive);
+        }
+
+        return isDuplicate(component.getName(), caseInsensitive);
     }
 
     private boolean isDuplicate(Release release){
         return isDuplicate(release.getName(), release.getVersion());
     }
 
-    private boolean isDuplicate(String componentName, boolean caseInsenstive) {
+    private boolean isDuplicate(String componentName, boolean caseInsensitive) {
         if (isNullEmptyOrWhitespace(componentName)) {
             return false;
         }
-        Set<String> duplicates = componentRepository.getComponentIdsByName(componentName, caseInsenstive);
+        Set<String> duplicates = componentRepository.getComponentIdsByName(componentName, caseInsensitive);
         return duplicates.size()>0;
     }
 
-    private boolean isDuplicateUsingVcs(Component component, boolean caseInsenstive){
-        return isDuplicateUsingVcs(component.getVcs(), caseInsenstive);
-    }
-
-    private boolean isDuplicateUsingVcs(String vcsUrl, boolean caseInsenstive){
+    private boolean isDuplicateUsingVcs(String vcsUrl, boolean caseInsensitive){
         if (isNullEmptyOrWhitespace(vcsUrl)) {
             return false;
         }
-        Set<String> duplicates = componentRepository.getComponentIdsByVCS(vcsUrl, caseInsenstive);
+        Set<String> duplicates = componentRepository.getComponentIdsByVCS(vcsUrl, caseInsensitive);
         return duplicates.size()>0;
     }
 
@@ -625,9 +634,9 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return duplicates.size()>0;
     }
 
-    private void isDuplicateComponent(List<String> componentNames, boolean caseInsenstive) {
+    private void isDuplicateComponent(List<String> componentNames, boolean caseInsensitive) {
         for (String name : componentNames) {
-            if(!isDuplicate(name, caseInsenstive))
+            if(!isDuplicate(name, caseInsensitive))
                listComponentName.add(name);
         }
     }
@@ -694,13 +703,24 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public RequestStatus updateComponent(Component component, User user, boolean forceUpdate) throws SW360Exception {
         removeLeadingTrailingWhitespace(component);
         String name = component.getName();
+        String vcs = component.getVcs();
+
         if (name == null || name.isEmpty()) {
             return RequestStatus.NAMINGERROR;
         }
+
+        if (isNotNullEmptyOrWhitespace(vcs)) {
+            if (!CommonUtils.isValidUrl(vcs)) {
+                log.error("Invalid VCS URL: " + vcs);
+                return RequestStatus.INVALID_INPUT;
+            }
+        }
+
         Set<String> categories = component.getCategories();
         if (categories == null || categories.isEmpty()) {
             component.setCategories(ImmutableSet.of(DEFAULT_CATEGORY));
         }
+
         // Prepare component for database
         prepareComponent(component);
 
@@ -823,8 +843,12 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private boolean changeWouldResultInDuplicate(Component before, Component after) {
         if (before.getName().equals(after.getName())) {
-            // sth else was changed, not one of the duplication relevant properties
             return false;
+        }
+        if (isNotNullEmptyOrWhitespace(before.getVcs())) {
+            if (before.getVcs().equals(after.getVcs())) {
+                return false;
+            }
         }
 
         return isDuplicate(after, false);

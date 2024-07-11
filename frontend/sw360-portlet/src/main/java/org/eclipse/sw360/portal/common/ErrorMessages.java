@@ -25,6 +25,7 @@ public class ErrorMessages {
     public static final String COMPONENT_NOT_ADDED = "Component could not be added.";
     public static final String COMPONENT_DUPLICATE = "A component with the same name or VCS already exists.";
     public static final String COMPONENT_NAMING_ERROR = "Name and Categories of component cannot contain only space characters.";
+    public static final String INVALID_VCS_OR_LINKED_DOCUMENT = "Invalid VCS or linked document";
     public static final String RELEASE_NOT_ADDED = "Release could not be added.";
     public static final String RELEASE_DUPLICATE = "A release with the same name and version already exists.";
     public static final String RELEASE_NAME_VERSION_ERROR = "Name and version of release cannot contain only space characters.";
@@ -71,7 +72,7 @@ public class ErrorMessages {
     public static final String ERROR_VENDOR = "Error: Invalid vendor Name or Url.";
     public static final String ERROR_BULK_DELETING = "Error while bulk deleting";
     public static final String ERROR_BULK_DELETING_IN_BACKEND = "Error while bulk deleting in backend.";
-    
+
     public static final String PACKAGE_NOT_ADDED = "Package could not be added.";
     public static final String PACKAGE_DUPLICATE = "A package with the same name and version already exists.";
     public static final String PACKAGE_NAME_VERSION_ERROR = "Name and version of the package cannot contain only space characters.";
@@ -93,6 +94,7 @@ public class ErrorMessages {
             .add(COMPONENT_NOT_ADDED)
             .add(COMPONENT_DUPLICATE)
             .add(COMPONENT_NAMING_ERROR)
+            .add(INVALID_VCS_OR_LINKED_DOCUMENT)
             .add(RELEASE_NOT_ADDED)
             .add(RELEASE_DUPLICATE)
             .add(RELEASE_NAME_VERSION_ERROR)
