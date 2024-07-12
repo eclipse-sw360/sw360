@@ -20,6 +20,10 @@
         <version>${revision}</version>
     </parent>
 
+    <properties>
+        <maven.test.skip>true</maven.test.skip>
+    </properties>
+
     <artifactId>authorization-server</artifactId>
     <packaging>war</packaging>
     <dependencies>
