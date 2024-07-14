@@ -642,25 +642,6 @@
             </execution>
           </executions>
         </plugin>
-        <plugin>
-          <groupId>biz.aQute.bnd</groupId>
-          <artifactId>bnd-maven-plugin</artifactId>
-          <version>3.5.0</version>
-          <dependencies>
-            <dependency>
-              <groupId>biz.aQute.bnd</groupId>
-              <artifactId>biz.aQute.bndlib</artifactId>
-              <version>3.5.0</version>
-            </dependency>
-          </dependencies>
-          <executions>
-            <execution>
-              <goals>
-                <goal>bnd-process</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
