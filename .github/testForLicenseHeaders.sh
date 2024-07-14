@@ -42,6 +42,7 @@ done <<< "$(git ls-files \
     | grep -v '.github/actions/docker_control/check_image.py' \
     | grep -v '.github/ISSUE_TEMPLATE/*' \
     | grep -v '.github/pull_request_template.md' \
+    | grep -v '.github/issue_template.md' \
     | grep -v 'sw360.code-workspace' \
     | grep -v 'default_secrets' \
     | grep -v 'requirements.txt' \
