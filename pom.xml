@@ -152,7 +152,7 @@
     <springdoc-openapi-security.version>1.7.0</springdoc-openapi-security.version>
     <springdoc-openapi-webmvc.version>1.7.0</springdoc-openapi-webmvc.version>
     <springframework.version>6.1.6</springframework.version>
-    <thrift.version>0.19.0</thrift.version>
+    <thrift.version>0.20.0</thrift.version>
     <tika.version>1.28.5</tika.version>
     <wiremock.version>2.26.0</wiremock.version>
     <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
