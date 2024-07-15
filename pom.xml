@@ -64,7 +64,7 @@
     <rest.version>2.0.0</rest.version>
     <backend.deploy.dir>${base.deploy.dir}/webapps</backend.deploy.dir>
     <rest.deploy.dir>${base.deploy.dir}/webapps</rest.deploy.dir>
-    <jars.deploy.dir>${base.deploy.dir}</jars.deploy.dir>    
+    <jars.deploy.dir>${base.deploy.dir}</jars.deploy.dir>
 
     <!-- Build version properties -->
     <java_source.version>17</java_source.version>
@@ -616,10 +616,10 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin.version}</version>
           <configuration>
-                <argLine>-Xms512m -Xmx1024m -XX:MaxPermSize=512m</argLine>
-                <forkCount>0</forkCount>
-                <reuseForks>false</reuseForks>
-                <reportFormat>plain</reportFormat>
+            <argLine>-Xms512m -Xmx1024m -XX:MaxPermSize=512m</argLine>
+            <forkCount>0</forkCount>
+            <reuseForks>false</reuseForks>
+            <reportFormat>plain</reportFormat>
           </configuration>
         </plugin>
 
@@ -698,6 +698,35 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
         <version>${versions-maven-plugin.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>enforce</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireProperty>
+                  <property>base.deploy.dir</property>
+                  <message>You must set at least the property
+                    'base.deploy.dir'!</message>
+                  <regex>^.+$</regex>
+                  <regexMessage>You must set at least the property
+                    'base.deploy.dir'!</regexMessage>
+                </requireProperty>
+                <requireJavaVersion>
+                  <version>[17,18)</version>
+                </requireJavaVersion>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-scm-plugin</artifactId>
@@ -781,7 +810,7 @@
             </markdown>
           </configuration>
           <java>
-            <eclipse/>
+            <eclipse />
           </java>
         </configuration>
       </plugin>
@@ -829,37 +858,6 @@
             </plugin>
           </plugins>
         </pluginManagement>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-enforcer-plugin</artifactId>
-            <version>${maven-enforcer-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>enforce</id>
-                <goals>
-                  <goal>enforce</goal>
-                </goals>
-                <configuration>
-                  <rules>
-                    <requireProperty>
-                      <property>base.deploy.dir</property>
-                      <message>You must set at least the property
-                        'base.deploy.dir'!</message>
-                      <regex>^.+$</regex>
-                      <regexMessage>You must set at least the property
-                        'base.deploy.dir'!</regexMessage>
-                    </requireProperty>
-                    <requireJavaVersion>
-                      <version>[17,18)</version>
-                    </requireJavaVersion>
-                  </rules>
-                  <fail>true</fail>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
       </build>
     </profile>
     <profile>
