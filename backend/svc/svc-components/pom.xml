@@ -16,7 +16,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-svc</artifactId>
-        <version>${revision}</version>
+        <version>18.99.1</version>
     </parent>
 
     <artifactId>svc-components</artifactId>
