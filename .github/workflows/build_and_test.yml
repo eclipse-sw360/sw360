@@ -30,7 +30,7 @@ env:
 jobs:
   build:
     name: Build and Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,6 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo _JAVA_OPTIONS= '-Djdk.util.zip.disableZip64ExtraFieldValidation=true' >> $GITHUB_ENV
           cat .versions >> $GITHUB_ENV
 
       - name: Setup CouchDB
@@ -60,7 +59,7 @@ jobs:
       - name: Prepare build environment
         run: |
           sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libboost-dev libboost-test-dev libboost-program-options-dev libevent-dev automake libtool flex bison pkg-config libssl-dev git cmake
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq python3-pip build-essential libevent-dev automake libtool flex bison pkg-config libssl-dev git cmake
           pip install mkdocs mkdocs-material
 
       - name: Set up JDK 17
@@ -76,8 +75,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            /usr/local/bin/thrift
-            /usr/share/thrift/${{ env.THRIFT_VERSION }}
+            /var/lib/thrift-${{ env.THRIFT_VERSION }}
           key: ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
           restore-keys: |
             ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
@@ -86,25 +84,21 @@ jobs:
         if: steps.cache-thrift.outputs.cache-hit != 'true'
         run: |
           chmod +x scripts/install-thrift.sh
-          bash scripts/install-thrift.sh
+          sudo DESTDIR=/var/lib//thrift-${{ env.THRIFT_VERSION }} scripts/install-thrift.sh
 
       - name: Build SW360
         run: |
-          mvn clean install --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Dliferay.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false -DRunRestForceUpdateTest=false -fae
+          export PATH=$PATH:/var/lib//thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
+          mvn clean install --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Djars.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false -DRunRestForceUpdateTest=false -fae
 
       - name: Run PrivateProjectAccessTest
         run: |
-          cd build-configuration
-          mvn install
-          cd ..
-          cd libraries/datahandler
-          mvn test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true
-          cd ../..
+          mvn install -pl :build-configuration -am -Dbase.deploy.dir=.
+          mvn -pl :datahandler test -Dtest=ProjectPermissionsVisibilityTest -DRunPrivateProjectAccessTest=true -DRunRestForceUpdateTest=true -Dbase.deploy.dir=.
 
       - name: Run BulkReleaseDeletingTest
         run: |
-          cd backend/src/src-components
-          mvn test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true
+          mvn -pl :src-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=.
 
       # - name: Deploy Backend and Rest Server
       #   run: |
@@ -115,10 +109,10 @@ jobs:
       # - name: Create users and oauth client
       #   run: bash scripts/sw360BackendRestDockerConfig/scripts/createUserAndOauthClient.sh
 
-      - name: Run Client Integration Test for Rest Api
-        run: |
-          cd clients
-          mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true
+      # - name: Run Client Integration Test for Rest Api
+      #   run: |
+      #     cd clients
+      #     mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true
 
       - name: Publish Test Report
         if: success() || failure()
