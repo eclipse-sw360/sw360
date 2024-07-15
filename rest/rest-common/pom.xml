@@ -14,7 +14,7 @@
     <parent>
         <artifactId>rest</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>${revision}</version>
+        <version>18.99.1</version>
     </parent>
 
     <artifactId>rest-common</artifactId>

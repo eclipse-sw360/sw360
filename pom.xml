@@ -16,7 +16,7 @@
 
   <groupId>org.eclipse.sw360</groupId>
   <artifactId>sw360</artifactId>
-  <version>${revision}</version>
+  <version>18.99.1</version>
   <packaging>pom</packaging>
 
   <name>Eclipse SW360</name>
@@ -46,12 +46,10 @@
 
   <modules>
     <module>build-configuration</module>
-    <!--<module>third-party</module>-->
     <module>utils</module>
     <module>libraries</module>
     <module>backend</module>
     <module>rest</module>
-    <!--<module>clients</module>-->
   </modules>
 
   <distributionManagement>
@@ -62,9 +60,11 @@
   </distributionManagement>
 
   <properties>
-    <revision>18.1.${patchlevel}</revision>
-    <patchlevel>0</patchlevel>
-    <rest.version>1.0.0</rest.version>
+    <sw360.version>18.99.0</sw360.version>
+    <rest.version>2.0.0</rest.version>
+    <backend.deploy.dir>${base.deploy.dir}/webapps</backend.deploy.dir>
+    <rest.deploy.dir>${base.deploy.dir}/webapps</rest.deploy.dir>
+    <jars.deploy.dir>${base.deploy.dir}</jars.deploy.dir>    
 
     <!-- Build version properties -->
     <java_source.version>17</java_source.version>
