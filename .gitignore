@@ -67,3 +67,5 @@ tmp/**/*
 
 # DS_Store
 .DS_Store
+
+.python-version
