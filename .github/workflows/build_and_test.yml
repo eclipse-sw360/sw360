@@ -75,7 +75,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            /var/lib/thrift-${{ env.THRIFT_VERSION }}
+            $HOME/dist/thrift-${{ env.THRIFT_VERSION }}
           key: ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
           restore-keys: |
             ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
@@ -84,11 +84,11 @@ jobs:
         if: steps.cache-thrift.outputs.cache-hit != 'true'
         run: |
           chmod +x scripts/install-thrift.sh
-          sudo DESTDIR=/var/lib//thrift-${{ env.THRIFT_VERSION }} scripts/install-thrift.sh
+          DESTDIR=$HOME/dist/thrift-${{ env.THRIFT_VERSION }} scripts/install-thrift.sh
 
       - name: Build SW360
         run: |
-          export PATH=$PATH:/var/lib//thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
+          export PATH=$PATH:$HOME/dist/thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
           mvn clean install --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Djars.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false -DRunRestForceUpdateTest=false -fae
 
       - name: Run PrivateProjectAccessTest
