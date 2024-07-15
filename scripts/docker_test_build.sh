@@ -46,6 +46,6 @@ docker run -it --rm \
     -P deploy \
     -Dhelp-docs=true \
     -Dbase.deploy.dir=. \
-    -Dliferay.deploy.dir="${PWD}/deploy" \
+    -Djars.deploy.dir="${PWD}/deploy" \
     -Dbackend.deploy.dir="${PWD}/deploy/webapps" \
     -Drest.deploy.dir="${PWD}/deploy/webapps"
