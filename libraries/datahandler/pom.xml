@@ -16,7 +16,7 @@
     <parent>
         <artifactId>libraries</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>${revision}</version>
+        <version>18.1.0-m2</version>
     </parent>
 
     <name>datahandler</name>

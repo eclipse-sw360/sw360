@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend-src</artifactId>
-        <version>${revision}</version>
+        <version>18.1.0-m2</version>
     </parent>
 
     <artifactId>src-vmcomponents</artifactId>
@@ -28,7 +28,7 @@
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>src-vulnerabilities</artifactId>
-            <version>${revision}</version>
+            <version>18.1.0-m2</version>
         </dependency>
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
