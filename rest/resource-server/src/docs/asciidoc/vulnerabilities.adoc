@@ -20,7 +20,7 @@ The Vulnerabilities resource is used to create and list vulnerabilities.
 A `GET` request will list all of the service's vulnerabilities.
 
 ===== Request parameter
-include::{snippets}/should_document_get_vulnerabilities/request-parameters.adoc[]
+include::{snippets}/should_document_get_vulnerabilities/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_vulnerabilities/response-fields.adoc[]

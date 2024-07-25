@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.authserver;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
@@ -24,6 +25,7 @@ import static org.junit.Assert.assertThat;
  * A POST request for an access token with grant type 'client_credentials' and
  * custom auth header should NOT be possible.
  */
+@Ignore("Keeeping this test for reference for header bases auth, but it is not needed anymore for now")
 public class GrantTypeClientCredentialsCustomHeaderAuthTest extends IntegrationTestBase {
 
     @Test

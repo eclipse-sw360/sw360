@@ -14,9 +14,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -56,9 +55,6 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockBean
-    private Sw360UserService userServiceMock;
 
     @MockBean
     private Sw360ProjectService projectServiceMock;
@@ -136,9 +132,8 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_clearingrequest() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/clearingrequest/CR-101")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -165,9 +160,8 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_clearingrequest_by_projectid() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/clearingrequest/project/543210")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -194,9 +188,8 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_clearingrequests() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/clearingrequests")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -218,14 +211,13 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_clearingrequests_by_state() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/clearingrequests")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("state", "NEW")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("state", "NEW")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("state").description("The clearing request state of the request. Possible values are:  " + Arrays.asList(ClearingRequestState.values()))
                         ),
                         responseFields(

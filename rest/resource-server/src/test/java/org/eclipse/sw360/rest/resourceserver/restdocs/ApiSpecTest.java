@@ -48,17 +48,12 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
     private String testUserPassword;
 
     @MockBean
-    private Sw360UserService userServiceMock;
-
-    @MockBean
     private Sw360ProjectService projectServiceMock;
 
     @Test
     public void should_document_headers() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-
         this.mockMvc.perform(RestDocumentationRequestBuilders.get("/api")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .header("Accept", MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -68,12 +63,11 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_error_bad_request() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(
                 post("/api/projects")
                         .contentType(MediaTypes.HAL_JSON)
                         .content("{")
-                        .header("Authorization", "Bearer " + accessToken))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isBadRequest())
                 .andDo(this.documentationHandler.document(
                         responseFields(
@@ -101,20 +95,18 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_error_not_found() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(
                 post("/api/endpoint_not_found")
                         .contentType(MediaTypes.HAL_JSON)
                         .content("{}")
-                        .header("Authorization", "Bearer " + accessToken))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     public void should_document_error_method_not_allowed() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(RestDocumentationRequestBuilders.delete("/api")
-                .header("Authorization", "Bearer " + accessToken))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isMethodNotAllowed())
                 .andDo(this.documentationHandler.document(
                         responseFields(
@@ -126,12 +118,11 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_error_unsupported_media_type() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(
                 post("/api/projects")
                         .contentType(MediaType.APPLICATION_XML)
                         .content("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-                        .header("Authorization", "Bearer " + accessToken))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isUnsupportedMediaType())
                 .andDo(this.documentationHandler.document(
                         responseFields(
@@ -144,9 +135,8 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_error_internal_error() throws Exception {
         given(this.projectServiceMock.getProjectForUserById(anyString(), any())).willThrow(new RuntimeException(new TException("Internal error processing getProjectById")));
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(RestDocumentationRequestBuilders.get("/api/projects/12321")
-                .header("Authorization", "Bearer " + accessToken))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isInternalServerError())
                 .andDo(this.documentationHandler.document(
                         responseFields(
@@ -158,9 +148,8 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_index() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(get("/api")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(

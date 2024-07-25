@@ -61,7 +61,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.requestF
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -74,9 +74,6 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockBean
-    private Sw360UserService userServiceMock;
 
     @MockBean
     private Sw360ReleaseService releaseServiceMock;
@@ -208,15 +205,14 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_moderationrequests() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/moderationrequest")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .param("page", "0")
-                        .param("page_entries", "5")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("page").description("Page of moderation requests"),
                                 parameterWithName("page_entries").description("Amount of requests per page")
                         ),
@@ -250,16 +246,15 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_moderationrequests_alldetails() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/moderationrequest")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .param("allDetails", "true")
-                        .param("page", "0")
-                        .param("page_entries", "5")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("allDetails", "true")
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("page").description("Page of moderation requests"),
                                 parameterWithName("page_entries").description("Amount of requests per page"),
                                 parameterWithName("allDetails").description("Set `true` to get all details for the <<resources-moderationRequest, ModerationRequests>>")
@@ -307,9 +302,8 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_moderationrequest() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/moderationrequest/MR-101")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -352,14 +346,13 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_moderationrequests_by_state() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/moderationrequest/byState")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .param("state", "closed")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("state", "closed")
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("state").description("The moderation request state of the request. Possible values are: <open|closed>"),
                                 parameterWithName("page").description("Page of moderation requests").optional(),
                                 parameterWithName("page_entries").description("Amount of requests per page").optional(),
@@ -404,13 +397,12 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_moderationrequests_accept() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         ModerationPatch patch = new ModerationPatch();
         patch.setAction(ModerationPatch.ModerationAction.ACCEPT);
         patch.setComment("Changes looks good.");
 
         mockMvc.perform(patch("/api/moderationrequest/MR-101")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .content(this.objectMapper.writeValueAsString(patch))
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON))
@@ -428,12 +420,11 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_moderationrequests_assign() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         ModerationPatch patch = new ModerationPatch();
         patch.setAction(ModerationPatch.ModerationAction.ASSIGN);
 
         mockMvc.perform(patch("/api/moderationrequest/MR-101")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .content(this.objectMapper.writeValueAsString(patch))
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON))
@@ -450,16 +441,15 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_moderationrequests_submission() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/moderationrequest/mySubmissions")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .param("page", "0")
-                        .param("page_entries", "5")
-                        .param("sort", "documentName,asc")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
+                        .queryParam("sort", "documentName,asc")
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("page").description("Page of moderation requests"),
                                 parameterWithName("page_entries").description("Amount of requests per page"),
                                 parameterWithName("sort").description("Sort the result by the given field and order. " +

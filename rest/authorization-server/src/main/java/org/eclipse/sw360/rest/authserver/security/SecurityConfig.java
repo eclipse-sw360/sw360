@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -62,8 +63,12 @@ public class SecurityConfig {
     @Order(2)
     @Bean
     public SecurityFilterChain appSecurtiy(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeRequests(request -> request.anyRequest().authenticated()).formLogin(Customizer.withDefaults());
-        return httpSecurity.csrf(csrf->csrf.disable()).build();
+        httpSecurity.authorizeRequests(
+                authz -> authz
+                .requestMatchers("/client-management/**").hasAuthority("ADMIN")
+                .anyRequest().authenticated()
+        ).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults());
+        return httpSecurity.csrf(csrf -> csrf.disable()).build();
     }
 
 

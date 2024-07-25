@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class VendorSpecTest extends TestRestDocsSpecBase {
@@ -85,15 +85,14 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_vendors() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/vendors")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("page", "0")
-                .param("page_entries", "5")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("page").description("Page of vendors"),
                                 parameterWithName("page_entries").description("Amount of vendors per page")
                         ),
@@ -118,9 +117,8 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_vendor() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/vendors/" + vendor.getId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -142,11 +140,10 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
         vendor.put("fullName", "Apache Software Foundation");
         vendor.put("shortName", "Apache");
         vendor.put("url", "https://www.apache.org/");
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(post("/api/vendors/")
+        mockMvc.perform(post("/api/vendors")
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(vendor))
-                .header("Authorization", "Bearer " + accessToken))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated())
                 .andDo(this.documentationHandler.document(
                         links(
@@ -167,9 +164,8 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_export_vendor() throws Exception{
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/vendors/exportVendorDetails")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document());

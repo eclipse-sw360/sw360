@@ -13,6 +13,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -30,13 +31,19 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.databasesanitation.Sw360DatabaseSanitationService;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloudant.client.api.model.Attachment;
@@ -50,15 +57,15 @@ public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
     private String testUserPassword;
     
     @MockBean
-    private Sw360UserService userServiceMock;
-    
-    @MockBean
     private Sw360DatabaseSanitationService sanitationService;
     
     private Component component,component1;
     private Release release,release1;
     private Project project, project1;
     private Attachment attachment,attachment1 ;
+
+    @Autowired
+    private BCryptPasswordEncoder encoder;
 
     @Before
     public void before() throws TException, IOException {
@@ -127,13 +134,14 @@ public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
         responseMap.put("duplicateComponents", componentResponse);
         responseMap.put("duplicateProjects", projectResponse);
         given(this.sanitationService.duplicateIdentifiers(any())).willReturn(responseMap);
+
+        when(sw360CustomUserDetailsService.loadUserByUsername("admin@sw360.org")).thenReturn(new org.springframework.security.core.userdetails.User("admin@sw360.org", encoder.encode("12345"), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))));
     }
     
     @Test
     public void should_document_search_duplicate() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/databaseSanitation/searchDuplicate")
-         .header("Authorization", "Bearer " + accessToken)
+         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
          .accept(MediaTypes.HAL_JSON))
          .andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }

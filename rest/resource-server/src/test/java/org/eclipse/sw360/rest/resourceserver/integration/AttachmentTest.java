@@ -39,9 +39,6 @@ public class AttachmentTest extends TestIntegrationBase {
     private int port;
 
     @MockBean
-    private Sw360UserService userServiceMock;
-
-    @MockBean
     private Sw360AttachmentService attachmentServiceMock;
 
     @MockBean

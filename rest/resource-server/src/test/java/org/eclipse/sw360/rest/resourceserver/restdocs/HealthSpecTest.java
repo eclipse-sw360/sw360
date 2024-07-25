@@ -54,6 +54,7 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
                                 fieldWithPath("components.diskSpace.details.free").description("The free space of the diskspace."),
                                 fieldWithPath("components.diskSpace.details.threshold").description("The threshold of the diskspace."),
                                 fieldWithPath("components.diskSpace.details.exists").description("The existance of diskspace."),
+                                fieldWithPath("components.diskSpace.details.path").description("The path being monitored for disk space."),
                                 fieldWithPath("components.ping.status").description("The status of the health of the specific health indicator 'SW360 Rest'.")
                         )
                 ));
@@ -82,6 +83,8 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
                                 fieldWithPath("components.diskSpace.details.free").description("The free space of the diskspace."),
                                 fieldWithPath("components.diskSpace.details.threshold").description("The threshold of the diskspace."),
                                 fieldWithPath("components.diskSpace.details.exists").description("The existance of diskspace."),
+                                //TODO: Reverify
+                                fieldWithPath("components.diskSpace.details.path").description("The path of the file."),
                                 fieldWithPath("components.ping.status").description("The status of the health of the specific health indicator 'SW360 Rest'.")
                         )
                 ));

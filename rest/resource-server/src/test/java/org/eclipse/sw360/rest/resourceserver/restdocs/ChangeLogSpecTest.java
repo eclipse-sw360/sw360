@@ -17,7 +17,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWit
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -41,7 +41,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.changelog.Sw360ChangeLogService;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,9 +57,6 @@ public class ChangeLogSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockBean
-    private Sw360UserService userServiceMock;
 
     @MockBean
     private Sw360ChangeLogService changeLogServiceMock;
@@ -123,16 +119,15 @@ public class ChangeLogSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_changelog_by_documentid() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/changelog/document/4567")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "changeTimestamp,asc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "changeTimestamp,asc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("page").description("Page of changelogs"),
                                 parameterWithName("page_entries").description("Amount of changelogs per page"),
                                 parameterWithName("sort").description("Defines order of the changelogs")

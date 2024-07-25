@@ -13,7 +13,7 @@ The ecc resource is used to list ecc information.
 A `GET` request will list all of the service's ecc.
 
 ===== Request parameter
-include::{snippets}/should_document_get_ecc/request-parameters.adoc[]
+include::{snippets}/should_document_get_ecc/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_ecc/response-fields.adoc[]

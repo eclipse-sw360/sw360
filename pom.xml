@@ -145,7 +145,7 @@
     <spotless.version>2.29.0</spotless.version>
     <spring-boot.version>3.3.0</spring-boot.version>
     <spring-restdocs-asciidoctor.version>2.0.6.RELEASE</spring-restdocs-asciidoctor.version>
-    <spring-restdocs.version>2.0.6.RELEASE</spring-restdocs.version>
+    <spring-restdocs.version>3.0.1</spring-restdocs.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
     <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
     <springdoc-openapi-hateos.version>1.7.0</springdoc-openapi-hateos.version>
@@ -621,12 +621,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin.version}</version>
-          <configuration>
-            <argLine>-Xms512m -Xmx1024m -XX:MaxPermSize=512m</argLine>
-            <forkCount>0</forkCount>
-            <reuseForks>false</reuseForks>
-            <reportFormat>plain</reportFormat>
-          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -652,6 +646,8 @@
         <configuration>
           <source>${java_source.version}</source>
           <target>${java_target.version}</target>
+          <!--REF: https://github.com/spring-projects/spring-framework/wiki/Upgrading-to-Spring-Framework-6.x#parameter-name-retention-->
+          <parameters>true</parameters>
         </configuration>
       </plugin>
       <plugin>

@@ -17,7 +17,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWit
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -29,7 +29,6 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.search.Sw360SearchService;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,9 +45,6 @@ public class SearchSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockBean
-    private Sw360UserService userServiceMock;
 
     @MockBean
     private Sw360SearchService searchServiceMock;
@@ -74,18 +70,17 @@ public class SearchSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_searchresult() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/search")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("searchText", "376570")
-                .param("typeMasks", "project")
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "name,asc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("searchText", "376570")
+                .queryParam("typeMasks", "project")
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "name,asc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("searchText").description("The search text"),
                                 parameterWithName("typeMasks").description("The type of resource. Possible values are " +List.of("project", "component", "license", "release", "obligation", "user", "vendor", "document") 
                                 + "\nNote: If document is excluded in typeMasks, then search will be restricted to " + "Name for Project, Component and Release, " 

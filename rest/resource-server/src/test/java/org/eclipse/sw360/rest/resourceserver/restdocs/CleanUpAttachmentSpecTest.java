@@ -49,9 +49,6 @@ public class CleanUpAttachmentSpecTest extends TestRestDocsSpecBase {
     private String testUserPassword;
 
     @MockBean
-    private Sw360UserService userServiceMock;
-
-    @MockBean
     private Sw360AttachmentCleanUpService cleanUpService;
     private RequestSummary requestSummary = new RequestSummary();
 
@@ -81,9 +78,8 @@ public class CleanUpAttachmentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_cleanup_all_attachment() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(delete("/api/attachmentCleanUp/deleteAll")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
         .andExpect(status().isOk());
     }

@@ -47,7 +47,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class UserSpecTest extends TestRestDocsSpecBase {
@@ -57,9 +57,6 @@ public class UserSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockBean
-    private Sw360UserService userServiceMock;
 
     private User user;
 
@@ -165,16 +162,15 @@ public class UserSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_users() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/users")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "email,desc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "email,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("page").description("Page of users"),
                                 parameterWithName("page_entries").description("Amount of users per page"),
                                 parameterWithName("sort").description("Defines order of the users")
@@ -205,7 +201,6 @@ public class UserSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_create_user() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         Map<String, String> user = new HashMap<>();
         user.put("fullName", "FTest lTest");
         user.put("givenName", "FTest");
@@ -216,7 +211,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         mockMvc.perform(post("/api/users")
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(user))
-                .header("Authorization", "Bearer " + accessToken))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated())
                 .andDo(this.documentationHandler.document(
                         requestFields(
@@ -242,9 +237,8 @@ public class UserSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_user_by_id() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/users/byid/" + user.getId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -269,9 +263,8 @@ public class UserSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_user() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/users/" + user.getEmail())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -296,9 +289,8 @@ public class UserSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_user_profile() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/users/profile")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -320,8 +312,6 @@ public class UserSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_update_user_profile() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-
         Map<String, Boolean> notificationPreferences = new HashMap<>();
         notificationPreferences.put("releaseCONTRIBUTORS", true);
         notificationPreferences.put("componentCREATED_BY", false);
@@ -349,7 +339,7 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         updatedProfile.put("notificationPreferences", notificationPreferences);
 
         mockMvc.perform(patch("/api/users/profile")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .contentType(MediaTypes.HAL_JSON)
                         .content(this.objectMapper.writeValueAsString(updatedProfile))
                         .accept(MediaTypes.HAL_JSON))
@@ -377,9 +367,8 @@ public class UserSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_list_all_user_tokens() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/users/tokens")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -397,7 +386,6 @@ public class UserSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_create_user_token() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         Map<String, Object> tokenRequest = new HashMap<>();
         tokenRequest.put("name", "Token3");
         tokenRequest.put("expirationDate", "2023-12-29");
@@ -405,17 +393,16 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         mockMvc.perform(post("/api/users/tokens")
                         .contentType(MediaTypes.HAL_JSON)
                         .content(this.objectMapper.writeValueAsString(tokenRequest))
-                        .header("Authorization", "Bearer " + accessToken))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated());
     }
 
     @Test
     public void should_document_revoke_user_token() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(delete("/api/users/tokens")
                         .contentType(MediaTypes.HAL_JSON)
-                        .header("Authorization", "Bearer " + accessToken)
-                        .param("name", "Token1")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("name", "Token1")
                 )
                 .andExpect(status().isNoContent());
     }

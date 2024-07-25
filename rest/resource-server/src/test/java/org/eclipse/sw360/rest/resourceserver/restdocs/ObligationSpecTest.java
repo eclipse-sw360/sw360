@@ -56,9 +56,6 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
     @MockBean
     private Sw360ObligationService obligationServiceMock;
 
-    @MockBean
-    private Sw360UserService userServiceMock;
-
     private Obligation obligation;
 
     @Before
@@ -95,9 +92,8 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_obligations() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/obligations")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -114,9 +110,8 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_obligation() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/obligations/" + obligation.getId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -140,11 +135,10 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
         obligation.put("obligationLevel", ObligationLevel.LICENSE_OBLIGATION.toString());
         obligation.put("obligationType", ObligationType.PERMISSION.toString());
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(post("/api/obligations")
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(obligation))
-                .header("Authorization", "Bearer " + accessToken))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("text", Matchers.is("This is the text of my Test Obligation")))
                 .andDo(this.documentationHandler.document(
@@ -165,9 +159,8 @@ public class ObligationSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_delete_obligations() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(delete("/api/obligations/" + obligation.getId() + ",1234,5678")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isMultiStatus())
                 .andDo(this.documentationHandler.document(

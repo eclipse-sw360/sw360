@@ -20,7 +20,7 @@ The Packages resource is used to create and list packages.
 A `GET` request will list all of the service's packages with minimal details.
 
 ===== Request parameter
-include::{snippets}/should_document_get_packages/request-parameters.adoc[]
+include::{snippets}/should_document_get_packages/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_packages/response-fields.adoc[]
@@ -40,7 +40,7 @@ include::{snippets}/should_document_get_packages/links.adoc[]
 A `GET` request will list all of the service's packages with all details.
 
 ===== Request parameter
-include::{snippets}/should_document_get_packages_with_all_details/request-parameters.adoc[]
+include::{snippets}/should_document_get_packages_with_all_details/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_packages_with_all_details/response-fields.adoc[]
@@ -77,7 +77,7 @@ include::{snippets}/should_document_get_package/links.adoc[]
 A `GET` request will filter and list all of the service's packages by name, version, purl and packageManager.
 
 ===== Request parameter
-include::{snippets}/should_document_search_packages/request-parameters.adoc[]
+include::{snippets}/should_document_search_packages/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_search_packages/response-fields.adoc[]

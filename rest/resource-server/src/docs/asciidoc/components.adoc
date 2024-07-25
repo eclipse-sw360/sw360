@@ -37,7 +37,7 @@ include::{snippets}/should_document_get_components/links.adoc[]
 A `GET` request will list all of the service's components with all details.
 
 ===== Request parameter
-include::{snippets}/should_document_get_components_with_all_details/request-parameters.adoc[]
+include::{snippets}/should_document_get_components_with_all_details/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_components_with_all_details/response-fields.adoc[]
@@ -553,7 +553,7 @@ include::{snippets}/should_document_import_sbom_for_component/http-response.adoc
 A `GET` request help to download the components report.
 
 ===== Request parameter
-include::{snippets}/should_document_get_component_report/request-parameters.adoc[]
+include::{snippets}/should_document_get_component_report/query-parameters.adoc[]
 
 ===== Example request
 include::{snippets}/should_document_get_component_report/curl-request.adoc[]
