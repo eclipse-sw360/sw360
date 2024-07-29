@@ -49,5 +49,10 @@
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.ibm.cloud</groupId>
+            <artifactId>cloudant</artifactId>
+            <version>${cloudantsdk.version}</version>
+        </dependency>
     </dependencies>
 </project>

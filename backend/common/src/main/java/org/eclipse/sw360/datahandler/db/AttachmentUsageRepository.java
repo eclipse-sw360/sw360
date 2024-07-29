@@ -10,7 +10,7 @@
 
 package org.eclipse.sw360.datahandler.db;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.cloudant.client.api.views.Key;
 import com.cloudant.client.api.views.MultipleRequestBuilder;
 import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
@@ -54,7 +54,7 @@ public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<
 
     public AttachmentUsageRepository(DatabaseConnectorCloudant db) {
         super(db, AttachmentUsage.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("usagesByAttachment", createMapReduce(USAGESBYATTACHMENT, "_count"));
         views.put("usedAttachments", createMapReduce(USEDATTACHMENTS, "_count"));

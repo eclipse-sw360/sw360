@@ -6,7 +6,6 @@ package org.eclipse.sw360.vmcomponents.db;
 
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMProcessReporting;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
 import org.ektorp.support.View;
 

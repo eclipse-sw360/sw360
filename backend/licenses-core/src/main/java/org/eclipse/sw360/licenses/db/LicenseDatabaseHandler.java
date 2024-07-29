@@ -10,6 +10,7 @@
  */
 package org.eclipse.sw360.licenses.db;
 
+import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import org.apache.commons.io.IOUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.components.summary.SummaryType;
@@ -29,7 +30,6 @@ import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.licenses.tools.SpdxConnector;
 import org.eclipse.sw360.exporter.LicenseExporter;
@@ -37,13 +37,11 @@ import org.eclipse.sw360.licenses.tools.OSADLObligationConnector;
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.ektorp.DocumentOperationResult;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.cloudant.client.api.CloudantClient;
-import com.cloudant.client.api.model.Response;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.collect.Sets;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
@@ -55,7 +53,6 @@ import java.net.MalformedURLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
@@ -100,10 +97,10 @@ public class LicenseDatabaseHandler {
     private String obligationText;
     private final Logger log = LogManager.getLogger(LicenseDatabaseHandler.class);
 
-    public LicenseDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
+    public LicenseDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
         // Create the connector
-        db = new DatabaseConnectorCloudant(httpClient, dbName);
-        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        db = new DatabaseConnectorCloudant(client, dbName);
+        DatabaseConnectorCloudant dbChangelogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         dbHandlerUtil = new DatabaseHandlerUtil(dbChangelogs);
 
         // Create the repository
@@ -730,9 +727,9 @@ public class LicenseDatabaseHandler {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user)){
             return null;
         }
-        List<Response> documentOperationResults = licenseTypeRepository.executeBulk(licenseTypes);
+        List<DocumentResult> documentOperationResults = licenseTypeRepository.executeBulk(licenseTypes);
         documentOperationResults = documentOperationResults.stream()
-                .filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED).collect(Collectors.toList());
+                .filter(res -> res.getError() != null || !res.isOk()).collect(Collectors.toList());
         if (documentOperationResults.isEmpty()) {
             return licenseTypes;
         } else return null;
@@ -762,9 +759,9 @@ public class LicenseDatabaseHandler {
             prepareLicense(license);
         }
 
-        List<Response> documentOperationResults = licenseRepository.executeBulk(licenses);
+        List<DocumentResult> documentOperationResults = licenseRepository.executeBulk(licenses);
         documentOperationResults = documentOperationResults.stream()
-                .filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED).collect(Collectors.toList());
+                .filter(res -> res.getError() != null || !res.isOk()).collect(Collectors.toList());
         if (documentOperationResults.isEmpty()) {
             return licenses;
         } else {
@@ -782,9 +779,9 @@ public class LicenseDatabaseHandler {
             prepareTodo(Oblig);
         }
 
-        List<Response> documentOperationResults = obligRepository.executeBulk(listOfObligations);
+        List<DocumentResult> documentOperationResults = obligRepository.executeBulk(listOfObligations);
         documentOperationResults = documentOperationResults.stream()
-                .filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED).collect(Collectors.toList());
+                .filter(res -> res.getError() != null || !res.isOk()).collect(Collectors.toList());
         if (documentOperationResults.isEmpty()) {
             return listOfObligations;
         } else return null;
@@ -1002,7 +999,7 @@ public class LicenseDatabaseHandler {
 
     private RequestSummary deleteAllDocuments(DatabaseRepositoryCloudantClient repository) {
         Set<String> allIds = repository.getAllIds();
-        List<DocumentOperationResult> operationResults = repository.deleteIds(allIds);
+        List<DocumentResult> operationResults = repository.deleteIds(allIds);
         return getRequestSummary(allIds.size(), operationResults.size());
     }
 

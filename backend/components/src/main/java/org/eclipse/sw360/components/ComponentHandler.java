@@ -25,14 +25,13 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
@@ -52,7 +51,7 @@ public class ComponentHandler implements ComponentService.Iface {
         this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS);
     }
 
-    public ComponentHandler(Supplier<CloudantClient> cClient, String dbName, String changeLogsDBName, String attachmentDbName) throws IOException {
+    public ComponentHandler(Cloudant cClient, String dbName, String changeLogsDBName, String attachmentDbName) throws IOException {
         handler = new ComponentDatabaseHandler(cClient, dbName, changeLogsDBName, attachmentDbName);
         componentSearchHandler = new ComponentSearchHandler(cClient, dbName);
         releaseSearchHandler = new ReleaseSearchHandler(cClient, dbName);
@@ -63,7 +62,7 @@ public class ComponentHandler implements ComponentService.Iface {
         this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_CHANGE_LOGS, DatabaseSettings.COUCH_DB_ATTACHMENTS, thriftClients);
     }
 
-    public ComponentHandler(Supplier<CloudantClient> client, String dbName, String changeLogsDBName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
+    public ComponentHandler(Cloudant client, String dbName, String changeLogsDBName, String attachmentDbName, ThriftClients thriftClients) throws IOException {
         handler = new ComponentDatabaseHandler(client, dbName, changeLogsDBName, attachmentDbName, thriftClients);
         componentSearchHandler = new ComponentSearchHandler(client, dbName);
         releaseSearchHandler = new ReleaseSearchHandler(client, dbName);

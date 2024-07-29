@@ -92,6 +92,7 @@
     <!-- Dependencies version properties -->
     <byte-buddy.version>1.12.13</byte-buddy.version>
     <cloudant.version>2.19.1</cloudant.version>
+    <cloudantsdk.version>0.9.1</cloudantsdk.version>
     <commons-codec.version>1.17.1</commons-codec.version>
     <commons-collection4.version>4.4</commons-collection4.version>
     <commons-compress.version>1.21</commons-compress.version>
@@ -101,7 +102,6 @@
     <commons-lang3.version>3.12.0</commons-lang3.version>
     <commons-text.version>1.10.0</commons-text.version>
     <dom4j.version>2.1.3</dom4j.version>
-    <ektorp.version>1.5.0</ektorp.version>
     <failureaccess.version>1.0.1</failureaccess.version>
     <findbugs-annotations.version>1.3.9-1</findbugs-annotations.version>
     <glassfish-jaxb.version>2.3.9</glassfish-jaxb.version>
@@ -306,17 +306,6 @@
         <artifactId>commons-collections4</artifactId>
         <version>${commons-collection4.version}</version>
       </dependency>
-      <!-- Replaces ektorplucene findbugs exclusion -->
-      <dependency>
-        <groupId>com.github.stephenc.findbugs</groupId>
-        <artifactId>findbugs-annotations</artifactId>
-        <version>${findbugs-annotations.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.ektorp</groupId>
-        <artifactId>org.ektorp</artifactId>
-        <version>${ektorp.version}</version>
-      </dependency>
       <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
@@ -428,6 +417,11 @@
         <groupId>com.cloudant</groupId>
         <artifactId>cloudant-client</artifactId>
         <version>${cloudant.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.ibm.cloud</groupId>
+        <artifactId>cloudant</artifactId>
+        <version>${cloudantsdk.version}</version>
       </dependency>
       <dependency>
         <groupId>junit</groupId>

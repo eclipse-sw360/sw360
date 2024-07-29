@@ -14,10 +14,9 @@ import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.search.db.AbstractDatabaseSearchHandler;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import java.io.IOException;
-import java.util.function.Supplier;
 
 public class Sw360usersDatabaseSearchHandler extends AbstractDatabaseSearchHandler {
 
@@ -25,7 +24,7 @@ public class Sw360usersDatabaseSearchHandler extends AbstractDatabaseSearchHandl
         super(DatabaseSettings.COUCH_DB_USERS);
     }
 
-    public Sw360usersDatabaseSearchHandler(Supplier<CloudantClient> client, String dbName) throws IOException {
+    public Sw360usersDatabaseSearchHandler(Cloudant client, String dbName) throws IOException {
         super(client, dbName);
     }
 

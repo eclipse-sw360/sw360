@@ -15,7 +15,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
@@ -24,7 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 
 /**
  * CRUD access for the ClearingRequest class
@@ -69,7 +68,7 @@ public class ClearingRequestRepository extends DatabaseRepositoryCloudantClient<
 
     public ClearingRequestRepository(DatabaseConnectorCloudant db) {
         super(db, ClearingRequest.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));
         views.put("myClearingRequests", createMapReduce(MY_CLEARING_REQUESTS, null));

@@ -9,8 +9,8 @@
  */
 package org.eclipse.sw360.attachments;
 
-import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.ImmutableSet;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
@@ -46,8 +45,8 @@ public class AttachmentHandler implements AttachmentService.Iface {
         handler = new AttachmentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
     }
 
-    public AttachmentHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
-        handler = new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName);
+    public AttachmentHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
+        handler = new AttachmentDatabaseHandler(client, dbName, attachmentDbName);
     }
 
     @Override

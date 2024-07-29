@@ -9,7 +9,8 @@
  */
 package org.eclipse.sw360.nouveau.designdocument;
 
-import com.cloudant.client.api.model.DesignDocument;
+import com.ibm.cloud.cloudant.v1.model.DesignDocument;
+import com.google.gson.annotations.SerializedName;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +22,7 @@ import java.util.Objects;
  */
 public class NouveauDesignDocument extends DesignDocument {
 
+    @SerializedName("nouveau")
     private JsonObject nouveau;
 
     public JsonObject getNouveau() {

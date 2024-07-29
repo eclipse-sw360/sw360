@@ -19,7 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 
 import java.util.*;
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.cloudant.client.api.views.Key;
 import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
 import com.cloudant.client.api.views.ViewRequestBuilder;
@@ -169,7 +169,7 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
 
     public ReleaseRepository(DatabaseConnectorCloudant db, VendorRepository vendorRepository) {
         super(Release.class, db, new ReleaseSummary(vendorRepository));
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byname", createMapReduce(BY_NAME, null));
         views.put("byCreatedOn", createMapReduce(BY_CREATED_ON, null));

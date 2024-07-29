@@ -17,13 +17,12 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import org.apache.thrift.TException;
 
 import java.net.MalformedURLException;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
@@ -35,8 +34,8 @@ public class DocumentCreationInformationHandler implements DocumentCreationInfor
         handler = new SpdxDocumentCreationInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
     }
 
-    DocumentCreationInformationHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
-        handler = new SpdxDocumentCreationInfoDatabaseHandler(httpClient, dbName);
+    DocumentCreationInformationHandler(Cloudant client, String dbName) throws MalformedURLException {
+        handler = new SpdxDocumentCreationInfoDatabaseHandler(client, dbName);
     }
 
     @Override

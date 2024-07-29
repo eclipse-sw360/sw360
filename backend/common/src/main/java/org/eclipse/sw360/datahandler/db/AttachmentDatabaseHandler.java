@@ -9,13 +9,13 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.cloudant.client.api.CloudantClient;
-import com.cloudant.client.api.model.Response;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
@@ -24,7 +24,6 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 
@@ -33,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
@@ -56,13 +54,13 @@ public class AttachmentDatabaseHandler {
 
     private static final Logger log = LogManager.getLogger(AttachmentDatabaseHandler.class);
 
-    public AttachmentDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
-        db = new DatabaseConnectorCloudant(httpClient, attachmentDbName);
-        attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
+    public AttachmentDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
+        db = new DatabaseConnectorCloudant(client, attachmentDbName);
+        attachmentConnector = new AttachmentConnector(client, attachmentDbName, durationOf(30, TimeUnit.SECONDS));
         attachmentContentRepository = new AttachmentContentRepository(db);
-        attachmentUsageRepository = new AttachmentUsageRepository(new DatabaseConnectorCloudant(httpClient, dbName));
-        attachmentRepository = new AttachmentRepository(new DatabaseConnectorCloudant(httpClient, dbName));
-        attachmentOwnerRepository = new AttachmentOwnerRepository(new DatabaseConnectorCloudant(httpClient, dbName));
+        attachmentUsageRepository = new AttachmentUsageRepository(new DatabaseConnectorCloudant(client, dbName));
+        attachmentRepository = new AttachmentRepository(new DatabaseConnectorCloudant(client, dbName));
+        attachmentOwnerRepository = new AttachmentOwnerRepository(new DatabaseConnectorCloudant(client, dbName));
     }
 
     public AttachmentConnector getAttachmentConnector(){
@@ -74,7 +72,7 @@ public class AttachmentDatabaseHandler {
         return attachmentContent;
     }
     public List<AttachmentContent> makeAttachmentContents(List<AttachmentContent> attachmentContents) throws TException {
-        final List<Response> documentOperationResults = attachmentContentRepository.executeBulk(attachmentContents);
+        final List<DocumentResult> documentOperationResults = attachmentContentRepository.executeBulk(attachmentContents);
         if (documentOperationResults.isEmpty())
             log.error("Failed Attachment store results " + documentOperationResults);
 
@@ -91,7 +89,7 @@ public class AttachmentDatabaseHandler {
         attachmentConnector.updateAttachmentContent(attachment);
     }
     public RequestSummary bulkDelete(List<String> ids) {
-        final List<Response> documentOperationResults = attachmentContentRepository.deleteIds(ids);
+        final List<DocumentResult> documentOperationResults = attachmentContentRepository.deleteIds(ids);
         return CommonUtils.getRequestSummary(ids, documentOperationResults);
     }
     public RequestStatus deleteAttachmentContent(String attachmentId) throws TException {
@@ -147,9 +145,9 @@ public class AttachmentDatabaseHandler {
 
     public void makeAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
         List<AttachmentUsage> sanitizedUsages = distinctAttachmentUsages(attachmentUsages);
-        List<Response> results = attachmentUsageRepository.executeBulk(sanitizedUsages);
-        results = results.stream().filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED)
-                .collect(Collectors.toList());
+        List<DocumentResult> results = attachmentUsageRepository.executeBulk(sanitizedUsages);
+        results = results.stream().filter(res -> res.getError() != null || !res.isOk())
+                .toList();
         if (!results.isEmpty()) {
             throw new SW360Exception("Some of the usage documents could not be created: " + results);
         }
@@ -187,9 +185,9 @@ public class AttachmentDatabaseHandler {
     }
 
     public void updateAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws TException {
-        List<Response> results = attachmentUsageRepository.executeBulk(attachmentUsages);
-        results = results.stream().filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_CREATED)
-                .collect(Collectors.toList());
+        List<DocumentResult> results = attachmentUsageRepository.executeBulk(attachmentUsages);
+        results = results.stream().filter(res -> res.getError() != null || !res.isOk())
+                .toList();
         if (!results.isEmpty()) {
             throw new SW360Exception("Some of the usage documents could not be updated: " + results);
         }
@@ -200,10 +198,10 @@ public class AttachmentDatabaseHandler {
     }
 
     public void deleteAttachmentUsages(List<AttachmentUsage> attachmentUsages) throws SW360Exception {
-        List<Response> results = attachmentUsageRepository.deleteIds(
+        List<DocumentResult> results = attachmentUsageRepository.deleteIds(
                 attachmentUsages.stream().map(AttachmentUsage::getId).collect(Collectors.toList()));
-        results = results.stream().filter(res -> res.getError() != null || res.getStatusCode() != HttpStatus.SC_OK)
-                .collect(Collectors.toList());
+        results = results.stream().filter(res -> res.getError() != null || !res.isOk())
+                .toList();
         if (!results.isEmpty()) {
             throw new SW360Exception("Some of the usage documents could not be deleted: " + results);
         }

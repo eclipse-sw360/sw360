@@ -32,7 +32,7 @@ import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.cloudant.client.api.query.Expression;
 import com.cloudant.client.api.query.PredicateExpression;
 import com.cloudant.client.api.query.PredicatedOperation;
@@ -83,7 +83,7 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
 
     public ModerationRequestRepository(DatabaseConnectorCloudant db) {
         super(ModerationRequest.class, db, new ModerationRequestSummary());
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byRequestingUsersDeptView", createMapReduce(REQUESTING_USERS_VIEW, null));
         views.put("countByModerationState", createMapReduce(COUNTBYMODERATIONSTATE, "_count"));

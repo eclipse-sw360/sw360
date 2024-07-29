@@ -16,9 +16,9 @@ import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -31,7 +31,6 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 
-import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 
@@ -43,8 +42,8 @@ public abstract class AttachmentAwareDatabaseHandler {
         this.attachmentDatabaseHandler = attachmentDatabaseHandler;
     }
 
-    protected AttachmentAwareDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
-        this(new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName));
+    protected AttachmentAwareDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
+        this(new AttachmentDatabaseHandler(client, dbName, attachmentDbName));
     }
 
     protected Source toSource(Release release){

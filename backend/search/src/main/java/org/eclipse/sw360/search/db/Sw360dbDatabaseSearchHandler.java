@@ -26,10 +26,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import java.io.IOException;
-import java.util.function.Supplier;
 
 public class Sw360dbDatabaseSearchHandler extends AbstractDatabaseSearchHandler {
 
@@ -50,10 +49,10 @@ public class Sw360dbDatabaseSearchHandler extends AbstractDatabaseSearchHandler 
         componentRepository = new ComponentRepository(db, releaseRepository, vendorRepository);
     }
 
-    public Sw360dbDatabaseSearchHandler(Supplier<CloudantClient> cclient, String dbName) throws IOException {
-        super(cclient, dbName);
+    public Sw360dbDatabaseSearchHandler(Cloudant client, String dbName) throws IOException {
+        super(client, dbName);
 
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cclient, dbName);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         
         projectRepository = new ProjectRepository(db);
         vendorRepository = new VendorRepository(db);

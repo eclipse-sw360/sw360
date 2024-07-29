@@ -21,10 +21,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMImporter;
@@ -49,8 +47,8 @@ import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.cloudant.client.api.CloudantClient;
-import com.cloudant.client.api.model.Response;
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import com.github.packageurl.MalformedPackageURLException;
 import com.github.packageurl.PackageURL;
 import com.google.common.collect.ImmutableList;
@@ -77,29 +75,29 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             Package._Fields.NAME, Package._Fields.VERSION, Package._Fields.VCS, Package._Fields.DESCRIPTION,
             Package._Fields.HOMEPAGE_URL, Package._Fields.PURL, Package._Fields.HASH);
 
-    public PackageDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName, String changeLogsDbName,
+    public PackageDatabaseHandler(Cloudant client, String dbName, String attachmentDbName, String changeLogsDbName,
             AttachmentDatabaseHandler attachmentDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler) throws MalformedURLException {
 
         super(attachmentDatabaseHandler);
-        db = new DatabaseConnectorCloudant(httpClient, dbName);
+        db = new DatabaseConnectorCloudant(client, dbName);
 
         // Create the repositories
         packageRepository = new PackageRepository(db);
         projectRepository = new ProjectRepository(db);
 
         // Create the attachment connector
-        attachmentConnector = new AttachmentConnector(httpClient, attachmentDbName, Duration.durationOf(30, TimeUnit.SECONDS));
+        attachmentConnector = new AttachmentConnector(client, attachmentDbName, Duration.durationOf(30, TimeUnit.SECONDS));
 
         this.componentDatabaseHandler = componentDatabaseHandler;
-        DatabaseConnectorCloudant changeLogsDb = new DatabaseConnectorCloudant(httpClient, changeLogsDbName);
+        DatabaseConnectorCloudant changeLogsDb = new DatabaseConnectorCloudant(client, changeLogsDbName);
         this.databaseHandlerUtil = new DatabaseHandlerUtil(changeLogsDb);
     }
 
-    public PackageDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName)
+    public PackageDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName)
             throws MalformedURLException {
 
-        this(httpClient, dbName, attachmentDbName, changeLogsDbName, new AttachmentDatabaseHandler(httpClient, dbName, attachmentDbName),
-                new ComponentDatabaseHandler(httpClient, dbName, changeLogsDbName, attachmentDbName));
+        this(client, dbName, attachmentDbName, changeLogsDbName, new AttachmentDatabaseHandler(client, dbName, attachmentDbName),
+                new ComponentDatabaseHandler(client, dbName, changeLogsDbName, attachmentDbName));
     }
 
     public Package getPackageById(String id) throws SW360Exception {
@@ -206,7 +204,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         preparePackage(pkg);
         List<Package> duplicatePackagesByPurl = getPackageByPurl(pkg.getPurl());
 
-        if (duplicatePackagesByPurl.size() > 0) {
+        if (!duplicatePackagesByPurl.isEmpty()) {
             final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                     .setRequestStatus(AddDocumentRequestStatus.DUPLICATE)
                     .setMessage(SW360Constants.DUPLICATE_PACKAGE_BY_PURL);
@@ -216,7 +214,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return addDocumentRequestSummary;
         }else{
             List<Package> duplicatePackages = getPackageByNameAndVersion(name, version);
-            if(duplicatePackages.size() > 0){
+            if(!duplicatePackages.isEmpty()){
                 final AddDocumentRequestSummary addDocumentRequestSummary = new AddDocumentRequestSummary()
                         .setRequestStatus(AddDocumentRequestStatus.DUPLICATE);
                 if(duplicatePackages.size() == 1) {
@@ -317,12 +315,12 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             // Ensure that release exists
             try {
                 // once we are sure that release exists, update the package
-                Response resp = packageRepository.updateWithResponse(updatedPkg);
+                DocumentResult resp = packageRepository.updateWithResponse(updatedPkg);
                 if (CommonUtils.isNotNullEmptyOrWhitespace(actualReleaseId)) {
                     Release actualRelease = componentDatabaseHandler.getRelease(actualReleaseId, user);
                     Set<String> packageIds = CommonUtils.nullToEmptySet(actualRelease.getPackageIds());
-                    // Update the previously linked release, if it contain package id
-                    if (resp.getStatusCode() == HttpStatus.SC_CREATED) {
+                    // Update the previously linked release, if it contains package id
+                    if (resp.isOk()) {
                         if (packageIds.contains(packageId)) {
                             packageIds.remove(packageId);
                             actualRelease.setPackageIds(packageIds);
@@ -339,7 +337,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     Release newRelease = componentDatabaseHandler.getRelease(newReleaseId, user);
                     Set<String> packageIds = CommonUtils.nullToEmptySet(newRelease.getPackageIds());
                     // Update the newly linked release, if it does not contain package id
-                    if (resp.getStatusCode() == HttpStatus.SC_CREATED) {
+                    if (resp.isOk()) {
                         if (!packageIds.contains(packageId)) {
                             newRelease.addToPackageIds(packageId);
                             componentDatabaseHandler.updateRelease(newRelease, user, ThriftUtils.IMMUTABLE_OF_RELEASE, true);
@@ -411,7 +409,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return false;
         }
         List<Package> duplicates = getPackageByNameAndVersion(after.getName(), after.getVersion());
-        return duplicates.size() > 0;
+        return !duplicates.isEmpty();
     }
 
     public List<Package> searchByName(String name) {

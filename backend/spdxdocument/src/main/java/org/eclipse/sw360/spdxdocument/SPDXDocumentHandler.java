@@ -17,13 +17,12 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import org.apache.thrift.TException;
 
 import java.net.MalformedURLException;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
@@ -35,8 +34,8 @@ public class SPDXDocumentHandler implements SPDXDocumentService.Iface {
         handler = new SpdxDocumentDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
     }
 
-    SPDXDocumentHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
-        handler = new SpdxDocumentDatabaseHandler(httpClient, dbName);
+    SPDXDocumentHandler(Cloudant client, String dbName) throws MalformedURLException {
+        handler = new SpdxDocumentDatabaseHandler(client, dbName);
     }
 
     @Override

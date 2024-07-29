@@ -14,8 +14,6 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import org.eclipse.sw360.datahandler.couchdb.AttachmentContentWrapper;
-import org.eclipse.sw360.datahandler.couchdb.DocumentWrapper;
 import org.eclipse.sw360.datahandler.couchdb.deserializer.UsageDataDeserializer;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
@@ -40,7 +38,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
-import org.ektorp.util.Documents;
+import com.ibm.cloud.cloudant.v1.model.Document;
 
 import java.util.Collection;
 import java.util.List;
@@ -126,10 +124,6 @@ public class ThriftUtils {
         return THRIFT_WRAPPED.containsKey(clazz);
     }
 
-    public static Class<? extends DocumentWrapper<?>> getWrapperClass(Class<?> clazz) {
-        return THRIFT_WRAPPED.get(clazz);
-    }
-
     public static <T extends TBase<T, F>, F extends TFieldIdEnum> void copyField(T src, T dest, F field) {
         if (src.isSet(field)) {
             dest.setFieldValue(field, src.getFieldValue(field));
@@ -154,7 +148,7 @@ public class ThriftUtils {
     }
 
     public static <T> Map<String, T> getIdMap(Collection<T> in) {
-        return Maps.uniqueIndex(in, Documents::getId);
+        return Maps.uniqueIndex(in, Document::getId);
     }
 
     public static <T extends TBase<T, F>, F extends TFieldIdEnum> Function<T, Object> extractField(final F field) {

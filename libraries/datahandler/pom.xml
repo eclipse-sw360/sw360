@@ -190,10 +190,6 @@
             <artifactId>annotations</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.ektorp</groupId>
-            <artifactId>org.ektorp</artifactId>
-        </dependency>
-        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons-io.version}</version>
@@ -209,6 +205,11 @@
             <version>${cloudant.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.ibm.cloud</groupId>
+            <artifactId>cloudant</artifactId>
+            <version>${cloudantsdk.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
@@ -219,10 +220,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.github.stephenc.findbugs</groupId>
-            <artifactId>findbugs-annotations</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.thrift</groupId>

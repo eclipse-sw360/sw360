@@ -18,14 +18,13 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import org.apache.thrift.TException;
 
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 
@@ -37,8 +36,8 @@ public class PackageInformationHandler implements PackageInformationService.Ifac
         handler = new SpdxPackageInfoDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_SPDX);
     }
 
-    PackageInformationHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
-        handler = new SpdxPackageInfoDatabaseHandler(httpClient, dbName);
+    PackageInformationHandler(Cloudant client, String dbName) throws MalformedURLException {
+        handler = new SpdxPackageInfoDatabaseHandler(client, dbName);
     }
 
     @Override

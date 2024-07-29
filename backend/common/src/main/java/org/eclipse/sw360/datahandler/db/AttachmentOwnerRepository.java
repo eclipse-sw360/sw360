@@ -13,7 +13,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.Source;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.cloudant.client.api.views.ViewRequestBuilder;
 
 import java.util.HashMap;
@@ -31,7 +31,7 @@ public class AttachmentOwnerRepository extends DatabaseRepositoryCloudantClient<
 
     public AttachmentOwnerRepository(DatabaseConnectorCloudant db) {
         super(db, Source.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("attachmentOwner", createMapReduce(ATTACHMENTOWNER_VIEW_NAME, null));
         initStandardDesignDocument(views, db);
     }
