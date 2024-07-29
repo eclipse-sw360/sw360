@@ -8,7 +8,6 @@ package org.eclipse.sw360.vmcomponents.db;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;

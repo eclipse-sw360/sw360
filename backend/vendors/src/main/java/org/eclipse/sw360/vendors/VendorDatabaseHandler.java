@@ -40,9 +40,8 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.collect.ImmutableSet;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
@@ -53,8 +52,8 @@ public class VendorDatabaseHandler {
     private static final Logger log = LogManager.getLogger(VendorDatabaseHandler.class);
     private final VendorRepository repository;
 
-    public VendorDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, dbName);
+    public VendorDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         repository = new VendorRepository(db);
     }
 

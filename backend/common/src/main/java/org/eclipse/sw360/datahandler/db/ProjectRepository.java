@@ -28,7 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.cloudant.client.api.query.PredicateExpression;
 import com.cloudant.client.api.query.PredicatedOperation;
 import com.cloudant.client.api.query.QueryBuilder;
@@ -266,7 +266,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
     public ProjectRepository(DatabaseConnectorCloudant db) {
         super(Project.class, db, new ProjectSummary());
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("byname", createMapReduce(BY_NAME_VIEW, null));
         views.put("bygroup", createMapReduce(BY_GROUP_VIEW, null));
         views.put("bytag", createMapReduce(BY_TAG_VIEW, null));

@@ -11,6 +11,7 @@
 package org.eclipse.sw360.licenses;
 
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ObligationSearchHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -53,8 +54,8 @@ public class LicenseHandler implements LicenseService.Iface {
         obligationSearchHandler = new ObligationSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 
-    LicenseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
-        handler = new LicenseDatabaseHandler(httpClient, dbName);
+    LicenseHandler(Cloudant client, String dbName) throws IOException {
+        handler = new LicenseDatabaseHandler(client, dbName);
     }
 
     /////////////////////

@@ -20,7 +20,7 @@ import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.cloudant.client.api.query.Expression;
 import com.cloudant.client.api.query.QueryBuilder;
 import com.cloudant.client.api.query.QueryResult;
@@ -120,7 +120,7 @@ public class UserRepository extends SummaryAwareRepository<User> {
 
     public UserRepository(DatabaseConnectorCloudant databaseConnector) {
         super(User.class, databaseConnector, new UserSummary());
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byExternalId", createMapReduce(BYEXTERNALID, null));
         views.put("byApiToken", createMapReduce(BYAPITOKEN, null));

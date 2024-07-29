@@ -23,19 +23,11 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 
-import com.cloudant.client.api.DesignDocumentManager;
-import com.cloudant.client.api.model.DesignDocument;
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
-import com.cloudant.client.api.query.JsonIndex;
-import com.cloudant.client.api.model.Response;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.Key.ComplexKey;
-import com.cloudant.client.api.views.MultipleRequestBuilder;
-import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
-import com.cloudant.client.api.views.ViewRequest;
-import com.cloudant.client.api.views.ViewRequestBuilder;
-import com.cloudant.client.api.views.ViewResponse;
-import com.cloudant.client.org.lightcouch.NoDocumentException;
+import com.ibm.cloud.cloudant.v1.model.DocumentResult;
+import com.ibm.cloud.cloudant.v1.model.DesignDocument;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import com.ibm.cloud.cloudant.v1.model.IndexDefinition;
+import com.ibm.cloud.cloudant.v1.model.IndexField;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 
@@ -51,10 +43,12 @@ public class DatabaseRepositoryCloudantClient<T> {
     private final Class<T> type;
     private final DatabaseConnectorCloudant connector;
 
-    public void initStandardDesignDocument(Map<String, MapReduce> views, DatabaseConnectorCloudant db) {
-        DesignDocument newDdoc = new DesignDocument();
+    public void initStandardDesignDocument(Map<String, DesignDocumentViewsMapReduce> views,
+                                           DatabaseConnectorCloudant db) {
         String ddocId = "_design/" + type.getSimpleName();
-        newDdoc.setId(ddocId);
+        DesignDocument newDdoc = new DesignDocument.Builder()
+                .id(ddocId)
+                .build();
         DesignDocument ddoc = db.get(DesignDocument.class, ddocId);
         if (ddoc == null) {
             db.add(newDdoc);
@@ -62,22 +56,28 @@ public class DatabaseRepositoryCloudantClient<T> {
         DesignDocument ddocFinal = db.get(DesignDocument.class, ddocId);
         ddocFinal.setViews(views);
         db.update(ddocFinal);
-        DesignDocumentManager ddocManager = db.getDesignDocumentManager();
-        ddocManager.put(ddocFinal);
+        db.putDesignDocument(ddocFinal, ddocId);
     }
 
-    public MapReduce createMapReduce(String map, String reduce) {
-        MapReduce mr = new MapReduce();
-        mr.setMap(map);
+    public DesignDocumentViewsMapReduce createMapReduce(String map, String reduce) {
+        DesignDocumentViewsMapReduce.Builder mrBuilder = new DesignDocumentViewsMapReduce.Builder()
+                .map(map);
         if (reduce != null) {
-            mr.setReduce(reduce);
+            mrBuilder.reduce(reduce);
         }
-        return mr;
+        return mrBuilder.build();
     }
 
     public void createIndex(String indexName, String[] fields, DatabaseConnectorCloudant db) {
-        String indexDefinition = JsonIndex.builder().name(indexName).desc(fields).definition();
-        db.createIndex(indexDefinition);
+        IndexDefinition.Builder indexDefinitionBuilder = new IndexDefinition.Builder();
+        for (String fieldName : fields) {
+            IndexField field = new IndexField.Builder()
+                    .add(fieldName, "asc")
+                    .build();
+            indexDefinitionBuilder.addFields(field);
+        }
+
+        db.createIndex(indexDefinitionBuilder.build(), indexName, "json");
     }
 
     protected DatabaseConnectorCloudant getConnector() {
@@ -370,7 +370,7 @@ public class DatabaseRepositoryCloudantClient<T> {
      * This function should NOT be used for updating document containing Attachment.
      * Ex: Project, Component & Release
      */
-    public Response updateWithResponse(T doc) {
+    public DocumentResult updateWithResponse(T doc) {
         return connector.updateWithResponse(doc);
     }
 
@@ -391,7 +391,7 @@ public class DatabaseRepositoryCloudantClient<T> {
     }
 
     public boolean remove(String id) {
-        return connector.deleteById(type, id);
+        return connector.deleteById(id);
     }
 
     public List<T> get(Collection<String> ids) {
@@ -402,13 +402,12 @@ public class DatabaseRepositoryCloudantClient<T> {
         return get(ids);
     }
 
-    public List<Response> executeBulk(Collection<?> list) {
+    public List<DocumentResult> executeBulk(Collection<?> list) {
         return connector.executeBulk(list);
     }
 
-    public List<Response> deleteIds(Collection<String> ids) {
-        final List<T> deletionCandidates = get(ids);
-        return connector.deleteBulk(deletionCandidates);
+    public List<DocumentResult> deleteIds(Collection<String> ids) {
+        return connector.deleteIds(ids);
     }
 
     public int getDocumentCount() {

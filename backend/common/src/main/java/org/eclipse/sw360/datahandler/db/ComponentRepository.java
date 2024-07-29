@@ -18,7 +18,7 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.cloudant.client.api.views.Key;
 import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
 import com.cloudant.client.api.views.ViewRequest;
@@ -161,7 +161,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
 
     public ComponentRepository(DatabaseConnectorCloudant db, ReleaseRepository releaseRepository, VendorRepository vendorRepository) {
         super(Component.class, db, new ComponentSummary(releaseRepository, vendorRepository));
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byCreatedOn", createMapReduce(BY_CREATED_ON, null));
         views.put("usedAttachmentContents", createMapReduce(USED_ATTACHMENT_CONTENTS, null));

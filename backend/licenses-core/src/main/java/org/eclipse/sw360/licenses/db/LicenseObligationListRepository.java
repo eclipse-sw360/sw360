@@ -17,7 +17,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseObligationList;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 
 /**
  * CRUD access for the LicenseObligationList class
@@ -37,7 +37,7 @@ public class LicenseObligationListRepository extends DatabaseRepositoryCloudantC
 
     public LicenseObligationListRepository(DatabaseConnectorCloudant db) {
         super(db, LicenseObligationList.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("byLicenseId", createMapReduce(BY_LICENSE_ID, null));
         views.put("all", createMapReduce(ALL, null));
         initStandardDesignDocument(views, db);

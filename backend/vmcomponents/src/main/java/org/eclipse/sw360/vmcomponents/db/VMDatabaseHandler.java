@@ -4,23 +4,22 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.db;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.vmcomponents.common.SVMMapper;
 import org.eclipse.sw360.vulnerabilities.db.VulnerabilityDatabaseHandler;
-import org.ektorp.http.HttpClient;
 
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * Class for accessing the CouchDB database
@@ -41,12 +40,12 @@ public class VMDatabaseHandler extends VulnerabilityDatabaseHandler {
     private VMMatchRepository matchRepo;
 
     public VMDatabaseHandler() throws MalformedURLException {
-        this(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_VM);
+        this(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_VM);
     }
 
-    public VMDatabaseHandler(Supplier<HttpClient> httpClient, String dbName) throws MalformedURLException {
-        super(httpClient, dbName);
-        DatabaseConnector db = new DatabaseConnector(httpClient, dbName);
+    public VMDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
+        super(client, dbName);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         compRepo = new VMComponentRepository(db);
         actionRepo = new VMActionRepository(db);
         prioRepo = new VMPriorityRepository(db);

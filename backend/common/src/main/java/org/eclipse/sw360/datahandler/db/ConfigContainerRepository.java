@@ -14,7 +14,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantCl
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.cloudant.client.api.views.Key;
 import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
 import com.cloudant.client.api.views.ViewRequestBuilder;
@@ -30,7 +30,7 @@ public class ConfigContainerRepository extends DatabaseRepositoryCloudantClient<
 
     public ConfigContainerRepository(DatabaseConnectorCloudant databaseConnector) {
         super(databaseConnector, ConfigContainer.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byId", createMapReduce(BYID, null));
         views.put("byConfigFor", createMapReduce(BYCONFIGFOR, null));

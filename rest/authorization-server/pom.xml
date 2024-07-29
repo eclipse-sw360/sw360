@@ -144,17 +144,6 @@
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.ektorp</groupId>
-            <artifactId>org.ektorp</artifactId>
-            <version>${ektorp.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>net.sourceforge.findbugs</groupId>
-                    <artifactId>annotations</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>

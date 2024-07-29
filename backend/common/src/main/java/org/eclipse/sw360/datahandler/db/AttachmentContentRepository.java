@@ -18,8 +18,8 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.cloudant.client.api.model.Response;
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DocumentResult;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.cloudant.client.api.views.Key;
 import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
 import com.cloudant.client.api.views.ViewRequestBuilder;
@@ -44,7 +44,7 @@ public class AttachmentContentRepository extends DatabaseRepositoryCloudantClien
 
     public AttachmentContentRepository(DatabaseConnectorCloudant db) {
         super(db, AttachmentContent.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("onlyRemotes", createMapReduce(ONLYREMOTES, null));
         views.put("all", createMapReduce(ALL, null));
         initStandardDesignDocument(views, db);
@@ -69,10 +69,14 @@ public class AttachmentContentRepository extends DatabaseRepositoryCloudantClien
         requestSummary.setTotalElements(allAttachmentContents.size());
         requestSummary.setTotalAffectedElements(unusedAttachmentContents.size());
 
-        final List<Response> documentOperationResults = getConnector().deleteBulk(unusedAttachmentContents);
+        final List<DocumentResult> documentOperationResults = getConnector().deleteIds(
+                unusedAttachmentContents
+                        .stream()
+                        .map(AttachmentContent::getId).collect(Collectors.toSet())
+        );
         if (unusedAttachmentContents.isEmpty() || !documentOperationResults.isEmpty()) {
             requestSummary.setRequestStatus(RequestStatus.SUCCESS);
-        }else{
+        } else {
             requestSummary.setRequestStatus(RequestStatus.FAILURE);
         }
         return requestSummary;

@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.datahandler.db.spdx.documentcreationinfo;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentRepository;
@@ -29,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 
 import java.net.MalformedURLException;
 import java.util.*;
-import java.util.function.Supplier;
 import com.google.common.collect.Lists;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -53,8 +52,8 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
     private DatabaseHandlerUtil dbHandlerUtil;
     private final SpdxDocumentCreationInfoModerator moderator;
 
-    public SpdxDocumentCreationInfoDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
-        db = new DatabaseConnectorCloudant(httpClient, dbName);
+    public SpdxDocumentCreationInfoDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
+        db = new DatabaseConnectorCloudant(client, dbName);
 
         // Create the repositories
         SPDXDocumentCreationInfoRepository = new SpdxDocumentCreationInfoRepository(db);
@@ -62,7 +61,7 @@ public class SpdxDocumentCreationInfoDatabaseHandler {
         // Create the moderator
         moderator = new SpdxDocumentCreationInfoModerator();
         // Create the changelogs
-        dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        dbChangeLogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
     }
 

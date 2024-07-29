@@ -18,7 +18,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 
 /**
  * CRUD access for the ChangeLogs class
@@ -55,7 +55,7 @@ public class ChangeLogsRepository extends DatabaseRepositoryCloudantClient<Chang
 
     public ChangeLogsRepository(DatabaseConnectorCloudant db) {
         super(db, ChangeLogs.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("byDocumentId", createMapReduce(BY_DOCUMENT_ID, null));
         views.put("byParentDocumentId", createMapReduce(BY_PARENT_DOCUMENT_ID, null));
         views.put("byUserEdited", createMapReduce(BY_USER_EDITED, null));

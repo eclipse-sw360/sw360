@@ -9,21 +9,14 @@
  */
 package org.eclipse.sw360.datahandler.common;
 
+import com.ibm.cloud.cloudant.security.CouchDbSessionAuthenticator;
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import com.ibm.cloud.sdk.core.security.Authenticator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
-import org.ektorp.http.HttpClient;
-import org.ektorp.http.StdHttpClient;
 
-import com.cloudant.client.api.ClientBuilder;
-import com.cloudant.client.api.CloudantClient;
-import com.google.gson.GsonBuilder;
-
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.function.Supplier;
 
 /**
  * Constants for the database address
@@ -71,39 +64,23 @@ public class DatabaseSettingsTest {
         COUCH_DB_CHANGELOGS = props.getProperty("couchdb.change_logs", "sw360_test_changelogs");
     }
 
-    public static Supplier<HttpClient> getConfiguredHttpClient() throws MalformedURLException {
-        StdHttpClient.Builder httpClientBuilder = new StdHttpClient.Builder().url(COUCH_DB_URL);
-        if (!"".equals(COUCH_DB_USERNAME.get())) {
-            httpClientBuilder.username(COUCH_DB_USERNAME.get());
-        }
-        if (!"".equals(COUCH_DB_PASSWORD.get())) {
-            httpClientBuilder.password(COUCH_DB_PASSWORD.get());
-        }
-        return httpClientBuilder::build;
-    }
-
-    public static Supplier<CloudantClient> getConfiguredClient() {
-        ClientBuilder clientBuilder = null;
-        GsonBuilder gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping();
-        for (Class<?> c : ThriftUtils.THRIFT_CLASSES) {
-            gson.registerTypeAdapter(c, new CustomThriftDeserializer());
-            gson.registerTypeAdapter(c, new CustomThriftSerializer());
-        }
-        for (Class<?> c : ThriftUtils.THRIFT_NESTED_CLASSES) {
-            gson.registerTypeAdapter(c, new CustomThriftSerializer());
+    public static Cloudant getConfiguredClient() {
+        Cloudant client;
+        if (COUCH_DB_USERNAME.isPresent() && !COUCH_DB_USERNAME.get().isEmpty() &&
+            COUCH_DB_PASSWORD.isPresent() && !COUCH_DB_PASSWORD.get().isEmpty()) {
+            Authenticator authenticator = CouchDbSessionAuthenticator.newAuthenticator(
+                    COUCH_DB_USERNAME,
+                    COUCH_DB_PASSWORD);
+            client = new Cloudant("sw360-couchdb-test", authenticator);
+        } else {
+            client = Cloudant.newInstance("sw360-couchdb-test");
         }
         try {
-            clientBuilder = ClientBuilder.url(new URL(COUCH_DB_URL)).gsonBuilder(gson);
-            if (!"".equals(COUCH_DB_USERNAME.get())) {
-                clientBuilder.username(COUCH_DB_USERNAME.get());
-            }
-            if (!"".equals(COUCH_DB_PASSWORD.get())) {
-                clientBuilder.password(COUCH_DB_PASSWORD.get());
-            }
-        } catch (MalformedURLException e) {
-            log.error("Error creating client", e);
+            client.setServiceUrl(COUCH_DB_URL);
+        } catch (IllegalArgumentException e) {
+            log.error("Error creating client: {}", e.getMessage(), e);
         }
-        return clientBuilder::build;
+        return client;
     }
 
 

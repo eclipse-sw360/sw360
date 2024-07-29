@@ -12,23 +12,20 @@ package org.eclipse.sw360.vendors;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.VendorSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
-import org.ektorp.http.HttpClient;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 public class VendorHandler implements VendorService.Iface {
@@ -38,16 +35,14 @@ public class VendorHandler implements VendorService.Iface {
 
     public VendorHandler() throws IOException {
         DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
-        DatabaseConnector databaseConnectorNative = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.COUCH_DB_DATABASE);
         vendorDatabaseHandler = new VendorDatabaseHandler(databaseConnector);
-        vendorSearchHandler = new VendorSearchHandler(databaseConnectorNative, DatabaseSettings.getConfiguredClient());     // Remove release id from component
+        vendorSearchHandler = new VendorSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);     // Remove release id from component
     }
 
-    public VendorHandler(Supplier<CloudantClient> httpClient,Supplier<HttpClient> clientlient, String dbName) throws IOException {
-        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(httpClient, dbName);
-        DatabaseConnector databaseConnectorNative = new DatabaseConnector(clientlient, DatabaseSettings.COUCH_DB_DATABASE);
+    public VendorHandler(Cloudant client, String dbName) throws IOException {
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(client, dbName);
         vendorDatabaseHandler = new VendorDatabaseHandler(databaseConnector);
-        vendorSearchHandler = new VendorSearchHandler(databaseConnectorNative, httpClient);     // Remove release id from component
+        vendorSearchHandler = new VendorSearchHandler(client, DatabaseSettings.COUCH_DB_DATABASE);     // Remove release id from component
     }
 
     @Override

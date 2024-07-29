@@ -9,10 +9,9 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -28,7 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.common.utils.SearchUtils.OBJ_ARRAY_TO_STRING_INDEX;
@@ -82,10 +80,10 @@ public class ProjectSearchHandler {
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
-    public ProjectSearchHandler(Supplier<CloudantClient> cClient, String dbName) throws IOException {
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
-        connector = new NouveauLuceneAwareDatabaseConnector(db, cClient, DDOC_NAME);
-        Gson gson = (new DatabaseInstanceCloudant(cClient)).getClient().getGson();
+    public ProjectSearchHandler(Cloudant client, String dbName) throws IOException {
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME);
+        Gson gson = db.getInstance().getGson();
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);
         searchView.addNouveau(luceneSearchView, gson);

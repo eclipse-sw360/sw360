@@ -10,10 +10,9 @@
  */
 package org.eclipse.sw360.datahandler.db.spdx.packageinfo;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
@@ -22,7 +21,6 @@ import org.eclipse.sw360.nouveau.designdocument.NouveauIndexFunction;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector.prepareWildcardQuery;
 import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX;
@@ -42,10 +40,10 @@ public class SpdxPackageInfoSearchHandler {
 
     private final NouveauLuceneAwareDatabaseConnector connector;
 
-    public SpdxPackageInfoSearchHandler(Supplier<CloudantClient> cClient, String dbName) throws IOException {
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
-        connector = new NouveauLuceneAwareDatabaseConnector(db, cClient, DDOC_NAME);
-        Gson gson = (new DatabaseInstanceCloudant(cClient)).getClient().getGson();
+    public SpdxPackageInfoSearchHandler(Cloudant client, String dbName) throws IOException {
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME);
+        Gson gson = db.getInstance().getGson();
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);
         searchView.addNouveau(luceneSearchView, gson);

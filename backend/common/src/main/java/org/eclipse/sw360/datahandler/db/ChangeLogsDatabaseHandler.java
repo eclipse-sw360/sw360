@@ -17,7 +17,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -29,7 +28,7 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -48,8 +47,8 @@ public class ChangeLogsDatabaseHandler {
             .add("revision")
             .add("documentState").build();
 
-    public ChangeLogsDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
-        db = new DatabaseConnectorCloudant(httpClient, dbName);
+    public ChangeLogsDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
+        db = new DatabaseConnectorCloudant(client, dbName);
         changeLogsRepository = new ChangeLogsRepository(db);
     }
 

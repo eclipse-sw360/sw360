@@ -9,11 +9,6 @@
  */
 package org.eclipse.sw360.datahandler.couchdb.lucene;
 
-import com.cloudant.client.api.CloudantClient;
-import com.cloudant.client.api.DesignDocumentManager;
-import com.cloudant.client.api.model.Response;
-import com.cloudant.client.org.lightcouch.NoDocumentException;
-import com.cloudant.client.org.lightcouch.internal.CouchDbUtil;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
@@ -43,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -78,25 +72,20 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
      * Constructor using a Database connector
      */
     public NouveauLuceneAwareDatabaseConnector(@NotNull DatabaseConnectorCloudant db,
-                                               Supplier<CloudantClient> dbClient,
                                                String ddoc) throws IOException {
-        super(db.getDatabase(), dbClient, ddoc);
+        super(db.getInstance().getClient(), ddoc);
         setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
         this.connector = db;
     }
 
     public boolean addDesignDoc(@NotNull NouveauDesignDocument designDocument) {
-        DesignDocumentManager designDocumentManager = this.connector.getDesignDocumentManager();
-
-        NouveauDesignDocument documentFromDb;
-        try {
-            documentFromDb = this.getNouveauDesignDocument(designDocument.getId());
-        } catch (NoDocumentException ex) {
-            return putNouveauDesignDocument(designDocument, designDocumentManager);
+        NouveauDesignDocument documentFromDb = this.getNouveauDesignDocument(designDocument.getId());
+        if (documentFromDb == null) {
+            return putNouveauDesignDocument(designDocument, this.connector);
         }
 
         if (!designDocument.equals(documentFromDb)) {
-            designDocument.setRevision(documentFromDb.getRevision());
+            designDocument.setRev(documentFromDb.getRev());
             if (documentFromDb.getNouveau() != null) {
                 // Add missing indexes from existing DDOC as to not overwrite them
                 documentFromDb.getNouveau().asMap().forEach((key, value) -> {
@@ -105,7 +94,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
                     }
                 });
             }
-            return putNouveauDesignDocument(designDocument, designDocumentManager);
+            return putNouveauDesignDocument(designDocument, this.connector);
         }
         return true;
     }
@@ -302,14 +291,15 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     }
 
     private NouveauDesignDocument getNouveauDesignDocument(String id) {
-        CouchDbUtil.assertNotEmpty(id, "id");
-        return this.connector.getDatabase().find(NouveauDesignDocument.class, id);
+        if (id.isEmpty()) {
+            throw new IllegalArgumentException("id cannot be empty");
+        }
+        return this.connector.get(NouveauDesignDocument.class, id);
     }
 
     private static boolean putNouveauDesignDocument(NouveauDesignDocument designDocument,
-                                                    @NotNull DesignDocumentManager designDocumentManager) {
-        Response response = designDocumentManager.put(designDocument);
-        return response.getError() == null || response.getError().isEmpty();
+                                                    @NotNull DatabaseConnectorCloudant connector) {
+        return connector.putDesignDocument(designDocument, designDocument.getId());
     }
 
     private static @NotNull String formatDateNouveauFormat(@NotNull String date) throws ParseException {

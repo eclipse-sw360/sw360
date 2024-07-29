@@ -170,6 +170,11 @@
             <version>${cloudant.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.ibm.cloud</groupId>
+            <artifactId>cloudant</artifactId>
+            <version>${cloudantsdk.version}</version>
+        </dependency>
+        <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
             <version>2.4</version>
