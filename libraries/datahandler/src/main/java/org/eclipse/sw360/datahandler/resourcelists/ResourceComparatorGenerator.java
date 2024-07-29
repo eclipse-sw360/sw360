@@ -33,6 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilitySummary;
 
 public class ResourceComparatorGenerator<T> {
 
@@ -48,6 +49,7 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = generateChangeLogMap();
     private static final Map<VulnerabilityDTO._Fields, Comparator<VulnerabilityDTO>> vDtoMap = generateVulDtoMap();
     private static final Map<Vulnerability._Fields, Comparator<Vulnerability>> vMap = generateVulMap();
+    private static final Map<VulnerabilitySummary._Fields, Comparator<VulnerabilitySummary>> vSumm = generateVulSumm();
     private static final Map<ModerationRequest._Fields, Comparator<ModerationRequest>> moderationRequestMap = generateModerationRequestMap();
 
     private static Map<Component._Fields, Comparator<Component>> generateComponentMap() {
@@ -156,6 +158,13 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(vulMap);
     }
 
+    private static Map<VulnerabilitySummary._Fields, Comparator<VulnerabilitySummary>> generateVulSumm() {
+        Map<VulnerabilitySummary._Fields, Comparator<VulnerabilitySummary>> vulSummaryMap = new HashMap<>();
+        vulSummaryMap.put(VulnerabilitySummary._Fields.EXTERNAL_ID, Comparator.comparing(VulnerabilitySummary::getExternalId, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        vulSummaryMap.put(VulnerabilitySummary._Fields.PRIORITY, Comparator.comparing(VulnerabilitySummary::getPriority, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(vulSummaryMap);
+    }
+
     private static Map<ModerationRequest._Fields, Comparator<ModerationRequest>> generateModerationRequestMap() {
         Map<ModerationRequest._Fields, Comparator<ModerationRequest>> moderationRequestMap = new HashMap<>();
         moderationRequestMap.put(ModerationRequest._Fields.TIMESTAMP,
@@ -193,6 +202,8 @@ public class ResourceComparatorGenerator<T> {
                 return (Comparator<T>)defaultVulDtoComparator();
             case SW360Constants.TYPE_VULNERABILITY:
                 return (Comparator<T>)defaultVulComparator();
+            case SW360Constants.TYPE_VULNERABILITYSUMMARY:
+                return (Comparator<T>)defaultVulSummComparator();
             case SW360Constants.TYPE_MODERATION:
                 return (Comparator<T>)defaultModerationRequestComparator();
             case SW360Constants.TYPE_PACKAGE:
@@ -300,6 +311,15 @@ public class ResourceComparatorGenerator<T> {
                     }
                 }
                 return generateVulComparatorWithFields(type, vul);
+            case SW360Constants.TYPE_VULNERABILITYSUMMARY:
+                List<VulnerabilitySummary._Fields> vulSumm = new ArrayList<>();
+                for(String property : properties) {
+                    VulnerabilitySummary._Fields field = VulnerabilitySummary._Fields.findByName(property);
+                    if (field != null) {
+                        vulSumm.add(field);
+                    }
+                }
+                return generateVulSummComparatorWithFields(type, vulSumm);
             case SW360Constants.TYPE_ECC:
                 List<Release._Fields> releaseFields = new ArrayList<>();
                 List<EccInformation._Fields> eccInfoFields = new ArrayList<>();
@@ -422,6 +442,15 @@ public class ResourceComparatorGenerator<T> {
         switch (type) {
             case SW360Constants.TYPE_VULNERABILITY:
                 return (Comparator<T>)vulnComparator(fields);
+            default:
+                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+        }
+    }
+
+    public Comparator<T> generateVulSummComparatorWithFields(String type, List<VulnerabilitySummary._Fields> fields) throws ResourceClassNotFoundException {
+        switch (type) {
+            case SW360Constants.TYPE_VULNERABILITYSUMMARY:
+                return (Comparator<T>)vulnSummComparator(fields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -583,6 +612,18 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
+    private Comparator<VulnerabilitySummary> vulnSummComparator(List<VulnerabilitySummary._Fields> fields) {
+        Comparator<VulnerabilitySummary> comparator = Comparator.comparing(x -> true);
+        for (VulnerabilitySummary._Fields field:fields) {
+            Comparator<VulnerabilitySummary> fieldComparator = vSumm.get(field);
+            if(fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultVulSummComparator());
+        return comparator;
+    }
+
     private Comparator<ModerationRequest> moderationComparator(List<ModerationRequest._Fields> fields) {
         Comparator<ModerationRequest> comparator = Comparator.comparing(x -> true);
         for (ModerationRequest._Fields field : fields) {
@@ -629,6 +670,10 @@ public class ResourceComparatorGenerator<T> {
 
     private Comparator<Vulnerability> defaultVulComparator() {
         return vMap.get(Vulnerability._Fields.EXTERNAL_ID);
+    }
+
+    private Comparator<VulnerabilitySummary> defaultVulSummComparator() {
+        return vSumm.get(VulnerabilitySummary._Fields.EXTERNAL_ID);
     }
 
     private Comparator<ModerationRequest> defaultModerationRequestComparator() {

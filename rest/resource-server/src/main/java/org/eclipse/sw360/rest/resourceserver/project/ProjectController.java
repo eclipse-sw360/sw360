@@ -93,6 +93,7 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilitySummary;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
@@ -106,7 +107,10 @@ import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.eclipse.sw360.rest.resourceserver.user.UserController;
+import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
+import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.GsonJsonParser;
@@ -967,6 +971,99 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             resources = restControllerHelper.emptyPageResource(Release.class, paginationResult);
         } else {
             resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
+        }
+
+        HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(resources, status);
+    }
+
+    @Operation(
+            description = "Get vulnerabilities of all projects including parent and directly linked projects.",
+            tags = {"Projects"}
+    )
+
+    @RequestMapping(value = PROJECTS_URL + "/{id}/vulnerabilitySummary", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<VulnerabilitySummary>>> getAllVulnerabilities(
+            Pageable pageable,
+            HttpServletRequest request,
+            @PathVariable("id") String id)
+            throws TException, PaginationParameterException, ResourceClassNotFoundException, URISyntaxException {
+
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+
+        List<VulnerabilityDTO> parentProjectVulnerabilities = vulnerabilityService.getVulnerabilitiesByProjectId(id, sw360User);
+
+        Map<String, List<VulnerabilityDTO>> vulnerabilitiesMap = new HashMap<>();
+        String parentProjectKey = sw360Project.getName() + " " + sw360Project.getVersion();
+        vulnerabilitiesMap.put(parentProjectKey, parentProjectVulnerabilities);
+
+        if (!sw360Project.getLinkedProjects().isEmpty()) {
+            for (String linkedProjectId : sw360Project.getLinkedProjects().keySet()) {
+                Project linkedProject = projectService.getProjectForUserById(linkedProjectId, sw360User);
+                List<VulnerabilityDTO> linkedProjectVulnerabilities = vulnerabilityService.getVulnerabilitiesByProjectId(linkedProjectId, sw360User);
+                String linkedProjectKey = linkedProject.getName() + " " + linkedProject.getVersion();
+                vulnerabilitiesMap.put(linkedProjectKey, linkedProjectVulnerabilities);
+            }
+        }
+
+        List<VulnerabilitySummary> newList = new ArrayList<>();
+        Optional<ProjectVulnerabilityRating> projectVulnerabilityRating = wrapThriftOptionalReplacement(vulnerabilityService.getProjectVulnerabilityRatingByProjectId(id, sw360User));
+        Map<String, Map<String, List<VulnerabilityCheckStatus>>> vulnerabilityIdToStatusHistory = projectVulnerabilityRating
+                .map(ProjectVulnerabilityRating::getVulnerabilityIdToReleaseIdToStatus).orElseGet(HashMap::new);
+
+
+        for (Map.Entry<String, List<VulnerabilityDTO>> entry : vulnerabilitiesMap.entrySet()) {
+            String projectName = entry.getKey();
+            List<VulnerabilityDTO> vulnerabilities = entry.getValue();
+
+            for (VulnerabilityDTO vulnerability : vulnerabilities) {
+                String comment = "", action = "new";
+                Map<String, Map<String, VulnerabilityRatingForProject>> vulRatingProj = vulnerabilityService.fillVulnerabilityMetadata(vulnerability, projectVulnerabilityRating);
+                vulnerability.setProjectRelevance(vulRatingProj.get(vulnerability.externalId).get(vulnerability.intReleaseId).toString());
+                Map<String, List<VulnerabilityCheckStatus>> relIdToCheckStatus = vulnerabilityIdToStatusHistory.get(vulnerability.externalId);
+                if(null != relIdToCheckStatus && relIdToCheckStatus.containsKey(vulnerability.intReleaseId)) {
+                    List<VulnerabilityCheckStatus> checkStatus = relIdToCheckStatus.get(vulnerability.intReleaseId);
+                    comment = checkStatus.get(checkStatus.size()-1).getComment();
+                    action = checkStatus.get(checkStatus.size()-1).getProjectAction();
+                }
+                vulnerability.setComment(comment);
+                vulnerability.setAction(action);
+                VulnerabilitySummary summ = new VulnerabilitySummary();
+                summ.setProjectName(projectName);
+                summ.setExternalId(vulnerability.getExternalId());
+                summ.setDescription(vulnerability.getDescription());
+                summ.setTitle(vulnerability.getTitle());
+                summ.setPriority(vulnerability.getPriority());
+                summ.setPriorityToolTip(vulnerability.getPriorityToolTip());
+                summ.setAction(vulnerability.getAction());
+                summ.setComment(vulnerability.getComment());
+                summ.setMatchedBy(vulnerability.getMatchedBy());
+                summ.setUsedNeedle(vulnerability.getUsedNeedle());
+                summ.setProjectRelevance(vulnerability.getProjectRelevance());
+                summ.setIntReleaseId(vulnerability.getIntReleaseId());
+                summ.setIntReleaseName(vulnerability.getIntReleaseName());
+                newList.add(summ);
+            }
+        }
+
+        PaginationResult<VulnerabilitySummary> paginationResult = restControllerHelper.createPaginationResult(request, pageable, newList, SW360Constants.TYPE_VULNERABILITYSUMMARY);
+
+        final List<EntityModel<VulnerabilitySummary>> vulResources = paginationResult.getResources().stream()
+                .map(sw360Vul -> wrapTException(() -> {
+                    final VulnerabilitySummary embeddedVul = restControllerHelper.convertToEmbeddedVulnerabilitySumm(sw360Vul);
+                    final HalResource<VulnerabilitySummary> vulResource = new HalResource<>(embeddedVul);
+                    Link projectLink = linkTo(VulnerabilityController.class)
+                            .slash("api/vulnerabilities/" + sw360Vul.getExternalId()).withSelfRel();
+                    vulResource.add(projectLink);
+                    return vulResource;
+                })).collect(Collectors.toList());
+
+        CollectionModel resources;
+        if (vulResources.size() == 0) {
+            resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, vulResources);
         }
 
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;

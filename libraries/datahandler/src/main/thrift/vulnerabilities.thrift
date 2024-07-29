@@ -109,6 +109,32 @@ struct VulnerabilityApiDTO{
     //additional info for Releases
     37: optional set<Release> releases;
 }
+struct VulnerabilitySummary{
+    // WILL NOT BE SAVED IN DB, only for view
+    3: optional string type = "vulnerabilitysummary",
+    4: optional string projectName,
+
+    // Additional information
+    10: required string externalId,
+    11: optional string title,
+    12: optional string description,
+
+    15: optional string priority,
+    16: optional string priorityToolTip,
+    17: optional string action,
+
+    // additional DTO fields
+    31: optional string intReleaseId,
+    32: optional string intReleaseName,
+
+    // meta information
+    100: optional string matchedBy,
+    101: optional string usedNeedle,
+
+    // Used in REST API
+    300: optional string projectRelevance,
+    301: optional string comment
+}
 
 struct VulnerabilityDTO{
     // WILL NOT BE SAVED IN DB, only for view
