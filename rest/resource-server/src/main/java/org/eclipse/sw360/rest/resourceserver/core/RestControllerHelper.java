@@ -876,6 +876,7 @@ public class RestControllerHelper<T> {
         embeddedRelease.setId(release.getId());
         embeddedRelease.setName(release.getName());
         embeddedRelease.setVersion(release.getVersion());
+        embeddedRelease.setClearingState(release.getClearingState());
         embeddedRelease.setType(null);
         return embeddedRelease;
     }
@@ -885,6 +886,8 @@ public class RestControllerHelper<T> {
         embeddedPackage.setId(pkg.getId());
         embeddedPackage.setName(pkg.getName());
         embeddedPackage.setVersion(pkg.getVersion());
+        embeddedPackage.setPackageManager(pkg.getPackageManager());
+        embeddedPackage.setLicenseIds(pkg.getLicenseIds());
         embeddedPackage.setPurl(pkg.getPurl());
         return embeddedPackage;
     }
