@@ -732,7 +732,7 @@ include::{snippets}/should_document_get_attachment_usage_for_project/http-respon
 [[resources-project-get-project-vulnerabilities]]
 ==== Listing project vulnerabilities
 
-A `GET` request will get vulnerabilities of a single project.
+A `GET` request will get vulnerabilities of a single projects.
 
 ===== Request parameter
 include::{snippets}/should_document_get_project_vulnerabilities/query-parameters.adoc[]
@@ -748,6 +748,26 @@ include::{snippets}/should_document_get_project_vulnerabilities/http-response.ad
 
 ===== Links
 include::{snippets}/should_document_get_project_vulnerabilities/links.adoc[]
+
+[[resources-project-get-project-vulnerability-summary]]
+==== Listing project vulnerability summary
+
+A `GET` request will get vulnerability summary of a single project.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_vulnerability_summary/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_vulnerability_summary/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_vulnerability_summary/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_vulnerability_summary/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_vulnerability_summary/links.adoc[]
 
 [[resources-project-get-project-vulnerabilities-by-release-id-and-external-id]]
 ==== Listing project vulnerabilities by release id and external id

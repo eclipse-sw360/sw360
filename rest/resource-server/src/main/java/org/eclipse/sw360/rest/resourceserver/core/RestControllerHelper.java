@@ -53,10 +53,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityApiDTO;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
@@ -1543,5 +1540,23 @@ public class RestControllerHelper<T> {
     public String getBaseUrl(HttpServletRequest request) {
         String requestURL = request.getRequestURL().toString();
         return requestURL.substring(0, requestURL.indexOf(request.getRequestURI()));
+    }
+
+    public VulnerabilitySummary convertToEmbeddedVulnerabilitySumm(VulnerabilitySummary sw360Vul) {
+        VulnerabilitySummary embeddedProject = new VulnerabilitySummary();
+        embeddedProject.setComment(sw360Vul.getComment());
+        embeddedProject.setAction(sw360Vul.getAction());
+        embeddedProject.setTitle(sw360Vul.getTitle());
+        embeddedProject.setMatchedBy(sw360Vul.getMatchedBy());
+        embeddedProject.setUsedNeedle(sw360Vul.getUsedNeedle());
+        embeddedProject.setProjectName(sw360Vul.getProjectName());
+        embeddedProject.setExternalId(sw360Vul.getExternalId());
+        embeddedProject.setDescription(sw360Vul.getDescription());
+        embeddedProject.setPriority(sw360Vul.getPriority());
+        embeddedProject.setPriorityToolTip(sw360Vul.getPriorityToolTip());
+        embeddedProject.setProjectRelevance(sw360Vul.getProjectRelevance());
+        embeddedProject.setIntReleaseId(sw360Vul.getIntReleaseId());
+        embeddedProject.setIntReleaseName(sw360Vul.getIntReleaseName());
+        return embeddedProject;
     }
 }

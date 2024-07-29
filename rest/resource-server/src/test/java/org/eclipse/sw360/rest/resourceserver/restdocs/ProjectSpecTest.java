@@ -1490,6 +1490,43 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_project_vulnerability_summary() throws Exception {
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/vulnerabilitySummary")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .param("page", "0")
+                        .param("page_entries", "5")
+                        .param("sort", "externalId,desc")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("page").description("Page of vulnerabilities"),
+                                parameterWithName("page_entries").description("Amount of vulnerability page"),
+                                parameterWithName("sort").description("Defines order of the vulnerability on the basis of externalId")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:vulnerabilitySummaries.[]priority").description("The priority of vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilitySummaries.[]action").description("The action of vulnerability"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilitySummaries.[]projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
+                                subsectionWithPath("_embedded.sw360:vulnerabilitySummaries.[]comment").description("Any message to added while updating project vulnerabilities"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilitySummaries.[]intReleaseId").description("The release id"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilitySummaries.[]intReleaseName").description("The release name"),
+                                subsectionWithPath("_embedded.sw360:vulnerabilitySummaries").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of vulnerability per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing vulnerability"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
     public void should_document_get_project_vulnerabilities_by_externalid() throws Exception {
         mockMvc.perform(get("/api/projects/" + project.getId() + "/vulnerabilities")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))

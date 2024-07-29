@@ -96,6 +96,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(ReleaseVulnerabilityRelationDTO.class, Sw360Module.ReleaseVulnerabilityRelationDTOMixin.class);
             setMixInAnnotation(VulnerabilityDTO.class, Sw360Module.VulnerabilityDTOMixin.class);
             setMixInAnnotation(VulnerabilityApiDTO.class, Sw360Module.VulnerabilityApiDTOMixin.class);
+            setMixInAnnotation(VulnerabilitySummary.class, Sw360Module.VulnerabilitySummMixin.class);
             setMixInAnnotation(EccInformation.class, Sw360Module.EccInformationMixin.class);
             setMixInAnnotation(EmbeddedProject.class, Sw360Module.EmbeddedProjectMixin.class);
             setMixInAnnotation(ExternalToolProcess.class, Sw360Module.ExternalToolProcessMixin.class);
@@ -148,6 +149,7 @@ public class JacksonCustomizations {
                     .replaceWithClass(VendorAdvisory.class, VendorAdvisoryMixin.class)
                     .replaceWithClass(VulnerabilityDTO.class, VulnerabilityDTOMixin.class)
                     .replaceWithClass(VulnerabilityApiDTO.class, VulnerabilityApiDTOMixin.class)
+                    .replaceWithClass(VulnerabilitySummary.class, VulnerabilitySummMixin.class)
                     .replaceWithClass(EccInformation.class, EccInformationMixin.class)
                     .replaceWithClass(EmbeddedProject.class, EmbeddedProjectMixin.class)
                     .replaceWithClass(ExternalToolProcess.class, ExternalToolProcessMixin.class)
@@ -1509,6 +1511,54 @@ public class JacksonCustomizations {
             @Override
             @JsonProperty("id")
             abstract public String getId();
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        @JsonIgnoreProperties({
+                "id",
+                "revision",
+                "type",
+                "publishDate",
+                "lastExternalUpdate",
+                "impact",
+                "legalNotice",
+                "cveReferences",
+                "references",
+                "intComponentId",
+                "intComponentName",
+                "releaseVulnerabilityRelation",
+                "setId",
+                "setProjectName",
+                "setRevision",
+                "setType",
+                "setExternalId",
+                "setTitle",
+                "setPublishDate",
+                "setLastExternalUpdate",
+                "setPriority",
+                "setPriorityToolTip",
+                "setAction",
+                "impactSize",
+                "setImpact",
+                "setLegalNotice",
+                "cveReferencesSize",
+                "cveReferencesIterator",
+                "setCveReferences",
+                "referencesSize",
+                "referencesIterator",
+                "setReferences",
+                "setIntReleaseId",
+                "setIntReleaseName",
+                "setIntComponentId",
+                "setIntComponentName",
+                "setReleaseVulnerabilityRelation",
+                "setMatchedBy",
+                "setUsedNeedle",
+                "setProjectRelevance",
+                "setComment",
+                "setDescription",
+        })
+        public static abstract class VulnerabilitySummMixin extends VulnerabilitySummary {
         }
 
         @JsonInclude(JsonInclude.Include.NON_EMPTY)
