@@ -225,8 +225,6 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "packageManager", required = false) String packageManager,
             @Parameter(description = "Get all details of the package.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
-            @Parameter(description = "If true, packages will be fetched by name exactly matching the search input.")
-            @RequestParam(value = "exactMatch", required = false) boolean isExactMatch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -236,7 +234,6 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         boolean isSearchByPackageManager = CommonUtils.isNotNullEmptyOrWhitespace(packageManager);
         boolean isSearchByVersion = CommonUtils.isNotNullEmptyOrWhitespace(version);
         boolean isSearchByPurl = CommonUtils.isNotNullEmptyOrWhitespace(purl);
-        boolean isNoFilter = false;
         List<Package> sw360Packages = new ArrayList<>();
 
         if (isSearchByName) {
@@ -255,9 +252,8 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             sw360Packages.addAll(packageService.searchPackageByPurl(params.get("purl")));
         } else {
             sw360Packages.addAll(packageService.getPackagesForUser());
-            isNoFilter = true;
         }
-        return getPackageResponse(version, purl, packageManager, pageable, allDetails, request, sw360User, sw360Packages, isNoFilter);
+        return getPackageResponse(version, purl, packageManager, pageable, allDetails, request, sw360User, sw360Packages);
     }
 
     private Package convertToPackage(Map<String, Object> requestBody) {
@@ -293,21 +289,13 @@ public class PackageController implements RepresentationModelProcessor<Repositor
 
     @NotNull
     private ResponseEntity<CollectionModel<EntityModel<Package>>> getPackageResponse(String version, String purl, String packageManager, Pageable pageable,
-            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages,
-            boolean isNoFilter)
+            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages)
             throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException, TException {
         Map<String, Package> mapOfPackages = new HashMap<>();
 
         sw360Packages.stream().forEach(pkg -> mapOfPackages.put(pkg.getId(), pkg));
         PaginationResult<Package> paginationResult;
-        if (isNoFilter) {
-            int totalCount = packageService.getTotalPackagesCounts();
-            paginationResult = restControllerHelper.paginationResultFromPaginatedList(request, pageable, sw360Packages,
-                    SW360Constants.TYPE_PACKAGE, totalCount);
-        } else {
-            paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Packages,
-                    SW360Constants.TYPE_PACKAGE);
-        }
+        paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Packages, SW360Constants.TYPE_PACKAGE);
 
         List<EntityModel<Package>> packageResources = new ArrayList<>();
         Consumer<Package> consumer = p -> {
