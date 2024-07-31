@@ -384,6 +384,10 @@ public class RestControllerHelper<T> {
         addEmbeddedUser(halResource, sw360User, "leadArchitect");
     }
 
+    public void addEmbeddedModifiedBy(HalResource halResource, User sw360User, String emailId) {
+        addEmbeddedUser(halResource, sw360User, "modifiedBy");
+    }
+
     public void addEmbeddedReleases(
             HalResource halResource,
             Set<String> releases,
