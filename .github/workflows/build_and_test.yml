@@ -115,5 +115,5 @@ jobs:
       #     mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true
 
       - name: Publish Test Report
-        if: success() || failure()
+        if: failure()
         uses: scacap/action-surefire-report@v1
