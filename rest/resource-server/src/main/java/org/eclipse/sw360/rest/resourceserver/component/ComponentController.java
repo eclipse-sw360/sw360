@@ -41,6 +41,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentDTO;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
@@ -97,6 +98,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -109,6 +111,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     private static final Logger log = LogManager.getLogger(ComponentController.class);
     private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
             .put("message", "Moderation request is created").build();
+    private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT = ImmutableMap.<String, String>builder()
+            .put("message", "Unauthorized user or empty commit message passed.").build();
 
     @NonNull
     private final Sw360ComponentService componentService;
@@ -346,27 +350,37 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @Parameter(description = "The id of the component to be updated.")
             @PathVariable("id") String id,
             @Parameter(description = "The component with updated fields.")
-            @RequestBody ComponentDTO updateComponentDto
+            @RequestBody ComponentDTO updateComponentDto,
+            @RequestParam(value = "comment", required = false) String comment
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
         sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponentDto);
+        user.setCommentMadeDuringModerationRequest(comment);
         Set<AttachmentDTO> attachmentDTOS = updateComponentDto.getAttachmentDTOs();
         if (!CommonUtils.isNullOrEmptyCollection(attachmentDTOS)) {
             Set<Attachment> attachments = new HashSet<>();
-            for (AttachmentDTO attachmentDTO: attachmentDTOS) {
+            for (AttachmentDTO attachmentDTO : attachmentDTOS) {
                 attachments.add(restControllerHelper.convertToAttachment(attachmentDTO, user));
             }
             sw360Component.setAttachments(attachments);
         } else {
             sw360Component.setAttachments(null);
         }
-        RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, user);
-        HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
-        if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        if (!isWriteActionAllowedOnComponent(sw360Component, user) && comment == null) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.FORBIDDEN);
+        } else {
+            RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, user);
+            HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
+            if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
+                return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+            }
+            return new ResponseEntity<>(userHalResource, HttpStatus.OK);
         }
-        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
+
+    private boolean isWriteActionAllowedOnComponent(Component component, User user) {
+        return makePermission(component, user).isActionAllowed(RequestedAction.WRITE);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -486,18 +500,26 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @Parameter(description = "The id of the attachment.")
             @PathVariable("attachmentId") String attachmentId,
             @Parameter(description = "The attachment info to be updated.")
-            @RequestBody Attachment attachmentData
+            @RequestBody Attachment attachmentData,
+            @RequestParam(value = "comment", required = false) String comment
+
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
         Set<Attachment> attachments = sw360Component.getAttachments();
-        Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId, sw360User);
+        sw360User.setCommentMadeDuringModerationRequest(comment);
+        Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId,
+                sw360User);
         RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, sw360User);
-        if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        if (!isWriteActionAllowedOnComponent(sw360Component, sw360User) && comment == null) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.FORBIDDEN);
+        } else {
+            if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
+                return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+            }
+            EntityModel<Attachment> attachmentResource = EntityModel.of(updatedAttachment);
+            return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
         }
-        EntityModel<Attachment> attachmentResource = EntityModel.of(updatedAttachment);
-        return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
     }
 
     @Operation(
