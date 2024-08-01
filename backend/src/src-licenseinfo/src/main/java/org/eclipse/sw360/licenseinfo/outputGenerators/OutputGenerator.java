@@ -64,7 +64,11 @@ public abstract class OutputGenerator<T> {
         this.outputVariant = variant;
     }
 
-    public abstract T generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String,String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception;
+    public abstract T generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults,
+            Project project, Collection<ObligationParsingResult> obligationResults, User user,
+            Map<String, String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus, String fileName,
+            boolean excludeReleaseVersion)
+            throws SW360Exception;
 
     public String getOutputType() {
         return outputType;
@@ -100,6 +104,10 @@ public abstract class OutputGenerator<T> {
         return SW360Utils.getReleaseFullname(li.getVendor(), li.getName(), li.getVersion());
     }
 
+    public String getComponentLongNameWithoutVersion(LicenseInfoParsingResult li) {
+        return SW360Utils.getReleaseFullname(li.getVendor(), li.getName(), "");
+    }
+
     public String getComponentShortName(LicenseInfoParsingResult li) {
         return SW360Utils.getReleaseFullname("", li.getName(), li.getVersion());
     }
@@ -116,17 +124,25 @@ public abstract class OutputGenerator<T> {
         return new VelocityContext(velocityToolManager.createContext());
     }
 
-    @NotNull
-    protected SortedMap<String, LicenseInfoParsingResult> getSortedLicenseInfos(Collection<LicenseInfoParsingResult> projectLicenseInfoResults) {
-        Map<String, LicenseInfoParsingResult> licenseInfos = projectLicenseInfoResults.stream()
-                .collect(Collectors.toMap(this::getComponentLongName, li -> li, this::mergeLicenseInfoParsingResults));
-        return sortStringKeyedMap(licenseInfos);
-    }
+	@NotNull
+	protected SortedMap<String, LicenseInfoParsingResult> getSortedLicenseInfos(
+			Collection<LicenseInfoParsingResult> projectLicenseInfoResults, boolean excludeReleaseVersion) {
+		Map<String, LicenseInfoParsingResult> licenseInfos = excludeReleaseVersion
+				? projectLicenseInfoResults.stream()
+						.collect(Collectors.toMap(this::getComponentLongNameWithoutVersion, li -> li,
+								(l1, l2) -> mergeLicenseInfoParsingResults(l1, l2, true)))
+				: projectLicenseInfoResults.stream().collect(Collectors.toMap(this::getComponentLongName, li -> li,
+						(l1, l2) -> mergeLicenseInfoParsingResults(l1, l2, false)));
+		return sortStringKeyedMap(licenseInfos);
+	}
 
     @NotNull
-    protected LicenseInfoParsingResult mergeLicenseInfoParsingResults(LicenseInfoParsingResult r1, LicenseInfoParsingResult r2){
+    protected LicenseInfoParsingResult mergeLicenseInfoParsingResults(LicenseInfoParsingResult r1, LicenseInfoParsingResult r2, boolean excludeReleaseVersion){
+        String r1_name = excludeReleaseVersion ? getComponentLongNameWithoutVersion(r1) : getComponentLongName(r1);
+        String r2_name = excludeReleaseVersion ? getComponentLongNameWithoutVersion(r2) : getComponentLongName(r2);
+
         if (r1.getStatus() != LicenseInfoRequestStatus.SUCCESS || r2.getStatus() != LicenseInfoRequestStatus.SUCCESS ||
-                !getComponentLongName(r1).equals(getComponentLongName(r2))){
+                !r1_name.equals(r2_name)){
             throw new IllegalArgumentException("Only successful parsing results for the same release can be merged");
         }
 
@@ -230,8 +246,9 @@ public abstract class OutputGenerator<T> {
      * @param externalIds
      * @return rendered template
      */
-    protected String renderTemplateWithDefaultValues(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, String file,
-                                                     String projectTitle, String licenseInfoHeaderText, String obligationsText, Map<String, String> externalIds) {
+    protected String renderTemplateWithDefaultValues(Collection<LicenseInfoParsingResult> projectLicenseInfoResults,
+            String file, String projectTitle, String licenseInfoHeaderText, String obligationsText,
+            Map<String, String> externalIds, boolean excludeReleaseVersion) {
         VelocityContext vc = getConfiguredVelocityContext();
         // set header
         vc.put(LICENSE_INFO_PROJECT_TITLE, projectTitle);
@@ -254,12 +271,15 @@ public abstract class OutputGenerator<T> {
         Map<Boolean, List<LicenseInfoParsingResult>> partitionedResults =
                 projectLicenseInfoResults.stream().collect(Collectors.partitioningBy(r -> r.getStatus() == LicenseInfoRequestStatus.SUCCESS));
         List<LicenseInfoParsingResult> goodResults = partitionedResults.get(true);
-        Map<String, List<LicenseInfoParsingResult>> badResultsPerRelease =
-                partitionedResults.get(false).stream().collect(Collectors.groupingBy(this::getComponentLongName));
+
+        Map<String, List<LicenseInfoParsingResult>> badResultsPerRelease = excludeReleaseVersion
+                ? partitionedResults.get(false).stream()
+                        .collect(Collectors.groupingBy(this::getComponentLongNameWithoutVersion))
+                : partitionedResults.get(false).stream().collect(Collectors.groupingBy(this::getComponentLongName));
         vc.put(LICENSE_INFO_ERROR_RESULTS_CONTEXT_PROPERTY, badResultsPerRelease);
 
         // be sure that the licenses inside a release are sorted by id. This looks nicer
-        SortedMap<String, LicenseInfoParsingResult> sortedLicenseInfos = getSortedLicenseInfos(goodResults);
+        SortedMap<String, LicenseInfoParsingResult> sortedLicenseInfos = getSortedLicenseInfos(goodResults, excludeReleaseVersion);
         // this will effectively change the objects in the collection and therefore the
         // objects in the sorted map above
         sortLicenseNamesWithinEachLicenseInfoById(sortedLicenseInfos.values(), licenseToReferenceId);

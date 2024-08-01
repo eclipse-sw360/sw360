@@ -50,10 +50,17 @@ public class Sw360LicenseInfoService {
 
     public LicenseInfoFile getLicenseInfoFile(Project project, User sw360User, String generatorClassNameWithVariant,
             Map<String, Map<String, Boolean>> selectedReleaseAndAttachmentIds,
-            Map<String, Set<LicenseNameWithText>> excludedLicenses, String externalIds, String fileName) {
+            Map<String, Set<LicenseNameWithText>> excludedLicenses, String externalIds, String fileName,
+            boolean excludeReleaseVersion) {
         try {
             LicenseInfoService.Iface sw360LicenseInfoClient = getThriftLicenseInfoClient();
-            return sw360LicenseInfoClient.getLicenseInfoFile(project, sw360User, generatorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicenses, externalIds, fileName);
+            if (excludeReleaseVersion) {
+                return sw360LicenseInfoClient.getLicenseInfoFileWithoutReleaseVersion(project, sw360User,
+                        generatorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicenses, externalIds,
+                        fileName, excludeReleaseVersion);
+            }
+            return sw360LicenseInfoClient.getLicenseInfoFile(project, sw360User, generatorClassNameWithVariant,
+                    selectedReleaseAndAttachmentIds, excludedLicenses, externalIds, fileName);
         } catch (TException e) {
             throw new RuntimeException(e);
         }

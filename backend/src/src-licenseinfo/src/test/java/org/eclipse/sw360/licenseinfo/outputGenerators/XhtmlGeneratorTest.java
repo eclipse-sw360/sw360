@@ -136,10 +136,10 @@ public class XhtmlGeneratorTest {
         Map<String, String> externalIds = Collections.emptyMap();
         Map<String, ObligationStatusInfo> obligationsStatus = Collections.emptyMap();
 
-        xmlString = xhtmlGenerator.generateOutputFile(lipresults, p, obligationResults, null, externalIds, obligationsStatus, "");
-        xmlString2 = xhtmlGenerator.generateOutputFile(lipresults2, p, obligationResults, null, externalIds, obligationsStatus, "");
-        xmlString3 = xhtmlGenerator.generateOutputFile(lipresults3, p, obligationResults, null, externalIds, obligationsStatus, "");
-        xmlStringEmpty = xhtmlGenerator.generateOutputFile(lipresultsEmpty, p, obligationResults, null, externalIds, obligationsStatus, "");
+        xmlString = xhtmlGenerator.generateOutputFile(lipresults, p, obligationResults, null, externalIds, obligationsStatus, "", false);
+        xmlString2 = xhtmlGenerator.generateOutputFile(lipresults2, p, obligationResults, null, externalIds, obligationsStatus, "", false);
+        xmlString3 = xhtmlGenerator.generateOutputFile(lipresults3, p, obligationResults, null, externalIds, obligationsStatus, "", false);
+        xmlStringEmpty = xhtmlGenerator.generateOutputFile(lipresultsEmpty, p, obligationResults, null, externalIds, obligationsStatus, "", false);
 
         generateDocumentsFromXml();
     }
