@@ -943,3 +943,17 @@ include::{snippets}/should_document_create_clearing_request/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_create_clearing_request/http-response.adoc[]
 
+[[resources-projects-download-releases-ecc-report]]
+==== Downloading project release with ecc information
+
+A `GET` request help to download the project release with ecc information report.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/http-response.adoc[]
+
