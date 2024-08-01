@@ -89,6 +89,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
@@ -2667,5 +2668,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         HalResource<ClearingRequest> halResource = new HalResource<>(clearingRequest);
 
         return ResponseEntity.created(location).body(halResource);
+    }
+
+    @RequestMapping(value = PROJECTS_URL + "/groupList", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, List<String>>> getGroupList() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<String> primaryGrpList = new ArrayList<>();
+        List<String> SecondaryGrpList = new ArrayList<>();
+        Map<String, List<String>> userGroupMap = new HashMap<>();
+        String mainDepartment = sw360User.getDepartment();
+        if (mainDepartment != null && !mainDepartment.isEmpty()) {
+            primaryGrpList.add(mainDepartment);
+        }
+        Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = sw360User.getSecondaryDepartmentsAndRoles();
+        if (secondaryDepartmentsAndRoles != null) {
+            SecondaryGrpList.addAll(secondaryDepartmentsAndRoles.keySet());
+        }
+        userGroupMap.put("primaryGrpList", primaryGrpList);
+        userGroupMap.put("SecondaryGrpList", SecondaryGrpList);
+        HttpStatus status = userGroupMap == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(userGroupMap, status);
     }
 }

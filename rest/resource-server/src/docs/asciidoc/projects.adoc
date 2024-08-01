@@ -943,3 +943,14 @@ include::{snippets}/should_document_create_clearing_request/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_create_clearing_request/http-response.adoc[]
 
+[[resources-projects-get-grouplist]]
+==== Fetch a list of group list.
+
+A `GET` request help to fetch the list of group for a particular user.
+
+===== Example request
+include::{snippets}/should_document_get_grouplist/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_grouplist/http-response.adoc[]
+
