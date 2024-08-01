@@ -99,4 +99,22 @@ public abstract class TestRestDocsSpecBase {
                 .header("Authorization", "Bearer " + accessToken);
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
+
+    public void testAttachmentOfProjectUpload(String url, String id) throws Exception {
+        String attachmentJson = "[{ \"filename\":\"spring-core-4.3.4.RELEASE.jar\", \"attachmentContentId\":\"2\", \"attachmentType\":\"SOURCE\", \"checkStatus\":\"ACCEPTED\", \"createdComment\":\"Uploading Sources.\" }]";
+        MockMultipartFile file = new MockMultipartFile("files", "spring-core-4.3.4.RELEASE.jar",
+                "application/java-archive", new byte[] {});
+        MockMultipartFile attachmentFile = new MockMultipartFile("attachments", "attachment.json", "application/json",
+                attachmentJson.getBytes());
+        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
+        String endpoint = url + "/" + id + "/attachments";
+
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(endpoint).file(file)
+                .file(attachmentFile).contentType(MediaType.MULTIPART_FORM_DATA)
+                .header("Authorization", "Bearer " + accessToken);
+        this.mockMvc.perform(builder)
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document());
+    }
 }

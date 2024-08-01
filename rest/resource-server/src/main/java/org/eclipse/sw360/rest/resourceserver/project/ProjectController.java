@@ -1449,28 +1449,32 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Project ID.")
             @PathVariable("projectId") String projectId,
             @Parameter(description = "File to attach")
-            @RequestPart("file") MultipartFile file,
+            @RequestPart("files") List<MultipartFile> files,
             @Parameter(description = "Attachment description")
-            @RequestPart("attachment") Attachment newAttachment
+            @RequestPart("attachments") List<Attachment> attachments
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project project = projectService.getProjectForUserById(projectId, sw360User);
-        Attachment attachment = null;
-        try {
-            attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
-        } catch (IOException e) {
-            log.error("failed to upload attachment", e);
-            throw new RuntimeException("failed to upload attachment", e);
+
+
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile file = files.get(i);
+            Attachment newAttachment = attachments.get(i);
+            try {
+                Attachment attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
+                project.addToAttachments(attachment);
+            } catch (IOException e) {
+                log.error("Failed to upload attachment", e);
+                throw new RuntimeException("Failed to upload attachment", e);
+            }
         }
 
-        project.addToAttachments(attachment);
         RequestStatus updateProjectStatus = projectService.updateProject(project, sw360User);
-        HttpStatus status = HttpStatus.OK;
         HalResource<Project> halResource = createHalProject(project, sw360User);
         if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
-        return new ResponseEntity<>(halResource, status);
+        return new ResponseEntity<>(halResource, HttpStatus.OK);
     }
 
     @Operation(

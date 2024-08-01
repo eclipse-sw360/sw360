@@ -1943,7 +1943,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_upload_attachment_to_project() throws Exception {
-        testAttachmentUpload("/api/projects/", project.getId());
+        testAttachmentOfProjectUpload("/api/projects/", project.getId());
     }
 
     @Test
