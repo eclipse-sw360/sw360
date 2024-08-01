@@ -12,6 +12,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.project;
 
+import com.google.common.collect.ImmutableSet;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
@@ -122,6 +123,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     private RestControllerHelper rch;
 
     public static final ExecutorService releaseExecutor = Executors.newFixedThreadPool(10);
+
+    public static final ImmutableSet<ObligationStatusInfo._Fields> SET_OF_LICENSE_OBLIGATION_FIELDS = ImmutableSet
+            .of(ObligationStatusInfo._Fields.COMMENT, ObligationStatusInfo._Fields.STATUS);
 
     public Set<Project> getProjectsForUser(User sw360User, Pageable pageable) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
@@ -346,7 +350,51 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return obligationStatusMap;
     }
 
-    public RequestStatus updateLinkedObligations(Project project, User user, Map<String, ObligationStatusInfo> licenseObligation) {
+    public Map<String, ObligationStatusInfo> compareObligationStatusMap(
+            User sw360User, Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo) {
+        Map<String, ObligationStatusInfo> newResults = new HashMap<>();
+        final String email = sw360User.getEmail();
+        final String createdOn = SW360Utils.getCreatedOn();
+        if (!CommonUtils.isNullOrEmptyMap(obligationStatusMap)) {
+
+            for (String key : obligationStatusMap.keySet()) {
+                if (requestBodyObligationStatusInfo.containsKey(key)) {
+                    ObligationStatusInfo requestValue = requestBodyObligationStatusInfo.get(key);
+                    ObligationStatusInfo databaseValue = obligationStatusMap.get(key);
+                    for (ObligationStatusInfo._Fields field : ObligationStatusInfo._Fields.values()) {
+                        Object fieldValue = requestValue.getFieldValue(field);
+                        if (fieldValue != null && SET_OF_LICENSE_OBLIGATION_FIELDS.contains(field)) {
+                            databaseValue.setFieldValue(field, fieldValue);
+                            if (field == ObligationStatusInfo._Fields.STATUS) {
+                                databaseValue.setModifiedBy(email);
+                                databaseValue.setModifiedOn(createdOn);
+                            }
+                        }
+                    }
+                    newResults.put(key, obligationStatusMap.get(key));
+                } else {
+                    newResults.put(key, obligationStatusMap.get(key));
+                }
+            }
+            return newResults;
+        }
+        throw new ResourceNotFoundException("Obligation Id not found for the given project");
+    }
+
+    public RequestStatus patchLinkedObligations(User sw360User, Map<String, ObligationStatusInfo> updatedObligationStatusMap, ObligationList obligation) {
+        try {
+            ThriftClients thriftClients = new ThriftClients();
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            obligation.unsetLinkedObligationStatus();
+            obligation.setLinkedObligationStatus(updatedObligationStatusMap);
+            return client.updateLinkedObligations(obligation, sw360User);
+        } catch (TException exception) {
+            log.error("Failed to update obligation for project: ");
+        }
+        return RequestStatus.FAILURE;
+    }
+
+    public RequestStatus addLinkedObligations(Project project, User user, Map<String, ObligationStatusInfo> licenseObligation) {
         try {
             ThriftClients thriftClients = new ThriftClients();
             ProjectService.Iface client = thriftClients.makeProjectClient();
@@ -905,5 +953,5 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         // returning default value 7 (days) if variable is not set
         return limit < 1 ? 7 : limit;
     }
- }
+}
 
