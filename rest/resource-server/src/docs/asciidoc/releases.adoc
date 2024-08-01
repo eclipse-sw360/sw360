@@ -393,6 +393,23 @@ include::{snippets}/should_document_update_release/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_update_release/links.adoc[]
 
+[[resources-SPDX-Document-update]]
+==== Update a SPDX Document
+
+A `PATCH` request is used to update an existing SPDX Document
+
+===== Response structure
+include::{snippets}/should_document_update_spdx/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_update_spdx/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_spdx/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_update_spdx/links.adoc[]
+
 
 [[resources-release-delete]]
 ==== Delete a release
