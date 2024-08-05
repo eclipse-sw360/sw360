@@ -19,11 +19,8 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
-import com.cloudant.client.api.views.ViewRequest;
-import com.cloudant.client.api.views.ViewRequestBuilder;
-import com.cloudant.client.api.views.ViewResponse;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import com.ibm.cloud.cloudant.v1.model.ViewResult;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -183,18 +180,19 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
     }
 
     public List<Component> getRecentComponentsSummary(int limit, User user) {
-        ViewRequestBuilder query = getConnector().createQuery(Component.class, "byCreatedOn");
-        UnpaginatedRequestBuilder<String, Object> unPagnReques = query.newRequest(Key.Type.STRING, Object.class).includeDocs(true).descending(true);
+        PostViewOptions.Builder queryBuilder = getConnector().getPostViewQueryBuilder(Component.class, "byCreatedOn")
+                .includeDocs(true)
+                .descending(true);
         if (limit >= 0){
-            unPagnReques.limit(limit);
+            queryBuilder.limit(limit);
         }
 
-        List<Component> components = new ArrayList<Component>(getFullDocsById(queryForIdsAsValue(unPagnReques)));
+        List<Component> components = new ArrayList<>(getFullDocsById(queryForIdsAsValue(queryBuilder.build())));
         return makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user);
     }
 
     public Set<String> getUsedAttachmentContents() {
-        return queryForIdsAsValue(getConnector().createQuery(Component.class, "usedAttachmentContents"));
+        return queryForIdsAsValue(getConnector().getPostViewQueryBuilder(Component.class, "usedAttachmentContents").build());
     }
 
     public Collection<Component> getMyComponents(String user) {
@@ -254,7 +252,7 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
 
     public Component getComponentFromFossologyUploadId(String fossologyUploadId) {
         final Set<String> componentIdList = queryForIdsAsValue("byFossologyId", fossologyUploadId);
-        if (componentIdList != null && componentIdList.size() > 0)
+        if (componentIdList != null && !componentIdList.isEmpty())
             return get(CommonUtils.getFirst(componentIdList));
         return null;
     }
@@ -277,56 +275,50 @@ public class ComponentRepository extends SummaryAwareRepository<Component> {
 
     public Map<PaginationData, List<Component>> getRecentComponentsSummary(User user, PaginationData pageData) {
         final int rowsPerPage = pageData.getRowsPerPage();
+        final int offset = pageData.getDisplayStart();
         Map<PaginationData, List<Component>> result = Maps.newHashMap();
         List<Component> components = Lists.newArrayList();
         final boolean ascending = pageData.isAscending();
         final int sortColumnNo = pageData.getSortColumnNumber();
 
-        ViewRequestBuilder query;
+        PostViewOptions.Builder query;
         switch (sortColumnNo) {
-        case -1:
-            query = getConnector().createQuery(Component.class, "byCreatedOn");
-            break;
-        case 0:
-            query = getConnector().createQuery(Component.class, "byvendor");
-            break;
-        case 1:
-            query = getConnector().createQuery(Component.class, "byname");
-            break;
-        case 2:
-            query = getConnector().createQuery(Component.class, "bymainlicense");
-            break;
-        case 3:
-            query = getConnector().createQuery(Component.class, "bycomponenttype");
-            break;
-        default:
-            query = getConnector().createQuery(Component.class, "all");
-            break;
+            case -1:
+                query = getConnector().getPostViewQueryBuilder(Component.class, "byCreatedOn");
+                break;
+            case 0:
+                query = getConnector().getPostViewQueryBuilder(Component.class, "byvendor");
+                break;
+            case 1:
+                query = getConnector().getPostViewQueryBuilder(Component.class, "byname");
+                break;
+            case 2:
+                query = getConnector().getPostViewQueryBuilder(Component.class, "bymainlicense");
+                break;
+            case 3:
+                query = getConnector().getPostViewQueryBuilder(Component.class, "bycomponenttype");
+                break;
+            default:
+                query = getConnector().getPostViewQueryBuilder(Component.class, "all");
+                break;
         }
 
-        ViewRequest<String, Object> request = null;
+        PostViewOptions request;
         if (rowsPerPage == -1) {
-            request = query.newRequest(Key.Type.STRING, Object.class).descending(!ascending).includeDocs(true).build();
+            request = query.descending(!ascending).includeDocs(true).build();
         } else {
-            request = query.newPaginatedRequest(Key.Type.STRING, Object.class).rowsPerPage(rowsPerPage)
+            request = query.limit(rowsPerPage).skip(offset)
                     .descending(!ascending).includeDocs(true).build();
         }
 
-        ViewResponse<String, Object> response = null;
         try {
-            response = request.getResponse();
-            int pageNo = pageData.getDisplayStart() / rowsPerPage;
-            int i = 1;
-            while (i <= pageNo) {
-                response = response.nextPage();
-                i++;
-            }
-            components = response.getDocsAs(Component.class);
-        } catch (Exception e) {
+            ViewResult response = getConnector().getPostViewQueryResponse(request);
+            components = getPojoFromViewResponse(response);
+            pageData.setTotalRowCount(response.getTotalRows());
+        } catch (ServiceConfigurationError e) {
             log.error("Error getting recent components", e);
         }
         components = makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, components, user);
-        pageData.setTotalRowCount(response.getTotalRowCount());
         result.put(pageData, components);
         return result;
     }

@@ -21,13 +21,10 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.ViewRequest;
-import com.cloudant.client.api.views.ViewRequestBuilder;
-import com.cloudant.client.api.views.ViewResponse;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import com.ibm.cloud.cloudant.v1.model.ViewResult;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -127,52 +124,46 @@ public class PackageRepository extends DatabaseRepositoryCloudantClient<Package>
 
     public Map<PaginationData, List<Package>> getPackagesWithPagination(PaginationData pageData) {
         final int rowsPerPage = pageData.getRowsPerPage();
+        final int offset = pageData.getDisplayStart();
         Map<PaginationData, List<Package>> result = Maps.newHashMap();
         List<Package> packages = Lists.newArrayList();
         final boolean ascending = pageData.isAscending();
         final int sortColumnNo = pageData.getSortColumnNumber();
 
-        ViewRequestBuilder query;
+        PostViewOptions.Builder query;
         switch (sortColumnNo) {
-        case -1:
-            query = getConnector().createQuery(Package.class, "byCreatedOn");
-            break;
-        case 0:
-            query = getConnector().createQuery(Package.class, "byNameLowerCase");
-            break;
-        case 3:
-            query = getConnector().createQuery(Package.class, "byLicenseIds");
-            break;
-        case 4:
-            query = getConnector().createQuery(Package.class, "byPackageManager");
-            break;
-        default:
-            query = getConnector().createQuery(Package.class, "all");
-            break;
+            case -1:
+                query = getConnector().getPostViewQueryBuilder(Package.class, "byCreatedOn");
+                break;
+            case 0:
+                query = getConnector().getPostViewQueryBuilder(Package.class, "byNameLowerCase");
+                break;
+            case 3:
+                query = getConnector().getPostViewQueryBuilder(Package.class, "byLicenseIds");
+                break;
+            case 4:
+                query = getConnector().getPostViewQueryBuilder(Package.class, "byPackageManager");
+                break;
+            default:
+                query = getConnector().getPostViewQueryBuilder(Package.class, "all");
+                break;
         }
 
-        ViewRequest<String, Object> request = null;
+        PostViewOptions request;
         if (rowsPerPage == -1) {
-            request = query.newRequest(Key.Type.STRING, Object.class).descending(!ascending).includeDocs(true).build();
+            request = query.descending(!ascending).includeDocs(true).build();
         } else {
-            request = query.newPaginatedRequest(Key.Type.STRING, Object.class).rowsPerPage(rowsPerPage)
+            request = query.limit(rowsPerPage).skip(offset)
                     .descending(!ascending).includeDocs(true).build();
         }
 
-        ViewResponse<String, Object> response = null;
         try {
-            response = request.getResponse();
-            int pageNo = pageData.getDisplayStart() / rowsPerPage;
-            int i = 1;
-            while (i <= pageNo) {
-                response = response.nextPage();
-                i++;
-            }
-            packages = response.getDocsAs(Package.class);
+            ViewResult response = getConnector().getPostViewQueryResponse(request);
+            packages = getPojoFromViewResponse(response);
+            pageData.setTotalRowCount(response.getTotalRows());
         } catch (Exception e) {
             log.error("Error getting packages from repository: ", e);
         }
-        pageData.setTotalRowCount(response.getTotalRowCount());
         result.put(pageData, packages);
         return result;
     }

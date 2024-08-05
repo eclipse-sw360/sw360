@@ -15,10 +15,9 @@ import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
-import com.cloudant.client.api.views.ViewRequestBuilder;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,11 +37,11 @@ public class ConfigContainerRepository extends DatabaseRepositoryCloudantClient<
     }
 
     public ConfigContainer getByConfigFor(ConfigFor configFor) {
-        ViewRequestBuilder query = getConnector().createQuery(ConfigContainer.class, "byConfigFor");
-        UnpaginatedRequestBuilder reqBuilder = query.newRequest(Key.Type.STRING, Object.class)
-                .keys(configFor.toString()).includeDocs(true);
+        PostViewOptions query = getConnector().getPostViewQueryBuilder(ConfigContainer.class, "byConfigFor")
+                .keys(Collections.singletonList(configFor.toString()))
+                .includeDocs(true).build();
 
-        List<ConfigContainer> configs = queryView(reqBuilder);
+        List<ConfigContainer> configs = queryView(query);
         if (configs.size() != 1) {
             throw new IllegalStateException(
                     "There are " + configs.size() + " configuration objects in the couch db for type " + configFor

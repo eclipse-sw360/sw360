@@ -9,7 +9,8 @@
  */
 package org.eclipse.sw360.datahandler.cloudantclient;
 
-import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -28,8 +29,14 @@ import com.ibm.cloud.cloudant.v1.model.DesignDocument;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.IndexDefinition;
 import com.ibm.cloud.cloudant.v1.model.IndexField;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import com.ibm.cloud.cloudant.v1.model.ViewResult;
+import com.ibm.cloud.cloudant.v1.model.ViewResultRow;
+import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Access the database in a CRUD manner, for a generic class
@@ -85,14 +92,11 @@ public class DatabaseRepositoryCloudantClient<T> {
     }
 
     public List<T> queryByIds(String viewName, Collection<String> ids) {
-        String[] idStrs = new String[ids.size()];
-        int index = 0;
-        for (String str : ids)
-            idStrs[index++] = str;
-        ViewRequestBuilder query = connector.createQuery(type, viewName);
-        UnpaginatedRequestBuilder reqBuilder = query.newRequest(Key.Type.STRING, Object.class).includeDocs(true)
-                .keys(idStrs);
-        return queryView(reqBuilder);
+        PostViewOptions query = connector.getPostViewQueryBuilder(type, viewName)
+                .includeDocs(true)
+                .keys(ids.stream().map(r -> (Object)r).toList())
+                .build();
+        return queryView(query);
     }
 
     public DatabaseRepositoryCloudantClient(DatabaseConnectorCloudant connector, Class<T> type) {
@@ -101,86 +105,86 @@ public class DatabaseRepositoryCloudantClient<T> {
     }
 
     public Set<String> queryForIdsAsValue(String queryName, String key) {
-        ViewRequestBuilder query = connector.createQuery(type, queryName);
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, queryName);
         return queryForIdsAsValue(query, key);
     }
 
     public Set<String> queryForIdsAsValue(String queryName, Set<String> keys) {
-        ViewRequestBuilder query = connector.createQuery(type, queryName);
+        PostViewOptions.Builder query = connector.getPostViewQueryBuilder(type, queryName);
         return queryForIdsAsValue(query, keys);
     }
 
-    public Set<String> queryForIdsAsValue(ViewRequestBuilder query, Set<String> keys) {
-        String[] arrayOfString = new String[keys.size()];
-        int index = 0;
-        for (String str : keys)
-            arrayOfString[index++] = str;
-        UnpaginatedRequestBuilder req = query.newRequest(Key.Type.STRING, Object.class).keys(arrayOfString);
+    public Set<String> queryForIdsAsValue(PostViewOptions.Builder query, Set<String> keys) {
+        PostViewOptions req = query
+                .keys(keys.stream().map(r -> (Object)r).toList())
+                .build();
         return queryForIdsFromReqBuilder(req);
     }
 
-    public Set<String> queryForIdsAsValue(ViewRequestBuilder query, String key) {
-        ViewResponse<String, Object> viewReponse = null;
+    public Set<String> queryForIdsAsValue(PostViewOptions.Builder queryBuilder, String key) {
+        PostViewOptions query = queryBuilder.includeDocs(true).keys(Collections.singletonList(key)).build();
+        ViewResult viewResponse = null;
         try {
-            viewReponse = query.newRequest(Key.Type.STRING, Object.class).includeDocs(true).keys(key).build()
-                    .getResponse();
-        } catch (IOException e) {
+            viewResponse = getConnector().getPostViewQueryResponse(query);
+        } catch (ServiceResponseException e) {
             log.error("Error executing query for ids as value", e);
         }
         HashSet<Object> ids = new HashSet<>();
-        for (ViewResponse.Row row : viewReponse.getRows()) {
-            ids.add(row.getValue());
+        if (viewResponse != null) {
+            for (ViewResultRow row : viewResponse.getRows()) {
+                ids.add(row.getValue());
+            }
         }
         return ids.stream().map(Object::toString).collect(Collectors.toSet());
     }
 
-    public Set<String> queryForIdsAsValue(ViewRequestBuilder query) {
-        UnpaginatedRequestBuilder reqBuild = query.newRequest(Key.Type.STRING, Object.class).includeDocs(true);
+    public Set<String> queryForIdsAsValue(PostViewOptions.Builder query) {
+        PostViewOptions reqBuild = query.includeDocs(true).build();
         return queryForIdsFromReqBuilder(reqBuild);
     }
 
     public List<T> queryView(String viewName, String startKey, String endKey) {
-        ViewRequestBuilder query = connector.createQuery(type, viewName);
-        UnpaginatedRequestBuilder reqBuild = query.newRequest(Key.Type.STRING, Object.class).startKey(startKey)
-                .endKey(endKey).includeDocs(true);
-        return queryView(reqBuild);
+        PostViewOptions query = connector.getPostViewQueryBuilder(type, viewName)
+                .startKey(startKey)
+                .endKey(endKey).includeDocs(true).build();
+        return queryView(query);
     }
 
     public List<T> queryView(String viewName, String key) {
-        ViewRequestBuilder query = connector.createQuery(type, viewName);
-        UnpaginatedRequestBuilder reqBuild = query.newRequest(Key.Type.STRING, Object.class).keys(key)
-                .includeDocs(true);
-        return queryView(reqBuild);
+        PostViewOptions query = connector.getPostViewQueryBuilder(type, viewName)
+                .keys(Collections.singletonList(key))
+                .includeDocs(true).build();
+        return queryView(query);
     }
 
     public List<T> queryView(String viewName) {
-        ViewRequestBuilder query = connector.createQuery(type, viewName);
-        UnpaginatedRequestBuilder reqBuild = query.newRequest(Key.Type.STRING, Object.class).includeDocs(true);
-        return queryView(reqBuild);
+        PostViewOptions query = connector.getPostViewQueryBuilder(type, viewName)
+                .includeDocs(true).build();
+        return queryView(query);
     }
 
-    public Set<String> queryForIds(UnpaginatedRequestBuilder query) {
-        ViewResponse<String, Object> rows = queryQueryResponse(query);
-        HashSet<Object> ids = new HashSet<>();
-        for (ViewResponse.Row row : rows.getRows()) {
+    public Set<String> queryForIds(PostViewOptions query) {
+        ViewResult response = this.connector.getPostViewQueryResponse(query);
+        HashSet<String> ids = new HashSet<>();
+        for (ViewResultRow row : response.getRows()) {
             ids.add(row.getId());
         }
-        return ids.stream().map(Object::toString).collect(Collectors.toSet());
+        return ids;
     }
 
-    public Set<String> queryForIdsAsValue(UnpaginatedRequestBuilder query) {
-        ViewResponse<String, Object> rows = queryQueryResponse(query);
+    public Set<String> queryForIdsAsValue(PostViewOptions query) {
+        ViewResult response = this.connector.getPostViewQueryResponse(query);
         HashSet<Object> ids = new HashSet<>();
-        for (ViewResponse.Row row : rows.getRows()) {
+        for (ViewResultRow row : response.getRows()) {
             ids.add(row.getValue());
         }
         return ids.stream().map(Object::toString).collect(Collectors.toSet());
     }
 
-    public Set<String> queryForIdsFromReqBuilder(UnpaginatedRequestBuilder query) {
-        ViewResponse<String, Object> rows = queryQueryResponse(query);
+    public Set<String> queryForIdsFromReqBuilder(PostViewOptions query) {
+        ViewResult response = queryQueryResponse(query);
         HashSet<Object> ids = new HashSet<>();
-        for (ViewResponse.Row row : rows.getRows()) {
+        for (ViewResultRow row : response.getRows()) {
             ids.add(row.getValue());
         }
         return ids.stream().map(Object::toString).collect(Collectors.toSet());
@@ -199,44 +203,43 @@ public class DatabaseRepositoryCloudantClient<T> {
     }
 
     public Set<String> queryForIds(String queryName, String startKey, String endKey) {
-        ViewRequestBuilder query = connector.createQuery(type, queryName);
-        UnpaginatedRequestBuilder req = query.newRequest(Key.Type.STRING, Object.class).startKey(startKey)
-                .endKey(endKey);
-        return queryForIds(req);
+        PostViewOptions query = connector.getPostViewQueryBuilder(type, queryName)
+                .startKey(startKey)
+                .endKey(endKey)
+                .build();
+        return queryForIds(query);
     }
 
     public Set<String> queryForIdsAsValue(String queryName, String startKey, String endKey) {
-        ViewRequestBuilder query = connector.createQuery(type, queryName);
-        UnpaginatedRequestBuilder req = query.newRequest(Key.Type.STRING, Object.class).startKey(startKey)
-                .endKey(endKey);
-        return queryForIdsAsValue(req);
+        PostViewOptions query = connector.getPostViewQueryBuilder(type, queryName)
+                .startKey(startKey)
+                .endKey(endKey)
+                .build();
+        return queryForIdsAsValue(query);
     }
 
     public Set<String> queryForIds(String queryName, String key) {
-        ViewRequestBuilder query = connector.createQuery(type, queryName);
-        UnpaginatedRequestBuilder reqBuild = query.newRequest(Key.Type.STRING, Object.class).keys(key);
-        return queryForIds(reqBuild);
+        PostViewOptions query = connector.getPostViewQueryBuilder(type, queryName)
+                .keys(Collections.singletonList(key)).build();
+        return queryForIds(query);
     }
 
     public Set<String> queryForIdsAsComplexValue(String queryName, String... keys) {
-        ViewRequestBuilder query = connector.createQuery(type, queryName);
-        UnpaginatedRequestBuilder reqBuild = query.newRequest(Key.Type.STRING, Object.class).keys(keys);
-        return queryForIds(reqBuild);
+        PostViewOptions query = connector.getPostViewQueryBuilder(type, queryName)
+                .keys(Arrays.asList(keys)).build();
+        return queryForIds(query);
     }
 
     public Set<String> queryForIdsAsComplexValues(String queryName, Map<String, Set<String>> keys) {
-        Set<String[]> complexKeys = keys.entrySet().stream().map(DatabaseRepositoryCloudantClient::createComplexKeys)
-                .flatMap(Collection::stream).collect(Collectors.toSet());
-        ViewRequestBuilder query = connector.createQuery(type, queryName);
-        Key.ComplexKey[] complexKys = new Key.ComplexKey[complexKeys.size()];
-        int index = 0;
-        for (String[] keyArr : complexKeys) {
-            Key.ComplexKey key = Key.complex(keyArr);
-            complexKys[index++] = key;
-        }
-        UnpaginatedRequestBuilder reqBuild = query.newRequest(Key.Type.COMPLEX, Object.class)
-                .keys(complexKys);
-        return queryForIds(reqBuild);
+        List<Object> complexKeys = keys.entrySet().stream()
+                .map(DatabaseRepositoryCloudantClient::createComplexKeys)
+                .flatMap(Collection::stream)
+                .map(r -> (Object)r)
+                .collect(Collectors.toList());
+        PostViewOptions query = connector.getPostViewQueryBuilder(type, queryName)
+                .keys(complexKeys)
+                .build();
+        return queryForIds(query);
     }
 
     public Set<String> queryForIdsOnlyComplexKey(String queryName, String key) {
@@ -246,116 +249,99 @@ public class DatabaseRepositoryCloudantClient<T> {
     public Set<String> queryForIdsOnlyComplexKeys(String queryName, Set<String> keys) {
         Set<String> queryResult = new HashSet<>();
         for (String key : keys) {
-            Key.ComplexKey startKeys = Key.complex(new String[] { key });
-            Key.ComplexKey endKeys = Key.complex(new String[] { key, "\ufff0" });
+            String[] startKeys = new String[] { key };
+            String[] endKeys = new String[] { key, "\ufff0" };
             queryResult.addAll(queryForIds(queryName, startKeys, endKeys));
         }
         return queryResult;
     }
 
-    public Collection<? extends String> queryForIds(String queryName, ComplexKey startKeys, ComplexKey endKeys) {
-        ViewRequestBuilder query = connector.createQuery(type, queryName);
-        UnpaginatedRequestBuilder reqBuilder = query.newRequest(Key.Type.COMPLEX, Object.class).startKey(startKeys)
-                .endKey(endKeys);
-        return queryForIds(reqBuilder);
+    public Collection<? extends String> queryForIds(String queryName, String[] startKeys, String[] endKeys) {
+        PostViewOptions query = connector.getPostViewQueryBuilder(type, queryName)
+                .startKey(startKeys)
+                .endKey(endKeys)
+                .build();
+        return queryForIds(query);
     }
 
     private static Set<String[]> createComplexKeys(Map.Entry<String, Set<String>> key) {
         return key.getValue().stream().map(v -> new String[] { key.getKey(), v }).collect(Collectors.toSet());
     }
 
-    public List<T> queryView(UnpaginatedRequestBuilder req) {
+    public List<T> queryView(PostViewOptions req) {
         List<T> docList = Lists.newArrayList();
         try {
-            docList = req.build().getResponse().getDocsAs(type);
-        } catch (NoDocumentException | IOException e) {
+            ViewResult response = getConnector().getPostViewQueryResponse(req);
+            docList = getPojoFromViewResponse(response);
+        } catch (ServiceResponseException e) {
             log.warn("Error in getting documents", e);
         }
         return docList;
     }
 
-    public List<Source> queryViewForSource(ViewRequest req) {
+    public @NotNull List<T> getPojoFromViewResponse(@NotNull ViewResult response) {
+        return response.getRows().stream()
+                .map(r -> connector.getPojoFromDocument(r.getDoc(), type))
+                .toList();
+    }
+
+    public List<Source> queryViewForSource(PostViewOptions req) {
         List<Source> sources = Lists.newArrayList();
         Gson gson = new Gson();
         try {
-            ViewResponse<String, Object> response = req.getResponse();
-            for (ViewResponse.Row row : response.getRows()) {
-                Map<String, String> srcMap = gson.fromJson(new Gson().toJson(row.getValue()), Map.class);
+            ViewResult response = getConnector().getPostViewQueryResponse(req);
+            for (ViewResultRow row : response.getRows()) {
+                Type t = new TypeToken<Map<String, String>>() {}.getType();
+                Map<String, String> srcMap = gson.fromJson(new Gson().toJson(row.getValue()), t);
                 Source._Fields type = Source._Fields.findByName(srcMap.keySet().iterator().next());
-                Source source = new Source(type, srcMap.values().iterator().next().toString());
+                Source source = new Source(type, srcMap.values().iterator().next());
                 sources.add(source);
             }
-        } catch (NoDocumentException | IOException e) {
+        } catch (ServiceResponseException e) {
             log.warn("Error in getting source", e);
         }
         return sources;
     }
 
-    public List<Attachment> queryViewForAttchmnt(ViewRequest req) {
-        List<Attachment> attchmnts = Lists.newArrayList();
+    public List<Attachment> queryViewForAttachment(PostViewOptions req) {
+        List<Attachment> attachments = Lists.newArrayList();
         Gson gson = new Gson();
         try {
-            ViewResponse<String, Object> response = req.getResponse();
-            for (ViewResponse.Row row : response.getRows()) {
+            ViewResult response = getConnector().getPostViewQueryResponse(req);
+            for (ViewResultRow row : response.getRows()) {
                 Attachment value = gson.fromJson(new Gson().toJson(row.getValue()), Attachment.class);
-                attchmnts.add(value);
+                attachments.add(value);
             }
-        } catch (NoDocumentException | IOException e) {
+        } catch (ServiceResponseException e) {
             log.warn("Error in getting attachment", e);
         }
-        return attchmnts;
+        return attachments;
     }
 
-    public ViewResponse queryQueryResponse(UnpaginatedRequestBuilder req) {
-        ViewResponse viewResp = null;
+    public ViewResult queryQueryResponse(PostViewOptions req) {
+        ViewResult viewResp = null;
         try {
-            viewResp = req.build().getResponse();
-        } catch (NoDocumentException | IOException e) {
+            viewResp = getConnector().getPostViewQueryResponse(req);
+        } catch (ServiceResponseException e) {
             log.warn("Error in query execution", e);
         }
         return viewResp;
     }
 
-    public List<T> multiRequestqueryView(MultipleRequestBuilder req) {
-        List<T> docList = Lists.newArrayList();
+    public ViewResult queryViewForComplexKeys(PostViewOptions req) {
+        ViewResult responses = null;
         try {
-            List<ViewResponse<String, Object>> responses = req.add().build().getViewResponses();
-            for (ViewResponse<String, Object> response : responses) {
-                docList.addAll(response.getDocsAs(type));
-            }
-        } catch (IOException e) {
-            log.error("Error executing multi request query view", e);
-        }
-        return docList;
-    }
-
-    public List<ViewResponse<String, Object>> multiRequestqueryViewResponse(MultipleRequestBuilder req) {
-        List<ViewResponse<String, Object>> responses = null;
-        try {
-            responses = req.add().build().getViewResponses();
-        } catch (IOException e) {
-            log.error("Error executing multi request query view response", e);
-        }
-        return responses;
-    }
-
-    public ViewResponse<ComplexKey, Object> queryViewForComplexKeys(
-            UnpaginatedRequestBuilder<Key.ComplexKey, Object> req) {
-        ViewResponse<ComplexKey, Object> responses = null;
-        try {
-            responses = req.build().getResponse();
-        } catch (IOException e) {
+            responses = getConnector().getPostViewQueryResponse(req);
+        } catch (ServiceResponseException e) {
             log.error("Error executing query view with complex keys", e);
         }
         return responses;
     }
 
-    public ViewRequest buildRequest(ViewRequestBuilder viewQuery, Collection<String> ids) {
-        String[] idStrs = new String[ids.size()];
-        int index = 0;
-        for (String str : ids)
-            idStrs[index++] = str;
-        return viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(false).keys(idStrs).build();
+    public PostViewOptions buildRequest(PostViewOptions.Builder viewQuery, Collection<String> ids) {
+        return viewQuery.includeDocs(false)
+                .keys(ids.stream().map(r -> (Object)r).toList())
+                .build();
     }
 
     public boolean add(T doc) {
