@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +19,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantCl
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
-import com.cloudant.client.api.views.ViewRequestBuilder;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
 
 /**
  * CRUD access for the RelationsUsageRepository class
@@ -49,8 +48,8 @@ public class RelationsUsageRepository extends DatabaseRepositoryCloudantClient<U
     }
 
     public List<UsedReleaseRelations> getUsedRelationsByProjectId(String projectId) {
-        ViewRequestBuilder viewQuery = getConnector().createQuery(UsedReleaseRelations.class, "byProjectId");
-        UnpaginatedRequestBuilder req = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(true).reduce(false).keys(projectId);
-        return queryView(req);
+        PostViewOptions viewQuery = getConnector().getPostViewQueryBuilder(UsedReleaseRelations.class, "byProjectId")
+                .includeDocs(true).reduce(false).keys(Collections.singletonList(projectId)).build();
+        return queryView(viewQuery);
     }
 }

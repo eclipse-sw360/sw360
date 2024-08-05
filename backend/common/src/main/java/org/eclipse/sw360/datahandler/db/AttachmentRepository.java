@@ -14,7 +14,8 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantCl
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import com.cloudant.client.api.views.ViewRequestBuilder;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -38,13 +39,21 @@ public class AttachmentRepository extends DatabaseRepositoryCloudantClient<Attac
         initStandardDesignDocument(views, db);
     }
 
-    public List<Attachment> getAttachmentsByIds(Set<String> ids) {
-        ViewRequestBuilder viewQuery = getConnector().createQuery(Attachment.class, "byid");
-        return queryViewForAttchmnt(buildRequest(viewQuery, ids));
+    public List<Attachment> getAttachmentsByIds(@NotNull Set<String> ids) {
+        PostViewOptions viewQuery = getConnector()
+                .getPostViewQueryBuilder(Attachment.class, "byid")
+                .includeDocs(false)
+                .keys(ids.stream().map(r -> (Object)r).toList())
+                .build();
+        return queryViewForAttachment(viewQuery);
     }
 
-    public List<Attachment> getAttachmentsBySha1s(Set<String> sha1s) {
-        ViewRequestBuilder viewQuery = getConnector().createQuery(Attachment.class, "bysha1");
-        return queryViewForAttchmnt(buildRequest(viewQuery, sha1s));
+    public List<Attachment> getAttachmentsBySha1s(@NotNull Set<String> sha1s) {
+        PostViewOptions viewQuery = getConnector()
+                .getPostViewQueryBuilder(Attachment.class, "bysha1")
+                .includeDocs(false)
+                .keys(sha1s.stream().map(r -> (Object)r).toList())
+                .build();
+        return queryViewForAttachment(viewQuery);
     }
 }

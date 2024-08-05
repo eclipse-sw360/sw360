@@ -10,7 +10,6 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.apache.thrift.TException;
 import org.eclipse.sw360.components.summary.ProjectSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -20,7 +19,6 @@ import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
@@ -29,16 +27,14 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import com.ibm.cloud.cloudant.v1.model.ViewResult;
 import com.cloudant.client.api.query.PredicateExpression;
 import com.cloudant.client.api.query.PredicatedOperation;
 import com.cloudant.client.api.query.QueryBuilder;
 import com.cloudant.client.api.query.QueryResult;
 import com.cloudant.client.api.query.Selector;
 import com.cloudant.client.api.query.Sort;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.ViewRequest;
-import com.cloudant.client.api.views.ViewRequestBuilder;
-import com.cloudant.client.api.views.ViewResponse;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 
@@ -457,7 +453,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             qb.limit(rowsPerPage);
         }
         qb.skip(pageData.getDisplayStart());
-        ViewRequestBuilder queryView = null;
+        PostViewOptions.Builder queryView = null;
         switch (sortColumnNo) {
         case 0:
             qb = qb.useIndex("byName");
@@ -476,32 +472,19 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
             break;
         case 3:
         case 4:
-            queryView = getConnector().createQuery(Project.class, "byState");
+            queryView = getConnector().getPostViewQueryBuilder(Project.class, "byState");
             break;
         default:
             break;
         }
         try {
             if (queryView != null) {
-                ViewRequest<String, Object> request = queryView.newPaginatedRequest(Key.Type.STRING, Object.class)
-                        .rowsPerPage(rowsPerPage).descending(!ascending).includeDocs(true).build();
-                ViewResponse<String, Object> response = request.getResponse();
-                response = request.getResponse();
-                int pageNo = pageData.getDisplayStart() / rowsPerPage;
-                List<Project> proj = new ArrayList<Project>();
-                int count = pageNo == 0 ? rowsPerPage : (pageNo + 1) * rowsPerPage;
-                while (projects.size() < count) {
-                    if (response != null) {
-                        proj = response.getDocsAs(Project.class);
-                    }
-                    proj = proj.stream().filter(ProjectPermissions.isVisible(user)).collect(Collectors.toList());
-                    projects.addAll(proj.stream().collect(Collectors.toList()));
-                    response = response.nextPage();
-                    if (response == null) {
-                        break;
-                    }
+                PostViewOptions request = queryView.limit(rowsPerPage).skip(pageData.getDisplayStart())
+                        .descending(!ascending).includeDocs(true).build();
+                ViewResult response = getConnector().getPostViewQueryResponse(request);
+                if (response != null) {
+                    projects = getPojoFromViewResponse(response);
                 }
-                projects = projects.stream().skip(pageData.getDisplayStart()).limit(rowsPerPage).collect(Collectors.toList());
             } else {
                 QueryResult<Project> queryResult = getConnector().getQueryResult(query, Project.class);
                 projects = queryResult.getDocs();

@@ -20,9 +20,8 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 
 import java.util.*;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
-import com.cloudant.client.api.views.ViewRequestBuilder;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import com.ibm.cloud.cloudant.v1.model.ViewResult;
 
 import java.util.stream.Collectors;
 
@@ -30,8 +29,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Lists;
-import com.cloudant.client.api.views.ViewRequest;
-import com.cloudant.client.api.views.ViewResponse;
 
 /**
  * CRUD access for the Release class
@@ -214,10 +211,10 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
     }
 
     public List<Release> getRecentReleases() {
-        ViewRequestBuilder query = getConnector().createQuery(Release.class, "byCreatedOn");
         // Get the 5 last documents
-        UnpaginatedRequestBuilder reqBuilder = query.newRequest(Key.Type.STRING, Object.class).limit(5).descending(true).includeDocs(false);
-        return makeSummary(SummaryType.SHORT, queryForIds(reqBuilder));
+        PostViewOptions query = getConnector().getPostViewQueryBuilder(Release.class, "byCreatedOn")
+                .limit(5).descending(true).includeDocs(false).build();
+        return makeSummary(SummaryType.SHORT, queryForIds(query));
     }
 
     public List<Release> getSubscribedReleases(String email) {
@@ -262,13 +259,10 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
     }
 
     public Set<String> getReleaseIdsFromVendorIds(Set<String> ids) {
-    	ViewRequestBuilder query = getConnector().createQuery(Release.class, "releaseIdsByVendorId");
-    	String[] arrayOfString = new String[ids.size()];
-        int index = 0;
-        for (String str : ids)
-            arrayOfString[index++] = str;
-        UnpaginatedRequestBuilder reqBuild = query.newRequest(Key.Type.STRING, Object.class).keys(arrayOfString);
-        return queryForIds(reqBuild);
+    	PostViewOptions query = getConnector().getPostViewQueryBuilder(Release.class, "releaseIdsByVendorId")
+                .keys(ids.stream().map(r -> (Object)r).toList())
+                .build();
+        return queryForIds(query);
     }
 
     public Set<Release> getReleasesByVendorId(String vendorId) {
@@ -314,60 +308,55 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         final boolean ascending = pageData.isAscending();
         final int sortColumnNo = pageData.getSortColumnNumber();
 
-        ViewRequestBuilder query;
+        PostViewOptions.Builder query;
         switch (sortColumnNo) {
-        case -1:
-            query = getConnector().createQuery(Release.class, "byCreatedOn");
-            break;
-        case 0:
-            query = getConnector().createQuery(Release.class, "byStatus");
-            break;
-        case 1:
-            query = getConnector().createQuery(Release.class, "byname");
-            break;
-        case 2:
-            query = getConnector().createQuery(Release.class, "releaseByVersion");
-            break;
-        case 3:
-            query = getConnector().createQuery(Release.class, "byCreatorGroup");
-            break;
-        case 4:
-            query = getConnector().createQuery(Release.class, "byECCAssessorContactPerson");
-            break;
-        case 5:
-            query = getConnector().createQuery(Release.class, "byECCAssessorGroup");
-            break;
-        case 6:
-            query = getConnector().createQuery(Release.class, "byECCAssessmentDate");
-            break;
-        default:
-            query = getConnector().createQuery(Release.class, "all");
-            break;
+            case -1:
+                query = getConnector().getPostViewQueryBuilder(Release.class, "byCreatedOn");
+                break;
+            case 0:
+                query = getConnector().getPostViewQueryBuilder(Release.class, "byStatus");
+                break;
+            case 1:
+                query = getConnector().getPostViewQueryBuilder(Release.class, "byname");
+                break;
+            case 2:
+                query = getConnector().getPostViewQueryBuilder(Release.class, "releaseByVersion");
+                break;
+            case 3:
+                query = getConnector().getPostViewQueryBuilder(Release.class, "byCreatorGroup");
+                break;
+            case 4:
+                query = getConnector().getPostViewQueryBuilder(Release.class, "byECCAssessorContactPerson");
+                break;
+            case 5:
+                query = getConnector().getPostViewQueryBuilder(Release.class, "byECCAssessorGroup");
+                break;
+            case 6:
+                query = getConnector().getPostViewQueryBuilder(Release.class, "byECCAssessmentDate");
+                break;
+            default:
+                query = getConnector().getPostViewQueryBuilder(Release.class, "all");
+                break;
         }
 
-        ViewRequest<String, Object> request = null;
+        PostViewOptions request = null;
         if (rowsPerPage == -1) {
-            request = query.newRequest(Key.Type.STRING, Object.class).descending(!ascending).includeDocs(true).build();
+            request = query.descending(!ascending).includeDocs(true).build();
         } else {
-            request = query.newPaginatedRequest(Key.Type.STRING, Object.class).rowsPerPage(rowsPerPage)
+            request = query.limit(rowsPerPage).skip(pageData.getDisplayStart())
                     .descending(!ascending).includeDocs(true).build();
         }
 
-        ViewResponse<String, Object> response = null;
         try {
-            response = request.getResponse();
-            int pageNo = pageData.getDisplayStart() / rowsPerPage;
-            int i = 1;
-            while (i <= pageNo) {
-                response = response.nextPage();
-                i++;
+            ViewResult response = getConnector().getPostViewQueryResponse(request);
+            if (response != null) {
+                releases = getPojoFromViewResponse(response);
+                pageData.setTotalRowCount(response.getTotalRows());
             }
-            releases = response.getDocsAs(Release.class);
         } catch (Exception e) {
             log.error("Error getting recent releases", e);
         }
         releases = makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, releases, user);
-        pageData.setTotalRowCount(response.getTotalRowCount());
         result.put(pageData, releases);
         return result;
     }

@@ -20,9 +20,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
-import com.cloudant.client.api.views.ViewRequestBuilder;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
 
 import java.util.HashMap;
 import java.util.List;
@@ -51,8 +49,10 @@ public class AttachmentContentRepository extends DatabaseRepositoryCloudantClien
     }
 
     public List<AttachmentContent> getOnlyRemoteAttachments() {
-        ViewRequestBuilder query = getConnector().createQuery(AttachmentContent.class, "onlyRemotes");
-        UnpaginatedRequestBuilder req = query.newRequest(Key.Type.STRING, Object.class).includeDocs(true);
+        PostViewOptions req = getConnector()
+                .getPostViewQueryBuilder(AttachmentContent.class, "onlyRemotes")
+                .includeDocs(true)
+                .build();
         return queryView(req);
     }
 

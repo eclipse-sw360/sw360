@@ -21,13 +21,13 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import com.ibm.cloud.cloudant.v1.model.ViewResultRow;
 import com.cloudant.client.api.query.Expression;
 import com.cloudant.client.api.query.QueryBuilder;
 import com.cloudant.client.api.query.QueryResult;
 import com.cloudant.client.api.query.Selector;
 import com.cloudant.client.api.query.Sort;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.ViewRequest;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -194,12 +194,16 @@ public class UserRepository extends SummaryAwareRepository<User> {
 
     private Set<String> getResultBasedOnQuery(String queryName) {
         Set<String> userResults = Sets.newHashSet();
-        ViewRequest<String, Object> query = getConnector().createQuery(User.class, queryName)
-                .newRequest(Key.Type.STRING, Object.class).includeDocs(false).build();
+        PostViewOptions query = getConnector().getPostViewQueryBuilder(User.class, queryName)
+                .includeDocs(false).build();
         try {
-            userResults = Sets.newTreeSet(CommonUtils.nullToEmptyList(query.getResponse().getKeys()).stream()
-                    .filter(Objects::nonNull).collect(Collectors.toList()));
-        } catch (IOException e) {
+            userResults = getConnector().getPostViewQueryResponse(query).getRows()
+                    .stream()
+                    .map(ViewResultRow::getKey)
+                    .filter(Objects::nonNull)
+                    .map(Object::toString)
+                    .collect(Collectors.toSet());
+        } catch (ServiceConfigurationError e) {
             log.error("Error getting record of users based on queryName - " + queryName, e);
         }
         return userResults;

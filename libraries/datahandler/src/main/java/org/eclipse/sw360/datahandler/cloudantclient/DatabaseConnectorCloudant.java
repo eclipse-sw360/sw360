@@ -23,6 +23,7 @@ import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -63,8 +64,7 @@ public class DatabaseConnectorCloudant {
     public void update(Object document) {
         DocumentResult resp;
         if (document != null) {
-            final Class documentClass = document.getClass();
-            if (ThriftUtils.isMapped(documentClass)) {
+            if (ThriftUtils.isMapped(document.getClass())) {
                 AttachmentContent content = (AttachmentContent) document;
                 InputStream in = getAttachment(content.getId(), content.getFilename());
                 resp = this.updateWithResponse(document);
@@ -103,7 +103,7 @@ public class DatabaseConnectorCloudant {
         return instance;
     }
 
-    public <T> Set<String> getAllIds(Class<T> type) {
+    public <T> Set<String> getAllIds(@NotNull Class<T> type) {
         Set<String> ids = Sets.newHashSet();
         try {
             PostViewOptions viewOptions = new PostViewOptions.Builder()
@@ -143,8 +143,8 @@ public class DatabaseConnectorCloudant {
             }
             if (extractedType != null) {
                 final String entityType = extractedType.toLowerCase();
-                if (!entitiesWithNonMatchingStructType.stream().map(String::toLowerCase)
-                        .anyMatch(tye -> tye.equals(entityType))
+                if (entitiesWithNonMatchingStructType.stream().map(String::toLowerCase)
+                        .noneMatch(tye -> tye.equals(entityType))
                         && !type.getSimpleName().equalsIgnoreCase(extractedType)) {
                     return null;
                 }
@@ -255,7 +255,7 @@ public class DatabaseConnectorCloudant {
         return get(type, ids);
     }
 
-    public List<DocumentResult> executeBulk(Collection<?> list) {
+    public List<DocumentResult> executeBulk(@NotNull Collection<?> list) {
         BulkDocs bulkDocs = new BulkDocs.Builder()
                 .docs(list.stream().map(this::getDocumentFromPojo).collect(Collectors.toList()))
                 .build();
@@ -286,7 +286,7 @@ public class DatabaseConnectorCloudant {
         return responses;
     }
 
-    public List<DocumentResult> deleteBulk(Collection<Document> deletionCandidates) {
+    public List<DocumentResult> deleteBulk(@NotNull Collection<Document> deletionCandidates) {
         BulkDocs bulkDocs = new BulkDocs.Builder()
                 .docs(
                         deletionCandidates.stream()
@@ -307,7 +307,7 @@ public class DatabaseConnectorCloudant {
         return deleteBulk(deletionCandidates);
     }
 
-    public <T> int getDocumentCount(Class<T> type) {
+    public <T> int getDocumentCount(@NotNull Class<T> type) {
         int count = 0;
         try {
             PostViewOptions viewOption = new PostViewOptions.Builder()
@@ -325,7 +325,7 @@ public class DatabaseConnectorCloudant {
         return count;
     }
 
-    public <T> int getDocumentCount(Class<T> type, String viewName, String[] keys) {
+    public <T> int getDocumentCount(@NotNull Class<T> type, String viewName, String[] keys) {
         int count = 0;
         try {
             PostViewOptions viewOption = new PostViewOptions.Builder()
@@ -349,8 +349,18 @@ public class DatabaseConnectorCloudant {
         return count;
     }
 
-    public <T> ViewRequestBuilder createQuery(Class<T> type, String queryName) {
-        return database.getViewRequestBuilder(type.getSimpleName(), queryName);
+    public <T> PostViewOptions.Builder getPostViewQueryBuilder(
+            @NotNull Class<T> type, String queryName) {
+        return new PostViewOptions.Builder()
+                .db(this.dbName)
+                .ddoc(type.getSimpleName())
+                .view(queryName);
+    }
+
+    public ViewResult getPostViewQueryResponse(PostViewOptions options) {
+        return this.instance.getClient().postView(options)
+                .execute()
+                .getResult();
     }
 
     public InputStream getAttachment(String docId, String attachmentName) {
@@ -463,7 +473,7 @@ public class DatabaseConnectorCloudant {
         return database.query(query, type);
     }
 
-    public <T> Set<String> getDistinctSortedStringKeys(Class<T> type, String viewName) {
+    public <T> Set<String> getDistinctSortedStringKeys(@NotNull Class<T> type, String viewName) {
         PostViewOptions viewOptions = new PostViewOptions.Builder()
                 .db(this.dbName)
                 .ddoc(type.getSimpleName())
@@ -502,13 +512,16 @@ public class DatabaseConnectorCloudant {
     }
 
     public Document getDocumentFromPojo(Object document) {
+        if (document instanceof Document) {
+            return (Document) document;
+        }
         Document doc = new Document();
         Gson gson = this.instance.getGson();
         doc.setProperties(gson.fromJson(gson.toJson(document), Map.class));
         return doc;
     }
 
-    public <T> T getPojoFromDocument(Document document, Class<T> type) {
+    public <T> T getPojoFromDocument(@NotNull Document document, Class<T> type) {
         return this.instance.getGson().fromJson(document.toString(), type);
     }
 

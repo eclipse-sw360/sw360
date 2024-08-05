@@ -10,16 +10,13 @@
 
 package org.eclipse.sw360.datahandler.db;
 
-import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.MultipleRequestBuilder;
-import com.cloudant.client.api.views.UnpaginatedRequestBuilder;
-import com.cloudant.client.api.views.ViewRequestBuilder;
-import com.cloudant.client.api.views.ViewResponse;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import com.ibm.cloud.cloudant.v1.model.ViewResult;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
@@ -66,34 +63,53 @@ public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<
     }
 
     public List<AttachmentUsage> getUsageForAttachment(String ownerId, String attachmentContentId) {
-        ViewRequestBuilder viewQuery = getConnector().createQuery(AttachmentUsage.class, "usagesByAttachment");
-        UnpaginatedRequestBuilder reqBuilder = viewQuery.newRequest(Key.Type.COMPLEX, Object.class).keys(Key.complex(new String[] {ownerId, attachmentContentId})).includeDocs(true).reduce(false);
-        return queryView(reqBuilder);
+        PostViewOptions viewQuery = getConnector()
+                .getPostViewQueryBuilder(AttachmentUsage.class, "usagesByAttachment")
+                .includeDocs(true)
+                .reduce(false)
+                .keys(List.of(new String[] { ownerId, attachmentContentId }))
+                .build();
+        return queryView(viewQuery);
     }
 
     public List<AttachmentUsage> getUsedAttachments(String usedById) {
-        ViewRequestBuilder viewQuery = getConnector().createQuery(AttachmentUsage.class, "usedAttachments");
-        UnpaginatedRequestBuilder reqBuilder = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(true).reduce(false).keys(usedById);
-        return queryView(reqBuilder);
+        PostViewOptions viewQuery = getConnector()
+                .getPostViewQueryBuilder(AttachmentUsage.class, "usedAttachments")
+                .includeDocs(true)
+                .reduce(false)
+                .keys(List.of(usedById))
+                .build();
+        return queryView(viewQuery);
     }
 
     public List<AttachmentUsage> getUsedAttachmentById(String attachmentContentId) {
-        ViewRequestBuilder viewQuery = getConnector().createQuery(AttachmentUsage.class, "usedAttachmentById");
-        UnpaginatedRequestBuilder reqBuilder = viewQuery.newRequest(Key.Type.STRING, Object.class).includeDocs(true).reduce(false).keys(attachmentContentId);
-        return queryView(reqBuilder);
+        PostViewOptions viewQuery = getConnector()
+                .getPostViewQueryBuilder(AttachmentUsage.class, "usedAttachmentById")
+                .includeDocs(true)
+                .reduce(false)
+                .keys(List.of(attachmentContentId))
+                .build();
+        return queryView(viewQuery);
     }
 
     public List<AttachmentUsage> getUsageForAttachment(String ownerId, String attachmentContentId, String filter) {
-        ViewRequestBuilder viewQuery = getConnector().createQuery(AttachmentUsage.class, "usagesByAttachmentUsageType");
-        UnpaginatedRequestBuilder reqBuilder = viewQuery.newRequest(Key.Type.COMPLEX, Object.class).includeDocs(true).reduce(false)
-                .keys(Key.complex(new String[] { ownerId, attachmentContentId, filter }));
-        return queryView(reqBuilder);
+        PostViewOptions viewQuery = getConnector()
+                .getPostViewQueryBuilder(AttachmentUsage.class, "usagesByAttachmentUsageType")
+                .includeDocs(true)
+                .reduce(false)
+                .keys(List.of(new String[] { ownerId, attachmentContentId, filter }))
+                .build();
+        return queryView(viewQuery);
     }
 
     public List<AttachmentUsage> getUsedAttachments(String usedById, String filter) {
-        ViewRequestBuilder viewQuery = getConnector().createQuery(AttachmentUsage.class, "usedAttachmentsUsageType");
-        UnpaginatedRequestBuilder reqBuilder = viewQuery.newRequest(Key.Type.COMPLEX, Object.class).includeDocs(true).reduce(false).keys(Key.complex(new String[] { usedById, filter }));
-        return queryView(reqBuilder);
+        PostViewOptions viewQuery = getConnector()
+                .getPostViewQueryBuilder(AttachmentUsage.class, "usedAttachmentsUsageType")
+                .includeDocs(true)
+                .reduce(false)
+                .keys(List.of(new String[] { usedById, filter }))
+                .build();
+        return queryView(viewQuery);
     }
 
     public List<AttachmentUsage> getUsagesByReleaseId(String releaseId) {
@@ -101,50 +117,39 @@ public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<
     }
 
     public Map<Map<String, String>, Integer> getAttachmentUsageCount(Map<String, Set<String>> attachments, String filter) {
-        ViewRequestBuilder viewQuery = createUsagesByAttachmentQuery(filter);
-        List<String[]> complexKeysList = prepareKeys(attachments, filter);
-        Key.ComplexKey[] compexKeys = new Key.ComplexKey[complexKeysList.size()];
-        for (int i = 0; i < compexKeys.length; i++) {
-            Key.ComplexKey key = Key.complex(complexKeysList.get(i));
-            compexKeys[i] = key;
-        }
-        UnpaginatedRequestBuilder<com.cloudant.client.api.views.Key.ComplexKey, Object> reqBuilder = viewQuery.newRequest(Key.Type.COMPLEX, Object.class).reduce(true).group(true).keys(compexKeys);
-        ViewResponse<com.cloudant.client.api.views.Key.ComplexKey, Object> result = queryViewForComplexKeys(reqBuilder);
+        PostViewOptions.Builder viewQuery = createUsagesByAttachmentQuery(filter);
+        @NotNull List<Object> complexKeysList = prepareKeys(attachments, filter);
+        PostViewOptions req = viewQuery.reduce(true).group(true).keys(complexKeysList).build();
+        ViewResult result = queryViewForComplexKeys(req);
 
         return result.getRows().stream().collect(Collectors.toMap(key -> {
-            String json = key.getKey().toJson();
-            String replace = json.replace("[","").replace("]","").replaceAll("\"","");
-            List<String> relIdAttachmentToUsageType = new ArrayList<String>(Arrays.asList(replace.split(",")));
+            String json = key.getKey().toString();
+            String replace = json.replace("[", "").replace("]", "").replaceAll("\"", "");
+            List<String> relIdAttachmentToUsageType = new ArrayList<>(Arrays.asList(replace.split(",")));
             return ImmutableMap.of(relIdAttachmentToUsageType.get(0), relIdAttachmentToUsageType.get(1));
         }, val -> ((Double) val.getValue()).intValue()));
     }
 
-
     public List<AttachmentUsage> getUsageForAttachments(Map<String, Set<String>> attachments, String filter) {
-        ViewRequestBuilder viewQuery = createUsagesByAttachmentQuery(filter);
-        @NotNull List<String[]> complexKeysList = prepareKeys(attachments, filter);
-        Key.ComplexKey[] compexKeys = new Key.ComplexKey[complexKeysList.size()];
-        for (int i = 0; i < compexKeys.length; i++) {
-            Key.ComplexKey key = Key.complex(complexKeysList.get(i));
-            compexKeys[i] = key;
-        }
-        MultipleRequestBuilder<com.cloudant.client.api.views.Key.ComplexKey, Object> reqBuilder = viewQuery.newMultipleRequest(Key.Type.COMPLEX, Object.class).includeDocs(true).reduce(false).keys(compexKeys);
-        return multiRequestqueryView(reqBuilder);
+        PostViewOptions.Builder viewQuery = createUsagesByAttachmentQuery(filter);
+        @NotNull List<Object> complexKeysList = prepareKeys(attachments, filter);
+        PostViewOptions req = viewQuery.includeDocs(true).reduce(false).keys(complexKeysList).build();
+        return queryView(req);
     }
 
-    private ViewRequestBuilder createUsagesByAttachmentQuery(String filter) {
-        ViewRequestBuilder viewQuery;
+    private PostViewOptions.Builder createUsagesByAttachmentQuery(String filter) {
+        PostViewOptions.Builder viewQuery;
         if (Strings.isNullOrEmpty(filter)) {
-            viewQuery = getConnector().createQuery(AttachmentUsage.class, "usagesByAttachment");
+            viewQuery = getConnector().getPostViewQueryBuilder(AttachmentUsage.class, "usagesByAttachment");
         } else {
-            viewQuery = getConnector().createQuery(AttachmentUsage.class, "usagesByAttachmentUsageType");
+            viewQuery = getConnector().getPostViewQueryBuilder(AttachmentUsage.class, "usagesByAttachmentUsageType");
         }
         return viewQuery;
     }
 
     @NotNull
-    private List<String[]> prepareKeys(Map<String, Set<String>> attachments, String filter) {
-        List<String[]> keys = Lists.newArrayList();
+    private List<Object> prepareKeys(@NotNull Map<String, Set<String>> attachments, String filter) {
+        List<Object> keys = Lists.newArrayList();
         for (Entry<String, Set<String>> entry : attachments.entrySet()) {
             for (String attachmentId : entry.getValue()) {
                 if (Strings.isNullOrEmpty(filter)) {

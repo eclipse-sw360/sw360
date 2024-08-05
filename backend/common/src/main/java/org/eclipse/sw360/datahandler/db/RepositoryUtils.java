@@ -15,7 +15,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.cloudant.client.api.model.Response;
+import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 
 import java.util.*;
 
@@ -30,7 +30,7 @@ public class RepositoryUtils {
         RequestSummary requestSummary =  new RequestSummary();
         if(PermissionUtils.isAdmin(user)) {
             // Prepare component for database
-            final List<Response> documentOperationResults = repository.executeBulk(objects);
+            final List<DocumentResult> documentOperationResults = repository.executeBulk(objects);
 
             requestSummary.setTotalElements(objects.size() );
             requestSummary.setTotalAffectedElements(objects.size() - documentOperationResults.size());

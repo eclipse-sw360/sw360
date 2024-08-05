@@ -33,6 +33,10 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import com.ibm.cloud.cloudant.v1.model.ViewResult;
+import com.ibm.cloud.cloudant.v1.model.ViewResultRow;
+import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
 import com.cloudant.client.api.query.Expression;
 import com.cloudant.client.api.query.PredicateExpression;
 import com.cloudant.client.api.query.PredicatedOperation;
@@ -40,10 +44,6 @@ import com.cloudant.client.api.query.QueryBuilder;
 import com.cloudant.client.api.query.QueryResult;
 import com.cloudant.client.api.query.Selector;
 import com.cloudant.client.api.query.Sort;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.Key.ComplexKey;
-import com.cloudant.client.api.views.ViewRequest;
-import com.cloudant.client.api.views.ViewResponse;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -245,14 +245,14 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         return result;
     }
 
-    private List<ComplexKey> prepareKeys(String moderator, boolean ascending) {
-        ComplexKey startKey, endKey;
+    private List<String[]> prepareKeys(String moderator, boolean ascending) {
+        String[] startKey, endKey;
         if (ascending) {
-            startKey = Key.complex(new String[] { moderator });
-            endKey = Key.complex(new String[] { moderator, "\ufff0" });
+            startKey = new String[] { moderator };
+            endKey = new String[] { moderator, "\ufff0" };
         } else {
-            startKey = Key.complex(new String[] { moderator, "\ufff0" });
-            endKey = Key.complex(new String[] { moderator });
+            startKey = new String[] { moderator, "\ufff0" };
+            endKey = new String[] { moderator };
         }
         return List.of(startKey, endKey);
     }
@@ -292,21 +292,26 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
 
     public Map<String, Long> getCountByModerationState(String moderator) {
         Map<String, Long> countByModerationState = Maps.newHashMap();
-        List<ComplexKey> keys = prepareKeys(moderator, true);
-        ViewRequest<ComplexKey, Long> countReq = getConnector()
-                .createQuery(ModerationRequest.class, "countByModerationState").newRequest(Key.Type.COMPLEX, Long.class)
-                .startKey(keys.get(0)).endKey(keys.get(1)).group(true).groupLevel(2).reduce(true).build();
+        List<String[]> keys = prepareKeys(moderator, true);
+        PostViewOptions countReq = getConnector()
+                .getPostViewQueryBuilder(ModerationRequest.class, "countByModerationState")
+                .startKey(keys.get(0))
+                .endKey(keys.get(1))
+                .group(true)
+                .groupLevel(2)
+                .descending(false)
+                .reduce(true).build();
         try {
-            ViewResponse<ComplexKey, Long> response = countReq.getResponse();
+            ViewResult response = getConnector().getPostViewQueryResponse(countReq);
             if (null != response) {
                 countByModerationState = response.getRows().stream().collect(Collectors.toMap(key -> {
-                    String json = key.getKey().toJson();
+                    String json = key.getKey().toString();
                     String replace = json.replace("[", "").replace("]", "").replaceAll("\"", "");
-                    List<String> moderatorToModStatus = new ArrayList<String>(Arrays.asList(replace.split(",")));
+                    List<String> moderatorToModStatus = new ArrayList<>(Arrays.asList(replace.split(",")));
                     return moderatorToModStatus.get(1);
-                }, val -> val.getValue()));
+                }, val -> Long.parseLong(val.getValue().toString())));
             }
-        } catch (IOException e) {
+        } catch (ServiceResponseException e) {
             log.error("Error getting count of moderation requests based on moderation state", e);
         }
         return countByModerationState;
@@ -315,19 +320,20 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
     public Map<String, Long> getCountByRequester(String user) {
         Map<String, Long> countByModerationState = Maps.newHashMap();
 
-        List<ComplexKey> keys = prepareKeys(user, true);
-        ViewRequest<ComplexKey, Long> countReq = getConnector()
-                .createQuery(ModerationRequest.class, "countByRequester").newRequest(Key.Type.COMPLEX, Long.class)
-                .startKey(keys.get(0)).endKey(keys.get(1)).group(true).groupLevel(2).reduce(true).build();
+        List<String[]> keys = prepareKeys(user, true);
+        PostViewOptions countReq = getConnector()
+                .getPostViewQueryBuilder(ModerationRequest.class, "countByRequester")
+                .startKey(keys.get(0)).endKey(keys.get(1))
+                .descending(false).group(true).groupLevel(2).reduce(true).build();
         try {
-            ViewResponse<ComplexKey, Long> response = countReq.getResponse();
+            ViewResult response = getConnector().getPostViewQueryResponse(countReq);
             if (null != response) {
                 countByModerationState = response.getRows().stream().collect(Collectors.toMap(key -> {
-                    String json = key.getKey().toJson();
+                    String json = key.getKey().toString();
                     return json.replaceAll("[\\[\\]\"]", "");
-                }, ViewResponse.Row::getValue));
+                }, val -> Long.parseLong(val.getValue().toString())));
             }
-        } catch (IOException e) {
+        } catch (ServiceResponseException e) {
             log.error("Error getting count of moderation requests based on moderation state", e);
         }
         return countByModerationState;
@@ -335,13 +341,17 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
 
     public Set<String> getRequestingUserDepts() {
         Set<String> requestingUserDepts = Sets.newHashSet();
-        ViewRequest<String, Object> query = getConnector()
-                .createQuery(ModerationRequest.class, "byRequestingUsersDeptView")
-                .newRequest(Key.Type.STRING, Object.class).includeDocs(false).build();
+        PostViewOptions query = getConnector()
+                .getPostViewQueryBuilder(ModerationRequest.class, "byRequestingUsersDeptView")
+                .includeDocs(false).build();
         try {
-            requestingUserDepts = Sets.newTreeSet(CommonUtils.nullToEmptyList(query.getResponse().getKeys()).stream()
-                    .filter(Objects::nonNull).collect(Collectors.toList()));
-        } catch (IOException e) {
+            requestingUserDepts = getConnector().getPostViewQueryResponse(query).getRows()
+                    .stream()
+                    .map(ViewResultRow::getKey)
+                    .filter(Objects::nonNull)
+                    .map(Object::toString)
+                    .collect(Collectors.toCollection(Sets::newTreeSet));
+        } catch (ServiceResponseException e) {
             log.error("Error getting requesting users", e);
         }
         return requestingUserDepts;

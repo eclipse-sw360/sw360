@@ -29,8 +29,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 
-import com.cloudant.client.api.model.Document;
-import com.cloudant.client.api.model.Response;
+import com.ibm.cloud.cloudant.v1.model.Document;
+import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
@@ -528,12 +528,12 @@ public class BulkDeleteUtil extends BackendUtils {
         for(Release release : releaseList) {
             Document document = new Document();
             document.setId(release.getId());
-            document.setRevision(release.getRevision());
+            document.setRev(release.getRevision());
             document.setDeleted(true);
             documentList.add(document);
         }
-        List<Response> responseList = releaseRepository.executeBulk(documentList);
-        for (Response response : responseList) {
+        List<DocumentResult> responseList = releaseRepository.executeBulk(documentList);
+        for (DocumentResult response : responseList) {
             String documentId = response.getId();
             String error = response.getError();
             if (CommonUtils.isNullEmptyOrWhitespace(error)) {
@@ -549,8 +549,8 @@ public class BulkDeleteUtil extends BackendUtils {
 
     public Map<String, BulkOperationResultState> updateBulkReleases(Collection<Release> collection) {
         Map<String, BulkOperationResultState> resultState = new HashMap<String, BulkOperationResultState>();
-        List<Response> responseList = releaseRepository.executeBulk(collection);
-        for (Response response : responseList) {
+        List<DocumentResult> responseList = releaseRepository.executeBulk(collection);
+        for (DocumentResult response : responseList) {
             String documentId = response.getId();
             String error = response.getError();
             if (CommonUtils.isNullEmptyOrWhitespace(error)) {
@@ -571,12 +571,12 @@ public class BulkDeleteUtil extends BackendUtils {
         for(Component component : componentList) {
             Document document = new Document();
             document.setId(component.getId());
-            document.setRevision(component.getRevision());
+            document.setRev(component.getRevision());
             document.setDeleted(true);
             documentList.add(document);
         }
-        List<Response> responseList = releaseRepository.executeBulk(documentList);
-        for (Response response : responseList) {
+        List<DocumentResult> responseList = releaseRepository.executeBulk(documentList);
+        for (DocumentResult response : responseList) {
             String documentId = response.getId();
             String error = response.getError();
             if (CommonUtils.isNullEmptyOrWhitespace(error)) {
@@ -592,8 +592,8 @@ public class BulkDeleteUtil extends BackendUtils {
 
     public Map<String, BulkOperationResultState> updateBulkComponent(Collection<Component> collection) {
         Map<String, BulkOperationResultState> resultState = new HashMap<String, BulkOperationResultState>();
-        List<Response> responseList = componentRepository.executeBulk(collection);
-        for (Response response : responseList) {
+        List<DocumentResult> responseList = componentRepository.executeBulk(collection);
+        for (DocumentResult response : responseList) {
             String documentId = response.getId();
             String error = response.getError();
             if (CommonUtils.isNullEmptyOrWhitespace(error)) {
