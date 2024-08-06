@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -1104,7 +1105,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         updateSPDX.put("documentCreationInformation", documentCreationInformation);
         updateSPDX.put("packageInformation", packageInformation);
 
-        if (!SW360Constants.SPDX_DOCUMENT_ENABLED) {
+        if (SW360Utils.readConfig(SPDX_DOCUMENT_ENABLED, false)) {
             this.mockMvc
                     .perform(patch("/api/releases/" + releaseSpdx.getId() + "/spdx")
                             .contentType(MediaTypes.HAL_JSON)

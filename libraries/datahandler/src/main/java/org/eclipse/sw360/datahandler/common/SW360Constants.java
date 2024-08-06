@@ -108,7 +108,6 @@ public class SW360Constants {
     public static final String TOTAL_FILE_COUNT = "totalFileCount";
     public static final String SVM_COMPONENT_ID;
     public static final String SVM_MONITORINGLIST_ID;
-    public static final Boolean SPDX_DOCUMENT_ENABLED;
     public static final String MAINLINE_COMPONENT_ID;
     public static final String SVM_COMPONENT_ID_KEY;
     public static final String SVM_SHORT_STATUS;
@@ -127,9 +126,6 @@ public class SW360Constants {
     public static final String SRC_ATTACHMENT_UPLOADER_EMAIL;
     public static final String SRC_ATTACHMENT_DOWNLOAD_LOCATION;
     public static final String PREFERRED_CLEARING_DATE_LIMIT;
-    public static final Boolean MAIL_REQUEST_FOR_PROJECT_REPORT;
-    public static final Boolean MAIL_REQUEST_FOR_COMPONENT_REPORT;
-
     public static final String COMPONENTS = "components";
     public static final String PROJECTS = "projects";
     public static final String LICENSES = "licenses";
@@ -138,7 +134,8 @@ public class SW360Constants {
     public static final String ADD_LIST_EMAIL = "listEmail";
     public static final String DEPARTMENT_KEY = "departmentKey";
     public static final String DELETE_LIST_EMAIL = "deleteEmail";
-
+    public static final String DEFAULT_ATTACHMENT_LOCATION = "/opt/sw360tempattachments";
+    public static final int DEFAULT_ATTACHMENT_DELETE_NO_DAY = 30;
     /**
      * Hashmap containing the name field for each type.
      * Used by the search service to fill the search results
@@ -233,7 +230,6 @@ public class SW360Constants {
         SVM_SHORT_STATUS_KEY = props.getProperty("svm.short.status.key", "");
         SVM_SCHEDULER_EMAIL = props.getProperty("svm.scheduler.email", "");
         SVM_MONITORINGLIST_ID = props.getProperty("svm.monitoringlist.id", "");
-        SPDX_DOCUMENT_ENABLED = Boolean.parseBoolean(props.getProperty("spdx.document.enabled", "false"));
         DATA_HANDLER_POM_FILE_PATH = props.getProperty("datahandler.pom.file.path", "/META-INF/maven/org.eclipse.sw360/datahandler/pom.xml");
         PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE = UserGroup.valueOf(props.getProperty("package.portlet.write.access.usergroup", UserGroup.USER.name()));
         IS_PACKAGE_PORTLET_ENABLED = Boolean.parseBoolean(props.getProperty("package.portlet.enabled", "true"));
@@ -248,8 +244,6 @@ public class SW360Constants {
         SRC_ATTACHMENT_UPLOADER_EMAIL = props.getProperty("source.code.attachment.uploader.email", "");
         SRC_ATTACHMENT_DOWNLOAD_LOCATION = props.getProperty("src.attachment.download.location", "");
         PREFERRED_CLEARING_DATE_LIMIT =  props.getProperty("preferred.clearing.date.limit","");
-        MAIL_REQUEST_FOR_PROJECT_REPORT = Boolean.parseBoolean(props.getProperty("send.project.spreadsheet.export.to.mail.enabled", "false"));
-        MAIL_REQUEST_FOR_COMPONENT_REPORT = Boolean.parseBoolean(props.getProperty("send.component.spreadsheet.export.to.mail.enabled", "false"));
     }
 
     private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName){

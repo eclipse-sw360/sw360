@@ -10,15 +10,18 @@
 
 package org.eclipse.sw360.datahandler.permissions;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
 import static org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent.ComponentRole.*;
 import static org.eclipse.sw360.datahandler.thrift.Visibility.*;
 import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.*;
 
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent.ComponentRole;
 import org.eclipse.sw360.datahandler.permissions.jgivens.ThenVisible;
 import org.eclipse.sw360.datahandler.permissions.jgivens.WhenComputeComponentVisibility;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.junit.Test;
@@ -50,7 +53,9 @@ public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenCompon
 
     @DataProvider
     public static Object[][] componentVisibilityProvider() {
-        if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+        boolean isComponentVisibilityRestrictionEnabled = SW360Utils.readConfig(IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, false);
+
+        if (isComponentVisibilityRestrictionEnabled) {
             // @formatter:off
             return new Object[][] {
     
@@ -142,7 +147,8 @@ public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenCompon
 
     @DataProvider
     public static Object[][] componentVisibilityByRoleProvider() {
-        if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+        boolean isComponentVisibilityRestrictionEnabled = SW360Utils.readConfig(IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, false);
+        if (isComponentVisibilityRestrictionEnabled) {
             // @formatter:off
             return new Object[][] {
                     //test otherDepartment

@@ -34,7 +34,6 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
@@ -48,7 +47,6 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReferen
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -59,7 +57,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.hateoas.Link;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
@@ -67,9 +64,8 @@ import org.springframework.util.FileCopyUtils;
 import com.google.common.collect.Sets;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_FORCE_UPDATE_ENABLED;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
-import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -276,7 +272,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         rch.checkForCyclicOrInvalidDependencies(sw360ComponentClient, release, sw360User);
 
         RequestStatus requestStatus;
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
             requestStatus = sw360ComponentClient.updateReleaseWithForceFlag(release, sw360User, true);
         } else {
             requestStatus = sw360ComponentClient.updateRelease(release, sw360User);
@@ -811,7 +807,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             }
         }
 
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
             deleteStatus = sw360ComponentClient.deleteReleaseWithForceFlag(releaseId, sw360User, true);
         } else {
             deleteStatus = sw360ComponentClient.deleteRelease(releaseId, sw360User);

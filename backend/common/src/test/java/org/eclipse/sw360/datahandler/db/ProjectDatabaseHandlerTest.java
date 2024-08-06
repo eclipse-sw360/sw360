@@ -17,6 +17,7 @@ import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -32,6 +33,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.*;
 
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_FORCE_UPDATE_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
@@ -175,7 +177,7 @@ public class ProjectDatabaseHandlerTest {
     
     @Test
     public void testForceUpdateProject() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
             return;
         }
         Project project1 = handler.getProjectById("P1", user1);
@@ -307,7 +309,7 @@ public class ProjectDatabaseHandlerTest {
     
     @Test
     public void testForceDeleteProject() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
             return;
         }
         int expect = handler.getMyProjectsSummary(user1.getEmail()).size() - 1;

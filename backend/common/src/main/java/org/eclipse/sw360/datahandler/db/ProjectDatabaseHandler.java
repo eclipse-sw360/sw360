@@ -82,6 +82,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertId;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.MAINLINE_STATE_ENABLED_FOR_USER;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getCreatedOn;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.printName;
@@ -685,7 +686,8 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void setReleaseRelations(Project updated, User user, Project current) {
-        boolean isMainlineStateDisabled = !(BackendUtils.MAINLINE_STATE_ENABLED_FOR_USER
+        final boolean isMainLineStateEnabledForUser = SW360Utils.readConfig(MAINLINE_STATE_ENABLED_FOR_USER, false);
+        boolean isMainlineStateDisabled = !(isMainLineStateEnabledForUser
                 || PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user))
                 && updated.getReleaseIdToUsageSize() > 0;
 

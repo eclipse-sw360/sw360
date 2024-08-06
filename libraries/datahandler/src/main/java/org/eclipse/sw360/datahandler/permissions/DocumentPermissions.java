@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
