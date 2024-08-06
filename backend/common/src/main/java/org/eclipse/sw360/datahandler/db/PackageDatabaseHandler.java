@@ -12,6 +12,7 @@ package org.eclipse.sw360.datahandler.db;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE;
 
 import java.net.MalformedURLException;
 import java.util.AbstractMap;
@@ -54,6 +55,7 @@ import com.github.packageurl.PackageURL;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
 /**
  * Class for accessing the CouchDB for Packages.
@@ -266,7 +268,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.NAMINGERROR;
         }
 
-        if (!SW360Utils.isWriteAccessUser(updatedPkg.getCreatedBy(), user, SW360Constants.PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE)) {
+        if (!SW360Utils.isWriteAccessUser(updatedPkg.getCreatedBy(), user, SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER))) {
             log.error(String.format("User %s does not have write access to package: %s ", user.getEmail(), packageId));
             return RequestStatus.ACCESS_DENIED;
         }
@@ -370,7 +372,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
             return RequestStatus.IN_USE;
         }
 
-        if (!SW360Utils.isWriteAccessUser(pkg.getCreatedBy(), user, SW360Constants.PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE)) {
+        if (!SW360Utils.isWriteAccessUser(pkg.getCreatedBy(), user, SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER))) {
             log.error(String.format("User %s does not have write access to package: %s ", user.getEmail(), pkg.getId()));
             return RequestStatus.ACCESS_DENIED;
         }

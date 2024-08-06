@@ -34,7 +34,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
-import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
@@ -49,6 +48,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.getSortedMap;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_FORCE_UPDATE_ENABLED;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -157,7 +157,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     public RequestStatus updateComponent(Component component, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         RequestStatus requestStatus;
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
             requestStatus = sw360ComponentClient.updateComponentWithForceFlag(component, sw360User, true);
         } else {
             requestStatus = sw360ComponentClient.updateComponent(component, sw360User);
@@ -176,7 +176,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     public RequestStatus deleteComponent(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
             return sw360ComponentClient.deleteComponentWithForceFlag(componentId, sw360User, true);
         } else {
             return sw360ComponentClient.deleteComponent(componentId, sw360User);
