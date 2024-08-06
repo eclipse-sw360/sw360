@@ -28,6 +28,7 @@
         <module>attachments</module>
         <module>components</module>
         <module>cvesearch</module>
+        <module>configurations</module>
         <module>fossology</module>
         <module>health</module>
         <module>licenseinfo</module>

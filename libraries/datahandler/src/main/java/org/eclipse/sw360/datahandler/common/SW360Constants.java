@@ -108,7 +108,6 @@ public class SW360Constants {
     public static final String TOTAL_FILE_COUNT = "totalFileCount";
     public static final String SVM_COMPONENT_ID;
     public static final String SVM_MONITORINGLIST_ID;
-    public static final Boolean SPDX_DOCUMENT_ENABLED;
     public static final String MAINLINE_COMPONENT_ID;
     public static final String SVM_COMPONENT_ID_KEY;
     public static final String SVM_SHORT_STATUS;
@@ -231,7 +230,6 @@ public class SW360Constants {
         SVM_SHORT_STATUS_KEY = props.getProperty("svm.short.status.key", "");
         SVM_SCHEDULER_EMAIL = props.getProperty("svm.scheduler.email", "");
         SVM_MONITORINGLIST_ID = props.getProperty("svm.monitoringlist.id", "");
-        SPDX_DOCUMENT_ENABLED = Boolean.parseBoolean(props.getProperty("spdx.document.enabled", "false"));
         DATA_HANDLER_POM_FILE_PATH = props.getProperty("datahandler.pom.file.path", "/META-INF/maven/org.eclipse.sw360/datahandler/pom.xml");
         PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE = UserGroup.valueOf(props.getProperty("package.portlet.write.access.usergroup", UserGroup.USER.name()));
         IS_PACKAGE_PORTLET_ENABLED = Boolean.parseBoolean(props.getProperty("package.portlet.enabled", "true"));

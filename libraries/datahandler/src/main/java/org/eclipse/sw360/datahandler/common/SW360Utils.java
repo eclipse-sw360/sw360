@@ -33,6 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
@@ -1073,4 +1074,12 @@ public class SW360Utils {
         return Collections.emptyList();
     }
 
+    public static String getConfigByKey(String key) throws SW360Exception {
+        try {
+            SW360ConfigsService.Iface configClient = new ThriftClients().makeSW360ConfigsClient();
+            return configClient.getConfigByKey(key);
+        } catch (TException exception) {
+            throw new SW360Exception("Unable to get configuration");
+        }
+    }
 }
