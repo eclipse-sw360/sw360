@@ -51,6 +51,9 @@ import com.github.packageurl.MalformedPackageURLException;
 import com.github.packageurl.PackageURL;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 
 /**
  * CycloneDX BOM export implementation.
@@ -82,7 +85,7 @@ public class CycloneDxBOMExporter {
             Set<String> linkedReleaseIds = Sets.newHashSet(CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage()));
             Set<String> linkedPackageIds = Sets.newHashSet(CommonUtils.nullToEmptySet(project.getPackageIds()));
 
-            if (!SW360Utils.isUserAtleastDesiredRoleInPrimaryOrSecondaryGroup(user, SW360Constants.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE)) {
+            if (!SW360Utils.isUserAtleastDesiredRoleInPrimaryOrSecondaryGroup(user, SW360Utils.readConfig(SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, UserGroup.USER))) {
                 log.warn("User does not have permission to export the SBOM: " + user.getEmail());
                 summary.setRequestStatus(RequestStatus.ACCESS_DENIED);
                 return summary;
@@ -95,13 +98,13 @@ public class CycloneDxBOMExporter {
                 linkedPackageIds.addAll(idsMap.get(SW360Constants.PACKAGE_IDS));
             }
 
-            if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+            if (Boolean.TRUE.equals(SW360Utils.readConfig(IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, false))) {
                 List<Release> releaseList = componentDatabaseHandler.getAccessibleReleaseSummary(user);
                 Set<String> releaseListIds = releaseList.stream().map(Release::getId).collect(Collectors.toSet());
                 linkedReleaseIds = CollectionUtils.intersection(releaseListIds, linkedReleaseIds).stream().collect(Collectors.toSet());
             }
 
-            if (SW360Constants.IS_PACKAGE_PORTLET_ENABLED && CommonUtils.isNotEmpty(linkedPackageIds)) {
+            if (SW360Utils.readConfig(IS_PACKAGE_PORTLET_ENABLED, true) && CommonUtils.isNotEmpty(linkedPackageIds)) {
                 List<Package> packages = packageDatabaseHandler.getPackageByIds(linkedPackageIds);
                 List<org.cyclonedx.model.Component> sbomComponents = getCycloneDxComponentsFromSw360Packages(packages);
                 Set<String> releaseIds = packages.stream()
@@ -159,8 +162,8 @@ public class CycloneDxBOMExporter {
 
     private static Tool getTool() {
         Tool tool = new Tool();
-        tool.setName(SW360Constants.TOOL_NAME);
-        tool.setVendor(SW360Constants.TOOL_VENDOR);
+        tool.setName(SW360Utils.readConfig(TOOL_NAME, SW360Constants.DEFAULT_SBOM_TOOL_NAME));
+        tool.setVendor(SW360Utils.readConfig(TOOL_VENDOR, SW360Constants.DEFAULT_SBOM_TOOL_VENDOR));
         tool.setVersion(SW360Utils.getSW360Version());
         return tool;
     }

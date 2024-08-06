@@ -41,6 +41,7 @@ import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorClou
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
 import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.or;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_ADMIN_PRIVATE_ACCESS_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 
 /**
@@ -424,7 +425,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         isUserBelongToBuAndModerator = and(List.of(buAndModorator_visibility_Selector, or(buSelectors)));
 
         Map<String, Object> finalSelector;
-        if (PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isAdmin) {
+        if (SW360Utils.readConfig(IS_ADMIN_PRIVATE_ACCESS_ENABLED, false) && isAdmin) {
                 finalSelector = typeSelector;
         } else {
             if (isClearingAdmin) {
@@ -556,7 +557,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         }
         keys[keys.length - 2] = user.getEmail();
         keys[keys.length - 1] = "everyone";
-        if (PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isAdmin) {
+        if (SW360Utils.readConfig(IS_ADMIN_PRIVATE_ACCESS_ENABLED, false) && isAdmin) {
             return getConnector().getDocumentCount(Project.class);
         }
         if (isClearingAdmin) {

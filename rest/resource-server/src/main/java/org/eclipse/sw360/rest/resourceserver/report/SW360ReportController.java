@@ -6,6 +6,8 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.rest.resourceserver.report;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.MAIL_REQUEST_FOR_COMPONENT_REPORT;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.MAIL_REQUEST_FOR_PROJECT_REPORT;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.JSON_FILE_EXTENSION;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.XML_FILE_EXTENSION;
@@ -166,7 +168,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             String externalIds
     ) throws TException {
         try {
-            if (SW360Constants.MAIL_REQUEST_FOR_PROJECT_REPORT) {
+            if (SW360Utils.readConfig(MAIL_REQUEST_FOR_PROJECT_REPORT, false)) {
                 sw360ReportService.getUploadedProjectPath(sw360User, withLinkedReleases, baseUrl, projectId);
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("response", "The downloaded report link will be send to the end user.");
@@ -187,7 +189,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             String externalIds
     ) throws TException {
         try {
-            if (SW360Constants.MAIL_REQUEST_FOR_COMPONENT_REPORT) {
+            if (SW360Utils.readConfig(MAIL_REQUEST_FOR_COMPONENT_REPORT, false)) {
                 sw360ReportService.getUploadedComponentPath(sw360User, withLinkedReleases, baseUrl);
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("response", "Component report download link will get send to the end user.");

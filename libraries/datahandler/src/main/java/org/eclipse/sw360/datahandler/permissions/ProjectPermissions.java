@@ -12,6 +12,7 @@ package org.eclipse.sw360.datahandler.permissions;
 import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.toSingletonSet;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_ADMIN_PRIVATE_ACCESS_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.isUserAtLeast;
 import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.ADMIN;
@@ -89,7 +91,7 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
                 visibility = Visibility.BUISNESSUNIT_AND_MODERATORS; // the current default
             }
 
-            boolean isPrivateAccessAllowed = PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isUserAtLeast(ADMIN, user);
+            boolean isPrivateAccessAllowed = SW360Utils.readConfig(IS_ADMIN_PRIVATE_ACCESS_ENABLED, false) && isUserAtLeast(ADMIN, user);
 
             switch (visibility) {
                 case PRIVATE:
