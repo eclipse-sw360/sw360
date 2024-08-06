@@ -9,11 +9,12 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.withSettings;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
@@ -99,6 +100,9 @@ import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilitySer
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.CollectionModel;
@@ -1104,15 +1108,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         updateSPDX.put("documentCreationInformation", documentCreationInformation);
         updateSPDX.put("packageInformation", packageInformation);
 
-        if (!SW360Constants.SPDX_DOCUMENT_ENABLED) {
-            this.mockMvc
-                    .perform(patch("/api/releases/" + releaseSpdx.getId() + "/spdx")
-                            .contentType(MediaTypes.HAL_JSON)
-                            .content(this.objectMapper.writeValueAsString(updateSPDX))
-                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
-                            .accept(MediaTypes.HAL_JSON))
-                    .andExpect(status().isInternalServerError());
-        } else {
+        try (MockedStatic<SW360Utils> mockedStatic = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mockedStatic.when(() -> SW360Utils.readConfig(any(), any())).thenReturn(true);
+
             mockMvc.perform(patch("/api/releases/" + releaseSpdx.getId() + "/spdx")
                             .contentType(MediaTypes.HAL_JSON)
                             .content(this.objectMapper.writeValueAsString(updateSPDX))

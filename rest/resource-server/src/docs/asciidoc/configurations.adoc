@@ -1,0 +1,66 @@
+//
+// Copyright TOSHIBA CORPORATION, 2025. Part of the SW360 Portal Project.
+// Copyright Toshiba Software Development (Vietnam) Co., Ltd., 2025. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+[[resources-configurations]]
+=== Configurations
+
+The configurations resource is used to list SW360 configurations information.
+
+
+[[resources-configurations-list]]
+==== Listing configurations
+
+A `GET` request will list all configurations of SW360.
+
+===== Example request
+include::{snippets}/should_document_get_all_configurations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_all_configurations/http-response.adoc[]
+
+[[resources-changeable-configurations-list]]
+==== Listing changeable configurations
+
+A `GET` request will list changeable configurations of SW360 (stored in database).
+
+===== Request parameter
+include::{snippets}/should_document_get_changeable_configurations/query-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_changeable_configurations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_changeable_configurations/http-response.adoc[]
+
+[[resources-not-changeable-configurations-list]]
+==== List of configurations can not be changed
+
+A `GET` request will list configurations that cannot be changed (stored in properties file, cannot update).
+
+===== Request parameter
+include::{snippets}/should_document_get_changeable_configurations/query-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_not_changeable_configurations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_not_changeable_configurations/http-response.adoc[]
+
+[[resources-update-changeable-configurations]]
+==== Update changeable configurations
+
+A `PATCH` request update changeable configurations (stored in database).
+
+===== Example request
+include::{snippets}/should_document_update_changeable_configurations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_changeable_configurations/http-response.adoc[]

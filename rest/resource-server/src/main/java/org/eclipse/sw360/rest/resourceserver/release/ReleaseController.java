@@ -11,6 +11,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.release;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -273,7 +274,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         List<ReleaseLink> linkedReleaseRelations = releaseService.getLinkedReleaseRelations(sw360Release, sw360User);
 
         String spdxId = sw360Release.getSpdxId();
-        if (CommonUtils.isNotNullEmptyOrWhitespace(spdxId) && SW360Constants.SPDX_DOCUMENT_ENABLED) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(spdxId) && SW360Utils.readConfig(SPDX_DOCUMENT_ENABLED, false)) {
             SPDXDocument spdxDocument = releaseService.getSPDXDocumentById(spdxId, sw360User);
             sw360SPDXDocumentService.sortSectionForSPDXDocument(spdxDocument);
             restControllerHelper.addEmbeddedSpdxDocument(halRelease, spdxDocument);
@@ -623,7 +624,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String releaseId
     ) throws TException {
-        if (Boolean.FALSE.equals(SW360Constants.SPDX_DOCUMENT_ENABLED)) {
+        if (!SW360Utils.readConfig(SPDX_DOCUMENT_ENABLED, false)) {
             return new ResponseEntity<>("Feature SPDXDocument disable", HttpStatus.INTERNAL_SERVER_ERROR);
         }
         if (CommonUtils.isNullEmptyOrWhitespace(releaseId)) {

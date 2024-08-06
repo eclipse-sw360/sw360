@@ -4,6 +4,7 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.rest.resourceserver.report;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
@@ -454,7 +456,7 @@ public class SW360ReportService {
                     bomString = status.name();
                     throw new SW360Exception(bomString);
                 } else if (RequestStatus.ACCESS_DENIED.equals(status)) {
-                    bomString = status.name() + ", only user with role " + SW360Constants.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE + " can access.";
+                    bomString = status.name() + ", only user with role " + SW360Utils.readConfig(SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, UserGroup.USER).name() + " can access.";
                     throw new AccessDeniedException(bomString);
                 } else if (RequestStatus.FAILURE.equals(status)) {
                     bomString = status.name() + "-" + summary.getMessage() ;

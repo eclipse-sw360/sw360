@@ -95,7 +95,6 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public static final String JWKS_ISSUER_URL;
     public static final String JWKS_ENDPOINT_URL;
     public static final Boolean IS_JWKS_VALIDATION_ENABLED;
-    public static final Boolean IS_FORCE_UPDATE_ENABLED;
     public static final UserGroup CONFIG_WRITE_ACCESS_USERGROUP;
     public static final UserGroup CONFIG_ADMIN_ACCESS_USERGROUP;
     private static final String DEFAULT_WRITE_ACCESS_USERGROUP = UserGroup.SW360_ADMIN.name();
@@ -116,8 +115,6 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         JWKS_ISSUER_URL = props.getProperty("jwks.issuer.url", null);
         JWKS_ENDPOINT_URL = props.getProperty("jwks.endpoint.url", null);
         IS_JWKS_VALIDATION_ENABLED = Boolean.parseBoolean(props.getProperty("jwks.validation.enabled", "false"));
-        IS_FORCE_UPDATE_ENABLED = Boolean.parseBoolean(
-                System.getProperty("RunRestForceUpdateTest", props.getProperty("rest.force.update.enabled", "false")));
         CONFIG_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", DEFAULT_WRITE_ACCESS_USERGROUP));
         CONFIG_ADMIN_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.admin.access.usergroup", DEFAULT_ADMIN_ACCESS_USERGROUP));
         SERVER_PATH_URL = props.getProperty("backend.url", "http://localhost:8080");
