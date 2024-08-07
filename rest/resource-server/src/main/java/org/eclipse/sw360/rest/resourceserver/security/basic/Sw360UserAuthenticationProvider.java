@@ -25,14 +25,13 @@ public class Sw360UserAuthenticationProvider implements AuthenticationProvider {
 
     private PasswordEncoder passwordEncoder;
 
-
-    @Autowired
-    public Sw360UserAuthenticationProvider(@Lazy PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    @Autowired
     private Sw360CustomUserDetailsService userDetailsService;
+
+    @Autowired
+    public Sw360UserAuthenticationProvider(@Lazy PasswordEncoder passwordEncoder, Sw360CustomUserDetailsService userDetailsService) {
+        this.passwordEncoder = passwordEncoder;
+        this.userDetailsService = userDetailsService;
+    }
 
     /**
      * @param authentication the authentication request object. 

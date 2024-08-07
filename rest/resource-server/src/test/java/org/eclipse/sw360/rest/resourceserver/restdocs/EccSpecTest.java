@@ -25,7 +25,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWit
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -41,9 +41,6 @@ public class EccSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockBean
-    private Sw360UserService userServiceMock;
 
     @MockBean
     private Sw360ReleaseService releaseService;
@@ -78,16 +75,15 @@ public class EccSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_ecc() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/ecc")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "name,desc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("page").description("Page of releases"),
                                 parameterWithName("page_entries").description("Amount of releases per page"),
                                 parameterWithName("sort").description("Defines order of the releases")

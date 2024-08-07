@@ -21,7 +21,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.requestF
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -74,12 +74,8 @@ import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
-import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.junit.Before;
@@ -108,9 +104,6 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockBean
-    private Sw360UserService userServiceMock;
 
     @MockBean
     private SW360PackageService packageServiceMock;
@@ -572,16 +565,15 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_releases() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "name,desc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("page").description("Page of release"),
                                 parameterWithName("page_entries").description("Amount of releases per page"),
                                 parameterWithName("sort").description("Defines order of the releases")
@@ -606,9 +598,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_release_all_details() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases?allDetails=true")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -654,18 +645,17 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_releases_by_lucene_search() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("name", release.getName())
-                .param("luceneSearch", "true")
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "name,desc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("name", release.getName())
+                .queryParam("luceneSearch", "true")
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("name").description("name of the release"),
                                 parameterWithName("luceneSearch").description("Defines whether luceneSearch is required while searching the release"),
                                 parameterWithName("page").description("Page of release"),
@@ -692,9 +682,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_releases_with_fields() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases?fields=cpeId,releaseDate")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -713,9 +702,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_recent_releases() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/recentReleases")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -732,9 +720,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_releases_by_name() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases?name=" + release.getName())
-                .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         links(linkWithRel("curies").description("Curies are used for online documentation")),
@@ -748,9 +735,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_release() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/" + release.getId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -797,9 +783,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_delete_releases() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(delete("/api/releases/" + release.getId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isMultiStatus())
                 .andDo(this.documentationHandler.document(
@@ -812,9 +797,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_usedbyresource_for_release() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/usedBy/" + release.getId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -853,11 +837,10 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         attachmentData.put("checkedOn", "2016-12-18");
         updateRelease.put("attachments", Collections.singletonList(attachmentData));
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(patch("/api/releases/" + releaseId)
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(updateRelease))
-                .header("Authorization", "Bearer" + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(documentReleaseProperties());
@@ -865,9 +848,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_release_attachment_info() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/" + release.getId() + "/attachments")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -891,11 +873,10 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         Attachment updateAttachment = new Attachment().setAttachmentType(AttachmentType.BINARY)
                 .setCreatedComment("Created Comment").setCheckStatus(CheckStatus.ACCEPTED)
                 .setCheckedComment("Checked Comment");
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc
                 .perform(patch("/api/releases/98745/attachment/1234").contentType(MediaTypes.HAL_JSON)
                         .content(this.objectMapper.writeValueAsString(updateAttachment))
-                        .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                 requestFields(
@@ -922,9 +903,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_release_attachment() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/" + release.getId() + "/attachments/" + attachment.getAttachmentContentId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept("application/*"))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document());
@@ -932,9 +912,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_release_attachment_bundle() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/" + release.getId() + "/attachments/download")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept("application/*"))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document());
@@ -944,11 +923,10 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     public void should_document_get_releases_by_externalIds() throws Exception {
         MultiValueMap<String, String> externalIds = new LinkedMultiValueMap<>();
         externalIds.put("mainline-id-component", List.of("1432","4876"));
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/searchByExternalIds?mainline-id-component=1432&mainline-id-component=4876")
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(externalIds))
-                .header("Authorization", "Bearer " + accessToken))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         responseFields(
@@ -962,10 +940,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_trigger_fossology_process() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(
                 get("/api/releases/" + release3.getId() + "/triggerFossologyProcess?uploadDescription=uploadDescription&markFossologyProcessOutdated=false")
-                        .header("Authorization", "Bearer " + accessToken))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(responseFields(
 //                        fieldWithPath("content.message").description(
@@ -977,9 +954,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_check_fossology_process_status() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/" + release3.getId() + "/checkFossologyProcessStatus").header("Authorization",
-                "Bearer " + accessToken)).andExpect(status().isOk())
+                TestHelper.generateAuthHeader(testUserId, testUserPassword))).andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(responseFields(
                         fieldWithPath("status").description("The status of triggered FOSSology, possible values are: " + Arrays.asList(RequestStatus.SUCCESS, RequestStatus.FAILURE, RequestStatus.PROCESSING)),
                         fieldWithPath("fossologyProcessInfo")
@@ -1017,11 +993,10 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         Map<String, String> release = new HashMap<>();
         release.put("version", "1.0");
         release.put("componentId", component.getId());
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(post("/api/releases")
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(release))
-                .header("Authorization", "Bearer " + accessToken))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated())
                 .andDo(this.documentationHandler.document(
                         requestFields(
@@ -1043,9 +1018,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_releases_by_sha1() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases?sha1=" + attachmentSha1)
-                        .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         links(linkWithRel("curies").description("Curies are used for online documentation")),
@@ -1059,9 +1033,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_delete_release_attachment() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(delete("/api/releases/" + release.getId() + "/attachments/" + attachment.getAttachmentContentId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(documentReleaseProperties());
@@ -1070,11 +1043,10 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_link_releases_to_release() throws Exception {
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(post("/api/releases/" + release.getId() + "/releases")
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(releaseIdToRelationship1))
-                .header("Authorization", "Bearer" + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isCreated());
     }
@@ -1098,10 +1070,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         packageIds.add("4444444467");
         packageIds.add("5555555576");
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(packageIds))
-                .header("Authorization", "Bearer " + accessToken)).andExpect(status().isCreated());
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))).andExpect(status().isCreated());
     }
 
     private RestDocumentationResultHandler documentReleaseProperties() {
@@ -1146,10 +1117,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_release_vulnerabilities() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/" + release.getId()+ "/vulnerabilities")
                         .contentType(MediaTypes.HAL_JSON)
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -1165,9 +1135,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_release_subscription() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/mySubscriptions")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -1194,11 +1163,10 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         vulnerabilityState.setComment("Change status NOT_CHECKED");
         vulnerabilityState.setVerificationState(VerificationState.NOT_CHECKED);
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(patch("/api/releases/" + releaseId + "/vulnerabilities")
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(vulnerabilityState))
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -1225,10 +1193,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_trigger_reload_fossology_report() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(
                         get("/api/releases/" + release3.getId() + "/reloadFossologyReport")
-                                .header("Authorization", "Bearer " + accessToken))
+                                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(responseFields(
                         fieldWithPath("message").description(
@@ -1238,7 +1205,6 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_write_spdx_licenses_info_into_release() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
 
         Map<String, List<String>> spdxLicenses= new HashMap<>();
         spdxLicenses.put("mainLicenseIds", List.of("ML1", "ML2"));
@@ -1247,7 +1213,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         this.mockMvc.perform(post("/api/releases/" + release.getId() + "/spdxLicenses")
                         .contentType(MediaTypes.HAL_JSON)
                         .content(this.objectMapper.writeValueAsString(spdxLicenses))
-                        .header("Authorization", "Bearer " + accessToken))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         requestFields(
@@ -1289,9 +1255,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_load_spdx_licenses_info_from_isr() throws Exception {
         mockLicensesInfo(AttachmentType.INITIAL_SCAN_REPORT);
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/" + releaseTest.getId() + "/spdxLicensesInfo?attachmentId=" + attachmentId)
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
     }
@@ -1299,9 +1264,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_load_spdx_licenses_info_from_clx_or_cli() throws Exception {
         mockLicensesInfo(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/" + releaseTest.getId() + "/spdxLicensesInfo?attachmentId=" + attachmentId)
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
     }
@@ -1400,9 +1364,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.getReleaseForUserById(eq(releaseWithAssessment.getId()), any())).willReturn(releaseWithAssessment);
         given(this.licenseInfoMockService.getLicenseInfoForAttachment(any(), any(), any(), eq(true))).willReturn(licenseInfoResults);
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/releases/" + releaseWithAssessment.getId() + "/assessmentSummaryInfo")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
     }

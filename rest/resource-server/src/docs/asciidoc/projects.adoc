@@ -20,7 +20,7 @@ The Projects resource is used to create and list projects.
 A `GET` request will list all of the service's projects.
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects/response-fields.adoc[]
@@ -41,7 +41,7 @@ include::{snippets}/should_document_get_projects/links.adoc[]
 A `GET` request will list all of the service's projects.
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects_with_all_details/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_with_all_details/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_with_all_details/response-fields.adoc[]
@@ -61,7 +61,7 @@ include::{snippets}/should_document_get_projects_with_all_details/links.adoc[]
 A `GET` request will list all of the service's projects by lucene search.
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects_by_lucene_search/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_by_lucene_search/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_lucene_search/response-fields.adoc[]
@@ -83,7 +83,7 @@ A `GET` request will list all of the service's projects by project name.
 Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects_by_name/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_by_name/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_name/response-fields.adoc[]
@@ -104,7 +104,7 @@ include::{snippets}/should_document_get_projects_by_name/links.adoc[]
 A `GET` request will list all of the service's projects by project type.
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects_by_type/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_by_type/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_type/response-fields.adoc[]
@@ -125,7 +125,7 @@ include::{snippets}/should_document_get_projects_by_type/links.adoc[]
 A `GET` request will list all of the service's projects by group.
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects_by_group/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_by_group/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_group/response-fields.adoc[]
@@ -148,7 +148,7 @@ A `GET` request will list all of the service's projects by tag.
 Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects_by_tag/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_by_tag/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_tag/response-fields.adoc[]
@@ -188,7 +188,7 @@ include::{snippets}/should_document_get_projects_by_external-ids/http-response.a
 A `GET` request will list all projects associated to the user.
 
 ===== Request parameter
-include::{snippets}/should_document_get_my_projects/request-parameters.adoc[]
+include::{snippets}/should_document_get_my_projects/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_my_projects/response-fields.adoc[]
@@ -372,7 +372,7 @@ include::{snippets}/should_document_get_project_releases/links.adoc[]
 A `GET` request will get releases of multiple projects. Please pass an array of project ids as request body
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects_releases/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_releases/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_releases/response-fields.adoc[]
@@ -413,7 +413,7 @@ A `GET` request will get all releases with ECC information of a single project.
 This works also with the transitive request parameter (&transitive=true)
 
 ===== Request parameter
-include::{snippets}/should_document_get_project_releases_ecc_information/request-parameters.adoc[]
+include::{snippets}/should_document_get_project_releases_ecc_information/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_project_releases_ecc_information/response-fields.adoc[]
@@ -662,7 +662,7 @@ include::{snippets}/should_document_get_license_clearing/http-response.adoc[]
 A `GET` request is used to download license info for the project. Please set the request parameter `&template=<TEMPLATE_NAME>` for variant `REPORT` to choose specific template.
 
 ===== Request parameter
-include::{snippets}/should_document_get_download_license_info/request-parameters.adoc[]
+include::{snippets}/should_document_get_download_license_info/query-parameters.adoc[]
 
 ===== Example request
 include::{snippets}/should_document_get_download_license_info/curl-request.adoc[]
@@ -690,7 +690,7 @@ include::{snippets}/should_document_get_usedbyresource_for_project/http-response
 A `GET` request will display all attachmentUsages of the projects.
 
 ===== Request parameter
-include::{snippets}/should_document_get_attachment_usage_for_project/request-parameters.adoc[]
+include::{snippets}/should_document_get_attachment_usage_for_project/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_attachment_usage_for_project/response-fields.adoc[]
@@ -707,7 +707,7 @@ include::{snippets}/should_document_get_attachment_usage_for_project/http-respon
 A `GET` request will get vulnerabilities of a single project.
 
 ===== Request parameter
-include::{snippets}/should_document_get_project_vulnerabilities/request-parameters.adoc[]
+include::{snippets}/should_document_get_project_vulnerabilities/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_project_vulnerabilities/response-fields.adoc[]
@@ -727,7 +727,7 @@ include::{snippets}/should_document_get_project_vulnerabilities/links.adoc[]
 A `GET` request will get vulnerabilities of a single project by release id and external id.
 
 ===== Request parameter
-include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/request-parameters.adoc[]
+include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/response-fields.adoc[]
@@ -854,7 +854,7 @@ include::{snippets}/should_document_create_summary_administration/http-response.
 A `GET` request help to download the projects report.
 
 ===== Request parameter
-include::{snippets}/should_document_get_project_report/request-parameters.adoc[]
+include::{snippets}/should_document_get_project_report/query-parameters.adoc[]
 
 ===== Example request
 include::{snippets}/should_document_get_project_report/curl-request.adoc[]
@@ -918,7 +918,7 @@ include::{snippets}/should_document_update_project_with_network/http-response.ad
 A `GET` request help to download project license clearing report.
 
 ===== Request parameter
-include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/request-parameters.adoc[]
+include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/query-parameters.adoc[]
 
 ===== Example request
 include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/curl-request.adoc[]

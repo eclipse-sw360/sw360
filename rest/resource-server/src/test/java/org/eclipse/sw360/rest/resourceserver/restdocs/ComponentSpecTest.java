@@ -69,7 +69,7 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -82,9 +82,6 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockBean
-    private Sw360UserService userServiceMock;
 
     @MockBean
     private Sw360ComponentService componentServiceMock;
@@ -518,16 +515,15 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_components() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "name,desc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("page").description("Page of components"),
                                 parameterWithName("page_entries").description("Amount of components per page"),
                                 parameterWithName("sort").description("Defines order of the components")
@@ -552,12 +548,11 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_components_by_lucene_search() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
-        mockMvc.perform(get("/api/components").header("Authorization", "Bearer " + accessToken)
-                .param("name", angularComponent.getName()).param("luceneSearch", "true").param("sort", "name,desc")
-                .param("page", "0").param("page_entries", "5").accept(MediaTypes.HAL_JSON)).andExpect(status().isOk())
+        mockMvc.perform(get("/api/components").header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("name", angularComponent.getName()).queryParam("luceneSearch", "true").queryParam("sort", "name,desc")
+                .queryParam("page", "0").queryParam("page_entries", "5").accept(MediaTypes.HAL_JSON)).andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(parameterWithName("name").description("name of components"),
+                        queryParameters(parameterWithName("name").description("name of components"),
                                 parameterWithName("luceneSearch").description("Defines whether luceneSearch is required while searching the component"),
                                 parameterWithName("page").description("Page of components"),
                                 parameterWithName("page_entries").description("Amount of components per page"),
@@ -582,17 +577,16 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_components_with_all_details() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .param("allDetails", "true")
-                        .param("page", "0")
-                        .param("page_entries", "5")
-                        .param("sort", "name,desc")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("allDetails", "true")
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
+                        .queryParam("sort", "name,desc")
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("allDetails").description("Flag to get components with all details. Possible values are `<true|false>`"),
                                 parameterWithName("page").description("Page of components"),
                                 parameterWithName("page_entries").description("Amount of components per page"),
@@ -660,9 +654,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_mysubscriptions_components() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components/mySubscriptions")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -678,9 +671,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     }
     @Test
     public void should_document_get_recent_components() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components/recentComponents")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -697,9 +689,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_usedbyresource_for_components() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components/usedBy/17653524")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -719,9 +710,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_components_no_paging_params() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -738,17 +728,16 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_components_with_fields() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("fields", "ownerGroup,ownerCountry")
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "name,desc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("fields", "ownerGroup,ownerCountry")
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("fields").description("Properties which should be present for each component in the result"),
                                 parameterWithName("page").description("Page of components"),
                                 parameterWithName("page_entries").description("Amount of components per page"),
@@ -776,9 +765,8 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_component() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components/17653524")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -830,12 +818,11 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         component.put("componentType", ComponentType.OSS.toString());
         component.put("homepage", "https://angular.io");
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(
                 post("/api/components")
                         .contentType(MediaTypes.HAL_JSON)
                         .content(this.objectMapper.writeValueAsString(component))
-                        .header("Authorization", "Bearer " + accessToken))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
                 .andDo(this.documentationHandler.document(
@@ -859,16 +846,15 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_components_by_type() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components?type=" + angularComponent.getComponentType())
-                .header("Authorization", "Bearer " + accessToken)
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "name,desc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("type").description("Filter for type"),
                                 parameterWithName("page").description("Page of components"),
                                 parameterWithName("page_entries").description("Amount of components per page"),
@@ -894,16 +880,15 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_components_by_name() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/components?name=" + angularComponent.getName())
-                .header("Authorization", "Bearer " + accessToken)
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "name,desc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("name").description("Filter for name"),
                                 parameterWithName("page").description("Page of components"),
                                 parameterWithName("page_entries").description("Amount of components per page"),
@@ -936,11 +921,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         updateComponent.setName("Updated Component");
         updateComponent.setAttachmentDTOs(attachmentDTOS);
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(patch("/api/components/17653524")
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(updateComponent))
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(documentComponentProperties());
@@ -948,19 +932,16 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_merge_components() throws Exception {
-
-
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(patch("/api/components/mergecomponents")
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(angularTargetComponent))
-                .header("Authorization", "Bearer " + accessToken)
-                .param("mergeTargetId", "87654321")
-                .param("mergeSourceId", "17653524")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("mergeTargetId", "87654321")
+                .queryParam("mergeSourceId", "17653524")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        formParameters(
+                        queryParameters(
                                 parameterWithName("mergeSourceId").description("Id of a source component to merge"),
                                 parameterWithName("mergeTargetId").description("Id of a target component to merge")
                         ),
@@ -999,9 +980,6 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_split_components() throws Exception {
-
-
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         Component srcComponent = new Component();
         srcComponent.setId("17653524");
         srcComponent.setName("Angular");
@@ -1026,7 +1004,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 mockMvc.perform(patch("/api/components/splitComponents")
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(componentsMap))
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -1049,9 +1027,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_delete_components() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
         mockMvc.perform(delete("/api/components/" + angularComponent.getId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isMultiStatus())
                 .andDo(this.documentationHandler.document(
@@ -1063,9 +1041,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_component_attachment_info() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
         mockMvc.perform(get("/api/components/" + angularComponent.getId() + "/attachments")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -1093,11 +1071,11 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         Attachment updateAttachment = new Attachment().setAttachmentType(AttachmentType.BINARY)
                 .setCreatedComment("Created Comment").setCheckStatus(CheckStatus.ACCEPTED)
                 .setCheckedComment("Checked Comment");
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
         this.mockMvc
                 .perform(patch("/api/components/98745/attachment/1234").contentType(MediaTypes.HAL_JSON)
                         .content(this.objectMapper.writeValueAsString(updateAttachment))
-                        .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                 requestFields(
@@ -1124,9 +1102,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_component_attachment() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
         mockMvc.perform(get("/api/components/" + angularComponent.getId() + "/attachments/" + attachment.getAttachmentContentId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept("application/*"))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document());
@@ -1134,9 +1112,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_component_attachment_bundle() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
         mockMvc.perform(get("/api/components/" + angularComponent.getId() + "/attachments/download")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept("application/zip"))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document());
@@ -1144,10 +1122,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_components_by_externalIds() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
         mockMvc.perform(get("/api/components/searchByExternalIds?component-id-key=1831A3&component-id-key=c77321")
                 .contentType(MediaTypes.HAL_JSON)
-                .header("Authorization", "Bearer " + accessToken))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         responseFields(
@@ -1166,9 +1144,9 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_delete_component_attachment() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
         mockMvc.perform(delete("/api/components/" + angularComponent.getId() + "/attachments/" + attachment.getAttachmentContentId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(documentComponentProperties());
@@ -1218,10 +1196,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_mycomponents_components() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
 
         mockMvc.perform(get("/api/components/mycomponents")
-                .header("Authorization", "Bearer " + accessToken).accept(MediaTypes.HAL_JSON))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         links(linkWithRel("curies").description("Curies are used for online documentation")),
@@ -1239,10 +1217,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_component_vulnerabilities() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
         mockMvc.perform(get("/api/components/" + angularComponent.getId()+ "/vulnerabilities")
                         .contentType(MediaTypes.HAL_JSON)
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                         .andExpect(status().isOk())
                         .andDo(this.documentationHandler.document(
@@ -1271,11 +1249,11 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         vulnerabilityState.setComment("Change status");
         vulnerabilityState.setVerificationState(VerificationState.NOT_CHECKED);
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
         mockMvc.perform(patch("/api/components/" + angularComponent.getId() + "/vulnerabilities")
                         .contentType(MediaType.APPLICATION_JSON_VALUE)
                         .content(this.objectMapper.writeValueAsString(vulnerabilityState))
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                         .andExpect(status().isOk())
                         .andDo(this.documentationHandler.document(
@@ -1301,10 +1279,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_releases_by_component() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
         mockMvc.perform(get("/api/components/" + angularComponent.getId()+ "/releases")
                         .contentType(MediaTypes.HAL_JSON)
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -1327,11 +1305,11 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_import_sbom_for_component() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file","file=@/bom.spdx.rdf".getBytes());
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/components/import/SBOM")
                 .content(file.getBytes())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .queryParam("type", "SPDX");
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
@@ -1339,27 +1317,26 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_prepare_import_sbom_for_component() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file","file=@/bom.spdx.rdf".getBytes());
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post("/api/components/prepareImport/SBOM")
                 .content(file.getBytes())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .queryParam("type", "SPDX");
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
 
     @Test
     public void should_document_get_component_report() throws Exception{
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/reports")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .param("withlinkedreleases", "true")
-                        .param("mimetype", "xlsx")
-                        .param("module", "components")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("withlinkedreleases", "true")
+                        .queryParam("mimetype", "xlsx")
+                        .queryParam("module", "components")
                         .accept(MediaTypes.HAL_JSON))
              .andExpect(status().isOk())
              .andDo(this.documentationHandler.document(
-                     formParameters(
+                     queryParameters(
                              parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
                              parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
                              parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`")

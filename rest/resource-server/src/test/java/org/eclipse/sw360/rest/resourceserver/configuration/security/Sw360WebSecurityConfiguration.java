@@ -26,13 +26,6 @@ import org.springframework.security.web.SecurityFilterChain;
 public class Sw360WebSecurityConfiguration {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.httpBasic().and().authorizeRequests().anyRequest().authenticated().and().httpBasic().and().csrf()
-                .disable();
-        return http.build();
-    }
-
-    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }

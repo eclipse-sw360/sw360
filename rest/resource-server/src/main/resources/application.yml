@@ -16,17 +16,18 @@ server:
 
 management:
   endpoints:
-    enabled-by-default: true
-    web:
-      base-path:
-  endpoint:
-    health:
-      enabled: true
-      show-details: always
-    info:
-      enabled: true
     web:
       base-path: /
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      enabled: true
+    info:
+      enabled: true
+  security:
+    enabled: true
 
 spring:
   application:
@@ -35,11 +36,6 @@ spring:
     multipart:
       max-file-size: 500MB
       max-request-size: 600MB
-
-# logging:
-#   level:
-#     org.springframework.web: DEBUG
-
   security:
     oauth2:
       resourceserver:
@@ -48,11 +44,10 @@ spring:
           #jwk-set-uri: https://localhost:8083/realms/sw360/protocol/openid-connect/certs
           issuer-uri: http://localhost:8080/authorization/oauth2/jwks
           jwk-set-uri: http://localhost:8080/authorization/oauth2/jwks
-            #security:
-            #oauth2:
-            #resourceserver:
-            #jwt:
-            #issuer-uri: http://localhost:8090/client-management/.well-known/jwks.json
+
+#logging:
+#  level:
+#    org.springframework.web: DEBUG
 
 
 jwt:
@@ -64,7 +59,7 @@ jwt:
 sw360:
   thrift-server-url: ${SW360_THRIFT_SERVER_URL:http://localhost:8080}
   test-user-id: admin@sw360.org
-  test-user-password: sw360-password
+  test-user-password: 12345
   couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
   cors:
     allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}

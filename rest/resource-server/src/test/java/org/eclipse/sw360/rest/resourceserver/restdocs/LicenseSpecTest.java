@@ -21,7 +21,6 @@ import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,7 +47,7 @@ import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuild
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.patch;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.formParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -61,9 +60,6 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockBean
-    private Sw360UserService userServiceMock;
 
     @MockBean
     private Sw360LicenseService licenseServiceMock;
@@ -153,9 +149,8 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_licenses() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/licenses")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -184,11 +179,10 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         requestBody.put("0001",true);
         requestBody.put("0002",true);
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(MockMvcRequestBuilders.patch("/api/licenses/" + license.getId() +"/whitelist")
                         .contentType(MediaTypes.HAL_JSON)
                         .content(this.objectMapper.writeValueAsString(requestBody))
-                        .header("Authorization", "Bearer" + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -222,9 +216,8 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         obligationIds.add(obligation2.getId());
         license.setObligationDatabaseIds(obligationIds);
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/licenses/" + license.getId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -251,9 +244,8 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_obligations_by_license() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/licenses/"+  license2.getId()+ "/obligations")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -273,11 +265,10 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         Map<String, String> licenseRequestBody = new HashMap<>();
         licenseRequestBody.put("fullName", "Apache 3.0");
         licenseRequestBody.put("shortName", "Apache License 3.0");
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(post("/api/licenses")
                         .contentType(MediaTypes.HAL_JSON)
                         .content(this.objectMapper.writeValueAsString(licenseRequestBody))
-                        .header("Authorization", "Bearer " + accessToken))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated())
                 .andDo(this.documentationHandler.document(
                         requestFields(
@@ -300,11 +291,10 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         licenseRequestBody.put("fullName", "Apache License 4.0");
         licenseRequestBody.put("note", "Apache License");
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(MockMvcRequestBuilders.patch("/api/licenses/" + license.getId())
                         .contentType(MediaTypes.HAL_JSON)
                         .content(this.objectMapper.writeValueAsString(licenseRequestBody))
-                        .header("Authorization", "Bearer" + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -325,9 +315,8 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_delete_license() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(delete("/api/licenses/" + license.getId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
     }
@@ -338,11 +327,10 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         obligationIds.add(obligation1.getId());
         obligationIds.add(obligation2.getId());
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(post("/api/licenses/" + license.getId() + "/obligations")
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(obligationIds))
-                .header("Authorization", "Bearer " + accessToken))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated());
     }
 
@@ -361,27 +349,24 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
         Set<String> obligationIds = new HashSet<String>();
         obligationIds.add(obligation2.getId());
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(patch("/api/licenses/" + license.getId() + "/obligations")
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(obligationIds))
-                .header("Authorization", "Bearer " + accessToken))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isOk());
     }
 
     @Test
     public void should_document_delete_all_license_info() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(delete("/api/licenses/" + "/delete")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
     }
     @Test
     public void should_document_get_download_license_archive() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/licenses" + "/downloadLicenses")
-         .header("Authorization", "Bearer " + accessToken)
+         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
          .accept("application/zip"))
          .andExpect(status().isOk())
          .andDo(this.documentationHandler.document());
@@ -389,9 +374,8 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_import_spdx_info() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(post("/api/licenses/" + "/import/SPDX")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
     }
@@ -399,43 +383,39 @@ public class LicenseSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_upload_license() throws Exception {
         MockMultipartFile file = new MockMultipartFile("licenseFile","file=@/bom.spdx.rdf".getBytes());
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart("/api/licenses/upload")
                 .file(file)
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .queryParam("licenseFile", "Must need to attach file.");
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
 
     @Test   		
     public void should_document_import_osadl_info() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(post("/api/licenses/import/OSADL")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
     }
 
     @Test
     public void should_document_get_create_license_type() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(post("/api/licenses/" + "/addLicenseType")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("licenseType", "wer")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("licenseType", "wer")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
 
     @Test
     public void should_document_get_license_report() throws Exception{
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/reports")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .param("module", "licenses")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("module", "licenses")
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                    formParameters(
+                    queryParameters(
                             parameterWithName("module").description("module represent the licenses. Possible values are `<licenses>`")
                     )));
     }

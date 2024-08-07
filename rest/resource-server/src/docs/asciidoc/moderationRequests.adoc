@@ -22,7 +22,7 @@ A `GET` request will list all the Moderation Requests with user as one of the mo
 
 ===== Request parameter
 
-include::{snippets}/should_document_get_moderationrequests/request-parameters.adoc[]
+include::{snippets}/should_document_get_moderationrequests/query-parameters.adoc[]
 
 ===== Response structure
 
@@ -43,7 +43,7 @@ A `GET` request will list all the Moderation Requests with all details with user
 
 ===== Request parameter
 
-include::{snippets}/should_document_get_moderationrequests_alldetails/request-parameters.adoc[]
+include::{snippets}/should_document_get_moderationrequests_alldetails/query-parameters.adoc[]
 
 ===== Response structure
 
@@ -79,7 +79,7 @@ include::{snippets}/should_document_get_moderationrequest/http-response.adoc[]
 A `GET` request will list all the ModerationRequest visible to the user based on the state.
 
 ===== Request parameter
-include::{snippets}/should_document_get_moderationrequests_by_state/request-parameters.adoc[]
+include::{snippets}/should_document_get_moderationrequests_by_state/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_moderationrequests_by_state/response-fields.adoc[]
@@ -136,7 +136,7 @@ include::{snippets}/should_document_get_moderationrequests_assign/http-response.
 A `GET` will pull <<resources-moderationRequest, ModerationRequest>> which are created by the requesting user.
 
 ===== Request parameter
-include::{snippets}/should_document_get_moderationrequests_submission/request-parameters.adoc[]
+include::{snippets}/should_document_get_moderationrequests_submission/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_moderationrequests_submission/response-fields.adoc[]

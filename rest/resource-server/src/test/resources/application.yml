@@ -1,0 +1,77 @@
+#SPDX-FileCopyrightText: © 2024 Siemens AG
+#SPDX-License-Identifier: EPL-2.0
+
+spring:
+  profiles:
+    active: SECURITY_MOCK
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/authorization/oauth2/jwks
+          jwk-set-uri: http://localhost:8080/authorization/oauth2/jwks
+  application:
+    name: resource
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 600MB
+
+management:
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+      enabled: true
+    info:
+      enabled: true
+  security:
+    enabled: true
+server:
+  servlet:
+    context-path: /
+
+#logging:
+#  level:
+#    org.springframework.security: DEBUG
+#    org.springframework.security.oauth2: DEBUG
+#    org.springframework.security.oauth2.provider.endpoint: DEBUG
+#    org.springframework.security.oauth2.provider.error: DEBUG
+#    org.springframework.security.oauth2.provider.token: DEBUG
+#    org.springframework.security.oauth2.provider.token.store: DEBUG
+#    org.springframework.security.oauth2.provider.token.store.jwk: DEBUG
+
+jwt:
+  auth:
+    converter:
+      resource-id: sw360-rest-api
+      principle-attribute: email
+
+sw360:
+  thrift-server-url: ${SW360_THRIFT_SERVER_URL:http://localhost:8080}
+  test-user-id: admin@sw360.org
+  test-user-password: 12345
+  couchdb-url: ${SW360_COUCHDB_URL:http://localhost:5984}
+  cors:
+    allowed-origin: ${SW360_CORS_ALLOWED_ORIGIN:#{null}}
+
+blacklist:
+  sw360:
+    rest:
+      api:
+        endpoints:
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api-docs
+  show-oauth2-endpoints: true
+  swagger-ui:
+    enabled: true
+    path: /api/swagger-ui
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/hal+json

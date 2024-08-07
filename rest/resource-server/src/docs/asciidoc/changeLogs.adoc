@@ -20,7 +20,7 @@ The changelog resource is used get the changelog of a document
 A `GET` request will list all the changelog based on the document id and parent document id
 
 ===== Request parameter
-include::{snippets}/should_document_get_changelog_by_documentid/request-parameters.adoc[]
+include::{snippets}/should_document_get_changelog_by_documentid/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_changelog_by_documentid/response-fields.adoc[]

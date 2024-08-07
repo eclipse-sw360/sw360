@@ -54,9 +54,6 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
     Sw360FossologyAdminServices fossologyAdminServices;
     
     @MockBean
-    private Sw360UserService userServiceMock;
-    
-    @MockBean
     FossologyService.Iface fossologyClient;
     
     @MockBean
@@ -83,9 +80,8 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
         myMap.put("url", "http://localhost:8080");
         myMap.put("folderId", "1");
         myMap.put("token", "hdshj2341.@");
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(post("/api/fossology/saveConfig")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(this.objectMapper.writeValueAsString(myMap))
                 .accept(MediaTypes.HAL_JSON))
@@ -94,10 +90,9 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
     
     @Test
     public void should_document_check_server_configuration() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/fossology/reServerConnection")
                 .contentType(MediaTypes.HAL_JSON)
-                .header("Authorization", "Bearer " + accessToken))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isOk());
     }
 }

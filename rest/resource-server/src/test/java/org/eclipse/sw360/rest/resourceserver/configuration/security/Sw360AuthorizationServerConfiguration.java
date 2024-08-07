@@ -1,7 +1,7 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2017,2024. Part of the SW360 Portal Project.
  *
-  * This program and the accompanying materials are made
+ * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
@@ -11,70 +11,43 @@
 package org.eclipse.sw360.rest.resourceserver.configuration.security;
 
 import lombok.RequiredArgsConstructor;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
-import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
-import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
-import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
-import org.springframework.security.oauth2.provider.token.TokenStore;
-import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
-import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
-import org.springframework.security.oauth2.provider.token.store.KeyStoreKeyFactory;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 
+@Profile("SECURITY_MOCK")
 @Configuration
-@EnableAuthorizationServer
+@EnableWebSecurity
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class Sw360AuthorizationServerConfiguration extends AuthorizationServerConfigurerAdapter {
-    private final AuthenticationManager authenticationManager;
+public class Sw360AuthorizationServerConfiguration {
 
-    // TODO Thomas Maier 15-12-2017
-    // Use Sw360GrantedAuthority from authorization server
-    private final String GRANTED_AUTHORITY_BASIC = "BASIC";
+	@Autowired
+	Sw360UserAuthenticationProvider sw360UserAuthenticationProvider;
 
-    @Override
-    public void configure(AuthorizationServerEndpointsConfigurer endpoints) {
-        endpoints
-                .tokenStore(tokenStore())
-                .tokenEnhancer(jwtAccessTokenConverter())
-                .authenticationManager(authenticationManager);
-    }
+	@Order(1)
+	@Bean
+	public SecurityFilterChain appSecurtiy(HttpSecurity httpSecurity) throws Exception {
+		httpSecurity.authorizeRequests(
+				authz -> authz
+				         .requestMatchers(HttpMethod.GET, "/health").permitAll()
+						.requestMatchers(HttpMethod.GET, "/info").permitAll()
+						.anyRequest().authenticated()
+		).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults());
+		return httpSecurity.csrf(csrf -> csrf.disable()).build();
+	}
 
-    @Override
-    public void configure(AuthorizationServerSecurityConfigurer oauthServer) {
-        oauthServer.tokenKeyAccess("isAnonymous() || hasAuthority('" + GRANTED_AUTHORITY_BASIC + "')")
-                .checkTokenAccess("hasAuthority('" + GRANTED_AUTHORITY_BASIC + "')");
-    }
+	@Autowired
+	public void authenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder) {
+        authenticationManagerBuilder.authenticationProvider(sw360UserAuthenticationProvider);
+	}
 
-    @Override
-    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-        clients.inMemory()
-                // TODO Thomas Maier 15-12-2017
-                // Externalize property values
-                .withClient("trusted-sw360-client")
-                .authorizedGrantTypes("client_credentials", "password")
-                .authorities(GRANTED_AUTHORITY_BASIC)
-                .scopes("all")
-                .resourceIds("sw360-REST-API")
-                .accessTokenValiditySeconds(3600)
-                .secret("sw360-secret");
-    }
-
-    @Bean
-    public TokenStore tokenStore() {
-        return new JwtTokenStore(jwtAccessTokenConverter());
-    }
-
-    @Bean
-    protected JwtAccessTokenConverter jwtAccessTokenConverter() {
-        KeyStoreKeyFactory keyStoreKeyFactory =
-                new KeyStoreKeyFactory(new ClassPathResource("jwt-keystore.jks"), "sw360SecretKey".toCharArray());
-        JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
-        jwtAccessTokenConverter.setKeyPair(keyStoreKeyFactory.getKeyPair("jwt"));
-        return jwtAccessTokenConverter;
-    }
 }
