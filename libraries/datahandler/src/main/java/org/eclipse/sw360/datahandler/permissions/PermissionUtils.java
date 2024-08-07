@@ -100,6 +100,10 @@ public class PermissionUtils {
         return user != null && user.isSetUserGroup() && user.getUserGroup() == userGroup;
     }
 
+    public static boolean isUserAtLeastClearingAdminOrExpert(User user) {
+        return isUserAtLeast(UserGroup.CLEARING_ADMIN, user) || isUserAtLeast(UserGroup.CLEARING_EXPERT, user);
+    }
+
     public static boolean isUserAtLeast(UserGroup group, User user) {
         switch (group) {
             case USER:
