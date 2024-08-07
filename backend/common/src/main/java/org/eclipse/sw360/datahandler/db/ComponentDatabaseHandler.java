@@ -225,8 +225,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         long isrCountAfter = evaluateClearingStateForScanAvailable(releaseAfter);
         if (isrCountAfter > 0) {
             releaseAfter.setClearingState(ClearingState.SCAN_AVAILABLE);
-        } else {
-            releaseAfter.setClearingState(ClearingState.NEW_CLEARING);
         }
 
         if (newSecondBestCR.isPresent()) {
