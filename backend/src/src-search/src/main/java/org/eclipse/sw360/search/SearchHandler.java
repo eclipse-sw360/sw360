@@ -23,7 +23,6 @@ import org.eclipse.sw360.datahandler.thrift.search.SearchService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.search.db.AbstractDatabaseSearchHandler;
 import org.eclipse.sw360.search.db.Sw360dbDatabaseSearchHandler;
-import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,9 +54,9 @@ public class SearchHandler implements SearchService.Iface {
         dbSw360users = new Sw360usersDatabaseSearchHandler();
     }
 
-    public SearchHandler(Supplier<HttpClient> hclient, Supplier<CloudantClient> cclient, String dbName) throws IOException {
-        dbSw360db = new Sw360dbDatabaseSearchHandler(hclient, cclient, dbName);
-        dbSw360users = new Sw360usersDatabaseSearchHandler(hclient, cclient, dbName);
+    public SearchHandler(Supplier<CloudantClient> cclient, String dbName) throws IOException {
+        dbSw360db = new Sw360dbDatabaseSearchHandler(cclient, dbName);
+        dbSw360users = new Sw360usersDatabaseSearchHandler(cclient, dbName);
     }
 
     @Override

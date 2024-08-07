@@ -19,7 +19,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -130,10 +130,10 @@ public class SW360PackageService {
 
         if (field.equals("name")) {
             if (isExactMatch) {
-                values = values.stream().map(s -> "\"" + s + "\"").map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+                values = values.stream().map(s -> "\"" + s + "\"").map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
             }
             else {
-                values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
             }
         }
         Map<String, Set<String>> queryMap = new HashMap<>();

@@ -32,7 +32,6 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
-import org.ektorp.http.HttpClient;
 
 import java.io.*;
 import java.text.DateFormat;
@@ -75,15 +74,7 @@ public class UserDatabaseHandler {
         dbConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
         repository = new UserRepository(db);
         readFileDepartmentConfig = new ReadFileDepartmentConfig();
-        userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
-    }
-
-    public UserDatabaseHandler(Supplier<CloudantClient> httpClient,Supplier<HttpClient> client, String dbName) throws IOException {
-        // Create the connector
-        db = new DatabaseConnectorCloudant(httpClient, dbName);
-        dbConnector = new DatabaseConnector(client, dbName);
-        repository = new UserRepository(db);
-        userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
+        userSearchHandler = new UserSearchHandler(DatabaseSettings.getConfiguredClient(), dbName);
     }
 
     public User getByEmail(String email) {

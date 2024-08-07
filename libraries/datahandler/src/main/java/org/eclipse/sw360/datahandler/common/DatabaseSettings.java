@@ -37,7 +37,6 @@ public class DatabaseSettings {
     public static final String PROPERTIES_FILE_PATH = "/couchdb.properties";
 
     public static final String COUCH_DB_URL;
-    public static final String COUCH_DB_LUCENE_URL;
     public static final String COUCH_DB_DATABASE;
     public static final String COUCH_DB_ATTACHMENTS;
     public static final String COUCH_DB_CHANGE_LOGS;
@@ -65,7 +64,6 @@ public class DatabaseSettings {
                 .ofNullable(System.getenv("COUCHDB_PASSWORD") != null ? System.getenv("COUCHDB_PASSWORD")
                         : props.getProperty("couchdb.password", ""));
         COUCH_DB_DATABASE = props.getProperty("couchdb.database", "sw360db");
-        COUCH_DB_LUCENE_URL = props.getProperty("couchdb.lucene.url", "http://localhost:8080/couchdb-lucene");
         COUCH_DB_ATTACHMENTS = props.getProperty("couchdb.attachments", "sw360attachments");
         COUCH_DB_CHANGE_LOGS = props.getProperty("couchdb.change_logs", "sw360changelogs");
         COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360config");

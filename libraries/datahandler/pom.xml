@@ -189,10 +189,6 @@
             <artifactId>annotations</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.ldriscoll</groupId>
-            <artifactId>ektorplucene</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.ektorp</groupId>
             <artifactId>org.ektorp</artifactId>
         </dependency>
@@ -209,6 +205,7 @@
         <dependency>
             <groupId>com.cloudant</groupId>
             <artifactId>cloudant-client</artifactId>
+            <version>${cloudant.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -267,9 +264,11 @@
             <artifactId>maven-model</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents.client5</groupId>
-            <artifactId>httpclient5</artifactId>
-        </dependency>  
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>nouveau-handler</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
 </project>
