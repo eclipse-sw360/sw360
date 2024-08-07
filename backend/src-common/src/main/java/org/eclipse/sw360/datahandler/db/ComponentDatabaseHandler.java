@@ -597,7 +597,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return isDuplicate(release.getName(), release.getVersion());
     }
 
-    private boolean isDuplicate(String componentName, boolean caseInsenstive) {
+    public boolean isDuplicate(String componentName, boolean caseInsenstive) {
         if (isNullEmptyOrWhitespace(componentName)) {
             return false;
         }
@@ -751,6 +751,15 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         return RequestStatus.SUCCESS;
 
+    }
+
+    public Component searchComponentByName(String name) {
+        List<Component> components = componentRepository.searchComponentByName(name, false);
+        if (components != null && components.size() == 1) {
+            return components.get(0);
+        } else {
+            return null;
+        }
     }
 
     private boolean isDependenciesExistInComponent(Component component) {
