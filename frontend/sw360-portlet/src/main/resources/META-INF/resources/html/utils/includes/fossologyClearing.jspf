@@ -24,7 +24,6 @@
     <portlet:param name="<%=PortalConstants.ACTION%>" value='<%=PortalConstants.FOSSOLOGY_ACTION_RELOAD_REPORT%>'/>
 </portlet:resourceURL>
 
-
 <div class="dialogs">
 	<div id="fossologyClearingDialog" data-title="<liferay-ui:message key="fossology.process" />" class="modal fade" tabindex="-1" role="dialog"
         data-portlet-namespace="<portlet:namespace/>"
@@ -38,6 +37,7 @@
         data-step-status-new="<%=ExternalToolProcessStatus.NEW %>"
         data-step-status-inwork="<%=ExternalToolProcessStatus.IN_WORK %>"
         data-step-status-done="<%=ExternalToolProcessStatus.DONE %>"
+        data-disable-clearing-report-download="<%=PortalConstants.DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD%>"
     >
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content">

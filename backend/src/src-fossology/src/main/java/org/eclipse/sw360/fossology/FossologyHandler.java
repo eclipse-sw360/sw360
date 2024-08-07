@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.fossology;
 
+import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.FossologyUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -32,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -162,11 +164,13 @@ public class FossologyHandler implements FossologyService.Iface {
             handleUploadStep(componentClient, release, user, fossologyProcess, sourceAttachment, uploadDescription);
         } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(furthestStep.getStepName())) {
             handleScanStep(componentClient, release, user, fossologyProcess);
-        } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
-            handleReportStep(componentClient, release, user, fossologyProcess);
         }
-
         updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+
+        if(BackendUtils.DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
+            handleReportStep(componentClient, release, user, fossologyProcess);
+            updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
+        }
 
         return fossologyProcess;
     }
@@ -393,8 +397,10 @@ public class FossologyHandler implements FossologyService.Iface {
             break;
         case DONE:
             // start report
-            fossologyProcess.addToProcessSteps(createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT));
-            handleReportStep(componentClient, release, user, fossologyProcess);
+            if(BackendUtils.DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD) {
+                fossologyProcess.addToProcessSteps(createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT));
+                handleReportStep(componentClient, release, user, fossologyProcess);
+            }
             break;
         default:
             // do nothing, unknown status
@@ -405,6 +411,7 @@ public class FossologyHandler implements FossologyService.Iface {
             ExternalToolProcess fossologyProcess) throws TException {
         ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps()
                 .get(fossologyProcess.getProcessSteps().size() - 1);
+
         switch (furthestStep.getStepStatus()) {
         case NEW:
             // generate report, set new state immediately to prevent other threads from
@@ -425,6 +432,7 @@ public class FossologyHandler implements FossologyService.Iface {
             // try to download report - since download might take a bit longer, we first set
             // the state to done so that no one else downloads the same report. if download
             // fails, we reset the state
+
             furthestStep.setStepStatus(ExternalToolProcessStatus.DONE);
             updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
 

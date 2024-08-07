@@ -667,6 +667,8 @@ public class PortalConstants {
     public static final String FOSSOLOGY_ACTION_RELOAD_REPORT = FOSSOLOGY_PREFIX + "reload_report";
     public static final String FOSSOLOGY_JOB_VIEW_LINK = "fossologyJobViewLink";
 
+    public static final Boolean DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD;
+
     public static final String RELEASES_AND_PROJECTS = "releasesAndProjects";
 
     // Task actions
@@ -863,6 +865,7 @@ public class PortalConstants {
         PROJECTIMPORT_HOSTS = props.getProperty("projectimport.hosts", "");
         PREFERRED_COUNTRY_CODES = props.getProperty("preferred.country.codes", "DE,AT,CH,US");
         MAINLINE_STATE_ENABLED_FOR_USER = Boolean.parseBoolean(props.getProperty("mainline.state.enabled.for.user", "false"));
+        DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD = Boolean.parseBoolean(props.getProperty("disable.clearing.fossology.report.download", "false"));
         IS_CLEARING_TEAM_UNKNOWN_ENABLED = Boolean.parseBoolean(props.getProperty("clearing.team.unknown.enabled", "true"));
         PROJECT_OBLIGATIONS_ACTION_SET = CommonUtils.splitToSet(props.getProperty("project.obligation.actions", "Action 1,Action 2,Action 3"));
         IS_PROJECT_OBLIGATIONS_ENABLED = Boolean.parseBoolean(props.getProperty("project.obligations.enabled", "true"));

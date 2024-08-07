@@ -150,7 +150,10 @@ define('utils/includes/fossologyClearing', [
     }
 
     function handleSuccessResult($dialog, releaseId, data) {
-        var finished = updateUI(data);
+        // 7 steps from 0 to 100 means 100/6 = 16.66 each step size
+        var isClearingReportDownloadDisabled = $('#fossologyClearingDialog').data('disable-clearing-report-download');
+        var stepSize = isClearingReportDownloadDisabled ? 25 : 16.66;
+        var finished = updateUI(data, stepSize);
         if (!finished) {
             if (dialogOpen) {
                 timeoutId = setTimeout(process.bind(this, $dialog, releaseId, 5), 1000);
@@ -160,7 +163,12 @@ define('utils/includes/fossologyClearing', [
             clearTimeout(timeoutId);
             dialogOpen = false;
             $dialog.closeMessage();
-            $dialog.success("The FOSSology process already finished. You should find the resulting report as attachment at this release.", false);
+            if (isClearingReportDownloadDisabled) {
+                $dialog.success("The FOSSology process finished. You can download the report from fossology", false);
+            } else {
+                $dialog.success("The FOSSology process already finished. You should find the resulting report as attachment at this release.", false);
+            }
+
         }
     }
 
@@ -188,10 +196,8 @@ define('utils/includes/fossologyClearing', [
         }
     }
 
-    function updateUI(data) {
-        // 7 steps from 0 to 100 means 100/6 = 16.66 each step size
-        var stepSize = 16.66,
-            progressText = "",
+    function updateUI(data, stepSize) {
+        var progressText = "",
             progressPercent = 0;
         if (data["stepName"] == config.stepNameReport) {
             progressText += "Report generation";
@@ -219,7 +225,7 @@ define('utils/includes/fossologyClearing', [
 
         $('.progress-bar').css("width", progressPercent + "%").attr("aria-valuenow", progressPercent).text(progressText);
 
-        return data["stepName"] == config.stepNameReport && data["stepStatus"] == config.stepStatusDone;
+        return data["stepName"] == config.stepNameScan && data["stepStatus"] == config.stepStatusDone;
     }
 
     return {

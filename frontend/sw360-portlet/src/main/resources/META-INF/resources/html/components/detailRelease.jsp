@@ -13,7 +13,6 @@
 <%@ page import="org.eclipse.sw360.portal.common.PortalConstants" %>
 <%@ page import="javax.portlet.PortletRequest" %>
 <%@ page import="org.eclipse.sw360.datahandler.thrift.components.ComponentType" %>
-
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 
@@ -35,6 +34,7 @@
     <jsp:useBean id="usingComponents" type="java.util.Set<org.eclipse.sw360.datahandler.thrift.components.Component>" scope="request"/>
     <jsp:useBean id="allUsingProjectsCount" type="java.lang.Integer" scope="request"/>
     <jsp:useBean id="isUserAllowedToMerge" type="java.lang.Boolean" scope="request"/>
+    <jsp:useBean id="isUserAtLeastClearingAdmin" type="java.lang.Boolean" scope="request"/>
     <core_rt:set var="cotsMode" value="<%=component.componentType == ComponentType.COTS%>"/>
     <jsp:useBean id="vulnerabilityVerificationEditable" type="java.lang.Boolean" scope="request"/>
     <jsp:useBean id="isSpdxDocument" type="java.lang.Boolean" scope="request" />

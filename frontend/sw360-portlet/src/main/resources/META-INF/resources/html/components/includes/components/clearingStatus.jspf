@@ -127,20 +127,7 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
             var $actions = $('<div>', {
                     'class': 'actions'
                 }),
-                <core_rt:choose>
-                    <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
-                        $fossologyAction = $('<svg>', {
-                            'class': 'disabled lexicon-icon',
-                            'data-release-id': row.DT_RowId
-                        }).append('<title><liferay-ui:message key="fossology.is.not.configured" /></title>'),
-                    </core_rt:when>
-                    <core_rt:otherwise>
-                        $fossologyAction = $('<svg>', {
-                            'class': 'fossology lexicon-icon',
-                            'data-release-id': row.DT_RowId
-                        }).append('<title><liferay-ui:message key="fossology.process" /></title>'),
-                    </core_rt:otherwise>
-                </core_rt:choose>
+
                 $editAction = render.linkTo(
                     makeReleaseUrl(row.DT_RowId, 'edit'),
                     "",
@@ -170,11 +157,30 @@ require(['jquery', 'bridges/datatables', 'components/includes/releases/linkProje
                     'data-linked-packages': row[5].linkedPackages,
                 });
 
-            $fossologyAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
+            <core_rt:if test="${isUserAtLeastClearingAdmin}">
+                var $fossologyAction;
+                <core_rt:choose>
+                    <core_rt:when test="${not empty FOSSOLOGY_CONNECTION_ENABLED and not FOSSOLOGY_CONNECTION_ENABLED}">
+                        $fossologyAction = $('<svg>', {
+                            'class': 'disabled lexicon-icon',
+                            'data-release-id': row.DT_RowId
+                        }).append('<title><liferay-ui:message key="fossology.is.not.configured" /></title>'),
+                    </core_rt:when>
+                    <core_rt:otherwise>
+                        $fossologyAction = $('<svg>', {
+                            'class': 'fossology lexicon-icon',
+                            'data-release-id': row.DT_RowId
+                        }).append('<title><liferay-ui:message key="fossology.process" /></title>'),
+                    </core_rt:otherwise>
+                </core_rt:choose>
+                $fossologyAction.append($('<use href="<%=request.getContextPath()%>/images/icons.svg#fossology"/>'));
+                $actions.append($fossologyAction);
+            </core_rt:if>
+
             $linkAction.append($('<title><liferay-ui:message key="link.project" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#link"/>'));
             $deleteAction.append($('<title><liferay-ui:message key="delete" /></title><use href="/o/org.eclipse.sw360.liferay-theme/images/clay/icons.svg#trash"/>'));
 
-            $actions.append($fossologyAction, $editAction, $copyAction, $linkAction, $mergeAction, $deleteAction);
+            $actions.append($editAction, $copyAction, $linkAction, $mergeAction, $deleteAction);
             return $actions[0].outerHTML;
         }
 

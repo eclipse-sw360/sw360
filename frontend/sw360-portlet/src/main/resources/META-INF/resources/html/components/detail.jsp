@@ -28,6 +28,7 @@
     <jsp:useBean id="allUsingProjectsCount" type="java.lang.Integer" scope="request"/>
     <jsp:useBean id="documentType" class="java.lang.String" scope="request"/>
     <jsp:useBean id="isUserAllowedToMerge" type="java.lang.Boolean" scope="request"/>
+    <jsp:useBean id="isUserAtLeastClearingAdmin" type="java.lang.Boolean" scope="request"/>
     <jsp:useBean id="vulnerabilityVerificationEditable" type="java.lang.Boolean" scope="request"/>
     <core_rt:if test="${vulnerabilityVerificationEditable}">
         <jsp:useBean id="numberOfIncorrectVulnerabilities" type="java.lang.Long" scope="request"/>
