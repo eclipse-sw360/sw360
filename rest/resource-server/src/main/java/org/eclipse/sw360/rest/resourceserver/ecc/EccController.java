@@ -39,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class EccController implements RepresentationModelProcessor<RepositoryLinksResource> {
     
     private static final String TYPE_ECC = "ecc";

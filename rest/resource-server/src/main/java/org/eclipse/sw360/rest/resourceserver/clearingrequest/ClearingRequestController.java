@@ -52,6 +52,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class ClearingRequestController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     public static final String CLEARING_REQUEST_URL = "/clearingrequest";

@@ -47,6 +47,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class ObligationController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String OBLIGATION_URL = "/obligations";
 

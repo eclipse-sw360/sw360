@@ -53,6 +53,7 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class VendorController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String VENDORS_URL = "/vendors";
 

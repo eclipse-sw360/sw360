@@ -35,6 +35,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class ScheduleAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String SCHEDULE_URL = "/schedule";
     
