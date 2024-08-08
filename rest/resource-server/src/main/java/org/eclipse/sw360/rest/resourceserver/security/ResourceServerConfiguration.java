@@ -16,7 +16,6 @@ import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
-import org.eclipse.sw360.rest.resourceserver.security.keycloak.KeycloakAccessTokenConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -57,7 +56,7 @@ public class ResourceServerConfiguration {
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers("/", "/*/*/.html/", "/*/*.css/", "/*/*.js/", "/*/*.json/", "/*/*.png/", "/*/*.gif/", "/*/*.ico/", "/*/*.woff/*", "/*/*.ttf/", "/docs/api-guide.html");
+        return (web) -> web.ignoring().requestMatchers("/", "/*/*.html", "/*/*.css", "/*/*.js", "/*.js", "/*.json", "/*/*.json", "/*/*.png", "/*/*.gif", "/*/*.ico", "/*/*.woff/*", "/*/*.ttf", "/*/*.html", "/*/*/*.html", "/*/*.yaml", "/v3/api-docs/**");
     }
 
     @Bean
@@ -80,7 +79,7 @@ public class ResourceServerConfiguration {
             auth.requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority("WRITE");
             auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE");
             auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE");
-            auth.requestMatchers(HttpMethod.PATCH, "*/api-docs.html").permitAll();
+            auth.requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll();
         }).csrf(csrf -> csrf.disable()).exceptionHandling(x -> x.authenticationEntryPoint(saep)).httpBasic(Customizer.withDefaults()).build();
 
     }

@@ -54,8 +54,8 @@ import org.eclipse.sw360.rest.resourceserver.moderationrequest.EmbeddedModeratio
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
-import org.springdoc.core.SpringDocUtils;
 
+import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
