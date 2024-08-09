@@ -24,6 +24,9 @@ import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -34,6 +37,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.google.common.collect.ImmutableMap;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -514,6 +518,60 @@ public class BulkDeleteUtilTest {
             
         } finally {
             stopTimeLog();
+        }
+    }
+    
+    @Test
+    public void testDeleteBulkRelease_ExternalLink001() throws Exception {
+        if (!isFeatureEnable()) {
+            System.out.println("BulkReleaseDeletion is disabled. these test is Skipped.");
+            return;
+        }
+
+        List<String> releaseIdList = new ArrayList<String>();
+        List<String> componentIdList = new ArrayList<String>();
+        
+        createTestRecords002(1, 2, releaseIdList, componentIdList);
+        String rootReleaseId = releaseIdList.get(0);
+        assertEquals(3, releaseIdList.size());
+        assertEquals(3, componentIdList.size());
+
+        Project project = new Project().setId("P1").setName("project1").setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
+        project.putToReleaseIdToUsage(rootReleaseId, new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.OPEN));
+        databaseConnector.add(project);
+        
+        BulkOperationNode level1Component = bulkDeleteUtil.deleteBulkRelease(rootReleaseId, user1, false);
+        assertNotNull(level1Component);
+
+        //Check the BulkOperationNode status
+        //Object[0] : NodeType, Object[1] : ResultState
+        Map<String, Object[]> expectedResults = new HashMap<String, Object[]>();
+        expectedResults.put(releaseIdList.get(0), new Object[]{BulkOperationNodeType.RELEASE, BulkOperationResultState.EXCLUDED});
+        expectedResults.put(releaseIdList.get(1), new Object[]{BulkOperationNodeType.RELEASE, BulkOperationResultState.EXCLUDED});
+        expectedResults.put(releaseIdList.get(2), new Object[]{BulkOperationNodeType.RELEASE, BulkOperationResultState.EXCLUDED});
+        expectedResults.put(componentIdList.get(0), new Object[]{BulkOperationNodeType.COMPONENT, BulkOperationResultState.EXCLUDED});
+        expectedResults.put(componentIdList.get(1), new Object[]{BulkOperationNodeType.COMPONENT, BulkOperationResultState.EXCLUDED});
+        expectedResults.put(componentIdList.get(2), new Object[]{BulkOperationNodeType.COMPONENT, BulkOperationResultState.EXCLUDED});
+        checkBulkOperationNode(level1Component, expectedResults);
+        
+        //Releases to be undeleted
+        for (String releaseId : releaseIdList) {
+            assertTrue(this.releaseExists(releaseId));
+        }
+        
+        //Release links to be undeleted
+        Release release0 = databaseConnector.get(Release.class, releaseIdList.get(0));
+        assertEquals(1, release0.getReleaseIdToRelationshipSize());
+        Release release1 = databaseConnector.get(Release.class, releaseIdList.get(1));
+        assertEquals(1, release1.getReleaseIdToRelationshipSize());
+        Release release2 = databaseConnector.get(Release.class, releaseIdList.get(2));
+        assertEquals(0, release2.getReleaseIdToRelationshipSize());
+        
+        //Components and links to be undeleted
+        for (String componentId : componentIdList) {
+            assertTrue(this.componentExists(componentId));
+            Component component = databaseConnector.get(Component.class, componentId);
+            assertEquals(1, component.getReleaseIdsSize());
         }
     }
     
