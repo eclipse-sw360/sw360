@@ -12,19 +12,14 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
@@ -65,6 +60,7 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
     ClearingRequest cr1 = new ClearingRequest();
     ClearingRequest cr2 = new ClearingRequest();
     List<Comment> comments = new ArrayList<Comment>();
+
     @Before
     public void before() throws TException, IOException {
         clearingRequest.setId("CR-101");
@@ -132,6 +128,7 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
         comments.add(comment);
         clearingRequest.setComments(comments);
+        given(this.clearingRequestServiceMock.addCommentToClearingRequest(eq(clearingRequest.getId()), any(), any())).willReturn(clearingRequest);
 
         given(this.clearingRequestServiceMock.getClearingRequestById(eq(clearingRequest.getId()), any())).willReturn(clearingRequest);
         given(this.clearingRequestServiceMock.getClearingRequestByProjectId(eq(clearingRequest.getProjectId()), any())).willReturn(clearingRequest);
@@ -276,4 +273,28 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                         )));
     }
 
+    public void should_add_comment_to_clearing_request() throws Exception {
+        Map<String, Object> comment = new LinkedHashMap<>();
+        comment.put("text", "comment text 1");
+        String accessToken = TestHelper.generateAuthHeader(testUserId, testUserPassword);
+
+        this.mockMvc.perform(
+                        post("/api/clearingrequest/" + clearingRequest.getId() + "/comments")
+                                .contentType(MediaTypes.HAL_JSON)
+                                .content(this.objectMapper.writeValueAsString(comment))
+                                .header("Authorization", accessToken))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        requestFields(
+                                fieldWithPath("text").description("The text of the comment")
+                        ),
+                        responseFields(
+                                fieldWithPath("_embedded.sw360:comments[].text").description("The text of the comment"),
+                                fieldWithPath("_embedded.sw360:comments[].commentedBy").description("The user who made the comment"),
+                                fieldWithPath("_embedded.sw360:comments[].commentedOn").description("Timestamp when the comment was made"),
+                                subsectionWithPath("_embedded.sw360:comments[]._embedded.commentingUser").description("Details of the user who made the comment"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )
+                ));
+    }
 }
