@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,7 +37,6 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -144,6 +144,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         return halClearingRequest;
     }
 
+
     @Operation(
             summary = "Get all the Clearing Requests visible to the user.",
             description = "Get all the Clearing Requests visible to the user.",
@@ -185,7 +186,6 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         return new ResponseEntity<>(resources, status);
     }
 
-
     @Operation(
             summary = "Get comments for a specific clearing request",
             description = "Fetch a paginated list of comments associated with the given clearing request ID.",
@@ -226,6 +226,47 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             return new ResponseEntity<>(resources, status);
         } catch (Exception e) {
             throw new TException(e.getMessage());
+        }
+    }
+
+    @Operation(
+            summary = "Add a new comment to a clearing request.",
+            description = "Create a new comment for the clearing request.",
+            tags = {"ClearingRequest"}
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = CLEARING_REQUEST_URL + "/{id}/comments", method = RequestMethod.POST)
+    public ResponseEntity<?> addComment(
+            @Parameter(description = "ID of the clearing request")
+            @PathVariable("id") String crId,
+            @Parameter(description = "Comment to be added to the clearing request",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Comment.class)))
+            @RequestBody Comment comment,
+            HttpServletRequest request
+    ) {
+        try {
+            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+            ClearingRequest existingClearingRequest = sw360ClearingRequestService.getClearingRequestById(crId, sw360User);
+            ClearingRequest updatedClearingRequest = sw360ClearingRequestService.addCommentToClearingRequest(crId, comment, sw360User);
+
+            List<Comment> sortedComments = updatedClearingRequest.getComments().stream()
+                    .sorted((c1, c2) -> Long.compare(c2.getCommentedOn(), c1.getCommentedOn()))
+                    .toList();
+            List<EntityModel<Comment>> commentList = new ArrayList<>();
+
+            for (Comment c : sortedComments) {
+                HalResource<Comment> resource = createHalComment(c);
+                commentList.add(resource);
+            }
+            CollectionModel<EntityModel<Comment>> resources = CollectionModel.of(commentList);
+            return new ResponseEntity<>(resources, HttpStatus.OK);
+        }catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Clearing request not found.");
+        }catch (TException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while processing the request.");
         }
     }
 
