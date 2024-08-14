@@ -10,10 +10,12 @@
 
 package org.eclipse.sw360.rest.resourceserver;
 
-import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.OAuthFlow;
+import io.swagger.v3.oas.models.security.OAuthFlows;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -23,7 +25,7 @@ import org.eclipse.sw360.rest.common.Sw360CORSFilter;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
-import org.springdoc.core.utils.SpringDocUtils;
+import org.springdoc.core.SpringDocUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -160,7 +162,13 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                         .addSecuritySchemes("tokenAuth",
                                 new SecurityScheme().type(SecurityScheme.Type.APIKEY).name("Authorization")
                                         .in(SecurityScheme.In.HEADER)
-                                        .description("Enter the token with the `Bearer ` prefix, e.g. \"Bearer eyJhbGciOiJ.....\".")))
+                                        .description("Enter the token with the `Token ` prefix, e.g. \"Token abcde12345\"."))
+                        .addSecuritySchemes("oauth",
+                                new SecurityScheme().type(SecurityScheme.Type.OAUTH2)
+                                        .flows(new OAuthFlows().password(new OAuthFlow()
+                                                .tokenUrl(SERVER_PATH_URL + "/authorization/oauth/token")
+                                                .refreshUrl(SERVER_PATH_URL + "/authorization/oauth/token"))
+                                        )))
                 .info(new Info().title("SW360 API").license(new License().name("EPL-2.0")
                                 .url("https://github.com/eclipse-sw360/sw360/blob/main/LICENSE"))
                         .version(restVersionString))
