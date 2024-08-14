@@ -68,13 +68,10 @@ blacklist:
 springdoc:
   api-docs:
     enabled: true
-    security:
-      oauth2:
-        enabled: true
+    path: /api-docs
+  show-oauth2-endpoints: true
   swagger-ui:
     enabled: true
-    security:
-      oauth2:
-        enabled: true
+    path: /api/swagger-ui
   default-consumes-media-type: application/json
   default-produces-media-type: application/hal+json

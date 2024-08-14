@@ -121,7 +121,7 @@
     <httpclient.version>5.3.1</httpclient.version>
     <httpcore.version>4.4.16</httpcore.version>
     <httpclient5.version>5.3.1</httpclient5.version>
-    <jakarta-xml-bind.version>4.0.2</jakarta-xml-bind.version>
+    <jakarta-xml-bind.version>2.3.2</jakarta-xml-bind.version>
     <javax-activation.version>1.1.1</javax-activation.version>
     <javax-annotation.version>1.3.2</javax-annotation.version>
     <jcip-annotations.version>1.0</jcip-annotations.version>
@@ -148,11 +148,10 @@
     <spring-restdocs.version>3.0.1</spring-restdocs.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
     <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
-    <springdoc-openapi-hateos.version>2.6.0</springdoc-openapi-hateos.version>
+    <springdoc-openapi-hateos.version>1.7.0</springdoc-openapi-hateos.version>
     <springdoc-openapi-ui.version>1.7.0</springdoc-openapi-ui.version>
-    <springdoc-openapi-security.version>2.6.0</springdoc-openapi-security.version>
-    <springdoc-openapi-webmvc.version>2.6.0</springdoc-openapi-webmvc.version>
-    <springdoc-openapi-stater-common.version>2.6.0</springdoc-openapi-stater-common.version>
+    <springdoc-openapi-security.version>1.7.0</springdoc-openapi-security.version>
+    <springdoc-openapi-webmvc.version>1.7.0</springdoc-openapi-webmvc.version>
     <springframework.version>6.1.6</springframework.version>
     <thrift.version>0.20.0</thrift.version>
     <tika.version>1.28.5</tika.version>
