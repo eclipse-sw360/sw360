@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -469,8 +470,23 @@ public class DatabaseConnectorCloudant {
         }
     }
 
-    public <T> QueryResult<T> getQueryResult(String query, Class<T> type) {
-        return database.query(query, type);
+    public PostFindOptions.Builder getQueryBuilder() {
+        return new PostFindOptions.Builder().db(this.dbName);
+    }
+
+    public <T> List<T> getQueryResult(PostFindOptions query, Class<T> type) {
+        List<T> results = new ArrayList<>();
+        try {
+            FindResult result = this.instance.getClient().postFind(query).execute().getResult();
+            if (result != null) {
+                results = result.getDocs().stream()
+                        .map(r -> getPojoFromDocument(r, type))
+                        .toList();
+            }
+        } catch (ServiceResponseException e) {
+            log.error("Error getting query result", e);
+        }
+        return results;
     }
 
     public <T> Set<String> getDistinctSortedStringKeys(@NotNull Class<T> type, String viewName) {
@@ -534,5 +550,58 @@ public class DatabaseConnectorCloudant {
 
         return this.instance.getClient().headDocument(documentOptions).execute()
                 .getStatusCode() == 200;
+    }
+
+    /**
+     * Generates an $eq selector for given field with given value.
+     * @param field Field name
+     * @param value Value to match
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> eq(String field, String value) {
+        return Collections.singletonMap(field,
+                Collections.singletonMap("$eq", value));
+    }
+
+    /**
+     * Generates an $exists selector for given field with given value.
+     * @param field Field name
+     * @param value Value to check
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> exists(String field, boolean value) {
+        return Collections.singletonMap(field,
+                Collections.singletonMap("$exists", value));
+    }
+
+    /**
+     * Generates an $and selector for list of selectors.
+     * @param selectors Selectors to combine
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> and(List<Map<String, Object>> selectors) {
+        return Collections.singletonMap("$and",
+                selectors);
+    }
+
+    /**
+     * Generates an $or selector for list of selectors.
+     * @param selectors Selectors to combine
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> or(List<Map<String, Object>> selectors) {
+        return Collections.singletonMap("$or",
+                selectors);
+    }
+
+    /**
+     * Generates an $elemMatch selector with and $eq selector for the field and value
+     * @param field Field name
+     * @param value Value to match
+     * @return New selector
+     */
+    public static @NotNull Map<String, Object> elemMatch(String field, String value) {
+        return Collections.singletonMap("$elemMatch",
+                eq(field, value));
     }
 }

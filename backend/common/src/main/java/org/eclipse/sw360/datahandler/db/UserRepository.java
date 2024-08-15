@@ -9,9 +9,10 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import static com.cloudant.client.api.query.Expression.eq;
-import static com.cloudant.client.api.query.Operation.and;
-import static com.cloudant.client.api.query.Operation.or;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.exists;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.or;
 
 import org.eclipse.sw360.components.summary.UserSummary;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -22,17 +23,12 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
 import com.ibm.cloud.cloudant.v1.model.ViewResultRow;
-import com.cloudant.client.api.query.Expression;
-import com.cloudant.client.api.query.QueryBuilder;
-import com.cloudant.client.api.query.QueryResult;
-import com.cloudant.client.api.query.Selector;
-import com.cloudant.client.api.query.Sort;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -215,76 +211,76 @@ public class UserRepository extends SummaryAwareRepository<User> {
         List<User> users = Lists.newArrayList();
         final boolean ascending = pageData.isAscending();
         final int sortColumnNo = pageData.getSortColumnNumber();
-        String query = null;
-        final Selector typeSelector = eq("type", "user");
-        final Selector emptySecondaryDepartmentsAndRolesSelector = or(
-                Expression.exists("secondaryDepartmentsAndRoles", false), eq("secondaryDepartmentsAndRoles", ""));
-        QueryBuilder qb = new QueryBuilder(typeSelector);
+        PostFindOptions query = null;
+        final Map<String, Object> typeSelector = Collections.singletonMap("type",
+                Collections.singletonMap("$eq", "user"));
+        final Map<String, Object> emptySecondaryDepartmentsAndRolesSelector = or(
+                List.of(exists("secondaryDepartmentsAndRoles", false), eq("secondaryDepartmentsAndRoles", "")));
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(typeSelector);
         if (rowsPerPage != -1) {
             qb.limit(rowsPerPage);
         }
         qb.skip(pageData.getDisplayStart());
 
         switch (sortColumnNo) {
-        case -1:
-        case 2:
-            qb = qb.useIndex("byEmailUser");
-            qb = ascending ? qb.sort(Sort.asc("email")) : qb.sort(Sort.desc("email"));
-            query = qb.build();
-            break;
-        case 0:
-            qb = qb.useIndex("byFirstName");
-            qb = ascending ? qb.sort(Sort.asc("givenname")) : qb.sort(Sort.desc("givenname"));
-            query = qb.build();
-            break;
-        case 1:
-            qb = qb.useIndex("byLastName");
-            qb = ascending ? qb.sort(Sort.asc("lastname")) : qb.sort(Sort.desc("lastname"));
-            query = qb.build();
-            break;
-        case 3:
-            qb = qb.useIndex("byActiveStatus");
-            qb = ascending ? qb.sort(Sort.asc("deactivated")) : qb.sort(Sort.desc("deactivated"));
-            query = qb.build();
-            break;
-        case 4:
-            qb = qb.useIndex("byDepartment");
-            qb = ascending ? qb.sort(Sort.asc("department")) : qb.sort(Sort.desc("department"));
-            query = qb.build();
-            break;
-        case 5:
-            qb = qb.useIndex("byUserGroup");
-            qb = ascending ? qb.sort(Sort.asc("userGroup")) : qb.sort(Sort.desc("userGroup"));
-            query = qb.build();
-            break;
-        case 6:
-            if (ascending) {
-                qb.skip(0);
-            }
-            qb = qb.useIndex("bySecondaryDepartmentsAndRoles");
-            qb = ascending ? qb.sort(Sort.asc("secondaryDepartmentsAndRoles"))
-                    : qb.sort(Sort.desc("secondaryDepartmentsAndRoles"));
-            query = qb.build();
-            break;
-        default:
-            break;
+            case -1:
+            case 2:
+                qb.useIndex(Collections.singletonList("byEmailUser"))
+                        .addSort(Collections.singletonMap("email", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 0:
+                qb.useIndex(Collections.singletonList("byFirstName"))
+                        .addSort(Collections.singletonMap("givenname", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 1:
+                qb.useIndex(Collections.singletonList("byLastName"))
+                        .addSort(Collections.singletonMap("lastname", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 3:
+                qb.useIndex(Collections.singletonList("byActiveStatus"))
+                        .addSort(Collections.singletonMap("deactivated", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 4:
+                qb.useIndex(Collections.singletonList("byDepartment"))
+                        .addSort(Collections.singletonMap("department", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 5:
+                qb.useIndex(Collections.singletonList("byUserGroup"))
+                        .addSort(Collections.singletonMap("userGroup", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 6:
+                if (ascending) {
+                    qb.skip(0);
+                }
+                qb.useIndex(Collections.singletonList("bySecondaryDepartmentsAndRoles"))
+                        .addSort(Collections.singletonMap("secondaryDepartmentsAndRoles", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            default:
+                break;
         }
 
         try {
-            QueryResult<User> queryResult = getConnector().getQueryResult(query, User.class);
-            users = queryResult.getDocs();
+            users = getConnector().getQueryResult(query, User.class);
 
             if (sortColumnNo == 6) {
-                final Selector selectorSecondaryGroupsAndRoles = and(typeSelector,
-                        emptySecondaryDepartmentsAndRolesSelector);
-                QueryBuilder emptySecondaryGroupsAndRolesQb = new QueryBuilder(selectorSecondaryGroupsAndRoles);
+                final Map<String, Object> selectorSecondaryGroupsAndRoles = and(List.of(typeSelector,
+                        emptySecondaryDepartmentsAndRolesSelector));
+                PostFindOptions.Builder emptySecondaryGroupsAndRolesQb = getConnector().getQueryBuilder()
+                        .selector(selectorSecondaryGroupsAndRoles);
                 emptySecondaryGroupsAndRolesQb.skip(pageData.getDisplayStart());
                 if (rowsPerPage != -1) {
                     emptySecondaryGroupsAndRolesQb.limit(rowsPerPage);
                 }
-                QueryResult<User> queryResultWithoutSorting = getConnector()
+                List<User> userList = getConnector()
                         .getQueryResult(emptySecondaryGroupsAndRolesQb.build(), User.class);
-                List<User> userList = queryResultWithoutSorting.getDocs();
                 if (ascending) {
                     userList.addAll(users);
                     users = userList;
