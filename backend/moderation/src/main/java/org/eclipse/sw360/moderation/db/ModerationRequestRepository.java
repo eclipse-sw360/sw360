@@ -10,13 +10,9 @@
 
 package org.eclipse.sw360.moderation.db;
 
-import static com.cloudant.client.api.query.Expression.eq;
-import static com.cloudant.client.api.query.Operation.and;
-import static com.cloudant.client.api.query.Operation.or;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,26 +23,25 @@ import java.util.stream.Collectors;
 import org.eclipse.sw360.components.summary.ModerationRequestSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
 import com.ibm.cloud.cloudant.v1.model.ViewResult;
 import com.ibm.cloud.cloudant.v1.model.ViewResultRow;
 import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
-import com.cloudant.client.api.query.Expression;
-import com.cloudant.client.api.query.PredicateExpression;
-import com.cloudant.client.api.query.PredicatedOperation;
-import com.cloudant.client.api.query.QueryBuilder;
-import com.cloudant.client.api.query.QueryResult;
-import com.cloudant.client.api.query.Selector;
-import com.cloudant.client.api.query.Sort;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.elemMatch;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.exists;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.or;
 
 /**
  * CRUD access for the ModerationRequest class
@@ -101,23 +96,26 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
     }
 
     public List<ModerationRequest> getRequestsByDocumentId(String documentId) {
-        final Selector typeSelector = eq("type", "moderation");
-        final Selector filterByModeratorSelector = eq("documentId", documentId);
-        final Selector finalSelector = and(typeSelector, filterByModeratorSelector);
-        QueryBuilder qb = new QueryBuilder(finalSelector);
-        qb.useIndex("byDocumentId");
-        List<ModerationRequest> mrs = getConnector().getQueryResult(qb.build(), ModerationRequest.class).getDocs();
+        final Map<String, Object> typeSelector = eq("type", "moderation");
+        final Map<String, Object> filterByModeratorSelector = eq("documentId", documentId);
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
+        PostFindOptions qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .useIndex(Collections.singletonList("byDocumentId"))
+                .build();
+        List<ModerationRequest> mrs = getConnector().getQueryResult(qb, ModerationRequest.class);
         return mrs;
     }
 
     public List<ModerationRequest> getRequestsByModerator(String moderator) {
-        final Selector typeSelector = eq("type", "moderation");
-        final Selector filterByModeratorSelector = PredicatedOperation.elemMatch("moderators",
-                PredicateExpression.eq(moderator));
-        final Selector finalSelector = and(typeSelector, filterByModeratorSelector);
-        QueryBuilder qb = new QueryBuilder(finalSelector);
-        qb.useIndex("byModerators");
-        List<ModerationRequest> mrs = getConnector().getQueryResult(qb.build(), ModerationRequest.class).getDocs();
+        final Map<String, Object> typeSelector = eq("type", "moderation");
+        final Map<String, Object> filterByModeratorSelector = elemMatch("moderators", moderator);
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
+        PostFindOptions qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .useIndex(Collections.singletonList("byModerators"))
+                .build();
+        List<ModerationRequest> mrs = getConnector().getQueryResult(qb, ModerationRequest.class);
         return makeSummaryFromFullDocs(SummaryType.SHORT, mrs);
     }
 
@@ -125,16 +123,17 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         final int rowsPerPage = pageData.getRowsPerPage();
         final boolean ascending = pageData.isAscending();
         final int skip = pageData.getDisplayStart();
-        final Selector typeSelector = eq("type", "moderation");
-        final Selector filterByModeratorSelector = PredicatedOperation.elemMatch("moderators",
-                PredicateExpression.eq(moderator));
-        final Selector finalSelector = and(typeSelector, filterByModeratorSelector);
-        QueryBuilder qb = new QueryBuilder(finalSelector);
-        qb.limit(rowsPerPage);
-        qb.skip(skip);
-        qb.useIndex("byDate");
-        qb = ascending ? qb.sort(Sort.asc("timestamp")) : qb.sort(Sort.desc("timestamp"));
-        return getConnector().getQueryResult(qb.build(), ModerationRequest.class).getDocs();
+        final Map<String, Object> typeSelector = eq("type", "moderation");
+        final Map<String, Object> filterByModeratorSelector = elemMatch("moderators", moderator);
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
+        PostFindOptions qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .limit(rowsPerPage)
+                .skip(skip)
+                .useIndex(Collections.singletonList("byDate"))
+                .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"))
+                .build();
+        return getConnector().getQueryResult(qb, ModerationRequest.class);
     }
 
     public Map<PaginationData, List<ModerationRequest>> getRequestsByModerator(String moderator, PaginationData pageData, boolean open) {
@@ -159,78 +158,71 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         List<ModerationRequest> modReqs = Lists.newArrayList();
         final boolean ascending = pageData.isAscending();
         final int sortColumnNo = pageData.getSortColumnNumber();
-        String query = null;
-        final Selector typeSelector = eq("type", "moderation");
-        final Selector openModerationState = or(eq("moderationState", "PENDING"), eq("moderationState", "INPROGRESS"));
-        final Selector closedModerationState = or(eq("moderationState", "APPROVED"), eq("moderationState", "REJECTED"));
-        final Selector filterByModeratorSelector = PredicatedOperation.elemMatch("moderators",
-                PredicateExpression.eq(moderator));
-        final Selector emptyComponentTypeSelector = or(Expression.exists("componentType", false),
-                eq("componentType", ""));
-        final Selector commonSelector = and(typeSelector, open ? openModerationState : closedModerationState,
-                filterByModeratorSelector);
-        QueryBuilder qb = new QueryBuilder(commonSelector);
+        PostFindOptions query = null;
+        final Map<String, Object> typeSelector = eq("type", "moderation");
+        final Map<String, Object> openModerationState = or(List.of(eq("moderationState", "PENDING"), eq("moderationState", "INPROGRESS")));
+        final Map<String, Object> closedModerationState = or(List.of(eq("moderationState", "APPROVED"), eq("moderationState", "REJECTED")));
+        final Map<String, Object> filterByModeratorSelector = elemMatch("moderators", moderator);
+        final Map<String, Object> emptyComponentTypeSelector = or(List.of(exists("componentType", false),
+                eq("componentType", "")));
+        final Map<String, Object> commonSelector = and(List.of(typeSelector, open ? openModerationState : closedModerationState,
+                filterByModeratorSelector));
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(commonSelector);
         if(rowsPerPage != -1) {
             qb.limit(rowsPerPage);
         }
         qb.skip(pageData.getDisplayStart());
         switch (sortColumnNo) {
-        case -1:
-            qb = qb.useIndex("byModerators");
-            qb = ascending ? qb.sort(Sort.asc("moderators")) : qb.sort(Sort.desc("moderators"));
-            query = qb.build();
-            break;
-        case 0:
-            qb = qb.useIndex("byDate");
-            qb = ascending ? qb.sort(Sort.asc("timestamp")) : qb.sort(Sort.desc("timestamp"));
-            query = qb.build();
-            break;
-        case 1:
-            qb = qb.useIndex("byComponentType");
-            qb = ascending ? qb.sort(Sort.asc("componentType")) : qb.sort(Sort.desc("componentType"));
-            query = qb.build();
-            break;
-        case 2:
-            qb = qb.useIndex("byDocumentName");
-            qb = ascending ? qb.sort(Sort.asc("documentName")) : qb.sort(Sort.desc("documentName"));
-            query = qb.build();
-            break;
-        case 3:
-            qb = qb.useIndex("byUsers");
-            qb = ascending ? qb.sort(Sort.asc("requestingUser")) : qb.sort(Sort.desc("requestingUser"));
-            query = qb.build();
-            break;
-        case 4:
-            qb = qb.useIndex("byDepartment");
-            qb = ascending ? qb.sort(Sort.asc("requestingUserDepartment"))
-                    : qb.sort(Sort.desc("requestingUserDepartment"));
-            query = qb.build();
-            break;
-        case 5:
-            qb = qb.useIndex("byModerators");
-            qb = ascending ? qb.sort(Sort.asc("moderators")) : qb.sort(Sort.desc("moderators"));
-            query = qb.build();
-            break;
-        case 6:
-            qb = qb.useIndex("byModerationState");
-            qb = ascending ? qb.sort(Sort.asc("moderationState")) : qb.sort(Sort.desc("moderationState"));
-            query = qb.build();
-            break;
-        default:
-            break;
+            case -1, 5:
+                qb.useIndex(Collections.singletonList("byModerators"))
+                        .addSort(Collections.singletonMap("moderators", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 0:
+                qb.useIndex(Collections.singletonList("byDate"))
+                        .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 1:
+                qb.useIndex(Collections.singletonList("byComponentType"))
+                        .addSort(Collections.singletonMap("componentType", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 2:
+                qb.useIndex(Collections.singletonList("byDocumentName"))
+                        .addSort(Collections.singletonMap("documentName", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 3:
+                qb.useIndex(Collections.singletonList("byUsers"))
+                        .addSort(Collections.singletonMap("requestingUser", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 4:
+                qb.useIndex(Collections.singletonList("byDepartment"))
+                        .addSort(Collections.singletonMap("requestingUserDepartment", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 6:
+                qb.useIndex(Collections.singletonList("byModerationState"))
+                        .addSort(Collections.singletonMap("moderationState", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            default:
+                break;
         }
         try {
-            QueryResult<ModerationRequest> queryResult = getConnector().getQueryResult(query, ModerationRequest.class);
-            modReqs = queryResult.getDocs();
+            modReqs = getConnector().getQueryResult(query, ModerationRequest.class);
             if (1 == sortColumnNo) {
-                final Selector selectorCompType = and(typeSelector, open ? openModerationState : closedModerationState,
-                        filterByModeratorSelector, emptyComponentTypeSelector);
-                QueryBuilder emptyCTypeQb = new QueryBuilder(selectorCompType);
-                emptyCTypeQb.limit(rowsPerPage);
-                emptyCTypeQb.skip(pageData.getDisplayStart());
-                QueryResult<ModerationRequest> queryResultWithoutSorting = getConnector()
+                final Map<String, Object> selectorCompType = and(List.of(typeSelector, open ? openModerationState : closedModerationState,
+                        filterByModeratorSelector, emptyComponentTypeSelector));
+                PostFindOptions.Builder emptyCTypeQb = getConnector().getQueryBuilder()
+                        .selector(selectorCompType)
+                        .limit(rowsPerPage)
+                        .skip(pageData.getDisplayStart());
+                List<ModerationRequest> mods = getConnector()
                         .getQueryResult(emptyCTypeQb.build(), ModerationRequest.class);
-                List<ModerationRequest> mods = queryResultWithoutSorting.getDocs();
                 if (ascending) {
                     mods.addAll(modReqs);
                     modReqs = mods;
@@ -258,12 +250,13 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
     }
 
     public List<ModerationRequest> getRequestsByRequestingUser(String user) {
-        final Selector typeSelector = eq("type", "moderation");
-        final Selector filterByModeratorSelector = eq("requestingUser", user);
-        final Selector finalSelector = and(typeSelector, filterByModeratorSelector);
-        QueryBuilder qb = new QueryBuilder(finalSelector);
-        qb.useIndex("byUsers");
-        List<ModerationRequest> mrs = getConnector().getQueryResult(qb.build(), ModerationRequest.class).getDocs();
+        final Map<String, Object> typeSelector = eq("type", "moderation");
+        final Map<String, Object> filterByModeratorSelector = eq("requestingUser", user);
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .useIndex(Collections.singletonList("byUsers"));
+        List<ModerationRequest> mrs = getConnector().getQueryResult(qb.build(), ModerationRequest.class);
         return makeSummaryFromFullDocs(SummaryType.SHORT, mrs);
     }
 
@@ -271,19 +264,19 @@ public class ModerationRequestRepository extends SummaryAwareRepository<Moderati
         final int rowsPerPage = pageData.getRowsPerPage();
         final boolean ascending = pageData.isAscending();
         final int skip = pageData.getDisplayStart();
-        final Selector typeSelector = eq("type", "moderation");
-        final Selector filterByModeratorSelector = eq("requestingUser", user);
-        final Selector finalSelector = and(typeSelector, filterByModeratorSelector);
-        QueryBuilder qb = new QueryBuilder(finalSelector);
-        qb.limit(rowsPerPage);
-        qb.skip(skip);
-        qb.useIndex("byUsers");
-        qb = ascending ? qb.sort(Sort.asc("timestamp")) : qb.sort(Sort.desc("timestamp"));
+        final Map<String, Object> typeSelector = eq("type", "moderation");
+        final Map<String, Object> filterByModeratorSelector = eq("requestingUser", user);
+        final Map<String, Object> finalSelector = and(List.of(typeSelector, filterByModeratorSelector));
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(finalSelector)
+                .limit(rowsPerPage)
+                .skip(skip)
+                .useIndex(Collections.singletonList("byUsers"))
+                .addSort(Collections.singletonMap("timestamp", ascending ? "asc" : "desc"));
 
         List<ModerationRequest> modReqs = Lists.newArrayList();
         try {
-            QueryResult<ModerationRequest> queryResult = getConnector().getQueryResult(qb.build(), ModerationRequest.class);
-            modReqs = queryResult.getDocs();
+            modReqs = getConnector().getQueryResult(qb.build(), ModerationRequest.class);
         } catch (Exception e) {
             log.error("Error getting moderation requests", e);
         }
