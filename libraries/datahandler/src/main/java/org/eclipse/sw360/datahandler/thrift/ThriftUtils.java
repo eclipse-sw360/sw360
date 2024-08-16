@@ -14,6 +14,11 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import org.eclipse.sw360.datahandler.common.CustomThriftDeserializer;
+import org.eclipse.sw360.datahandler.common.CustomThriftSerializer;
 import org.eclipse.sw360.datahandler.couchdb.deserializer.UsageDataDeserializer;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
@@ -40,6 +45,7 @@ import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import com.ibm.cloud.cloudant.v1.model.Document;
 
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -97,10 +103,6 @@ public class ThriftUtils {
             UsageData.class, new UsageDataDeserializer()
     );
 
-    private static final Map<Class<?>, Class<? extends DocumentWrapper<?>>> THRIFT_WRAPPED = ImmutableMap.of(
-            AttachmentContent.class, AttachmentContentWrapper.class
-    );
-
     public static final ImmutableList<Component._Fields> IMMUTABLE_OF_COMPONENT = ImmutableList.of(
             Component._Fields.CREATED_BY,
             Component._Fields.CREATED_ON);
@@ -115,13 +117,11 @@ public class ThriftUtils {
             Release._Fields.CREATED_BY,
             Release._Fields.CREATED_ON);
 
+    private static Gson gson;
+
 
     private ThriftUtils() {
         // Utility class with only static functions
-    }
-
-    public static boolean isMapped(Class<?> clazz) {
-        return THRIFT_WRAPPED.containsKey(clazz);
     }
 
     public static <T extends TBase<T, F>, F extends TFieldIdEnum> void copyField(T src, T dest, F field) {
@@ -148,7 +148,16 @@ public class ThriftUtils {
     }
 
     public static <T> Map<String, T> getIdMap(Collection<T> in) {
-        return Maps.uniqueIndex(in, Document::getId);
+        return Maps.uniqueIndex(in, value -> {
+            if (value instanceof Document doc) {
+                return doc.getId();
+            }
+            Document doc = new Document();
+            Gson gson = getGson();
+            Type t = new TypeToken<Map<String, Object>>() {}.getType();
+            doc.setProperties(gson.fromJson(gson.toJson(value), t));
+            return doc.getId();
+        });
     }
 
     public static <T extends TBase<T, F>, F extends TFieldIdEnum> Function<T, Object> extractField(final F field) {
@@ -169,5 +178,20 @@ public class ThriftUtils {
                 return null;
             }
         };
+    }
+
+    private static Gson getGson() {
+        if (gson == null) {
+            GsonBuilder gsonBuilder = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping();
+            for (Class<?> c : THRIFT_CLASSES) {
+                gsonBuilder.registerTypeAdapter(c, new CustomThriftDeserializer());
+                gsonBuilder.registerTypeAdapter(c, new CustomThriftSerializer());
+            }
+            for (Class<?> c : THRIFT_NESTED_CLASSES) {
+                gsonBuilder.registerTypeAdapter(c, new CustomThriftSerializer());
+            }
+            gson = gsonBuilder.create();
+        }
+        return gson;
     }
 }

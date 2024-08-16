@@ -53,7 +53,7 @@ public class ObligationElementSearchHandler {
     public ObligationElementSearchHandler(Cloudant cClient, String dbName) throws IOException {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
         // Creates the database connector and adds the lucene search view
-        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
         Gson gson = db.getInstance().getGson();
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);

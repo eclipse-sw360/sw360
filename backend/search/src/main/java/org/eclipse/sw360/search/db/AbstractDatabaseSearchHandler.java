@@ -85,7 +85,7 @@ public abstract class AbstractDatabaseSearchHandler {
         Cloudant client = DatabaseSettings.getConfiguredClient();
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         // Create the database connector and add the search view to couchDB
-        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
         Gson gson = db.getInstance().getGson();
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);
@@ -98,7 +98,7 @@ public abstract class AbstractDatabaseSearchHandler {
     public AbstractDatabaseSearchHandler(Cloudant client, String dbName) throws IOException {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
         // Create the database connector and add the search view to couchDB
-        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
         Gson gson = db.getInstance().getGson();
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);

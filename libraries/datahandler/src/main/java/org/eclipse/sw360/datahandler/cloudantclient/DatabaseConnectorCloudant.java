@@ -13,6 +13,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.cloudant.v1.model.*;
 import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
@@ -21,12 +22,12 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -65,8 +66,7 @@ public class DatabaseConnectorCloudant {
     public void update(Object document) {
         DocumentResult resp;
         if (document != null) {
-            if (ThriftUtils.isMapped(document.getClass())) {
-                AttachmentContent content = (AttachmentContent) document;
+            if (document instanceof AttachmentContent content) {
                 InputStream in = getAttachment(content.getId(), content.getFilename());
                 resp = this.updateWithResponse(document);
                 createAttachment(resp.getId(), content.getFilename(), in, content.getContentType());
@@ -533,7 +533,8 @@ public class DatabaseConnectorCloudant {
         }
         Document doc = new Document();
         Gson gson = this.instance.getGson();
-        doc.setProperties(gson.fromJson(gson.toJson(document), Map.class));
+        Type t = new TypeToken<Map<String, Object>>() {}.getType();
+        doc.setProperties(gson.fromJson(gson.toJson(document), t));
         return doc;
     }
 
