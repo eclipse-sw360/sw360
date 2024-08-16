@@ -9,109 +9,81 @@
  */
 package org.eclipse.sw360.nouveau;
 
-import com.cloudant.client.internal.DatabaseURIHelper;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.ibm.cloud.cloudant.common.SdkCommon;
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import com.ibm.cloud.cloudant.v1.model.SearchAnalyzeResult;
 import com.ibm.cloud.sdk.core.http.RequestBuilder;
 import com.ibm.cloud.sdk.core.http.ResponseConverter;
+import com.ibm.cloud.sdk.core.http.ServiceCall;
 import com.ibm.cloud.sdk.core.util.ResponseConverterUtils;
+import com.ibm.cloud.sdk.core.util.Validator;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * CouchDB connector which allows us to run the Nouveau queries.
  */
 public class LuceneAwareCouchDbConnector {
-
     public static String DEFAULT_NOUVEAU_PREFIX = "_nouveau";
     public static String DEFAULT_DESIGN_PREFIX = "_design";
 
-    private final String lucenePrefix;
-    private final String ddoc;
     private final NouveauAwareDatabase database;
 
-    public LuceneAwareCouchDbConnector(Cloudant db, String ddoc) throws IOException {
-        this.lucenePrefix = DEFAULT_NOUVEAU_PREFIX;
-        this.ddoc = ddoc;
-        this.database = new NouveauAwareDatabase(db, this.ddoc, this.lucenePrefix);
+    public LuceneAwareCouchDbConnector(Cloudant dbClient, String ddoc, String db,
+                                       Gson gson) {
+        String lucenePrefix = DEFAULT_NOUVEAU_PREFIX;
+        this.database = new NouveauAwareDatabase(dbClient, db, ddoc,
+                lucenePrefix, gson);
     }
 
-    public static class NouveauAwareDatabase {
+    public static class NouveauAwareDatabase extends Cloudant {
+        private final String db;
         private final String ddoc;
-        private final Cloudant client;
         private final String lucenePrefix;
+        private final Gson gson;
 
-        protected NouveauAwareDatabase(@NotNull Cloudant dbClient,
-                                       String ddoc, String lucenePrefix) {
-            this.client = dbClient;
+        public NouveauAwareDatabase(@NotNull Cloudant client, String db,
+                                    String ddoc, String lucenePrefix, Gson gson) {
+            super(client.getName(), client.getAuthenticator());
+            this.db = db;
             this.ddoc = ddoc;
             this.lucenePrefix = lucenePrefix;
+            this.gson = gson;
         }
 
-        public <T> T queryNouveau(String index, @NotNull NouveauQuery query, Class<T> classOfT) {
-//            RequestBuilder builder = RequestBuilder.post(
-//                    RequestBuilder.resolveRequestUrl(
-//                            this.client.getServiceUrl(),
-//                            "/" + ensureDesignId(this.ddoc) + "/" + lucenePrefix + "/" + index
-//                    ));
-//            Map<String, String> sdkHeaders = SdkCommon.getSdkHeaders(
-//                    "cloudant", "v1", "postNouveauQuery");
-//            Iterator<Map.Entry<String, String>> var4 = sdkHeaders.entrySet().iterator();
-//
-//            while (var4.hasNext()) {
-//                Map.Entry<String, String> header = var4.next();
-//                builder.header(new Object[]{header.getKey(), header.getValue()});
-//            }
-//
-//            builder.header(new Object[]{"Accept", "application/json"});
-//            JsonObject contentJson = this.getGson().fromJson(query.buildQuery(this.getGson()), JsonObject.class);
-//            builder.bodyJson(contentJson);
-//            ResponseConverter<SearchAnalyzeResult> responseConverter = ResponseConverterUtils.getValue((new TypeToken<SearchAnalyzeResult>() {
-//            }).getType());
-//            this.client.createServiceCall(builder.build(), responseConverter);
+        public <T> ServiceCall<T> queryNouveau(String index, @NotNull NouveauQuery query,
+                                               Class<T> ignoredClassOfT) {
+            Validator.notEmpty(index, "index cannot be empty");
+            Validator.notNull(query, "query cannot be null");
 
+            Map<String, String> pathParamsMap = new HashMap<>();
+            pathParamsMap.put("db", this.db);
+            pathParamsMap.put("ddoc", ensureDesignId(this.ddoc));
+            pathParamsMap.put("nouveauPrefix", this.lucenePrefix);
+            pathParamsMap.put("index", index);
 
-            URI uri = (new DatabaseURIHelper(this.getDBUri()))
-                    .path(ensureDesignId(this.ddoc))
-                    .path(lucenePrefix).path(index).build();
+            RequestBuilder builder = RequestBuilder.post(RequestBuilder.resolveRequestUrl(
+                    this.getServiceUrl(),
+                    "/{db}/{ddoc}/{nouveauPrefix}/{index}",
+                    pathParamsMap));
+            Map<String, String> sdkHeaders = SdkCommon.getSdkHeaders("cloudant", "v1", "postNouveauQuery");
 
-            InputStream response = null;
-
-            T queryResponse;
-            try {
-                response = this.client.executeRequest(CouchDbUtil.createPost(uri, query.buildQuery(this.client.getGson()), "application/json")).responseAsInputStream();
-                queryResponse = CouchDbUtil.getResponse(response, classOfT, this.client.getGson());
-            } catch (IOException | CouchDbException e) {
-                throw new RuntimeException(e);
-            } finally {
-                CouchDbUtil.close(response);
+            for (Map.Entry<String, String> stringStringEntry : sdkHeaders.entrySet()) {
+                builder.header(stringStringEntry.getKey(), stringStringEntry.getValue());
             }
 
-            return queryResponse;
-        }
+            builder.header("Accept", "application/json");
+            builder.header("Content-Type", "application/json");
 
-//        private Gson getGson() {
-//            GsonBuilder gsonBuilder = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping();
-//            for (Class<?> c : ThriftUtils.THRIFT_CLASSES) {
-//                gsonBuilder.registerTypeAdapter(c, new CustomThriftDeserializer());
-//                gsonBuilder.registerTypeAdapter(c, new CustomThriftSerializer());
-//            }
-//            for (Class<?> c : ThriftUtils.THRIFT_NESTED_CLASSES) {
-//                gsonBuilder.registerTypeAdapter(c, new CustomThriftSerializer());
-//            }
-//            return gsonBuilder.create();
-//        }
+            builder.bodyContent(query.buildQuery(this.gson), "application/json");
+            ResponseConverter<T> responseConverter = ResponseConverterUtils.getValue((new TypeToken<T>() {
+            }).getType());
+            return this.createServiceCall(builder.build(), responseConverter);
+        }
     }
 
     /**
@@ -121,7 +93,7 @@ public class LuceneAwareCouchDbConnector {
      * @return The result of the query.
      */
     public NouveauResult queryNouveau(String index, @NotNull NouveauQuery query) {
-        return this.database.queryNouveau(index, query, NouveauResult.class);
+        return this.database.queryNouveau(index, query, NouveauResult.class).execute().getResult();
     }
 
     /**

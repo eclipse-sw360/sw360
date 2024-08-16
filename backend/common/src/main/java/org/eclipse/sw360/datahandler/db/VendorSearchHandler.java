@@ -54,7 +54,7 @@ public class VendorSearchHandler {
     public VendorSearchHandler(Cloudant client, String dbName) throws IOException {
         // Creates the database connector and adds the lucene search view
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
-        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
         Gson gson = db.getInstance().getGson();
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);

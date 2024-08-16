@@ -65,7 +65,7 @@ public class ModerationSearchHandler {
 
     public ModerationSearchHandler(Cloudant client, String dbName) throws IOException {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, dbName);
-        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
         Gson gson = db.getInstance().getGson();
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);

@@ -52,7 +52,7 @@ public class ReleaseSearchHandler {
 
     public ReleaseSearchHandler(Cloudant cClient, String dbName) throws IOException {
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(cClient, dbName);
-        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME);
+        connector = new NouveauLuceneAwareDatabaseConnector(db, DDOC_NAME, dbName, db.getInstance().getGson());
         Gson gson = db.getInstance().getGson();
         NouveauDesignDocument searchView = new NouveauDesignDocument();
         searchView.setId(DDOC_NAME);

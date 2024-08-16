@@ -71,11 +71,11 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
     /**
      * Constructor using a Database connector
      */
-    public NouveauLuceneAwareDatabaseConnector(@NotNull DatabaseConnectorCloudant db,
-                                               String ddoc) throws IOException {
-        super(db.getInstance().getClient(), ddoc);
+    public NouveauLuceneAwareDatabaseConnector(@NotNull DatabaseConnectorCloudant dbClient,
+                                               String ddoc, String db, Gson gson) throws IOException {
+        super(dbClient.getInstance().getClient(), ddoc, db, gson);
         setResultLimit(DatabaseSettings.LUCENE_SEARCH_LIMIT);
-        this.connector = db;
+        this.connector = dbClient;
     }
 
     public boolean addDesignDoc(@NotNull NouveauDesignDocument designDocument) {
