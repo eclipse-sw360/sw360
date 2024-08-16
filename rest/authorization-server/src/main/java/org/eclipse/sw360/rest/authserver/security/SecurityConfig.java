@@ -11,35 +11,35 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
+import org.eclipse.sw360.rest.authserver.client.service.Sw360OidcUserInfoService;
 import org.eclipse.sw360.rest.authserver.security.authproviders.Sw360UserAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Arrays;
 import java.util.UUID;
 
+/**
+ * Configures the security settings for the authorization server
+ *
+ * @author smruti.sahoo@siemens.com
+ */
 
 @Configuration
 @EnableWebSecurity
@@ -50,6 +50,9 @@ public class SecurityConfig {
 
     @Autowired
     Sw360ClientDetailsService sw360ClientDetailsService;
+
+    @Autowired
+    private Sw360OidcUserInfoService sw360OidcUserInfoService;
 
     @Bean
     @Order(1)
@@ -69,22 +72,6 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
         ).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults());
         return httpSecurity.csrf(csrf -> csrf.disable()).build();
-    }
-
-
-    @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
-        return (context) -> {
-            if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
-                context.getClaims().claims((claims) -> {
-                    claims.put("user_name", claims.get("sub"));
-                    claims.remove("sub");
-                    claims.put("client_id", claims.get("aud"));
-                    claims.remove("aud");
-                    claims.put("aud", Arrays.asList("sw360-REST-API"));
-                });
-            }
-        };
     }
 
     @Bean
