@@ -72,6 +72,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class ModerationRequestController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     public static final String MODERATION_REQUEST_URL = "/moderationrequest";

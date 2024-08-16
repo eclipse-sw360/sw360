@@ -70,6 +70,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class UserController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     protected final EntityLinks entityLinks;

@@ -62,6 +62,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class LicenseController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String LICENSES_URL = "/licenses";
 

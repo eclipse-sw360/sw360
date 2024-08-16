@@ -171,6 +171,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class ProjectController implements RepresentationModelProcessor<RepositoryLinksResource> {
     private static final String CREATED_BY = "createdBy";
     private static final String ATTACHMENT_TYPE = "attachmentType";

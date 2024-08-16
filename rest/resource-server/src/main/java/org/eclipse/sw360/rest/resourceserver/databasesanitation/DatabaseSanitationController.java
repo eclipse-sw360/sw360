@@ -38,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class DatabaseSanitationController  implements RepresentationModelProcessor<RepositoryLinksResource> {
     
     public static final String DATABASESANITATION_URL = "/databaseSanitation";

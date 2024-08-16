@@ -55,6 +55,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class SearchController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     private static final Logger log = LogManager.getLogger(SearchController.class);
