@@ -120,7 +120,9 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         restControllerHelper.addEmbeddedUser(halClearingRequest, requestingUser, "requestingUser");
         User clearingTeam = restControllerHelper.getUserByEmail(clearingRequest.getClearingTeam());
         restControllerHelper.addEmbeddedUser(halClearingRequest, clearingTeam, "clearingTeam");
-
+        if(clearingRequest.getClearingState().equals(ClearingRequestState.CLOSED) || clearingRequest.getClearingState().equals(ClearingRequestState.REJECTED)){
+            restControllerHelper.addEmbeddedTimestampOfDecision(halClearingRequest,clearingRequest.getTimestampOfDecision());
+        }
         return halClearingRequest;
     }
 
