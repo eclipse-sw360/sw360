@@ -109,15 +109,10 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -1535,6 +1530,14 @@ public class RestControllerHelper<T> {
             HalResource<License> licenseHalResource = addEmbeddedLicense(licenseId);
             halRelease.addEmbeddedResource("sw360:otherLicenses", licenseHalResource);
         }
+    }
+
+    public void addEmbeddedTimestampOfDecision(HalResource<ClearingRequest> halClearingRequest, long timestampOfDecision) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                .withLocale(Locale.ENGLISH)
+                .withZone(ZoneId.systemDefault());
+        String humanReadableDate = formatter.format(Instant.ofEpochMilli(timestampOfDecision));
+        halClearingRequest.addEmbeddedResource("requestClosedOn", humanReadableDate);
     }
 
     public String getBaseUrl(HttpServletRequest request) {
