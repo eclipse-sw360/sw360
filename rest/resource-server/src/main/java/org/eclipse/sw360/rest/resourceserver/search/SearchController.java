@@ -71,7 +71,9 @@ public class SearchController implements RepresentationModelProcessor<Repository
 
     @Operation(
             summary = "List all the search results based on the search text and type.",
-            description = "List all the search results based on the search text and type.",
+            description = "List all the search results based on the search text and type.\n\n" +
+                "Note: If `document` is excluded in `typeMasks`, then search will be restricted to " +
+                "Name for Project, Component and Release, Fullname for License, User and Vendor, Title for Obligation",
             tags = {"Search"}
     )
     @RequestMapping(value = SEARCH_URL, method = RequestMethod.GET)
@@ -83,7 +85,7 @@ public class SearchController implements RepresentationModelProcessor<Repository
                     description = "The type of resource.",
                     schema = @Schema(
                             allowableValues = {"project", "component", "license", "release", "obligation", "user",
-                                    "vendor"},
+                                    "vendor", "document"},
                             type = "array"
                     )
             )
