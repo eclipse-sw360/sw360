@@ -52,6 +52,22 @@ include::{snippets}/should_document_get_vendor/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_get_vendor/links.adoc[]
 
+[[resources-vendor-get-releases]]
+==== Get vendor releases
+
+A `GET` request will list the releases used by the vendor.
+
+===== Response structure
+include::{snippets}/should_document_get_vendor_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_vendor_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_vendor_releases/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_vendor_releases/links.adoc[]
 
 [[resources-vendor-create]]
 ==== Creating a vendor
