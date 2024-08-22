@@ -643,7 +643,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public void addEmbeddedLinkedProject(Project sw360Project, User sw360User, HalResource<Project> projectResource, Set<String> projectIdsInBranch) throws TException {
         projectIdsInBranch.add(sw360Project.getId());
         Map<String, ProjectProjectRelationship> linkedProjects = sw360Project.getLinkedProjects();
-		List<String> keys = new ArrayList<>(linkedProjects.keySet());
+        List<String> keys = linkedProjects != null ? new ArrayList<>(linkedProjects.keySet()) : new ArrayList<>();
         if (keys != null) {
         	keys.forEach(linkedProjectId -> wrapTException(() -> {
                 if (projectIdsInBranch.contains(linkedProjectId)) {
