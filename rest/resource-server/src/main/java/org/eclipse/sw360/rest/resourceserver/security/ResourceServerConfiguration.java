@@ -16,6 +16,7 @@ import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationProvider;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
+import org.eclipse.sw360.rest.resourceserver.security.jwt.Sw360JWTAccessTokenConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -46,6 +47,9 @@ public class ResourceServerConfiguration {
     private ApiTokenAuthenticationFilter filter;
 
     @Autowired
+    Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter;
+
+    @Autowired
     private ApiTokenAuthenticationProvider authProvider;
 
     @Autowired
@@ -62,7 +66,7 @@ public class ResourceServerConfiguration {
     @Bean
     @Order(1)
     public SecurityFilterChain securityFilterChainRS1(HttpSecurity http) throws Exception {
-        return http.authorizeRequests(auth -> auth.anyRequest().authenticated()).oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwkSetUri(issuerUri))).httpBasic(Customizer.withDefaults()).csrf(csrf -> csrf.disable()).build();
+        return http.authorizeRequests(auth -> auth.anyRequest().authenticated()).oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter).jwkSetUri(issuerUri))).httpBasic(Customizer.withDefaults()).csrf(csrf -> csrf.disable()).build();
     }
 
     @Bean

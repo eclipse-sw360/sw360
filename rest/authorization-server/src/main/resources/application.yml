@@ -22,6 +22,9 @@ couchdb:
 
 jwt:
   secretkey: sw360SecretKey
+  auth:
+    converter:
+      principle-attribute: email
 
 spring:
   jackson:
