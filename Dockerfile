@@ -3,6 +3,7 @@
 # Copyright Helio Chisisni de Castro, 2023. Part of the SW360 Portal Project.
 # Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
 # Copyright BMW CarIT GmbH, 2021.
+# Copyright Cariad SE, 2024. Part of the SW360 Portal Project.
 #
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
@@ -14,12 +15,14 @@ ARG TOMCAT_VERSION=10-jre17-temurin-jammy
 
 #--------------------------------------------------------------------------------------------------
 # Thrift
-FROM ubuntu:jammy AS sw360thriftbuild
+FROM ubuntu:noble AS sw360thriftbuild
 
 ARG BASEDIR="/build"
+ARG DESTDIR="/"
 ARG THRIFT_VERSION
 
-RUN --mount=type=cache,target=/var/cache/apt \
+RUN rm -f /etc/apt/apt.conf.d/docker-clean
+RUN --mount=type=cache,mode=0755,target=/var/cache/apt \
     apt-get -qq update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     bison \
@@ -51,19 +54,6 @@ COPY --from=localthrift /usr/local/bin/thrift /usr/bin
 
 SHELL ["/bin/bash", "-c"]
 
-# Install mkdocs to generate documentation
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt-get update -qq \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
-    gettext-base \
-    git \
-    python3-pip \
-    python3-wheel \
-    zip \
-    unzip \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install mkdocs-material
-
 #--------------------------------------------------------------------------------------------------
 # SW360
 # We build sw360 and create real image after everything is ready
@@ -78,18 +68,14 @@ WORKDIR /build
 
 SHELL ["/bin/bash", "-c"]
 
-# Install mkdocs to generate documentation
-RUN --mount=type=cache,target=/var/cache/apt \
+RUN rm -f /etc/apt/apt.conf.d/docker-clean
+RUN --mount=type=cache,mode=0755,target=/var/cache/apt \
     apt-get update -qq \
     && DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends \
     gettext-base \
     git \
-    python3-pip \
-    python3-wheel \
-    zip \
     unzip \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install mkdocs-material
+    zip
 
 # Prepare maven from binary to avoid wrong java dependencies and proxy
 COPY scripts/docker-config/mvn-proxy-settings.xml /etc
