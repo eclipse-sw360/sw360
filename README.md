@@ -72,13 +72,13 @@ Then run the current build script:
 **Step 1**: Prepare source code
 
 ```bash
-git clone https://github.com/eclipse/sw360.git
+git clone https://github.com/eclipse-sw360/sw360.git
 cd sw360
 pip install pre-commit
 pre-commit install
 ```
 
-**Step 2**: Build the code (without tests and docs)
+**Step 2**: Build the code
 
 ```bash
 mvn package -P deploy \
@@ -90,26 +90,6 @@ mvn package -P deploy \
 ```
 
 If you want run the the tests, we need start a local couchdb server and Docker is required:
-
-**Step 3**:
-
-```bash
-pip install mkdocs-material
-./scripts/startCouchdbForTests.sh
-
-mvn package -P deploy \
-    -Djars.deploy.dir=deploy \
-    -Drest.deploy.dir=webapps \
-    -Dbackend.deploy.dir=webapps
-```
-
-To check your code linting without commit:
-
-```bash
-mvn spotless:check
-```
-
-Please refer to [SW360 main documentation website](https://www.eclipse.org/sw360/docs/) for more details.
 
 ### License
 
