@@ -75,7 +75,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            $HOME/dist/thrift-${{ env.THRIFT_VERSION }}
+            ${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}
           key: ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
           restore-keys: |
             ${{ runner.os }}-thrift-${{ env.THRIFT_VERSION }}
@@ -84,7 +84,7 @@ jobs:
         if: steps.cache-thrift.outputs.cache-hit != 'true'
         run: |
           chmod +x scripts/install-thrift.sh
-          DESTDIR=$HOME/dist/thrift-${{ env.THRIFT_VERSION }} scripts/install-thrift.sh
+          DESTDIR=${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }} scripts/install-thrift.sh
 
       - name: Build SW360
         run: |
