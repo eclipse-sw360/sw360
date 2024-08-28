@@ -19,7 +19,7 @@
 
 set -ex
 
-BASEDIR="$(mktemp -d)"
+BASEDIR="${BASEDIR:-$(mktemp -d)}"
 THRIFT_VERSION=${THRIFT_VERSION:-0.20.0}
 
 has() { type "$1" &> /dev/null; }
