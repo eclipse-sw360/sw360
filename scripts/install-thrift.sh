@@ -2,6 +2,7 @@
 # -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2013-2016.
 # Copyright (c) Bosch Software Innovations GmbH 2019.
+# Copyright Cariad SE, 2024.
 # Part of the SW360 Portal Project.
 #
 # This program and the accompanying materials are made
@@ -10,16 +11,12 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-# script automatically generating keys for password-free login onto
-# the vagrantbox
-#
-#
 # initial author: birgit.heydenreich@tngtech.com
 # -----------------------------------------------------------------------------
 
 set -ex
 
-BASEDIR="$(mktemp -d)"
+BASEDIR="${BASEDIR:-$(mktemp -d)}"
 THRIFT_VERSION=${THRIFT_VERSION:-0.20.0}
 
 has() { type "$1" &> /dev/null; }
