@@ -2,6 +2,7 @@
 <!--
   ~ Copyright Siemens AG, 2013-2017, 2019, 2020. Part of the SW360 Portal Project.
   ~ Copyright Bosch.IO GmbH 2020.
+  ~ Copyright Cariad SE, 2024. Part of the SW360 Portal Project.
   ~
   ~ This program and the accompanying materials are made
   ~ available under the terms of the Eclipse Public License 2.0
@@ -75,7 +76,6 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!-- Plugin version properties -->
-    <asciidoctor-maven-plugin.version>2.2.2</asciidoctor-maven-plugin.version>
     <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
     <maven-assembly-plugin.version>3.4.2</maven-assembly-plugin.version>
@@ -144,7 +144,6 @@
     <slf4j.version>1.7.30</slf4j.version>
     <spotless.version>2.29.0</spotless.version>
     <spring-boot.version>3.3.0</spring-boot.version>
-    <spring-restdocs-asciidoctor.version>2.0.6.RELEASE</spring-restdocs-asciidoctor.version>
     <spring-restdocs.version>3.0.1</spring-restdocs.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
     <spring-security-oauth2.version>2.5.1.RELEASE</spring-security-oauth2.version>
