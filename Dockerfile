@@ -11,7 +11,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 
-ARG TOMCAT_VERSION=10-jre17-temurin-jammy
+ARG TOMCAT_VERSION=10-jre17-temurin-noble
 
 #--------------------------------------------------------------------------------------------------
 # Thrift
