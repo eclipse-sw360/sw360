@@ -69,20 +69,19 @@
 
 * Volumes
 
-  By default couchdb, postgres and sw360 have their own storage volumes:
+  By default couchdb and sw360 have their own storage volumes:
 
   **CouchDB**
 
   ```yml
-  - couchdb:/opt/couchdb/data
+  - couchdb → /opt/couchdb/data
   ```
 
   **sw360**
 
   ```yml
-  - etc:/etc/sw360
-  - webapps:/app/sw360/tomcat/webapps
-  - document_library:/app/sw360/data/document_library
+  - etc → /etc/sw360
+  - webapps → /app/sw360/tomcat/webapps
   ```
 
   There is a local mounted as binded dir volume to add customizations
@@ -90,16 +89,15 @@
   **sw360**
 
   ```yml
-  - ./config:/app/sw360/config
+  - ./config/sw360 -> /app/sw360/config
   ```
 
   **couchdb**
 
   ```yml
-  - ./config/couchdb/sw360_setup.ini:/opt/couchdb/etc/local.d/sw360_setup.ini
-  - ./config/couchdb/sw360_log.ini:/opt/couchdb/etc/local.d/sw360_log.ini
-  - ./config/couchdb/sw360_sw360.ini:/opt/couchdb/etc/local.d/sw360_admins.ini
-  - ./logs/couchdb:/opt/couchdb/log
+  - config/couchdb/sw360_setup.ini → /opt/couchdb/sw360_setup.ini
+  - config/couchdb/sw360_log.ini → /opt/couchdb/etc/local.d/sw360_log.ini
+  - logs/couchdb → /opt/couchdb/log
   ```
 
   If you want to override all configs, create a docker env file  and alter for your needs.
@@ -110,7 +108,7 @@
 
 This composed image runs under a single default network, called **sw360net**
 
-So any external docker image can connect to internal couchdb or postgresql through this network
+So any external docker image can connect to internal couchdb  through this network
 
 ## Running the image first time
 
