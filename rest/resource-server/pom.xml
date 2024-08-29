@@ -23,6 +23,9 @@
 
     <artifactId>resource-server</artifactId>
     <packaging>war</packaging>
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -68,9 +71,8 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.springframework.security.oauth</groupId>
-            <artifactId>spring-security-oauth2</artifactId>
-            <version>${spring-security-oauth2.version}</version>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-client</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -188,7 +190,6 @@
         <dependency>
             <groupId>org.bitbucket.b_c</groupId>
             <artifactId>jose4j</artifactId>
-            <version>0.9.3</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -245,7 +246,7 @@
             <plugin>
                 <groupId>com.internetitem</groupId>
                 <artifactId>write-properties-file-maven-plugin</artifactId>
-                <version>1.0.1</version>
+                <version>2.0.0</version>
                 <executions>
                     <execution>
                         <id>one</id>
