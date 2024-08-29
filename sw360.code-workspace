@@ -22,5 +22,6 @@
     },
     "peacock.color": "#42b883",
     "java.configuration.updateBuildConfiguration": "automatic",
+    "java.format.settings.url": ".vscode/java-formatter.xml",
   },
 }

@@ -33,10 +33,6 @@ jgiven-reports/
 .settings
 .factorypath
 
-# Ignore VSCode files
-.vscode/
-#*.code-workspace
-
 # Ignore backup files
 *.bak
 *.orig
