@@ -24,8 +24,8 @@ on:
 permissions: write-all
 
 env:
-  COUCHDB_USER: admin
-  COUCHDB_PASSWORD: password
+  COUCHDB_USER: sw360
+  COUCHDB_PASSWORD: sw360fossie
 
 jobs:
   build:
