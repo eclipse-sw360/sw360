@@ -6,8 +6,6 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 
-version: "3.8"
-
 services:
   sw360:
     image: "ghcr.io/eclipse-sw360/sw360:latest"
@@ -25,7 +23,7 @@ services:
       - ./config/sw360:/app/sw360/config
 
   couchdb:
-    image: couchdb
+    image: couchdb:3
     restart: unless-stopped
     environment:
       - COUCHDB_CREATE_DATABASE=yes
@@ -33,9 +31,8 @@ services:
       - "5984:5984"
     volumes:
       - couchdb:/opt/couchdb/data
-      - ./config/couchdb/sw360_setup.ini:/opt/couchdb/etc/local.d/sw360_setup.ini
-      - ./config/couchdb/sw360_log.ini:/opt/couchdb/etc/local.d/sw360_log.ini
-      - ./config/couchdb/sw360_admins.ini:/opt/couchdb/etc/local.d/sw360_admins.ini
+      - ./config/couchdb/sw360_setup.ini:/opt/couchdb/etc/local.d/sw360_setup.ini:ro
+      - ./config/couchdb/sw360_log.ini:/opt/couchdb/etc/local.d/sw360_log.ini:ro
       - ./logs/couchdb:/opt/couchdb/log
     healthcheck:
       test: ["CMD-SHELL", "curl --fail -s http://couchdb:5984/_up"]
