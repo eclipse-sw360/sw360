@@ -48,7 +48,7 @@ set -e -o pipefail
 . .versions
 
 DOCKER_IMAGE_ROOT="${DOCKER_IMAGE_ROOT:-ghcr.io/eclipse-sw360}"
-SECRETS=${SECRETS:-"$PWD/scripts/docker-config/default_secrets"}
+SECRETS=${SECRETS:-"$PWD/config/couchdb/default_secrets"}
 export DOCKER_PLATFORM DOCKER_IMAGE_ROOT GIT_REVISION SECRETS
 
 # ---------------------------
@@ -80,7 +80,7 @@ image_build localthrift sw360/thrift "$THRIFT_VERSION" --build-arg THRIFT_VERSIO
 image_build sw360test sw360/test "$SW360_VERSION" "$@"
 
 image_build binaries sw360/binaries "$SW360_VERSION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
---secret id=sw360,src="$SECRETS" \
+--secret id=couchdb,src="$SECRETS" \
 --build-context "thrift=docker-image://${DOCKER_IMAGE_ROOT}/sw360/thrift:$THRIFT_VERSION" "$@"
 
 image_build sw360 sw360 "$SW360_VERSION" \

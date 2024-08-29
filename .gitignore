@@ -69,3 +69,6 @@ tmp/**/*
 .DS_Store
 
 .python-version
+
+# Local logs for dev runtime
+logs

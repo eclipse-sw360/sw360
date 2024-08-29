@@ -110,7 +110,7 @@ jobs:
             THRIFT_VERSION=${{ env.THRIFT_VERSION }}
             SW360_VERSION=${{ env.SHORT_SHA }}
           secret-files: |
-            "sw360=./scripts/docker-config/default_secrets"
+            "couchdb=./config/couchdb/default_secrets"
           build-contexts: |
             thrift=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/thrift:${{ env.THRIFT_VERSION }}
 

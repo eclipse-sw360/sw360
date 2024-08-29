@@ -87,10 +87,10 @@ COPY --from=localthrift /usr/local/bin/thrift /usr/bin
 
 RUN --mount=type=bind,target=/build/sw360,rw \
     --mount=type=cache,target=/root/.m2 \
-    --mount=type=secret,id=sw360 \
+    --mount=type=secret,id=couchdb \
     cd /build/sw360 \
     && set -a \
-    && source /run/secrets/sw360 \
+    && source /run/secrets/couchdb \
     && envsubst < scripts/docker-config/couchdb.properties.template | tee scripts/docker-config/etc_sw360/couchdb.properties \
     && set +a \
     && cp scripts/docker-config/etc_sw360/couchdb.properties build-configuration/resources/ \
