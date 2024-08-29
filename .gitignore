@@ -68,3 +68,5 @@ tmp/**/*
 
 # Local logs for dev runtime
 logs
+scripts/docker-config/etc_sw360/couchdb-test.properties
+scripts/docker-config/etc_sw360/couchdb.properties
