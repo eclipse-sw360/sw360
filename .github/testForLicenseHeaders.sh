@@ -47,7 +47,8 @@ done <<< "$(git ls-files \
     | grep -v 'default_secrets' \
     | grep -v 'requirements.txt' \
     | grep -Ev 'third-party/couchdb-lucene/*' \
-    | grep -Ev '*/asciidoc/*')"
+    | grep -Ev '*/asciidoc/*' \
+    | grep -Ev 'config/*')" \
 
 if [ "$failure" = true ]; then
     echo "test failed"

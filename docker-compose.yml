@@ -22,20 +22,21 @@ services:
     tty: true
     volumes:
       - etc:/etc/sw360
-      - document_library:/app/sw360/data/document_library
-      - ./config:/app/sw360/config
+      - ./config/sw360:/app/sw360/config
 
   couchdb:
     image: couchdb
     restart: unless-stopped
     environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=password
       - COUCHDB_CREATE_DATABASE=yes
     ports:
       - "5984:5984"
     volumes:
       - couchdb:/opt/couchdb/data
+      - ./config/couchdb/sw360_setup.ini:/opt/couchdb/etc/local.d/sw360_setup.ini
+      - ./config/couchdb/sw360_log.ini:/opt/couchdb/etc/local.d/sw360_log.ini
+      - ./config/couchdb/sw360_admins.ini:/opt/couchdb/etc/local.d/sw360_admins.ini
+      - ./logs/couchdb:/opt/couchdb/log
     healthcheck:
       test: ["CMD-SHELL", "curl --fail -s http://couchdb:5984/_up"]
       interval: 30s
@@ -43,10 +44,8 @@ services:
       retries: 5
 
 volumes:
-  postgres: null
   couchdb: null
   etc: null
-  document_library: null
 
 networks:
   default:
