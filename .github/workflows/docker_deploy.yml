@@ -103,7 +103,7 @@ jobs:
         uses: heliocastro/docker-build-control@v4
         with:
           name: binaries
-          version: ${{ needs.sw360_version.outputs.sw360_version }}
+          version: ${{ env.SW360_VERSION }}
           token: ${{ secrets.GITHUB_TOKEN }}
           invalidate-cache: ${{ inputs.invalidate-cache }}
           debug: ${{ inputs.debug }}
@@ -113,7 +113,7 @@ jobs:
           secret-files: |
             "couchdb=./config/couchdb/default_secrets"
           build-contexts: |
-            thrift=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/thrift:${{ env.THRIFT_VERSION }}
+            localthrift=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/thrift:${{ env.THRIFT_VERSION }}
 
   runtime_image:
     name: SW360 Runtime image
@@ -150,7 +150,7 @@ jobs:
           tags: |
             type=schedule,pattern={{date 'YYYYMMDD'}}
             type=schedule,pattern=nightly
-            type=raw,value=${{ needs.sw360_version.outputs.sw360_version }}
+            type=raw,value=${{ env.SW360_VERSION }}
             type=sha,enable=true,prefix=sha-,format=short
             type=ref,event=tag
 
@@ -163,5 +163,4 @@ jobs:
           tags: ${{ steps.meta_runtime.outputs.tags }}
           labels: ${{ steps.meta_runtime.outputs.labels }}
           build-contexts: |
-            base=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/base:${{ env.JAVA_VERSION }}-jdk-${{ env.UBUNTU_VERSION }}
-            binaries=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/binaries:${{ needs.sw360_version.outputs.sw360_version }}
+            binaries=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/binaries:${{ env.SW360_VERSION }}

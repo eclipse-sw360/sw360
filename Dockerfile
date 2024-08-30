@@ -1,5 +1,4 @@
-# syntax=docker/dockerfile:1.4
-#
+
 # Copyright Helio Chisisni de Castro, 2023. Part of the SW360 Portal Project.
 # Copyright Siemens AG, 2020. Part of the SW360 Portal Project.
 # Copyright BMW CarIT GmbH, 2021.
