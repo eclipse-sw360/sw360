@@ -1,5 +1,6 @@
 # -----------------------------------------------------------------------------
 # Copyright Helio Chissini de Castro 2022.
+# Copyright Cariad SE 2024
 # Part of the SW360 Project.
 #
 # This program and the accompanying materials are made
@@ -14,20 +15,20 @@ name: Docker Build
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Midnight
+    - cron: "0 0 * * *" # Midnight
   workflow_dispatch:
     inputs:
       invalidate-cache:
-        description: 'Build all images disregarding exists same version'
+        description: "Build all images disregarding exists same version"
         required: false
       debug:
-        description: 'Debug docker build'
+        description: "Debug docker build"
         required: false
   push:
     tags:
-      - 'sw360-*'
+      - "sw360-*"
     paths-ignore:
-      - '**.md'
+      - "**.md"
 
 env:
   REGISTRY: ghcr.io
@@ -37,10 +38,9 @@ permissions: write-all
 jobs:
   sw360_version:
     name: SW360 Version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       sw360_version: ${{ steps.pom_version.outputs.SW360_VERSION }}
-
     steps:
       - name: Checkout main repository
         uses: actions/checkout@v4
@@ -48,9 +48,9 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          cache: 'maven'
-          distribution: 'temurin'
+          java-version: "17"
+          cache: "maven"
+          distribution: "temurin"
 
       - name: Get revision from pom.xml
         id: pom_version
@@ -59,7 +59,7 @@ jobs:
 
   thrift_image:
     name: Build SW360 Thrift image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -72,9 +72,10 @@ jobs:
           cat .versions >> $GITHUB_ENV
 
       - name: Build thrift image
-        uses: heliocastro/docker-build-control@v1
+        uses: heliocastro/docker-build-control@v4
         with:
           name: thrift
+          target: localthrift
           token: ${{ secrets.GITHUB_TOKEN }}
           version: ${{ env.THRIFT_VERSION }}
           invalidate-cache: ${{ inputs.invalidate-cache }}
@@ -85,7 +86,7 @@ jobs:
   binary_image:
     name: SW360 Binary
     needs: [sw360_version, thrift_image]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -99,7 +100,7 @@ jobs:
           cat .versions >> $GITHUB_ENV
 
       - name: Build binary image
-        uses: heliocastro/docker-build-control@v1
+        uses: heliocastro/docker-build-control@v4
         with:
           name: binaries
           version: ${{ needs.sw360_version.outputs.sw360_version }}
@@ -117,7 +118,7 @@ jobs:
   runtime_image:
     name: SW360 Runtime image
     needs: [sw360_version, binary_image]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
