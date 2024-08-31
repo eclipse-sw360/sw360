@@ -25,6 +25,8 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -43,6 +45,8 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<Release._Fields, Comparator<Release>> releaseMapForEcc = generateReleaseMapForEccComparator();
     private static final Map<EccInformation._Fields, Comparator<Release>> eccInfoMap = generateEccInfoMap();
     private static final Map<Vendor._Fields, Comparator<Vendor>> vendorMap = generateVendorMap();
+    private static final Map<License._Fields, Comparator<License>> licenseMap = generateLicenseMap();
+    private static final Map<Obligation._Fields, Comparator<Obligation>> obligationMap = generateObligationMap();
     private static final Map<Package._Fields, Comparator<Package>> packageMap = generatePackageMap();
     private static final Map<SearchResult._Fields, Comparator<SearchResult>> searchResultMap = generateSearchResultMap();
     private static final Map<ChangeLogs._Fields, Comparator<ChangeLogs>> changeLogMap = generateChangeLogMap();
@@ -76,11 +80,23 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(userMap);
     }
 
+    private static Map<License._Fields, Comparator<License>> generateLicenseMap() {
+        Map<License._Fields, Comparator<License>> licenseMap = new HashMap<>();
+        licenseMap.put(License._Fields.FULLNAME, Comparator.comparing(License::getShortname, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(licenseMap);
+    }
+
     private static Map<Release._Fields, Comparator<Release>> generateReleaseMap() {
         Map<Release._Fields, Comparator<Release>> releaseMap = new HashMap<>();
         releaseMap.put(Release._Fields.NAME, Comparator.comparing(Release::getName, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         releaseMap.put(Release._Fields.CLEARING_STATE, Comparator.comparing(p -> Optional.ofNullable(p.getClearingState()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
         return Collections.unmodifiableMap(releaseMap);
+    }
+
+    private static Map<Obligation._Fields, Comparator<Obligation>> generateObligationMap() {
+        Map<Obligation._Fields, Comparator<Obligation>> obligationMap = new HashMap<>();
+        obligationMap.put(Obligation._Fields.TITLE, Comparator.comparing(Obligation::getTitle, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(obligationMap);
     }
 
     private static Map<Release._Fields, Comparator<Release>> generateReleaseMapForEccComparator() {
@@ -199,6 +215,10 @@ public class ResourceComparatorGenerator<T> {
                 return (Comparator<T>)defaultPackageComparator();
             case SW360Constants.TYPE_ECC:
                 return (Comparator<T>)defaultReleaseComparator();
+            case SW360Constants.TYPE_LICENSE:
+                return (Comparator<T>)defaultLicenseComparator();
+            case SW360Constants.TYPE_OBLIGATION:
+                return (Comparator<T>)defaultObligationComparator();
             default:
                 throw new ResourceClassNotFoundException("No default comparator for resource class with name " + type);
         }
@@ -641,5 +661,13 @@ public class ResourceComparatorGenerator<T> {
 
     private Comparator<Release> defaultEccComparator() {
         return eccInfoMap.get(EccInformation._Fields.ASSESSMENT_DATE);
+    }
+
+    private Comparator<License> defaultLicenseComparator() {
+        return licenseMap.get(License._Fields.FULLNAME);
+    }
+
+    private Comparator<Obligation> defaultObligationComparator() {
+        return obligationMap.get(Obligation._Fields.TITLE);
     }
 }
