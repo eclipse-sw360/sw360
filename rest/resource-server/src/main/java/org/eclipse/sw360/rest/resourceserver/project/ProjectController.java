@@ -2300,21 +2300,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     private Map<String, Object> createPaginationMetadata(Pageable pageable, Map<String, ObligationStatusInfo> licenseObligation) {
         List<Map.Entry<String, ObligationStatusInfo>> entries = new ArrayList<>(licenseObligation.entrySet());
-        int pageSize = pageable.getPageSize();
-        int pageNumber = pageable.getPageNumber();
+        boolean isDefaultPaged = pageable != null && pageable.getPageSize() == 20 && pageable.getPageNumber() == 0;
+        boolean isPaged = pageable != null && pageable.isPaged() && !isDefaultPaged;
+        int pageSize = isPaged ? pageable.getPageSize() : entries.size();
+        int pageNumber = isPaged ? pageable.getPageNumber() : 0;
         int start = pageNumber * pageSize;
         int end = Math.min(start + pageSize, entries.size());
-        entries = entries.subList(start, end);
+
+        List<Map.Entry<String, ObligationStatusInfo>> paginatedEntries = entries.subList(start, end);
         int totalPages = (int) Math.ceil((double) licenseObligation.size()/ pageSize);
+
         Map<String, ObligationStatusInfo> paginatedMap = new LinkedHashMap<>();
-        for (Map.Entry<String, ObligationStatusInfo> entry : entries) {
+        for (Map.Entry<String, ObligationStatusInfo> entry : paginatedEntries) {
             paginatedMap.put(entry.getKey(), entry.getValue());
         }
         Map<String, Integer> pagination =  Map.of(
-            "size", pageSize,
-            "totalElements", licenseObligation.size(),
-            "totalPages", totalPages,
-            "number", pageNumber
+                "size", pageSize,
+                "totalElements", licenseObligation.size(),
+                "totalPages", isPaged ? totalPages : 1,
+                "number", pageNumber
         );
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("page", pagination);
@@ -2414,12 +2418,42 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
         }
         selectedLicenseObligation.putAll(obligationStatusMapFromReport);
-        RequestStatus requestStatus= projectService.updateLinkedObligations(sw360Project, sw360User, selectedLicenseObligation);
+        RequestStatus requestStatus= projectService.addLinkedObligations(sw360Project, sw360User, selectedLicenseObligation);
         if (requestStatus == RequestStatus.SUCCESS) {
             return new ResponseEntity<>("License Obligation Added Successfully", HttpStatus.CREATED);
         }
         return new ResponseEntity<>("Failed to add/update obligation for project", HttpStatus.NOT_FOUND);
 	}
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Update License Obligations ",
+            description = "Pass a map of obligations in request body.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/updateLicenseObligation", method = RequestMethod.PATCH)
+    public ResponseEntity<?> patchLicenseObligations(
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id,
+            @Parameter(description = "Map of obligation status info.")
+            @RequestBody Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo
+    ) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        ObligationList obligation = new ObligationList();
+        Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getLinkedObligationId())) {
+            obligation = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+            obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
+        }
+        Map<String, ObligationStatusInfo> updatedObligationStatusMap = projectService
+                .compareObligationStatusMap(sw360User, obligationStatusMap, requestBodyObligationStatusInfo);
+        RequestStatus updateObligationStatus = projectService.patchLinkedObligations(sw360User, updatedObligationStatusMap, obligation);
+        if (updateObligationStatus == RequestStatus.SUCCESS) {
+            return new ResponseEntity<>("License Obligation Updated Successfully", HttpStatus.CREATED);
+        }
+        return new ResponseEntity<>("Cannot update License Obligation", HttpStatus.CONFLICT);
+    }
 
     @Operation(
             description = "Get summary and administration page of project tab.",

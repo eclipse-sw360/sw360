@@ -480,7 +480,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         Map<String, ObligationStatusInfo> obligationStatusMap = Map.of(obligation.getTitle(), osi);
         
         ObligationList obligationLists = new ObligationList();
-        obligationLists.setProjectId("123456733");
+        obligationLists.setProjectId(project8.getId());
         obligationLists.setId("009");
         obligationLists.setLinkedObligationStatus(obligationStatusMap);
 
@@ -566,7 +566,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.setLicenseInfoWithObligations(eq(obligationStatusMap), eq(releaseIdToAcceptedCLI), any(), any())).willReturn(obligationStatusMap);
         given(this.projectServiceMock.getLicensesFromAttachmentUsage(eq(licenseInfoUsages), any())).willReturn(licensesFromAttachmentUsage);
         given(this.projectServiceMock.getLicenseObligationData(eq(licensesFromAttachmentUsage), any())).willReturn(obligationStatusMap);
-        given(this.projectServiceMock.updateLinkedObligations(any(), any(), eq(obligationStatusMap))).willReturn(RequestStatus.SUCCESS);
+        given(this.projectServiceMock.addLinkedObligations(any(), any(), eq(obligationStatusMap))).willReturn(RequestStatus.SUCCESS);
+        given(this.projectServiceMock.compareObligationStatusMap(any(), any(), any())).willReturn(obligationStatusMap);
+        given(this.projectServiceMock.patchLinkedObligations(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(projectForAtt);
         given(this.projectServiceMock.getProjectForUserById(eq(SPDXProject.getId()), any())).willReturn(SPDXProject);
         given(this.projectServiceMock.getProjectForUserById(eq(cycloneDXProject.getId()), any())).willReturn(cycloneDXProject);
@@ -894,6 +896,20 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
         this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(licenseObligationIds))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))).andExpect(status().isCreated());
+    }
+
+    @Test
+    public void should_document_update_license_obligations() throws Exception {
+        MockHttpServletRequestBuilder requestBuilder = patch("/api/projects/" + project8.getId() + "/updateLicenseObligation");
+        ObligationStatusInfo obligationStatusInfo = new ObligationStatusInfo();
+        obligationStatusInfo.setComment("updating comment");
+        obligationStatusInfo.setStatus(ObligationStatus.ESCALATED);
+        Map<String, ObligationStatusInfo> licOblMap = new HashMap<>();
+        licOblMap.put("obligation_title", obligationStatusInfo);
+
+        this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(licOblMap))
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))).andExpect(status().isCreated());
     }
 
