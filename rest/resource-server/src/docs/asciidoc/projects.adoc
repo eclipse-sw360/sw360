@@ -553,7 +553,7 @@ include::{snippets}/should_document_delete_project/http-response.adoc[]
 [[resources-project-link-projects]]
 ==== Link project to the projects
 
-A `POST` request is used to link project to the projects. Please pass an array of project ids as request body.
+A `POST` request is used to link project to the projects. Please pass an array of project ids as request body. The project passed in the url will become the child project of all the projects passed in the request body.
 
 ===== Request structure 1
 Pass an array of project ids as request body.
