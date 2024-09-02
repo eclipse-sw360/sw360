@@ -72,7 +72,7 @@ jobs:
           cat .versions >> $GITHUB_ENV
 
       - name: Build thrift image
-        uses: heliocastro/docker-build-control@v4
+        uses: heliocastro/docker-build-control@v5
         with:
           name: thrift
           target: localthrift
@@ -100,7 +100,7 @@ jobs:
           cat .versions >> $GITHUB_ENV
 
       - name: Build binary image
-        uses: heliocastro/docker-build-control@v4
+        uses: heliocastro/docker-build-control@v5
         with:
           name: binaries
           version: ${{ env.SW360_VERSION }}
@@ -162,5 +162,7 @@ jobs:
           push: true
           tags: ${{ steps.meta_runtime.outputs.tags }}
           labels: ${{ steps.meta_runtime.outputs.labels }}
+          provenance: mode=max
+          sbom: true
           build-contexts: |
             binaries=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/binaries:${{ env.SW360_VERSION }}
