@@ -2485,13 +2485,19 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     private void setAdditionalFieldsToHalResource(Project sw360Project, HalResource<Project> userHalResource) throws TException {
         try {
-            User projectModifier = restControllerHelper.getUserByEmail(sw360Project.getModifiedBy());
-            if (projectModifier != null && projectModifier.getEmail() != null) {
-                restControllerHelper.addEmbeddedUser(userHalResource, projectModifier, "modifiedBy");
+            String modifiedByEmail = sw360Project.getModifiedBy();
+            if (modifiedByEmail != null) {
+                User projectModifier = restControllerHelper.getUserByEmail(modifiedByEmail);
+                if (projectModifier != null) {
+                    restControllerHelper.addEmbeddedUser(userHalResource, projectModifier, "modifiedBy");
+                }
             }
-            User projectOwner = restControllerHelper.getUserByEmail(sw360Project.getProjectOwner());
-            if (projectOwner != null && projectOwner.getEmail() != null) {
-                restControllerHelper.addEmbeddedUser(userHalResource, projectOwner, "projectOwner");
+            String projectOwnerEmail = sw360Project.getProjectOwner();
+            if (projectOwnerEmail != null) {
+                User projectOwner = restControllerHelper.getUserByEmail(sw360Project.getProjectOwner());
+                if (projectOwner != null) {
+                    restControllerHelper.addEmbeddedUser(userHalResource, projectOwner, "projectOwner");
+                }
             }
             if (sw360Project.getSecurityResponsibles() == null || sw360Project.getSecurityResponsibles().isEmpty()) {
                 sw360Project.setSecurityResponsibles(new HashSet<String>(){{add("");}});
