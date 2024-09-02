@@ -47,7 +47,7 @@ COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
 #--------------------------------------------------------------------------------------------------
 # SW360 Build Test image
 
-FROM maven:3-eclipse-temurin-17 as sw360test
+FROM maven:3-eclipse-temurin-17 AS sw360test
 
 COPY --from=localthrift /usr/local/bin/thrift /usr/bin
 
@@ -59,7 +59,7 @@ SHELL ["/bin/bash", "-c"]
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-FROM maven:3-eclipse-temurin-17 as sw360build
+FROM maven:3-eclipse-temurin-17 AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -120,7 +120,7 @@ COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 
 #--------------------------------------------------------------------------------------------------
 # Runtime image
-FROM tomcat:$TOMCAT_VERSION as sw360
+FROM tomcat:$TOMCAT_VERSION AS sw360
 
 ARG TOMCAT_DIR=/usr/local/tomcat
 
