@@ -117,6 +117,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -719,6 +720,9 @@ public class RestControllerHelper<T> {
         component.setMailinglist(componentDTO.getMailinglist());
         component.setWiki(componentDTO.getWiki());
         component.setBlog(componentDTO.getBlog());
+        if(componentDTO.getVcs()!=null && Objects.nonNull(componentDTO.getVcs())) {
+        	component.setVcs(componentDTO.getVcs().trim());
+        }
 
         return component;
     }
