@@ -20,13 +20,23 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,6 +68,45 @@ public class Sw360ModerationRequestService {
         THttpClient thriftClient = new THttpClient(thriftServerUrl + "/moderation/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new ModerationService.Client(protocol);
+    }
+    private ComponentService.Iface getThriftComponentClient() throws TTransportException {
+        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/components/thrift");
+        TProtocol protocol = new TCompactProtocol(thriftClient);
+        return new ComponentService.Client(protocol);
+    }
+
+    public ProjectService.Iface getThriftProjectClient() throws TTransportException {
+        ProjectService.Iface projectClient = new ThriftClients().makeProjectClient();
+        return projectClient;
+    }
+
+    private LicenseService.Iface getThriftLicenseClient() throws TTransportException {
+        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/licenses/thrift");
+        TProtocol protocol = new TCompactProtocol(thriftClient);
+        return new LicenseService.Client(protocol);
+    }
+
+    private SPDXDocumentService.Iface getThriftSPDXDocumentClient() throws TTransportException {
+        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/spdxdocument/thrift");
+        TProtocol protocol = new TCompactProtocol(thriftClient);
+        return new SPDXDocumentService.Client(protocol);
+    }
+
+    private DocumentCreationInformationService.Iface getThriftDocumentCreationInfo()  throws TTransportException {
+        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/spdxdocumentcreationinfo/thrift");
+        TProtocol protocol = new TCompactProtocol(thriftClient);
+        return new DocumentCreationInformationService.Client(protocol);
+    }
+
+    private PackageInformationService.Iface getThriftPackageInfo()  throws TTransportException {
+        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/spdxpackageinfo/thrift");
+        TProtocol protocol = new TCompactProtocol(thriftClient);
+        return new PackageInformationService.Client(protocol);
+    }
+    private UserService.Iface getThriftUserClient() throws TTransportException {
+        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/users/thrift");
+        TProtocol protocol = new TCompactProtocol(thriftClient);
+        return new UserService.Client(protocol);
     }
 
     /**
@@ -193,8 +242,123 @@ public class Sw360ModerationRequestService {
      */
     public ModerationState acceptRequest(ModerationRequest request, String moderatorComment, @NotNull User reviewer)
             throws TException {
+
+        User userFromRequest = getUserFromRequest(request);
+
+        switch (request.getDocumentType()) {
+            case COMPONENT: {
+                ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+                if (request.isRequestDocumentDelete()) {
+                    sw360ComponentClient.deleteComponent(request.getDocumentId(), reviewer);
+                } else {
+                    sw360ComponentClient.updateComponentFromModerationRequest(request.getComponentAdditions(),
+                            request.getComponentDeletions(), reviewer);
+                }
+                break;
+            }
+
+            case PROJECT: {
+                ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+                if (request.isRequestDocumentDelete()) {
+                    sw360ProjectClient.deleteProject(request.getDocumentId(), reviewer);
+                } else {
+                    sw360ProjectClient.updateProjectFromModerationRequest(request.getProjectAdditions(),
+                            request.getProjectDeletions(), reviewer);
+                }
+                break;
+            }
+
+            case RELEASE: {
+                ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+                if (request.isRequestDocumentDelete()) {
+                    RequestStatus deleteStatus = sw360ComponentClient.deleteRelease(request.getDocumentId(), reviewer);
+                    if (deleteStatus.equals(RequestStatus.SUCCESS)) {
+                        SW360Utils.removeReleaseVulnerabilityRelation(request.getDocumentId(), userFromRequest);
+                    }
+                } else {
+                    sw360ComponentClient.updateReleaseFromModerationRequest(request.getReleaseAdditions(),
+                            request.getReleaseDeletions(), reviewer);
+                }
+                break;
+            }
+
+            case LICENSE: {
+                LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+                sw360LicenseClient.updateLicenseFromModerationRequest(request.getLicenseAdditions(),
+                        request.getLicenseDeletions(), reviewer, userFromRequest);
+                break;
+            }
+
+            case SPDX_DOCUMENT: {
+                SPDXDocumentService.Iface sw360SPDXClient = getThriftSPDXDocumentClient();
+                if (request.isRequestDocumentDelete()) {
+                    sw360SPDXClient.deleteSPDXDocument(request.getDocumentId(), reviewer);
+                } else {
+                    sw360SPDXClient.updateSPDXDocumentFromModerationRequest(request.getSPDXDocumentAdditions(),
+                            request.getSPDXDocumentDeletions(), reviewer);
+                }
+                break;
+            }
+
+            case SPDX_DOCUMENT_CREATION_INFO: {
+                DocumentCreationInformationService.Iface documentCreationInfoClient = getThriftDocumentCreationInfo();
+                if (request.isRequestDocumentDelete()) {
+                    documentCreationInfoClient.deleteDocumentCreationInformation(request.getDocumentId(), reviewer);
+                } else {
+                    documentCreationInfoClient.updateDocumentCreationInfomationFromModerationRequest(
+                            request.getDocumentCreationInfoAdditions(), request.getDocumentCreationInfoDeletions(),
+                            reviewer);
+                }
+                break;
+            }
+
+            case SPDX_PACKAGE_INFO: {
+                PackageInformationService.Iface packageInfoClient = getThriftPackageInfo();
+                if (request.isRequestDocumentDelete()) {
+                    packageInfoClient.deletePackageInformation(request.getDocumentId(), reviewer);
+                } else {
+                    packageInfoClient.updatePackageInfomationFromModerationRequest(request.getPackageInfoAdditions(),
+                            request.getPackageInfoDeletions(), reviewer);
+                }
+                try {
+                    UserService.Iface userClient = getThriftUserClient();
+                    User user = getUserByEmailOrExternalId(userClient, request.getUser().getEmail(),
+                            request.getUser().getExternalid());
+                    userClient.addUser(user);
+                } catch (Exception e) {
+                    log.error("Failed to find or activate user for moderation request: " + request.getDocumentId(), e);
+                }
+                break;
+            }
+        }
+
         getThriftModerationClient().acceptRequest(request, moderatorComment, reviewer.getEmail());
         return ModerationState.APPROVED;
+    }
+
+
+
+    private User getUserFromRequest(ModerationRequest request) {
+        return new User(request.getId(), request.getModerators().toString());
+    }
+
+    public User getUserByEmail(String email) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.getByEmail(email);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public User getUserByEmailOrExternalId(org.eclipse.sw360.datahandler.thrift.users.UserService.Iface userClient,
+            String userIdentifier, String string) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.getByEmailOrExternalId(userIdentifier, userIdentifier);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
