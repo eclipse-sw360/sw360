@@ -115,13 +115,13 @@ So any external docker image can connect to internal couchdb  through this netwo
 * Run the resulting image:
 
     ```sh
-    docker-compose up
+    docker compose up
     ```
 
 * With custom env file
 
     ```sh
-    docker-compose --env-file <envfile> up
+    docker compose --env-file <envfile> up
     ```
 
     You can add **-d** parameter at end of line to start in daemon mode and see the logs with the following command:
