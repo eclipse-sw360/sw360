@@ -458,6 +458,28 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return mergedUsage;
     }
 
+    public RequestStatus removeOrphanObligations(Map<String, ObligationStatusInfo> obligationStatusMap, List<String> obligationTitlesInRequestBody, Project project, User user, ObligationList obligation) {
+        try {
+            ThriftClients thriftClients = new ThriftClients();
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            RequestStatus status = null;
+
+            for (String topic : obligationTitlesInRequestBody) {
+                if (obligationStatusMap.containsKey(topic)) {
+                    obligationStatusMap.remove(topic);
+                } else {
+                    status = RequestStatus.FAILURE;
+                    return status;
+                }
+            }
+            status = client.updateLinkedObligations(obligation, user);
+            return status;
+        } catch (TException exception) {
+            log.error("Failed to remove orphan obligation for project: " + project.getId(), exception);
+        }
+        return RequestStatus.FAILURE;
+    }
+
     public Map<String, ObligationStatusInfo> getLicenseObligationData(Map<String, Set<Release>> licensesFromAttachmentUsage, User user) {
         ThriftClients thriftClients = new ThriftClients();
         LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
