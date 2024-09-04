@@ -478,7 +478,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 		boolean isTransitive = Boolean.parseBoolean(transitive);
 
 		Map<String, ProjectProjectRelationship> linkedProjects = sw360Proj.getLinkedProjects();
-		List<String> keys = new ArrayList<>(linkedProjects.keySet());
+        List<String> keys = linkedProjects != null ? new ArrayList<>(linkedProjects.keySet()) : new ArrayList<>();
 		List<Project> projects = keys.stream().map(projId -> wrapTException(() -> {
 			final Project sw360Project = projectService.getProjectForUserById(projId, sw360User);
 			return sw360Project;
