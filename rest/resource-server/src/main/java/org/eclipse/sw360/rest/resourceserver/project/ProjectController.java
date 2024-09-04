@@ -2527,6 +2527,44 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return responseBody;
     }
 
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "delete orphan obligations",
+            description = "Pass an array of orphan obligation titles in request body.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/orphanObligation", method = RequestMethod.PATCH)
+    public ResponseEntity<?> removeOrphanObligation(
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id,
+            @Parameter(description = "Array of orphaned obligations title",
+                    examples = {
+                            @ExampleObject(value = "[\"title1\",\"title2\",\"title3\"]")
+                            // TODO: Add example for MAP value
+                    }
+            )
+            @RequestBody List<String> obligationTitlesInRequestBody
+    ) throws URISyntaxException, TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+
+        ObligationList obligation = new ObligationList();
+        RequestStatus status = null;
+        Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
+
+        if (CommonUtils.isNotNullEmptyOrWhitespace(sw360Project.getLinkedObligationId())) {
+            obligation = projectService.getObligationData(sw360Project.getLinkedObligationId(), sw360User);
+            obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
+            status = projectService.removeOrphanObligations(obligationStatusMap, obligationTitlesInRequestBody, sw360Project, sw360User, obligation);
+        } else {
+            return new ResponseEntity<>("No linked obligation found for the project", HttpStatus.NOT_FOUND);
+        }
+        if (status == RequestStatus.SUCCESS) {
+            return new ResponseEntity<>("Orphaned Obligation Removed Successfully", HttpStatus.OK);
+        }
+        return new ResponseEntity<>("Failed to Remove Orphaned Obligation", HttpStatus.NOT_FOUND);
+    }
+
     @Operation(
             description = "Get license obligation data of project tab.",
             tags = {"Project"}

@@ -444,9 +444,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project8.setId("123456733");
         project8.setName("oblProject");
         project8.setVersion("3");
-        project8.setLinkedObligationId("0001");
+        project8.setLinkedObligationId("009");
         linkedReleases3.put("376527651233", projectReleaseRelationship);
         project8.setReleaseIdToUsage(linkedReleases3);
+        List<String> title = Arrays.asList("obligation_title");
 
         Source ownerSrc3 = Source.releaseId("376527651233");
         Source usedBySrc3 = Source.projectId("123456733");
@@ -599,6 +600,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.validate(any(), any(), any(), any())).willReturn(true);
         given(this.projectServiceMock.deselectedAttachmentUsagesFromRequest(any(), eq(selectedUsages), any(), any(), any())).willReturn(deselectedUsagesFromRequest);
         given(this.projectServiceMock.selectedAttachmentUsagesFromRequest(any(), eq(selectedUsages), any(), any(), any())).willReturn(selectedUsagesFromRequest);
+        given(this.projectServiceMock.removeOrphanObligations(eq(obligationStatusMap), any(), eq(project8), any(), eq(obligationLists))).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(projectForAtt);
         given(this.projectServiceMock.getProjectForUserById(eq(SPDXProject.getId()), any())).willReturn(SPDXProject);
         given(this.projectServiceMock.getProjectForUserById(eq(cycloneDXProject.getId()), any())).willReturn(cycloneDXProject);
@@ -2222,6 +2224,17 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     public void should_document_delete_project() throws Exception {
         mockMvc.perform(delete("/api/projects/" + project.getId())
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_document_remove_orphaned_obligations() throws Exception {
+        List<String> orphanedObligationTitles = Arrays.asList("obligation_title");
+        mockMvc.perform(patch("/api/projects/" + project8.getId() + "/orphanObligation")
+                .content(this.objectMapper.writeValueAsString(orphanedObligationTitles))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
     }
