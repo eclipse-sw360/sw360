@@ -874,14 +874,8 @@ public class SpdxBOMImporter {
     private PackageInformation getPackageInformationFromSpdxDocument(String spdxDocId, String packageName) throws SW360Exception {
         PackageInformation info;
         final SPDXDocument spdxDoc = sink.getSPDXDocument(spdxDocId);
-        if (spdxDoc.getSpdxPackageInfoIdsSize() > 0) {
-            for (String packageId : spdxDoc.getSpdxPackageInfoIds()) {
-                if (sink.getPackageInfo(packageId).getName().equals(packageName)) {
-                    info = sink.getPackageInfo(packageId);
-                    return info;
-                }
-            }
-            return new PackageInformation();
+        if (spdxDoc.getSpdxPackageInfoIdsSize() > 0 ) {
+            return sink.getPackageInfo(spdxDoc.getSpdxPackageInfoIds().iterator().next());
         } else {
             return new PackageInformation();
         }

@@ -556,6 +556,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         // Add release to database
         releaseRepository.add(release);
+        if (SW360Constants.SPDX_DOCUMENT_ENABLED) {
+            try {
+                spdxDocumentDatabaseHandler.updateSPDX(user, release, true);
+            } catch (TException ex) {
+                log.error("Error updateSPDX "+ ex.getMessage());
+            }
+        }
         final String id = release.getId();
 
         // Update the underlying component
