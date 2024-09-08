@@ -38,6 +38,7 @@
         <module>projects</module>
         <module>schedule</module>
         <module>search</module>
+        <module>service-core</module>
         <module>spdxdocument</module>
         <module>spdxdocumentcreationinfo</module>
         <module>spdxpackageinfo</module>
@@ -47,7 +48,6 @@
         <module>vulnerabilities</module>
         <module>vulnerabilities-core</module>
         <module>wsimport</module>
-        <module>svc-common</module>
         <module>utils</module>
     </modules>
 
@@ -121,6 +121,26 @@
             <version>1.4.7</version>
         </dependency>
     </dependencies>
+
+    <!-- NEed by Servlets to be activated by Tomcat -->
+    <profiles>
+        <profile>
+            <id>war-dependencies</id>
+            <activation>
+                <property>
+                    <name>packaging</name>
+                    <value>war</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.eclipse.sw360</groupId>
+                    <artifactId>backend-service-core</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
     <build>
         <pluginManagement>

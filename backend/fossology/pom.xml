@@ -25,6 +25,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>backend-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.jcraft</groupId>
             <artifactId>jsch</artifactId>
         </dependency>

@@ -26,7 +26,12 @@
     <dependencies>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
-            <artifactId>backend-licenses</artifactId>
+            <artifactId>backend-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>backend-licenses-core</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

@@ -25,20 +25,8 @@
     <dependencies>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
-            <artifactId>backend-attachments</artifactId>
+            <artifactId>backend-common</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.spdx</groupId>
-            <artifactId>tools-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-1.2-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.velocity</groupId>
@@ -49,35 +37,13 @@
             <artifactId>velocity-tools-generic</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.saxon</groupId>
-            <artifactId>saxon-dom</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.tngtech.java</groupId>
-            <artifactId>junit-dataprovider</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.dom4j</groupId>
             <artifactId>dom4j</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>jaxen</groupId>
-            <artifactId>jaxen</artifactId>
+            <groupId>com.tngtech.java</groupId>
+            <artifactId>junit-dataprovider</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -21,4 +21,11 @@
     <packaging>war</packaging>
     <name>backend-search</name>
     <build><finalName>search</finalName></build>
+    <dependencies>
+      <dependency>
+        <groupId>org.eclipse.sw360</groupId>
+        <artifactId>backend-common</artifactId>
+        <version>${project.version}</version>
+    </dependency>
+    </dependencies>
 </project>
