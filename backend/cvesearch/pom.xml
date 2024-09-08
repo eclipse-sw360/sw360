@@ -28,7 +28,12 @@
     <dependencies>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
-            <artifactId>datahandler</artifactId>
+            <artifactId>backend-vulnerabilities-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>backend-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

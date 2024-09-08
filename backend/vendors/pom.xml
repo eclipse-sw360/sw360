@@ -9,17 +9,26 @@
   ~ SPDX-License-Identifier: EPL-2.0
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-   
-    <parent>
-        <artifactId>backend</artifactId>
-        <groupId>org.eclipse.sw360</groupId>
-        <version>18.99.1</version>
-    </parent>
-    
-    <modelVersion>4.0.0</modelVersion>
-    <artifactId>backend-vendors</artifactId>
-    <packaging>war</packaging>
-    <build><finalName>vendors</finalName></build>
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <parent>
+    <artifactId>backend</artifactId>
+    <groupId>org.eclipse.sw360</groupId>
+    <version>18.99.1</version>
+  </parent>
+
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>backend-vendors</artifactId>
+  <packaging>war</packaging>
+  <build>
+    <finalName>vendors</finalName>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.eclipse.sw360</groupId>
+      <artifactId>backend-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
 </project>

@@ -27,7 +27,7 @@
     <dependencies>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
-            <artifactId>backend-attachments</artifactId>
+            <artifactId>backend-common</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
