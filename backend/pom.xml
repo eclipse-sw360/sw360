@@ -44,6 +44,7 @@
         <module>vendors</module>
         <module>vmcomponents</module>
         <module>vulnerabilities</module>
+        <module>vulnerabilities-core</module>
         <module>wsimport</module>
         <module>svc-common</module>
         <module>utils</module>
