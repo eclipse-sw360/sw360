@@ -32,6 +32,7 @@
         <module>health</module>
         <module>licenseinfo</module>
         <module>licenses</module>
+        <module>licenses-core</module>
         <module>moderation</module>
         <module>packages</module>
         <module>projects</module>
@@ -133,6 +134,14 @@
         </pluginManagement>
 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <finalName>sw360-${project.artifactId}-${project.version}</finalName>
+                </configuration>
+            </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
             </plugin>
