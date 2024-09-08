@@ -165,31 +165,6 @@
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
             </plugin>
-            <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-build-configuration-resources</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems combine.children="append">
-                                <artifactItem>
-                                    <groupId>org.eclipse.sw360</groupId>
-                                    <artifactId>backend-common</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                    <excludes>**/*.java,**/*.class</excludes>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 </project>
