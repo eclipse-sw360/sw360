@@ -19,21 +19,17 @@
         <version>18.99.1</version>
     </parent>
 
-    <artifactId>backend-vulnerabilities</artifactId>
-    <packaging>war</packaging>
-    <name>backend-vulnerabilities</name>
-    <build><finalName>vulnerabilities</finalName></build>
+    <artifactId>backend-vulnerabilities-core</artifactId>
+    <name>backend-vulnerabilities-core</name>
+    <packaging>jar</packaging>
+    <build>
+        <finalName>vulnerabilities-core</finalName>
+    </build>
 
     <dependencies>
         <dependency>
-            <groupId>org.eclipse.sw360</groupId>
-            <artifactId>backend-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.sw360</groupId>
-            <artifactId>backend-vulnerabilities-core</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.github.cliftonlabs</groupId>
+            <artifactId>json-simple</artifactId>
         </dependency>
     </dependencies>
 </project>
