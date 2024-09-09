@@ -25,24 +25,25 @@
         <version.compiler.maven.plugin>3.5.1</version.compiler.maven.plugin>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <keycloak.provider.version>23.0.4</keycloak.provider.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
-            <version>23.0.4</version>
+            <version>${keycloak.provider.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
-            <version>23.0.4</version>
+            <version>${keycloak.provider.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi-private</artifactId>
-            <version>23.0.4</version>
+            <version>${keycloak.provider.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
