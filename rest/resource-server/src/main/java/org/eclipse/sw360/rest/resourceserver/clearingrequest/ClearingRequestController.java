@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.clearingrequest;
 
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.net.URISyntaxException;
@@ -17,7 +18,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,7 +30,13 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
+import org.eclipse.sw360.datahandler.thrift.Comment;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -36,11 +47,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -166,6 +179,57 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         CollectionModel<EntityModel<ClearingRequest>> resources = CollectionModel.of(clearingRequestList);
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
+    }
+
+
+    @Operation(
+            summary = "Get comments for a specific clearing request",
+            description = "Fetch a paginated list of comments associated with the given clearing request ID.",
+            tags = {"ClearingRequest"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved the comments",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Comment.class))),
+            @ApiResponse(responseCode = "404", description = "Clearing request not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping(value = CLEARING_REQUEST_URL + "/{id}/comments")
+    public ResponseEntity<CollectionModel<?>> getCommentsByClearingRequestId(
+            @PathVariable("id") String crId,
+            HttpServletRequest request,
+            Pageable pageable) throws TException, URISyntaxException {
+        try {
+            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+            ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestById(crId, sw360User);
+
+            List<Comment> commentList = clearingRequest.getComments().stream().sorted((c1, c2) -> Long.compare(c2.getCommentedOn(), c1.getCommentedOn()))
+                    .collect(Collectors.toList());
+            PaginationResult<Comment> paginationResult = restControllerHelper.createPaginationResult(request, pageable, commentList, SW360Constants.TYPE_COMMENT);
+            final List<EntityModel<Comment>> commentResources = new ArrayList<>();
+            for (Comment comment : paginationResult.getResources()) {
+                Comment embeddedComment = restControllerHelper.convertToEmbeddedComment(comment);
+                HalResource<Comment> commentHalResource = createHalComment(embeddedComment);
+                commentResources.add(commentHalResource);
+            }
+            CollectionModel<EntityModel<Comment>> resources;
+            if (commentResources.isEmpty()) {
+                resources = restControllerHelper.emptyPageResource(Comment.class, paginationResult);
+            } else {
+                resources = restControllerHelper.generatePagesResource(paginationResult, commentResources);
+            }
+            HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+            return new ResponseEntity<>(resources, status);
+        } catch (Exception e) {
+            throw new TException(e.getMessage());
+        }
+    }
+
+    private HalResource<Comment> createHalComment(Comment comment) throws TException {
+        HalResource<Comment> halComment = new HalResource<>(comment);
+        User commentinguser = restControllerHelper.getUserByEmail(comment.getCommentedBy());
+        restControllerHelper.addEmbeddedUser(halComment, commentinguser, "commentingUser");
+        return halComment;
     }
 
     @Override

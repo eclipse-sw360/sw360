@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
@@ -55,6 +56,8 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<Vulnerability._Fields, Comparator<Vulnerability>> vMap = generateVulMap();
     private static final Map<VulnerabilitySummary._Fields, Comparator<VulnerabilitySummary>> vSumm = generateVulSumm();
     private static final Map<ModerationRequest._Fields, Comparator<ModerationRequest>> moderationRequestMap = generateModerationRequestMap();
+    private static final Map<Comment._Fields, Comparator<Comment>> commentMap = generateCommentMap();
+
 
     private static Map<Component._Fields, Comparator<Component>> generateComponentMap() {
         Map<Component._Fields, Comparator<Component>> componentMap = new HashMap<>();
@@ -198,6 +201,16 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(moderationRequestMap);
     }
 
+    private static Map<Comment._Fields, Comparator<Comment>> generateCommentMap() {
+        Map<Comment._Fields, Comparator<Comment>> commentMap = new HashMap<>();
+        commentMap.put(Comment._Fields.COMMENTED_ON,
+                Comparator.comparingLong(Comment::getCommentedOn));
+        commentMap.put(Comment._Fields.COMMENTED_BY,
+                Comparator.comparing(Comment::getCommentedBy, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(commentMap);
+    }
+
+
     public Comparator<T> generateComparator(String type) throws ResourceClassNotFoundException {
         switch (type) {
             case SW360Constants.TYPE_COMPONENT:
@@ -230,6 +243,8 @@ public class ResourceComparatorGenerator<T> {
                 return (Comparator<T>)defaultLicenseComparator();
             case SW360Constants.TYPE_OBLIGATION:
                 return (Comparator<T>)defaultObligationComparator();
+            case SW360Constants.TYPE_COMMENT:
+                return (Comparator<T>)defaultCommentComparator();
             default:
                 throw new ResourceClassNotFoundException("No default comparator for resource class with name " + type);
         }
@@ -362,10 +377,20 @@ public class ResourceComparatorGenerator<T> {
                     }
                 }
                 return generateModerationRequestComparatorWithFields(type, modFields);
-            default:
+            case SW360Constants.TYPE_COMMENT:
+                List<Comment._Fields> commentFields = new ArrayList<>();
+                for (String property : properties) {
+                    Comment._Fields field = Comment._Fields.findByName(property);
+                    if(field != null){
+                        commentFields.add(field);
+                    }
+                }
+                return generateCommentComparatorWithFields(type, commentFields);
+                default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
     }
+
 
     public Comparator<T> generateComparatorWithFields(String type, List<Component._Fields> fields) throws ResourceClassNotFoundException {
         switch (type) {
@@ -417,6 +442,15 @@ public class ResourceComparatorGenerator<T> {
         switch (type) {
             case SW360Constants.TYPE_VENDOR:
                 return (Comparator<T>)vendorComparator(fields);
+            default:
+                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+        }
+    }
+
+    private Comparator<T> generateCommentComparatorWithFields(String type, List<Comment._Fields> fields) throws ResourceClassNotFoundException {
+        switch (type){
+            case SW360Constants.TYPE_COMMENT:
+                return (Comparator<T>)commentComparator(fields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -572,6 +606,20 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
+    private Comparator<Comment> commentComparator(List<Comment._Fields> fields) {
+        Comparator<Comment> comparator = Comparator.comparing(x -> true);
+
+        for (Comment._Fields field : fields) {
+            Comparator<Comment> fieldComparator = commentMap.get(field);
+            if (fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultCommentComparator());
+        return comparator;
+    }
+
+
     private Comparator<Package> packageComparator(List<Package._Fields> fields) {
         Comparator<Package> comparator = Comparator.comparing(x -> true);
         for (Package._Fields field:fields) {
@@ -714,5 +762,8 @@ public class ResourceComparatorGenerator<T> {
 
     private Comparator<Obligation> defaultObligationComparator() {
         return obligationMap.get(Obligation._Fields.TITLE);
+    }
+    public Comparator<Comment> defaultCommentComparator() {
+        return commentMap.get(Comment._Fields.COMMENTED_ON);
     }
 }
