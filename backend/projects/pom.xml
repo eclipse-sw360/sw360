@@ -23,6 +23,9 @@
     <packaging>war</packaging>
     <name>backend-projects</name>
     <build><finalName>projects</finalName></build>
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <dependencies>
         <dependency>

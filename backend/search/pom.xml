@@ -21,6 +21,10 @@
     <packaging>war</packaging>
     <name>backend-search</name>
     <build><finalName>search</finalName></build>
+    <properties>
+      <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+  </properties>
+
     <dependencies>
       <dependency>
         <groupId>org.eclipse.sw360</groupId>

@@ -122,7 +122,7 @@
         </dependency>
     </dependencies>
 
-    <!-- NEed by Servlets to be activated by Tomcat -->
+    <!-- Needed by Servlets to be activated by Tomcat -->
     <profiles>
         <profile>
             <id>war-dependencies</id>
@@ -141,7 +141,6 @@
             </dependencies>
         </profile>
     </profiles>
-
     <build>
         <pluginManagement>
             <plugins>
@@ -152,7 +151,6 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -161,6 +159,9 @@
                 <configuration>
                     <finalName>sw360-${project.artifactId}-${project.version}</finalName>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>

@@ -21,8 +21,10 @@
     <artifactId>backend-fossology</artifactId>
     <packaging>war</packaging>
     <name>backend-fossology</name>
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
     <build><finalName>fossology</finalName></build>
-
     <dependencies>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>

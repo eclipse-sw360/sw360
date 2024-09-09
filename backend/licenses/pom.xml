@@ -23,6 +23,9 @@
     <packaging>war</packaging>
     <name>backend-licenses</name>
     <build><finalName>licenses</finalName></build>
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <dependencies>
         <dependency>

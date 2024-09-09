@@ -21,7 +21,9 @@
     <packaging>war</packaging>
     <name>backend-attachments</name>
     <build><finalName>attachments</finalName></build>
-
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>

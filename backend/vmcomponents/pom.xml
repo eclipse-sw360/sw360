@@ -24,6 +24,9 @@
             <name>stefan.jaeger@evosoft.com</name>
         </developer>
     </developers>
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <dependencies>
         <dependency>

@@ -19,6 +19,9 @@
     <artifactId>backend-health</artifactId>
     <packaging>war</packaging>
     <name>backend-health</name>
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
     <build>
         <finalName>health</finalName>
     </build>
