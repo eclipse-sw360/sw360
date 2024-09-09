@@ -32,8 +32,8 @@ services:
     volumes:
       - couchdb:/opt/couchdb/data
       - ./config/couchdb/sw360_setup.ini:/opt/couchdb/etc/local.d/sw360_setup.ini:ro
-      - ./config/couchdb/sw360_log.ini:/opt/couchdb/etc/local.d/sw360_log.ini:ro
-      - ./logs/couchdb:/opt/couchdb/log
+      # - ./config/couchdb/sw360_log.ini:/opt/couchdb/etc/local.d/sw360_log.ini:ro
+      # - ./logs/couchdb:/opt/couchdb/log
     healthcheck:
       test: ["CMD-SHELL", "curl --fail -s http://couchdb:5984/_up"]
       interval: 30s
