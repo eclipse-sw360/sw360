@@ -22,6 +22,9 @@
     <packaging>jar</packaging>
     <name>backend-components</name>
     <build><finalName>components</finalName></build>
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <dependencies>
         <dependency>

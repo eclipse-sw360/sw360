@@ -17,6 +17,9 @@
         <artifactId>backend</artifactId>
         <version>18.99.1</version>
     </parent>
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <artifactId>backend-licenses-core</artifactId>
     <packaging>jar</packaging>

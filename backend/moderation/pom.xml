@@ -22,6 +22,9 @@
     <packaging>war</packaging>
     <name>backend-moderation</name>
     <build><finalName>moderation</finalName></build>
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <dependencies>
         <dependency>

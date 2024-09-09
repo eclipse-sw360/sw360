@@ -25,6 +25,9 @@
     <packaging>war</packaging>
     <name>backend-spdxdocument</name>
     <build><finalName>spdxdocument</finalName></build>
+    <properties>
+        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+    </properties>
 
     <dependencies>
         <dependency>
