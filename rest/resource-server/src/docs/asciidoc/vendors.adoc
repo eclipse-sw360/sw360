@@ -70,6 +70,17 @@ include::{snippets}/should_document_create_vendor/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_create_vendor/links.adoc[]
 
+[[resources-vendor-update]]
+==== Updating a vendor
+
+A `PATCH` request is used to update a vendor.
+
+===== Example request
+include::{snippets}/should_document_update_vendor/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_vendor/http-response.adoc[]
+
 [[resources-vendor-export]]
 ==== Export vendor list
 

@@ -105,6 +105,28 @@ public class Sw360VendorService {
         }
     }
 
+    public RequestStatus vendorUpdate(Vendor vendor, User sw360User, String id) {
+        try {
+            VendorService.Iface sw360VendorClient = getThriftVendorClient();
+            Vendor existingVendor = sw360VendorClient.getByID(id);
+            if (existingVendor != null) {
+                if (vendor.getShortname() != null) {
+                    existingVendor.setShortname(vendor.getShortname());
+                }
+                if (vendor.getFullname() != null) {
+                    existingVendor.setFullname(vendor.getFullname());
+                }
+                if (vendor.getUrl() != null) {
+                    existingVendor.setUrl(vendor.getUrl());
+                }
+            }
+            RequestStatus requestStatus = sw360VendorClient.updateVendor(existingVendor, sw360User);
+            return requestStatus;
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void deleteVendor(Vendor vendor, User sw360User) {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();

@@ -10,6 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
@@ -40,6 +41,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 
@@ -56,6 +58,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
     private Sw360VendorService vendorServiceMock;
 
     private Vendor vendor;
+    private Vendor vendor3;
 
     @Before
     public void before() throws TException{
@@ -71,11 +74,18 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
         vendor2.setShortname("Pivotal");
         vendor2.setUrl("https://pivotal.io/");
 
+        vendor3 = new Vendor();
+        vendor3.setId("987567468");
+        vendor3.setFullname("AMazon Ltd");
+        vendor3.setShortname("AMazon");
+        vendor3.setUrl("https://AMazon.io/");
+
         List<Vendor> vendorList = new ArrayList<>();
         vendorList.add(vendor);
         vendorList.add(vendor2);
 
         given(this.vendorServiceMock.getVendors()).willReturn(vendorList);
+        given(this.vendorServiceMock.vendorUpdate(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vendorServiceMock.getVendorById(eq(vendor.getId()))).willReturn(vendor);
         given(this.vendorServiceMock.exportExcel()).willReturn(ByteBuffer.allocate(10000));
 
@@ -160,6 +170,20 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("url").description("The vendor's home page URL"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_update_vendor() throws Exception {
+        Map<String, Object> updateVendor = new HashMap<>();
+        updateVendor.put("fullName", "Amazon Ltd");
+        updateVendor.put("shortName", "Amazon");
+        updateVendor.put("url", "https://Amazon.io/");
+        mockMvc.perform(patch("/api/vendors/" + vendor3.getId())
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(updateVendor))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
     }
 
     @Test
