@@ -42,7 +42,7 @@ public class ComponentSearchHandler {
 
     private static final Logger log = LogManager.getLogger(ComponentSearchHandler.class);
 
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "/lucene";
+    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
 
     private static final NouveauIndexDesignDocument luceneSearchView
         = new NouveauIndexDesignDocument("components",

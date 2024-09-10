@@ -4,11 +4,14 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.db;
 
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
-import org.ektorp.support.View;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -16,8 +19,13 @@ import java.util.Set;
  *
  * @author stefan.jaeger@evosoft.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'vmcomponent') emit(null, doc._id) }")
-public class VMComponentRepository extends DatabaseRepository<VMComponent> {
+public class VMComponentRepository extends DatabaseRepositoryCloudantClient<VMComponent> {
+
+    private static final String ALL =
+            "function(doc) {" +
+                    "  if (doc.type == 'vmcomponent') " +
+                    "    emit(null, doc._id) " +
+                    "}";
 
     private static final String BY_VMID_VIEW =
             "function(doc) {" +
@@ -61,51 +69,57 @@ public class VMComponentRepository extends DatabaseRepository<VMComponent> {
                     "  } " +
                     "}";
 
-    public VMComponentRepository(DatabaseConnector db) {
-        super(VMComponent.class, db);
+    public VMComponentRepository(DatabaseConnectorCloudant db) {
+        super(db, VMComponent.class);
 
-        initStandardDesignDocument();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
+        views.put("all", createMapReduce(ALL, null));
+        views.put("byvmid", createMapReduce(BY_VMID_VIEW, null));
+        views.put("bylastupdate", createMapReduce(BY_LAST_UPDATE_VIEW, null));
+        views.put("all_vmids", createMapReduce(ALL_VMIDS, null));
+        views.put("componentByName", createMapReduce(BY_LOWERCASE_NAME_VIEW, null));
+        views.put("componentByVendor", createMapReduce(BY_LOWERCASE_VENDOR_VIEW, null));
+        views.put("componentByVersion", createMapReduce(BY_LOWERCASE_VERSION_VIEW, null));
+        initStandardDesignDocument(views, db);
     }
 
-    @View(name = "byvmid", map = BY_VMID_VIEW)
     public VMComponent getComponentByVmid(String vmid) {
         final Set<String> idList = queryForIdsAsValue("byvmid", vmid);
-        if (idList != null && idList.size() > 0)
+        if (idList != null && !idList.isEmpty())
             return get(CommonUtils.getFirst(idList));
         return null;
     }
 
-    @View(name = "bylastupdate", map = BY_LAST_UPDATE_VIEW)
     public VMComponent getComponentByLastUpdate(String lastUpdateDate) {
         final Set<String> idList;
-        if (lastUpdateDate == null){
-            idList = getAllIdsByView("bylastupdate", true);
+        if (lastUpdateDate == null) {
+            idList = queryForIdsAsValue(getConnector()
+                    .getPostViewQueryBuilder(VMComponent.class, "bylastupdate")
+                    .descending(true)
+                    .build());
         } else {
             idList = queryForIdsAsValue("bylastupdate", lastUpdateDate);
         }
-        if (idList != null && idList.size() > 0)
+        if (idList != null && !idList.isEmpty())
             return get(CommonUtils.getFirst(idList));
         return null;
     }
 
-    @View(name = "all_vmids", map = ALL_VMIDS)
     public Set<String> getAllVmids() {
-        return queryForIdsAsValue(createQuery("all_vmids"));
+        return queryForIdsAsValue(getConnector()
+                .getPostViewQueryBuilder(VMComponent.class, "all_vmids")
+                .build());
     }
 
-    @View(name = "componentByName", map = BY_LOWERCASE_NAME_VIEW)
     public Set<String> getComponentByLowercaseNamePrefix(String namePrefix) {
         return queryForIdsByPrefix("componentByName", namePrefix != null ? namePrefix.toLowerCase() : namePrefix);
     }
 
-    @View(name = "componentByVendor", map = BY_LOWERCASE_VENDOR_VIEW)
     public Set<String> getComponentByLowercaseVendorPrefix(String vendorPrefix) {
         return queryForIdsByPrefix("componentByVendor", vendorPrefix != null ? vendorPrefix.toLowerCase() : vendorPrefix);
     }
 
-    @View(name = "componentByVersion", map = BY_LOWERCASE_VERSION_VIEW)
     public Set<String> getComponentByLowercaseVersionPrefix(String versionPrefix) {
         return queryForIdsByPrefix("componentByVersion", versionPrefix != null ? versionPrefix.toLowerCase() : versionPrefix);
     }
-
 }

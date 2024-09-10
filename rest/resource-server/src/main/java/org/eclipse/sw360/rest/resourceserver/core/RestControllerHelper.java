@@ -1167,12 +1167,12 @@ public class RestControllerHelper<T> {
                     if (fieldDTO.equals(VulnerabilityApiDTO._Fields.CVSS)) {
                         if (!setDataCVSS(vulnerabilityApiDTO.getCvss(), vulnerability)) {
                             throw new RuntimeException(new SW360Exception("Invalid cvss: property 'cvss' should be a valid cvss.")
-                                    .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                                    .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
                         }
                     } else if (fieldDTO.equals(VulnerabilityApiDTO._Fields.IS_SET_CVSS)) {
                         if(!setDataIsSetCvss(vulnerabilityApiDTO.getIsSetCvss(), vulnerability)) {
                             throw new RuntimeException(new SW360Exception("Invalid isSetCvss: property 'isSetCvss' should be a valid isSetCvss.")
-                                    .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                                    .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
                         }
                     } else if (fieldDTO.equals(VulnerabilityApiDTO._Fields.CVE_REFERENCES)) {
                         setDataCveReferences(vulnerabilityApiDTO.getCveReferences(), vulnerability);
@@ -1221,16 +1221,16 @@ public class RestControllerHelper<T> {
             for (String cveReference : cveReferences) {
                 if (CommonUtils.isNullEmptyOrWhitespace(cveReference)) {
                     throw new RuntimeException(new SW360Exception("Invalid yearNumber: property 'yearNumber' cannot be null, empty or whitespace.")
-                            .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                            .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
                 }
                 if (!Pattern.matches("^\\d{4}-\\d*", cveReference)) {
                     throw new RuntimeException(new SW360Exception("Invalid yearNumber: property 'yearNumber' is wrong format")
-                            .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                            .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
                 }
                 String[] yearAndNumber = cveReference.split("-");
                 if (yearAndNumber.length != 2) {
                     throw new RuntimeException(new SW360Exception("Invalid yearNumber: property 'year-Number' is wrong format")
-                            .setErrorCode(org.apache.http.HttpStatus.SC_BAD_REQUEST));
+                            .setErrorCode(org.apache.hc.core5.http.HttpStatus.SC_BAD_REQUEST));
                 }
                 CVEReference m_cVEReference = new CVEReference();
                 m_cVEReference.setYear(yearAndNumber[0]);

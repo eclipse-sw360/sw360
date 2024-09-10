@@ -12,6 +12,7 @@ package org.eclipse.sw360.components.db;
 
 import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
@@ -96,8 +97,8 @@ public class BulkDeleteUtilTest {
 
     private Map<String, Vendor> vendors;
     private ComponentDatabaseHandler handler;
-    private DatabaseConnector databaseConnector;
-    private DatabaseConnector changeLogsDatabaseConnector;
+    private DatabaseConnectorCloudant databaseConnector;
+    private DatabaseConnectorCloudant changeLogsDatabaseConnector;
     private BulkDeleteUtil bulkDeleteUtil;
 
     private int nextReleaseVersion = 0;
@@ -126,8 +127,8 @@ public class BulkDeleteUtilTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), changeLogsDbName);
 
         // Prepare the database
-        databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
-        changeLogsDatabaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), changeLogsDbName);
+        databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
+        changeLogsDatabaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), changeLogsDbName);
         
         // Prepare vendors
         for (Vendor vendor : vendors.values()) {

@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.vendors;
 
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
@@ -30,7 +31,7 @@ public class TestVendorClient {
 
     @SuppressWarnings("unused")
     public static void InitDatabase() throws MalformedURLException {
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
 
         databaseConnector.add(new Vendor().setShortname("Microsoft").setFullname("Microsoft Corporation").setUrl("http://www.microsoft.com"));
         databaseConnector.add(new Vendor().setShortname("Apache").setFullname("The Apache Software Foundation").setUrl("http://www.apache.org"));

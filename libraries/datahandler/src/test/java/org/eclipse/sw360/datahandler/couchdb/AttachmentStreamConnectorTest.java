@@ -9,6 +9,12 @@
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
+import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
+import okhttp3.MediaType;
+import okhttp3.Protocol;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.internal.http.RealResponseBody;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
@@ -16,15 +22,12 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.ektorp.AttachmentInputStream;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import com.cloudant.client.org.lightcouch.NoDocumentException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -108,7 +111,7 @@ public class AttachmentStreamConnectorTest {
         String attachmentId = "id";
         when(attachment.getId()).thenReturn(attachmentId);
 
-        AttachmentInputStream full = mock(AttachmentInputStream.class);
+        InputStream full = mock(InputStream.class);
         when(connector.getAttachment(attachmentId, "fil")).thenReturn(full);
 
         when(full.read()).thenReturn(1, 2, -1);
@@ -136,10 +139,10 @@ public class AttachmentStreamConnectorTest {
         String attachmentId = "id";
         when(attachment.getId()).thenReturn(attachmentId);
 
-        AttachmentInputStream part1 = mock(AttachmentInputStream.class);
+        InputStream part1 = mock(InputStream.class);
         when(connector.getAttachment(attachmentId, "fil_part1")).thenReturn(part1);
 
-        AttachmentInputStream part2 = mock(AttachmentInputStream.class);
+        InputStream part2 = mock(InputStream.class);
         when(connector.getAttachment(attachmentId, "fil_part2")).thenReturn(part2);
 
         when(part1.read()).thenReturn(1, -1);
@@ -171,10 +174,18 @@ public class AttachmentStreamConnectorTest {
         String attachmentId = "id";
         when(attachment.getId()).thenReturn(attachmentId);
 
-        AttachmentInputStream part1 = mock(AttachmentInputStream.class);
+        InputStream part1 = mock(InputStream.class);
         when(connector.getAttachment(attachmentId, "fil_part1")).thenReturn(part1);
 
-        when(connector.getAttachment(attachmentId, "fil_part2")).thenThrow(new NoDocumentException(""));
+        when(connector.getAttachment(attachmentId, "fil_part2")).thenThrow(
+                new ServiceResponseException(404, new Response.Builder()
+                        .code(404)
+                        .request(new Request.Builder().url("http://example.com").build())
+                        .protocol(Protocol.HTTP_1_0)
+                        .message("Not Found")
+                        .body(RealResponseBody.create("Not Found", MediaType.get("text/plain")))
+                        .build())
+        );
 
         when(part1.read()).thenReturn(1, -1);
         InputStream attachmentStream = attachmentStreamConnector.getAttachmentStream(attachment, dummyUser,

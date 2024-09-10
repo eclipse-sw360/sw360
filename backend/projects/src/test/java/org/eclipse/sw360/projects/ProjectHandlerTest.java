@@ -12,6 +12,7 @@ package org.eclipse.sw360.projects;
 
 import com.google.common.collect.ImmutableMap;
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
@@ -68,7 +69,7 @@ public class ProjectHandlerTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
         for (Project project : projects) {
             databaseConnector.add(project);
         }

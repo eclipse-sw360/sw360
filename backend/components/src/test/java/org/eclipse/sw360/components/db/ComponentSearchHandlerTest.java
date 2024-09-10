@@ -12,6 +12,7 @@ package org.eclipse.sw360.components.db;
 
 import com.google.common.collect.ImmutableSet;
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.db.ComponentSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
@@ -75,7 +76,7 @@ public class ComponentSearchHandlerTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         for (Component component : components) {
             databaseConnector.add(component);

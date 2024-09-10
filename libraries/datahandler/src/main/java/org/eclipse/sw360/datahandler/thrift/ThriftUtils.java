@@ -152,11 +152,17 @@ public class ThriftUtils {
             if (value instanceof Document doc) {
                 return doc.getId();
             }
-            Document doc = new Document();
             Gson gson = getGson();
             Type t = new TypeToken<Map<String, Object>>() {}.getType();
-            doc.setProperties(gson.fromJson(gson.toJson(value), t));
-            return doc.getId();
+
+            Map<String, Object> map = gson.fromJson(gson.toJson(value), t);
+            if (map.containsKey("id")) {
+                return (String) map.get("id");
+            }
+            if (map.containsKey("_id")) {
+                return (String) map.get("_id");
+            }
+            return "";
         });
     }
 

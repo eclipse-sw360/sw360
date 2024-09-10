@@ -10,7 +10,6 @@
  */
 package org.eclipse.sw360.search;
 
-import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.ImmutableMap;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
@@ -33,7 +32,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 

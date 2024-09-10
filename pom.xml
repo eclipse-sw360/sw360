@@ -91,7 +91,6 @@
 
     <!-- Dependencies version properties -->
     <byte-buddy.version>1.12.13</byte-buddy.version>
-    <cloudant.version>2.19.1</cloudant.version>
     <cloudantsdk.version>0.9.1</cloudantsdk.version>
     <commons-codec.version>1.17.1</commons-codec.version>
     <commons-collection4.version>4.4</commons-collection4.version>
@@ -122,7 +121,6 @@
     <junit.version>4.13.2</junit.version>
     <maven-javadoc.version>3.6.2</maven-javadoc.version>
     <log4j2.version>2.19.0</log4j2.version>
-    <lucene.version>6.6.6</lucene.version>
     <mockito.version>4.7.0</mockito.version>
     <okhttp.version>4.10.0</okhttp.version>
     <org.spdx.java.spdx.library.version>1.1.1</org.spdx.java.spdx.library.version>
@@ -412,11 +410,6 @@
         <artifactId>assertj-core</artifactId>
         <version>3.11.1</version>
         <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>com.cloudant</groupId>
-        <artifactId>cloudant-client</artifactId>
-        <version>${cloudant.version}</version>
       </dependency>
       <dependency>
         <groupId>com.ibm.cloud</groupId>

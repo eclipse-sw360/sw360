@@ -15,6 +15,7 @@ import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
@@ -140,7 +141,7 @@ public class ComponentDatabaseHandlerTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         for (Vendor vendor : vendors.values()) {
             databaseConnector.add(vendor);

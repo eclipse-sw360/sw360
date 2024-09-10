@@ -36,7 +36,7 @@ import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 
 /**
- * Ektorp connector for uploading attachments
+ * Connector for uploading attachments
  *
  * @author cedric.bodet@tngtech.com
  * @author alex.borodin@evosoft.com

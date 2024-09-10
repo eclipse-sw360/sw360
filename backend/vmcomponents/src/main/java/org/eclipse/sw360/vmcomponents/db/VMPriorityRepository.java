@@ -4,11 +4,14 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.db;
 
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMPriority;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
-import org.ektorp.support.View;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -16,8 +19,13 @@ import java.util.Set;
  *
  * @author stefan.jaeger@evosoft.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'vmpriority') emit(null, doc._id) }")
-public class VMPriorityRepository extends DatabaseRepository<VMPriority> {
+public class VMPriorityRepository extends DatabaseRepositoryCloudantClient<VMPriority> {
+
+    private static final String ALL =
+            "function(doc) {" +
+                    "  if (doc.type == 'vmpriority')" +
+                    "    emit(null, doc._id) " +
+                    "}";
 
     private static final String BY_VMID_VIEW =
             "function(doc) {" +
@@ -40,37 +48,42 @@ public class VMPriorityRepository extends DatabaseRepository<VMPriority> {
                     "  } " +
                     "}";
 
-    public VMPriorityRepository(DatabaseConnector db) {
-        super(VMPriority.class, db);
+    public VMPriorityRepository(DatabaseConnectorCloudant db) {
+        super(db, VMPriority.class);
 
-        initStandardDesignDocument();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
+        views.put("all", createMapReduce(ALL, null));
+        views.put("byvmid", createMapReduce(BY_VMID_VIEW, null));
+        views.put("bylastupdate", createMapReduce(BY_LAST_UPDATE_VIEW, null));
+        views.put("all_vmids", createMapReduce(ALL_VMIDS, null));
+        initStandardDesignDocument(views, db);
     }
 
-    @View(name = "byvmid", map = BY_VMID_VIEW)
     public VMPriority getPriorityByVmid(String vmid) {
         final Set<String> idList = queryForIdsAsValue("byvmid", vmid);
-        if (idList != null && idList.size() > 0)
+        if (idList != null && !idList.isEmpty())
             return get(CommonUtils.getFirst(idList));
         return null;
     }
 
-    @View(name = "bylastupdate", map = BY_LAST_UPDATE_VIEW)
     public VMPriority getPriorityByLastUpdate(String lastUpdateDate) {
         final Set<String> idList;
-        if (lastUpdateDate == null){
-            idList = getAllIdsByView("bylastupdate", true);
+        if (lastUpdateDate == null) {
+            idList = queryForIdsAsValue(getConnector()
+                    .getPostViewQueryBuilder(VMPriority.class, "bylastupdate")
+                    .descending(true)
+                    .build());
         } else {
             idList = queryForIdsAsValue("bylastupdate", lastUpdateDate);
         }
-        if (idList != null && idList.size() > 0)
+        if (idList != null && !idList.isEmpty())
             return get(CommonUtils.getFirst(idList));
         return null;
     }
 
-    @View(name = "all_vmids", map = ALL_VMIDS)
     public Set<String> getAllVmids() {
-        return queryForIdsAsValue(createQuery("all_vmids"));
+        return queryForIdsAsValue(getConnector()
+                .getPostViewQueryBuilder(VMPriority.class, "all_vmids")
+                .build());
     }
-
-
 }

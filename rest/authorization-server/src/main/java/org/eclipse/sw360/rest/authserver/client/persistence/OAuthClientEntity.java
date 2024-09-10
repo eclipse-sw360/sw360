@@ -9,19 +9,23 @@
  */
 package org.eclipse.sw360.rest.authserver.client.persistence;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Set;
 
-import org.ektorp.support.CouchDbDocument;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-public class OAuthClientEntity extends CouchDbDocument {
+public class OAuthClientEntity implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
+    private String id;
+    private String revision;
     private String clientId;
     private String clientSecret;
     private String description;
@@ -35,6 +39,26 @@ public class OAuthClientEntity extends CouchDbDocument {
     private Integer accessTokenValiditySeconds;
     private Integer refreshTokenValiditySeconds;
     private Set<String> autoApproveScopes;
+
+    @JsonProperty("_id")
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    @JsonProperty("_id")
+    public String getId() {
+        return id;
+    }
+
+    @JsonProperty("_rev")
+    public void setRevision(String revision) {
+        this.revision = revision;
+    }
+
+    @JsonProperty("_rev")
+    public String getRevision() {
+        return revision;
+    }
 
     @JsonProperty("secretRequired")
     public void setSecretRequired(boolean secretRequired) {

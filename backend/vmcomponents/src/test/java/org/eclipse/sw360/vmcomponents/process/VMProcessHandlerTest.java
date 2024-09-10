@@ -78,7 +78,7 @@ public class VMProcessHandlerTest extends AbstractJSONMockTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Prepare the handler
-        handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_VM);
+        handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_VM);
 
         // mock preparation
         staticJSONResponse("/portal/api/v1/public/actions/5", "{\"text\": \"Install New Package\"}");
