@@ -722,15 +722,20 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             return obligationStatusMap;
         }
 
-        Map<String, LicenseInfoParsingResult> attachmentIdToLicenseMap = licenseResults.stream()
+        Map<String, LicenseInfoParsingResult> attachmentIdToLicenseMap = licenseResults.parallelStream()
                 .filter(LicenseInfoParsingResult::isSetAttachmentContentId)
-                .filter(LicenseInfoParsingResult::isSetLicenseInfo).collect(Collectors.toList()).stream()
-                .collect(Collectors.toMap(LicenseInfoParsingResult::getAttachmentContentId, Function.identity()));
+                .filter(LicenseInfoParsingResult::isSetLicenseInfo)
+                .collect(Collectors.toMap(
+                        LicenseInfoParsingResult::getAttachmentContentId,
+                        Function.identity(),
+                        (existingValue, newValue) -> existingValue
+                ));
 
-        Map<String, ObligationParsingResult> attachmentIdToObligationMap = obligationResults.stream()
-                .filter(ObligationParsingResult::isSetAttachmentContentId).filter(o -> o.getObligationsAtProjectSize() > 0)
-                .collect(Collectors.toList()).stream()
-                .collect(Collectors.toMap(ObligationParsingResult::getAttachmentContentId, Function.identity()));
+        Map<String, ObligationParsingResult> attachmentIdToObligationMap = obligationResults.parallelStream()
+                .filter(ObligationParsingResult::isSetAttachmentContentId)
+                .filter(o -> o.getObligationsAtProjectSize() > 0)
+                .collect(Collectors.toMap(ObligationParsingResult::getAttachmentContentId, Function.identity(),
+                        (existingValue, newValue) -> existingValue));
 
         List<LicenseInfoParsingResult> licenseParsingResults = new ArrayList<LicenseInfoParsingResult>();
         Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
