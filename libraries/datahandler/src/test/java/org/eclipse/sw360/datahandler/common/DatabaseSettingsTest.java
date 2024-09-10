@@ -1,9 +1,8 @@
 /*
  * Copyright Siemens AG, 2021. Part of the SW360 Portal Project.
  *
- * This program and the accompanying materials are made
- * available under the terms of the Eclipse Public License 2.0
- * which is available at https://www.eclipse.org/legal/epl-2.0/
+ * This program and the accompanying materials are made available under the terms of the Eclipse
+ * Public License 2.0 which is available at https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
  */
@@ -21,6 +20,7 @@ import com.google.gson.GsonBuilder;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Supplier;
 
@@ -30,7 +30,8 @@ import java.util.function.Supplier;
 public class DatabaseSettingsTest {
 
     private static final Logger log = LogManager.getLogger(DatabaseSettingsTest.class);
-    public static final String PROPERTIES_FILE_PATH = "/couchdb-test.properties";
+    public static final String PROPERTIES_FILE_PATH;
+
 
     public static final String COUCH_DB_URL;
     public static final String COUCH_DB_LUCENE_URL;
@@ -41,17 +42,30 @@ public class DatabaseSettingsTest {
     public static final String COUCH_DB_VM;
     public static final String COUCH_DB_CHANGELOGS;
 
-    private static final String COUCH_DB_USERNAME;
-    private static final String COUCH_DB_PASSWORD;
+    private static final Optional<String> COUCH_DB_USERNAME;
+    private static final Optional<String> COUCH_DB_PASSWORD;
 
     static {
-        Properties props = CommonUtils.loadProperties(DatabaseSettingsTest.class, PROPERTIES_FILE_PATH);
+        PROPERTIES_FILE_PATH = System.getenv("PROPERTIES_FILE_PATH") != null
+                ? System.getenv("PROPERTIES_FILE_PATH") + "/couchdb-test.properties"
+                : "/couchdb-test.properties";
 
-        COUCH_DB_URL = props.getProperty("couchdb.url", "http://localhost:5984");
-        COUCH_DB_LUCENE_URL = props.getProperty("couchdb.lucene.url", "http://localhost:8080/couchdb-lucene");
+        Properties props =
+                CommonUtils.loadProperties(DatabaseSettingsTest.class, PROPERTIES_FILE_PATH);
+
+        // Try ENV if set first
+        COUCH_DB_URL = System.getenv("COUCHDB_URL") != null ? System.getenv("COUCHDB_URL")
+                : props.getProperty("couchdb.url", "http://localhost:5984");
+        COUCH_DB_USERNAME = Optional
+                .ofNullable(System.getenv("COUCHDB_USER") != null ? System.getenv("COUCHDB_USER")
+                        : props.getProperty("couchdb.user", ""));
+        COUCH_DB_PASSWORD = Optional.ofNullable(
+                System.getenv("COUCHDB_PASSWORD") != null ? System.getenv("COUCHDB_PASSWORD")
+                        : props.getProperty("couchdb.password", ""));
+
+        COUCH_DB_LUCENE_URL =
+                props.getProperty("couchdb.lucene.url", "http://localhost:8080/couchdb-lucene");
         COUCH_DB_DATABASE = props.getProperty("couchdb.database", "sw360_test_db");
-        COUCH_DB_USERNAME = props.getProperty("couchdb.user", "");
-        COUCH_DB_PASSWORD = props.getProperty("couchdb.password", "");
         COUCH_DB_ATTACHMENTS = props.getProperty("couchdb.attachments", "sw360_test_attachments");
         COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360_test_config");
         COUCH_DB_USERS = props.getProperty("couchdb.usersdb", "sw360_test_users");
@@ -61,11 +75,11 @@ public class DatabaseSettingsTest {
 
     public static Supplier<HttpClient> getConfiguredHttpClient() throws MalformedURLException {
         StdHttpClient.Builder httpClientBuilder = new StdHttpClient.Builder().url(COUCH_DB_URL);
-        if(! "".equals(COUCH_DB_USERNAME)) {
-            httpClientBuilder.username(COUCH_DB_USERNAME);
+        if (!"".equals(COUCH_DB_USERNAME.get())) {
+            httpClientBuilder.username(COUCH_DB_USERNAME.get());
         }
-        if (! "".equals(COUCH_DB_PASSWORD)) {
-            httpClientBuilder.password(COUCH_DB_PASSWORD);
+        if (!"".equals(COUCH_DB_PASSWORD.get())) {
+            httpClientBuilder.password(COUCH_DB_PASSWORD.get());
         }
         return httpClientBuilder::build;
     }
@@ -82,11 +96,11 @@ public class DatabaseSettingsTest {
         }
         try {
             clientBuilder = ClientBuilder.url(new URL(COUCH_DB_URL)).gsonBuilder(gson);
-            if (!"".equals(COUCH_DB_USERNAME)) {
-                clientBuilder.username(COUCH_DB_USERNAME);
+            if (!"".equals(COUCH_DB_USERNAME.get())) {
+                clientBuilder.username(COUCH_DB_USERNAME.get());
             }
-            if (!"".equals(COUCH_DB_PASSWORD)) {
-                clientBuilder.password(COUCH_DB_PASSWORD);
+            if (!"".equals(COUCH_DB_PASSWORD.get())) {
+                clientBuilder.password(COUCH_DB_PASSWORD.get());
             }
         } catch (MalformedURLException e) {
             log.error("Error creating client", e);
