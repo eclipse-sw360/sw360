@@ -14,6 +14,7 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.sdk.core.security.Authenticator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
 import java.util.Properties;
@@ -64,13 +65,13 @@ public class DatabaseSettingsTest {
         COUCH_DB_CHANGELOGS = props.getProperty("couchdb.change_logs", "sw360_test_changelogs");
     }
 
-    public static Cloudant getConfiguredClient() {
+    public static @NotNull Cloudant getConfiguredClient() {
         Cloudant client;
         if (COUCH_DB_USERNAME.isPresent() && !COUCH_DB_USERNAME.get().isEmpty() &&
             COUCH_DB_PASSWORD.isPresent() && !COUCH_DB_PASSWORD.get().isEmpty()) {
             Authenticator authenticator = CouchDbSessionAuthenticator.newAuthenticator(
-                    COUCH_DB_USERNAME,
-                    COUCH_DB_PASSWORD);
+                    COUCH_DB_USERNAME.get(),
+                    COUCH_DB_PASSWORD.get());
             client = new Cloudant("sw360-couchdb-test", authenticator);
         } else {
             client = Cloudant.newInstance("sw360-couchdb-test");
@@ -86,6 +87,10 @@ public class DatabaseSettingsTest {
 
     private DatabaseSettingsTest() {
         // Utility class with only static functions
+    }
+
+    public static String getCouchDbUrl() {
+        return COUCH_DB_URL;
     }
 
 }

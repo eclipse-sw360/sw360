@@ -15,10 +15,10 @@ import junit.framework.TestCase;
 public class LuceneAwareCouchDbConnectorTest extends TestCase {
 
     public void testEnsureDesignIdMissing() {
-        assert "_design/lucene".equals(LuceneAwareCouchDbConnector.ensureDesignId("lucene"));
+        assert (LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX + "lucene").equals(LuceneAwareCouchDbConnector.ensureDesignId("lucene"));
     }
 
     public void testEnsureDesignIdContaining() {
-        assert "_design/lucene".equals(LuceneAwareCouchDbConnector.ensureDesignId("_design/lucene"));
+        assert (LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX + "lucene").equals(LuceneAwareCouchDbConnector.ensureDesignId(LuceneAwareCouchDbConnector.DEFAULT_DESIGN_PREFIX + "lucene"));
     }
 }

@@ -17,6 +17,7 @@ import com.google.common.collect.Lists;
 import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
 import com.ibm.cloud.cloudant.v1.model.ViewResult;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
@@ -67,7 +68,7 @@ public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<
                 .getPostViewQueryBuilder(AttachmentUsage.class, "usagesByAttachment")
                 .includeDocs(true)
                 .reduce(false)
-                .keys(List.of(new String[] { ownerId, attachmentContentId }))
+                .keys(List.of(List.of(ownerId, attachmentContentId)))
                 .build();
         return queryView(viewQuery);
     }
@@ -97,7 +98,7 @@ public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<
                 .getPostViewQueryBuilder(AttachmentUsage.class, "usagesByAttachmentUsageType")
                 .includeDocs(true)
                 .reduce(false)
-                .keys(List.of(new String[] { ownerId, attachmentContentId, filter }))
+                .keys(List.of(List.of(ownerId, attachmentContentId, filter)))
                 .build();
         return queryView(viewQuery);
     }
@@ -107,7 +108,7 @@ public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<
                 .getPostViewQueryBuilder(AttachmentUsage.class, "usedAttachmentsUsageType")
                 .includeDocs(true)
                 .reduce(false)
-                .keys(List.of(new String[] { usedById, filter }))
+                .keys(List.of(List.of(usedById, filter)))
                 .build();
         return queryView(viewQuery);
     }
@@ -125,9 +126,9 @@ public class AttachmentUsageRepository extends DatabaseRepositoryCloudantClient<
         return result.getRows().stream().collect(Collectors.toMap(key -> {
             String json = key.getKey().toString();
             String replace = json.replace("[", "").replace("]", "").replaceAll("\"", "");
-            List<String> relIdAttachmentToUsageType = new ArrayList<>(Arrays.asList(replace.split(",")));
+            List<String> relIdAttachmentToUsageType = Arrays.stream(StringUtils.stripAll(replace.split(","))).toList();
             return ImmutableMap.of(relIdAttachmentToUsageType.get(0), relIdAttachmentToUsageType.get(1));
-        }, val -> ((Double) val.getValue()).intValue()));
+        }, val -> (Double.valueOf(val.getValue().toString())).intValue()));
     }
 
     public List<AttachmentUsage> getUsageForAttachments(Map<String, Set<String>> attachments, String filter) {

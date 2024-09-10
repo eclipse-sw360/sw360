@@ -12,8 +12,8 @@ package org.eclipse.sw360.rest.resourceserver;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseInstance;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.health.HealthService;
 import org.eclipse.sw360.datahandler.thrift.health.Status;
@@ -21,7 +21,6 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,18 +47,13 @@ public class SW360RestHealthIndicator implements HealthIndicator {
 
     private RestState check(List<Exception> exception) {
         RestState restState = new RestState();
-        try {
-            restState.isDbReachable = isDbReachable(exception);
-        } catch (MalformedURLException e) {
-            restState.isDbReachable = false;
-            exception.add(e);
-        }
+        restState.isDbReachable = isDbReachable(exception);
         restState.isThriftReachable = isThriftReachable(exception);
         return restState;
     }
 
-    private boolean isDbReachable(List<Exception> exception) throws MalformedURLException {
-        DatabaseInstance databaseInstance = makeDatabaseInstance();
+    private boolean isDbReachable(List<Exception> exception) {
+        DatabaseInstanceCloudant databaseInstance = makeDatabaseInstance();
         try {
             return databaseInstance.checkIfDbExists(DatabaseSettings.COUCH_DB_ATTACHMENTS);
         } catch (Exception e) {
@@ -90,8 +84,8 @@ public class SW360RestHealthIndicator implements HealthIndicator {
         return new ThriftClients().makeHealthClient();
     }
 
-    protected DatabaseInstance makeDatabaseInstance() throws MalformedURLException {
-        return new DatabaseInstance(DatabaseSettings.getConfiguredHttpClient().get());
+    protected DatabaseInstanceCloudant makeDatabaseInstance() {
+        return new DatabaseInstanceCloudant(DatabaseSettings.getConfiguredClient());
     }
 
     public static class RestState {

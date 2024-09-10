@@ -165,11 +165,6 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>com.cloudant</groupId>
-            <artifactId>cloudant-client</artifactId>
-            <version>${cloudant.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.ibm.cloud</groupId>
             <artifactId>cloudant</artifactId>
             <version>${cloudantsdk.version}</version>

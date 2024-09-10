@@ -4,11 +4,14 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.db;
 
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMAction;
-import org.ektorp.support.View;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -16,8 +19,13 @@ import java.util.Set;
  *
  * @author stefan.jaeger@evosoft.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'vmaction') emit(null, doc._id) }")
-public class VMActionRepository extends DatabaseRepository<VMAction> {
+public class VMActionRepository extends DatabaseRepositoryCloudantClient<VMAction> {
+
+    private static final String ALL =
+            "function(doc) {" +
+                    "  if (doc.type == 'vmaction') " +
+                    "    emit(null, doc._id) " +
+                    "}";
 
     private static final String BY_VMID_VIEW =
             "function(doc) {" +
@@ -40,37 +48,42 @@ public class VMActionRepository extends DatabaseRepository<VMAction> {
                     "  } " +
                     "}";
 
-    public VMActionRepository(DatabaseConnector db) {
-        super(VMAction.class, db);
+    public VMActionRepository(DatabaseConnectorCloudant db) {
+        super(db, VMAction.class);
 
-        initStandardDesignDocument();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
+        views.put("all", createMapReduce(ALL, null));
+        views.put("byvmid", createMapReduce(BY_VMID_VIEW, null));
+        views.put("bylastupdate", createMapReduce(BY_LAST_UPDATE_VIEW, null));
+        views.put("all_vmids", createMapReduce(ALL_VMIDS, null));
+        initStandardDesignDocument(views, db);
     }
 
-    @View(name = "byvmid", map = BY_VMID_VIEW)
     public VMAction getActionByVmid(String vmid) {
         final Set<String> idList = queryForIdsAsValue("byvmid", vmid);
-        if (idList != null && idList.size() > 0)
+        if (idList != null && !idList.isEmpty())
             return get(CommonUtils.getFirst(idList));
         return null;
     }
 
-    @View(name = "bylastupdate", map = BY_LAST_UPDATE_VIEW)
     public VMAction getActionByLastUpdate(String lastUpdateDate) {
         final Set<String> idList;
         if (lastUpdateDate == null){
-            idList = getAllIdsByView("bylastupdate", true);
+            idList = queryForIdsAsValue(getConnector()
+                    .getPostViewQueryBuilder(VMAction.class, "bylastupdate")
+                    .descending(true)
+                    .build());
         } else {
             idList = queryForIdsAsValue("bylastupdate", lastUpdateDate);
         }
-        if (idList != null && idList.size() > 0)
+        if (idList != null && !idList.isEmpty())
             return get(CommonUtils.getFirst(idList));
         return null;
     }
 
-    @View(name = "all_vmids", map = ALL_VMIDS)
     public Set<String> getAllVmids() {
-        return queryForIdsAsValue(createQuery("all_vmids"));
+        return queryForIdsAsValue(getConnector()
+                .getPostViewQueryBuilder(VMAction.class, "all_vmids")
+                .build());
     }
-
-
 }

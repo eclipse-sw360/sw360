@@ -13,11 +13,15 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.ibm.cloud.cloudant.common.SdkCommon;
 import com.ibm.cloud.cloudant.v1.Cloudant;
+import com.ibm.cloud.cloudant.v1.model.DocumentResult;
+import com.ibm.cloud.cloudant.v1.model.PutDesignDocumentOptions;
 import com.ibm.cloud.sdk.core.http.RequestBuilder;
 import com.ibm.cloud.sdk.core.http.ResponseConverter;
 import com.ibm.cloud.sdk.core.http.ServiceCall;
+import com.ibm.cloud.sdk.core.service.exception.NotFoundException;
 import com.ibm.cloud.sdk.core.util.ResponseConverterUtils;
 import com.ibm.cloud.sdk.core.util.Validator;
+import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,7 +33,7 @@ import java.util.Map;
  */
 public class LuceneAwareCouchDbConnector {
     public static String DEFAULT_NOUVEAU_PREFIX = "_nouveau";
-    public static String DEFAULT_DESIGN_PREFIX = "_design";
+    public static String DEFAULT_DESIGN_PREFIX = ""; // '_design/' not needed with Cloudant SDK
 
     private final NouveauAwareDatabase database;
 
@@ -49,6 +53,7 @@ public class LuceneAwareCouchDbConnector {
         public NouveauAwareDatabase(@NotNull Cloudant client, String db,
                                     String ddoc, String lucenePrefix, Gson gson) {
             super(client.getName(), client.getAuthenticator());
+            this.setServiceUrl(client.getServiceUrl());
             this.db = db;
             this.ddoc = ddoc;
             this.lucenePrefix = lucenePrefix;
@@ -68,7 +73,7 @@ public class LuceneAwareCouchDbConnector {
 
             RequestBuilder builder = RequestBuilder.post(RequestBuilder.resolveRequestUrl(
                     this.getServiceUrl(),
-                    "/{db}/{ddoc}/{nouveauPrefix}/{index}",
+                    "/{db}/_design/{ddoc}/{nouveauPrefix}/{index}",
                     pathParamsMap));
             Map<String, String> sdkHeaders = SdkCommon.getSdkHeaders("cloudant", "v1", "postNouveauQuery");
 
@@ -83,6 +88,78 @@ public class LuceneAwareCouchDbConnector {
             ResponseConverter<T> responseConverter = ResponseConverterUtils.getValue((new TypeToken<T>() {
             }).getType());
             return this.createServiceCall(builder.build(), responseConverter);
+        }
+
+        public ServiceCall<NouveauDesignDocument> getNouveauDesignDocument(String ddoc) {
+            Validator.notEmpty(ddoc, "ddoc cannot be empty");
+
+            Map<String, String> pathParamsMap = new HashMap<>();
+            pathParamsMap.put("db", this.db);
+            pathParamsMap.put("ddoc", ensureDesignId(this.ddoc));
+
+            RequestBuilder builder = RequestBuilder.get(RequestBuilder.resolveRequestUrl(
+                    this.getServiceUrl(),
+                    "/{db}/_design/{ddoc}",
+                    pathParamsMap));
+            Map<String, String> sdkHeaders = SdkCommon.getSdkHeaders("cloudant", "v1", "getNouveauDesignDocument");
+
+            for (Map.Entry<String, String> stringStringEntry : sdkHeaders.entrySet()) {
+                builder.header(stringStringEntry.getKey(), stringStringEntry.getValue());
+            }
+
+            builder.header("Accept", "application/json");
+            builder.header("Content-Type", "application/json");
+
+            builder.query("latest", String.valueOf(true));
+
+            ResponseConverter<NouveauDesignDocument> responseConverter = ResponseConverterUtils.getValue((new TypeToken<NouveauDesignDocument>() {
+            }).getType());
+            return this.createServiceCall(builder.build(), responseConverter);
+        }
+
+        /**
+         * Put a NouveauDesignDocument to DB.
+         * First checks if the document already exists to get the ID and
+         * revision update. If not, then creates a new one.
+         * @param designDocument Design document to create/update
+         * @return true on success
+         * @throws RuntimeException If there is some error.
+         */
+        public boolean putNouveauDesignDocument(
+                @NotNull NouveauDesignDocument designDocument
+        ) throws RuntimeException {
+            NouveauDesignDocument existingDoc;
+            try {
+                existingDoc = this.getNouveauDesignDocument(designDocument.getId())
+                        .execute()
+                        .getResult();
+            } catch (NotFoundException e) {
+                existingDoc = null;
+            }
+            if (existingDoc != null) {
+                designDocument.setId(existingDoc.getId());
+                designDocument.setRev(existingDoc.getRev());
+            }
+            PutDesignDocumentOptions designDocumentOptions =
+                    new PutDesignDocumentOptions.Builder()
+                            .db(this.db)
+                            .designDocument(designDocument)
+                            .ddoc(ddoc)
+                            .build();
+
+            DocumentResult response =
+                    this.putDesignDocument(designDocumentOptions)
+                            .execute().getResult();
+            boolean success = response.isOk();
+            if (!success) {
+                throw new RuntimeException(
+                        "Unable to put design document " + designDocument.getId()
+                        + " to " + ddoc + ". Error: " + response.getError());
+            } else {
+                designDocument.setId(response.getId());
+                designDocument.setRev(response.getRev());
+            }
+            return true;
         }
     }
 
@@ -103,10 +180,40 @@ public class LuceneAwareCouchDbConnector {
      */
     @Contract(pure = true)
     public static @NotNull String ensureDesignId(@NotNull String designId) {
-        if (designId.startsWith(DEFAULT_DESIGN_PREFIX)) {
-            return designId;
+        if (!DEFAULT_DESIGN_PREFIX.isEmpty() && !designId.startsWith(DEFAULT_DESIGN_PREFIX)) {
+            return DEFAULT_DESIGN_PREFIX + designId;
         } else {
-            return DEFAULT_DESIGN_PREFIX + "/" + designId;
+            return designId;
         }
+    }
+
+    /**
+     * Get a NouveauDesignDocument from DB.
+     * @param ddoc ddoc to get
+     * @return Design document if found. Null otherwise.
+     */
+    protected NouveauDesignDocument getNouveauDesignDocument(@NotNull String ddoc) {
+        if (ddoc.isEmpty()) {
+            throw new IllegalArgumentException("ddoc cannot be empty");
+        }
+        try {
+            return this.database.getNouveauDesignDocument(ddoc)
+                    .execute()
+                    .getResult();
+        } catch (NotFoundException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Create/update Nouveau design document.
+     * @param designDocument Design document to create/update.
+     * @return True on success.
+     * @throws RuntimeException If something goes wrong.
+     */
+    public boolean putNouveauDesignDocument(
+            @NotNull NouveauDesignDocument designDocument
+    ) throws RuntimeException {
+        return this.database.putNouveauDesignDocument(designDocument);
     }
 }

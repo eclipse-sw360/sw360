@@ -11,6 +11,7 @@
 package org.eclipse.sw360.datahandler.couchdb;
 
 import com.google.common.io.CharStreams;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.junit.Before;
@@ -21,8 +22,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.util.concurrent.*;
 
 import static org.eclipse.sw360.datahandler.TestUtils.*;
@@ -53,7 +52,7 @@ public class AttachmentContentDownloaderTest {
     public void testTheCouchDbUrl() throws Exception {
         AttachmentContent attachmentContent = mock(AttachmentContent.class);
 
-        when(attachmentContent.getRemoteUrl()).thenReturn(DatabaseTestProperties.getCouchDbUrl());
+        when(attachmentContent.getRemoteUrl()).thenReturn(DatabaseSettingsTest.getCouchDbUrl());
 
         try (InputStream download = attachmentContentDownloader.download(attachmentContent, downloadTimeout)) {
             String read = CharStreams.toString(new InputStreamReader(download));

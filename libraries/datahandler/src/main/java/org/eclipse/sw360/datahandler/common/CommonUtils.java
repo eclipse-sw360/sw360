@@ -11,7 +11,6 @@
  */
 package org.eclipse.sw360.datahandler.common;
 
-import com.cloudant.client.api.model.Response;
 import com.google.common.base.*;
 import com.google.common.collect.*;
 

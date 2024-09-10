@@ -78,10 +78,19 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         this.connector = dbClient;
     }
 
-    public boolean addDesignDoc(@NotNull NouveauDesignDocument designDocument) {
+    /**
+     * Update NouveauDesignDocument index for a database. First gets the design
+     * from DB if exists and update the index map to not overwrite existing
+     * indexes. Then puts the design to the DB.
+     * @param designDocument Design Document to create/add
+     * @return True on success.
+     * @throws RuntimeException If something goes wrong.
+     */
+    public boolean addDesignDoc(@NotNull NouveauDesignDocument designDocument)
+            throws RuntimeException {
         NouveauDesignDocument documentFromDb = this.getNouveauDesignDocument(designDocument.getId());
         if (documentFromDb == null) {
-            return putNouveauDesignDocument(designDocument, this.connector);
+            return putNouveauDesignDocument(designDocument);
         }
 
         if (!designDocument.equals(documentFromDb)) {
@@ -94,7 +103,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
                     }
                 });
             }
-            return putNouveauDesignDocument(designDocument, this.connector);
+            return putNouveauDesignDocument(designDocument);
         }
         return true;
     }
@@ -288,18 +297,6 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
             }
             return input.replaceAll("\\s+", " ").trim();
         }
-    }
-
-    private NouveauDesignDocument getNouveauDesignDocument(String id) {
-        if (id.isEmpty()) {
-            throw new IllegalArgumentException("id cannot be empty");
-        }
-        return this.connector.get(NouveauDesignDocument.class, id);
-    }
-
-    private static boolean putNouveauDesignDocument(NouveauDesignDocument designDocument,
-                                                    @NotNull DatabaseConnectorCloudant connector) {
-        return connector.putDesignDocument(designDocument, designDocument.getId());
     }
 
     private static @NotNull String formatDateNouveauFormat(@NotNull String date) throws ParseException {

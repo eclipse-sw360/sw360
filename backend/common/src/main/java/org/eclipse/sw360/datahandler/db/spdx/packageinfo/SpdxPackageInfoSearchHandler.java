@@ -27,7 +27,7 @@ import static org.eclipse.sw360.nouveau.LuceneAwareCouchDbConnector.DEFAULT_DESI
 
 public class SpdxPackageInfoSearchHandler {
 
-    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "/lucene";
+    private static final String DDOC_NAME = DEFAULT_DESIGN_PREFIX + "lucene";
 
     private static final NouveauIndexDesignDocument luceneSearchView
         = new NouveauIndexDesignDocument("packageInformation",

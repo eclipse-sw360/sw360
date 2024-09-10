@@ -16,12 +16,14 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.cloudant.v1.model.*;
+import com.ibm.cloud.sdk.core.service.exception.NotFoundException;
 import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.jetbrains.annotations.NotNull;
 
@@ -73,13 +75,7 @@ public class DatabaseConnectorCloudant {
             } else {
                 resp = this.updateWithResponse(document);
             }
-            if (TBase.class.isAssignableFrom(document.getClass())) {
-                TBase tbase = (TBase) document;
-                TFieldIdEnum id = tbase.fieldForId(1);
-                TFieldIdEnum rev = tbase.fieldForId(2);
-                tbase.setFieldValue(id, resp.getId());
-                tbase.setFieldValue(rev, resp.getRev());
-            }
+            updateIdAndRev(document, resp.getId(), resp.getRev());
         } else {
             log.warn("Ignore updating a null document.");
         }
@@ -125,13 +121,16 @@ public class DatabaseConnectorCloudant {
         return ids;
     }
 
+    /**
+     * Get a document from DB and convert to SW360 type.
+     * @param type Type to translate the document to.
+     * @param id   Document ID
+     * @return Document of type if found.
+     * @param <T> Type to translate the document to.
+     */
     public <T> T get(Class<T> type, String id) {
         try {
-            GetDocumentOptions documentOption = new GetDocumentOptions.Builder()
-                    .db(this.dbName)
-                    .docId(id)
-                    .build();
-            Document doc = this.instance.getClient().getDocument(documentOption).execute().getResult();
+            Document doc = getDocument(id);
             T obj = this.getPojoFromDocument(doc, type);
 
             String extractedType = null;
@@ -151,9 +150,32 @@ public class DatabaseConnectorCloudant {
                 }
             }
             return obj;
-        } catch (Exception e) {
-            log.error("Error fetching document of type " + type.getSimpleName() + " with id " + id + " : "
-                    + e.getMessage());
+        } catch (IllegalAccessException | SW360Exception e) {
+            log.error("Error fetching document of type {} with id {} : {}",
+                    type.getSimpleName(), id, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get a design document from DB with dDoc
+     * @param ddoc ddoc of Design Document
+     * @return Design Document if found. Null otherwise.
+     */
+    public DesignDocument getDesignDoc(String ddoc) {
+        try {
+            GetDesignDocumentOptions designDocumentOptions = new GetDesignDocumentOptions.Builder()
+                    .db(this.dbName)
+                    .ddoc(ddoc)
+                    .latest(true)
+                    .build();
+
+            return this.getInstance().getClient().getDesignDocument(designDocumentOptions)
+                    .execute()
+                    .getResult();
+        } catch (NotFoundException e) {
+            log.error("Error fetching design document with id _design/{} : {}",
+                    ddoc, e.getMessage());
             return null;
         }
     }
@@ -179,17 +201,15 @@ public class DatabaseConnectorCloudant {
     }
 
     public boolean remove(String id) {
+        if (!contains(id)) {
+            return false;
+        }
         DeleteDocumentOptions deleteOption = new DeleteDocumentOptions.Builder()
                 .db(this.dbName)
                 .docId(id)
                 .build();
 
-        DocumentResult resp = this.instance.getClient().deleteDocument(deleteOption).execute().getResult();
-        boolean success = resp.isOk();
-        if (!success) {
-            log.error("Could not delete document with id: " + id);
-        }
-        return success;
+        return deleteDocumentWithOption(deleteOption);
     }
 
     public List<Document> getDocuments(Collection<String> ids) {
@@ -215,17 +235,65 @@ public class DatabaseConnectorCloudant {
         }
     }
 
-    public Document getDocument(String id) {
-        try {
-            GetDocumentOptions getDocOption = new GetDocumentOptions.Builder()
-                    .db(this.dbName)
-                    .docId(id)
-                    .build();
+    /**
+     * Get Cloudant Document from DB for give ID. Will use GET call for most
+     * request and POST for IDs with `+`.
+     * @param id Document ID
+     * @return Document if found. Empty document otherwise.
+     * @see DatabaseConnectorCloudant::getDocumentWithPost()
+     */
+    public Document getDocument(@NotNull String id) throws SW360Exception {
+        if (id.contains("+")) {
+            return getDocumentWithPost(id);
+        }
+        return getDocumentWithGet(id);
+    }
 
+    /**
+     * Use GET request to get document (with caching)
+     * @param id Document ID
+     * @return Document if exists.
+     * @throws SW360Exception If document is not found for ID
+     */
+    private Document getDocumentWithGet(String id) throws SW360Exception {
+        GetDocumentOptions getDocOption = new GetDocumentOptions.Builder()
+                .db(this.dbName)
+                .docId(id)
+                .build();
+
+        try {
             return this.instance.getClient().getDocument(getDocOption).execute().getResult();
-        } catch (ServiceResponseException e) {
-            log.error("Error fetching document", e);
-            return new Document();
+        } catch (NotFoundException e) {
+            throw new SW360Exception("Cannot find document: " + id);
+        }
+    }
+
+    /**
+     * Get document with `+` in id with POST call. Known issue with CloudantSDK
+     * https://github.com/IBM/cloudant-java-sdk/blob/51b7da64dea925dc1dd0b2a980dba93e0c899297/KNOWN_ISSUES.md#path-elements-containing-the--character
+     * @param id Document ID
+     * @return Document if found.
+     * @throws SW360Exception If document is not found for ID
+     */
+    private Document getDocumentWithPost(String id) throws SW360Exception {
+        List<String> idList = List.of(id);
+
+        PostAllDocsOptions postDocsOption = new PostAllDocsOptions.Builder()
+                .db(this.dbName)
+                .keys(idList)
+                .includeDocs(true)
+                .build();
+
+        try {
+            AllDocsResult resp = this.instance.getClient().postAllDocs(postDocsOption).execute().getResult();
+
+            if (resp.getRows().isEmpty() || resp.getRows().get(0).getDoc() == null) {
+                return new Document();
+            }
+
+            return resp.getRows().get(0).getDoc();
+        } catch (NotFoundException e) {
+            throw new SW360Exception("Cannot find document: " + id);
         }
     }
 
@@ -243,9 +311,12 @@ public class DatabaseConnectorCloudant {
 
             AllDocsResult resp = this.instance.getClient().postAllDocs(postDocsOption).execute().getResult();
 
-            return resp.getRows().stream().map(
-                    r -> this.getPojoFromDocument(r.getDoc(), type)
-            ).filter(Objects::nonNull).collect(Collectors.toList());
+            return resp.getRows().stream().map(r -> {
+                if (r.getError() != null && r.getDoc() == null) {
+                    return null;
+                }
+                return this.getPojoFromDocument(r.getDoc(), type);
+            }).filter(Objects::nonNull).collect(Collectors.toList());
         } catch (ServiceResponseException e) {
             log.error("Error fetching documents", e);
             return Collections.emptyList();
@@ -272,13 +343,7 @@ public class DatabaseConnectorCloudant {
         try {
             responses = this.instance.getClient().postBulkDocs(bulkDocsOptions).execute().getResult();
             for (int i = 0; i < entities.length; i++) {
-                if (TBase.class.isAssignableFrom(entities[i].getClass())) {
-                    TBase tbase = (TBase) entities[i];
-                    TFieldIdEnum id = tbase.fieldForId(1);
-                    TFieldIdEnum rev = tbase.fieldForId(2);
-                    tbase.setFieldValue(id, responses.get(i).getId());
-                    tbase.setFieldValue(rev, responses.get(i).getRev());
-                }
+                updateIdAndRev(entities[i], responses.get(i).getId(), responses.get(i).getRev());
             }
         } catch (Exception e) {
             log.error("Error in bulk execution", e);
@@ -400,33 +465,54 @@ public class DatabaseConnectorCloudant {
     }
 
     public boolean deleteById(String id) {
-        if (this.contains(id)) {
-            Document doc = getDocument(id);
-
-            DeleteDocumentOptions deleteOption = new DeleteDocumentOptions.Builder()
-                    .db(this.dbName)
-                    .docId(id)
-                    .rev(doc.getRev())
-                    .build();
-            return this.instance.getClient().deleteDocument(deleteOption).execute().getResult().isOk();
+        if (!contains(id)) {
+            return false;
         }
-        return true;
+
+        Document doc;
+        try {
+            doc = getDocument(id);
+        } catch (SW360Exception e) {
+            return false;
+        }
+        DeleteDocumentOptions deleteOption = new DeleteDocumentOptions.Builder()
+                .db(this.dbName)
+                .docId(id)
+                .rev(doc.getRev())
+                .build();
+
+        return deleteDocumentWithOption(deleteOption);
+    }
+
+    private boolean deleteDocumentWithOption(DeleteDocumentOptions deleteOption) {
+        DocumentResult resp;
+        boolean success;
+        try {
+            resp = this.instance.getClient().deleteDocument(deleteOption).execute().getResult();
+            success = resp.isOk();
+        } catch (ServiceResponseException e) {
+            log.error("Error deleting document with id {}", deleteOption.docId(), e);
+            success = false;
+        }
+        if (!success) {
+            log.error("Could not delete document with id: {}", deleteOption.docId());
+        }
+        return success;
     }
 
     public <T> boolean add(T doc) {
+        Document document = this.getDocumentFromPojo(doc);
+        if (document.getId() != null && this.contains(document.getId())) {
+            // Cannot add same document again. Must update.
+            return false;
+        }
         PostDocumentOptions postDocOption = new PostDocumentOptions.Builder()
                 .db(this.dbName)
-                .document(this.getDocumentFromPojo(doc))
+                .document(document)
                 .build();
 
         DocumentResult resp = this.instance.getClient().postDocument(postDocOption).execute().getResult();
-        if (TBase.class.isAssignableFrom(doc.getClass())) {
-            TBase tbase = (TBase) doc;
-            TFieldIdEnum id = tbase.fieldForId(1);
-            TFieldIdEnum rev = tbase.fieldForId(2);
-            tbase.setFieldValue(id, resp.getId());
-            tbase.setFieldValue(rev, resp.getRev());
-        }
+        updateIdAndRev(doc, resp.getId(), resp.getRev());
         return resp.isOk();
     }
 
@@ -434,24 +520,47 @@ public class DatabaseConnectorCloudant {
         return this.remove(this.getDocumentFromPojo(doc).getId());
     }
 
-    public boolean putDesignDocument(DesignDocument designDocument, String docId) {
+    public boolean putDesignDocument(DesignDocument designDocument, String ddoc) {
+        DesignDocument existingDoc = getDesignDocument(ddoc);
+        if (existingDoc != null) {
+            designDocument.setId(existingDoc.getId());
+            designDocument.setRev(existingDoc.getRev());
+        }
         PutDesignDocumentOptions designDocumentOptions =
-                new PutDesignDocumentOptions.Builder()
-                        .db(this.dbName)
-                        .designDocument(designDocument)
-                        .ddoc(docId)
-                        .build();
+            new PutDesignDocumentOptions.Builder()
+                .db(this.dbName)
+                .designDocument(designDocument)
+                .ddoc(ddoc)
+                .build();
 
         DocumentResult response =
-                this.instance.getClient()
-                        .putDesignDocument(designDocumentOptions).execute()
-                        .getResult();
+            this.instance.getClient()
+                .putDesignDocument(designDocumentOptions).execute()
+                .getResult();
         boolean success = response.isOk();
         if (!success) {
             log.error("Unable to put design document {} to {}. Error: {}",
-                    designDocument.getId(), docId, response.getError());
+                    designDocument.getId(), ddoc, response.getError());
+        } else {
+            designDocument.setId(response.getId());
+            designDocument.setRev(response.getRev());
         }
         return success;
+    }
+
+    public DesignDocument getDesignDocument(String ddoc) {
+        GetDesignDocumentOptions designDocumentOptions = new GetDesignDocumentOptions.Builder()
+            .db(this.dbName)
+            .ddoc(ddoc)
+            .latest(true)
+            .build();
+
+        try {
+            return this.instance.getClient().getDesignDocument(designDocumentOptions).execute()
+                .getResult();
+        } catch (NotFoundException e) {
+            return null;
+        }
     }
 
     public void createIndex(IndexDefinition indexDefinition, String indexName,
@@ -534,23 +643,63 @@ public class DatabaseConnectorCloudant {
         Document doc = new Document();
         Gson gson = this.instance.getGson();
         Type t = new TypeToken<Map<String, Object>>() {}.getType();
-        doc.setProperties(gson.fromJson(gson.toJson(document), t));
+        Map<String, Object> map = gson.fromJson(gson.toJson(document), t);
+        if (map.containsKey("id")) {
+            doc.setId((String) map.get("id"));
+            map.remove("id");
+        }
+        if (map.containsKey("_id")) {
+            doc.setId((String) map.get("_id"));
+            map.remove("_id");
+        }
+        if (map.containsKey("rev")) {
+            doc.setRev((String) map.get("rev"));
+            map.remove("rev");
+        }
+        if (map.containsKey("revision")) {
+            doc.setRev((String) map.get("revision"));
+            map.remove("revision");
+        }
+        if (map.containsKey("_rev")) {
+            doc.setRev((String) map.get("_rev"));
+            map.remove("_rev");
+        }
+        doc.setProperties(map);
         return doc;
     }
 
     public <T> T getPojoFromDocument(@NotNull Document document, Class<T> type) {
-        return this.instance.getGson().fromJson(document.toString(), type);
+        T doc = this.instance.getGson().fromJson(document.toString(), type);
+        updateIdAndRev(doc, document.getId(), document.getRev());
+        return doc;
     }
 
-    public boolean contains(String docId) {
+    private <T> void updateIdAndRev(@NotNull T doc, String docId, String docRev) {
+        if (TBase.class.isAssignableFrom(doc.getClass())) {
+            TBase tbase = (TBase) doc;
+            TFieldIdEnum id = tbase.fieldForId(1);
+            TFieldIdEnum rev = tbase.fieldForId(2);
+            tbase.setFieldValue(id, docId);
+            tbase.setFieldValue(rev, docRev);
+        }
+    }
+
+    public boolean contains(@NotNull String docId) {
+        if (docId.isEmpty()) {
+            return false;
+        }
         HeadDocumentOptions documentOptions =
                 new HeadDocumentOptions.Builder()
                         .db(this.dbName)
                         .docId(docId)
                         .build();
 
-        return this.instance.getClient().headDocument(documentOptions).execute()
-                .getStatusCode() == 200;
+        try {
+            return this.instance.getClient().headDocument(documentOptions).execute()
+                    .getStatusCode() == 200;
+        } catch (NotFoundException e) {
+            return false;
+        }
     }
 
     /**

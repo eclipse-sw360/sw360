@@ -176,7 +176,7 @@ public class FossologyHandler implements FossologyService.Iface {
         // because our workflow in between might have taken some time, we have to
         // refetch the release to get the current version (as another thread might have
         // written changes to the release which results in a new version so that we
-        // would get a org.ektorp.UpdateConflictException on trying to write)
+        // would get a conflict error on trying to write)
         release = componentClient.getReleaseById(release.getId(), user);
         Iterator<ExternalToolProcess> oldFossologyProcessIterator = SW360Utils
                 .getNotOutdatedExternalToolProcessesForTool(release, ExternalTool.FOSSOLOGY).iterator();

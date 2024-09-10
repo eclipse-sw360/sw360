@@ -9,15 +9,14 @@
  */
 package org.eclipse.sw360.datahandler;
 
-import com.cloudant.client.api.CloudantClient;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceTrackerCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseInstanceTracker;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 
@@ -31,7 +30,6 @@ import org.mockito.stubbing.Answer;
 import java.io.IOException;
 import java.net.*;
 import java.util.*;
-import java.util.function.Supplier;
 
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.base.Predicates.not;
@@ -114,14 +112,12 @@ public class TestUtils {
         return user;
     }
 
-    public static void deleteDatabase(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
+    public static void deleteDatabase(Cloudant httpClient, String dbName) throws MalformedURLException {
         assertTestString(dbName);
 
         DatabaseInstanceCloudant instance = new DatabaseInstanceCloudant(httpClient);
         if (instance.checkIfDbExists(dbName))
             instance.deleteDatabase(dbName);
-
-        DatabaseInstanceTracker.destroy();
 
         // Giving 500ms Delay between Deleting and Creating test Db
         try {
@@ -130,7 +126,7 @@ public class TestUtils {
         }
     }
 
-    public static void createDatabase(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
+    public static void createDatabase(Cloudant httpClient, String dbName) throws MalformedURLException {
         assertTestString(dbName);
 
         DatabaseInstanceCloudant instance = new DatabaseInstanceCloudant(httpClient);

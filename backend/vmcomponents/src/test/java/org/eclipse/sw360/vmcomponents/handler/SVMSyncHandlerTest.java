@@ -84,7 +84,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
         releaseHandler = new SVMSyncHandler<Release>(Release.class);
         user = new User().setEmail("me");
         // Prepare the handler
-        handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_VM);
+        handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_VM);
         compDBHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbNameComp, dbNameAtt);
         vendorRepository = new VendorRepository(new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbNameComp));
 
@@ -102,7 +102,7 @@ public class SVMSyncHandlerTest extends AbstractJSONMockTest {
 
 //    @Test
     public void create5000Matches() throws SW360Exception, MalformedURLException {
-        VMDatabaseHandler handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_VM);
+        VMDatabaseHandler handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_VM);
         ComponentDatabaseHandler compDBHandler = new ComponentDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), dbNameComp, dbNameAtt);
         VMComponent component = new VMComponent(SW360Utils.getCreatedOnTime(), "droelf");
         component.setName("droelf");

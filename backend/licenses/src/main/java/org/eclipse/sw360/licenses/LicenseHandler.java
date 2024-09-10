@@ -25,14 +25,11 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ObligationElementSearchHandler;
 
-import com.cloudant.client.api.CloudantClient;
-
 import org.apache.thrift.TException;
 import java.nio.ByteBuffer;
 
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.io.IOException;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;

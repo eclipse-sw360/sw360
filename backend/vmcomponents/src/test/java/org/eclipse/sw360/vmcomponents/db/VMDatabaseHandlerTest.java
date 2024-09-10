@@ -6,6 +6,7 @@
 package org.eclipse.sw360.vmcomponents.db;
 
 import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -58,7 +59,7 @@ public class VMDatabaseHandlerTest {
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // Prepare the database
-        DatabaseConnector databaseConnector = new DatabaseConnector(DatabaseSettingsTest.getConfiguredHttpClient(), dbName);
+        DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), dbName);
 
         // set up prios
         p1 = new VMPriority().setVmid("1").setShortText("one").setLongText("onelong");
@@ -91,7 +92,7 @@ public class VMDatabaseHandlerTest {
         pr1 = new VMProcessReporting(VMAction.class.getSimpleName(), SW360Utils.getCreatedOnTime());
 
         // Prepare the handler
-        handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_VM);
+        handler = new VMDatabaseHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_VM);
     }
 
     @After

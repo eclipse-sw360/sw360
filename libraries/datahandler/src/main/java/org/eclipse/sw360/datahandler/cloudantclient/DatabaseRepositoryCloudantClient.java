@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.thrift.TBase;
+import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 
@@ -48,22 +50,15 @@ public class DatabaseRepositoryCloudantClient<T> {
     private static final char HIGH_VALUE_UNICODE_CHARACTER = '\uFFF0';
 
     private final Class<T> type;
-    private final DatabaseConnectorCloudant connector;
+    private DatabaseConnectorCloudant connector;
 
     public void initStandardDesignDocument(Map<String, DesignDocumentViewsMapReduce> views,
-                                           DatabaseConnectorCloudant db) {
-        String ddocId = "_design/" + type.getSimpleName();
+                                           @NotNull DatabaseConnectorCloudant db) {
+        String ddocId = type.getSimpleName();
         DesignDocument newDdoc = new DesignDocument.Builder()
-                .id(ddocId)
+                .views(views)
                 .build();
-        DesignDocument ddoc = db.get(DesignDocument.class, ddocId);
-        if (ddoc == null) {
-            db.add(newDdoc);
-        }
-        DesignDocument ddocFinal = db.get(DesignDocument.class, ddocId);
-        ddocFinal.setViews(views);
-        db.update(ddocFinal);
-        db.putDesignDocument(ddocFinal, ddocId);
+        db.putDesignDocument(newDdoc, ddocId);
     }
 
     public DesignDocumentViewsMapReduce createMapReduce(String map, String reduce) {
@@ -101,6 +96,14 @@ public class DatabaseRepositoryCloudantClient<T> {
 
     public DatabaseRepositoryCloudantClient(DatabaseConnectorCloudant connector, Class<T> type) {
         this.type = type;
+        this.connector = connector;
+    }
+
+    protected DatabaseRepositoryCloudantClient(Class<T> type) {
+        this.type = type;
+    }
+
+    protected void setConnector(DatabaseConnectorCloudant connector) {
         this.connector = connector;
     }
 
@@ -361,6 +364,12 @@ public class DatabaseRepositoryCloudantClient<T> {
     }
 
     public boolean remove(T doc) {
+        if (TBase.class.isAssignableFrom(doc.getClass())) {
+            TBase tbase = (TBase) doc;
+            TFieldIdEnum id = tbase.fieldForId(1);
+            String docId = (String) tbase.getFieldValue(id);
+            return connector.deleteById(docId);
+        }
         return connector.remove(doc);
     }
 

@@ -4,11 +4,14 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.db;
 
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMProcessReporting;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseRepository;
-import org.ektorp.support.View;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -16,8 +19,13 @@ import java.util.Set;
  *
  * @author stefan.jaeger@evosoft.com
  */
-@View(name = "all", map = "function(doc) { if (doc.type == 'vmprocessreporting') emit(null, doc._id) }")
-public class VMProcessReportingRepository extends DatabaseRepository<VMProcessReporting> {
+public class VMProcessReportingRepository extends DatabaseRepositoryCloudantClient<VMProcessReporting> {
+
+    private static final String ALL =
+            "function(doc) {" +
+                    "  if (doc.type == 'vmprocessreporting')" +
+                    "    emit(null, doc._id) " +
+                    "}";
 
     private static final String BY_START_DATE =
             "function(doc) {" +
@@ -26,16 +34,18 @@ public class VMProcessReportingRepository extends DatabaseRepository<VMProcessRe
                     "  } " +
                     "}";
 
-    public VMProcessReportingRepository(DatabaseConnector db) {
-        super(VMProcessReporting.class, db);
+    public VMProcessReportingRepository(DatabaseConnectorCloudant db) {
+        super(db, VMProcessReporting.class);
 
-        initStandardDesignDocument();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
+        views.put("all", createMapReduce(ALL, null));
+        views.put("bystartdate", createMapReduce(BY_START_DATE, null));
+        initStandardDesignDocument(views, db);
     }
 
-    @View(name = "bystartdate", map = BY_START_DATE)
     public VMProcessReporting getProcessReportingByStartDate(String startDate) {
         final Set<String> idList = queryForIdsAsValue("bystartdate", startDate);
-        if (idList != null && idList.size() > 0)
+        if (idList != null && !idList.isEmpty())
             return get(CommonUtils.getFirst(idList));
         return null;
     }
