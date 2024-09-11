@@ -94,7 +94,7 @@ jobs:
 
       - name: Run BulkReleaseDeletingTest
         run: |
-          mvn -pl :src-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=.
+          mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=.
 
       # - name: Deploy Backend and Rest Server
       #   run: |
