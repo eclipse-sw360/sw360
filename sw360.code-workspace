@@ -7,19 +7,6 @@
   "settings": {
     "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms100m -Xlog:disable",
     "java.compile.nullAnalysis.mode": "automatic",
-    "workbench.colorCustomizations": {
-      "commandCenter.border": "#15202b99",
-      "sash.hoverBorder": "#65c89b",
-      "statusBar.background": "#42b883",
-      "statusBar.foreground": "#15202b",
-      "statusBarItem.hoverBackground": "#359268",
-      "statusBarItem.remoteBackground": "#42b883",
-      "statusBarItem.remoteForeground": "#15202b",
-      "titleBar.activeBackground": "#42b883",
-      "titleBar.activeForeground": "#15202b",
-      "titleBar.inactiveBackground": "#42b88399",
-      "titleBar.inactiveForeground": "#15202b99"
-    },
     "peacock.color": "#42b883",
     "java.configuration.updateBuildConfiguration": "automatic",
     "java.format.settings.url": ".vscode/java-formatter.xml",
