@@ -25,6 +25,8 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
@@ -435,6 +437,28 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public ObligationList getObligationData(String linkedObligationId, User user) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         return sw360ProjectClient.getLinkedObligations(linkedObligationId, user);
+    }
+
+    public Map<String, ObligationStatusInfo> setObligationsFromAdminSection(User user, Map<String, ObligationStatusInfo> obligationStatusMap,
+                                                                            Project project, String oblLevel) throws TException {
+        List<Obligation> obligations = SW360Utils.getObligations();
+        Map<String, ObligationStatusInfo> updatedObligationStatusMap = Maps.newHashMap();
+        ThriftClients thriftClients = new ThriftClients();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+
+        if (oblLevel.equalsIgnoreCase("Project")) {
+            updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
+                    obligationStatusMap, obligations, ObligationLevel.PROJECT_OBLIGATION, true);
+            return updatedObligationStatusMap;
+        } else if (oblLevel.equalsIgnoreCase("Organization")) {
+            updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
+                    obligationStatusMap, obligations, ObligationLevel.ORGANISATION_OBLIGATION, true);
+            return updatedObligationStatusMap;
+        } else if (oblLevel.equalsIgnoreCase("Component")) {
+            updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
+                    obligationStatusMap, obligations, ObligationLevel.COMPONENT_OBLIGATION, true);
+            return updatedObligationStatusMap;
+        } return updatedObligationStatusMap;
     }
 
     public Map<String, ObligationStatusInfo> setLicenseInfoWithObligations(Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, String> releaseIdToAcceptedCLI,
