@@ -14,6 +14,7 @@ package org.eclipse.sw360.rest.resourceserver.project;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -2319,16 +2320,28 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(sw360Module);
 
+        if (requestBody.containsKey(mapOfProjectFieldsToRequestBody.get(Project._Fields.VISBILITY))) {
+            try {
+                String visibility = (String) requestBody
+                        .get(mapOfProjectFieldsToRequestBody.get(Project._Fields.VISBILITY));
+                requestBody.put(mapOfProjectFieldsToRequestBody.get(Project._Fields.VISBILITY),
+                        visibility.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.err.println("Error processing visibility field: " + e.getMessage());
+                System.err.println("Failed requestBody: " + requestBody);
+                throw e;
+            }
+        }
+
         if (requestBody.containsKey("linkedProjects")) {
             Map<String, Object> linkedProjects = (Map<String, Object>) requestBody.get("linkedProjects");
             linkedProjects.entrySet().stream().forEach(entry -> {
                 if (entry.getValue() instanceof String) {
-                    Map<String, Object> projectProjectRelationShip = new HashMap<String, Object>();
-                    projectProjectRelationShip.put("projectRelationship", entry.getValue());
-                    linkedProjects.put(entry.getKey(), projectProjectRelationShip);
+                    Map<String, Object> projectRelationshipMap = new HashMap<>();
+                    projectRelationshipMap.put("projectRelationship", entry.getValue());
+                    linkedProjects.put(entry.getKey(), projectRelationshipMap);
                 }
             });
-
         }
         return mapper.convertValue(requestBody, Project.class);
     }
