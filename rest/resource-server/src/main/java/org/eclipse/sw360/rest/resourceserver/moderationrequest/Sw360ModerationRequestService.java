@@ -377,6 +377,23 @@ public class Sw360ModerationRequestService {
     }
 
     /**
+     * Update the moderation request with the new comment when POSTPONE action
+     * is performed and update its state to INPROGRESS.
+     *
+     * @param request          Moderation request to postpone
+     * @param moderatorComment Comment from moderator
+     * @return Current status of the moderation request
+     * @throws TException Exception in case of error.
+     */
+    public ModerationState postponeRequest(@NotNull ModerationRequest request,
+                                           String moderatorComment) throws TException {
+        request.setModerationState(ModerationState.INPROGRESS);
+        request.setCommentDecisionModerator(moderatorComment);
+        getThriftModerationClient().updateModerationRequest(request);
+        return ModerationState.INPROGRESS;
+    }
+
+    /**
      * Remove the user from moderator list of the moderation request.
      *
      * @param request  Moderation request to edit
@@ -424,7 +441,7 @@ public class Sw360ModerationRequestService {
     /**
      * Get open critical CR count by user department
      *
-     * @param department Department of user
+     * @param group Department of user
      * @return Count of open critical CRs
      * @throws TException Throws exception in case of errors.
      */
