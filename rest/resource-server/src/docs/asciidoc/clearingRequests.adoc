@@ -76,3 +76,20 @@ include::{snippets}/should_document_get_clearingrequests_by_state/curl-request.a
 ===== Example response
 include::{snippets}/should_document_get_clearingrequests_by_state/http-response.adoc[]
 
+
+[[resources-comments-list]]
+==== Listing comments for a clearing request
+
+A `GET` request will list all comments associated with a specific clearing request.
+
+===== Request parameter
+include::{snippets}/should_document_get_comments_by_clearing_request_id/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_comments_by_clearing_request_id/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_comments_by_clearing_request_id/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_comments_by_clearing_request_id/http-response.adoc[]
