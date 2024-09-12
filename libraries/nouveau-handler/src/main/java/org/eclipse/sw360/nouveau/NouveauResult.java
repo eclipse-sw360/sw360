@@ -9,6 +9,8 @@
  */
 package org.eclipse.sw360.nouveau;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -17,6 +19,7 @@ import java.util.List;
  */
 public class NouveauResult extends CommonNouveauResult {
 
+    @SerializedName("hits")
     private List<Hits> hits;
 
     public List<Hits> getHits() {
@@ -29,6 +32,7 @@ public class NouveauResult extends CommonNouveauResult {
 
     public static class Hits extends CommonHits {
 
+        @SerializedName("doc")
         private LinkedHashMap<String, Object> doc;
 
         /**

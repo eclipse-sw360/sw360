@@ -10,6 +10,8 @@
 
 package org.eclipse.sw360.nouveau;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -17,8 +19,13 @@ import java.util.List;
  * Represents the Hits of a Lucene query.
  */
 class CommonHits {
+    @SerializedName("order")
     protected List<LinkedHashMap<String, Object>> order;
+
+    @SerializedName("id")
     protected String id;
+
+    @SerializedName("fields")
     protected LinkedHashMap<String, Object> fields;
 
     public List<LinkedHashMap<String, Object>> getOrder() {
