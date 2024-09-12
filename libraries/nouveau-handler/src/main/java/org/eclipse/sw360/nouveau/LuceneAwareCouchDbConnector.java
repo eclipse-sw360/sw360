@@ -60,8 +60,8 @@ public class LuceneAwareCouchDbConnector {
             this.gson = gson;
         }
 
-        public <T> ServiceCall<T> queryNouveau(String index, @NotNull NouveauQuery query,
-                                               Class<T> ignoredClassOfT) {
+        public ServiceCall<NouveauResult> queryNouveau(String index,
+                                                       @NotNull NouveauQuery query) {
             Validator.notEmpty(index, "index cannot be empty");
             Validator.notNull(query, "query cannot be null");
 
@@ -85,7 +85,7 @@ public class LuceneAwareCouchDbConnector {
             builder.header("Content-Type", "application/json");
 
             builder.bodyContent(query.buildQuery(this.gson), "application/json");
-            ResponseConverter<T> responseConverter = ResponseConverterUtils.getValue((new TypeToken<T>() {
+            ResponseConverter<NouveauResult> responseConverter = ResponseConverterUtils.getValue((new TypeToken<NouveauResult>() {
             }).getType());
             return this.createServiceCall(builder.build(), responseConverter);
         }
@@ -170,7 +170,7 @@ public class LuceneAwareCouchDbConnector {
      * @return The result of the query.
      */
     public NouveauResult queryNouveau(String index, @NotNull NouveauQuery query) {
-        return this.database.queryNouveau(index, query, NouveauResult.class).execute().getResult();
+        return this.database.queryNouveau(index, query).execute().getResult();
     }
 
     /**
