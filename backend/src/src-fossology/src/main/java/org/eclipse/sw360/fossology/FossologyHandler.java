@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.fossology;
 
+import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.FossologyUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -63,6 +64,7 @@ public class FossologyHandler implements FossologyService.Iface {
     private static final String SCAN_RESPONSE_STATUS_VALUE_PROCESSING = "Processing";
     private static final String SCAN_RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
     private static final String SCAN_RESPONSE_STATUS_VALUE_FAILED = "Failed";
+    boolean reportStep = false;
 
     @Autowired
     public FossologyHandler(ThriftClients thriftClients, FossologyRestConfig fossologyRestConfig,
@@ -162,7 +164,9 @@ public class FossologyHandler implements FossologyService.Iface {
             handleUploadStep(componentClient, release, user, fossologyProcess, sourceAttachment, uploadDescription);
         } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(furthestStep.getStepName())) {
             handleScanStep(componentClient, release, user, fossologyProcess);
-        } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
+        } else if(!BackendUtils.DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
+            handleReportStep(componentClient, release, user, fossologyProcess);
+        } else if(reportStep && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
             handleReportStep(componentClient, release, user, fossologyProcess);
         }
 
@@ -221,7 +225,7 @@ public class FossologyHandler implements FossologyService.Iface {
             switch (furthestStep.getStepStatus()) {
             case IN_WORK:
             case DONE:
-                result = ClearingState.UNDER_CLEARING;
+                result = ClearingState.SENT_TO_CLEARING_TOOL;
                 break;
             case NEW:
             default:
@@ -393,8 +397,10 @@ public class FossologyHandler implements FossologyService.Iface {
             break;
         case DONE:
             // start report
-            fossologyProcess.addToProcessSteps(createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT));
-            handleReportStep(componentClient, release, user, fossologyProcess);
+            if(!BackendUtils.DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD) {
+                fossologyProcess.addToProcessSteps(createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT));
+                handleReportStep(componentClient, release, user, fossologyProcess);
+            }
             break;
         default:
             // do nothing, unknown status
@@ -405,6 +411,7 @@ public class FossologyHandler implements FossologyService.Iface {
             ExternalToolProcess fossologyProcess) throws TException {
         ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps()
                 .get(fossologyProcess.getProcessSteps().size() - 1);
+
         switch (furthestStep.getStepStatus()) {
         case NEW:
             // generate report, set new state immediately to prevent other threads from
@@ -425,6 +432,7 @@ public class FossologyHandler implements FossologyService.Iface {
             // try to download report - since download might take a bit longer, we first set
             // the state to done so that no one else downloads the same report. if download
             // fails, we reset the state
+
             furthestStep.setStepStatus(ExternalToolProcessStatus.DONE);
             updateFossologyProcessInRelease(fossologyProcess, release, user, componentClient);
 
@@ -497,6 +505,9 @@ public class FossologyHandler implements FossologyService.Iface {
             if (extToolProcess.getProcessSteps().size() > 2) {
                 extToolProcess.getProcessSteps().get(extToolProcess.getProcessSteps().size() - 1)
                         .setStepStatus(ExternalToolProcessStatus.NEW);
+            } else if (extToolProcess.getProcessSteps().size() == 2 && BackendUtils.DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD) {
+                extToolProcess.addToProcessSteps(createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT));
+                reportStep = true;
             } else {
                 log.info("Either the source of release with id {} is not yet uploaded or not yet scanned", releaseId);
                 return RequestStatus.FAILURE;
