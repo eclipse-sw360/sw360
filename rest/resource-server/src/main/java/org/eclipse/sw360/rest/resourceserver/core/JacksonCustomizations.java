@@ -124,6 +124,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(ReleaseNode.class, Sw360Module.ReleaseNodeMixin.class);
             setMixInAnnotation(RestrictedResource.class, Sw360Module.RestrictedResourceMixin.class);
             setMixInAnnotation(RestApiToken.class, Sw360Module.RestApiTokenMixin.class);
+            setMixInAnnotation(BulkOperationNode.class, Sw360Module.BulkOperationNodeMixin.class);
 
             // Make spring doc aware of the mixin(s)
             SpringDocUtils.getConfig()
@@ -175,7 +176,8 @@ public class JacksonCustomizations {
                     .replaceWithClass(ProjectDTO.class, ProjectDTOMixin.class)
                     .replaceWithClass(EmbeddedProjectDTO.class, EmbeddedProjectDTOMixin.class)
                     .replaceWithClass(ReleaseNode.class, ReleaseNodeMixin.class)
-                    .replaceWithClass(RestrictedResource.class, RestrictedResourceMixin.class);
+                    .replaceWithClass(RestrictedResource.class, RestrictedResourceMixin.class)
+                    .replaceWithClass(BulkOperationNode.class, BulkOperationNodeMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -2275,6 +2277,23 @@ public class JacksonCustomizations {
                 "token"
         })
         public abstract static class RestApiTokenMixin extends RestApiToken {
+        }
+
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties(value = {
+                "setId",
+                "setName",
+                "setVersion",
+                "setType",
+                "setParentId",
+                "setChildList",
+                "childListSize",
+                "childListIterator",
+                "setState",
+                "setAdditionalData",
+                "additionalDataSize"
+        })
+        static abstract class BulkOperationNodeMixin extends BulkOperationNode {
         }
     }
 }

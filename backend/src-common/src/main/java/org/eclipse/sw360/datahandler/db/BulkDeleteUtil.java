@@ -173,8 +173,11 @@ public class BulkDeleteUtil extends BackendUtils {
                             Release referencingRelease = workReleaseMap.get(referencingReleaseId);
                             Map<String, ReleaseRelationship> relationMap = referencingRelease.getReleaseIdToRelationship();
                             relationMap.remove(leafReleaseId);
-                            if (!isPreview) {
-                                releaseRepository.update(referencingRelease);
+                            //Do not update the repository link if both the referencing Release and the referenced Release are externally referenced.
+                            if (!externalLinkMap.get(referencingReleaseId)) {
+                                if (!isPreview) {
+                                    releaseRepository.update(referencingRelease);
+                                }
                             }
                         }
                     }
