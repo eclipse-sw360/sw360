@@ -99,7 +99,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     ) throws TException, URISyntaxException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestById(docId, sw360User);
-        HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User);
+        HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User, true);
         HttpStatus status = halClearingRequest == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(halClearingRequest, status);
     }
@@ -118,24 +118,29 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     ) throws TException, URISyntaxException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestByProjectId(projectId, sw360User);
-        HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User);
+        HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User, true);
         HttpStatus status = halClearingRequest == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(halClearingRequest, status);
     }
 
-    private HalResource<ClearingRequest> createHalClearingRequestWithAllDetails(ClearingRequest clearingRequest, User sw360User) throws TException {
+    private HalResource<ClearingRequest> createHalClearingRequestWithAllDetails(ClearingRequest clearingRequest, User sw360User, boolean isSingleRequest) throws TException {
         HalResource<ClearingRequest> halClearingRequest = new HalResource<>(clearingRequest);
         if (StringUtils.hasText(clearingRequest.projectId)) {
             Project project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
+            Project projectWithClearingInfo = projectService.getClearingInfo(project, sw360User);
+            restControllerHelper.addEmbeddedReleaseDetails(halClearingRequest, projectWithClearingInfo);
             restControllerHelper.addEmbeddedProject(halClearingRequest, project, true);
         }
         User requestingUser = restControllerHelper.getUserByEmail(clearingRequest.getRequestingUser());
         restControllerHelper.addEmbeddedUser(halClearingRequest, requestingUser, "requestingUser");
-        User clearingTeam = restControllerHelper.getUserByEmail(clearingRequest.getClearingTeam());
-        restControllerHelper.addEmbeddedUser(halClearingRequest, clearingTeam, "clearingTeam");
+        if(isSingleRequest){
+            User clearingTeam = restControllerHelper.getUserByEmail(clearingRequest.getClearingTeam());
+            restControllerHelper.addEmbeddedUser(halClearingRequest, clearingTeam, "clearingTeam");
+        }
         if(clearingRequest.getClearingState().equals(ClearingRequestState.CLOSED) || clearingRequest.getClearingState().equals(ClearingRequestState.REJECTED)){
             restControllerHelper.addEmbeddedTimestampOfDecision(halClearingRequest,clearingRequest.getTimestampOfDecision());
         }
+        restControllerHelper.addEmbeddedDatesClearingRequest(halClearingRequest, clearingRequest, isSingleRequest);
         return halClearingRequest;
     }
 
@@ -170,10 +175,9 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
 
         List<EntityModel<ClearingRequest>> clearingRequestList = new ArrayList<>();
         for (ClearingRequest cr : clearingRequestSet) {
-            EntityModel<ClearingRequest> embeddedCRresource = null;
             ClearingRequest embeddedCR = restControllerHelper.convertToEmbeddedClearingRequest(cr);
-            embeddedCRresource = EntityModel.of(embeddedCR);
-            clearingRequestList.add(embeddedCRresource);
+            HalResource<ClearingRequest> halResource = createHalClearingRequestWithAllDetails(embeddedCR, sw360User, false);
+            clearingRequestList.add(halResource);
         }
 
         CollectionModel<EntityModel<ClearingRequest>> resources = CollectionModel.of(clearingRequestList);
