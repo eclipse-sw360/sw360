@@ -700,4 +700,9 @@ service ProjectService {
      * is equivalent to `getLinkedProjectsOfProject(getProjectById(id, user))`
      */
     list<ProjectLink> getLinkedProjectsOfProjectWithAllReleases(1: Project project, 2: bool deep, 3: User user);
+
+    /**
+    * Get linked releases information in dependency network of a project
+    */
+    list<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(1: string projectId, 2: User sw360User) throws (1: SW360Exception exp);
 }

@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
@@ -155,6 +156,12 @@ public class RestControllerHelper<T> {
     private final com.fasterxml.jackson.databind.Module sw360Module;
     public static final ImmutableSet<ProjectReleaseRelationship._Fields> SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE = ImmutableSet
             .of(ProjectReleaseRelationship._Fields.CREATED_ON, ProjectReleaseRelationship._Fields.CREATED_BY);
+    private static final ImmutableMap<Release._Fields,String> mapOfReleaseFieldsTobeEmbedded = ImmutableMap.of(
+            Release._Fields.MODERATORS, "sw360:moderators",
+            Release._Fields.ATTACHMENTS, "sw360:attachments",
+            Release._Fields.COTS_DETAILS, "sw360:cotsDetails",
+            Release._Fields.RELEASE_ID_TO_RELATIONSHIP,"sw360:releaseIdToRelationship",
+            Release._Fields.CLEARING_INFORMATION, "sw360:clearingInformation");
 
     public User getSw360UserFromAuthentication() {
         try {
@@ -1568,5 +1575,42 @@ public class RestControllerHelper<T> {
         embeddedProject.setIntReleaseId(sw360Vul.getIntReleaseId());
         embeddedProject.setIntReleaseName(sw360Vul.getIntReleaseName());
         return embeddedProject;
+    }
+
+    public ReleaseLink convertToReleaseLink(Release release, ReleaseRelationship relationship) {
+        ReleaseLink releaseLink = new ReleaseLink();
+        releaseLink.setId(release.getId());
+        releaseLink.setClearingState(release.getClearingState());
+        releaseLink.setLicenseIds(release.getMainLicenseIds());
+        releaseLink.setName(release.getName());
+        releaseLink.setVersion(release.getVersion());
+        releaseLink.setReleaseRelationship(relationship);
+        releaseLink.setComponentId(release.getComponentId());
+        return releaseLink;
+    }
+
+    public HalResource<Release> createHalReleaseResourceWithAllDetails(Release release) {
+        HalResource<Release> halRelease = new HalResource<>(release);
+        Link componentLink = linkTo(ReleaseController.class)
+                .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId())
+                .withRel("component");
+        halRelease.add(componentLink);
+        release.setComponentId(null);
+        Set<String> packageIds = release.getPackageIds();
+
+        if (packageIds != null) {
+            for (String id : release.getPackageIds()) {
+                Link packageLink = linkTo(ReleaseController.class)
+                        .slash("api" + PackageController.PACKAGES_URL + "/" + id).withRel("packages");
+                halRelease.add(packageLink);
+            }
+        }
+        release.setPackageIds(null);
+        for (Map.Entry<Release._Fields, String> field : mapOfReleaseFieldsTobeEmbedded.entrySet()) {
+            addEmbeddedFields(field.getValue(), release.getFieldValue(field.getKey()), halRelease);
+        }
+        // Do not add attachment as it is an embedded field
+        release.unsetAttachments();
+        return halRelease;
     }
 }

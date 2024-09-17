@@ -2782,6 +2782,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         releaseNode.setReleaseRelationship(releaseRelationShipUpper);
         releaseNode.setMainlineState(mainLineStateUpper);
+        releaseNode.unsetComponentId();
+        releaseNode.unsetReleaseName();
+        releaseNode.unsetReleaseVersion();
 
         if (operation.equals(ProjectOperation.CREATE)) {
             releaseNode.setCreateOn(SW360Utils.getCreatedOn());
@@ -2873,5 +2876,115 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         HalResource<ClearingRequest> halResource = new HalResource<>(clearingRequest);
 
         return ResponseEntity.created(location).body(halResource);
+    }
+
+    @Operation(
+            description = "Get linked releases information in project's dependency network.",
+            tags = {"Project"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}/linkedReleases", method = RequestMethod.GET)
+    public ResponseEntity<?> getLinkedReleasesInNetwork(
+            @Parameter(description = "Project ID.") @PathVariable("id") String projectId
+        ) throws TException {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return new ResponseEntity<>(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        return new ResponseEntity<>(projectService.getLinkedReleasesInDependencyNetworkOfProject(projectId, sw360User), HttpStatus.OK);
+    }
+
+    @Operation(
+            description = "Get linked releases information of linked projects.",
+            tags = {"Project"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/subProjects/releases", method = RequestMethod.GET)
+    public ResponseEntity<?> getLinkedReleasesOfLinkedProjects(
+            @Parameter(description = "Project ID.") @PathVariable("id") String projectId
+    ) throws TException {
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<Release> linkedReleases = projectService.getLinkedReleasesOfSubProjects(projectId, sw360User);
+        List<HalResource> halResources = linkedReleases.stream()
+                .map(rel -> restControllerHelper.createHalReleaseResourceWithAllDetails(rel))
+                .collect(Collectors.toList());
+        CollectionModel<HalResource> collectionModel = CollectionModel.of(halResources);
+        return new ResponseEntity<>(collectionModel, HttpStatus.OK);
+    }
+
+    @Operation(
+            description = "Compare dependency network with default network (relationships between releases).",
+            tags = {"Project"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/network/compareDefaultNetwork", method = RequestMethod.POST)
+    public ResponseEntity<?> compareDependencyNetworkWithDefaultNetwork(
+            @RequestBody List<ReleaseNode> dependencyNetwork
+    ) {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return new ResponseEntity<>(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        if (CommonUtils.isNullOrEmptyCollection(dependencyNetwork)) {
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
+        }
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<Map<String, Object>> comparedNetwork = projectService.compareWithDefaultNetwork(dependencyNetwork, sw360User);
+        return new ResponseEntity<>(comparedNetwork, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            description = "Create a duplicate project with dependency network.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/network/duplicate/{id}", method = RequestMethod.POST)
+    public ResponseEntity<?> createDuplicateProjectWithDependencyNetwork(
+            @Parameter(description = "Project ID to copy.")
+            @PathVariable("id") String id,
+            @Parameter(schema = @Schema(implementation = Project.class))
+            @RequestBody Map<String, Object> reqBodyMap
+    ) throws TException {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return new ResponseEntity<>(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        if (!reqBodyMap.containsKey("name") && !reqBodyMap.containsKey("version")) {
+            throw new HttpMessageNotReadableException(
+                    "Field name or version should be present in request body to create duplicate of a project");
+        }
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Project duplicatedProject = projectService.getProjectForUserById(id, sw360User);
+        Project projectFromRequest = convertToProject(reqBodyMap);
+        duplicatedProject.unsetReleaseIdToUsage();
+        projectFromRequest.unsetReleaseIdToUsage();
+        duplicatedProject = this.restControllerHelper.updateProject(duplicatedProject, projectFromRequest, reqBodyMap,
+                mapOfProjectFieldsToRequestBody);
+
+        if (reqBodyMap.get("dependencyNetwork") != null) {
+            try {
+                addOrPatchDependencyNetworkToProject(duplicatedProject, reqBodyMap, ProjectOperation.CREATE);
+            } catch (JsonProcessingException | NoSuchElementException | InvalidPropertiesFormatException e) {
+                log.error(e.getMessage());
+                return ResponseEntity.badRequest().body(e.getMessage());
+            }
+        }
+
+        projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(duplicatedProject, sw360User);
+        duplicatedProject.unsetId();
+        duplicatedProject.unsetRevision();
+        duplicatedProject.unsetAttachments();
+        duplicatedProject.unsetClearingRequestId();
+        duplicatedProject.setClearingState(ProjectClearingState.OPEN);
+        String linkedObligationId = duplicatedProject.getLinkedObligationId();
+        duplicatedProject.unsetLinkedObligationId();
+
+        Project createdProject = projectService.createProject(duplicatedProject, sw360User);
+        createdProject.setLinkedObligationId(linkedObligationId);
+        projectService.copyLinkedObligationsForClonedProject(createdProject, duplicatedProject, sw360User);
+
+        HalResource<ProjectDTO> projectDTOHalResource = createHalProjectDTO(createdProject, sw360User);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+                .buildAndExpand(createdProject.getId()).toUri();
+
+        return ResponseEntity.created(location).body(projectDTOHalResource);
     }
 }
