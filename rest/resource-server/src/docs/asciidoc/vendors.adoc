@@ -69,6 +69,17 @@ include::{snippets}/should_document_get_vendor_releases/http-response.adoc[]
 ===== Links
 include::{snippets}/should_document_get_vendor_releases/links.adoc[]
 
+[[resources-vendor-delete]]
+==== Delete a vendor
+
+A `DELETE` request will delete vendor by id.
+
+===== Example request
+include::{snippets}/should_document_delete_vendor/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_delete_vendor/http-response.adoc[]
+
 [[resources-vendor-create]]
 ==== Creating a vendor
 
