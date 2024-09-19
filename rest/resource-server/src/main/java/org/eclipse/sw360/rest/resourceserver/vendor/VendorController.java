@@ -16,6 +16,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -106,6 +108,37 @@ public class VendorController implements RepresentationModelProcessor<Repository
         Vendor sw360Vendor = vendorService.getVendorById(id);
         HalResource<Vendor> halResource = createHalVendor(sw360Vendor);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Delete a vendor.",
+            description = "Delete vendor by id.",
+            tags = {"Vendor"}
+    )
+    @RequestMapping(value = VENDORS_URL + "/{id}", method = RequestMethod.DELETE)
+    public ResponseEntity<?> deleteVendor(
+            @Parameter(description = "The id of the vendor to be deleted.")
+            @PathVariable("id") String id
+    ) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        boolean idFound = false;
+        List<Vendor> vendors = vendorService.getVendors();
+        for (Vendor vendor : vendors) {
+            if (vendor.getId().equals(id)) {
+                idFound = true;
+                break;
+            }
+        }
+        if (!idFound) {
+            return new ResponseEntity<>("Vendor with id " + id + " not found.", HttpStatus.NOT_FOUND);
+        }
+        Vendor sw360Vendor = vendorService.getVendorById(id);
+        RequestStatus requestStatus = vendorService.deleteVendorByid(id, sw360User);
+        if (requestStatus == RequestStatus.SUCCESS) {
+            return new ResponseEntity<>("Vendor with full name " + sw360Vendor.getFullname() + " deleted successfully.", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Vendor with full name " + sw360Vendor.getFullname() + " cannot be deleted.", HttpStatus.BAD_REQUEST);
+        }
     }
 
     @Operation(
