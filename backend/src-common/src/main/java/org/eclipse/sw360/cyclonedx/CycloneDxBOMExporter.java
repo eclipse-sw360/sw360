@@ -17,8 +17,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.plexus.util.CollectionUtils;
 import org.cyclonedx.exception.GeneratorException;
-import org.cyclonedx.generators.json.BomJsonGenerator14;
-import org.cyclonedx.generators.xml.BomXmlGenerator14;
+import org.cyclonedx.generators.json.BomJsonGenerator;
+import org.cyclonedx.generators.xml.BomXmlGenerator;
+import org.cyclonedx.Version;
 import org.cyclonedx.model.Bom;
 import org.cyclonedx.model.Component.Type;
 import org.cyclonedx.model.ExternalReference;
@@ -135,10 +136,10 @@ public class CycloneDxBOMExporter {
             bom.setMetadata(metadata);
 
             if (SW360Constants.JSON_FILE_EXTENSION.equalsIgnoreCase(bomType)) {
-                BomJsonGenerator14 jsonBom = new BomJsonGenerator14(bom);
+                BomJsonGenerator jsonBom = new BomJsonGenerator(bom, Version.VERSION_14);
                 summary.setMessage(jsonBom.toJsonString());
             } else {
-                BomXmlGenerator14 xmlBom = new BomXmlGenerator14(bom);
+                BomXmlGenerator xmlBom = new BomXmlGenerator(bom, Version.VERSION_14);
                 summary.setMessage(xmlBom.toXmlString());
             }
             return summary;
