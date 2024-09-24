@@ -19,7 +19,7 @@
     </parent>
 
     <artifactId>backend-components</artifactId>
-    <packaging>jar</packaging>
+    <packaging>war</packaging>
     <name>backend-components</name>
     <build><finalName>components</finalName></build>
     <properties>
