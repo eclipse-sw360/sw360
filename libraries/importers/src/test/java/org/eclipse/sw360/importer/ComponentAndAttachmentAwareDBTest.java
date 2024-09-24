@@ -89,24 +89,10 @@ public class ComponentAndAttachmentAwareDBTest {
 
         ThriftClients thriftClients = failingMock(ThriftClients.class);
 
-        // ComponentHandler componentHandler = new
-        // ComponentHandler(DatabaseSettingsTest.getConfiguredHttpClient(),DatabaseSettingsTest.getConfiguredClient(),DatabaseSettingsTest.COUCH_DB_DATABASE,
-        // DatabaseSettingsTest.COUCH_DB_CHANGELOGS, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS,
-        // thriftClients);
-        // VendorHandler vendorHandler = new
-        // VendorHandler(DatabaseSettingsTest.getConfiguredClient(),
-        // DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
-        // AttachmentHandler attachmentHandler = new
-        // AttachmentHandler(DatabaseSettingsTest.getConfiguredClient(),
-        // DatabaseSettingsTest.COUCH_DB_DATABASE, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
-
         ModerationService.Iface moderationService = failingMock(ModerationService.Iface.class);
 
         doNothing().when(moderationService).deleteRequestsOnDocument(anyString());
 
-        // doReturn(componentHandler).when(thriftClients).makeComponentClient();
-        // doReturn(vendorHandler).when(thriftClients).makeVendorClient();
-        // doReturn(attachmentHandler).when(thriftClients).makeAttachmentClient();
         doReturn(moderationService).when(thriftClients).makeModerationClient();
 
         return thriftClients;
