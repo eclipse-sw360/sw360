@@ -77,11 +77,12 @@ image_build() {
 
 image_build localthrift sw360/thrift "$THRIFT_VERSION" --build-arg THRIFT_VERSION="$THRIFT_VERSION" "$@"
 
-image_build sw360test sw360/test "$SW360_VERSION" "$@"
+image_build sw360test sw360/test "$SW360_VERSION" "$@" \
+--build-context "localthrift=docker-image://${DOCKER_IMAGE_ROOT}/sw360/thrift:$THRIFT_VERSION" "$@"
 
 image_build binaries sw360/binaries "$SW360_VERSION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
 --secret id=couchdb,src="$SECRETS" \
---build-context "thrift=docker-image://${DOCKER_IMAGE_ROOT}/sw360/thrift:$THRIFT_VERSION" "$@"
+--build-context "localthrift=docker-image://${DOCKER_IMAGE_ROOT}/sw360/thrift:$THRIFT_VERSION" "$@"
 
 image_build sw360 sw360 "$SW360_VERSION" \
 --build-context "binaries=docker-image://${DOCKER_IMAGE_ROOT}/sw360/binaries:latest" "$@"
