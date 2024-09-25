@@ -140,7 +140,7 @@ public class CycloneDxBOMImporter {
                         .filter(Objects::nonNull)
                         .filter(ref -> ExternalReference.Type.VCS.equals(ref.getType()))
                         .map(ExternalReference::getUrl)
-                        .map(url -> sanitizeVCS(url))
+                        .map(url -> sanitizeVCS(url.toLowerCase()))
                         .filter(url -> CommonUtils.isValidUrl(url))
                         .map(url -> new AbstractMap.SimpleEntry<>(url, comp)))
                 .collect(Collectors.groupingBy(e -> e.getKey(),
@@ -987,16 +987,115 @@ public class CycloneDxBOMImporter {
      */
     public String sanitizeVCS(String vcs) {
         // GitHub repository URL Format: https://github.com/supplier/name
-        if (vcs.toLowerCase().contains("github.com")) {
-            URI uri = URI.create(vcs);
-            String[] urlParts = uri.getPath().split("/");
-            if (urlParts.length >= 3) {
-                String firstSegment = urlParts[1];
-                String secondSegment = urlParts[2].replaceAll("\\.git.*", "").replaceAll("#.*", "");
-                vcs = "https://github.com/" + firstSegment + "/" + secondSegment;
-                return vcs;
-            } else {
-                log.error("Invalid GitHub repository URL: " + vcs);
+        if (vcs.contains("github.com")) {
+            vcs = "https://" + vcs.substring(vcs.indexOf("github.com")).trim();
+            try {
+                URI uri = URI.create(vcs);
+                String[] urlParts = uri.getPath().split("/");
+
+                if (urlParts.length >= 3) {
+                    String firstSegment = urlParts[1];
+                    String secondSegment = urlParts[2].replaceAll("\\.git.*", "").replaceAll("#.*", "");
+                    vcs = "https://github.com/" + firstSegment + "/" + secondSegment;
+                    return vcs;
+                } else {
+                    log.error("Invalid GitHub repository URL: {}", vcs);
+                }
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid URL format: {}", vcs, e);
+            }
+        }else if(vcs.contains("gitlab.com")){
+            // GitLab repository URL Format: https://gitlab.com/supplier/name
+            vcs = "https://" + vcs.substring(vcs.indexOf("gitlab.com")).trim();
+            try{
+                URI uri = URI.create(vcs);
+                String[] urlParts = uri.getPath().split("/");
+                if (urlParts.length >= 3) {
+                    String firstSegment = urlParts[1];
+                    String secondSegment = urlParts[2].replaceAll("\\.git.*", "").replaceAll("#.*", "");
+                    vcs = "https://gitlab.com/" + firstSegment + "/" + secondSegment;
+                    return vcs;
+                } else {
+                    log.error("Invalid GitLab repository URL: " + vcs);
+                }
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid URL format: {}", vcs, e);
+            }
+        }else if(vcs.contains("bitbucket.org")){
+            // Bitbucket repository URL Format: https://bitbucket.org/supplier/name
+            vcs = "https://" + vcs.substring(vcs.indexOf("bitbucket.org")).trim();
+            try{
+                URI uri = URI.create(vcs);
+                String[] urlParts = uri.getPath().split("/");
+                if (urlParts.length >= 3) {
+                    String firstSegment = urlParts[1];
+                    String secondSegment = urlParts[2].replaceAll("\\.git.*", "").replaceAll("#.*", "");
+                    vcs = "https://bitbucket.org/" + firstSegment + "/" + secondSegment;
+                    return vcs;
+                } else {
+                    log.error("Invalid Bitbucket repository URL: " + vcs);
+                }
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid URL format: {}", vcs, e);
+            }
+        }else if(vcs.contains("cs.opensource.google")) {
+            // Google repository URL Format: https://cs.opensource.google/supplier/name
+            vcs = "https://" + vcs.substring(vcs.indexOf("cs.opensource.google")).trim();
+
+            try{
+                URI uri = URI.create(vcs);
+                String[] urlParts = uri.getPath().split("/");
+
+                if (urlParts.length >= 3) {
+                    String firstSegment = urlParts[1];
+                    String secondSegment = urlParts[2];
+                    String thirdSegment = (urlParts.length > 3 && !CommonUtils.isNullEmptyOrWhitespace(urlParts[3])) ? urlParts[3] : "";
+
+                    if (!thirdSegment.isEmpty() && !"+".equals(thirdSegment)) {
+                        vcs = "https://cs.opensource.google/" + firstSegment + "/" + secondSegment + "/" + thirdSegment;
+                    }else{
+                        vcs = "https://cs.opensource.google/" + firstSegment + "/" + secondSegment;
+                    }
+                    return vcs;
+                } else {
+                    log.error("Invalid Google repository URL: " + vcs);
+                }
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid URL format: {}", vcs, e);
+            }
+        }else if(vcs.contains("go.googlesource.com")){
+            // Google source repository URL Format: https://go.googlesource.com/name
+            vcs = "https://" + vcs.substring(vcs.indexOf("go.googlesource.com")).trim();
+
+            try{
+                URI uri = URI.create(vcs);
+                String[] urlParts = uri.getPath().split("/");
+                if (urlParts.length >= 2) {
+                    String firstSegment = urlParts[1];
+                    vcs = "https://go.googlesource.com/" + firstSegment;
+                    return vcs;
+                } else {
+                    log.error("Invalid Googlesource repository URL: " + vcs);
+                }
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid URL format: {}", vcs, e);
+            }
+        }else if(vcs.contains("pypi.org")) {
+            // PythonSource repository URL Format: https://pypi.org/project/name
+            vcs = "https://" + vcs.substring(vcs.indexOf("pypi.org")).trim();
+
+            try{
+                URI uri = URI.create(vcs);
+                String[] urlParts = uri.getPath().split("/");
+                if (urlParts.length >= 3) {
+                    String secondSegment = urlParts[2].replaceAll("\\.git.*", "").replaceAll("#.*", "");
+                    vcs = "https://pypi.org/project" + "/" + secondSegment;
+                    return vcs;
+                } else {
+                    log.error("Invalid PythonSource repository URL: " + vcs);
+                }
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid URL format: {}", vcs, e);
             }
         }
         // Other formats yet to be defined
