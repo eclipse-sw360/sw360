@@ -61,7 +61,6 @@ public class Sw360CustomEventListenerProvider implements EventListenerProvider {
             }
         } else if (ResourceType.GROUP_MEMBERSHIP.equals(event.getResourceType())) {
             keycloakAdminEventService.groupMembershipOperationAdminEvent(event);
-
         }
     }
 

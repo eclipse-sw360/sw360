@@ -65,9 +65,9 @@ public class Sw360KeycloakAdminEventService {
 				userfromSw360DB.setUserGroup(ThriftEnumUtils.stringToEnum(userGroup, UserGroup.class));
 				userService.updateUser(userfromSw360DB);
 			} catch (JsonProcessingException e) {
-				log.info("CustomEventListenerSW360::onEvent(_,_)::Json processing error(GROUP)-->" + e);
+				log.error("CustomEventListenerSW360::onEvent(_,_)::Json processing error(GROUP)-->" + e);
 			} catch (Exception e) {
-				log.error("Error updatin the user while updating the user group", e);
+				log.error("Error updating the user while updating the user group", e);
 			}
 		} else if (OperationType.DELETE.equals(event.getOperationType())) {
 			log.info("Group Details:::(Group Membership Event - DELETE)" + event.getRepresentation());
@@ -87,7 +87,7 @@ public class Sw360KeycloakAdminEventService {
 	}
 
 	public void createUserOperation(AdminEvent event) {
-		log.debugf("User Details:::(CREATE Event): %s" + event.getRepresentation());
+		log.debugf("User Details:::(CREATE Event): %s" ,event.getRepresentation());
 		try {
 			UserEntity userEntity = objectMapper.readValue(event.getRepresentation(), UserEntity.class);
 			log.debug("Converted Entity::" + convertEntityToUserThriftObj(userEntity));
@@ -105,7 +105,7 @@ public class Sw360KeycloakAdminEventService {
 	}
 
 	public void updateUserOperation(AdminEvent event) {
-		log.debugf("User Details:::(Update Event): %s" + event.getRepresentation());
+		log.debugf("User Details:::(Update Event): %s" ,event.getRepresentation());
 		try {
 			UserEntity userEntity = objectMapper.readValue(event.getRepresentation(), UserEntity.class);
 			User user = convertEntityToUserThriftObj(userEntity);

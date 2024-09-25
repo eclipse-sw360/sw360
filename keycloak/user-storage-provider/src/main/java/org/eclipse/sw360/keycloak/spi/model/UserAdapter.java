@@ -19,7 +19,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 
 public class UserAdapter extends AbstractUserAdapterFederatedStorage {
-    private static final Logger logger = Logger.getLogger(UserAdapter.class);
+    public static final String DEPARTMENT = "department";
     protected User entity;
     protected String keycloakId;
 
@@ -65,7 +65,7 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        if (name.equals("department")) {
+        if (name.equals(DEPARTMENT)) {
             entity.setDepartment(value);
         } else {
             super.setSingleAttribute(name, value);
@@ -74,7 +74,7 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
 
     @Override
     public void removeAttribute(String name) {
-        if (name.equals("department")) {
+        if (name.equals(DEPARTMENT)) {
             entity.setDepartment(null);
         } else {
             super.removeAttribute(name);
@@ -83,7 +83,7 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        if (name.equals("department")) {
+        if (name.equals(DEPARTMENT)) {
             entity.setDepartment(values.get(0));
         } else {
             super.setAttribute(name, values);
@@ -92,7 +92,7 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
 
     @Override
     public String getFirstAttribute(String name) {
-        if (name.equals("department")) {
+        if (name.equals(DEPARTMENT)) {
             return entity.getDepartment();
         } else {
             return super.getFirstAttribute(name);
@@ -104,13 +104,13 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
         Map<String, List<String>> attrs = super.getAttributes();
         MultivaluedHashMap<String, String> all = new MultivaluedHashMap<>();
         all.putAll(attrs);
-        all.add("department", entity.getDepartment());
+        all.add(DEPARTMENT, entity.getDepartment());
         return all;
     }
 
     @Override
     public Stream<String> getAttributeStream(String name) {
-        if (name.equals("department")) {
+        if (name.equals(DEPARTMENT)) {
             List<String> phone = new LinkedList<>();
             phone.add(entity.getDepartment());
             return phone.stream();

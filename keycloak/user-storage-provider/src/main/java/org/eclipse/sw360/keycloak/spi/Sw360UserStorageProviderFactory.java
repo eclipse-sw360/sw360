@@ -71,11 +71,11 @@ public class Sw360UserStorageProviderFactory implements UserStorageProviderFacto
 				UserModel keycloakUser = session.users().getUserByUsername(realm, externalUser.getEmail());
 				if (keycloakUser == null) {
 					// User does not exist in Keycloak, create a new user\
+					keycloakUser = session.users().addUser(realm, externalUser.getEmail());
 					keycloakUser.setEmail(externalUser.getEmail());
 					keycloakUser.setFirstName(externalUser.getGivenname());
 					keycloakUser.setLastName(externalUser.getLastname());
 					keycloakUser.setEnabled(true);
-					keycloakUser = session.users().addUser(realm, externalUser.getEmail());
 					result.increaseAdded();
 				} else {
 					// User exists, update their information

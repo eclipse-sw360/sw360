@@ -23,6 +23,8 @@ import java.util.regex.Pattern;
 public class Sw360KeycloakUserEventService {
 	private static final Logger log = Logger.getLogger(Sw360KeycloakUserEventService.class);
 	public static final String USERNAME = "username";
+	public static final String DEPARTMENT = "Department";
+	public static final String DEFAULT_DEPARTMENT = "DEPARTMENT";
 
 
 	private final Sw360UserService userService;
@@ -55,7 +57,6 @@ public class Sw360KeycloakUserEventService {
 	}
 
 	private User setUserDepartmentFromSession(User user) {
-		log.debug("setUserDepartmentFromSession(_) called!");
 		keycloakSession.getAttributes().entrySet().forEach(x -> {
 			Object up = x.getValue();
 			if (up instanceof DefaultUserProfile usPro) {
@@ -70,7 +71,6 @@ public class Sw360KeycloakUserEventService {
 	}
 
 	public void userLoginEvent(Event event) {
-		log.debug("Login Event called!");
 		UserProvider userProvider = keycloakSession.users();
 		RealmModel realmModel = keycloakSession.realms().getRealmByName(REALM);
 		UserModel userModel = getUserFromKeycloakRealm(event, realmModel, userProvider);
@@ -80,21 +80,18 @@ public class Sw360KeycloakUserEventService {
 			log.debug("User logging in for the first time. Saving the user in sw360 database" + user.getEmail());
 			userService.addUser(user);
 		}
-		log.debug("Login Event exited!");
 	}
 
 	private UserModel getUserFromKeycloakRealm(Event event, RealmModel realmModel, UserProvider userProvider) {
 		UserModel userModel = null;
 		Map<String, String> details = event.getDetails();
-		if (realmModel != null && details != null) {
+		if (realmModel != null && details != null && userProvider != null) {
 			if (details.containsKey(USERNAME)) {
 				String userName = details.get(USERNAME);
-				if (userProvider != null) {
-					if (isValidEmail(userName)) {
-						userModel = userProvider.getUserByEmail(realmModel, userName);
-					} else {
-						userModel = userProvider.getUserById(realmModel, userName);
-					}
+				if (isValidEmail(userName)) {
+					userModel = userProvider.getUserByEmail(realmModel, userName);
+				} else {
+					userModel = userProvider.getUserById(realmModel, userName);
 				}
 			}
 		}
@@ -114,7 +111,7 @@ public class Sw360KeycloakUserEventService {
 
 	private void mapSetDepartment(UserModel userModel, User user) {
 		log.debug("User Model Attributes" + userModel.getAttributes());
-		List<String> departments = userModel.getAttributes().getOrDefault("Department", Collections.singletonList("DEPARTMENT"));
+		List<String> departments = userModel.getAttributes().getOrDefault(DEPARTMENT, Collections.singletonList(DEFAULT_DEPARTMENT));
 		String department = departments.stream().findFirst().get();
 		String parentDepartment = sanitizeDepartment(department);
 		user.setDepartment(parentDepartment);
@@ -135,13 +132,14 @@ public class Sw360KeycloakUserEventService {
 	}
 
 	private boolean checkExistenceOfUserInSw360DB(User user) {
+		User user1 = null;
 		try {
-			user = userService.getUserByEmail(user.getEmail());
+			user1 = userService.getUserByEmail(user.getEmail());
 		} catch (Exception ex) {
 			log.error("User doesn't exist in the sw360 user db!", ex);
 			return false;
 		}
-		return user != null;
+		return user1 != null;
 	}
 
 	public boolean isValidEmail(String email) {

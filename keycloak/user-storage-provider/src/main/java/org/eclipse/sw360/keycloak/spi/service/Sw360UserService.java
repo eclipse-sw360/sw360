@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2024. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -81,17 +81,8 @@ public class Sw360UserService {
         }
     }
 
-//    public User getUserFromClientCredentialClientId(String clientId) {
-//        try {
-//            UserService.Iface sw360UserClient = getThriftUserClient();
-//            return sw360UserClient.getByClientId(clientId);
-//        } catch (TException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-
     public User addUser(User user) {
-    	logger.info("Sw360UserService::addUser()::-->"+user);
+        logger.debug("Sw360UserService::addUser()::-->"+user);
         try {
             UserService.Iface sw360UserClient = getThriftUserClient();
             user.setUserGroup(UserGroup.USER);
@@ -101,13 +92,13 @@ public class Sw360UserService {
                 user.setId(documentRequestSummary.getId());
                 return user;
             } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
-//                throw new DataIntegrityViolationException("sw360 user with name '" + user.getEmail()
-//                        + "' already exists, having database identifier " + documentRequestSummary.getId());
+                logger.warn("Duplicate User");
             } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-//                throw new HttpMessageNotReadableException(documentRequestSummary.getMessage());
+                logger.warn("Invalid Input/Request");
             }
         } catch (Exception e) {
-//            throw new HttpMessageNotReadableException(e.getMessage());
+            logger.error("Error Creating the user in sw360 database", e);
+            return null;
         }
         return null;
     }

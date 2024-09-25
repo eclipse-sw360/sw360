@@ -149,11 +149,11 @@ public class Sw360UserStorageProvider implements UserStorageProvider, UserRegist
 		try {
 			user = sw360UserService.getUserByEmailOrExternalId(email);
 			if (user == null) {
-				logger.warnf("Could not find user by email: %s in sw360 user database: ", email, realm.getName());
+				logger.warnf("Could not find user by email: %s in sw360 user database", email);
 				return null;
 			}
 		} catch (Exception ex) {
-			logger.errorf("Exception occurred while retrieving user by email: %s in sw360 user database: , error: %s", email, realm.getName(), ex.getMessage());
+			logger.errorf("Exception occurred while retrieving user by email: %s in sw360 user database: , error: %s", email, ex.getMessage());
 			return null;
 		}
 		return new UserAdapter(session, realm, model, user);
