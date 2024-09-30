@@ -36,15 +36,12 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageAttachment;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentDTO;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -1378,6 +1375,8 @@ public class RestControllerHelper<T> {
         embeddedClearingRequest.setProjectBU(clearingRequest.getProjectBU());
         embeddedClearingRequest.setProjectId(clearingRequest.getProjectId());
         embeddedClearingRequest.setType(null);
+        embeddedClearingRequest.setClearingType(clearingRequest.getClearingType());
+        embeddedClearingRequest.setTimestamp(clearingRequest.getTimestamp());
         return embeddedClearingRequest;
     }
 
@@ -1568,5 +1567,19 @@ public class RestControllerHelper<T> {
         embeddedProject.setIntReleaseId(sw360Vul.getIntReleaseId());
         embeddedProject.setIntReleaseName(sw360Vul.getIntReleaseName());
         return embeddedProject;
+    }
+    public void addEmbeddedDatesClearingRequest(HalResource<ClearingRequest> halClearingRequest, ClearingRequest clearingRequest, boolean isSingleRequest) {
+        halClearingRequest.addEmbeddedResource("createdOn", SW360Utils.convertEpochTimeToDate(clearingRequest.getTimestamp()));
+        if (isSingleRequest) {
+            halClearingRequest.addEmbeddedResource("lastUpdatedOn", SW360Utils.convertEpochTimeToDate(clearingRequest.getModifiedOn()));
+        }
+    }
+
+    public void addEmbeddedReleaseDetails(HalResource<ClearingRequest> halClearingRequest, Project project) {
+        ReleaseClearingStateSummary clearingInfo = project.getReleaseClearingStateSummary();
+        int openReleaseCount = SW360Utils.getOpenReleaseCount(clearingInfo);
+        int totalReleaseCount = SW360Utils.getTotalReleaseCount(clearingInfo);
+        halClearingRequest.addEmbeddedResource("openRelease", openReleaseCount);
+        halClearingRequest.addEmbeddedResource("totalRelease", totalReleaseCount);
     }
 }

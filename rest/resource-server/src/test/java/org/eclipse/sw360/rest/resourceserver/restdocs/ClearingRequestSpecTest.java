@@ -9,6 +9,8 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
+import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
+import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -20,17 +22,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
-import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
+import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
@@ -77,6 +73,9 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         clearingRequest.setRequestedClearingDate("10-07-2020");
         clearingRequest.setRequestingUser("test.admin@sw60.org");
         clearingRequest.setRequestingUserComment("testing comment");
+        clearingRequest.setClearingType(ClearingRequestType.DEEP);
+        clearingRequest.setTimestamp(1599285578);
+        clearingRequest.setModifiedOn(1599285580);
 
         Set<ClearingRequest> clearingrequests = new HashSet<>();
         Set<ClearingRequest> clearingrequestsbystate = new HashSet<>();
@@ -90,6 +89,9 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         cr1.setProjectId("54121");
         cr1.setRequestedClearingDate("10-08-2020");
         cr1.setRequestingUser("test.user@sw60.org");
+        cr1.setClearingType(ClearingRequestType.HIGH);
+        cr1.setTimestamp(1599285573);
+        cr1.setModifiedOn(1599285590);
 
         cr2.setId("CR-3");
         cr2.setAgreedClearingDate("24-10-2020");
@@ -100,10 +102,17 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         cr2.setProjectId("54181");
         cr2.setRequestedClearingDate("13-09-2020");
         cr2.setRequestingUser("test.admin@sw60.org");
+        cr2.setClearingType(ClearingRequestType.DEEP);
+        cr2.setTimestamp(1599285571);
+        cr2.setModifiedOn(1599285588);
 
         clearingrequests.add(cr1);
         clearingrequests.add(cr2);
         clearingrequestsbystate.add(cr2);
+
+        Map<String, ProjectReleaseRelationship> linkedReleases = new HashMap<>();
+        ProjectReleaseRelationship projectReleaseRelationship = new ProjectReleaseRelationship(CONTAINED, MAINLINE)
+                .setComment("Test Comment").setCreatedOn("2020-08-05").setCreatedBy("admin@sw360.org");
 
         Project project = new Project();
         project.setId(clearingRequest.getProjectId());
@@ -113,10 +122,67 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         project.setVisbility(Visibility.EVERYONE);
         project.setBusinessUnit("DEPT");
 
+        Project project1 = new Project();
+        project.setId(cr1.getProjectId());
+        project.setName("Beta");
+        project.setVersion("1.0");
+        project.setProjectType(ProjectType.CUSTOMER);
+        project.setVisbility(Visibility.EVERYONE);
+        project.setBusinessUnit("DEPT");
+
+        Project project2 = new Project();
+        project.setId(cr2.getProjectId());
+        project.setName("Delta");
+        project.setVersion("1.0");
+        project.setProjectType(ProjectType.CUSTOMER);
+        project.setVisbility(Visibility.EVERYONE);
+        project.setBusinessUnit("DEPT");
+
+        ReleaseClearingStateSummary clearingCount = new ReleaseClearingStateSummary();
+        clearingCount.newRelease = 2;
+        clearingCount.sentToClearingTool = 1;
+        clearingCount.underClearing = 0;
+        clearingCount.reportAvailable = 0;
+        clearingCount.scanAvailable = 0;
+        clearingCount.internalUseScanAvailable = 1;
+        clearingCount.approved = 2;
+
+        ReleaseClearingStateSummary clearingCount1 = new ReleaseClearingStateSummary();
+        clearingCount1.newRelease = 3;
+        clearingCount1.sentToClearingTool = 1;
+        clearingCount1.underClearing = 0;
+        clearingCount1.reportAvailable = 0;
+        clearingCount1.scanAvailable = 0;
+        clearingCount1.internalUseScanAvailable = 1;
+        clearingCount1.approved = 2;
+
+        project.setReleaseClearingStateSummary(clearingCount);
+
+        project1.setReleaseClearingStateSummary(clearingCount1);
+        project2.setReleaseClearingStateSummary(clearingCount);
+
+        linkedReleases.put("3765276512", projectReleaseRelationship);
+        linkedReleases.put("3765276513", projectReleaseRelationship);
+        linkedReleases.put("3765276514", projectReleaseRelationship);
+
+        project.setReleaseIdToUsage(linkedReleases);
+        project1.setReleaseIdToUsage(linkedReleases);
+        project2.setReleaseIdToUsage(linkedReleases);
+
         given(this.projectServiceMock.getProjectForUserById(eq(clearingRequest.getProjectId()), any())).willReturn(project);
         given(this.userServiceMock.getUserByEmail(clearingRequest.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
         given(this.userServiceMock.getUserByEmail(clearingRequest.getClearingTeam())).willReturn(new User("clearing.team@sw60.org", "XYZ").setId("67890"));
+        given(this.projectServiceMock.getClearingInfo(eq(project), any())).willReturn(project);
 
+        given(this.projectServiceMock.getProjectForUserById(eq(cr1.getProjectId()), any())).willReturn(project1);
+        given(this.userServiceMock.getUserByEmail(cr1.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
+        given(this.userServiceMock.getUserByEmail(cr1.getClearingTeam())).willReturn(new User("clearing.team@sw60.org", "XYZ").setId("67890"));
+        given(this.projectServiceMock.getClearingInfo(eq(project1), any())).willReturn(project1);
+
+        given(this.projectServiceMock.getProjectForUserById(eq(cr2.getProjectId()), any())).willReturn(project2);
+        given(this.userServiceMock.getUserByEmail(cr2.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
+        given(this.userServiceMock.getUserByEmail(cr2.getClearingTeam())).willReturn(new User("clearing.team@sw60.org", "XYZ").setId("67890"));
+        given(this.projectServiceMock.getClearingInfo(eq(project2), any())).willReturn(project2);
 
         Comment comment = new Comment();
         comment.setText("comment text 1");
@@ -154,15 +220,22 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("projectBU").description("The Business Unit / Group of the Project, for which clearing request is created"),
                                 fieldWithPath("projectId").description("The id of the Project, for which clearing request is created"),
                                 fieldWithPath("requestedClearingDate").description("The requested clearing date of releases"),
+                                fieldWithPath("clearingType").description("The clearing type of the request, e.g., DEEP."),
                                 fieldWithPath("requestingUser").description("The user who created the clearing request"),
                                 fieldWithPath("requestingUserComment").description("The comment from requesting user"),
                                 fieldWithPath("priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
                                 subsectionWithPath("comments.[]").description("The clearing request comment"),
                                 subsectionWithPath("comments.[]text").description("The clearing request comment text"),
                                 subsectionWithPath("comments.[]commentedBy").description("The user who added the comment on clearing request"),
+                                subsectionWithPath("comments.[].commentedOn").description("The timestamp when the comment was added."),
+                                subsectionWithPath("comments.[].autoGenerated").description("Indicates if the comment was generated automatically."),
                                 subsectionWithPath("_embedded.sw360:project").description("<<resources-projects, Project>> associated with the ClearingRequest"),
                                 subsectionWithPath("_embedded.clearingTeam").description("clearing team user detail"),
                                 subsectionWithPath("_embedded.requestingUser").description("requesting user, user detail"),
+                                subsectionWithPath("_embedded.totalRelease").description("The total number of releases for the project."),
+                                subsectionWithPath("_embedded.lastUpdatedOn").description("The last updated date of the clearing request."),
+                                subsectionWithPath("_embedded.createdOn").description("The creation date of the clearing request."),
+                                subsectionWithPath("_embedded.openRelease").description("requesting user, user detail"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -182,15 +255,22 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("projectBU").description("The Business Unit / Group of the Project, for which clearing request is created"),
                                 fieldWithPath("projectId").description("The id of the Project, for which clearing request is created"),
                                 fieldWithPath("requestedClearingDate").description("The requested clearing date of releases"),
+                                fieldWithPath("clearingType").description("The clearing type of the request, e.g., DEEP."),
                                 fieldWithPath("requestingUser").description("The user who created the clearing request"),
                                 fieldWithPath("requestingUserComment").description("The comment from requesting user"),
                                 fieldWithPath("priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
                                 subsectionWithPath("comments.[]").description("The clearing request comment"),
                                 subsectionWithPath("comments.[]text").description("The clearing request comment text"),
                                 subsectionWithPath("comments.[]commentedBy").description("The user who added the comment on clearing request"),
+                                subsectionWithPath("comments.[].commentedOn").description("The timestamp when the comment was added."),
+                                subsectionWithPath("comments.[].autoGenerated").description("Indicates if the comment was generated automatically."),
                                 subsectionWithPath("_embedded.sw360:project").description("<<resources-projects, Project>> associated with the ClearingRequest"),
                                 subsectionWithPath("_embedded.clearingTeam").description("clearing team user detail"),
                                 subsectionWithPath("_embedded.requestingUser").description("requesting user, user detail"),
+                                subsectionWithPath("_embedded.totalRelease").description("The total number of releases for the project."),
+                                subsectionWithPath("_embedded.lastUpdatedOn").description("The last updated date of the clearing request."),
+                                subsectionWithPath("_embedded.createdOn").description("The creation date of the clearing request."),
+                                subsectionWithPath("_embedded.openRelease").description("requesting user, user detail"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -211,7 +291,12 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]projectId").description("The id of the Project, for which clearing request is created"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]requestedClearingDate").description("The requested clearing date of releases"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]requestingUser").description("The user who created the clearing request"),
-                                subsectionWithPath("_embedded.sw360:clearingRequests.[]priority").description("The priorityof clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.sw360:project").description("<<resources-projects, Project>> associated with the ClearingRequest"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.totalRelease").description("Total number of releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.openRelease").description("Number of open releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.createdOn").description("The date when the clearing request was created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.requestingUser").description("The user who created the clearing request"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests").description("An array of <<resources-clearingRequest, ClearingRequests>>"),
                                 subsectionWithPath("_links").description("Link to <<resources-clearingRequest, ClearingRequest resource>>")
 
@@ -238,7 +323,12 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]projectId").description("The id of the Project, for which clearing request is created"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]requestedClearingDate").description("The requested clearing date of releases"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]requestingUser").description("The user who created the clearing request"),
-                                subsectionWithPath("_embedded.sw360:clearingRequests.[]priority").description("The priorityof clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.sw360:project").description("<<resources-projects, Project>> associated with the ClearingRequest"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.totalRelease").description("Total number of releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.openRelease").description("Number of open releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.createdOn").description("The date when the clearing request was created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.requestingUser").description("The user who created the clearing request"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests").description("An array of <<resources-clearingRequest, ClearingRequests>>"),
                                 subsectionWithPath("_links").description("Link to <<resources-clearingRequest, ClearingRequest resource>>")
 
