@@ -1,15 +1,27 @@
 /*
  * Copyright Siemens AG, 2013-2015. Part of the SW360 Portal Project.
  *
- * This program and the accompanying materials are made
- * available under the terms of the Eclipse Public License 2.0
- * which is available at https://www.eclipse.org/legal/epl-2.0/
+ * This program and the accompanying materials are made available under the terms of the Eclipse
+ * Public License 2.0 which is available at https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.sw360.users;
 
+
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
+
 import com.ibm.cloud.cloudant.v1.Cloudant;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,14 +38,8 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertUser;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * Implementation of the Thrift service
@@ -44,13 +50,40 @@ public class UserHandler implements UserService.Iface {
 
     private static final Logger log = LogManager.getLogger(UserHandler.class);
     private static final String EXTENSION = ".log";
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     private UserDatabaseHandler db;
     private ReadFileDepartmentConfig readFileDepartmentConfig;
 
     public UserHandler() throws IOException {
-        db = new UserDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_USERS);
+        db = new UserDatabaseHandler(DatabaseSettings.getConfiguredClient(),
+                DatabaseSettings.COUCH_DB_USERS);
         readFileDepartmentConfig = new ReadFileDepartmentConfig();
+
+        // Create admin user if not in database yet
+        List<User> users = getAllUsers();
+        if (users.isEmpty()) {
+            Optional<String> COUCHDB_ADMIN_PASSWORD =
+                    Optional.ofNullable(System.getenv("COUCHDB_ADMIN_PASSWORD") != null
+                            ? System.getenv("COUCHDB_ADMIN_PASSWORD")
+                            : "sw360fossie");
+            User admin = new User();
+            admin.setEmail("setup@sw360.org");
+            admin.setFullname("SW360 Admin");
+            admin.setGivenname("SW360");
+            admin.setLastname("Admin");
+            admin.setDepartment("SW360");
+            admin.setPassword(COUCHDB_ADMIN_PASSWORD.get());
+            admin.setUserGroup(UserGroup.ADMIN);
+            String encodedPassword = passwordEncoder.encode(admin.getPassword());
+            admin.setPassword(encodedPassword);
+            log.info("No users found. Creating default administrator user.");
+            try {
+                addUser(admin);
+            } catch (TException e) {
+                log.atError().withThrowable(e).log("Error creating admin user");
+            }
+        }
     }
 
     public UserHandler(Cloudant client, String userDbName) throws IOException {
@@ -65,9 +98,11 @@ public class UserHandler implements UserService.Iface {
     @Override
     public User getByEmail(String email) throws TException {
         StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[2];
-        assertNotEmpty(email, "Invalid empty email " + stackTraceElement.getFileName() + ": " + stackTraceElement.getLineNumber());
+        assertNotEmpty(email, "Invalid empty email " + stackTraceElement.getFileName() + ": "
+                + stackTraceElement.getLineNumber());
 
-        if (log.isTraceEnabled()) log.trace("getByEmail: " + email);
+        if (log.isTraceEnabled())
+            log.trace("getByEmail: " + email);
 
         return db.getByEmail(email);
     }
@@ -89,7 +124,6 @@ public class UserHandler implements UserService.Iface {
         assertNotEmpty(token);
         return db.getByApiToken(token);
     }
-
 
     @Override
     public User getByOidcClientId(String clientId) throws TException {
@@ -134,13 +168,14 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public Map<PaginationData, List<User>> getUsersWithPagination(User user, PaginationData pageData)
-            throws TException {
+    public Map<PaginationData, List<User>> getUsersWithPagination(User user,
+            PaginationData pageData) throws TException {
         return db.getUsersWithPagination(pageData);
     }
 
     @Override
-    public List<User> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions) throws TException {
+    public List<User> refineSearch(String text, Map<String, Set<String>> subQueryRestrictions)
+            throws TException {
         return db.search(text, subQueryRestrictions);
     }
 
@@ -158,9 +193,8 @@ public class UserHandler implements UserService.Iface {
         return db.getUserEmails();
     }
 
-
     @Override
-    public RequestSummary importFileToDB()  {
+    public RequestSummary importFileToDB() {
         DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         RequestSummary requestSummary = new RequestSummary();
         if (!configDTO.getPathFolder().isEmpty()) {
@@ -170,7 +204,7 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public RequestStatus importDepartmentSchedule()  {
+    public RequestStatus importDepartmentSchedule() {
         DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         db.importFileToDB(configDTO.getPathFolder());
         return RequestStatus.SUCCESS;
@@ -198,7 +232,8 @@ public class UserHandler implements UserService.Iface {
             if (configDTO != null && !configDTO.getPathFolderLog().isEmpty()) {
                 String path = configDTO.getPathFolderLog();
                 File theDir = new File(path);
-                if (!theDir.exists()) theDir.mkdirs();
+                if (!theDir.exists())
+                    theDir.mkdirs();
                 return FileUtil.listFileNames(path);
             }
         } catch (IOException e) {
@@ -215,10 +250,13 @@ public class UserHandler implements UserService.Iface {
             if (configDTO != null && configDTO.getPathFolderLog().length() > 0) {
                 String path = configDTO.getPathFolderLog();
                 File theDir = new File(path);
-                if (!theDir.exists()) theDir.mkdirs();
-                Set<String> fileNamesSet = FileUtil.getListFilesOlderThanNDays(configDTO.getShowFileLogFrom(), path);
+                if (!theDir.exists())
+                    theDir.mkdirs();
+                Set<String> fileNamesSet =
+                        FileUtil.getListFilesOlderThanNDays(configDTO.getShowFileLogFrom(), path);
                 for (String fileName : fileNamesSet) {
-                    listMap.put(FilenameUtils.getName(fileName).replace(EXTENSION, ""), FileUtil.readFileLog(fileName));
+                    listMap.put(FilenameUtils.getName(fileName).replace(EXTENSION, ""),
+                            FileUtil.readFileLog(fileName));
                 }
             }
         } catch (IOException e) {
@@ -234,7 +272,8 @@ public class UserHandler implements UserService.Iface {
             if (configDTO != null && !configDTO.getPathFolderLog().isEmpty()) {
                 String path = configDTO.getPathFolderLog();
                 File theDir = new File(path);
-                if (!theDir.exists()) theDir.mkdirs();
+                if (!theDir.exists())
+                    theDir.mkdirs();
                 Set<String> strings = FileUtil.listFileNames(path);
                 if (!strings.isEmpty()) {
                     File file = FileUtil.getFileLastModified(path);
@@ -294,5 +333,4 @@ public class UserHandler implements UserService.Iface {
     public List<User> searchUsersGroup(UserGroup userGroup) throws TException {
         return db.getAllUsersGroup(userGroup);
     }
-
 }
