@@ -22,6 +22,11 @@
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>backend-service-core</artifactId>
+            <version>18.99.1</version>
+        </dependency>
+        <dependency>
             <groupId>org.spdx</groupId>
             <artifactId>tools-java</artifactId>
         </dependency>
