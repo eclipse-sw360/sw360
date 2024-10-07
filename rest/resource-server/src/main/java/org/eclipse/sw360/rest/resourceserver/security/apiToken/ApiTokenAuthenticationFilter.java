@@ -19,8 +19,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,6 +53,9 @@ public class ApiTokenAuthenticationFilter implements Filter {
                 String[] token = authorization.trim().split("\\s+");
                 if (token.length == 2 && token[0].equalsIgnoreCase("token")) {
                     Authentication auth = new ApiTokenAuthentication(token[1]);
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } else if(token.length == 2 && token[0].equalsIgnoreCase("Bearer")) {
+                    Authentication auth = new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS);
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
             } else if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED && !headers.isEmpty()

@@ -24,13 +24,13 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.Base64Utils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.io.IOException;
@@ -40,9 +40,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 public class TestHelper {
+    private static final String AUTH_BASIC = "Basic ";
 
     public static String release1Id = "121831bjh1v2j";
     public static String releaseId2 = "3451831bjh1v2jxxz";
@@ -81,25 +83,10 @@ public class TestHelper {
         assertThat(curiesNode.get("templated").asBoolean(), is(true));
     }
 
-    public static String getAccessToken(MockMvc mockMvc, String username, String password) throws Exception {
-        String authorizationHeaderValue = "Basic "
-                + new String(Base64Utils.encode("trusted-sw360-client:sw360-secret".getBytes()));
-
-        MockHttpServletResponse response = mockMvc
-                .perform(post("/oauth/token")
-                        .header("Authorization", authorizationHeaderValue)
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("client_id", "trusted-sw360-client")
-                        .param("client_secret", "sw360-secret")
-                        .param("username", username)
-                        .param("password", password)
-                        .param("grant_type", "password")
-                        .param("scope", "all"))
-                .andReturn().getResponse();
-
-        return new ObjectMapper()
-                .readValue(response.getContentAsByteArray(), OAuthToken.class)
-                .accessToken;
+    public static String generateAuthHeader(String user, String password) {
+        String credentials = user + ":" + password;
+        String credentialsEncoded = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+        return AUTH_BASIC + credentialsEncoded;
     }
 
     public static void handleBatchDeleteResourcesResponse(ResponseEntity<String> response, String resourceId, int statusCode) throws IOException {

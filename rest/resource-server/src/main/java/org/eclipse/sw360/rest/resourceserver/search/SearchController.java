@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -55,6 +55,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class SearchController implements RepresentationModelProcessor<RepositoryLinksResource> {
 
     private static final Logger log = LogManager.getLogger(SearchController.class);
@@ -70,7 +71,9 @@ public class SearchController implements RepresentationModelProcessor<Repository
 
     @Operation(
             summary = "List all the search results based on the search text and type.",
-            description = "List all the search results based on the search text and type.",
+            description = "List all the search results based on the search text and type.\n\n" +
+                "Note: If `document` is excluded in `typeMasks`, then search will be restricted to " +
+                "Name for Project, Component and Release, Fullname for License, User and Vendor, Title for Obligation",
             tags = {"Search"}
     )
     @RequestMapping(value = SEARCH_URL, method = RequestMethod.GET)
@@ -82,11 +85,11 @@ public class SearchController implements RepresentationModelProcessor<Repository
                     description = "The type of resource.",
                     schema = @Schema(
                             allowableValues = {"project", "component", "license", "release", "obligation", "user",
-                                    "vendor"},
+                                    "vendor", "document"},
                             type = "array"
                     )
             )
-            @RequestParam Optional<List<String>> typeMasks,
+            @RequestParam(value = "typeMasks") Optional<List<String>> typeMasks,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         log.debug("SearchText = {} typeMasks = {}", searchText, typeMasks);

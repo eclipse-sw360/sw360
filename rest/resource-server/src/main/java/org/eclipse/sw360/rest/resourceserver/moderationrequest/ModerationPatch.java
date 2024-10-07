@@ -13,9 +13,14 @@
 
 package org.eclipse.sw360.rest.resourceserver.moderationrequest;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Input for PATCH request on moderation request to accept/reject it.
  */
+@Setter
+@Getter
 public class ModerationPatch {
     private ModerationAction action;
     private String comment;
@@ -25,22 +30,6 @@ public class ModerationPatch {
         this.comment = null;
     }
 
-    public ModerationAction getAction() {
-        return action;
-    }
-
-    public void setAction(ModerationAction action) {
-        this.action = action;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
     /**
      * Actions which can be performed on the moderation request
      */
@@ -48,6 +37,7 @@ public class ModerationPatch {
         ACCEPT,
         REJECT,
         UNASSIGN,
-        ASSIGN
+        ASSIGN,
+        POSTPONE
     }
 }

@@ -12,6 +12,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.project;
 
+import com.google.common.collect.ImmutableSet;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.LogManager;
@@ -19,21 +20,36 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
+import org.eclipse.sw360.datahandler.thrift.licenses.License;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseObligationsStatusInfo;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.ObligationParsingResult;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
@@ -57,14 +73,21 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
 import javax.annotation.PreDestroy;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
@@ -74,8 +97,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.nullToEmpty;
@@ -98,6 +123,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     private RestControllerHelper rch;
 
     public static final ExecutorService releaseExecutor = Executors.newFixedThreadPool(10);
+
+    public static final ImmutableSet<ObligationStatusInfo._Fields> SET_OF_LICENSE_OBLIGATION_FIELDS = ImmutableSet
+            .of(ObligationStatusInfo._Fields.COMMENT, ObligationStatusInfo._Fields.STATUS);
 
     public Set<Project> getProjectsForUser(User sw360User, Pageable pageable) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
@@ -126,6 +154,352 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 throw sw360Exp;
             }
         }
+    }
+
+    public String getCyclicLinkedProjectPath(Project project, User user) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        String cyclicLinkedProjectPath = sw360ProjectClient.getCyclicLinkedProjectPath(project, user);
+        return cyclicLinkedProjectPath;
+    }
+
+    public Map<String, Set<Release>> getLicensesFromAttachmentUsage(
+            Map<String, AttachmentUsage> licenseInfoAttachmentUsage, User user) {
+        ThriftClients thriftClients = new ThriftClients();
+        LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        Map<String, Release> attachmentIdToReleaseMap = new HashMap<String, Release>();
+        Map<String, Set<Release>> licenseIdToReleasesMap = new HashMap<>();
+        licenseInfoAttachmentUsage.entrySet().stream()
+                .filter(entry -> entry.getKey() != null && entry.getValue() != null).forEach(entry -> {
+                    String releaseId = entry.getValue().getOwner().getReleaseId();
+                    Release releaseById = null;
+                    try {
+                        releaseById = componentClient.getReleaseById(releaseId, user);
+                    } catch (TException exp) {
+                        log.warn("Error fetching Release from backend! Release Id-" + releaseId, exp.getMessage());
+                        return;
+                    }
+                    if (CommonUtils.isNullOrEmptyCollection(releaseById.getAttachments()))
+                        return;
+
+                    Set<Attachment> attachmentFiltered = releaseById.getAttachments().stream().filter(Objects::nonNull)
+                            .filter(att -> entry.getKey().equals(att.getAttachmentContentId()))
+                            .filter(att -> att.getCheckStatus() != null && att.getCheckStatus() == CheckStatus.ACCEPTED)
+                            .collect(Collectors.toSet());
+
+                    if (CommonUtils.isNullOrEmptyCollection(attachmentFiltered))
+                        return;
+                    releaseById.setAttachments(attachmentFiltered);
+
+                    attachmentIdToReleaseMap.put(entry.getKey(), releaseById);
+                });
+
+        attachmentIdToReleaseMap.entrySet().stream().filter(entry -> entry.getKey() != null && entry.getValue() != null)
+                .forEach(entry -> wrapTException(() -> {
+                    List<LicenseInfoParsingResult> licenseInfoForAttachment = licenseInfoClient
+                            .getLicenseInfoForAttachment(entry.getValue(), entry.getKey(), false, user);
+                    Set<String> licenseIds = licenseInfoForAttachment.stream().filter(Objects::nonNull)
+                            .filter(lia -> lia.getLicenseInfo() != null)
+                            .filter(lia -> lia.getLicenseInfo().getLicenseNamesWithTexts() != null)
+                            .flatMap(lia -> lia.getLicenseInfo().getLicenseNamesWithTexts().stream())
+                            .filter(Objects::nonNull)
+                            .map(licenseNamesWithTexts -> CommonUtils.isNotNullEmptyOrWhitespace(
+                                    licenseNamesWithTexts.getLicenseSpdxId()) ? licenseNamesWithTexts.getLicenseSpdxId()
+                                            : licenseNamesWithTexts.getLicenseName())
+                            .filter(CommonUtils::isNotNullEmptyOrWhitespace).collect(Collectors.toSet());
+
+                    licenseIds.stream().forEach(licenseId -> {
+                        if (licenseIdToReleasesMap.containsKey(licenseId)) {
+                            licenseIdToReleasesMap.get(licenseId).add(entry.getValue());
+                        } else {
+                            Set<Release> listOfRelease = new HashSet<>();
+                            listOfRelease.add(entry.getValue());
+                            licenseIdToReleasesMap.put(licenseId, listOfRelease);
+                        }
+                    });
+                }));
+
+        return licenseIdToReleasesMap;
+    }
+
+    public Map<String, AttachmentUsage> getLicenseInfoAttachmentUsage(String projectId) {
+        Map<String, AttachmentUsage> licenseInfoUsages = new HashMap<>();
+        try {
+            ThriftClients thriftClients = new ThriftClients();
+            AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+
+            List<AttachmentUsage> attachmentUsages = wrapTException(
+                    () -> attachmentClient.getUsedAttachments(Source.projectId(projectId), null));
+            Collector<AttachmentUsage, ?, Map<String, AttachmentUsage>> attachmentUsageMapCollector = Collectors.toMap(
+                    AttachmentUsage::getAttachmentContentId, Function.identity(),
+                    Sw360ProjectService::mergeAttachmentUsages);
+            BiFunction<List<AttachmentUsage>, UsageData._Fields, Map<String, AttachmentUsage>> filterAttachmentUsages = (
+                    attUsages, type) -> attUsages.stream()
+                            .filter(attUsage -> attUsage.getUsageData().getSetField().equals(type))
+                            .collect(attachmentUsageMapCollector);
+
+            licenseInfoUsages = filterAttachmentUsages.apply(attachmentUsages, UsageData._Fields.LICENSE_INFO);
+
+        } catch (WrappedTException e) {
+            log.error("Error fetching AttachmentUsage from backend!", e);
+        }
+
+        return licenseInfoUsages;
+    }
+
+    static AttachmentUsage mergeAttachmentUsages(AttachmentUsage u1, AttachmentUsage u2) {
+        if (u1.getUsageData() == null) {
+            if (u2.getUsageData() == null) {
+                return u1;
+            } else {
+                throw new IllegalArgumentException("Cannot merge attachment usages of different usage types");
+            }
+        } else {
+            if (!u1.getUsageData().getSetField().equals(u2.getUsageData().getSetField())) {
+                throw new IllegalArgumentException("Cannot merge attachment usages of different usage types");
+            }
+        }
+        AttachmentUsage mergedUsage = u1.deepCopy();
+        switch (u1.getUsageData().getSetField()) {
+            case LICENSE_INFO:
+                mergedUsage.getUsageData().getLicenseInfo().setExcludedLicenseIds(
+                        Sets.union(Optional.of(u1)
+                                        .map(AttachmentUsage::getUsageData)
+                                        .map(UsageData::getLicenseInfo)
+                                        .map(LicenseInfoUsage::getExcludedLicenseIds)
+                                        .orElse(Collections.emptySet()),
+                                Optional.of(u2)
+                                        .map(AttachmentUsage::getUsageData)
+                                        .map(UsageData::getLicenseInfo)
+                                        .map(LicenseInfoUsage::getExcludedLicenseIds)
+                                        .orElse(Collections.emptySet())));
+                break;
+            case SOURCE_PACKAGE:
+            case MANUALLY_SET:
+                // do nothing
+                // source package and manual usages do not have any information to be merged
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected UsageData type: " + u1.getUsageData().getSetField());
+        }
+
+        return mergedUsage;
+    }
+
+    public Map<String, ObligationStatusInfo> getLicenseObligationData(Map<String, Set<Release>> licensesFromAttachmentUsage, User user) {
+        ThriftClients thriftClients = new ThriftClients();
+        LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
+        Map<String, ObligationStatusInfo> obligationStatusMap = new HashMap<String, ObligationStatusInfo>();
+        licensesFromAttachmentUsage.entrySet().stream().forEach(entry -> wrapTException(() -> {
+            License lic = null;
+            Set<Release> releaseData = entry.getValue();
+            Set<Release> limitedSet = new HashSet<>();
+            Map<String, String> releaseIdToAcceptedCli = new HashMap<String, String>();
+            for (Release rel : releaseData) {
+                String releaseId = rel.getId();
+                for (Attachment attachment : rel.getAttachments()) {
+                    if (CheckStatus.ACCEPTED.equals(attachment.getCheckStatus())) {
+                        String attachmentContentId = attachment.getAttachmentContentId();
+                        releaseIdToAcceptedCli.put(releaseId, attachmentContentId);
+                    }
+                }
+                Release limitedRelease = new Release();
+                limitedRelease.setId(rel.getId());
+                limitedRelease.setName(rel.getName());
+                limitedRelease.setVersion(rel.getVersion());
+                limitedSet.add(limitedRelease);
+            }
+            try {
+                lic = licenseClient.getByID(entry.getKey(), user.getDepartment());
+            } catch (TException exp) {
+                log.warn("Error fetching license from backend! License Id-" + entry.getKey(), exp.getMessage());
+                return;
+            }
+            if (lic == null || CommonUtils.isNullOrEmptyCollection(lic.getObligations()))
+                return;
+
+            lic.getObligations().stream().filter(Objects::nonNull).forEach(obl -> {
+                String keyOfObl = CommonUtils.isNotNullEmptyOrWhitespace(obl.getTitle()) ? obl.getTitle()
+                        : obl.getText();
+                ObligationStatusInfo osi = null;
+                if (obligationStatusMap.containsKey(keyOfObl)) {
+                    osi = obligationStatusMap.get(keyOfObl);
+                } else {
+                    osi = new ObligationStatusInfo();
+                    obligationStatusMap.put(keyOfObl, osi);
+                }
+                osi.setText(obl.getText());
+                osi.setId(obl.getId());
+                osi.setObligationType(obl.getObligationType());
+                osi.setReleaseIdToAcceptedCLI(releaseIdToAcceptedCli);
+                Set<String> licenseIds = osi.getLicenseIds();
+                if (licenseIds == null) {
+                    licenseIds = new HashSet<>();
+                    osi.setLicenseIds(licenseIds);
+                }
+                licenseIds.add(entry.getKey());
+                Set<Release> releases = osi.getReleases();
+                if (releases == null) {
+                    releases = new HashSet<>();
+                    osi.setReleases(releases);
+                }
+                releases.addAll(limitedSet);
+            });
+
+        }));
+        return obligationStatusMap;
+    }
+
+    public Map<String, ObligationStatusInfo> compareObligationStatusMap(
+            User sw360User, Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, ObligationStatusInfo> requestBodyObligationStatusInfo) {
+        Map<String, ObligationStatusInfo> newResults = new HashMap<>();
+        final String email = sw360User.getEmail();
+        final String createdOn = SW360Utils.getCreatedOn();
+        if (!CommonUtils.isNullOrEmptyMap(obligationStatusMap)) {
+
+            for (String key : obligationStatusMap.keySet()) {
+                if (requestBodyObligationStatusInfo.containsKey(key)) {
+                    ObligationStatusInfo requestValue = requestBodyObligationStatusInfo.get(key);
+                    ObligationStatusInfo databaseValue = obligationStatusMap.get(key);
+                    for (ObligationStatusInfo._Fields field : ObligationStatusInfo._Fields.values()) {
+                        Object fieldValue = requestValue.getFieldValue(field);
+                        if (fieldValue != null && SET_OF_LICENSE_OBLIGATION_FIELDS.contains(field)) {
+                            databaseValue.setFieldValue(field, fieldValue);
+                            if (field == ObligationStatusInfo._Fields.STATUS) {
+                                databaseValue.setModifiedBy(email);
+                                databaseValue.setModifiedOn(createdOn);
+                            }
+                        }
+                    }
+                    newResults.put(key, obligationStatusMap.get(key));
+                } else {
+                    newResults.put(key, obligationStatusMap.get(key));
+                }
+            }
+            return newResults;
+        }
+        throw new ResourceNotFoundException("Obligation Id not found for the given project");
+    }
+
+    public RequestStatus patchLinkedObligations(User sw360User, Map<String, ObligationStatusInfo> updatedObligationStatusMap, ObligationList obligation) {
+        try {
+            ThriftClients thriftClients = new ThriftClients();
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            obligation.unsetLinkedObligationStatus();
+            obligation.setLinkedObligationStatus(updatedObligationStatusMap);
+            return client.updateLinkedObligations(obligation, sw360User);
+        } catch (TException exception) {
+            log.error("Failed to update obligation for project: ");
+        }
+        return RequestStatus.FAILURE;
+    }
+
+    public RequestStatus addLinkedObligations(Project project, User user, Map<String, ObligationStatusInfo> licenseObligation) {
+        try {
+            ThriftClients thriftClients = new ThriftClients();
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            final boolean isObligationPresent = CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId());
+            final String email = user.getEmail();
+            final String createdOn = SW360Utils.getCreatedOn();
+            final ObligationList obligation = isObligationPresent
+                    ? client.getLinkedObligations(project.getLinkedObligationId(), user)
+                    : new ObligationList().setProjectId(project.getId());
+
+            Map<String, ObligationStatusInfo> obligationStatusInfo = isObligationPresent
+                    && obligation.getLinkedObligationStatusSize() > 0 ? obligation.getLinkedObligationStatus() : Maps.newHashMap();
+
+            for (Map.Entry<String, ObligationStatusInfo> entry : licenseObligation.entrySet()) {
+                ObligationStatusInfo newOsi = entry.getValue();
+                ObligationStatusInfo currentOsi = obligationStatusInfo.get(entry.getKey());
+                if (newOsi.isSetModifiedOn()) {
+                    newOsi.setModifiedBy(email);
+                    newOsi.setModifiedOn(createdOn);
+                    obligationStatusInfo.put(entry.getKey(), newOsi);
+                } else if (null != currentOsi) {
+                    if (newOsi.getReleaseIdToAcceptedCLISize() > 0)
+                        currentOsi.setReleaseIdToAcceptedCLI(newOsi.getReleaseIdToAcceptedCLI());
+                    obligationStatusInfo.put(entry.getKey(), currentOsi);
+                }
+
+                obligationStatusInfo.computeIfAbsent(entry.getKey(), e -> newOsi);
+            }
+            obligation.unsetLinkedObligationStatus();
+            obligation.setLinkedObligationStatus(obligationStatusInfo);
+            return isObligationPresent ? client.updateLinkedObligations(obligation, user) : client.addLinkedObligations(obligation, user);
+        } catch (TException exception) {
+            log.error("Failed to add/update obligation for project: " + project.getId(), exception);
+        }
+        return RequestStatus.FAILURE;
+    }
+
+    public ObligationList getObligationData(String linkedObligationId, User user) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.getLinkedObligations(linkedObligationId, user);
+    }
+
+    public Map<String, ObligationStatusInfo> setLicenseInfoWithObligations(Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, String> releaseIdToAcceptedCLI,
+            List<Release> releases, User user) {
+
+        final List<LicenseInfoParsingResult> licenseInfoWithObligations = Lists.newArrayList();
+        ThriftClients thriftClients = new ThriftClients();
+        LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
+
+        for (Release release : releases) {
+            List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
+            if (approvedCliAttachments.isEmpty()) {
+                approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
+            }
+            final String releaseId = release.getId();
+
+            if (approvedCliAttachments.size() == 1) {
+                final Attachment filteredAttachment = approvedCliAttachments.get(0);
+                final String attachmentContentId = filteredAttachment.getAttachmentContentId();
+
+                if (releaseIdToAcceptedCLI.containsKey(releaseId) && releaseIdToAcceptedCLI.get(releaseId).equals(attachmentContentId)) {
+                    releaseIdToAcceptedCLI.remove(releaseId);
+                }
+
+                try {
+                    List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(release, attachmentContentId, false, user);
+
+                    List<ObligationParsingResult> obligationResults = licenseClient.getObligationsForAttachment(release, attachmentContentId, user);
+
+                    if (CommonUtils.allAreNotEmpty(licenseResults, obligationResults) && obligationResults.get(0).getObligationsAtProjectSize() > 0) {
+                        licenseInfoWithObligations.add(licenseClient.createLicenseToObligationMapping(licenseResults.get(0), obligationResults.get(0)));
+                    }
+                } catch (TException exception) {
+                    log.error(String.format("Error fetchinig license Information for attachment: %s in release: %s",
+                            filteredAttachment.getFilename(), releaseId), exception);
+                }
+            }
+        }
+
+        try {
+            LicenseObligationsStatusInfo licenseObligation = licenseClient.getProjectObligationStatus(obligationStatusMap,
+                    licenseInfoWithObligations, releaseIdToAcceptedCLI);
+            Map<String, String> releaseIdToAcceptedCli = new HashMap<String, String>();
+            obligationStatusMap = licenseObligation.getObligationStatusMap();
+            for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
+                ObligationStatusInfo details = entry.getValue();
+                if (details.getReleaseIdToAcceptedCLI() == null) {
+                    Set<Release> releaseData = details.getReleases();
+                    for (Release rel : releaseData) {
+                        String releaseId = rel.getId();
+                        for (Attachment attachment : rel.getAttachments()) {
+                            if (CheckStatus.ACCEPTED.equals(attachment.getCheckStatus())) {
+                                String attachmentContentId = attachment.getAttachmentContentId();
+                                releaseIdToAcceptedCli.put(releaseId, attachmentContentId);
+                            }
+                        }
+                    }
+                    details.setReleaseIdToAcceptedCLI(releaseIdToAcceptedCli);
+                }
+                details.unsetReleases();
+            }
+        } catch (TException e) {
+            log.error("Failed to set obligation status for project!", e);
+        }
+        return obligationStatusMap;
     }
 
     public Set<Project> searchLinkingProjects(String projectId, User sw360User) throws TException {
@@ -223,7 +597,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             }
         }
     }
-    
+
     public Project getClearingInfo(Project sw360Project, User sw360User) throws TException {
     	ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
     	return sw360ProjectClient.fillClearingStateSummaryIncludingSubprojectsForSingleProject(sw360Project, sw360User);
@@ -269,7 +643,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public void addEmbeddedLinkedProject(Project sw360Project, User sw360User, HalResource<Project> projectResource, Set<String> projectIdsInBranch) throws TException {
         projectIdsInBranch.add(sw360Project.getId());
         Map<String, ProjectProjectRelationship> linkedProjects = sw360Project.getLinkedProjects();
-		List<String> keys = new ArrayList<>(linkedProjects.keySet());
+        List<String> keys = linkedProjects != null ? new ArrayList<>(linkedProjects.keySet()) : new ArrayList<>();
         if (keys != null) {
         	keys.forEach(linkedProjectId -> wrapTException(() -> {
                 if (projectIdsInBranch.contains(linkedProjectId)) {
@@ -337,6 +711,32 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                         .comparing((Attachment a) -> nullToEmpty(a.getCreatedTeam()))
                         .thenComparing(Comparator.comparing((Attachment a) -> nullToEmpty(a.getCreatedOn())).reversed()))
                 .collect(Collectors.toList())));
+    }
+
+    public Function<ProjectLink, ProjectLink> filterAndSortAllAttachments(Collection<AttachmentType> attachmentTypes) {
+        Predicate<Attachment> filter = att -> attachmentTypes.contains(att.getAttachmentType());
+        return createProjectLinkMapper(rl -> {
+            List<Attachment> attachments = nullToEmptyList(rl.getAttachments()).stream()
+                .filter(filter)
+                .collect(Collectors.toList());
+
+            if (attachments.size() > 1) {
+                Optional<Attachment> acceptedAttachment = attachments.stream()
+                        .filter(att -> att.getCheckStatus() == CheckStatus.ACCEPTED).findFirst();
+
+                if (acceptedAttachment.isPresent()) {
+                    attachments = List.of(acceptedAttachment.get());
+                } else {
+                    attachments = attachments.stream()
+                        .filter(att -> SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES.contains(att.getAttachmentType()))
+                        .limit(1)
+                        .collect(Collectors.toList());
+                }
+            }
+
+            rl.setAttachments(attachments);
+            return rl;
+        });
     }
 
     public Function<ProjectLink, ProjectLink> createProjectLinkMapper(Function<ReleaseLink, ReleaseLink> releaseLinkMapper){
@@ -566,4 +966,18 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             return 0;
         }
     }
+
+    public AddDocumentRequestSummary createClearingRequest(ClearingRequest clearingRequest, User sw360User, String baseUrl, String projectId) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        String projectUrl = baseUrl + "/projects/-/project/detail/" + projectId;
+        return sw360ProjectClient.createClearingRequest(clearingRequest, sw360User, projectUrl);
+    }
+
+    public Integer loadPreferredClearingDateLimit() {
+        Integer limit = Optional.of(SW360Constants.PREFERRED_CLEARING_DATE_LIMIT).filter(s -> !s.isEmpty())
+                .map(Integer::parseInt).orElse(0);
+        // returning default value 7 (days) if variable is not set
+        return limit < 1 ? 7 : limit;
+    }
 }
+

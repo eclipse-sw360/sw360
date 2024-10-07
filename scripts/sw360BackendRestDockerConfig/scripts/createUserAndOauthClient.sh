@@ -11,8 +11,8 @@
 # This script creates user and oauth client in DB.
 # -----------------------------------------------------------------------------
 
-COUCHDB_USER=${COUCHDB_USER:-admin}
-COUCHDB_PASSWORD=${COUCHDB_PASSWORD:-password}
+COUCHDB_USER=${COUCHDB_USER:-sw360}
+COUCHDB_PASSWORD=${COUCHDB_PASSWORD:-sw360fossie}
 COUCHDB_HOST=${COUCHDB_HOST:-localhost}
 
 create_user_oauth_client() {

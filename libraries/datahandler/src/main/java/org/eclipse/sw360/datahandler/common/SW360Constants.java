@@ -55,6 +55,7 @@ public class SW360Constants {
     public static final String NULL_STRING = "null";
     public static final String PACKAGE_URL = "package-url";
     public static final String PURL_ID = "purl.id";
+    public static final String DUPLICATE_PACKAGE_BY_PURL = "duplicatePackagesByPurl";
     public static final String XML_FILE_EXTENSION = "xml";
     public static final String JSON_FILE_EXTENSION = "json";
     public static final String PROJECT_IDS = "projectIds";
@@ -80,14 +81,17 @@ public class SW360Constants {
     public static final String TYPE_SEARCHRESULT = "searchResult";
     public static final String TYPE_CHANGELOG = "changeLog";
     public static final String TYPE_VULNERABILITYDTO = "vulDTO";
+    public static final String TYPE_VULNERABILITYSUMMARY = "vulSummary";
     public static final String TYPE_VULNERABILITY = "vul";
     public static final String TYPE_OBLIGATIONELEMENT = "obligationElement";
     public static final String TYPE_OBLIGATIONNODE = "obligationNode";
     public static final String TYPE_DOCUMENT = "document";
+    public static final String TYPE_COMMENT = "comment";
     public static final String TYPE_SPDX_DOCUMENT = "SPDXDocument";
     public static final String TYPE_SPDX_DOCUMENT_CREATION_INFO = "documentCreationInformation";
     public static final String TYPE_SPDX_PACKAGE_INFO = "packageInformation";
     public static final String TYPE_PACKAGE = "package";
+    public static final String TYPE_ECC = "ecc";
     public static final String PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP = "Please enable flexible project " +
             "release relationship configuration to use this function (enable.flexible.project.release.relationship = true)";
 
@@ -120,6 +124,9 @@ public class SW360Constants {
     public static final String URL_FORMATS;
     public static final String SRC_ATTACHMENT_UPLOADER_EMAIL;
     public static final String SRC_ATTACHMENT_DOWNLOAD_LOCATION;
+    public static final String PREFERRED_CLEARING_DATE_LIMIT;
+    public static final Boolean MAIL_REQUEST_FOR_PROJECT_REPORT;
+    public static final Boolean MAIL_REQUEST_FOR_COMPONENT_REPORT;
 
     /**
      * Hashmap containing the name field for each type.
@@ -138,7 +145,10 @@ public class SW360Constants {
                     .put(TYPE_PACKAGE, "name version")
                     .build();
 
-    public static final Collection<AttachmentType> LICENSE_INFO_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.COMPONENT_LICENSE_INFO_XML, AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
+    public static final Collection<AttachmentType> LICENSE_INFO_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.COMPONENT_LICENSE_INFO_XML,
+            AttachmentType.COMPONENT_LICENSE_INFO_COMBINED);
+    public static final Collection<AttachmentType> INITIAL_LICENSE_INFO_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.COMPONENT_LICENSE_INFO_XML,
+            AttachmentType.COMPONENT_LICENSE_INFO_COMBINED, AttachmentType.INITIAL_SCAN_REPORT);
     public static final Collection<AttachmentType> SOURCE_CODE_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.SOURCE, AttachmentType.SOURCE_SELF);
     public static final String CONTENT_TYPE_OPENXML_SPREADSHEET = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -215,7 +225,7 @@ public class SW360Constants {
         SPDX_DOCUMENT_ENABLED = Boolean.parseBoolean(props.getProperty("spdx.document.enabled", "false"));
         DATA_HANDLER_POM_FILE_PATH = props.getProperty("datahandler.pom.file.path", "/META-INF/maven/org.eclipse.sw360/datahandler/pom.xml");
         PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE = UserGroup.valueOf(props.getProperty("package.portlet.write.access.usergroup", UserGroup.USER.name()));
-        IS_PACKAGE_PORTLET_ENABLED = Boolean.parseBoolean(props.getProperty("package.portlet.enabled", "false"));
+        IS_PACKAGE_PORTLET_ENABLED = Boolean.parseBoolean(props.getProperty("package.portlet.enabled", "true"));
         TOOL_NAME = props.getProperty("sw360.tool.name", "SW360");
         TOOL_VENDOR = props.getProperty("sw360.tool.vendor", "Eclipse Foundation");
         SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE = UserGroup.valueOf(props.getProperty("sbom.import.export.access.usergroup", UserGroup.USER.name()));
@@ -224,6 +234,9 @@ public class SW360Constants {
         URL_FORMATS = props.getProperty("source.download.formats","");
         SRC_ATTACHMENT_UPLOADER_EMAIL = props.getProperty("source.code.attachment.uploader.email", "");
         SRC_ATTACHMENT_DOWNLOAD_LOCATION = props.getProperty("src.attachment.download.location", "");
+        PREFERRED_CLEARING_DATE_LIMIT =  props.getProperty("preferred.clearing.date.limit","");
+        MAIL_REQUEST_FOR_PROJECT_REPORT = Boolean.parseBoolean(props.getProperty("send.project.spreadsheet.export.to.mail.enabled", "false"));
+        MAIL_REQUEST_FOR_COMPONENT_REPORT = Boolean.parseBoolean(props.getProperty("send.component.spreadsheet.export.to.mail.enabled", "false"));
     }
 
     private static Map.Entry<String, String> pair(TFieldIdEnum field, String displayName){

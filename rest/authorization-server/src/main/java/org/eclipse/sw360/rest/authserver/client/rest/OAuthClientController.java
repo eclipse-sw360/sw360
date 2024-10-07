@@ -9,39 +9,53 @@
  */
 package org.eclipse.sw360.rest.authserver.client.rest;
 
-import com.google.common.collect.Sets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
-
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.eclipse.sw360.rest.authserver.security.key.KeyManager;
+
+import com.google.common.collect.Sets;
 
 /**
  * This REST controller can be accessed by users having the authority
  * {@link Sw360GrantedAuthority#ADMIN}. Such users can perform CRUD operations
  * on the configured {@link OAuthClientResource}s via these REST endpoints.
  */
-@Controller
+@RestController
 @RequestMapping(path = "/" + OAuthClientController.ENDPOINT_URL)
 @PreAuthorize("hasAuthority('ADMIN')")
 public class OAuthClientController {
 
     public static final String ENDPOINT_URL = "client-management";
 
+    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     @Value("${security.oauth2.resource.id}")
     private String resourceId;
+
+    @Autowired
+    private KeyManager keyManager;
 
     @Autowired
     private OAuthClientRepository repo;
@@ -77,7 +91,7 @@ public class OAuthClientController {
             repo.add(clientEntity);
 
             clientEntity.setClientId(clientEntity.getId());
-            clientEntity.setClientSecret(UUID.randomUUID().toString());
+            clientEntity.setClientSecret(passwordEncoder.encode(UUID.randomUUID().toString()));
         }
 
         updateClientEntityFromResource(clientEntity, clientResource);

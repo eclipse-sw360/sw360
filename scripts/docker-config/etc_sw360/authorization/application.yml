@@ -17,8 +17,8 @@ couchdb:
   url: http://couchdb:5984
   database: sw360oauthclients
   # if your couchdb does not use authentication, pls just don't use the settings for username and password
-  username: admin
-  password: password
+  username: sw360
+  password: sw360fossie
 
 jwt:
   secretkey: sw360SecretKey

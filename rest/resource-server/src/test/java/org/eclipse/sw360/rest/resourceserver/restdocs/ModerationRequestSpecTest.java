@@ -61,7 +61,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.requestF
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -74,9 +74,6 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-
-    @MockBean
-    private Sw360UserService userServiceMock;
 
     @MockBean
     private Sw360ReleaseService releaseServiceMock;
@@ -203,19 +200,19 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         given(this.moderationRequestServiceMock.getRequestsByState(any(), any(), eq(false), anyBoolean())).willReturn(requestsByState);
         given(this.moderationRequestServiceMock.acceptRequest(eq(moderationRequest), eq("Changes looks good."), any())).willReturn(ModerationState.APPROVED);
         given(this.moderationRequestServiceMock.assignRequest(eq(moderationRequest), any())).willReturn(ModerationState.INPROGRESS);
+        given(this.moderationRequestServiceMock.getRequestsByRequestingUser(any(), any())).willReturn(requestsByState);
     }
 
     @Test
     public void should_document_get_moderationrequests() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/moderationrequest")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .param("page", "0")
-                        .param("page_entries", "5")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        queryParameters(
                                 parameterWithName("page").description("Page of moderation requests"),
                                 parameterWithName("page_entries").description("Amount of requests per page")
                         ),
@@ -249,16 +246,15 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_moderationrequests_alldetails() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/moderationrequest")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .param("allDetails", "true")
-                        .param("page", "0")
-                        .param("page_entries", "5")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("allDetails", "true")
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        queryParameters(
                                 parameterWithName("page").description("Page of moderation requests"),
                                 parameterWithName("page_entries").description("Amount of requests per page"),
                                 parameterWithName("allDetails").description("Set `true` to get all details for the <<resources-moderationRequest, ModerationRequests>>")
@@ -271,7 +267,6 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:moderationRequests").description("An array of <<resources-moderationRequest, ModerationRequest>>."),
                                 fieldWithPath("_embedded.sw360:moderationRequests.[]id").description("The id of the moderation request."),
-                                fieldWithPath("_embedded.sw360:moderationRequests.[]revision").description("The revision of the moderation request."),
                                 fieldWithPath("_embedded.sw360:moderationRequests.[]timestamp").description("Timestamp (in unix epoch) when the request was created."),
                                 fieldWithPath("_embedded.sw360:moderationRequests.[]timestampOfDecision").description("Timestamp (in unix epoch) when the decision on the request was made."),
                                 fieldWithPath("_embedded.sw360:moderationRequests.[]documentId").description("The ID of the document for which the moderation request was made."),
@@ -307,9 +302,8 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_moderationrequest() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/moderationrequest/MR-101")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -318,7 +312,6 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                         ),
                         responseFields(
                                 fieldWithPath("id").description("The id of the moderation request."),
-                                fieldWithPath("revision").description("The revision number of the request."),
                                 fieldWithPath("timestamp").description("Timestamp (in unix epoch) when the request was created."),
                                 fieldWithPath("timestampOfDecision").description("Timestamp (in unix epoch) when the decision on the request was made."),
                                 fieldWithPath("documentId").description("The ID of the document for which the moderation request was made."),
@@ -353,14 +346,13 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_moderationrequests_by_state() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/moderationrequest/byState")
-                        .header("Authorization", "Bearer " + accessToken)
-                        .param("state", "closed")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("state", "closed")
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        queryParameters(
                                 parameterWithName("state").description("The moderation request state of the request. Possible values are: <open|closed>"),
                                 parameterWithName("page").description("Page of moderation requests").optional(),
                                 parameterWithName("page_entries").description("Amount of requests per page").optional(),
@@ -405,13 +397,12 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_moderationrequests_accept() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         ModerationPatch patch = new ModerationPatch();
         patch.setAction(ModerationPatch.ModerationAction.ACCEPT);
         patch.setComment("Changes looks good.");
 
         mockMvc.perform(patch("/api/moderationrequest/MR-101")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .content(this.objectMapper.writeValueAsString(patch))
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON))
@@ -429,12 +420,11 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_moderationrequests_assign() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         ModerationPatch patch = new ModerationPatch();
         patch.setAction(ModerationPatch.ModerationAction.ASSIGN);
 
         mockMvc.perform(patch("/api/moderationrequest/MR-101")
-                        .header("Authorization", "Bearer " + accessToken)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .content(this.objectMapper.writeValueAsString(patch))
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON))
@@ -446,6 +436,50 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 fieldWithPath("status").description("`" + ModerationState.PENDING + "` if unassigned, `" + ModerationState.INPROGRESS + "` if assigned. Exception thrown in case of errors."),
                                 subsectionWithPath("_links").description("Link to current <<resources-moderationRequest, ModerationRequest resource>>")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_moderationrequests_submission() throws Exception {
+        mockMvc.perform(get("/api/moderationrequest/mySubmissions")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
+                        .queryParam("sort", "documentName,asc")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("page").description("Page of moderation requests"),
+                                parameterWithName("page_entries").description("Amount of requests per page"),
+                                parameterWithName("sort").description("Sort the result by the given field and order. " +
+                                        "Possible values are: `documentName`, `timestamp` and `moderationState`.")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:moderationRequests").description("An array of <<resources-moderationRequest, ModerationRequest>>."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]id").description("The id of the moderation request."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]timestamp").description("Timestamp (in unix epoch) when the request was created."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]timestampOfDecision").description("Timestamp (in unix epoch) when the decision on the request was made."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]documentId").description("The ID of the document for which the moderation request was made."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]documentType").description("Type of the document. Possible values are: " + Arrays.asList(DocumentType.values())),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]requestingUser").description("The user who created the moderation request."),
+                                subsectionWithPath("_embedded.sw360:moderationRequests.[]moderators.[]").description("List of users who are marked as moderators for the request."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]documentName").description("Name of the document for which the request was created."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]moderationState").description("The state of the moderation request. Possible values are: " + Arrays.asList(ModerationState.values())),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]requestingUserDepartment").description("The Business Unit / Group of the Project, for which clearing request is created."),
+                                fieldWithPath("_embedded.sw360:moderationRequests.[]componentType").description("Type of the component for which the moderation request is created. Possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:moderationRequests.[]moderatorsSize").description("Number of users in moderators list."),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing moderation requests"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
 }

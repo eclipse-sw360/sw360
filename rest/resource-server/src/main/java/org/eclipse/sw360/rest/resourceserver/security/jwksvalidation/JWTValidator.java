@@ -30,8 +30,9 @@ public class JWTValidator {
         HttpsJwks httpsJkws = new HttpsJwks(jwksurl);
         HttpsJwksVerificationKeyResolver httpsJwksKeyResolver = new HttpsJwksVerificationKeyResolver(httpsJkws);
         jwtConsumer = new JwtConsumerBuilder()
-                .setRequireExpirationTime()
-                .setAllowedClockSkewInSeconds(30)
+                //TODO:Recheck
+//                .setRequireExpirationTime()
+//                .setAllowedClockSkewInSeconds(30)
                 .setExpectedIssuer(issuerUrl)
                 .setVerificationKeyResolver(httpsJwksKeyResolver).build();
     }

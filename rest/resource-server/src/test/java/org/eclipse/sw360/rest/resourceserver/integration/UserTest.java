@@ -44,9 +44,6 @@ public class UserTest extends TestIntegrationBase {
     @Value("${local.server.port}")
     private int port;
 
-    @MockBean
-    private Sw360UserService userServiceMock;
-
     @Before
     public void before() {
         List<User> userList = new ArrayList<>();

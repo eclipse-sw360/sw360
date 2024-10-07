@@ -22,7 +22,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.requestF
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
+import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -71,9 +71,6 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
     private String testUserPassword;
 
     @MockBean
-    private Sw360UserService userServiceMock;
-
-    @MockBean
     private SW360PackageService packageServiceMock;
 
     @MockBean
@@ -81,6 +78,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
 
     private Package package1;
     private Package package2;
+    private Package package3;
     private Set<String> licenseIds;
 
     @Before
@@ -105,8 +103,12 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
         licenseIds.add("MIT");
         licenseIds.add("GPL");
 
-        package1 = new Package("angular-sanitize", "1.8.2", "pkg:npm/angular-sanitize@1.8.2", CycloneDxComponentType.FRAMEWORK)
+        package1 = new Package()
                         .setId("122357345")
+                        .setName("angular-sanitize")
+                        .setVersion("1.8.2")
+                        .setPackageType(CycloneDxComponentType.LIBRARY)
+                        .setPurl("pkg:npm/angular-sanitize@1.8.2")
                         .setCreatedBy("admin@sw360.org")
                         .setCreatedOn("2023-01-02")
                         .setVcs("git+https://github.com/angular/angular.js.git")
@@ -129,6 +131,21 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                         .setHomepageUrl("https://github.com/microsoft/ApplicationInsights-JS#readme")
                         .setDescription("Application Insights is an extension of Azure Monitor and provides application performance monitoring (APM) features");
 
+        package3 = new Package()
+                .setId("1223573425")
+                .setName("angular-sanitize")
+                .setVersion("1.8.0")
+                .setPackageType(CycloneDxComponentType.LIBRARY)
+                .setPurl("pkg:npm/angular-sanitize@1.8.0")
+                .setCreatedBy("admin@sw360.org")
+                .setCreatedOn("2023-01-02")
+                .setVcs("git+https://github.com/angular/angular.js.git")
+                .setHomepageUrl("http://angularjs.org")
+                .setLicenseIds(licenseIds)
+                .setReleaseId(testRelease.getId())
+                .setPackageManager(PackageManager.NPM)
+                .setDescription("Sanitizes an html string by stripping all potentially dangerous tokens.");
+
         when(this.packageServiceMock.createPackage(any(), any())).then(invocation ->
         new Package(package1));
 
@@ -136,12 +153,18 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
         packageList.add(package1);
         packageList.add(package2);
 
+        List<Package> packageListByName = new ArrayList<>();
+        packageListByName.add(package1);
+        packageListByName.add(package3);
+
         given(this.packageServiceMock.getPackageForUserById(eq(package1.getId()))).willReturn(package1);
         given(this.packageServiceMock.getPackageForUserById(eq(package2.getId()))).willReturn(package2);
         given(this.packageServiceMock.deletePackage(eq(package1.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.packageServiceMock.getPackagesForUser()).willReturn(packageList);
-        given(this.packageServiceMock.searchPackage(eq("name"), any(), eq(true))).willReturn(List.of(package1));
-        given(this.packageServiceMock.searchPackage(eq("packageManager"), any(), eq(false))).willReturn(packageList);
+        given(this.packageServiceMock.searchPackageByName(any())).willReturn(packageListByName);
+        given(this.packageServiceMock.searchByPackageManager(any())).willReturn(List.of(package1));
+        given(this.packageServiceMock.searchPackageByVersion(any())).willReturn(List.of(package1));
+        given(this.packageServiceMock.searchPackageByPurl(any())).willReturn(List.of(package1));
         given(this.packageServiceMock.getTotalPackagesCounts()).willReturn(packageList.size());
 
 
@@ -158,16 +181,15 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_packages() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/packages")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "name,desc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        queryParameters(
                                 parameterWithName("page").description("Page of packages"),
                                 parameterWithName("page_entries").description("Amount of packages per page"),
                                 parameterWithName("sort").description("Defines order of the packages")
@@ -193,17 +215,16 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_packages_with_all_details() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/packages")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("allDetails", "true")
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "name,desc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("allDetails", "true")
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        queryParameters(
                                 parameterWithName("allDetails").description("Flag to get packages with all details. Possible values are `<true|false>`"),
                                 parameterWithName("page").description("Page of packages"),
                                 parameterWithName("page_entries").description("Amount of packages per page"),
@@ -240,9 +261,8 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_package() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/packages/" + package1.getId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -270,22 +290,24 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
-    public void should_document_get_packages_by_name() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+    public void should_document_search_packages() throws Exception {
         mockMvc.perform(get("/api/packages")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("name", package1.getName())
-                .param("exactMatch", "true")
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "name,desc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("name", package1.getName())
+                .queryParam("version", package1.getVersion())
+                .queryParam("packageManager", package1.getPackageManager().toString())
+                .queryParam("purl", package1.getPurl())
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        queryParameters(
                                 parameterWithName("name").description("The name of the package"),
-                                parameterWithName("exactMatch").description("If the exactMatch parameter is set to true, "
-                                        + "packages will be fetched by name exactly matching the search input"),
+                                parameterWithName("version").description("The version of the package"),
+                                parameterWithName("packageManager").description("The package manager type. Possible values are: " + Arrays.asList(PackageManager.values())),
+                                parameterWithName("purl").description("The package URL"),
                                 parameterWithName("page").description("Page of packages"),
                                 parameterWithName("page_entries").description("Amount of packages per page"),
                                 parameterWithName("sort").description("Defines order of the packages")
@@ -310,18 +332,19 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
-    public void should_document_get_packages_by_package_manager() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
+    public void should_document_search_packages_by_name() throws Exception {
         mockMvc.perform(get("/api/packages")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("packageManager", PackageManager.NPM.toString())
-                .param("page", "0")
-                .param("page_entries", "5")
-                .param("sort", "name,desc")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("name", package1.getName())
+                        .queryParam("packageManager", PackageManager.NPM.toString())
+                .queryParam("page", "0")
+                .queryParam("page_entries", "5")
+                .queryParam("sort", "name,desc")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        queryParameters(
+                                parameterWithName("name").description("The name of the package"),
                                 parameterWithName("packageManager").description("Type of the package manager"),
                                 parameterWithName("page").description("Page of packages"),
                                 parameterWithName("page_entries").description("Amount of packages per page"),
@@ -346,7 +369,6 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                         )));
     }
 
-
     @Test
     public void should_document_create_package() throws Exception {
         Map<String, Object> pkg = new LinkedHashMap<>();
@@ -361,12 +383,11 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
         pkg.put("releaseId", "98745");
         pkg.put("description", "Sanitizes a html string by stripping all potentially dangerous tokens.");
 
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         this.mockMvc.perform(
                 post("/api/packages")
                         .contentType(MediaTypes.HAL_JSON)
                         .content(this.objectMapper.writeValueAsString(pkg))
-                        .header("Authorization", "Bearer " + accessToken))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("_embedded.createdBy.email", Matchers.is("admin@sw360.org")))
                 .andDo(this.documentationHandler.document(
@@ -404,11 +425,10 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
         Package updatePackage = new Package()
                                     .setHomepageUrl("https://angularJS.org")
                                     .setDescription("Updated Description");
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(patch("/api/packages/" + package1.getId())
                 .contentType(MediaTypes.HAL_JSON)
                 .content(this.objectMapper.writeValueAsString(updatePackage))
-                .header("Authorization", "Bearer" + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -436,9 +456,8 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_delete_package() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(delete("/api/packages/" + package1.getId())
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
     }

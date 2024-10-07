@@ -8,15 +8,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
-@Profile("!SECURITY_MOCK")
-@Component
+@Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360CustomUserDetailsService implements UserDetailsService {
 

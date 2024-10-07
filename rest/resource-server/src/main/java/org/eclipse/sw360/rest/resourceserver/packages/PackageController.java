@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -70,6 +70,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class PackageController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String PACKAGES_URL = "/packages";
 
@@ -216,35 +217,43 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             Pageable pageable,
             @Parameter(description = "The name of the package.")
             @RequestParam(value = "name", required = false) String name,
-            @Parameter(description = "Type of the package manager.")
+            @Parameter(description = "The version of the package.")
+            @RequestParam(value = "version", required = false) String version,
+            @Parameter(description = "The pURL of the package.")
+            @RequestParam(value = "purl", required = false) String purl,
+            @Parameter(description = "The package manager of the package.")
             @RequestParam(value = "packageManager", required = false) String packageManager,
             @Parameter(description = "Get all details of the package.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
-            @Parameter(description = "If true, packages will be fetched by name exactly matching the search input.")
-            @RequestParam(value = "exactMatch", required = false) boolean isExactMatch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        boolean isSearchByName = name != null && !name.isEmpty();
-        boolean isSearchByType = CommonUtils.isNotNullEmptyOrWhitespace(packageManager);
-        boolean isNoFilter = false;
+        String queryString = request.getQueryString();
+        Map<String, String> params = restControllerHelper.parseQueryString(queryString);
+        boolean isSearchByName = CommonUtils.isNotNullEmptyOrWhitespace(name);
+        boolean isSearchByPackageManager = CommonUtils.isNotNullEmptyOrWhitespace(packageManager);
+        boolean isSearchByVersion = CommonUtils.isNotNullEmptyOrWhitespace(version);
+        boolean isSearchByPurl = CommonUtils.isNotNullEmptyOrWhitespace(purl);
         List<Package> sw360Packages = new ArrayList<>();
 
         if (isSearchByName) {
-            sw360Packages.addAll(packageService.searchPackage("name", name, isExactMatch));
-        } else if (isSearchByType) {
+            sw360Packages.addAll(packageService.searchPackageByName(params.get("name")));
+        } else if (isSearchByPackageManager) {
             packageManager = packageManager.toUpperCase();
 
             if (!EnumUtils.isValidEnum(PackageManager.class, packageManager)) {
                return new ResponseEntity<String>("Invalid package manager type. Possible values are "
                         +Arrays.asList(PackageManager.values()), HttpStatus.BAD_REQUEST);
             }
-            sw360Packages.addAll(packageService.searchPackage("packageManager", packageManager, isExactMatch));
+            sw360Packages.addAll(packageService.searchByPackageManager(packageManager));
+        } else if (isSearchByVersion) {
+            sw360Packages.addAll(packageService.searchPackageByVersion(params.get("version")));
+        } else if (isSearchByPurl) {
+            sw360Packages.addAll(packageService.searchPackageByPurl(params.get("purl")));
         } else {
             sw360Packages.addAll(packageService.getPackagesForUser());
-            isNoFilter = true;
         }
-        return getPackageResponse(pageable, allDetails, request, sw360User, sw360Packages, isNoFilter);
+        return getPackageResponse(version, purl, packageManager, pageable, allDetails, request, sw360User, sw360Packages);
     }
 
     private Package convertToPackage(Map<String, Object> requestBody) {
@@ -272,26 +281,21 @@ public class PackageController implements RepresentationModelProcessor<Repositor
 
             restControllerHelper.addEmbeddedSingleRelease(halPackage, release);
         }
+        if (sw360Package.getModifiedBy() != null) {
+            restControllerHelper.addEmbeddedModifiedBy(halPackage, sw360User, "modifiedBy");
+        }
         return halPackage;
     }
 
     @NotNull
-    private ResponseEntity<CollectionModel<EntityModel<Package>>> getPackageResponse(Pageable pageable,
-            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages,
-            boolean isNoFilter)
+    private ResponseEntity<CollectionModel<EntityModel<Package>>> getPackageResponse(String version, String purl, String packageManager, Pageable pageable,
+            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages)
             throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException, TException {
         Map<String, Package> mapOfPackages = new HashMap<>();
 
         sw360Packages.stream().forEach(pkg -> mapOfPackages.put(pkg.getId(), pkg));
         PaginationResult<Package> paginationResult;
-        if (isNoFilter) {
-            int totalCount = packageService.getTotalPackagesCounts();
-            paginationResult = restControllerHelper.paginationResultFromPaginatedList(request, pageable, sw360Packages,
-                    SW360Constants.TYPE_PACKAGE, totalCount);
-        } else {
-            paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Packages,
-                    SW360Constants.TYPE_PACKAGE);
-        }
+        paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Packages, SW360Constants.TYPE_PACKAGE);
 
         List<EntityModel<Package>> packageResources = new ArrayList<>();
         Consumer<Package> consumer = p -> {
@@ -312,7 +316,11 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             packageResources.add(embeddedPackageResource);
         };
 
-        paginationResult.getResources().stream().forEach(consumer);
+        paginationResult.getResources().stream()
+        .filter(pkg -> packageManager == null || packageManager.equals(pkg.getPackageManager().toString()))
+        .filter(pkg -> version == null || version.isEmpty() || version.equals(pkg.getVersion()))
+        .filter(pkg -> purl == null || purl.isEmpty() || purl.equals(pkg.getPurl())).forEach(consumer);
+
         CollectionModel<EntityModel<Package>> resources;
         if (packageResources.isEmpty()) {
             resources = restControllerHelper.emptyPageResource(Package.class, paginationResult);

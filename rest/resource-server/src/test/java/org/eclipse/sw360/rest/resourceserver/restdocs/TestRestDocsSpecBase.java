@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessRequest;
@@ -18,17 +19,24 @@ import static org.springframework.restdocs.operation.preprocess.Preprocessors.pr
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.ByteArrayInputStream;
+import java.util.List;
 
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
+import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Rule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -65,6 +73,15 @@ public abstract class TestRestDocsSpecBase {
 
     protected RestDocumentationResultHandler documentationHandler;
 
+    @MockBean
+    Sw360CustomUserDetailsService sw360CustomUserDetailsService;
+
+    @Autowired
+    private BCryptPasswordEncoder encoder;
+
+    @MockBean
+    protected Sw360UserService userServiceMock;
+
     @Before
     public void setupRestDocs() {
         this.documentationHandler = document("{method-name}",
@@ -80,6 +97,8 @@ public abstract class TestRestDocsSpecBase {
                         .withPort(443))
                 .alwaysDo(this.documentationHandler)
                 .build();
+
+        when(sw360CustomUserDetailsService.loadUserByUsername("admin@sw360.org")).thenReturn(new org.springframework.security.core.userdetails.User("admin@sw360.org", encoder.encode("12345"), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))));
     }
 
     public void testAttachmentUpload(String url, String id) throws Exception {
@@ -91,12 +110,11 @@ public abstract class TestRestDocsSpecBase {
          */
         MockMultipartFile jsonFile = new MockMultipartFile("attachment", "", "application/json",
                 new ByteArrayInputStream(attachment.getBytes()));
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(url + id + "/attachments")
                 .file("file", "@/spring-core-4.3.4.RELEASE.jar".getBytes())
                 .file(jsonFile)
                 .contentType(MediaType.MULTIPART_FORM_DATA)
-                .header("Authorization", "Bearer " + accessToken);
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
 }

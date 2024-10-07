@@ -6,15 +6,12 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 
-version: '3.8'
-
 services:
   sw360:
-    image: 'ghcr.io/eclipse-sw360/sw360:latest'
+    image: "ghcr.io/eclipse-sw360/sw360:latest"
     restart: unless-stopped
     container_name: sw360
     depends_on:
-      - postgresdb
       - couchdb
     ports:
       - "8080:8080"
@@ -23,52 +20,37 @@ services:
     tty: true
     volumes:
       - etc:/etc/sw360
-      - document_library:/app/sw360/data/document_library
-      - ./config:/app/sw360/config
+      - ./config/sw360:/app/sw360/config
 
-  postgresdb:
-    image: 'postgres:14'
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=liferay
-      - POSTGRES_PASSWORD=liferay
-      - POSTGRES_DB=lportal
-    volumes:
-      - postgres:/var/lib/postgresql/data/
+  couchdb-nouveau:
+    image: ghcr.io/eclipse-sw360/couchdb:3.4.1-nouveau
     ports:
-      - '5438:5432'
-    logging:
-      options:
-        max-size: 10m
-        max-file: "2"
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready --dbname $$POSTGRES_DB --username $$POSTGRES_USER" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - "5987:5987"
+      - "5988:5988"
 
   couchdb:
-    image: couchdb
+    image: ghcr.io/eclipse-sw360/couchdb:3.4.1
     restart: unless-stopped
     environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=password
       - COUCHDB_CREATE_DATABASE=yes
     ports:
       - "5984:5984"
+    depends_on:
+      - couchdb-nouveau
     volumes:
       - couchdb:/opt/couchdb/data
+      - ./config/couchdb/sw360_setup.ini:/opt/couchdb/etc/local.d/sw360_setup.ini
+      - ./config/couchdb/sw360_log.ini:/opt/couchdb/etc/local.d/sw360_log.ini
+      - ./config/couchdb/nouveau.ini:/opt/couchdb/etc/local.d/nouveau.ini
     healthcheck:
-      test: [ "CMD-SHELL", "curl --fail -s http://couchdb:5984/_up" ]
-      interval: 10s
+      test: ["CMD-SHELL", "curl --fail -s http://couchdb:5984/_up"]
+      interval: 30s
       timeout: 5s
       retries: 5
 
 volumes:
-  postgres: null
   couchdb: null
   etc: null
-  document_library: null
 
 networks:
   default:

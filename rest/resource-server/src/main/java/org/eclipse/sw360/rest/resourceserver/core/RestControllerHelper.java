@@ -28,6 +28,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceListController;
+import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -35,14 +36,12 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageAttachment;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentDTO;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
+import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
@@ -52,10 +51,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.CVEReference;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityApiDTO;
-import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
+import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
@@ -65,21 +61,14 @@ import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationRequest
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
 import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
-import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
+import org.jetbrains.annotations.NotNull;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
-import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.Quadratic;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.resourceserver.obligation.ObligationController;
 import org.eclipse.sw360.rest.resourceserver.packages.PackageController;
 import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
-import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
-import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
@@ -88,6 +77,7 @@ import org.eclipse.sw360.rest.resourceserver.user.UserController;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vendor.VendorController;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -99,28 +89,25 @@ import org.springframework.hateoas.server.core.EmbeddedWrapper;
 import org.springframework.hateoas.server.core.EmbeddedWrappers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -159,14 +146,31 @@ public class RestControllerHelper<T> {
     private static final double MIN_CVSS = 0;
     private static final double MAX_CVSS = 10;
     public static final String PAGINATION_PARAM_PAGE_ENTRIES = "page_entries";
+    private static final String JWT_SUBJECT = "sub";
+
+    @NonNull
+    private final com.fasterxml.jackson.databind.Module sw360Module;
     public static final ImmutableSet<ProjectReleaseRelationship._Fields> SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE = ImmutableSet
             .of(ProjectReleaseRelationship._Fields.CREATED_ON, ProjectReleaseRelationship._Fields.CREATED_BY);
 
     public User getSw360UserFromAuthentication() {
         try {
-            String userId;
+            String userId = null;
             Object principle = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            if (principle instanceof String) {
+            if (principle instanceof Jwt jwt) {
+                if (jwt.getClaims().containsKey("resource_access") || !jwt.getClaims().containsKey("user_name")) {
+                    userId = jwt.getClaim("email");
+                    if (userId == null) {
+                        userId = jwt.getClaim("mapped_user_email");
+                    }
+                } else {
+                    String clientId = jwt.getClaim(JWT_SUBJECT);
+                    if (clientId == null) {
+                        userId = jwt.getClaim("user_name");
+                        return userService.getUserByEmailOrExternalId(userId);
+                    }
+                }
+            } else if (principle instanceof String) {
                 userId = principle.toString();
             } else {
                 org.springframework.security.core.userdetails.User user = (org.springframework.security.core.userdetails.User) principle;
@@ -312,6 +316,17 @@ public class RestControllerHelper<T> {
         return sw360User;
     }
 
+    public User getUserByEmailOrNull(String emailId) {
+        User sw360User;
+        try {
+            sw360User = userService.getUserByEmail(emailId);
+        } catch (RuntimeException e) {
+            LOGGER.debug("Could not get user object from backend with email: " + emailId);
+            return null;
+        }
+        return sw360User;
+    }
+
     public void addEmbeddedContributors(HalResource halResource, Set<String> contributors) {
         for (String contributorEmail : contributors) {
             User sw360User = getUserByEmail(contributorEmail);
@@ -373,6 +388,10 @@ public class RestControllerHelper<T> {
     public void addEmbeddedLeadArchitect(HalResource halResource, String leadArchitect) {
         User sw360User = getUserByEmail(leadArchitect);
         addEmbeddedUser(halResource, sw360User, "leadArchitect");
+    }
+
+    public void addEmbeddedModifiedBy(HalResource halResource, User sw360User, String emailId) {
+        addEmbeddedUser(halResource, sw360User, "modifiedBy");
     }
 
     public void addEmbeddedReleases(
@@ -442,7 +461,7 @@ public class RestControllerHelper<T> {
         return embeddedRelease;
     }
 
-    public void addEmbeddedProjectAttachmentUsage(HalResource halResource, List<EntityModel<Release>> releases, List<Map<String, Object>> attachmentUsageMap) {
+    public void addEmbeddedProjectAttachmentUsage(HalResource halResource, List<Map<String, Object>> releases, List<Map<String, Object>> attachmentUsageMap) {
         halResource.addEmbeddedResource("sw360:release", releases);
         halResource.addEmbeddedResource("sw360:attachmentUsages", attachmentUsageMap);
     }
@@ -488,6 +507,17 @@ public class RestControllerHelper<T> {
         }
     }
 
+    public Set<String> getObligationIdsFromRequestWithValueTrue(Map<String, Boolean> reqBodyMaps) {
+        Map<String, Boolean> obligationIdsRequest = reqBodyMaps.entrySet().stream()
+                .filter(reqBodyMap-> reqBodyMap.getValue().equals(true))
+                .collect(Collectors.toMap(reqBodyMap-> reqBodyMap.getKey(),reqBodyMap -> reqBodyMap.getValue()));
+        return obligationIdsRequest.keySet();
+    }
+
+    public boolean checkDuplicateLicense(List<License> licenses, String licenseId) {
+        return licenses.stream().anyMatch(licenseCheck -> licenseCheck.getShortname().equalsIgnoreCase(licenseId));
+    }
+
     private HalResource<License> addEmbeddedLicense(String licenseId) {
         License embeddedLicense = convertToEmbeddedLicense(licenseId);
         HalResource<License> halLicense = new HalResource<>(embeddedLicense);
@@ -512,6 +542,13 @@ public class RestControllerHelper<T> {
             LOGGER.error("cannot create self link for license with id: " + licenseId);
         }
         return null;
+    }
+
+    public LicenseType convertToEmbeddedLicenseType(LicenseType licenseType) {
+        LicenseType embeddedLicenseType = new LicenseType();
+        embeddedLicenseType.setId(licenseType.getId());
+        embeddedLicenseType.setLicenseType(licenseType.getLicenseType());
+        return embeddedLicenseType;
     }
 
     public void addEmbeddedRelease(HalResource halResource, Release release) {
@@ -622,6 +659,32 @@ public class RestControllerHelper<T> {
         return packageToUpdate;
     }
 
+    public User updateUserProfile(User userToUpdate, Map<String, Object> requestBodyUser, ImmutableSet<User._Fields> setOfUserProfileFields) {
+        for (User._Fields field : setOfUserProfileFields) {
+            Object fieldValue = requestBodyUser.get(field.getFieldName());
+            if (fieldValue != null) {
+                switch (field) {
+                    case NOTIFICATION_PREFERENCES:
+                        Object wantNotification = requestBodyUser.get(User._Fields.WANTS_MAIL_NOTIFICATION.getFieldName());
+                        if (wantNotification == null) {
+                            if (userToUpdate.isWantsMailNotification()) {
+                                userToUpdate.setFieldValue(field, fieldValue);
+                            }
+                        } else {
+                            if (Boolean.TRUE.equals(wantNotification)) {
+                                userToUpdate.setFieldValue(field, fieldValue);
+                            }
+                        }
+                        break;
+                    default:
+                        userToUpdate.setFieldValue(field, fieldValue);
+                        break;
+                }
+            }
+        }
+        return userToUpdate;
+    }
+
     public Component convertToComponent(ComponentDTO componentDTO) {
         Component component = new Component();
 
@@ -667,6 +730,17 @@ public class RestControllerHelper<T> {
             }
         }
         return releaseToUpdate;
+    }
+
+    public License convertLicenseFromRequest(Map<String, Object> reqBodyMap, License licenseUpdate) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(sw360Module);
+        License licenseRequestBody = mapper.convertValue(reqBodyMap, License.class);
+        if (null == reqBodyMap.get("checked") && !licenseUpdate.isChecked()) {
+            licenseRequestBody.setChecked(false);
+        }
+        return licenseRequestBody;
     }
 
     private void isLicenseValid(Set<String> licenses) {
@@ -735,7 +809,8 @@ public class RestControllerHelper<T> {
         embeddedProject.setId(project.getId());
         embeddedProject.setDescription(project.getDescription());
         embeddedProject.setProjectResponsible(project.getProjectResponsible());
-        embeddedProject.setProjectType(project.getProjectType());
+        embeddedProject.setProjectOwner(project.getProjectOwner());
+	embeddedProject.setProjectType(project.getProjectType());
         embeddedProject.setState(project.getState());
         embeddedProject.setClearingState(project.getClearingState());
         embeddedProject.setVersion(project.getVersion());
@@ -807,6 +882,20 @@ public class RestControllerHelper<T> {
         embeddedRelease.setId(release.getId());
         embeddedRelease.setName(release.getName());
         embeddedRelease.setVersion(release.getVersion());
+        embeddedRelease.setClearingState(release.getClearingState());
+        embeddedRelease.setType(null);
+        return embeddedRelease;
+    }
+
+    public Release convertToEmbeddedLinkedProjectsReleases(Release release) {
+        Release embeddedRelease = new Release();
+        embeddedRelease.setId(release.getId());
+        embeddedRelease.setName(release.getName());
+        embeddedRelease.setVersion(release.getVersion());
+        embeddedRelease.setComponentId(release.getComponentId());
+        embeddedRelease.setMainlineState(release.getMainlineState());
+        embeddedRelease.setClearingState(release.getClearingState());
+        embeddedRelease.setVendor(release.getVendor());
         embeddedRelease.setType(null);
         return embeddedRelease;
     }
@@ -816,6 +905,8 @@ public class RestControllerHelper<T> {
         embeddedPackage.setId(pkg.getId());
         embeddedPackage.setName(pkg.getName());
         embeddedPackage.setVersion(pkg.getVersion());
+        embeddedPackage.setPackageManager(pkg.getPackageManager());
+        embeddedPackage.setLicenseIds(pkg.getLicenseIds());
         embeddedPackage.setPurl(pkg.getPurl());
         return embeddedPackage;
     }
@@ -842,10 +933,13 @@ public class RestControllerHelper<T> {
         return embeddedRelease;
     }
 
+
     public License convertToEmbeddedLicense(License license) {
         License embeddedLicense = new License();
         embeddedLicense.setId(license.getId());
         embeddedLicense.setFullname(license.getFullname());
+        embeddedLicense.setChecked(license.isChecked());
+        embeddedLicense.setLicenseType(license.getLicenseType());
         embeddedLicense.unsetOSIApproved();
         embeddedLicense.unsetFSFLibre();
         embeddedLicense.setType(null);
@@ -894,6 +988,8 @@ public class RestControllerHelper<T> {
         embeddedUser.setGivenname(user.getGivenname());
         embeddedUser.setLastname(user.getLastname());
         embeddedUser.setDepartment(user.getDepartment());
+        embeddedUser.setUserGroup(user.getUserGroup());
+        embeddedUser.setSecondaryDepartmentsAndRoles(user.getSecondaryDepartmentsAndRoles());
         embeddedUser.setType(null);
         return embeddedUser;
     }
@@ -1146,12 +1242,47 @@ public class RestControllerHelper<T> {
     }
 
     /**
+     * Bypass spring query parser to distinguish between URL encoded and
+     * un-encoded ids.
+     *
+     * @param queryString Query from request
+     * @return Query parsed as a value map.
+     */
+    public @NotNull MultiValueMap<String, String> parseQueryStringForExtIds(String queryString) {
+        MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+        if (queryString != null && !queryString.isEmpty()) {
+            UriComponentsBuilder builder = UriComponentsBuilder.newInstance().query(queryString);
+            builder.build().getQueryParams().forEach((key, values) -> values.forEach(value -> parameters.add(key, urlDecode(value))));
+        }
+        return parameters;
+    }
+
+    public Map<String, String> parseQueryString(String queryString) {
+        Map<String, String> parameters = new HashMap<>();
+        if (queryString != null && !queryString.isEmpty()) {
+            UriComponentsBuilder builder = UriComponentsBuilder.newInstance().query(queryString);
+            builder.build().getQueryParams().forEach((key, values) -> parameters.put(key, urlDecode(values.get(0))));
+        }
+        return parameters;
+    }
+
+    public static String urlDecode(String str) {
+        if (str == null) {
+            return null;
+        }
+        try {
+            return URLDecoder.decode(str, StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            // This exception occurs if the specified encoding is not supported
+            throw new IllegalArgumentException("Unsupported encoding: " + e.getMessage());
+        }
+    }
+    /**
      * Generic Entity response method to get externalIds (projects, components, releases)
      */
-    public <T> ResponseEntity searchByExternalIds(MultiValueMap<String, String> externalIdsMultiMap,
-                                                  AwareOfRestServices<T> service,
-                                                  User user) throws TException {
+    public <T> ResponseEntity searchByExternalIds(String queryString, AwareOfRestServices<T> service, User user) throws TException {
 
+        MultiValueMap<String, String> externalIdsMultiMap = parseQueryStringForExtIds(queryString);
         Map<String, Set<String>> externalIds = getExternalIdsFromMultiMap(externalIdsMultiMap);
         Set<T> sw360Objects = service.searchByExternalIds(externalIds, user);
         List<EntityModel> resourceList = new ArrayList<>();
@@ -1244,7 +1375,18 @@ public class RestControllerHelper<T> {
         embeddedClearingRequest.setProjectBU(clearingRequest.getProjectBU());
         embeddedClearingRequest.setProjectId(clearingRequest.getProjectId());
         embeddedClearingRequest.setType(null);
+        embeddedClearingRequest.setClearingType(clearingRequest.getClearingType());
+        embeddedClearingRequest.setTimestamp(clearingRequest.getTimestamp());
         return embeddedClearingRequest;
+    }
+
+    public Comment convertToEmbeddedComment(Comment comment) {
+        Comment embeddedComment = new Comment();
+        embeddedComment.setText(comment.getText());
+        embeddedComment.setCommentedBy(comment.getCommentedBy());
+        embeddedComment.setCommentedOn(comment.getCommentedOn());
+        embeddedComment.setAutoGenerated(comment.isAutoGenerated());
+        return embeddedComment;
     }
 
     public ModerationRequest convertToEmbeddedModerationRequest(ModerationRequest moderationRequest) {
@@ -1387,5 +1529,57 @@ public class RestControllerHelper<T> {
         User sw360User = getUserByEmail(clearingTeam);
         if(sw360User!=null)
             addEmbeddedUser(userHalResource, sw360User, resource);
+    }
+
+    public void addEmbeddedOtherLicenses(HalResource<Release> halRelease, Set<String> licenseIds) {
+        for (String licenseId : licenseIds) {
+            HalResource<License> licenseHalResource = addEmbeddedLicense(licenseId);
+            halRelease.addEmbeddedResource("sw360:otherLicenses", licenseHalResource);
+        }
+    }
+
+    public void addEmbeddedTimestampOfDecision(HalResource<ClearingRequest> halClearingRequest, long timestampOfDecision) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                .withLocale(Locale.ENGLISH)
+                .withZone(ZoneId.systemDefault());
+        String humanReadableDate = formatter.format(Instant.ofEpochMilli(timestampOfDecision));
+        halClearingRequest.addEmbeddedResource("requestClosedOn", humanReadableDate);
+    }
+
+    public String getBaseUrl(HttpServletRequest request) {
+        String requestURL = request.getRequestURL().toString();
+        return requestURL.substring(0, requestURL.indexOf(request.getRequestURI()));
+    }
+
+    public VulnerabilitySummary convertToEmbeddedVulnerabilitySumm(VulnerabilitySummary sw360Vul) {
+        VulnerabilitySummary embeddedProject = new VulnerabilitySummary();
+        embeddedProject.setComment(sw360Vul.getComment());
+        embeddedProject.setAction(sw360Vul.getAction());
+        embeddedProject.setTitle(sw360Vul.getTitle());
+        embeddedProject.setMatchedBy(sw360Vul.getMatchedBy());
+        embeddedProject.setUsedNeedle(sw360Vul.getUsedNeedle());
+        embeddedProject.setProjectName(sw360Vul.getProjectName());
+        embeddedProject.setExternalId(sw360Vul.getExternalId());
+        embeddedProject.setDescription(sw360Vul.getDescription());
+        embeddedProject.setPriority(sw360Vul.getPriority());
+        embeddedProject.setPriorityToolTip(sw360Vul.getPriorityToolTip());
+        embeddedProject.setProjectRelevance(sw360Vul.getProjectRelevance());
+        embeddedProject.setIntReleaseId(sw360Vul.getIntReleaseId());
+        embeddedProject.setIntReleaseName(sw360Vul.getIntReleaseName());
+        return embeddedProject;
+    }
+    public void addEmbeddedDatesClearingRequest(HalResource<ClearingRequest> halClearingRequest, ClearingRequest clearingRequest, boolean isSingleRequest) {
+        halClearingRequest.addEmbeddedResource("createdOn", SW360Utils.convertEpochTimeToDate(clearingRequest.getTimestamp()));
+        if (isSingleRequest) {
+            halClearingRequest.addEmbeddedResource("lastUpdatedOn", SW360Utils.convertEpochTimeToDate(clearingRequest.getModifiedOn()));
+        }
+    }
+
+    public void addEmbeddedReleaseDetails(HalResource<ClearingRequest> halClearingRequest, Project project) {
+        ReleaseClearingStateSummary clearingInfo = project.getReleaseClearingStateSummary();
+        int openReleaseCount = SW360Utils.getOpenReleaseCount(clearingInfo);
+        int totalReleaseCount = SW360Utils.getTotalReleaseCount(clearingInfo);
+        halClearingRequest.addEmbeddedResource("openRelease", openReleaseCount);
+        halClearingRequest.addEmbeddedResource("totalRelease", totalReleaseCount);
     }
 }

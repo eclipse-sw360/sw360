@@ -10,17 +10,29 @@
 
 package org.eclipse.sw360.rest.resourceserver.integration;
 
+import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
+import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
+import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.junit.Before;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
@@ -30,10 +42,34 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ContextConfiguration
 abstract public class TestIntegrationBase {
 
+    private static final String AUTH_BASIC = "Basic ";
+
+    @MockBean
+    Sw360CustomUserDetailsService sw360CustomUserDetailsService;
+
+    @Autowired
+    private BCryptPasswordEncoder encoder;
+
+    @MockBean
+    protected Sw360UserService userServiceMock;
+
+
+
+    @Before
+    public void setupMockerUser(){
+        when(sw360CustomUserDetailsService.loadUserByUsername("admin@sw360.org")).thenReturn(new org.springframework.security.core.userdetails.User("admin@sw360.org", encoder.encode("12345"), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))));
+    }
+
     public HttpHeaders getHeaders(int port) throws IOException {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", generateBasicAuthHeader("admin@sw360.org", "12345"));
+        return headers;
+    }
+
+    public HttpHeaders getHeader(int port) throws IOException {
         ResponseEntity<String> response =
                 new TestRestTemplate("trusted-sw360-client", "sw360-secret")
-                        .postForEntity("http://localhost:" + port + "/oauth/token?grant_type=password&username=admin@sw360.org&password=sw360-password",
+                        .postForEntity("http://localhost:" + port + "/oauth/token",
                                 null,
                                 String.class);
 
@@ -69,4 +105,11 @@ abstract public class TestIntegrationBase {
         assertThat(curiesNode.get("name").asText(), is("sw360"));
         assertThat(curiesNode.get("templated").asBoolean(), is(true));
     }
+
+    private static String generateBasicAuthHeader(String user, String password) {
+        String credentials = user + ":" + password;
+        String credentialsEncoded = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+        return AUTH_BASIC + credentialsEncoded;
+    }
+
 }

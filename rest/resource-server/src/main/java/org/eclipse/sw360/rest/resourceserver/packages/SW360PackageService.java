@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -54,6 +55,9 @@ public class SW360PackageService {
             pkg.setId(documentRequestSummary.getId());
             pkg.setCreatedBy(sw360User.getEmail());
             return pkg;
+        } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE
+                && documentRequestSummary.getMessage().equals(SW360Constants.DUPLICATE_PACKAGE_BY_PURL) ) {
+            throw new DataIntegrityViolationException("sw360 package with same purl '" + pkg.getPurl() + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 package with same name and version '" + pkg.getName() + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
@@ -106,6 +110,15 @@ public class SW360PackageService {
         }
     }
 
+    public boolean validatePackageIds(Set<String> packageIds) throws TException {
+        for (String id: packageIds) {
+            if (null == getPackageForUserById(id)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public List<Package> getPackagesForUser() throws TException {
         PackageService.Iface sw360PackageClient = getThriftPackageClient();
         return sw360PackageClient.getAllPackages();
@@ -127,6 +140,26 @@ public class SW360PackageService {
 
         queryMap.put(field, values);
         return sw360PackageClient.searchPackagesWithFilter(searchQuery, queryMap);
+    }
+
+    public List<Package> searchPackageByName(String name) throws TException {
+        final PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        return sw360PackageClient.searchByName(name);
+    }
+
+    public List<Package> searchByPackageManager(String pkgManager) throws TException {
+        final PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        return sw360PackageClient.searchByPackageManager(pkgManager);
+    }
+
+    public List<Package> searchPackageByVersion(String version) throws TException {
+        final PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        return sw360PackageClient.searchByVersion(version);
+    }
+
+    public List<Package> searchPackageByPurl(String purl) throws TException {
+        final PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        return sw360PackageClient.searchByPurl(purl);
     }
 
     public int getTotalPackagesCounts() throws TException {

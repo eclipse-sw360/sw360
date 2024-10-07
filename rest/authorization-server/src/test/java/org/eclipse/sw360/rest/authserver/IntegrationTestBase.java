@@ -9,20 +9,30 @@
  */
 package org.eclipse.sw360.rest.authserver;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Sets;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
 import org.eclipse.sw360.rest.authserver.client.service.Sw360ClientDetailsService;
+import org.eclipse.sw360.rest.authserver.client.service.Sw360UserDetailsService;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
-import org.eclipse.sw360.rest.authserver.security.basicauth.Sw360LiferayAuthenticationProvider;
-import org.apache.commons.lang.StringUtils;
-import org.apache.thrift.TException;
+import org.eclipse.sw360.rest.authserver.security.Sw360UserDetailsProvider;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -34,28 +44,19 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.jwt.Jwt;
 import org.springframework.security.jwt.JwtHelper;
-import org.springframework.security.oauth2.provider.ClientDetails;
-import org.springframework.security.oauth2.provider.client.BaseClientDetails;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Sw360AuthorizationServer.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -64,9 +65,6 @@ public abstract class IntegrationTestBase {
 
     @Value("${local.server.port}")
     protected int port;
-
-    @Autowired
-    protected FilterChainProxy springSecurityFilterChain;
 
     @MockBean
     protected ThriftClients thriftClients;
@@ -77,20 +75,25 @@ public abstract class IntegrationTestBase {
     @MockBean
     protected OAuthClientRepository clientRepo;
 
+    @MockBean
+    Sw360UserDetailsProvider sw360UserDetailsProvider;
+
     @SpyBean
     protected RestTemplateBuilder restTemplateBuilder;
-
-    @Autowired
-    @InjectMocks
-    protected Sw360LiferayAuthenticationProvider provider;
 
     protected User adminTestUser;
 
     protected User normalTestUser;
 
-    protected ClientDetails testClient;
+    protected RegisteredClient testClient;
 
     protected ResponseEntity<String> responseEntity;
+
+    @MockBean
+    Sw360UserDetailsService sw360UserDetailsService;
+
+    @Autowired
+    protected BCryptPasswordEncoder encoder;
 
     @Before
     public void setup() throws TException {
@@ -101,10 +104,11 @@ public abstract class IntegrationTestBase {
                 .thenReturn(normalTestUser);
         when(thriftClients.makeUserClient()).thenReturn(mockedUserService);
 
-        setupTestClient();
-        when(sw360ClientDetailsService.loadClientByClientId(anyString())).thenReturn(testClient);
+        when(sw360UserDetailsService.loadUserByUsername(adminTestUser.email)).thenReturn(new org.springframework.security.core.userdetails.User(adminTestUser.email, encoder.encode(adminTestUser.password), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))));
+        when(sw360UserDetailsService.loadUserByUsername(normalTestUser.email)).thenReturn(new org.springframework.security.core.userdetails.User(normalTestUser.email, encoder.encode(normalTestUser.password), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.READ.getAuthority()))));
 
-        setupLiferayMocks();
+        setupTestClient();
+        when(sw360ClientDetailsService.findByClientId(anyString())).thenReturn(testClient);
     }
 
     private void setupTestUser() {
@@ -113,58 +117,27 @@ public abstract class IntegrationTestBase {
         adminTestUser.fullname = "Mocked Service Admin User";
         adminTestUser.givenname = "Mocked";
         adminTestUser.lastname = "Service Admin User";
-        adminTestUser.userGroup = UserGroup.SW360_ADMIN;
+        adminTestUser.password = "12345";
+        adminTestUser.userGroup = UserGroup.ADMIN;
 
         normalTestUser = new User("mockedservicenormaluser@sw360.org", "qa-normal");
         normalTestUser.externalid = "service-mocked-by-mockito-normal";
         normalTestUser.fullname = "Mocked Service Normal User";
         normalTestUser.givenname = "Mocked";
         normalTestUser.lastname = "Service Normal User";
+        normalTestUser.password = "12345";
         normalTestUser.userGroup = UserGroup.USER;
     }
 
     private void setupTestClient() {
-        testClient = new BaseClientDetails("trusted-sw360-client", "sw360-REST-API",
-                Sw360GrantedAuthority.READ.getAuthority(), "client_credentials,password",
-                Sw360GrantedAuthority.BASIC.getAuthority());
-        ((BaseClientDetails) testClient).setClientSecret("sw360-secret");
-        ((BaseClientDetails) testClient).setAutoApproveScopes(Sets.newHashSet("true"));
-    }
-
-    @SuppressWarnings("unchecked")
-    private void setupLiferayMocks() {
-        // this setup is more complex! Since we can only mock the RestTemplateBuilder,
-        // which is used in other parts of the application and tests as well, we have to
-        // create a mock and inject that one only in the correct class and cannot just
-        // use @MockBean which would exchange it in the application context. In addition
-        // we want two different responses (happy case and error case) which is why we
-        // need to exchange the builder after a call to withBasicAuth() because we only
-        // know at this location if we are in the happy case or in the error case
-
-        // preparation for good case
-        ResponseEntity<String> mockedResponseEntity = mock(ResponseEntity.class);
-        when(mockedResponseEntity.getBody()).thenReturn("4711");
-
-        RestTemplate mockedRestTemplate = mock(RestTemplate.class);
-        when(mockedRestTemplate.postForEntity(anyString(), any(), eq(String.class)))
-                .thenReturn(mockedResponseEntity);
-
-        RestTemplateBuilder mockedRTB = mock(RestTemplateBuilder.class);
-        when(restTemplateBuilder.basicAuthentication(adminTestUser.email, "password-not-checked-in-test-without-liferay")).thenReturn(mockedRTB);
-        when(restTemplateBuilder.basicAuthentication(normalTestUser.email, "password-not-checked-in-test-without-liferay")).thenReturn(mockedRTB);
-        when(mockedRTB.build()).thenReturn(mockedRestTemplate);
-
-        // preparation for bad case
-        ResponseEntity<String> mockedResponseEntityFail = mock(ResponseEntity.class);
-        when(mockedResponseEntityFail.getBody()).thenReturn("Some auth exception");
-
-        RestTemplate mockedRestTemplateFail = mock(RestTemplate.class);
-        when(mockedRestTemplateFail.postForEntity(anyString(), any(), eq(String.class)))
-                .thenReturn(mockedResponseEntityFail);
-
-        RestTemplateBuilder mockedRTBFail = mock(RestTemplateBuilder.class);
-        when(restTemplateBuilder.basicAuthentication("my-unknown-user", "pwd")).thenReturn(mockedRTBFail);
-        when(mockedRTBFail.build()).thenReturn(mockedRestTemplateFail);
+        testClient = RegisteredClient.withId("trusted-sw360-client").clientId("trusted-sw360-client")
+                .clientSecret(encoder.encode("sw360-secret")).authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .authorizationGrantType(AuthorizationGrantType.PASSWORD)
+                .scope(Sw360GrantedAuthority.READ.getAuthority())
+                .scope(Sw360GrantedAuthority.WRITE.getAuthority())
+                .scope(Sw360GrantedAuthority.ADMIN.getAuthority())
+                .build();
     }
 
     protected void checkResponseBody() throws IOException {

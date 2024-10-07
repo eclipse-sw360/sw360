@@ -652,11 +652,11 @@ service ProjectService {
     /*
     * make excel export
     */
-    binary getReportDataStream(1: User user,2: bool extendedByReleases) throws (1: SW360Exception exp);
+    binary getReportDataStream(1: User user,2: bool extendedByReleases,3: string projectId) throws (1: SW360Exception exp);
      /*
     * excel export - return the filepath
     */
-    string getReportInEmail(1: User user, 2: bool extendedByReleases) throws (1: SW360Exception exp);
+    string getReportInEmail(1: User user, 2: bool extendedByReleases, string projectId) throws (1: SW360Exception exp);
     /*
     * download excel
     */
@@ -694,4 +694,10 @@ service ProjectService {
      */
     list<ProjectLink> getLinkedProjectsOfProjectWithoutReleases(1: Project project, 2: bool deep, 3: User user);
 
+    /**
+     * get a list of project links of the project that matches the id `id`
+     * with each project get all release in dependency network
+     * is equivalent to `getLinkedProjectsOfProject(getProjectById(id, user))`
+     */
+    list<ProjectLink> getLinkedProjectsOfProjectWithAllReleases(1: Project project, 2: bool deep, 3: User user);
 }

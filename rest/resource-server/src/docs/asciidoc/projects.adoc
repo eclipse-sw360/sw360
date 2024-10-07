@@ -20,7 +20,7 @@ The Projects resource is used to create and list projects.
 A `GET` request will list all of the service's projects.
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects/response-fields.adoc[]
@@ -41,7 +41,7 @@ include::{snippets}/should_document_get_projects/links.adoc[]
 A `GET` request will list all of the service's projects.
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects_with_all_details/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_with_all_details/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_with_all_details/response-fields.adoc[]
@@ -61,7 +61,7 @@ include::{snippets}/should_document_get_projects_with_all_details/links.adoc[]
 A `GET` request will list all of the service's projects by lucene search.
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects_by_lucene_search/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_by_lucene_search/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_lucene_search/response-fields.adoc[]
@@ -80,8 +80,10 @@ include::{snippets}/should_document_get_projects_by_lucene_search/links.adoc[]
 
 A `GET` request will list all of the service's projects by project name.
 
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
 ===== Request parameter
-include::{snippets}/should_document_get_projects_by_name/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_by_name/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_name/response-fields.adoc[]
@@ -102,7 +104,7 @@ include::{snippets}/should_document_get_projects_by_name/links.adoc[]
 A `GET` request will list all of the service's projects by project type.
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects_by_type/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_by_type/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_type/response-fields.adoc[]
@@ -123,7 +125,7 @@ include::{snippets}/should_document_get_projects_by_type/links.adoc[]
 A `GET` request will list all of the service's projects by group.
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects_by_group/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_by_group/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_group/response-fields.adoc[]
@@ -143,8 +145,10 @@ include::{snippets}/should_document_get_projects_by_group/links.adoc[]
 
 A `GET` request will list all of the service's projects by tag.
 
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
 ===== Request parameter
-include::{snippets}/should_document_get_projects_by_tag/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_by_tag/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_tag/response-fields.adoc[]
@@ -166,6 +170,8 @@ A `GET` request will get all projects corresponding to external ids +
 The request parameter supports MultiValueMap (allows to add duplicate keys with different values) +
 It's possible to search for projects only by the external id key by leaving the value.
 
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
 ===== Response structure
 include::{snippets}/should_document_get_projects_by_external-ids/response-fields.adoc[]
 
@@ -182,7 +188,7 @@ include::{snippets}/should_document_get_projects_by_external-ids/http-response.a
 A `GET` request will list all projects associated to the user.
 
 ===== Request parameter
-include::{snippets}/should_document_get_my_projects/request-parameters.adoc[]
+include::{snippets}/should_document_get_my_projects/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_my_projects/response-fields.adoc[]
@@ -366,7 +372,7 @@ include::{snippets}/should_document_get_project_releases/links.adoc[]
 A `GET` request will get releases of multiple projects. Please pass an array of project ids as request body
 
 ===== Request parameter
-include::{snippets}/should_document_get_projects_releases/request-parameters.adoc[]
+include::{snippets}/should_document_get_projects_releases/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_projects_releases/response-fields.adoc[]
@@ -399,6 +405,19 @@ include::{snippets}/should_document_get_project_releases_transitive/http-respons
 ===== Links
 include::{snippets}/should_document_get_project_releases_transitive/links.adoc[]
 
+[[resources-project-get-linked-project-releases]]
+==== Listing linked project's releases
+
+A `GET` request will get all releases of linked projects for a project.
+
+===== Response structure
+include::{snippets}/should_document_get_linked_project_releases/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_project_releases/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_project_releases/http-response.adoc[]
 
 [[resources-project-get-project-releases-ecc-information]]
 ==== Listing releases with ECC
@@ -407,7 +426,7 @@ A `GET` request will get all releases with ECC information of a single project.
 This works also with the transitive request parameter (&transitive=true)
 
 ===== Request parameter
-include::{snippets}/should_document_get_project_releases_ecc_information/request-parameters.adoc[]
+include::{snippets}/should_document_get_project_releases_ecc_information/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_project_releases_ecc_information/response-fields.adoc[]
@@ -421,6 +440,49 @@ include::{snippets}/should_document_get_project_releases_ecc_information/http-re
 ===== Links
 include::{snippets}/should_document_get_project_releases_ecc_information/links.adoc[]
 
+[[resources-project-get-license-obligation-information]]
+==== Listing obligations from licenseDB
+
+A `GET` request will get all license obligations from licenseDB.
+
+===== Response structure
+include::{snippets}/should_document_get_obligations_from_license_db/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_obligations_from_license_db/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_obligations_from_license_db/http-response.adoc[]
+
+[[resources-project-add-license-obligation-information]]
+==== Adding obligations from licenseDB to project
+
+A `POST` request will add the license obligations from licenseDB to project.
+
+===== Request structure
+Pass an array of license obligation ids to be added as request body.
+
+===== Example request
+include::{snippets}/should_document_add_obligations_from_license_db/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_add_obligations_from_license_db/http-response.adoc[]
+
+[[resources-project-update-license-obligation-information]]
+==== Update License Obligations for a project
+
+A `PATCH` request will update the license obligations for the given project id.
+
+===== Request structure
+Pass a map having key as Obligation Title and value as Obligation Status and Obligation Comment which you want to update.
+Possible Obligation Status values are [FULFILLED_AND_PARENT_MUST_ALSO_FULFILL, ESCALATED, WILL_BE_FULFILLED_BEFORE_RELEASE, DEFERRED_TO_PARENT_PROJECT, ACKNOWLEDGED_OR_FULFILLED, NOT_APPLICABLE, OPEN]
+
+===== Example request
+include::{snippets}/should_document_update_license_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_update_license_obligations/http-response.adoc[]
+
 [[resources-project-get-license-clearing-information-information]]
 ==== Project's license clearing count
 
@@ -431,6 +493,20 @@ include::{snippets}/should_document_get_license_clearing_information/curl-reques
 
 ===== Example response
 include::{snippets}/should_document_get_license_clearing_information/http-response.adoc[]
+
+[[resources-project-get-license-obligations-information]]
+==== List license obligations
+
+A `GET` request will get license obligations of a project.
+
+===== Response structure
+include::{snippets}/should_document_get_license_obligations/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_license_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_license_obligations/http-response.adoc[]
 
 [[resources-projects-create]]
 ==== Creating a project
@@ -488,6 +564,20 @@ include::{snippets}/should_document_delete_project/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_delete_project/http-response.adoc[]
+
+[[resources-project-link-projects]]
+==== Link project to the projects
+
+A `POST` request is used to link project to the projects. Please pass an array of project ids as request body. The project passed in the url will become the child project of all the projects passed in the request body.
+
+===== Request structure 1
+Pass an array of project ids as request body.
+
+===== Example request 1
+include::{snippets}/should_document_link_projects/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_link_projects/http-response.adoc[]
 
 [[resources-project-link-releases]]
 ==== Link Releases to the project
@@ -600,13 +690,27 @@ include::{snippets}/should_document_get_license_clearing/http-response.adoc[]
 A `GET` request is used to download license info for the project. Please set the request parameter `&template=<TEMPLATE_NAME>` for variant `REPORT` to choose specific template.
 
 ===== Request parameter
-include::{snippets}/should_document_get_download_license_info/request-parameters.adoc[]
+include::{snippets}/should_document_get_download_license_info/query-parameters.adoc[]
 
 ===== Example request
 include::{snippets}/should_document_get_download_license_info/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_get_download_license_info/http-response.adoc[]
+
+[[resources-project-get-download-licenseinfo-with-all-attachments]]
+==== Download License Info with all attachments
+
+A `GET` request is used to download the project's license information. The resulting file will include findings from either the CLX or ISR attachment of a linked release.
+
+===== Request parameter
+include::{snippets}/should_document_get_download_license_info_with_all_attachemnts/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_download_license_info_with_all_attachemnts/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_license_info_with_all_attachemnts/http-response.adoc[]
 
 [[resources-project-usedby-list]]
 ==== Resources using the project
@@ -627,6 +731,9 @@ include::{snippets}/should_document_get_usedbyresource_for_project/http-response
 
 A `GET` request will display all attachmentUsages of the projects.
 
+===== Request parameter
+include::{snippets}/should_document_get_attachment_usage_for_project/query-parameters.adoc[]
+
 ===== Response structure
 include::{snippets}/should_document_get_attachment_usage_for_project/response-fields.adoc[]
 
@@ -639,10 +746,10 @@ include::{snippets}/should_document_get_attachment_usage_for_project/http-respon
 [[resources-project-get-project-vulnerabilities]]
 ==== Listing project vulnerabilities
 
-A `GET` request will get vulnerabilities of a single project.
+A `GET` request will get vulnerabilities of a single projects.
 
 ===== Request parameter
-include::{snippets}/should_document_get_project_vulnerabilities/request-parameters.adoc[]
+include::{snippets}/should_document_get_project_vulnerabilities/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_project_vulnerabilities/response-fields.adoc[]
@@ -656,13 +763,33 @@ include::{snippets}/should_document_get_project_vulnerabilities/http-response.ad
 ===== Links
 include::{snippets}/should_document_get_project_vulnerabilities/links.adoc[]
 
+[[resources-project-get-project-vulnerability-summary]]
+==== Listing project vulnerability summary
+
+A `GET` request will get vulnerability summary of a single project.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_vulnerability_summary/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_vulnerability_summary/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_vulnerability_summary/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_vulnerability_summary/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_project_vulnerability_summary/links.adoc[]
+
 [[resources-project-get-project-vulnerabilities-by-release-id-and-external-id]]
 ==== Listing project vulnerabilities by release id and external id
 
 A `GET` request will get vulnerabilities of a single project by release id and external id.
 
 ===== Request parameter
-include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/request-parameters.adoc[]
+include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_project_vulnerabilities_by_externalid/response-fields.adoc[]
@@ -786,27 +913,10 @@ include::{snippets}/should_document_create_summary_administration/http-response.
 [[resources-projects-download-report]]
 ==== Downloading project report
 
-A `GET` request help to download the projects report with mail request false.
+A `GET` request help to download the projects report.
 
 ===== Request parameter
-include::{snippets}/should_document_get_project_report_without_mail_req/request-parameters.adoc[]
-
-===== Example request
-include::{snippets}/should_document_get_project_report_without_mail_req/curl-request.adoc[]
-
-===== Example response
-include::{snippets}/should_document_get_project_report_without_mail_req/http-response.adoc[]
-
-[[resources-projects-download-report-mail-request]]
-==== Downloading project report with mail request
-
-A `GET` request help to download the projects report with mail request true.
-
-===== Request parameter
-include::{snippets}/should_document_get_project_report/request-parameters.adoc[]
-
-===== Response structure
-include::{snippets}/should_document_get_project_report/response-fields.adoc[]
+include::{snippets}/should_document_get_project_report/query-parameters.adoc[]
 
 ===== Example request
 include::{snippets}/should_document_get_project_report/curl-request.adoc[]
@@ -862,3 +972,36 @@ include::{snippets}/should_document_update_project_with_network/curl-request.ado
 
 ===== Example response
 include::{snippets}/should_document_update_project_with_network/http-response.adoc[]
+
+
+[[resources-projects-download-licenseclearing-report]]
+==== Downloading project license clearing report
+
+A `GET` request help to download project license clearing report.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/query-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_licenseclearing_spreadsheet/http-response.adoc[]
+
+[[resources-clearing-request-create]]
+==== Creating a clearing request
+
+A `POST` request is used to create the clearing request for a project.
+
+===== Request structure
+include::{snippets}/should_document_create_clearing_request/request-fields.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_create_clearing_request/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_create_clearing_request/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_create_clearing_request/http-response.adoc[]
+

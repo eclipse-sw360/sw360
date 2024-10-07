@@ -10,12 +10,10 @@
 
 package org.eclipse.sw360.rest.resourceserver;
 
+import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.security.OAuthFlow;
-import io.swagger.v3.oas.models.security.OAuthFlows;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -25,7 +23,7 @@ import org.eclipse.sw360.rest.common.Sw360CORSFilter;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
-import org.springdoc.core.SpringDocUtils;
+import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -61,6 +59,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     public static final String API_TOKEN_HASH_SALT;
     public static final String API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
     public static final String API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
+    public static final UserGroup API_WRITE_ACCESS_USERGROUP;
     public static final Set<String> DOMAIN;
     public static final String REPORT_FILENAME_MAPPING;
     public static final String JWKS_ISSUER_URL;
@@ -80,6 +79,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         API_TOKEN_MAX_VALIDITY_READ_IN_DAYS = props.getProperty("rest.apitoken.read.validity.days", "90");
         API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS = props.getProperty("rest.apitoken.write.validity.days", "30");
         API_TOKEN_HASH_SALT = props.getProperty("rest.apitoken.hash.salt", "$2a$04$Software360RestApiSalt");
+        API_WRITE_ACCESS_USERGROUP = UserGroup.valueOf(props.getProperty("rest.write.access.usergroup", UserGroup.ADMIN.name()));
         DOMAIN = CommonUtils.splitToSet(props.getProperty("domain",
                 "Application Software, Documentation, Embedded Software, Hardware, Test and Diagnostics"));
         REPORT_FILENAME_MAPPING = props.getProperty("org.eclipse.sw360.licensinfo.projectclearing.templatemapping", "");
@@ -160,13 +160,11 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                         .addSecuritySchemes("tokenAuth",
                                 new SecurityScheme().type(SecurityScheme.Type.APIKEY).name("Authorization")
                                         .in(SecurityScheme.In.HEADER)
-                                        .description("Enter the token with the `Token ` prefix, e.g. \"Token abcde12345\"."))
-                        .addSecuritySchemes("oauth",
-                                new SecurityScheme().type(SecurityScheme.Type.OAUTH2)
-                                        .flows(new OAuthFlows().password(new OAuthFlow()
-                                                .tokenUrl(SERVER_PATH_URL + "/authorization/oauth/token")
-                                                .refreshUrl(SERVER_PATH_URL + "/authorization/oauth/token"))
-                                        )))
+                                        .description("Enter the token with the `Bearer ` prefix, e.g. \"Bearer eyJhbGciOiJ.....\"."))
+                        .addSecuritySchemes("basic",
+                                new SecurityScheme().type(SecurityScheme.Type.HTTP).name("Basic")
+                                        .scheme("basic")
+                                        .description("Username & password based authentication.")))
                 .info(new Info().title("SW360 API").license(new License().name("EPL-2.0")
                                 .url("https://github.com/eclipse-sw360/sw360/blob/main/LICENSE"))
                         .version(restVersionString))

@@ -40,9 +40,6 @@ public class ProjectTest extends TestIntegrationBase {
     private int port;
 
     @MockBean
-    private Sw360UserService userServiceMock;
-
-    @MockBean
     private Sw360ProjectService projectServiceMock;
 
     @Before

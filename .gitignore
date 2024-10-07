@@ -33,10 +33,6 @@ jgiven-reports/
 .settings
 .factorypath
 
-# Ignore VSCode files
-.vscode/
-*.code-workspace
-
 # Ignore backup files
 *.bak
 *.orig
@@ -48,7 +44,7 @@ jgiven-reports/
 # Ignore docker local files
 deps
 data
-config
+#config
 .tmp
 .env
 
@@ -67,3 +63,10 @@ tmp/**/*
 
 # DS_Store
 .DS_Store
+
+.python-version
+
+# Local logs for dev runtime
+logs
+scripts/docker-config/etc_sw360/couchdb-test.properties
+scripts/docker-config/etc_sw360/couchdb.properties

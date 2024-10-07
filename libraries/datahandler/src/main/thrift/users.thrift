@@ -126,6 +126,16 @@ service UserService {
     list<User> searchUsers(1:string name);
 
     /**
+     * get list of all SW360-users in database with department equal to parameter department
+     **/
+    list<User> searchDepartmentUsers(1:string department);
+
+    /**
+     * get list of all SW360-users in database with userGroup equal to parameter userGroup
+     **/
+    list<User> searchUsersGroup(1:UserGroup userGroup);
+
+    /**
      * get list of all SW360-users in database
      **/
     list<User> getAllUsers();

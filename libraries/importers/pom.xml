@@ -10,21 +10,21 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>libraries</artifactId>
-        <groupId>org.eclipse.sw360</groupId>
-        <version>${revision}</version>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<parent>
+		<artifactId>libraries</artifactId>
+		<groupId>org.eclipse.sw360</groupId>
+		<version>18.99.1</version>
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
 
 	<name>importers</name>
 	<artifactId>importers</artifactId>
 	<packaging>jar</packaging>
 
 	<properties>
-		<artifact.deploy.dir>${liferay.deploy.dir}</artifact.deploy.dir>
+		<artifact.deploy.dir>${jars.deploy.dir}</artifact.deploy.dir>
 	</properties>
 
 	<build>
@@ -36,16 +36,15 @@
 				<version>${maven-source-plugin.version}</version>
 			</plugin>
 			<plugin>
-				<groupId>biz.aQute.bnd</groupId>
-				<artifactId>bnd-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>${maven-jar-plugin.version}</version>
 				<configuration>
 					<archive>
-						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<mainClass>org.eclipse.sw360.importers</mainClass>
+						</manifest>
 					</archive>
 				</configuration>
 			</plugin>
@@ -78,19 +77,7 @@
 
 		<dependency>
 			<groupId>org.eclipse.sw360</groupId>
-			<artifactId>src-components</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.eclipse.sw360</groupId>
-			<artifactId>src-vendors</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.eclipse.sw360</groupId>
-			<artifactId>src-attachments</artifactId>
+			<artifactId>backend-common</artifactId>
 			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>

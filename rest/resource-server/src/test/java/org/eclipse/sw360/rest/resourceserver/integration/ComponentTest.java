@@ -22,16 +22,18 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.*;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,14 +64,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
 public class ComponentTest extends TestIntegrationBase {
 
-    @Value("${local.server.port}")
+    @LocalServerPort
     private int port;
-
-    @MockBean
-    private Sw360UserService userServiceMock;
 
     @MockBean
     private Sw360ComponentService componentServiceMock;
@@ -79,6 +78,8 @@ public class ComponentTest extends TestIntegrationBase {
 
     private Component component;
     private final String componentId = "123456789";
+
+    private MockMvc mockMvc;
 
     @Before
     public void before() throws TException {
@@ -101,7 +102,7 @@ public class ComponentTest extends TestIntegrationBase {
     }
 
     @Test
-    public void should_get_all_components() throws IOException {
+    public void should_get_all_components() throws Exception {
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/components",

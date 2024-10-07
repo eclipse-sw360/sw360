@@ -10,6 +10,10 @@
 
 package org.eclipse.sw360.rest.resourceserver.security.keycloak;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -17,9 +21,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.JwtAccessTokenConverterConfigurer;
-import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties;
 import org.springframework.context.annotation.Profile;
-import org.springframework.security.oauth2.common.exceptions.OAuth2Exception;
 import org.springframework.security.oauth2.common.exceptions.UnauthorizedUserException;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.token.DefaultAccessTokenConverter;
@@ -39,9 +41,6 @@ public class KeycloakAccessTokenConverter extends DefaultAccessTokenConverter im
     private static final String JWT_RESOURCE_ACCESS = "resource_access";
     private static final String JWT_ROLES = "roles";
     private static final String JWT_AUTHORITIES = "authorities";
-
-    @Autowired
-    private ResourceServerProperties resourceServerProperties;
 
     @Autowired
     private Sw360UserService userService;
@@ -69,8 +68,8 @@ public class KeycloakAccessTokenConverter extends DefaultAccessTokenConverter im
         // Map the roles of resource_access.sw360-REST-API.roles.* into authorities.*
         if (tokenMap.containsKey(JWT_RESOURCE_ACCESS)) {
             Map<String, Object> resourceAccess = (Map<String, Object>) jwtToken.get(JWT_RESOURCE_ACCESS);
-            if (resourceAccess.containsKey(resourceServerProperties.getResourceId())) {
-                Map<String, Object> clientAccess = (Map<String, Object>) resourceAccess.get(resourceServerProperties.getResourceId());
+            if (resourceAccess.containsKey("sw360-REST-API")) {
+                Map<String, Object> clientAccess = (Map<String, Object>) resourceAccess.get("sw360-REST-API");
                 if (clientAccess.containsKey(JWT_ROLES)) {
                     ArrayList<String> clientRoles = (ArrayList<String>) clientAccess.get(JWT_ROLES);
                     jwtToken.put(JWT_AUTHORITIES, Collections.unmodifiableList(clientRoles));

@@ -9,20 +9,21 @@
  */
 package org.eclipse.sw360.rest.authserver.security;
 
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * This user details provider is able to query the sw360 user thrift service to
  * check if a user identified by an email address or an external id exists.
  */
+@Service
 public class Sw360UserDetailsProvider {
 
     private final Logger log = LogManager.getLogger(this.getClass());

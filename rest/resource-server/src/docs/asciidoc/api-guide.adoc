@@ -306,4 +306,7 @@ include::clearingRequests.adoc[]
 include::obligations.adoc[]
 include::moderationRequests.adoc[]
 include::fossology.adoc[]
-
+include::schedule.adoc[]
+include::ecc.adoc[]
+include::attachmentCleanUp.adoc[]
+include::databaseSanitation.adoc[]

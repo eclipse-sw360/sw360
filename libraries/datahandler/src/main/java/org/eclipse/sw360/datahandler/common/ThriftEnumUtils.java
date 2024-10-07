@@ -334,6 +334,7 @@ public class ThriftEnumUtils {
 
     private static final ImmutableMap<ClearingRequestState, String> MAP_CLEARING_REQUEST_STATE_STRING = ImmutableMap.<ClearingRequestState, String>builder()
             .put(ClearingRequestState.NEW, "New")
+            .put(ClearingRequestState.SANITY_CHECK, "Sanity Check")
             .put(ClearingRequestState.ACCEPTED, "Accepted")
             .put(ClearingRequestState.REJECTED, "Rejected")
             .put(ClearingRequestState.IN_QUEUE, "In Queue")
@@ -341,6 +342,7 @@ public class ThriftEnumUtils {
             .put(ClearingRequestState.CLOSED, "Closed")
             .put(ClearingRequestState.AWAITING_RESPONSE, "Awaiting Response")
             .put(ClearingRequestState.ON_HOLD, "On Hold")
+            .put(ClearingRequestState.PENDING_INPUT,"Pending Input")
             .build();
 
     private static final ImmutableMap<ClearingReportStatus, String> MAP_CLEARING_REPORT_STATUS_STRING = ImmutableMap.<ClearingReportStatus, String>builder()

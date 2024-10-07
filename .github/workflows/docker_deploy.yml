@@ -1,5 +1,6 @@
 # -----------------------------------------------------------------------------
 # Copyright Helio Chissini de Castro 2022.
+# Copyright Cariad SE 2024
 # Part of the SW360 Project.
 #
 # This program and the accompanying materials are made
@@ -14,13 +15,20 @@ name: Docker Build
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Midnight
+    - cron: "0 0 * * *" # Midnight
   workflow_dispatch:
+    inputs:
+      invalidate-cache:
+        description: "Build all images disregarding exists same version"
+        required: false
+      debug:
+        description: "Debug docker build"
+        required: false
   push:
     tags:
-      - 'sw360-*'
+      - "sw360-*"
     paths-ignore:
-      - '**.md'
+      - "**.md"
 
 env:
   REGISTRY: ghcr.io
@@ -30,82 +38,28 @@ permissions: write-all
 jobs:
   sw360_version:
     name: SW360 Version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       sw360_version: ${{ steps.pom_version.outputs.SW360_VERSION }}
-
     steps:
       - name: Checkout main repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 11
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
-          cache: 'maven'
-          distribution: 'temurin'
+          java-version: "17"
+          cache: "maven"
+          distribution: "temurin"
 
       - name: Get revision from pom.xml
         id: pom_version
         run: |
           echo "SW360_VERSION=$(mvn help:evaluate -Dexpression=revision -q -DforceStdout)" >> "$GITHUB_OUTPUT"
-  base_image:
-    name: SW360 Base image
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout main repository
-        uses: actions/checkout@v4
-
-      - name: Set environment variables
-        run: |
-          cat .versions >> $GITHUB_ENV
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract components metadata (tags, labels) for base image
-        id: meta_base
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/base
-          tags: |
-            type=schedule,pattern={{date 'YYYYMMDD'}}
-            type=schedule,pattern=nightly
-            type=raw,value=${{ env.JAVA_VERSION }}-jdk-${{ env.UBUNTU_VERSION }}
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          target: base
-          push: true
-          load: false
-          build-args: |
-            LIFERAY_VERSION=${{ env.LIFERAY_VERSION }}
-            LIFERAY_SOURCE=${{ env.LIFERAY_SOURCE }}
-            JAVA_VERSION=${{ env.JAVA_VERSION }}
-            UBUNTU_VERSION=${{ env.UBUNTU_VERSION }}
-          tags: ${{ steps.meta_base.outputs.tags }}
-          labels: ${{ steps.meta_base.outputs.labels }}
-          cache-from: type=gha,scope=base
-          cache-to: type=gha,scope=base,mode=max
 
   thrift_image:
-    name: SW360 Thrift image
-    runs-on: ubuntu-latest
+    name: Build SW360 Thrift image
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -113,51 +67,26 @@ jobs:
     steps:
       - name: Checkout main repository
         uses: actions/checkout@v4
-
       - name: Set environment variables
         run: |
           cat .versions >> $GITHUB_ENV
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Build thrift image
+        uses: heliocastro/docker-build-control@v5
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract components metadata (tags, labels) for thrift image
-        id: meta_thrift
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/thrift
-          tags: |
-            type=schedule,pattern={{date 'YYYYMMDD'}}
-            type=schedule,pattern=nightly
-            type=raw,value=${{ env.THRIFT_VERSION }}
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          target: sw360thrift
-          push: true
-          load: false
+          name: thrift
+          target: localthrift
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: ${{ env.THRIFT_VERSION }}
+          invalidate-cache: ${{ inputs.invalidate-cache }}
+          debug: ${{ inputs.debug }}
           build-args: |
             THRIFT_VERSION=${{ env.THRIFT_VERSION }}
-          tags: ${{ steps.meta_thrift.outputs.tags }}
-          labels: ${{ steps.meta_thrift.outputs.labels }}
-          cache-from: type=gha,scope=thrift
-          cache-to: type=gha,scope=thrift,mode=max
 
   binary_image:
     name: SW360 Binary
-    needs: [sw360_version, base_image, thrift_image]
-    runs-on: ubuntu-latest
+    needs: [sw360_version, thrift_image]
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -170,49 +99,26 @@ jobs:
         run: |
           cat .versions >> $GITHUB_ENV
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build binary image
+        uses: heliocastro/docker-build-control@v5
         with:
-          version: latest
-          install: true
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract components metadata (tags, labels) for sw360
-        id: meta_sw360
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/binaries
-          tags: |
-            type=schedule,pattern={{date 'YYYYMMDD'}}
-            type=schedule,pattern=nightly
-            type=raw,value=${{ needs.sw360_version.outputs.sw360_version }}
-            type=sha,enable=true,prefix=sha-,format=short
-
-      - name: Build image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          target: sw360
-          push: true
+          name: binaries
+          version: ${{ env.SW360_VERSION }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          invalidate-cache: ${{ inputs.invalidate-cache }}
+          debug: ${{ inputs.debug }}
+          build-args: |
+            THRIFT_VERSION=${{ env.THRIFT_VERSION }}
+            SW360_VERSION=${{ env.SHORT_SHA }}
           secret-files: |
-            "sw360=./scripts/docker-config/default_secrets"
-          tags: |
-            ${{ steps.meta_sw360.outputs.tags }}
-          labels: ${{ steps.meta_sw360.outputs.labels }}
+            "couchdb=./config/couchdb/default_secrets"
           build-contexts: |
-            sw360thrift=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/thrift:${{ env.THRIFT_VERSION }}
+            localthrift=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/thrift:${{ env.THRIFT_VERSION }}
 
   runtime_image:
     name: SW360 Runtime image
-    needs: [sw360_version, base_image, binary_image]
-    runs-on: ubuntu-latest
+    needs: [sw360_version, binary_image]
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
@@ -244,7 +150,7 @@ jobs:
           tags: |
             type=schedule,pattern={{date 'YYYYMMDD'}}
             type=schedule,pattern=nightly
-            type=raw,value=${{ needs.sw360_version.outputs.sw360_version }}
+            type=raw,value=${{ env.SW360_VERSION }}
             type=sha,enable=true,prefix=sha-,format=short
             type=ref,event=tag
 
@@ -252,10 +158,11 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          target: runtime
+          target: sw360
           push: true
           tags: ${{ steps.meta_runtime.outputs.tags }}
           labels: ${{ steps.meta_runtime.outputs.labels }}
+          provenance: mode=max
+          sbom: true
           build-contexts: |
-            base=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/base:${{ env.JAVA_VERSION }}-jdk-${{ env.UBUNTU_VERSION }}
-            sw360=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/binaries:${{ env.SHORT_SHA }}
+            binaries=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/binaries:${{ env.SW360_VERSION }}

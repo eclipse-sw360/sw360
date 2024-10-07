@@ -61,7 +61,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
@@ -512,7 +514,7 @@ public class SW360Utils {
         }
         return Collections.emptyList();
     }
-    
+
     public static List<ReleaseLink> getLinkedReleaseRelations(Release release, ThriftClients thriftClients, Logger log) {
         if (release != null && release.getReleaseIdToRelationship() != null) {
             try {
@@ -536,7 +538,7 @@ public class SW360Utils {
         }
         return Collections.emptyList();
     }
-    
+
     public static Predicate<String> startsWith(final String prefix) {
         return new Predicate<String>() {
             @Override
@@ -684,7 +686,7 @@ public class SW360Utils {
         }
         return releaseNamesMap;
     }
-    
+
     public static <T> Map<String, T> putProjectNamesInMap(Map<String, T> map, List<Project> projects) {
         if(map == null || projects == null) {
             return Collections.emptyMap();
@@ -731,6 +733,15 @@ public class SW360Utils {
     public static int getTotalReleaseCount(ReleaseClearingStateSummary clearingSummary) {
         return clearingSummary.getNewRelease() + clearingSummary.getReportAvailable() + clearingSummary.getUnderClearing()
                 + clearingSummary.getSentToClearingTool()+ clearingSummary.getApproved();
+    }
+
+    public static int getOpenReleaseCount(ReleaseClearingStateSummary clearingSummary) {
+        return getTotalReleaseCount(clearingSummary) - (clearingSummary.getApproved() + clearingSummary.getReportAvailable());
+    }
+
+    public static String convertEpochTimeToDate(long timestamp) {
+        LocalDate date = Instant.ofEpochMilli(timestamp).atZone(ZoneId.of("UTC")).toLocalDate();
+        return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     }
 
     /**
@@ -1013,4 +1024,21 @@ public class SW360Utils {
         }
         project.setReleaseIdToUsage(releaseIdToUsage);
     }
+
+    public static Collection<ProjectLink> getLinkedProjectsWithAllReleasesAsFlatList(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+        return flattenProjectLinkTree(getLinkedProjectsWithAllReleases(project, deep, thriftClients, log, user));
+    }
+
+    public static Collection<ProjectLink> getLinkedProjectsWithAllReleases(Project project, boolean deep, ThriftClients thriftClients, Logger log, User user) {
+        if (project != null) {
+            try {
+                ProjectService.Iface client = thriftClients.makeProjectClient();
+                return client.getLinkedProjectsOfProjectWithAllReleases(project, deep, user);
+            } catch (TException e) {
+                log.error("Could not get linked projects", e);
+            }
+        }
+        return Collections.emptyList();
+    }
+
 }

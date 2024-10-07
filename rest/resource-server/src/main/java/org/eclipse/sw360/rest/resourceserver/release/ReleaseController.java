@@ -14,8 +14,11 @@ package org.eclipse.sw360.rest.resourceserver.release;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,8 +32,8 @@ import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Sets;
@@ -90,6 +93,7 @@ import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -104,6 +108,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
@@ -117,6 +122,7 @@ import com.google.common.collect.ImmutableMap;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
 @SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class ReleaseController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String RELEASES_URL = "/releases";
     private static final Logger log = LogManager.getLogger(ReleaseController.class);
@@ -180,6 +186,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<Release> sw360Releases = new ArrayList<>();
+        String queryString = request.getQueryString();
+        Map<String, String> params = restControllerHelper.parseQueryString(queryString);
 
         if (luceneSearch && CommonUtils.isNotNullEmptyOrWhitespace(name)) {
             sw360Releases.addAll(releaseService.refineSearch(name, sw360User));
@@ -189,7 +197,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             } else {
                 sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
                 sw360Releases = sw360Releases.stream()
-                        .filter(release -> name == null || name.isEmpty() || release.getName().equalsIgnoreCase(name))
+                        .filter(release -> name == null || name.isEmpty() || release.getName().equalsIgnoreCase(params.get("name")))
                         .collect(Collectors.toList());
             }
         }
@@ -360,23 +368,28 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     @Operation(
             summary = "Get releases by external IDs.",
             description = "Get releases where provided external IDs match.",
-            tags = {"Releases"}
+            tags = {"Releases"},
+            parameters = {
+                    @Parameter(
+                            description = "The external IDs of the releases to filter.",
+                            example = "{\n" +
+                                    "\"mainline-id-component\": \"1432\",\n" +
+                                    "\"mainline-id-component\": \"4876\"\n" +
+                                    "}",
+                            in = ParameterIn.QUERY,
+                            name = "externalIds",
+                            explode = Explode.TRUE,
+                            schema = @Schema(implementation = LinkedMultiValueMap.class)
+                    )
+            }
+
     )
     @GetMapping(value = RELEASES_URL + "/searchByExternalIds")
     public ResponseEntity<Release> searchByExternalIds(
-            @Parameter(
-                    description = "The external IDs of the releases to filter.",
-                    example = "{\n" +
-                            "\"mainline-id-component\": \"1432\",\n" +
-                            "\"mainline-id-component\": \"4876\"\n" +
-                            "}",
-                    in = ParameterIn.QUERY,
-                    name = "externalIds",
-                    explode = Explode.TRUE
-            )
-            @RequestParam LinkedMultiValueMap<String, String> externalIdsMultiMap
+            HttpServletRequest request
     ) throws TException {
-        return restControllerHelper.searchByExternalIds(externalIdsMultiMap, releaseService, null);
+        String queryString = request.getQueryString();
+        return restControllerHelper.searchByExternalIds(queryString, releaseService, null);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -1050,6 +1063,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The package IDs to be linked.")
             @RequestBody Set<String> packagesInRequestBody
     ) throws URISyntaxException, TException {
+        if(!packageService.validatePackageIds(packagesInRequestBody)){
+            return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
+        }
         RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true);
         if (linkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
@@ -1088,6 +1104,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The package IDs to be linked.")
             @RequestBody Set<String> packagesInRequestBody
     ) throws URISyntaxException, TException {
+        if(!packageService.validatePackageIds(packagesInRequestBody)){
+            return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
+        }
         RequestStatus unlinkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false);
         if (unlinkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
@@ -1275,9 +1294,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             throws URISyntaxException, TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Release release = releaseService.getReleaseForUserById(id, sw360User);
-        Set<String> packageIds = new HashSet<>();
+        Set<String> packageIds;
         packageIds = release.getPackageIds();
-
+        if (CommonUtils.isNullOrEmptyCollection(packageIds)) {
+            packageIds = new HashSet<>();
+        }
         if (link) {
             packageIds.addAll(packagesInRequestBody);
         } else {
@@ -1372,6 +1393,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             if (release.getMainLicenseIds() != null) {
                 restControllerHelper.addEmbeddedLicenses(halRelease, release.getMainLicenseIds());
                 release.setMainLicenseIds(null);
+            }
+            if (release.getOtherLicenseIds() != null) {
+                restControllerHelper.addEmbeddedOtherLicenses(halRelease, release.getOtherLicenseIds());
             }
             Set<String> packageIds = release.getPackageIds();
 

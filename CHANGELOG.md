@@ -4,6 +4,164 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-18.1.0-M1
+This tag includes important corrections and fixes following the 18.0 pre-release. It is also the final tag with Liferay, as SW360 will use the SW360-frontend project (https://github.com/eclipse-sw360/sw360-frontend) starting from the next release.
+
+### Migrations
+
+For existing installations, a data migration is required with PR 1963. Please go to the readme file in scripts/migrations to see more information:
+
+https://github.com/eclipse/sw360/blob/master/scripts/migrations/README.md
+
+Note: For running the migrations scripts, you will need python and the couchdb package. Please note that you will need to change manually in the python file: the DRYRUN variable and the couchdb URL (if that is not on localhost or requires password or both).
+
+### Credits
+
+The following github users have contributed to the source code since the last release (in alphabetical order):
+
+```
+> Afsah Syeda <afsah.syeda@siemens-healthineers.com>
+> Aftab, Farooq Fateh (ext) <farooq-fateh.aftab.ext@siemens-energy.com>
+> Anupam Ghosh <anupam.ghosh@siemens.com>
+> Akshit Joshi <akshit.joshi@siemens-healthineers.com>
+> Eldrin <eldrin.sanctis@siemens.com>
+> Gaurav Mishra <gmishx@gmail.com>
+> Helio Chissini de Castro <heliocastro@gmail.com>
+> Jens Viebig <jens.viebig@vitec.com>
+> hoangnt2 <hoang2.nguyenthai@toshiba.co.jp>
+> Keerthi B L <keerthi.bl@siemens.com>
+> Nikesh kumar <kumar.nikesh@simens.com>
+> rudra-superrr <rudra.chopra@siemens.com>
+> sameed.ahmad <sameed.ahmad@siemens-healthineers.com>
+> tuannn2 <tuan2.nguyennhu@toshiba.co.jp>
+```
+
+Please note that also many other persons usually contribute to the project with reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `4bfabe486` feat(rest) : Remove mail-request parameter and read from config file
+* `96863d14c` feat(REST): Search package by purl and version
+* `684d90117` feat(REST): Create clearing request for a project and move the preferred clearing date limit field out of Liferay"
+* `fe044d00` feat(project): Added release field for licenseObligation get endpoint
+* `70837b27` feat(rest): filter attachment usages in project
+* `ea94202b` feat(license): Update Whitelist
+* `af155858` feat(CR): Update clearing request state from AWAITING RESPONSE to PENDING INPUT
+* `2bd2b2fd` feat(vscode): Add workspace java settings
+* `8ceba8fb` feat(docker): Add test build using docker
+* `944a7164` feat(rest): added pagination for vulnerability tracking status page.
+* `70391d07` feat(rest): add license obligations to a project.
+* `4f65386f` feat(obligation): endpoint to list license obligation table data
+* `5fcb3533` feat(rest) : endpoint to list license obligations from license database.
+* `240c73f3` feat(CR): Create a new Clearing Request state Sanity Check to perform sanity check before accepting a project
+* `4bc56326` Revert "feat(CR): Disable Clearing Request creation for the projects which have linked releases without SRC type attachment"
+* `71d3a470` Feat(User): Create new endpoints to Create/Revoke/List rest api token
+* `d4820efc` feat(Rest) : Download license clearing report end point.
+* `14fda713` feat(api): new endpoint /mySubmissions
+* `cec7f4b7` feat(docker): Improve output of check_image script.
+* `d7699485` feat(docker): Revamp docker build setup
+* `2ddf76f0` feat(user): Enable API user endpoint by default
+* `36a41cef` feat(Obligation): adding obligation type data in license obligation table.
+* `44219a39` feat(rest) : Pagination for vulnerability tracking status
+* `b925c0ab` Revert "feat(UI): enhanced date filter for open and closed clearing requests tab"
+* `a3038447` feat(UI): enhanced date filter for open and closed clearing requests tab
+* `9f9a1ffa1` feat(UI): Add an info button in the create CR page
+* `b98d346a4` feat(UI): Add clearing type column in closed clearing request tab
+* `b6aa50650` feat(Project): - Extract license from all releases in dependency network when download license information of a project - Generate source code bundle from all releases in dependency network when download Generate source code bundle for a project
+* `49f5486fa` feat(rest): endpoint to link sourceProject to list of projects.
+* `1ab14350b` feat(CR): Disable Clearing Request creation for the projects which have linked releases without SRC type attachment
+* `bcd600c26` feat(User): Add new endpoints to get/update requesting user profile
+* `3cb73c19f` feat(rest): Create new endpoint to unschedule all services.
+* `83a2b3a28` feat(license): Listing obligations by license
+* `8a9c407e8` feat(license): Fix Update License isChecked
+* `89a75f815` feat(project): Update ghactions workflows deps
+* `849e10a0c` feat(obligation): Add api listing obligations by ObligationLevel
+* `3ec2cb129` feat(rest) : Rest end point for releases by lucene search
+* `7ccba71d5` feat(project): Setup Sonatype publishing
+* `c0fb731c4` feat(license): Create API Export License
+* `141e24bab` feat(Release):Upload Source Code Attachment to Releases through a Scheduled Service
+* `c7c33c78f` feat(rest): adding pagination for listing vendors endpoint.
+* `c805ff90f` feat(rest) : Adding or Modifying fields to project summaryadminastration page
+* `6a89beabc` feat(Script): Delete MR's for a specific user
+* `adc862038` feat(license): Create new api update license
+
+### Corrections
+* `dfabecd2c` fix(importCDX) : Fix package's linked release updation when an SBOM is imported
+* `3de514387` fix(project): adding project owner field in project get endpoint.
+* `c31464972` fix(api): throw 409 if last moderator
+* `219792b1` fix(importCDX): Resolve incorrect package/release count in import summary
+* `6d9f3620` fix(rest): Create a new endpoint for dataBaseSanitation.
+* `ae997be2` fix(project): Update outdated Github actions
+* `cb02b200` fix(sw360): changing mkdocs version
+* `0c9523fb` fix(REST): Improve error message handling for CycloneDX sbom import using REST API
+* `df735e9b` fix(Release): Updating the license overview in the summary page
+* `e5ac9278` fix(SRCUploadService): Source upload should work for release versions having alphanumeric characters
+* `fa42d204` fix(api): provide typeMasks name as Optional type
+* `6e36abbb` fix(api): check project modifier before embedding
+* `3beff049` fix(Project): Fix bug Expand Next Level and Collapse All button are hidden when click on sort icon
+* `5112980f` fix(urlEncoding): url encoding.
+* `fe0a4408` fix(Release): Add embedded other licenses in release response
+* `d4a8be84` fix(importCDX): Packages without VCS in SBOM having VCS in SW360 are not getting linked to project
+* `8af9bd5e` fix(importCDX): Add check for existing comps and package using case-insensitive comparison of vcs and purl
+* `ee3ed068` fix(Liferay): Fix bug cannot access oauth client page when import lar file
+* `edc9320c` fix(rest) : attachment usage type fix in response
+* `49be7428` fix(importSBOM): Remove the invalid characters appearing in import summary message for invalid packages list
+* `5a726764` fix(rest): create endpoint for search by userName using lucene search.
+* `ff068133` fix(rest): Added releaseId in recentRelease and release mySubscription.
+* `87a14f7a` fix(Rest): Added status for mysubsciption in component.
+* `d28843c2` fix(docker): Fix broken binaries context inclusion
+* `16475d70` fix(rest) : create new endpoint for cleanup attachment.
+* `0950a2ca` fix(script): update modifiedBy/modifiedOn project fields.
+* `67696a9f` fix(department): Division by zero caused by bad default value for interval
+* `9703661d` fix(rest): Added primaryRole and secondaryDepartmentRoles fields for user endpoint.
+* `fba0d8e5` fix(rest): Added modifiedBy field in project search by id.
+* `178813e5f` fix(docker): Adjust local naming for docker images
+* `b55372562` fix(thrift): Add proper version to build
+* `34765dd80` fix(thrift): Follow link download step
+* `ef5cc0142` fix(database): Restore reading environment database vars
+* `8aaf95734` fix(UI) : Issue fix for vulnerability not displaying for project
+* `c63023c4d` fix(release): modify the externalId query parsing
+* `6a6cb33b5` fix(docker): We have been using wrong Java version
+* `625ffcfa1` fix(release): revert external id query parsing
+* `222879a9e` fix(rest): error handling when user dont have sufficient import permission
+* `d619c5121` fix(Table): Fix error of hiding attachment table content when clicking sort
+* `ef83441df` fix(moderator): show message when only moderator choose remove me option.
+* `590a2b3ad` fix(docker): Remove deletion that invalidate image
+* `2fe147f09` fix(rest): create new enpoint to check server connection.
+* `47d14b158` fix(script): Fix migration script not working with python3
+* `0d535c386` fix(config): Correct file number
+* `0f9d9b85a` fix(rest): create a new endpoint for fossology in admin tab.
+* `5b9f10921` fix(script): Fix incorrect numbering for migration scripts
+* `0f9d31974` fix(couchdb): Add config entry to disable couchdb cache
+* `451948a79` fix(javadoc): Remove invalid link reference
+* `05c2445fa` fix(lib): Add meta information to enable publish
+* `b5f6cb469` fix(importCDX): Update failed component creation error message
+* `6e1964a40` fix(rest-fossology): applied changes for upload endpoint
+* `5a83fe2c9` fix(RequestsPortlet): Unable to reopen CR, Open Components to display open releases, clearing progress to show percentage
+* `2fdd5f4c5` fix(Rest): Allowing search for releases using externalIds
+* `d9fce216f` Fix(package): Fix issues api for package - Cannot unlink orphan packages from the project - Cannot link a package to a release without any package - Handle message when package with same purl already exists
+* `02d84be81` fix (rest) : rest api created for component search by lucene search
+
+### Infrastructure
+* `e71c5e53f` Revert "build(deps): bump org.apache.commons:commons-compress"
+* `42ed65ee` chore(deps): Update json to version 20240303
+* `cd53eed2` refactor(deps): Update new codebase library
+* `8fca0929` chore(license): Ignore checks under templates
+* `73ea0cf3` chore(templates): Second batch of bug report template updates
+* `f375af4f` chore(templates): Update outdated bug/issue templates
+* `a28f3ce3` build(deps): bump idna in /.github/actions/clean_up_package_registry
+* `2d907549` build(deps): bump org.apache.commons:commons-compress
+* `4d87a2bb` build(deps): bump org.bitbucket.b_c:jose4j in /rest/resource-server
+* `7ee06367` build(deps): bump org.springframework.security:spring-security-core
+* `737a1320` ci(docker): Use external action to reduce maintenance
+* `d9341ee28` chore(package-portlet): package-portlet enabled for default installation
+* `ecb30a34d` Update build status
+* `7d3511146` build(deps): bump com.jayway.jsonpath:json-path from 2.8.0 to 2.9.0
+* `8b5428d92` docs(api): add OpenAPI docs for /vulnerabilities
+* `27dc3d8bb` docs(api): add OpenAPI docs for releases
+* `72a99c897` docs(project): response codes DELETE /projects
+* `1c3f70f8e` chore(javadoc): Fix javadoc entries as requirements to publish in sonatype
+
+
 ## sw360-18.0.0-M1
 This tag covers many corrections/bug after the 17.0 release and multiple new endpoints to support sw360 UI project.
 

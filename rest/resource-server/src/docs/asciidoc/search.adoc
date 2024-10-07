@@ -20,7 +20,7 @@ The search resource is used get the search result
 A `GET` request will list all the search results based on the search text and type
 
 ===== Request parameter
-include::{snippets}/should_document_get_searchresult/request-parameters.adoc[]
+include::{snippets}/should_document_get_searchresult/query-parameters.adoc[]
 
 ===== Response structure
 include::{snippets}/should_document_get_searchresult/response-fields.adoc[]

@@ -9,29 +9,24 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
+import static org.eclipse.sw360.datahandler.thrift.MainlineState.MAINLINE;
+import static org.eclipse.sw360.datahandler.thrift.ReleaseRelationship.CONTAINED;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.requestParameters;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
-import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
-import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.Visibility;
+import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
@@ -58,17 +53,16 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
     private String testUserPassword;
 
     @MockBean
-    private Sw360UserService userServiceMock;
-
-    @MockBean
     private Sw360ProjectService projectServiceMock;
 
     @MockBean
     private Sw360ClearingRequestService clearingRequestServiceMock;
-
+    ClearingRequest clearingRequest = new ClearingRequest();
+    ClearingRequest cr1 = new ClearingRequest();
+    ClearingRequest cr2 = new ClearingRequest();
+    List<Comment> comments = new ArrayList<Comment>();
     @Before
     public void before() throws TException, IOException {
-        ClearingRequest clearingRequest = new ClearingRequest();
         clearingRequest.setId("CR-101");
         clearingRequest.setAgreedClearingDate("12-07-2020");
         clearingRequest.setClearingState(ClearingRequestState.ACCEPTED);
@@ -79,10 +73,13 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         clearingRequest.setRequestedClearingDate("10-07-2020");
         clearingRequest.setRequestingUser("test.admin@sw60.org");
         clearingRequest.setRequestingUserComment("testing comment");
+        clearingRequest.setClearingType(ClearingRequestType.DEEP);
+        clearingRequest.setTimestamp(1599285578);
+        clearingRequest.setModifiedOn(1599285580);
 
         Set<ClearingRequest> clearingrequests = new HashSet<>();
         Set<ClearingRequest> clearingrequestsbystate = new HashSet<>();
-        ClearingRequest cr1 = new ClearingRequest();
+
         cr1.setId("CR-2");
         cr1.setAgreedClearingDate("12-10-2020");
         cr1.setClearingState(ClearingRequestState.ACCEPTED);
@@ -92,8 +89,10 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         cr1.setProjectId("54121");
         cr1.setRequestedClearingDate("10-08-2020");
         cr1.setRequestingUser("test.user@sw60.org");
+        cr1.setClearingType(ClearingRequestType.HIGH);
+        cr1.setTimestamp(1599285573);
+        cr1.setModifiedOn(1599285590);
 
-        ClearingRequest cr2 = new ClearingRequest();
         cr2.setId("CR-3");
         cr2.setAgreedClearingDate("24-10-2020");
         cr2.setClearingState(ClearingRequestState.NEW);
@@ -103,10 +102,17 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         cr2.setProjectId("54181");
         cr2.setRequestedClearingDate("13-09-2020");
         cr2.setRequestingUser("test.admin@sw60.org");
+        cr2.setClearingType(ClearingRequestType.DEEP);
+        cr2.setTimestamp(1599285571);
+        cr2.setModifiedOn(1599285588);
 
         clearingrequests.add(cr1);
         clearingrequests.add(cr2);
         clearingrequestsbystate.add(cr2);
+
+        Map<String, ProjectReleaseRelationship> linkedReleases = new HashMap<>();
+        ProjectReleaseRelationship projectReleaseRelationship = new ProjectReleaseRelationship(CONTAINED, MAINLINE)
+                .setComment("Test Comment").setCreatedOn("2020-08-05").setCreatedBy("admin@sw360.org");
 
         Project project = new Project();
         project.setId(clearingRequest.getProjectId());
@@ -116,14 +122,79 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         project.setVisbility(Visibility.EVERYONE);
         project.setBusinessUnit("DEPT");
 
+        Project project1 = new Project();
+        project.setId(cr1.getProjectId());
+        project.setName("Beta");
+        project.setVersion("1.0");
+        project.setProjectType(ProjectType.CUSTOMER);
+        project.setVisbility(Visibility.EVERYONE);
+        project.setBusinessUnit("DEPT");
+
+        Project project2 = new Project();
+        project.setId(cr2.getProjectId());
+        project.setName("Delta");
+        project.setVersion("1.0");
+        project.setProjectType(ProjectType.CUSTOMER);
+        project.setVisbility(Visibility.EVERYONE);
+        project.setBusinessUnit("DEPT");
+
+        ReleaseClearingStateSummary clearingCount = new ReleaseClearingStateSummary();
+        clearingCount.newRelease = 2;
+        clearingCount.sentToClearingTool = 1;
+        clearingCount.underClearing = 0;
+        clearingCount.reportAvailable = 0;
+        clearingCount.scanAvailable = 0;
+        clearingCount.internalUseScanAvailable = 1;
+        clearingCount.approved = 2;
+
+        ReleaseClearingStateSummary clearingCount1 = new ReleaseClearingStateSummary();
+        clearingCount1.newRelease = 3;
+        clearingCount1.sentToClearingTool = 1;
+        clearingCount1.underClearing = 0;
+        clearingCount1.reportAvailable = 0;
+        clearingCount1.scanAvailable = 0;
+        clearingCount1.internalUseScanAvailable = 1;
+        clearingCount1.approved = 2;
+
+        project.setReleaseClearingStateSummary(clearingCount);
+
+        project1.setReleaseClearingStateSummary(clearingCount1);
+        project2.setReleaseClearingStateSummary(clearingCount);
+
+        linkedReleases.put("3765276512", projectReleaseRelationship);
+        linkedReleases.put("3765276513", projectReleaseRelationship);
+        linkedReleases.put("3765276514", projectReleaseRelationship);
+
+        project.setReleaseIdToUsage(linkedReleases);
+        project1.setReleaseIdToUsage(linkedReleases);
+        project2.setReleaseIdToUsage(linkedReleases);
+
         given(this.projectServiceMock.getProjectForUserById(eq(clearingRequest.getProjectId()), any())).willReturn(project);
         given(this.userServiceMock.getUserByEmail(clearingRequest.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
         given(this.userServiceMock.getUserByEmail(clearingRequest.getClearingTeam())).willReturn(new User("clearing.team@sw60.org", "XYZ").setId("67890"));
+        given(this.projectServiceMock.getClearingInfo(eq(project), any())).willReturn(project);
 
-        List<Comment> comments = new ArrayList<Comment>();
+        given(this.projectServiceMock.getProjectForUserById(eq(cr1.getProjectId()), any())).willReturn(project1);
+        given(this.userServiceMock.getUserByEmail(cr1.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
+        given(this.userServiceMock.getUserByEmail(cr1.getClearingTeam())).willReturn(new User("clearing.team@sw60.org", "XYZ").setId("67890"));
+        given(this.projectServiceMock.getClearingInfo(eq(project1), any())).willReturn(project1);
+
+        given(this.projectServiceMock.getProjectForUserById(eq(cr2.getProjectId()), any())).willReturn(project2);
+        given(this.userServiceMock.getUserByEmail(cr2.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
+        given(this.userServiceMock.getUserByEmail(cr2.getClearingTeam())).willReturn(new User("clearing.team@sw60.org", "XYZ").setId("67890"));
+        given(this.projectServiceMock.getClearingInfo(eq(project2), any())).willReturn(project2);
+
         Comment comment = new Comment();
         comment.setText("comment text 1");
-        comment.setCommentedBy("test.user@sw360.org");
+        comment.setCommentedBy("test.admin@sw60.org");
+
+        Comment comment1 = new Comment();
+        comment1.setText("comment text 2");
+        comment1.setCommentedBy("test.admin@sw60.org");
+
+        Comment comment2 = new Comment();
+        comment2.setText("comment text 3");
+        comment2.setCommentedBy("test.admin@sw60.org");
 
         comments.add(comment);
         clearingRequest.setComments(comments);
@@ -136,9 +207,8 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_clearingrequest() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/clearingrequest/CR-101")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -150,24 +220,30 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("projectBU").description("The Business Unit / Group of the Project, for which clearing request is created"),
                                 fieldWithPath("projectId").description("The id of the Project, for which clearing request is created"),
                                 fieldWithPath("requestedClearingDate").description("The requested clearing date of releases"),
+                                fieldWithPath("clearingType").description("The clearing type of the request, e.g., DEEP."),
                                 fieldWithPath("requestingUser").description("The user who created the clearing request"),
                                 fieldWithPath("requestingUserComment").description("The comment from requesting user"),
                                 fieldWithPath("priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
                                 subsectionWithPath("comments.[]").description("The clearing request comment"),
                                 subsectionWithPath("comments.[]text").description("The clearing request comment text"),
                                 subsectionWithPath("comments.[]commentedBy").description("The user who added the comment on clearing request"),
+                                subsectionWithPath("comments.[].commentedOn").description("The timestamp when the comment was added."),
+                                subsectionWithPath("comments.[].autoGenerated").description("Indicates if the comment was generated automatically."),
                                 subsectionWithPath("_embedded.sw360:project").description("<<resources-projects, Project>> associated with the ClearingRequest"),
                                 subsectionWithPath("_embedded.clearingTeam").description("clearing team user detail"),
                                 subsectionWithPath("_embedded.requestingUser").description("requesting user, user detail"),
+                                subsectionWithPath("_embedded.totalRelease").description("The total number of releases for the project."),
+                                subsectionWithPath("_embedded.lastUpdatedOn").description("The last updated date of the clearing request."),
+                                subsectionWithPath("_embedded.createdOn").description("The creation date of the clearing request."),
+                                subsectionWithPath("_embedded.openRelease").description("requesting user, user detail"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
 
     @Test
     public void should_document_get_clearingrequest_by_projectid() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/clearingrequest/project/543210")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -179,24 +255,30 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("projectBU").description("The Business Unit / Group of the Project, for which clearing request is created"),
                                 fieldWithPath("projectId").description("The id of the Project, for which clearing request is created"),
                                 fieldWithPath("requestedClearingDate").description("The requested clearing date of releases"),
+                                fieldWithPath("clearingType").description("The clearing type of the request, e.g., DEEP."),
                                 fieldWithPath("requestingUser").description("The user who created the clearing request"),
                                 fieldWithPath("requestingUserComment").description("The comment from requesting user"),
                                 fieldWithPath("priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
                                 subsectionWithPath("comments.[]").description("The clearing request comment"),
                                 subsectionWithPath("comments.[]text").description("The clearing request comment text"),
                                 subsectionWithPath("comments.[]commentedBy").description("The user who added the comment on clearing request"),
+                                subsectionWithPath("comments.[].commentedOn").description("The timestamp when the comment was added."),
+                                subsectionWithPath("comments.[].autoGenerated").description("Indicates if the comment was generated automatically."),
                                 subsectionWithPath("_embedded.sw360:project").description("<<resources-projects, Project>> associated with the ClearingRequest"),
                                 subsectionWithPath("_embedded.clearingTeam").description("clearing team user detail"),
                                 subsectionWithPath("_embedded.requestingUser").description("requesting user, user detail"),
+                                subsectionWithPath("_embedded.totalRelease").description("The total number of releases for the project."),
+                                subsectionWithPath("_embedded.lastUpdatedOn").description("The last updated date of the clearing request."),
+                                subsectionWithPath("_embedded.createdOn").description("The creation date of the clearing request."),
+                                subsectionWithPath("_embedded.openRelease").description("requesting user, user detail"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
 
     @Test
     public void should_document_get_clearingrequests() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/clearingrequests")
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -209,7 +291,12 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]projectId").description("The id of the Project, for which clearing request is created"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]requestedClearingDate").description("The requested clearing date of releases"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]requestingUser").description("The user who created the clearing request"),
-                                subsectionWithPath("_embedded.sw360:clearingRequests.[]priority").description("The priorityof clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.sw360:project").description("<<resources-projects, Project>> associated with the ClearingRequest"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.totalRelease").description("Total number of releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.openRelease").description("Number of open releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.createdOn").description("The date when the clearing request was created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.requestingUser").description("The user who created the clearing request"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests").description("An array of <<resources-clearingRequest, ClearingRequests>>"),
                                 subsectionWithPath("_links").description("Link to <<resources-clearingRequest, ClearingRequest resource>>")
 
@@ -218,14 +305,13 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_get_clearingrequests_by_state() throws Exception {
-        String accessToken = TestHelper.getAccessToken(mockMvc, testUserId, testUserPassword);
         mockMvc.perform(get("/api/clearingrequests")
-                .header("Authorization", "Bearer " + accessToken)
-                .param("state", "NEW")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .queryParam("state", "NEW")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
-                        requestParameters(
+                        queryParameters(
                                 parameterWithName("state").description("The clearing request state of the request. Possible values are:  " + Arrays.asList(ClearingRequestState.values()))
                         ),
                         responseFields(
@@ -237,10 +323,46 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]projectId").description("The id of the Project, for which clearing request is created"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]requestedClearingDate").description("The requested clearing date of releases"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]requestingUser").description("The user who created the clearing request"),
-                                subsectionWithPath("_embedded.sw360:clearingRequests.[]priority").description("The priorityof clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.sw360:project").description("<<resources-projects, Project>> associated with the ClearingRequest"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.totalRelease").description("Total number of releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.openRelease").description("Number of open releases associated with the clearing request"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.createdOn").description("The date when the clearing request was created"),
+                                subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.requestingUser").description("The user who created the clearing request"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests").description("An array of <<resources-clearingRequest, ClearingRequests>>"),
                                 subsectionWithPath("_links").description("Link to <<resources-clearingRequest, ClearingRequest resource>>")
 
+                        )));
+    }
+
+    @Test
+    public void should_document_get_comments_by_clearing_request_id() throws Exception {
+        mockMvc.perform(get("/api/clearingrequest/" + clearingRequest.getId() +"/comments")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
+                        .queryParam("sort", "commentedOn,desc")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("page").description("Page number of the comments list."),
+                                parameterWithName("page_entries").description("Number of comments per page."),
+                                parameterWithName("sort").description("Defines the order of the comments, e.g., 'commentedOn,desc' for sorting by commentedOn in descending order.")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:comments.[].text").description("The text of the comment."),
+                                subsectionWithPath("_embedded.sw360:comments.[].commentedBy").description("The user who added the comment."),
+                                subsectionWithPath("_embedded.sw360:comments.[].commentedOn").description("The timestamp when the comment was added."),
+                                subsectionWithPath("_embedded.sw360:comments.[].autoGenerated").description("Indicates if the comment was generated automatically."),
+                                subsectionWithPath("_embedded.sw360:comments[]._embedded.commentingUser").description("Details of the user who made the comment"),
+                                subsectionWithPath("_embedded.sw360:comments").description("An array of comments related to the clearing request."),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information for the comments."),
+                                fieldWithPath("page.size").description("Number of comments per page."),
+                                fieldWithPath("page.totalElements").description("Total number of comments available."),
+                                fieldWithPath("page.totalPages").description("Total number of pages available."),
+                                fieldWithPath("page.number").description("Current page number.")
                         )));
     }
 

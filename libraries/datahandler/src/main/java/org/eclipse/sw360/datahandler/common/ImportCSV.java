@@ -45,15 +45,14 @@ public class ImportCSV {
     public static List<CSVRecord> readAsCSVRecords(InputStream in) {
         List<CSVRecord> records = null;
 
-        try (Reader reader = new InputStreamReader(in)) {
-            CSVParser parser = new CSVParser(reader, CommonUtils.sw360CsvFormat);
+        try (Reader reader = new InputStreamReader(in);
+             CSVParser parser = new CSVParser(reader, CommonUtils.sw360CsvFormat)) {
             records = parser.getRecords();
             records.remove(0); // Remove header
         } catch (IOException e) {
             log.error("Error parsing CSV File!", e);
         }
 
-        // To avoid returning null above
         if (records == null)
             records = Collections.emptyList();
 
