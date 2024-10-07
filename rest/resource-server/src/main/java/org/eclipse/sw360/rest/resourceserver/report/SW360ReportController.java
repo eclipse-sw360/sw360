@@ -56,6 +56,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
 
     public static final String REPORTS_URL = "/reports";
 
+    private static final String LICENSE_INFO = "licenseInfo";
+
     private static final String CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     @NonNull
@@ -104,7 +106,10 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                             request, sw360User, module);
                     break;
                 case LICENSES:
-                    getLicensesReports(response, sw360User, module);
+                    getLicensesReports(request, response, sw360User, module);
+                    break;
+                case LICENSE_INFO:
+                        getLicensesInfoReports(request, response, sw360User, module, projectId);
                     break;
                 default:
                     break;
@@ -126,7 +131,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 responseJson.addProperty("response", "The downloaded report link will be send to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
-                downloadExcelReport(withLinkedReleases, response, sw360User, module, projectId);
+                downloadExcelReport(withLinkedReleases, request, response, sw360User, module, projectId);
             }
         } catch (Exception e) {
             throw new TException(e.getMessage());
@@ -142,22 +147,30 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 responseJson.addProperty("response", "Component report download link will get send to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
-                downloadExcelReport(withLinkedReleases, response, sw360User, module, null);
+                downloadExcelReport(withLinkedReleases, request, response, sw360User, module, null);
             }
         } catch (Exception e) {
             throw new TException(e.getMessage());
         }
     }
 
-    private void getLicensesReports(HttpServletResponse response, User sw360User, String module) throws TException {
+    private void getLicensesReports(HttpServletRequest request, HttpServletResponse response, User sw360User, String module) throws TException {
         try {
-            downloadExcelReport(false, response, sw360User, module, null);
+            downloadExcelReport(false, request, response, sw360User, module, null);
         } catch (Exception e) {
             throw new TException(e.getMessage());
         }
     }
 
-    private void downloadExcelReport(boolean withLinkedReleases, HttpServletResponse response, User user, String module, String projectId)
+    private void getLicensesInfoReports(HttpServletRequest request, HttpServletResponse response, User sw360User, String module, String projectId) throws TException {
+        try {
+            downloadExcelReport(false, request, response, sw360User, module, projectId);
+        }catch (Exception e) {
+            throw new TException(e.getMessage());
+        }
+    }
+
+    private void downloadExcelReport(boolean withLinkedReleases, HttpServletRequest request , HttpServletResponse response, User user, String module, String projectId)
             throws TException {
         try {
             ByteBuffer buffer = null;
@@ -170,6 +183,13 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                     break;
                 case LICENSES:
                     buffer = sw360ReportService.getLicenseBuffer();
+                    break;
+                case LICENSE_INFO:
+                    final String generatorClassName = request.getParameter("generatorClassName");
+                    final String variant = request.getParameter("variant");
+                    final String template = request.getParameter("template");
+                    final String externalIds = request.getParameter("externalIds");
+                    buffer = sw360ReportService.getLicenseInfoBuffer(user, projectId, generatorClassName, variant, template, externalIds);
                     break;
                 default:
                     break;
@@ -247,7 +267,9 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 fileName = String.format("licenses-%s.xlsx", SW360Utils.getCreatedOn());
             } else if(module.equals(PROJECTS)) {
                 fileName = sw360ReportService.getDocumentName(user, request.getParameter("projectId"));
-            }else {
+            } else if(module.equals(LICENSE_INFO)) {
+                fileName = sw360ReportService.getGenericLicInfoFileName(request, user);
+            } else {
                 fileName = sw360ReportService.getDocumentName(user, null);
             }
             response.setContentType(CONTENT_TYPE);

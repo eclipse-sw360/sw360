@@ -23,9 +23,59 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 
+import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.lang.StringUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.thrift.Source;
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
+import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
+import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
+import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
+import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
+import com.google.common.base.Strings;
+
+import lombok.NonNull;
+
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class SW360ReportService {
+
+    @NonNull
+    private final Sw360ProjectService projectService;
+
+    @NonNull
+    private final Sw360LicenseService licenseService;
+
+    @NonNull
+    private final Sw360ComponentService componentService;
+
+    @NonNull
+    private final Sw360AttachmentService attachmentService;
+
+    @NonNull
+    private final Sw360LicenseInfoService licenseInfoService;
 
     ThriftClients thriftClients = new ThriftClients();
     ProjectService.Iface projectclient = thriftClients.makeProjectClient();
@@ -128,5 +178,100 @@ public class SW360ReportService {
 
     public void sendComponentExportSpreadsheetSuccessMail(String emailURL, String email) throws TException {
         componentclient.sendExportSpreadsheetSuccessMail(emailURL, email);
+    }
+
+    public ByteBuffer getLicenseInfoBuffer(User sw360User, String id, String generatorClassName, String variant, String template, String externalIds) throws TException {
+        final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+
+        List<ProjectLink> mappedProjectLinks = projectService.createLinkedProjects(sw360Project,
+                projectService.filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true, sw360User);
+
+        List<AttachmentUsage> attchmntUsg = attachmentService.getAttachemntUsages(id);
+
+        Map<Source, Set<String>> releaseIdToExcludedLicenses = attchmntUsg.stream()
+                .collect(Collectors.toMap(AttachmentUsage::getOwner,
+                        x -> x.getUsageData().getLicenseInfo().getExcludedLicenseIds(), (li1, li2) -> li1));
+
+        Map<String, Boolean> usedAttachmentContentIds = attchmntUsg.stream()
+                .collect(Collectors.toMap(AttachmentUsage::getAttachmentContentId, attUsage -> {
+                    if (attUsage.isSetUsageData()
+                            && attUsage.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)) {
+                        return Boolean.valueOf(attUsage.getUsageData().getLicenseInfo().isIncludeConcludedLicense());
+                    }
+                    return Boolean.FALSE;
+                }, (li1, li2) -> li1));
+
+        final Map<String, Map<String, Boolean>> selectedReleaseAndAttachmentIds = new HashMap<>();
+        final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachments = new HashMap<>();
+
+        getSelectedAttchIdsAndExcludedLicInfo(sw360User, mappedProjectLinks, releaseIdToExcludedLicenses,
+                usedAttachmentContentIds, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments);
+
+        String outputGeneratorClassNameWithVariant = generatorClassName + "::" + variant;
+        String fileName = "";
+        if (CommonUtils.isNotNullEmptyOrWhitespace(template)
+                && CommonUtils.isNotNullEmptyOrWhitespace(REPORT_FILENAME_MAPPING)) {
+            Map<String, String> orgToTemplate = Arrays.stream(REPORT_FILENAME_MAPPING.split(","))
+                    .collect(Collectors.toMap(k -> k.split(":")[0], v -> v.split(":")[1]));
+            fileName = orgToTemplate.get(template);
+        }
+        final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User,
+                outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments,
+                externalIds, fileName);
+        return licenseInfoFile.bufferForGeneratedOutput();
+    }
+
+    private void getSelectedAttchIdsAndExcludedLicInfo(User sw360User, List<ProjectLink> mappedProjectLinks,
+                                                       Map<Source, Set<String>> releaseIdToExcludedLicenses, Map<String, Boolean> usedAttachmentContentIds,
+                                                       final Map<String, Map<String, Boolean>> selectedReleaseAndAttachmentIds,
+                                                       final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachments) {
+        mappedProjectLinks.forEach(projectLink -> wrapTException(() -> projectLink.getLinkedReleases().stream()
+                .filter(ReleaseLink::isSetAttachments).forEach(releaseLink -> {
+                    String releaseLinkId = releaseLink.getId();
+                    Set<String> excludedLicenseIds = releaseIdToExcludedLicenses.get(Source.releaseId(releaseLinkId));
+
+                    if (!selectedReleaseAndAttachmentIds.containsKey(releaseLinkId)) {
+                        selectedReleaseAndAttachmentIds.put(releaseLinkId, new HashMap<>());
+                    }
+                    final List<Attachment> attachments = releaseLink.getAttachments();
+                    Release release = componentService.getReleaseById(releaseLinkId, sw360User);
+                    for (final Attachment attachment : attachments) {
+                        String attachemntContentId = attachment.getAttachmentContentId();
+                        if (usedAttachmentContentIds.containsKey(attachemntContentId)) {
+                            boolean includeConcludedLicense = usedAttachmentContentIds.get(attachemntContentId);
+                            List<LicenseInfoParsingResult> licenseInfoParsingResult = licenseInfoService
+                                    .getLicenseInfoForAttachment(release, sw360User, attachemntContentId,
+                                            includeConcludedLicense);
+                            excludedLicensesPerAttachments.put(attachemntContentId,
+                                    getExcludedLicenses(excludedLicenseIds, licenseInfoParsingResult));
+                            selectedReleaseAndAttachmentIds.get(releaseLinkId).put(attachemntContentId,
+                                    includeConcludedLicense);
+                        }
+                    }
+                })));
+    }
+
+    public String getGenericLicInfoFileName(HttpServletRequest request, User sw360User) throws TException {
+        final String variant = request.getParameter("variant");
+        final Project sw360Project = projectService.getProjectForUserById(request.getParameter("projectId"), sw360User);
+        final String generatorClassName = request.getParameter("generatorClassName");
+        final String timestamp = SW360Utils.getCreatedOnTime().replaceAll("\\s", "_").replace(":", "_");
+        final OutputFormatInfo outputFormatInfo = licenseInfoService
+                .getOutputFormatInfoForGeneratorClass(generatorClassName);
+        return String.format("%s-%s%s-%s.%s",
+                Strings.nullToEmpty(variant).equals("DISCLOSURE") ? "LicenseInfo" : "ProjectClearingReport",
+                sw360Project.getName(),
+                StringUtils.isBlank(sw360Project.getVersion()) ? "" : "-" + sw360Project.getVersion(), timestamp,
+                outputFormatInfo.getFileExtension());
+    }
+
+    private Set<LicenseNameWithText> getExcludedLicenses(Set<String> excludedLicenseIds,
+                                                         List<LicenseInfoParsingResult> licenseInfoParsingResult) {
+        Predicate<LicenseNameWithText> filteredLicense = licenseNameWithText -> excludedLicenseIds
+                .contains(licenseNameWithText.getLicenseName());
+        Function<LicenseInfo, Stream<LicenseNameWithText>> streamLicenseNameWithTexts = licenseInfo -> licenseInfo
+                .getLicenseNamesWithTexts().stream();
+        return licenseInfoParsingResult.stream().map(LicenseInfoParsingResult::getLicenseInfo)
+                .flatMap(streamLicenseNameWithTexts).filter(filteredLicense).collect(Collectors.toSet());
     }
 }
