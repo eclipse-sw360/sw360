@@ -441,6 +441,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         sw360Release = this.restControllerHelper.updateRelease(sw360Release, updateRelease);
         releaseService.setComponentNameAsReleaseName(sw360Release, user);
         RequestStatus updateReleaseStatus = releaseService.updateRelease(sw360Release, user);
+        sw360Release = releaseService.getReleaseForUserById(id, user);
         HalResource<Release> halRelease = createHalReleaseResource(sw360Release, true);
         if (updateReleaseStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
