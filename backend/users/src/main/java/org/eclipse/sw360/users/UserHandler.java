@@ -63,12 +63,16 @@ public class UserHandler implements UserService.Iface {
         // Create admin user if not in database yet
         List<User> users = getAllUsers();
         if (users.isEmpty()) {
+            Optional<String> COUCHDB_ADMIN_EMAIL =
+                    Optional.ofNullable(System.getenv("COUCHDB_ADMIN_EMAIL") != null
+                            ? System.getenv("COUCHDB_ADMIN_EMAIL")
+                            : "setup@sw360.org");
             Optional<String> COUCHDB_ADMIN_PASSWORD =
                     Optional.ofNullable(System.getenv("COUCHDB_ADMIN_PASSWORD") != null
                             ? System.getenv("COUCHDB_ADMIN_PASSWORD")
                             : "sw360fossie");
             User admin = new User();
-            admin.setEmail("setup@sw360.org");
+            admin.setEmail(COUCHDB_ADMIN_EMAIL.get());
             admin.setFullname("SW360 Admin");
             admin.setGivenname("SW360");
             admin.setLastname("Admin");
