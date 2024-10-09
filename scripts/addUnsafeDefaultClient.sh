@@ -20,8 +20,10 @@
 set -e
 
 # URLs for OAuth clients and users in the CouchDB database
-AUTH_CLIENTS_URL="http://127.0.0.1:5984/sw360oauthclients"
-USERS_DB_URL="http://127.0.0.1:5984/sw360users"
+COUCHDB_USER="${COUCHDB_USER:-sw360}"
+COUCHDB_PASSWORD="${COUCHDB_PASSWORD:-sw360fossie}"
+AUTH_CLIENTS_URL="http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@127.0.0.1:5984/sw360oauthclients"
+USERS_DB_URL="http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@127.0.0.1:5984/sw360users"
 TRUSTED_CLIENT_URL="${AUTH_CLIENTS_URL}/trusted-sw360-client"
 DEFAULT_USER_URL="${USERS_DB_URL}/admin-sw360-user"
 
