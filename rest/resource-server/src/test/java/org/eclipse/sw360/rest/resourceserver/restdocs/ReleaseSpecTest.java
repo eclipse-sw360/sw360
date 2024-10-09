@@ -1481,4 +1481,13 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isMultiStatus());
     }
+
+    @Test
+    public void should_user_subscribe_release() throws Exception {
+        mockMvc.perform(post("/api/releases/" + release.getId() + "/subscriptions")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
+    }
 }
