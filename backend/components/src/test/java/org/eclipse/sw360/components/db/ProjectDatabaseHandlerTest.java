@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.db.AttachmentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
@@ -48,7 +49,6 @@ import java.util.concurrent.TimeUnit;
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProjectDatabaseHandlerTest {
@@ -69,8 +69,7 @@ public class ProjectDatabaseHandlerTest {
     @Mock
     private ProjectModerator moderator;
 
-    @Mock
-    private User user;
+    private static final User user = new User().setEmail("admin@sw360.org").setDepartment("DEPARTMENT");
 
     @Before
     public void setUp() throws Exception {
@@ -100,9 +99,59 @@ public class ProjectDatabaseHandlerTest {
         projects = new ArrayList<>();
         Project project1 = new Project().setId("P1").setName("project1").setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project1);
-        Project project2 = new Project().setId("P2").setName("project2").setLinkedProjects(ImmutableMap.of("P3", new ProjectProjectRelationship(ProjectRelationship.REFERRED), "P4", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setReleaseIdToUsage(ImmutableMap.of("R1A", newDefaultProjectReleaseRelationship(), "R1B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
+        Project project2 = new Project().setId("P2").setName("project2").setLinkedProjects(ImmutableMap.of("P3", new ProjectProjectRelationship(ProjectRelationship.REFERRED), "P4", new ProjectProjectRelationship(ProjectRelationship.CONTAINED))).setReleaseIdToUsage(ImmutableMap.of("R1A", newDefaultProjectReleaseRelationship(), "R1B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER)
+            .setReleaseRelationNetwork(
+                """
+                   [
+                       {
+                           "comment": "",
+                           "releaseLink":[],
+                           "createBy":"admin@sw360.org",
+                           "createOn":"2022-08-15",
+                           "mainlineState":"MAINLINE",
+                           "releaseId":"R1A",
+                           "releaseRelationship":"REFERRED"
+                       },
+                       {
+                           "comment": "",
+                           "releaseLink":[],
+                           "createBy":"admin@sw360.org",
+                           "createOn":"2022-08-15",
+                           "mainlineState":"MAINLINE",
+                           "releaseId":"R1B",
+                           "releaseRelationship":"REFERRED"
+                       }
+                   ]
+                """
+            );
+
         projects.add(project2);
-        Project project3 = new Project().setId("P3").setName("project3").setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.UNKNOWN))).setReleaseIdToUsage(ImmutableMap.of("R2A", newDefaultProjectReleaseRelationship(), "R2B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
+        Project project3 = new Project().setId("P3").setName("project3").setLinkedProjects(ImmutableMap.of("P2", new ProjectProjectRelationship(ProjectRelationship.UNKNOWN))).setReleaseIdToUsage(ImmutableMap.of("R2A", newDefaultProjectReleaseRelationship(), "R2B", newDefaultProjectReleaseRelationship())).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER)
+            .setReleaseRelationNetwork(
+               """
+                  [
+                      {
+                          "comment": "",
+                          "releaseLink":[],
+                          "createBy":"admin@sw360.org",
+                          "createOn":"2022-08-15",
+                          "mainlineState":"MAINLINE",
+                          "releaseId":"R2A",
+                          "releaseRelationship":"REFERRED"
+                      },
+                      {
+                          "comment": "",
+                          "releaseLink":[],
+                          "createBy":"admin@sw360.org",
+                          "createOn":"2022-08-15",
+                          "mainlineState":"MAINLINE",
+                          "releaseId":"R2B",
+                          "releaseRelationship":"REFERRED"
+                      }
+                  ]
+               """
+            );
+
         projects.add(project3);
         Project project4 = new Project().setId("P4").setName("project4").setLinkedProjects(ImmutableMap.of("P1", new ProjectProjectRelationship(ProjectRelationship.UNKNOWN))).setVisbility(Visibility.EVERYONE).setProjectType(ProjectType.CUSTOMER);
         projects.add(project4);
@@ -166,6 +215,37 @@ public class ProjectDatabaseHandlerTest {
         ReleaseLink releaseLinkR1B = new ReleaseLink("R1B", "vendor", "component1", "releaseB", "vendor component1 releaseB", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R1B").setComponentType(ComponentType.OSS).setAccessible(true);
         ReleaseLink releaseLinkR2A = new ReleaseLink("R2A", "vendor", "component2", "releaseA", "vendor component2 releaseA", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R2A").setComponentType(ComponentType.COTS).setAccessible(true);
         ReleaseLink releaseLinkR2B = new ReleaseLink("R2B", "vendor", "component2", "releaseB", "vendor component2 releaseB", false).setReleaseRelationship(ReleaseRelationship.REFERRED).setMainlineState(MainlineState.MAINLINE).setNodeId("R2B").setComponentType(ComponentType.COTS).setAccessible(true);
+
+        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            releaseLinkR1A.setParentNodeId("");
+            releaseLinkR1A.setAttachments(new ArrayList<>());
+            releaseLinkR1A.setProjectId("P2");
+            releaseLinkR1A.setComment("");
+            releaseLinkR1A.setIndex(0);
+            releaseLinkR1A.setLayer(0);
+
+            releaseLinkR1B.setParentNodeId("");
+            releaseLinkR1B.setAttachments(new ArrayList<>());
+            releaseLinkR1B.setProjectId("P2");
+            releaseLinkR1B.setComment("");
+            releaseLinkR1B.setIndex(1);
+            releaseLinkR1B.setLayer(0);
+
+
+            releaseLinkR2A.setParentNodeId("");
+            releaseLinkR2A.setAttachments(new ArrayList<>());
+            releaseLinkR2A.setProjectId("P3");
+            releaseLinkR2A.setComment("");
+            releaseLinkR2A.setIndex(0);
+            releaseLinkR2A.setLayer(0);
+
+            releaseLinkR2B.setParentNodeId("");
+            releaseLinkR2B.setAttachments(new ArrayList<>());
+            releaseLinkR2B.setProjectId("P3");
+            releaseLinkR2B.setComment("");
+            releaseLinkR2B.setIndex(1);
+            releaseLinkR2B.setLayer(0);
+        }
 
         ProjectLink link3 = new ProjectLink("P3", "project3")
                 .setRelation(ProjectRelationship.REFERRED)
