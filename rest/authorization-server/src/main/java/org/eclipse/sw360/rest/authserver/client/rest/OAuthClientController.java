@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;
 import org.eclipse.sw360.rest.authserver.security.Sw360GrantedAuthority;
@@ -88,7 +89,12 @@ public class OAuthClientController {
             clientEntity = new OAuthClientEntity();
 
             // store entity to get a new id
-            repo.add(clientEntity);
+            try {
+                repo.add(clientEntity);
+            } catch (SW360Exception e) {
+                return new ResponseEntity<String>("Unable to add client " + clientResource.getClientId(),
+                        HttpStatus.INTERNAL_SERVER_ERROR);
+            }
 
             clientEntity.setClientId(clientEntity.getId());
             clientEntity.setClientSecret(passwordEncoder.encode(UUID.randomUUID().toString()));

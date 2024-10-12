@@ -27,9 +27,11 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -500,18 +502,37 @@ public class DatabaseConnectorCloudant {
         return success;
     }
 
-    public <T> boolean add(T doc) {
+    public <T> boolean add(T doc) throws SW360Exception {
         Document document = this.getDocumentFromPojo(doc);
         if (document.getId() != null && this.contains(document.getId())) {
             // Cannot add same document again. Must update.
             return false;
+        }
+
+        DocumentResult resp;
+        if (doc instanceof AttachmentContent content) {
+            if (content.getFilename() == null) {
+                throw new SW360Exception("Attachment filename cannot be null.");
+            }
+            PostDocumentOptions postDocOption = new PostDocumentOptions.Builder()
+                    .db(this.dbName)
+                    .document(document)
+                    .build();
+
+            DocumentResult createResp = this.instance.getClient().postDocument(postDocOption).execute().getResult();
+            InputStream in = new ByteArrayInputStream(content.getFilename()
+                    .getBytes(StandardCharsets.UTF_8));
+            createAttachment(createResp.getId(), content.getFilename(), in, content.getContentType());
+            Document updatedDoc = this.getDocument(createResp.getId());
+            updateIdAndRev(doc, updatedDoc.getId(), updatedDoc.getRev());
+            return true;
         }
         PostDocumentOptions postDocOption = new PostDocumentOptions.Builder()
                 .db(this.dbName)
                 .document(document)
                 .build();
 
-        DocumentResult resp = this.instance.getClient().postDocument(postDocOption).execute().getResult();
+        resp = this.instance.getClient().postDocument(postDocOption).execute().getResult();
         updateIdAndRev(doc, resp.getId(), resp.getRev());
         return resp.isOk();
     }
