@@ -67,7 +67,7 @@ public class AttachmentDatabaseHandler {
         return attachmentConnector;
     }
 
-    public AttachmentContent add(AttachmentContent attachmentContent){
+    public AttachmentContent add(AttachmentContent attachmentContent) throws SW360Exception {
         attachmentContentRepository.add(attachmentContent);
         return attachmentContent;
     }
@@ -138,7 +138,7 @@ public class AttachmentDatabaseHandler {
         }
     }
 
-    public AttachmentUsage makeAttachmentUsage(AttachmentUsage attachmentUsage) {
+    public AttachmentUsage makeAttachmentUsage(AttachmentUsage attachmentUsage) throws SW360Exception {
         attachmentUsageRepository.add(attachmentUsage);
         return attachmentUsage;
     }

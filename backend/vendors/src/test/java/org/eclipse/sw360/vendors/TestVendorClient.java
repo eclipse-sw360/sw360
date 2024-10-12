@@ -11,6 +11,7 @@ package org.eclipse.sw360.vendors;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.apache.thrift.TException;
@@ -18,8 +19,6 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.List;
 
 /**
@@ -30,7 +29,7 @@ import java.util.List;
 public class TestVendorClient {
 
     @SuppressWarnings("unused")
-    public static void InitDatabase() throws MalformedURLException {
+    public static void InitDatabase() throws SW360Exception {
         DatabaseConnectorCloudant databaseConnector = new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
 
         databaseConnector.add(new Vendor().setShortname("Microsoft").setFullname("Microsoft Corporation").setUrl("http://www.microsoft.com"));
@@ -38,7 +37,7 @@ public class TestVendorClient {
         databaseConnector.add(new Vendor().setShortname("Oracle").setFullname("Oracle Corporation Inc").setUrl("http://www.oracle.com"));
     }
 
-    public static void main(String[] args) throws TException, IOException {
+    public static void main(String[] args) throws TException {
         THttpClient thriftClient = new THttpClient("http://127.0.0.1:8080/vendorservice/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);
         VendorService.Iface client = new VendorService.Client(protocol);

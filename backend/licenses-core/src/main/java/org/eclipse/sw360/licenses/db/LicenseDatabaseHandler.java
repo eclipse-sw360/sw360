@@ -981,7 +981,12 @@ public class LicenseDatabaseHandler {
         if(customProperties.isSetId()){
             customPropertiesRepository.update(customProperties);
         } else {
-            customPropertiesRepository.add(customProperties);
+            try {
+                customPropertiesRepository.add(customProperties);
+            } catch (SW360Exception e) {
+                log.error("Unable to add or update custom license property.", e);
+                return RequestStatus.FAILURE;
+            }
         }
         return RequestStatus.SUCCESS;
     }
