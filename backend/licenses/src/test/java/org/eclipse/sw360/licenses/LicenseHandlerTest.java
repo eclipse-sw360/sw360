@@ -21,7 +21,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.net.MalformedURLException;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -167,7 +166,7 @@ public class LicenseHandlerTest {
         handler.updateLicense(invalidLicense, user, user);
     }
 
-    public void createTestEntries() throws MalformedURLException {
+    public void createTestEntries() throws SW360Exception {
         // List of test objects
         licenses = new HashMap<>();
         obligs = new HashMap<>();

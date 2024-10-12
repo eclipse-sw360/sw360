@@ -1137,7 +1137,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public RequestStatus updateProjectVulnerabilityRating(ProjectVulnerabilityRating link) {
         if( ! link.isSetId()){
             link.setId(SW360Constants.PROJECT_VULNERABILITY_RATING_ID_PREFIX + link.getProjectId());
-            pvrRepository.add(link);
+            try {
+                pvrRepository.add(link);
+            } catch (SW360Exception e) {
+                log.error("Unable to update project vulnerability rating.", e);
+                return RequestStatus.FAILURE;
+            }
         } else {
             pvrRepository.update(link);
         }

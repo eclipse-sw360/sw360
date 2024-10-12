@@ -181,7 +181,7 @@ public class ModerationDatabaseHandler {
         return requests;
     }
 
-    public String createClearingRequest(ClearingRequest request, User user) {
+    public String createClearingRequest(ClearingRequest request, User user) throws SW360Exception {
         request.setTimestamp(System.currentTimeMillis());
         long id = 1;
         synchronized (ModerationDatabaseHandler.class) {
@@ -441,7 +441,12 @@ public class ModerationDatabaseHandler {
         if(component.isSetComponentType()) {
             request.setComponentType(component.getComponentType());
         }
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to update request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -476,7 +481,12 @@ public class ModerationDatabaseHandler {
         } catch (SW360Exception e) {
             log.error("Could not retrieve parent component type of release with ID=" + release.getId());
         }
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to update request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -551,7 +561,12 @@ public class ModerationDatabaseHandler {
         // Fill the request
         ModerationRequestGenerator generator = new ProjectModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, project, dbproject);
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to create request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -617,7 +632,12 @@ public class ModerationDatabaseHandler {
         // Fill the request
         ModerationRequestGenerator generator = new LicenseModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, license, dblicense);
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to create request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -633,7 +653,11 @@ public class ModerationDatabaseHandler {
         // Set the object
         request.setUser(user);
 
-        addOrUpdate(request, user);
+         try {
+             addOrUpdate(request, user);
+         } catch (SW360Exception e) {
+             log.error("Unable to create request.", e);
+         }
     }
 
     private Set<String> getSPDXDocumentModerators(String department, SPDXDocument dbSpdx) {
@@ -685,7 +709,12 @@ public class ModerationDatabaseHandler {
         // Fill the request
         ModerationRequestGenerator generator = new SpdxDocumentModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, spdx, dbSpdx);
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to create request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -706,7 +735,12 @@ public class ModerationDatabaseHandler {
         // Fill the request
         ModerationRequestGenerator generator = new SpdxDocumentCreationInfoModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, documentCreationInfo, dbDocumentCreationInfo);
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to create request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -727,7 +761,12 @@ public class ModerationDatabaseHandler {
         // Fill the request
         ModerationRequestGenerator generator = new SpdxPackageInfoModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, packageInfo, dbPackageInfo);
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to create request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -846,10 +885,10 @@ public class ModerationDatabaseHandler {
         return sw360users;
     }
 
-    public void addOrUpdate(ModerationRequest request, User user) {
+    public void addOrUpdate(ModerationRequest request, User user) throws SW360Exception {
         addOrUpdate(request, user.getEmail());
     }
-    public void addOrUpdate(ModerationRequest request, String userEmail) {
+    public void addOrUpdate(ModerationRequest request, String userEmail) throws SW360Exception {
         if (request.isSetId()) {
             repository.update(request);
             sendMailNotificationsForUpdatedRequest(request, userEmail);
