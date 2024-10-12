@@ -19,6 +19,7 @@ import com.ibm.cloud.sdk.core.http.RequestBuilder;
 import com.ibm.cloud.sdk.core.http.ResponseConverter;
 import com.ibm.cloud.sdk.core.http.ServiceCall;
 import com.ibm.cloud.sdk.core.service.exception.NotFoundException;
+import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
 import com.ibm.cloud.sdk.core.util.ResponseConverterUtils;
 import com.ibm.cloud.sdk.core.util.Validator;
 import org.eclipse.sw360.nouveau.designdocument.NouveauDesignDocument;
@@ -169,7 +170,8 @@ public class LuceneAwareCouchDbConnector {
      * @param query The query to run.
      * @return The result of the query.
      */
-    public NouveauResult queryNouveau(String index, @NotNull NouveauQuery query) {
+    public NouveauResult queryNouveau(String index, @NotNull NouveauQuery query)
+            throws ServiceResponseException {
         return this.database.queryNouveau(index, query).execute().getResult();
     }
 

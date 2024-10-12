@@ -11,6 +11,7 @@ package org.eclipse.sw360.datahandler.couchdb.lucene;
 
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
+import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -61,7 +62,7 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
 
     private final DatabaseConnectorCloudant connector;
 
-    private static final List<String> LUCENE_SPECIAL_CHARACTERS = Arrays.asList("[\\\\\\+\\-\\!\\~\\*\\?\\\"\\^\\:\\(\\)\\{\\}\\[\\]]", "\\&\\&", "\\|\\|", "/");
+    private static final List<String> LUCENE_SPECIAL_CHARACTERS = Arrays.asList("[\\\\\\+\\-\\!\\~\\*\\?\\\"\\^\\:\\(\\)\\{\\}\\[\\]]", "\\&\\&", "\\|\\|", "/", "@");
 
     /**
      * Maximum number of results to return
@@ -182,13 +183,18 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         return callLuceneDirectly(indexName, queryString, includeDocs);
     }
 
-    private NouveauResult callLuceneDirectly(String indexName, String queryString, boolean includeDocs) {
+    private @Nullable NouveauResult callLuceneDirectly(String indexName, String queryString, boolean includeDocs) {
         NouveauQuery query = new NouveauQuery(queryString);
         query.setIncludeDocs(includeDocs);
         if (resultLimit > 0) {
             query.setLimit(resultLimit);
         }
-        return queryNouveau(indexName, query);
+        try {
+            return queryNouveau(indexName, query);
+        } catch (ServiceResponseException e) {
+            log.error("Nouveau query failed: {}", e.getResponseBody(), e);
+        }
+        return null;
     }
 
     /////////////////////////
