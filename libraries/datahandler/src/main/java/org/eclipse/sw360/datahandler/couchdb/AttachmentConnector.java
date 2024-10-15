@@ -9,8 +9,8 @@
  */
 package org.eclipse.sw360.datahandler.couchdb;
 
-import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.Sets;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -37,7 +36,7 @@ import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 
 /**
- * Ektorp connector for uploading attachments
+ * Connector for uploading attachments
  *
  * @author cedric.bodet@tngtech.com
  * @author alex.borodin@evosoft.com
@@ -53,8 +52,8 @@ public class AttachmentConnector extends AttachmentStreamConnector {
     /**
      * @todo remove this mess of constructors and use dependency injection
      */
-    public AttachmentConnector(Supplier<CloudantClient> httpClient, String dbName, Duration downloadTimeout) throws MalformedURLException {
-        this(new DatabaseConnectorCloudant(httpClient, dbName), downloadTimeout);
+    public AttachmentConnector(Cloudant client, String dbName, Duration downloadTimeout) throws MalformedURLException {
+        this(new DatabaseConnectorCloudant(client, dbName), downloadTimeout);
     }
 
     /**
@@ -74,7 +73,7 @@ public class AttachmentConnector extends AttachmentStreamConnector {
     }
 
     public void deleteAttachment(String id) {
-        connector.deleteById(AttachmentContent.class, id);
+        connector.deleteById(id);
     }
 
     public void deleteAttachments(Collection<Attachment> attachments) {
@@ -83,7 +82,7 @@ public class AttachmentConnector extends AttachmentStreamConnector {
     }
 
     private void deleteAttachmentsByIds(Collection<String> attachmentContentIds) {
-        connector.deleteIds(AttachmentContent.class, attachmentContentIds);
+        connector.deleteIds(attachmentContentIds);
     }
 
     public Set<String> getAttachmentContentIds(Collection<Attachment> attachments) {

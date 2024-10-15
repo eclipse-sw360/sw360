@@ -10,7 +10,7 @@
 
 package org.eclipse.sw360.moderation.db;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -67,7 +67,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -104,26 +103,26 @@ public class ModerationDatabaseHandler {
 
     private final MailUtil mailUtil = new MailUtil();
 
-    public ModerationDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String attachmentDbName) throws MalformedURLException {
-        db = new DatabaseConnectorCloudant(httpClient, dbName);
+    public ModerationDatabaseHandler(Cloudant client, String dbName, String attachmentDbName) throws MalformedURLException {
+        db = new DatabaseConnectorCloudant(client, dbName);
 
         // Create the repository
         repository = new ModerationRequestRepository(db);
         clearingRequestRepository = new ClearingRequestRepository(db);
 
-        licenseDatabaseHandler = new LicenseDatabaseHandler(httpClient, dbName);
-        projectDatabaseHandler = new ProjectDatabaseHandler(httpClient, dbName, attachmentDbName);
-        componentDatabaseHandler = new ComponentDatabaseHandler(httpClient, dbName, attachmentDbName);
-        spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(httpClient, DatabaseSettings.COUCH_DB_SPDX);
-        spdxDocumentCreationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(httpClient, DatabaseSettings.COUCH_DB_SPDX);
-        spdxPackageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(httpClient, DatabaseSettings.COUCH_DB_SPDX);
-        DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        licenseDatabaseHandler = new LicenseDatabaseHandler(client, dbName);
+        projectDatabaseHandler = new ProjectDatabaseHandler(client, dbName, attachmentDbName);
+        componentDatabaseHandler = new ComponentDatabaseHandler(client, dbName, attachmentDbName);
+        spdxDocumentDatabaseHandler = new SpdxDocumentDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX);
+        spdxDocumentCreationInfoDatabaseHandler = new SpdxDocumentCreationInfoDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX);
+        spdxPackageInfoDatabaseHandler = new SpdxPackageInfoDatabaseHandler(client, DatabaseSettings.COUCH_DB_SPDX);
+        DatabaseConnectorCloudant dbChangeLogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
     }
 
-    public ModerationDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName, String changeLogsDbName, String attachmentDbName) throws MalformedURLException {
-        this(httpClient, dbName, attachmentDbName);
-        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(httpClient, changeLogsDbName);
+    public ModerationDatabaseHandler(Cloudant client, String dbName, String changeLogsDbName, String attachmentDbName) throws MalformedURLException {
+        this(client, dbName, attachmentDbName);
+        DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(client, changeLogsDbName);
         this.dbHandlerUtil = new DatabaseHandlerUtil(db);
 
     }

@@ -16,7 +16,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.CustomProperties;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 
 import java.util.HashMap;
 import java.util.List;
@@ -41,7 +41,7 @@ public class CustomPropertiesRepository extends DatabaseRepositoryCloudantClient
 
     public CustomPropertiesRepository(DatabaseConnectorCloudant db) {
         super(db, CustomProperties.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("customPropertiesByDocType", createMapReduce(CUSTOM_PROPERTIES_BY_DOCTYPE, null));
         views.put("all", createMapReduce(ALL, null));
         initStandardDesignDocument(views, db);

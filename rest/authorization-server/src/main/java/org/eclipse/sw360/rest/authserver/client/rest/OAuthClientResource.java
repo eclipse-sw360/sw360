@@ -11,12 +11,16 @@ package org.eclipse.sw360.rest.authserver.client.rest;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 
 import java.util.Set;
 
+@Getter
 public class OAuthClientResource {
 
+    @Setter
     @JsonProperty("description")
     private String description;
 
@@ -51,37 +55,4 @@ public class OAuthClientResource {
         this.accessTokenValidity = clientEntity.getAccessTokenValiditySeconds();
         this.refreshTokenValidity = clientEntity.getRefreshTokenValiditySeconds();
     }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public String getClientSecret() {
-        return clientSecret;
-    }
-
-    public Set<String> getAuthorities() {
-        return authorities;
-    }
-
-    public Set<String> getScope() {
-        return scope;
-    }
-
-    public Integer getAccessTokenValidity() {
-        return accessTokenValidity;
-    }
-
-    public Integer getRefreshTokenValidity() {
-        return refreshTokenValidity;
-    }
-
 }

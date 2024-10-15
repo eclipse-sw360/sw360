@@ -23,7 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import com.cloudant.client.org.lightcouch.NoDocumentException;
+import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -217,7 +217,7 @@ public class AttachmentStreamConnector {
                 part++;
                 try {
                     return connector.getAttachment(attachmentId, partFileName);
-                } catch (NoDocumentException e) {
+                } catch (ServiceResponseException e) {
                     log.error("Cannot find part " + (part - 1) + " of attachment " + attachmentId, e);
                     return null;
                 }

@@ -31,9 +31,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.databasesanitation.Sw360DatabaseSanitationService;
-import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,10 +41,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.cloudant.client.api.model.Attachment;
+import com.ibm.cloud.cloudant.v1.model.Attachment;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
@@ -72,12 +69,14 @@ public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
         Map<String, Object> responseMap = new HashMap<>();
 
         List<String> attachmentList = new ArrayList<>();
-        attachment = new Attachment();
-        attachment.setContentType("12345");
-        attachment1 = new Attachment();
-        attachment1.setContentType("23456");
-        attachmentList.add(attachment.getContentType());
-        attachmentList.add(attachment1.getContentType());
+        attachment = new Attachment.Builder()
+                .contentType("12345")
+                .build();
+        attachment1 = new Attachment.Builder()
+                .contentType("23456")
+                .build();
+        attachmentList.add(attachment.contentType());
+        attachmentList.add(attachment1.contentType());
 
         List<String> componentList = new ArrayList<>();
         component = new Component();

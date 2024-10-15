@@ -9,15 +9,14 @@
  */
 package org.eclipse.sw360.health;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.health.Health;
 import org.eclipse.sw360.datahandler.thrift.health.HealthService;
 import org.eclipse.sw360.health.db.HealthDatabaseHandler;
-import org.ektorp.http.HttpClient;
 
 import java.net.MalformedURLException;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * Implementation of the thrift service "Health"
@@ -27,11 +26,11 @@ public class HealthHandler implements HealthService.Iface {
     private final HealthDatabaseHandler handler;
 
     HealthHandler() throws MalformedURLException {
-        handler = new HealthDatabaseHandler(DatabaseSettings.getConfiguredHttpClient());
+        handler = new HealthDatabaseHandler(DatabaseSettings.getConfiguredClient());
     }
 
-    HealthHandler(Supplier<HttpClient> httpClient) throws MalformedURLException {
-        handler = new HealthDatabaseHandler(httpClient);
+    HealthHandler(Cloudant client) throws MalformedURLException {
+        handler = new HealthDatabaseHandler(client);
     }
 
     @Override

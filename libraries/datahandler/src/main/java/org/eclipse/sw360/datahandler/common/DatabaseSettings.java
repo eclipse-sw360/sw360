@@ -1,5 +1,5 @@
 /*
- * Copyright Siemens AG, 2014-2019. Part of the SW360 Portal Project.
+ * Copyright Siemens AG, 2014-2019,2024. Part of the SW360 Portal Project.
  *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
@@ -9,21 +9,16 @@
  */
 package org.eclipse.sw360.datahandler.common;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.function.Supplier;
 
+import com.ibm.cloud.sdk.core.security.Authenticator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
-import org.ektorp.http.HttpClient;
-import org.ektorp.http.StdHttpClient;
 
-import com.cloudant.client.api.ClientBuilder;
-import com.cloudant.client.api.CloudantClient;
-import com.google.gson.GsonBuilder;
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import com.ibm.cloud.cloudant.security.CouchDbSessionAuthenticator;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Constants for the database address
@@ -37,7 +32,6 @@ public class DatabaseSettings {
     public static final String PROPERTIES_FILE_PATH = "/couchdb.properties";
 
     public static final String COUCH_DB_URL;
-    public static final String COUCH_DB_LUCENE_URL;
     public static final String COUCH_DB_DATABASE;
     public static final String COUCH_DB_ATTACHMENTS;
     public static final String COUCH_DB_CHANGE_LOGS;
@@ -65,7 +59,6 @@ public class DatabaseSettings {
                 .ofNullable(System.getenv("COUCHDB_PASSWORD") != null ? System.getenv("COUCHDB_PASSWORD")
                         : props.getProperty("couchdb.password", ""));
         COUCH_DB_DATABASE = props.getProperty("couchdb.database", "sw360db");
-        COUCH_DB_LUCENE_URL = props.getProperty("couchdb.lucene.url", "http://localhost:8080/couchdb-lucene");
         COUCH_DB_ATTACHMENTS = props.getProperty("couchdb.attachments", "sw360attachments");
         COUCH_DB_CHANGE_LOGS = props.getProperty("couchdb.change_logs", "sw360changelogs");
         COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360config");
@@ -78,38 +71,22 @@ public class DatabaseSettings {
         LUCENE_LEADING_WILDCARD = Boolean.parseBoolean(props.getProperty("lucenesearch.leading.wildcard", "false"));
     }
 
-    public static Supplier<HttpClient> getConfiguredHttpClient() throws MalformedURLException {
-        StdHttpClient.Builder httpClientBuilder = new StdHttpClient.Builder().url(COUCH_DB_URL);
-        if (!COUCH_DB_CACHE) {
-            httpClientBuilder.caching(false);
-        }
+    public static @NotNull Cloudant getConfiguredClient() {
+        Cloudant client;
         if (COUCH_DB_USERNAME.isPresent() && COUCH_DB_PASSWORD.isPresent()) {
-            httpClientBuilder.username(COUCH_DB_USERNAME.get());
-            httpClientBuilder.password(COUCH_DB_PASSWORD.get());
-        }
-        return httpClientBuilder::build;
-    }
-
-    public static Supplier<CloudantClient> getConfiguredClient() {
-        ClientBuilder clientBuilder = null;
-        GsonBuilder gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping();
-        for (Class<?> c : ThriftUtils.THRIFT_CLASSES) {
-            gson.registerTypeAdapter(c, new CustomThriftDeserializer());
-            gson.registerTypeAdapter(c, new CustomThriftSerializer());
-        }
-        for (Class<?> c : ThriftUtils.THRIFT_NESTED_CLASSES) {
-            gson.registerTypeAdapter(c, new CustomThriftSerializer());
+            Authenticator authenticator = CouchDbSessionAuthenticator.newAuthenticator(
+                    COUCH_DB_USERNAME.get(),
+                    COUCH_DB_PASSWORD.get());
+            client = new Cloudant("sw360-couchdb", authenticator);
+        } else {
+            client = Cloudant.newInstance("sw360-couchdb");
         }
         try {
-            clientBuilder = ClientBuilder.url(new URL(COUCH_DB_URL)).gsonBuilder(gson);
-            if (COUCH_DB_USERNAME.isPresent() && COUCH_DB_PASSWORD.isPresent()) {
-                clientBuilder.username(COUCH_DB_USERNAME.get());
-                clientBuilder.password(COUCH_DB_PASSWORD.get());
-            }
-        } catch (MalformedURLException e) {
-            log.error("Error creating client", e);
+            client.setServiceUrl(COUCH_DB_URL);
+        } catch (IllegalArgumentException e) {
+            log.error("Error creating client: {}", e.getMessage(), e);
         }
-        return clientBuilder::build;
+        return client;
     }
 
     private DatabaseSettings() {

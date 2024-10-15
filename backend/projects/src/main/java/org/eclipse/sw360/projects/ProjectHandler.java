@@ -41,14 +41,12 @@ import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.UsedReleaseRelations;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.ektorp.http.HttpClient;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.function.Supplier;
 
 /**
  * Implementation of the Thrift service
@@ -67,17 +65,17 @@ public class ProjectHandler implements ProjectService.Iface {
 
     ProjectHandler() throws IOException {
         handler = new ProjectDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE, DatabaseSettings.COUCH_DB_ATTACHMENTS);
-        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 
-    ProjectHandler(Supplier<CloudantClient> httpClient, String dbName, String attchmntDbName) throws IOException {
-        handler = new ProjectDatabaseHandler(httpClient, dbName, attchmntDbName);
-        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), dbName);
+    ProjectHandler(Cloudant client, String dbName, String attchmntDbName) throws IOException {
+        handler = new ProjectDatabaseHandler(client, dbName, attchmntDbName);
+        searchHandler = new ProjectSearchHandler(DatabaseSettings.getConfiguredClient(), dbName);
     }
 
-    ProjectHandler(Supplier<CloudantClient> cClient,Supplier<HttpClient> hClient, String dbName, String changeLogsDbName, String attchmntDbName) throws IOException {
-        handler = new ProjectDatabaseHandler(cClient, dbName, changeLogsDbName, attchmntDbName);
-        searchHandler = new ProjectSearchHandler(hClient, cClient, dbName);
+    ProjectHandler(Cloudant client, String dbName, String changeLogsDbName, String attchmntDbName) throws IOException {
+        handler = new ProjectDatabaseHandler(client, dbName, changeLogsDbName, attchmntDbName);
+        searchHandler = new ProjectSearchHandler(client, dbName);
     }
 
     /////////////////////

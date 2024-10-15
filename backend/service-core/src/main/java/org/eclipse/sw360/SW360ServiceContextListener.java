@@ -10,8 +10,7 @@
 
 package org.eclipse.sw360;
 
-import org.eclipse.sw360.datahandler.couchdb.DatabaseInstanceTracker;
-import org.ektorp.http.IdleConnectionMonitor;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceTrackerCloudant;
 
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
@@ -26,7 +25,6 @@ public class SW360ServiceContextListener implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        DatabaseInstanceTracker.destroy();
-        IdleConnectionMonitor.shutdown();
+        DatabaseInstanceTrackerCloudant.destroy();
     }
 }

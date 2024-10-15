@@ -11,10 +11,10 @@
  */
 package org.eclipse.sw360.datahandler.common;
 
-import com.cloudant.client.api.model.Response;
 import com.google.common.base.*;
 import com.google.common.collect.*;
 
+import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -560,7 +560,7 @@ public class CommonUtils {
     }
 
     @NotNull
-    public static RequestSummary getRequestSummary(List<String> ids, List<Response> documentOperationResults) {
+    public static RequestSummary getRequestSummary(List<String> ids, List<DocumentResult> documentOperationResults) {
         final RequestSummary requestSummary = new RequestSummary();
         requestSummary.requestStatus = documentOperationResults.isEmpty() ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
         requestSummary.setTotalElements(ids.size());

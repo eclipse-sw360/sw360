@@ -16,7 +16,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +28,7 @@ public class SpdxDocumentRepository extends SummaryAwareRepository<SPDXDocument>
 
     public SpdxDocumentRepository(DatabaseConnectorCloudant db) {
         super(SPDXDocument.class, db, new SpdxDocumentSummary());
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         initStandardDesignDocument(views, db);
     }

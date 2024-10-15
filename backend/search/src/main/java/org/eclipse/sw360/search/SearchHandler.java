@@ -10,9 +10,9 @@
  */
 package org.eclipse.sw360.search;
 
-import com.cloudant.client.api.CloudantClient;
 import com.google.common.collect.ImmutableMap;
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.jena.ext.com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,7 +23,6 @@ import org.eclipse.sw360.datahandler.thrift.search.SearchService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.search.db.AbstractDatabaseSearchHandler;
 import org.eclipse.sw360.search.db.Sw360dbDatabaseSearchHandler;
-import org.ektorp.http.HttpClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -55,9 +53,9 @@ public class SearchHandler implements SearchService.Iface {
         dbSw360users = new Sw360usersDatabaseSearchHandler();
     }
 
-    public SearchHandler(Supplier<HttpClient> hclient, Supplier<CloudantClient> cclient, String dbName) throws IOException {
-        dbSw360db = new Sw360dbDatabaseSearchHandler(hclient, cclient, dbName);
-        dbSw360users = new Sw360usersDatabaseSearchHandler(hclient, cclient, dbName);
+    public SearchHandler(Cloudant client, String dbName) throws IOException {
+        dbSw360db = new Sw360dbDatabaseSearchHandler(client, dbName);
+        dbSw360users = new Sw360usersDatabaseSearchHandler(client, dbName);
     }
 
     @Override

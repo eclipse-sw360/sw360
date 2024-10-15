@@ -10,29 +10,28 @@
 package org.eclipse.sw360.health.db;
 
 import com.google.common.collect.ImmutableSet;
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import com.ibm.cloud.sdk.core.service.exception.ServiceUnavailableException;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseInstance;
 import org.eclipse.sw360.datahandler.thrift.health.Health;
 import org.eclipse.sw360.datahandler.thrift.health.Status;
-import org.ektorp.DbAccessException;
-import org.ektorp.http.HttpClient;
 
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.function.Supplier;
 
 public class HealthDatabaseHandler {
 
-    private final DatabaseInstance db;
+    private final DatabaseInstanceCloudant db;
 
     public static final Set<String> DATABASES_TO_CHECK = ImmutableSet.of(
             DatabaseSettings.COUCH_DB_ATTACHMENTS,
             DatabaseSettings.COUCH_DB_DATABASE,
             DatabaseSettings.COUCH_DB_USERS);
 
-    public HealthDatabaseHandler(Supplier<HttpClient> httpClient) throws MalformedURLException {
-        db = new DatabaseInstance(httpClient.get());
+    public HealthDatabaseHandler(Cloudant client) throws MalformedURLException {
+        db = new DatabaseInstanceCloudant(client);
     }
 
     public Health getHealth() {
@@ -47,7 +46,7 @@ public class HealthDatabaseHandler {
                 if (!db.checkIfDbExists(database)) {
                     health.getDetails().put(database, String.format("The database '%s' does not exist.", database));
                 }
-            } catch (DbAccessException e) {
+            } catch (ServiceUnavailableException e) {
                 health.getDetails().put(database, e.getMessage());
             }
         }

@@ -33,7 +33,7 @@ public class HealthHandlerTest {
     @Test
     public void testGetHealthFailsUponMissingDB() throws MalformedURLException {
         TestUtils.deleteAllDatabases();
-        HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredHttpClient());
+        HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredClient());
         final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
         assertEquals(Status.DOWN, health.status);
         assertEquals(DATABASES_TO_CHECK.size(), health.getDetails().size());
@@ -45,7 +45,7 @@ public class HealthHandlerTest {
             TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), database);
         }
 
-        HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredHttpClient());
+        HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredClient());
         final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
         assertEquals(Status.UP, health.status);
         assertEquals(new HashMap<>(), health.getDetails());
@@ -60,7 +60,7 @@ public class HealthHandlerTest {
         final String couchDbDatabase = DatabaseSettingsTest.COUCH_DB_DATABASE;
         TestUtils.createDatabase(DatabaseSettingsTest.getConfiguredClient(), couchDbDatabase);
 
-        HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredHttpClient());
+        HealthHandler healthHandler = new HealthHandler(DatabaseSettingsTest.getConfiguredClient());
         final Health health = healthHandler.getHealthOfSpecificDbs(DATABASES_TO_CHECK);
         assertEquals(Status.ERROR, health.getStatus());
         assertEquals(DATABASES_TO_CHECK.size() -1, health.getDetails().size());

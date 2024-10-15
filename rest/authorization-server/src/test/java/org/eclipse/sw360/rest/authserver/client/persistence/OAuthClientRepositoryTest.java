@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
  * loading and overwriting in tests.
  *
  * Currently we are only testing the setup anyway, since we do not have custom
- * repo logic yet - beside the ektorp supported CRUD logic.
+ * repo logic yet.
  *
  * ATTENTION: This test should be executed manually when a couchdb is running.
  * Make sure to not have the OAuthClientRepository as Mockito mock in the

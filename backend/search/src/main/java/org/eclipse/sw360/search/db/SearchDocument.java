@@ -19,7 +19,7 @@ import java.util.Map;
 import static org.eclipse.sw360.search.common.SearchConstants.NAME_MAX_LENGTH;
 
 /**
- * Helper class to help parse JSON documents from lucene-ektorp
+ * Helper class to help parse JSON documents from lucene
  *
  * @author cedric.bodet@tngtech.com
  */

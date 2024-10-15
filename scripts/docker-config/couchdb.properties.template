@@ -18,12 +18,7 @@ couchdb.change_logs = sw360changelogs
 couchdb.config = sw360config
 couchdb.vulnerability_management = sw360vm
 lucenesearch.limit = 1000
-couchdb.lucene.url = http://localhost:8080/couchdb-lucene
 
-# Warning: If you enable lucene leading wildcards you have to enable this configuration also in couchdb-lucene.ini
-# leading wildcard search is disabled as default because its a expensive operation.
-# couchdb-lucene.ini (is part of the couchdb-lucene .war package)
-# [lucene]
-# allowLeadingWildcard=true
+# Warning: Nouveau currently does not support use of leading wildcards.
 # see more: https://wiki.apache.org/lucene-java/LuceneFAQ#What_wildcard_search_support_is_available_from_Lucene.3F
-lucenesearch.leading.wildcard = true
+lucenesearch.leading.wildcard = false

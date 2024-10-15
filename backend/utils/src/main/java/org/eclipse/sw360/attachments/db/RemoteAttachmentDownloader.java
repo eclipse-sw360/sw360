@@ -15,20 +15,17 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.ektorp.http.HttpClient;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import static org.apache.logging.log4j.LogManager.getLogger;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
@@ -47,9 +44,9 @@ public class RemoteAttachmentDownloader {
         retrieveRemoteAttachments(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS, downloadTimeout);
     }
 
-    public static int retrieveRemoteAttachments(Supplier<CloudantClient> httpClient, String dbAttachments, Duration downloadTimeout) throws MalformedURLException {
-        AttachmentConnector attachmentConnector = new AttachmentConnector(httpClient, dbAttachments, downloadTimeout);
-        AttachmentContentRepository attachmentContentRepository = new AttachmentContentRepository(new DatabaseConnectorCloudant(httpClient, dbAttachments));
+    public static int retrieveRemoteAttachments(Cloudant client, String dbAttachments, Duration downloadTimeout) throws MalformedURLException {
+        AttachmentConnector attachmentConnector = new AttachmentConnector(client, dbAttachments, downloadTimeout);
+        AttachmentContentRepository attachmentContentRepository = new AttachmentContentRepository(new DatabaseConnectorCloudant(client, dbAttachments));
 
         List<AttachmentContent> remoteAttachments = attachmentContentRepository.getOnlyRemoteAttachments();
         log.info("we have {} remote attachments to retrieve", remoteAttachments.size());

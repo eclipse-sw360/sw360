@@ -10,21 +10,20 @@
 
 package org.eclipse.sw360.datahandler.couchdb;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import com.ibm.cloud.cloudant.v1.model.DocumentResult;
+import com.ibm.cloud.cloudant.v1.model.PostDocumentOptions;
+import com.ibm.cloud.cloudant.v1.model.PutDatabaseOptions;
+import com.ibm.cloud.sdk.core.service.exception.ServiceResponseException;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
+import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.testthrift.TestObject;
-import org.ektorp.CouchDbConnector;
-import org.ektorp.CouchDbInstance;
-import org.ektorp.http.HttpClient;
-import org.ektorp.impl.StdCouchDbConnector;
-import org.ektorp.impl.StdCouchDbInstance;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
-
-import static org.eclipse.sw360.datahandler.couchdb.DatabaseTestProperties.COUCH_DB_DATABASE;
+import static org.eclipse.sw360.datahandler.common.DatabaseSettingsTest.COUCH_DB_DATABASE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -32,8 +31,7 @@ import static org.junit.Assert.assertTrue;
 
 public class DatabaseConnectorTest {
 
-    DatabaseConnector connector;
-    MapperFactory factory;
+    DatabaseConnectorCloudant connector;
 
     TestObject object;
 
@@ -47,44 +45,50 @@ public class DatabaseConnectorTest {
         object.setName("Test");
         object.setText("This is some nice test text.");
         // Initialize the mapper factory
-        factory = new MapperFactory(ImmutableList.<Class<?>>of(TestObject.class), Collections.<Class<?>>emptyList(), Maps.newHashMap());
-        // Default connector for testing
-        HttpClient httpClient = DatabaseTestProperties.getConfiguredHttpClient();
-        CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
+        Cloudant client = DatabaseSettingsTest.getConfiguredClient();
+        DatabaseInstanceCloudant dbInstance = new DatabaseInstanceCloudant(client);
 
         // Create database if it does not exists
         if (!dbInstance.checkIfDbExists(COUCH_DB_DATABASE)) {
-            dbInstance.createDatabase(COUCH_DB_DATABASE);
+            PutDatabaseOptions putDbOptions = new PutDatabaseOptions.Builder().db(COUCH_DB_DATABASE).build();
+            try {
+                client.putDatabase(putDbOptions).execute().getResult();
+            } catch (ServiceResponseException e) {
+                if (e.getStatusCode() != 412) {
+                    throw e;
+                }
+            }
         }
 
-        CouchDbConnector db = new StdCouchDbConnector(COUCH_DB_DATABASE, dbInstance, factory);
-        // Add the object
-        db.create(object);
-        // Save id and rev for teardown
-        id = object.getId();
-        rev = object.getRevision();
         // Now create the actual database connector
-        connector = new DatabaseConnector(DatabaseTestProperties.getConfiguredHttpClient(), COUCH_DB_DATABASE, factory);
+        connector = new DatabaseConnectorCloudant(client, COUCH_DB_DATABASE);
+
+        // Add the object
+        PostDocumentOptions postDocOption = new PostDocumentOptions.Builder()
+                .db(COUCH_DB_DATABASE)
+                .document(connector.getDocumentFromPojo(object))
+                .build();
+
+        DocumentResult resp = client.postDocument(postDocOption).execute().getResult();
+        // Save id and rev for teardown
+        id = resp.getId();
+        rev = resp.getRev();
+        object.setId(id);
+        object.setRevision(rev);
     }
 
     @After
     public void tearDown() throws Exception {
         // Default connector for testing
-        HttpClient httpClient = DatabaseTestProperties.getConfiguredHttpClient();
-        CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
-        if (dbInstance.checkIfDbExists(COUCH_DB_DATABASE)) {
-            dbInstance.deleteDatabase(COUCH_DB_DATABASE);
+        if (connector.getInstance().checkIfDbExists(COUCH_DB_DATABASE)) {
+            connector.getInstance().deleteDatabase(COUCH_DB_DATABASE);
         }
     }
 
     @Test
     public void testSetUp() throws Exception {
-        // Default connector for testing
-        HttpClient httpClient = DatabaseTestProperties.getConfiguredHttpClient();
-        CouchDbInstance dbInstance = new StdCouchDbInstance(httpClient);
-        CouchDbConnector db = new StdCouchDbConnector(COUCH_DB_DATABASE, dbInstance, factory);
         // Check that the document was inserted
-        assertTrue(db.contains(id));
+        assertTrue(connector.contains(id));
     }
 
 
@@ -119,7 +123,7 @@ public class DatabaseConnectorTest {
         object.setText("Some new text");
         // Update the document
         connector.update(object);
-        // Checkt that the object's revision was updated
+        // Check that the object's revision was updated
         assertNotEquals(rev, object.getRevision());
         // Fetch it again to check it was updated in the database
         TestObject object1 = connector.get(TestObject.class, id);

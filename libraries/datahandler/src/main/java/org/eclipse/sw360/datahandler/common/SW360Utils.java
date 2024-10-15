@@ -26,7 +26,7 @@ import com.google.common.collect.Sets;
 
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.couchdb.DatabaseMixInForChangeLog.ProjectProjectRelationshipMixin;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -943,7 +943,7 @@ public class SW360Utils {
             values.add("\"releaseId\":\"" + releaseId + "\"");
             values.add("\"releaseId\": \"" + releaseId + "\"");
         }
-        values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
+        values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery).collect(Collectors.toSet());
         filterMap.put(Project._Fields.RELEASE_RELATION_NETWORK.getFieldName(), values);
         return filterMap;
     }

@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.users.db;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.opencsv.CSVReader;
@@ -22,7 +22,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseConnector;
 import org.eclipse.sw360.datahandler.db.UserRepository;
 import org.eclipse.sw360.datahandler.db.UserSearchHandler;
 import org.eclipse.sw360.datahandler.thrift.*;
@@ -32,13 +31,11 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
-import org.ektorp.http.HttpClient;
 
 import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
@@ -56,7 +53,6 @@ public class UserDatabaseHandler {
      * Connection to the couchDB database
      */
     private DatabaseConnectorCloudant db;
-    private DatabaseConnector dbConnector;
     private UserRepository repository;
     private UserSearchHandler userSearchHandler;
     private static final Logger log = LogManager.getLogger(UserDatabaseHandler.class);
@@ -69,21 +65,12 @@ public class UserDatabaseHandler {
     private List<String> emailDoNotExist;
     DateFormat dateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
 
-    public UserDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws IOException {
+    public UserDatabaseHandler(Cloudant client, String dbName) throws IOException {
         // Create the connector
-        db = new DatabaseConnectorCloudant(httpClient, dbName);
-        dbConnector = new DatabaseConnector(DatabaseSettings.getConfiguredHttpClient(), dbName);
+        db = new DatabaseConnectorCloudant(client, dbName);
         repository = new UserRepository(db);
         readFileDepartmentConfig = new ReadFileDepartmentConfig();
-        userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
-    }
-
-    public UserDatabaseHandler(Supplier<CloudantClient> httpClient,Supplier<HttpClient> client, String dbName) throws IOException {
-        // Create the connector
-        db = new DatabaseConnectorCloudant(httpClient, dbName);
-        dbConnector = new DatabaseConnector(client, dbName);
-        repository = new UserRepository(db);
-        userSearchHandler = new UserSearchHandler(dbConnector, httpClient);
+        userSearchHandler = new UserSearchHandler(DatabaseSettings.getConfiguredClient(), dbName);
     }
 
     public User getByEmail(String email) {

@@ -16,9 +16,8 @@ import java.util.Optional;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
-import org.ektorp.support.View;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 
 /**
  * CRUD access for the Project class
@@ -38,7 +37,7 @@ public class ObligationListRepository extends DatabaseRepositoryCloudantClient<O
 
     public ObligationListRepository(DatabaseConnectorCloudant db) {
         super(db, ObligationList.class);
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("byProjectId", createMapReduce(BY_PROJECT_ID, null));
         views.put("all", createMapReduce(ALL, null));
         initStandardDesignDocument(views, db);

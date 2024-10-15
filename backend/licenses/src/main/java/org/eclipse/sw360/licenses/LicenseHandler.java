@@ -11,6 +11,7 @@
 package org.eclipse.sw360.licenses;
 
 
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ObligationSearchHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -23,17 +24,12 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.licenses.db.LicenseDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ObligationElementSearchHandler;
-import org.ektorp.http.HttpClient;
-
-import com.cloudant.client.api.CloudantClient;
 
 import org.apache.thrift.TException;
 import java.nio.ByteBuffer;
 
-import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.io.IOException;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
@@ -49,14 +45,14 @@ public class LicenseHandler implements LicenseService.Iface {
     ObligationElementSearchHandler searchHandler;
     ObligationSearchHandler obligationSearchHandler;
 
-    LicenseHandler() throws MalformedURLException, IOException {
+    LicenseHandler() throws IOException {
         handler = new LicenseDatabaseHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
-        searchHandler = new ObligationElementSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
-        obligationSearchHandler = new ObligationSearchHandler(DatabaseSettings.getConfiguredHttpClient(), DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        searchHandler = new ObligationElementSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
+        obligationSearchHandler = new ObligationSearchHandler(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_DATABASE);
     }
 
-    LicenseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException, IOException {
-        handler = new LicenseDatabaseHandler(httpClient, dbName);
+    LicenseHandler(Cloudant client, String dbName) throws IOException {
+        handler = new LicenseDatabaseHandler(client, dbName);
     }
 
     /////////////////////

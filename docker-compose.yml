@@ -23,13 +23,13 @@ services:
       - ./config/sw360:/app/sw360/config
 
   couchdb-nouveau:
-    image: ghcr.io/eclipse-sw360/couchdb:3.4.1-nouveau
+    image: couchdb:3.4-nouveau
     ports:
       - "5987:5987"
       - "5988:5988"
 
   couchdb:
-    image: ghcr.io/eclipse-sw360/couchdb:3.4.1
+    image: couchdb:3.4
     restart: unless-stopped
     environment:
       - COUCHDB_CREATE_DATABASE=yes

@@ -54,7 +54,7 @@ public class LicenseModerationRequestGenerator extends ModerationRequestGenerato
                 documentAdditions.getObligations().add(updateTodo);
             } else {
                 Obligation actualTodo = actualTodos.get(updateTodo.getId());
-                Set<String> actualWhitelist = actualTodo.whitelist != null ? actualTodo.whitelist : new HashSet<String>();
+                Set<String> actualWhitelist = actualTodo != null && actualTodo.whitelist != null ? actualTodo.whitelist : new HashSet<String>();
                 Set<String> updateWhitelist = updateTodo.whitelist != null ? updateTodo.whitelist : new HashSet<String>();
                 String departement = request.getRequestingUserDepartment();
                 if(updateWhitelist.contains(departement) && !actualWhitelist.contains(departement)){
@@ -66,7 +66,9 @@ public class LicenseModerationRequestGenerator extends ModerationRequestGenerato
                     if(!documentDeletions.isSetObligations()) {
                         documentDeletions.setObligations(new ArrayList<>());
                     }
-                    documentDeletions.getObligations().add(actualTodo);
+                    if (actualTodo != null) {
+                        documentDeletions.getObligations().add(actualTodo);
+                    }
                 }
             }
         }

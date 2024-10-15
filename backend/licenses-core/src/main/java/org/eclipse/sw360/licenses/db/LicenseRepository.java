@@ -15,7 +15,7 @@ import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +36,7 @@ public class LicenseRepository extends SummaryAwareRepository<License> {
 
     public LicenseRepository(DatabaseConnectorCloudant db) {
         super(License.class, db, new LicenseSummary());
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("all", createMapReduce(ALL, null));
         views.put("byname", createMapReduce(BYNAME, null));
         views.put("byshortname", createMapReduce(BYSHORTNAME, null));

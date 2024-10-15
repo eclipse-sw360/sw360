@@ -68,7 +68,7 @@ public class AttachmentConnectorTest {
         deletedIds.add("a2cid");
 
         attachmentConnector.deleteAttachmentDifference(before, after);
-        verify(connector).deleteIds(AttachmentContent.class, deletedIds);
+        verify(connector).deleteIds(deletedIds);
     }
 
     @Test
@@ -96,8 +96,6 @@ public class AttachmentConnectorTest {
         expectedIdsToDelete.add("a2");
 
         attachmentConnector.deleteAttachmentDifference(before, after);
-        verify(connector).deleteIds(AttachmentContent.class, expectedIdsToDelete);
+        verify(connector).deleteIds(expectedIdsToDelete);
     }
-
-
 }

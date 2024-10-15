@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.users;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,13 +26,10 @@ import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.users.db.UserDatabaseHandler;
 import org.eclipse.sw360.users.util.FileUtil;
 import org.eclipse.sw360.users.util.ReadFileDepartmentConfig;
-import org.ektorp.http.HttpClient;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Supplier;
 
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
@@ -56,8 +53,8 @@ public class UserHandler implements UserService.Iface {
         readFileDepartmentConfig = new ReadFileDepartmentConfig();
     }
 
-    public UserHandler(Supplier<CloudantClient> client, Supplier<HttpClient> httpclient, String userDbName) throws IOException {
-        db = new UserDatabaseHandler(client, httpclient, userDbName);
+    public UserHandler(Cloudant client, String userDbName) throws IOException {
+        db = new UserDatabaseHandler(client, userDbName);
     }
 
     @Override

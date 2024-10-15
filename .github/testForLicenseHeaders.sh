@@ -47,7 +47,6 @@ done <<< "$(git ls-files \
     | grep -v 'sw360.code-workspace' \
     | grep -v 'default_secrets' \
     | grep -v 'requirements.txt' \
-    | grep -Ev 'third-party/couchdb-lucene/*' \
     | grep -Ev '*/asciidoc/*' \
     | grep -Ev '.vscode/*' \
     | grep -Ev 'config/*')" \

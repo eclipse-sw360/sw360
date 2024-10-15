@@ -10,7 +10,6 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.apache.thrift.TException;
 import org.eclipse.sw360.components.summary.ProjectSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -20,7 +19,6 @@ import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.permissions.ProjectPermissions;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
@@ -28,27 +26,21 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.jetbrains.annotations.NotNull;
 
-import com.cloudant.client.api.model.DesignDocument.MapReduce;
-import com.cloudant.client.api.query.PredicateExpression;
-import com.cloudant.client.api.query.PredicatedOperation;
-import com.cloudant.client.api.query.QueryBuilder;
-import com.cloudant.client.api.query.QueryResult;
-import com.cloudant.client.api.query.Selector;
-import com.cloudant.client.api.query.Sort;
-import com.cloudant.client.api.views.Key;
-import com.cloudant.client.api.views.ViewRequest;
-import com.cloudant.client.api.views.ViewRequestBuilder;
-import com.cloudant.client.api.views.ViewResponse;
+import com.ibm.cloud.cloudant.v1.model.DesignDocumentViewsMapReduce;
+import com.ibm.cloud.cloudant.v1.model.PostFindOptions;
+import com.ibm.cloud.cloudant.v1.model.PostViewOptions;
+import com.ibm.cloud.cloudant.v1.model.ViewResult;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.cloudant.client.api.query.Expression.eq;
-import static com.cloudant.client.api.query.Operation.and;
-import static com.cloudant.client.api.query.Operation.or;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.elemMatch;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.eq;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.and;
+import static org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant.or;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 
 /**
@@ -266,7 +258,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
     public ProjectRepository(DatabaseConnectorCloudant db) {
         super(Project.class, db, new ProjectSummary());
-        Map<String, MapReduce> views = new HashMap<String, MapReduce>();
+        Map<String, DesignDocumentViewsMapReduce> views = new HashMap<>();
         views.put("byname", createMapReduce(BY_NAME_VIEW, null));
         views.put("bygroup", createMapReduce(BY_GROUP_VIEW, null));
         views.put("bytag", createMapReduce(BY_TAG_VIEW, null));
@@ -396,115 +388,94 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         List<Project> projects = new ArrayList<>();
         Map<PaginationData, List<Project>> result = Maps.newHashMap();
 
-        String query = null;
-        final Selector typeSelector = eq("type", "project");
-        final Selector private_visibility_Selector = eq("visbility", "PRIVATE");
-        final Selector createdBySelector = eq("createdBy", requestingUserEmail);
-        final Selector getAllPrivateProjects = and(private_visibility_Selector, createdBySelector);
-        final Selector everyone_visibility_Selector = eq("visbility", "EVERYONE");
+        PostFindOptions query = null;
+        final Map<String, Object> typeSelector = eq("type", "project");
+        final Map<String, Object> private_visibility_Selector = eq("visbility", "PRIVATE");
+        final Map<String, Object> createdBySelector = eq("createdBy", requestingUserEmail);
+        final Map<String, Object> getAllPrivateProjects = and(List.of(private_visibility_Selector, createdBySelector));
+        final Map<String, Object> everyone_visibility_Selector = eq("visbility", "EVERYONE");
 
-        final Selector isAProjectResponsible = eq("projectResponsible", requestingUserEmail);
-        final Selector isALeadArchitect = eq("leadArchitect", requestingUserEmail);
-        final Selector isAModerator = PredicatedOperation.elemMatch("moderators",
-                PredicateExpression.eq(requestingUserEmail));
-        final Selector isAContributor = PredicatedOperation.elemMatch("contributors",
-                PredicateExpression.eq(requestingUserEmail));
-        final Selector meAndModorator_visibility_Selector = eq("visbility", "ME_AND_MODERATORS");
-        final Selector isUserBelongToMeAndModerator = and(meAndModorator_visibility_Selector,
-                or(createdBySelector, isAProjectResponsible, isALeadArchitect, isAModerator, isAContributor));
+        final Map<String, Object> isAProjectResponsible = eq("projectResponsible", requestingUserEmail);
+        final Map<String, Object> isALeadArchitect = eq("leadArchitect", requestingUserEmail);
+        final Map<String, Object> isAModerator = elemMatch("moderators", requestingUserEmail);
+        final Map<String, Object> isAContributor = elemMatch("contributors", requestingUserEmail);
+        final Map<String, Object> meAndModorator_visibility_Selector = eq("visbility", "ME_AND_MODERATORS");
+        final Map<String, Object> isUserBelongToMeAndModerator = and(List.of(meAndModorator_visibility_Selector,
+                or(List.of(createdBySelector, isAProjectResponsible, isALeadArchitect, isAModerator, isAContributor))));
 
-        final Selector buAndModorator_visibility_Selector = eq("visbility", "BUISNESSUNIT_AND_MODERATORS");
-        final Selector userBuSelector = eq("businessUnit", userBU);
+        final Map<String, Object> buAndModorator_visibility_Selector = eq("visbility", "BUISNESSUNIT_AND_MODERATORS");
+        final Map<String, Object> userBuSelector = eq("businessUnit", userBU);
         boolean isAdmin = PermissionUtils.isAdmin(user);
         boolean isClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
-        Selector isUserBelongToBuAndModerator = null;
+        Map<String, Object> isUserBelongToBuAndModerator;
 
-        Selector[] buSelectors = null;
+        List<Map<String, Object>> buSelectors = new ArrayList<>();
         Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = user.getSecondaryDepartmentsAndRoles();
         if (!CommonUtils.isNullOrEmptyMap(secondaryDepartmentsAndRoles)) {
             Set<String> secondaryUgs = secondaryDepartmentsAndRoles.keySet();
             Set<String> secondaryBus = secondaryUgs.stream().map(SW360Utils::getBUFromOrganisation)
                     .collect(Collectors.toSet());
-            buSelectors = new Selector[secondaryBus.size() + 2];
-            int index = 0;
             for (String secondaryBU : secondaryBus) {
-                Selector buselector = eq("businessUnit", secondaryBU);
-                buSelectors[index] = buselector;
-                index++;
+                buSelectors.add(eq("businessUnit", secondaryBU));
             }
-        } else {
-            buSelectors = new Selector[2];
         }
-        buSelectors[buSelectors.length - 2] = isUserBelongToMeAndModerator;
-        buSelectors[buSelectors.length - 1] = userBuSelector;
-        isUserBelongToBuAndModerator = and(buAndModorator_visibility_Selector, or(buSelectors));
+        buSelectors.add(isUserBelongToMeAndModerator);
+        buSelectors.add(userBuSelector);
+        isUserBelongToBuAndModerator = and(List.of(buAndModorator_visibility_Selector, or(buSelectors)));
 
-        Selector finalSelector = null;
+        Map<String, Object> finalSelector;
         if (PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isAdmin) {
                 finalSelector = typeSelector;
         } else {
             if (isClearingAdmin) {
-                finalSelector = and(typeSelector, or(getAllPrivateProjects, everyone_visibility_Selector,
-                        isUserBelongToMeAndModerator, buAndModorator_visibility_Selector));
+                finalSelector = and(List.of(typeSelector, or(List.of(getAllPrivateProjects, everyone_visibility_Selector,
+                        isUserBelongToMeAndModerator, buAndModorator_visibility_Selector))));
             } else {
-                finalSelector = and(typeSelector, or(getAllPrivateProjects, everyone_visibility_Selector,
-                        isUserBelongToMeAndModerator, isUserBelongToBuAndModerator));
+                finalSelector = and(List.of(typeSelector, or(List.of(getAllPrivateProjects, everyone_visibility_Selector,
+                        isUserBelongToMeAndModerator, isUserBelongToBuAndModerator))));
             }
         }
 
-        QueryBuilder qb = new QueryBuilder(finalSelector);
+        PostFindOptions.Builder qb = getConnector().getQueryBuilder()
+                .selector(finalSelector);
         if (rowsPerPage != -1) {
             qb.limit(rowsPerPage);
         }
         qb.skip(pageData.getDisplayStart());
-        ViewRequestBuilder queryView = null;
+        PostViewOptions.Builder queryView = null;
         switch (sortColumnNo) {
-        case 0:
-            qb = qb.useIndex("byName");
-            qb = ascending ? qb.sort(Sort.asc("name")) : qb.sort(Sort.desc("name"));
-            query = qb.build();
-            break;
-        case 1:
-            qb = qb.useIndex("byDesc");
-            qb = ascending ? qb.sort(Sort.asc("description")) : qb.sort(Sort.desc("description"));
-            query = qb.build();
-            break;
-        case 2:
-            qb = qb.useIndex("byProjectResponsible");
-            qb = ascending ? qb.sort(Sort.asc("projectResponsible")) : qb.sort(Sort.desc("projectResponsible"));
-            query = qb.build();
-            break;
-        case 3:
-        case 4:
-            queryView = getConnector().createQuery(Project.class, "byState");
-            break;
-        default:
-            break;
+            case 0:
+                qb.useIndex(Collections.singletonList("byName"))
+                        .addSort(Collections.singletonMap("name", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 1:
+                qb.useIndex(Collections.singletonList("byDesc"))
+                        .addSort(Collections.singletonMap("description", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 2:
+                qb.useIndex(Collections.singletonList("byProjectResponsible"))
+                        .addSort(Collections.singletonMap("projectResponsible", ascending ? "asc" : "desc"));
+                query = qb.build();
+                break;
+            case 3:
+            case 4:
+                queryView = getConnector().getPostViewQueryBuilder(Project.class, "byState");
+                break;
+            default:
+                break;
         }
         try {
             if (queryView != null) {
-                ViewRequest<String, Object> request = queryView.newPaginatedRequest(Key.Type.STRING, Object.class)
-                        .rowsPerPage(rowsPerPage).descending(!ascending).includeDocs(true).build();
-                ViewResponse<String, Object> response = request.getResponse();
-                response = request.getResponse();
-                int pageNo = pageData.getDisplayStart() / rowsPerPage;
-                List<Project> proj = new ArrayList<Project>();
-                int count = pageNo == 0 ? rowsPerPage : (pageNo + 1) * rowsPerPage;
-                while (projects.size() < count) {
-                    if (response != null) {
-                        proj = response.getDocsAs(Project.class);
-                    }
-                    proj = proj.stream().filter(ProjectPermissions.isVisible(user)).collect(Collectors.toList());
-                    projects.addAll(proj.stream().collect(Collectors.toList()));
-                    response = response.nextPage();
-                    if (response == null) {
-                        break;
-                    }
+                PostViewOptions request = queryView.limit(rowsPerPage).skip(pageData.getDisplayStart())
+                        .descending(!ascending).includeDocs(true).build();
+                ViewResult response = getConnector().getPostViewQueryResponse(request);
+                if (response != null) {
+                    projects = getPojoFromViewResponse(response);
                 }
-                projects = projects.stream().skip(pageData.getDisplayStart()).limit(rowsPerPage).collect(Collectors.toList());
             } else {
-                QueryResult<Project> queryResult = getConnector().getQueryResult(query, Project.class);
-                projects = queryResult.getDocs();
+                projects = getConnector().getQueryResult(query, Project.class);
             }
         } catch (Exception e) {
             log.error("Error getting projects", e);

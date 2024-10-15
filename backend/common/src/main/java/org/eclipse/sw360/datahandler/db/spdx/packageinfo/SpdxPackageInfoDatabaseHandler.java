@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.datahandler.db.spdx.packageinfo;
 
-import com.cloudant.client.api.CloudantClient;
+import com.ibm.cloud.cloudant.v1.Cloudant;
 
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.db.spdx.document.SpdxDocumentRepository;
@@ -29,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 
 import java.net.MalformedURLException;
 import java.util.*;
-import java.util.function.Supplier;
 import com.google.common.collect.Lists;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -53,8 +52,8 @@ public class SpdxPackageInfoDatabaseHandler {
     private DatabaseHandlerUtil dbHandlerUtil;
     private final SpdxPackageInfoModerator moderator;
 
-    public SpdxPackageInfoDatabaseHandler(Supplier<CloudantClient> httpClient, String dbName) throws MalformedURLException {
-        db = new DatabaseConnectorCloudant(httpClient, dbName);
+    public SpdxPackageInfoDatabaseHandler(Cloudant client, String dbName) throws MalformedURLException {
+        db = new DatabaseConnectorCloudant(client, dbName);
 
         // Create the repositories
         PackageInfoRepository = new SpdxPackageInfoRepository(db);
@@ -63,13 +62,12 @@ public class SpdxPackageInfoDatabaseHandler {
         // Create the moderator
         moderator = new SpdxPackageInfoModerator();
         // Create the changelogs
-        dbChangeLogs = new DatabaseConnectorCloudant(httpClient, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
+        dbChangeLogs = new DatabaseConnectorCloudant(client, DatabaseSettings.COUCH_DB_CHANGE_LOGS);
         this.dbHandlerUtil = new DatabaseHandlerUtil(dbChangeLogs);
     }
 
     public List<PackageInformation> getPackageInformationSummary(User user) {
-        List<PackageInformation> packageInfos = PackageInfoRepository.getPackageInformationSummary();
-        return packageInfos;
+        return PackageInfoRepository.getPackageInformationSummary();
     }
 
     public PackageInformation getPackageInformationById(String id, User user) throws SW360Exception {
