@@ -589,7 +589,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
                     .filter(parser -> wrapTException(() -> parser.isApplicableTo(attachment, user, release))).collect(Collectors.toList());
 
             if (applicableParsers.size() == 0) {
-                LOGGER.warn("No applicable parser has been found for the attachment selected for license information");
+                LOGGER.warn("No applicable parser has been found for the attachment selected for license information " + attachmentContentId);
                 return assignReleaseToLicenseInfoParsingResult(
                         assignFileNameToLicenseInfoParsingResult(
                                 noSourceParsingResult("No applicable parser has been found for the attachment"), attachment.getFilename()),
