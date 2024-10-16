@@ -22,9 +22,9 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
-import javax.mail.*;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.*;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.IllegalFormatException;
@@ -37,7 +37,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 
 /**
- * Provides the possiblity to send mail from SW360
+ * Provides the possibility to send mail from SW360
  *
  * @author birgit.heydenreich@tngtech.com
  */

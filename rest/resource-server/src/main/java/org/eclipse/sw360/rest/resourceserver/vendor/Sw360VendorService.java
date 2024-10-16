@@ -12,14 +12,12 @@ package org.eclipse.sw360.rest.resourceserver.vendor;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
@@ -131,9 +129,7 @@ public class Sw360VendorService {
     }
 
     private VendorService.Iface getThriftVendorClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/vendors/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new VendorService.Client(protocol);
+        return new ThriftClients().makeVendorClient();
     }
 
     public ByteBuffer exportExcel() throws TException {

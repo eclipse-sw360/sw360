@@ -229,7 +229,7 @@ public class DatabaseRepositoryCloudantClient<T> {
 
     public Set<String> queryForIdsAsComplexValue(String queryName, String... keys) {
         PostViewOptions query = connector.getPostViewQueryBuilder(type, queryName)
-                .keys(Arrays.asList(keys)).build();
+                .keys(Collections.singletonList(keys)).build();
         return queryForIds(query);
     }
 
