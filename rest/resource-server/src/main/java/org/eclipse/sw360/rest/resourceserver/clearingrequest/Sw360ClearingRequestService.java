@@ -16,6 +16,7 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -122,4 +123,11 @@ public class Sw360ClearingRequestService {
         return requestStatus;
     }
 
+    public void updateClearingRequestForChangeInClearingSize(String crId, ClearingRequestSize size) throws TException{
+        try {
+            getThriftModerationClient().updateClearingRequestForChangeInClearingSize(crId, size);
+        } catch (SW360Exception e) {
+            log.error("Error updating clearing request for change in clearing size: " + e.getMessage());
+        }
+    }
 }

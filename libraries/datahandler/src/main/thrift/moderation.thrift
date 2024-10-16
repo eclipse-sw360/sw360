@@ -34,6 +34,7 @@ typedef licenses.License License
 typedef licenses.Obligation Obligation
 typedef components.ComponentType ComponentType
 typedef projects.ClearingRequest ClearingRequest
+typedef sw360.ClearingRequestSize ClearingSize
 typedef spdxdocument.SPDXDocument SPDXDocument
 typedef documentcreationinformation.DocumentCreationInformation DocumentCreationInformation
 typedef packageinformation.PackageInformation PackageInformation
@@ -313,6 +314,11 @@ service ModerationService {
      * update clearing request if project's BU is changed
      **/
     oneway void updateClearingRequestForChangeInProjectBU(1: string crId, 2: string businessUnit, 3: User user);
+
+    /**
+     * update clearing request if project's BU is changed
+     **/
+    oneway  void updateClearingRequestForChangeInClearingSize(1: string crId, 2: ClearingSize size);
 
     /**
      * get clearing request by Id for view/read
