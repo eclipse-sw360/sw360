@@ -22,6 +22,7 @@ import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
@@ -56,6 +57,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectData;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
@@ -63,6 +65,7 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
+import org.jose4j.json.internal.json_simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -77,9 +80,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import javax.annotation.PreDestroy;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -979,5 +987,132 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         // returning default value 7 (days) if variable is not set
         return limit < 1 ? 7 : limit;
     }
-}
+
+
+    public RequestStatus updateProjectForAttachment(Project project, User sw360User, HttpServletRequest request,
+            HttpServletResponse response, String projectId) throws TException, IOException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        String cyclicLinkedProjectPath = null;
+        rch.checkForCyclicOrInvalidDependencies(sw360ProjectClient, project, sw360User);
+
+        verifyIfAttachmentsExist(request, response, projectId, sw360User, project);
+        // TODO: Move this logic to backend
+        if (project.getReleaseIdToUsage() != null) {
+            for (String releaseId : project.getReleaseIdToUsage().keySet()) {
+                if (isNullEmptyOrWhitespace(releaseId)) {
+                    throw new HttpMessageNotReadableException("Release Id can't be empty");
+                }
+            }
+        }
+
+        if (project.getVendor() != null && project.getVendorId() == null) {
+            project.setVendorId(project.getVendor().getId());
+        }
+
+        RequestStatus requestStatus;
+        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+            requestStatus = sw360ProjectClient.updateProjectWithForceFlag(project, sw360User, true);
+        } else {
+            requestStatus = sw360ProjectClient.updateProject(project, sw360User);
+            System.out.println("********** requestStatus *********" + requestStatus);
+        }
+        if (requestStatus == RequestStatus.NAMINGERROR) {
+            throw new HttpMessageNotReadableException(
+                    "Project name field cannot be empty or contain only whitespace character");
+        }
+
+        if (requestStatus == RequestStatus.CLOSED_UPDATE_NOT_ALLOWED) {
+            throw new RuntimeException("User cannot modify a closed project");
+        }
+        if (requestStatus == RequestStatus.INVALID_INPUT) {
+            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+        } else if (requestStatus != RequestStatus.SENT_TO_MODERATOR && requestStatus != RequestStatus.SUCCESS) {
+            throw new RuntimeException("sw360 project with name '" + project.getName() + " cannot be updated.");
+        }
+        return requestStatus;
+    }
+
+    private void verifyIfAttachmentsExist(HttpServletRequest request, HttpServletResponse response, String projectId, User user, Project project)
+            throws TException, IOException {
+
+        Set<Attachment> attachments = project.getAttachments();
+        Map<String, String> filenameToAttachmentId = attachments.stream()
+                .collect(Collectors.toMap(Attachment::getAttachmentContentId, Attachment::getFilename));
+
+        ThriftClients thriftClients = new ThriftClients();
+        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+        JSONObject jsonObject = new JSONObject();
+        Set<String> missingAttachmentFilenames = new HashSet<>();
+
+        String selectedProjectRelationsParam = request.getParameter("selectedProjectRelations");
+        List<String> selectedProjectRelations = selectedProjectRelationsParam == null ? Collections.emptyList()
+                : Arrays.asList(selectedProjectRelationsParam.split(","));
+
+        Set<ProjectRelationship> selectedProjectRelationships = selectedProjectRelations.stream()
+                .map(rel -> ThriftEnumUtils.stringToEnum(rel, ProjectRelationship.class)).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Set<String> selectedAttachmentIdsWithPath = filterAttachmentSelectionOnProjectRelation(
+                selectedProjectRelationships, attachments, user, project);
+
+        Set<String> selectedAttachmentIds = selectedAttachmentIdsWithPath.stream()
+                .map(fullpath -> fullpath.split(":")[fullpath.split(":").length - 1]).collect(Collectors.toSet());
+
+        for (String attachmentId : selectedAttachmentIds) {
+            try {
+                attachmentClient.getAttachmentContent(attachmentId);
+            } catch (SW360Exception sw360Exp) {
+                if (sw360Exp.getErrorCode() == 404) {
+                    missingAttachmentFilenames.add(filenameToAttachmentId.get(attachmentId));
+                    log.error("Attachment not found: {}", attachmentId, sw360Exp);
+                } else {
+                    throw sw360Exp;
+                }
+            } catch (TException exception) {
+                log.error("Error getting attachment: {}", attachmentId, exception);
+                throw exception;
+            }
+        }
+
+        if (!missingAttachmentFilenames.isEmpty()) {
+            jsonObject.put("missingAttachments", missingAttachmentFilenames);
+        }
+
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(jsonObject.toString());
+        response.getWriter().flush();
+    }
+
+    private Set<String> filterAttachmentSelectionOnProjectRelation(
+            Set<ProjectRelationship> listOfSelectedProjectRelationships, Set<Attachment> selectedAttachments, User user,
+            Project project) {
+        List<ProjectLink> filteredMappedProjectLinks = createLinkedProjects(project,
+                link -> filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES).apply(link), true, user);
+        Set<String> filteredProjectIds = filteredProjectIds(filteredMappedProjectLinks);
+        Set<String> selectedAttachmentIdsWithPath = new HashSet<>();
+
+        if (selectedAttachments != null) {
+            selectedAttachmentIdsWithPath = selectedAttachments.stream().map(Attachment::getAttachmentContentId)
+                    .collect(Collectors.toSet());
+        }
+        selectedAttachmentIdsWithPath = selectedAttachmentIdsWithPath.stream().filter(fullPath -> {
+            String[] pathParts = fullPath.split(":");
+            int length = pathParts.length;
+            if (length >= 5) {
+                String projectIdOpted = pathParts[pathParts.length - 5];
+                return filteredProjectIds.contains(projectIdOpted);
+            }
+            return true;
+        }).collect(Collectors.toSet());
+
+        return selectedAttachmentIdsWithPath;
+    }
+
+    private Set<String> filteredProjectIds(List<ProjectLink> filteredProjectLinks) {
+        return filteredProjectLinks.stream().map(ProjectLink::getId).collect(Collectors.toSet());
+    }
+
+ }
+
 
