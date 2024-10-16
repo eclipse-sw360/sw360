@@ -22,6 +22,7 @@ import com.google.gson.JsonObject;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.jena.shared.NotFoundException;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
@@ -70,6 +71,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -949,7 +951,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     // HELPER FUNCTIONS //
     //////////////////////
 
-    public List<ProjectLink> getLinkedProjects(Project project, boolean deep, User user) {
+    public List<ProjectLink> getLinkedProjects(Project project, boolean deep, User user) throws SW360Exception {
         Deque<String> visitedIds = new ArrayDeque<>();
 
         Map<String, ProjectProjectRelationship> fakeRelations = new HashMap<>();
@@ -958,7 +960,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return out;
     }
 
-    public List<ProjectLink> getLinkedProjects(Map<String, ProjectProjectRelationship> relations, boolean depth, User user) {
+    public List<ProjectLink> getLinkedProjects(Map<String, ProjectProjectRelationship> relations, boolean depth, User user) throws SW360Exception {
         List<ProjectLink> out;
 
         Deque<String> visitedIds = new ArrayDeque<>();
@@ -968,7 +970,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private List<ProjectLink> iterateProjectRelationShips(Map<String, ProjectProjectRelationship> relations,
-            String parentNodeId, Deque<String> visitedIds, int maxDepth, User user) {
+            String parentNodeId, Deque<String> visitedIds, int maxDepth, User user) throws SW360Exception {
         List<ProjectLink> out = new ArrayList<>();
         for (Map.Entry<String, ProjectProjectRelationship> entry : relations.entrySet()) {
             Optional<ProjectLink> projectLinkOptional;
@@ -986,7 +988,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private Optional<ProjectLink> createProjectLink(String id, ProjectProjectRelationship projectProjectRelationship, String parentNodeId,
-            Deque<String> visitedIds, int maxDepth, User user) {
+            Deque<String> visitedIds, int maxDepth, User user) throws SW360Exception {
         ProjectLink projectLink = null;
         if (!visitedIds.contains(id) && (maxDepth < 0 || visitedIds.size() < maxDepth)) {
             visitedIds.push(id);
@@ -2208,9 +2210,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             executor.shutdown();
         }
 
+        AtomicInteger index = new AtomicInteger();
         return releaseLinksFuture.stream().map(fut -> {
             try {
-                return fut.get();
+                ReleaseLink releaseLink = fut.get();
+                releaseLink.setIndex(index.getAndIncrement());
+                return releaseLink;
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException("Error when convert releaseLink: " + e.getMessage());
             }
@@ -2309,11 +2314,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private Optional<ProjectLink> createProjectLinkForDependencyNetwork(String id, ProjectProjectRelationship projectProjectRelationship, String parentNodeId,
-                                                                        Deque<String> visitedIds, int maxDepth, User user, boolean withRelease, boolean withAllReleases) {
+                                                                        Deque<String> visitedIds, int maxDepth, User user, boolean withRelease, boolean withAllReleases) throws SW360Exception {
         ProjectLink projectLink = null;
         if (!visitedIds.contains(id) && (maxDepth < 0 || visitedIds.size() < maxDepth)) {
             visitedIds.push(id);
-            Project project = repository.get(id);
+            Project project = getProjectById(id, user);
             if (project != null
                     && (user == null || !makePermission(project, user).isActionAllowed(RequestedAction.READ))) {
                 log.error("User " + (user == null ? "" : user.getEmail())
@@ -2331,7 +2336,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                             releaseNodes = mapper.readValue(releaseNetwork, new TypeReference<>() {
                             });
                             if (withAllReleases == WITH_ROOT_RELEASES_ONLY) {
-                                linkedReleases = convertReleaseNodesToReleaseLinksSequentially(releaseNodes, id, user, "", 0);
+                                linkedReleases = convertReleaseNodesToReleaseLinksParallel(releaseNodes, id, user);
                             } else {
                                 List<ReleaseNode> flattenedNetwork = new ArrayList<>();
                                 Set<String> visitedNodeIds = new HashSet<>();
@@ -2342,8 +2347,6 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                             }
                         } catch (JsonProcessingException e) {
                             log.error("JsonProcessingException: " + e);
-                        } catch (TException e) {
-                            log.error(e.getMessage());
                         }
                         projectLink.setLinkedReleases(nullToEmptyList(linkedReleases));
                     }
@@ -2377,7 +2380,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return Optional.ofNullable(projectLink);
     }
 
-    public List<ProjectLink> getLinkedProjectsWithoutReleases(Map<String, ProjectProjectRelationship> relations, boolean depth, User user) {
+    public List<ProjectLink> getLinkedProjectsWithoutReleases(Map<String, ProjectProjectRelationship> relations, boolean depth, User user) throws SW360Exception {
         List<ProjectLink> out;
 
         Deque<String> visitedIds = new ArrayDeque<>();
@@ -2388,7 +2391,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     private List<ProjectLink> iterateProjectRelationShips(Map<String, ProjectProjectRelationship> relations,
                                                           String parentNodeId, Deque<String> visitedIds, int maxDepth,
-                                                          User user, boolean withRelease) {
+                                                          User user, boolean withRelease) throws SW360Exception {
         List<ProjectLink> out = new ArrayList<>();
         for (Map.Entry<String, ProjectProjectRelationship> entry : relations.entrySet()) {
             Optional<ProjectLink> projectLinkOptional;
@@ -2405,7 +2408,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return out;
     }
 
-    public List<ProjectLink> getLinkedProjectsWithoutReleases(Project project, boolean deep, User user) {
+    public List<ProjectLink> getLinkedProjectsWithoutReleases(Project project, boolean deep, User user) throws SW360Exception {
         Deque<String> visitedIds = new ArrayDeque<>();
 
         Map<String, ProjectProjectRelationship> fakeRelations = new HashMap<>();
@@ -2414,7 +2417,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return out;
     }
 
-    public List<ProjectLink> getLinkedProjectsWithAllReleases(Project project, boolean deep, User user) {
+    public List<ProjectLink> getLinkedProjectsWithAllReleases(Project project, boolean deep, User user) throws SW360Exception {
         Deque<String> visitedIds = new ArrayDeque<>();
 
         Map<String, ProjectProjectRelationship> fakeRelations = new HashMap<>();
@@ -2423,7 +2426,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private List<ProjectLink> iterateProjectRelationShipsWithAllReleases(Map<String, ProjectProjectRelationship> relations,
-                                                                         String parentNodeId, Deque<String> visitedIds, int maxDepth, User user) {
+                                                                         String parentNodeId, Deque<String> visitedIds, int maxDepth, User user) throws SW360Exception {
         List<ProjectLink> out = new ArrayList<>();
         for (Map.Entry<String, ProjectProjectRelationship> entry : relations.entrySet()) {
             Optional<ProjectLink> projectLinkOptional = createProjectLinkForDependencyNetwork(entry.getKey(), entry.getValue(),
@@ -2463,38 +2466,64 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     protected ReleaseLink convertReleaseNodeToReleaseLink(ReleaseNode releaseNode, String projectId, User user, String parentId, int layer) throws TException {
         Release releaseById = componentDatabaseHandler.getRelease(releaseNode.getReleaseId(), user);
+
         ReleaseLink releaseLink = new ReleaseLink();
+        boolean isAccessible = componentDatabaseHandler.isReleaseActionAllowed(releaseById, user, RequestedAction.READ);
         releaseLink.setId(releaseNode.getReleaseId());
-        releaseLink.setReleaseRelationship(ReleaseRelationship.valueOf(releaseNode.getReleaseRelationship()));
-        releaseLink.setMainlineState(MainlineState.valueOf(releaseNode.getMainlineState()));
-        releaseLink.setComment(releaseNode.getComment());
+        releaseLink.setAccessible(isAccessible);
+        releaseLink.setName(isAccessible ? releaseById.getName() : "");
+        releaseLink.setVersion(isAccessible ? releaseById.getVersion() : "");
+        releaseLink.setLayer(layer);
+        releaseLink.setLongName(isAccessible ? SW360Utils.printFullname(releaseById) : "Restricted release");
         releaseLink.setHasSubreleases(!releaseNode.getReleaseLink().isEmpty());
-        releaseLink.setName(releaseById.getName());
-        releaseLink.setVersion(releaseById.getVersion());
-        releaseLink.setLongName(SW360Utils.printFullname(releaseById));
-        releaseLink.setClearingState(releaseById.getClearingState());
-        releaseLink.setLicenseIds(releaseById.getMainLicenseIds());
-        releaseLink.setOtherLicenseIds(releaseById.getOtherLicenseIds());
-        releaseLink.setAccessible(componentDatabaseHandler.isReleaseActionAllowed(releaseById, user, RequestedAction.READ));
         releaseLink.setNodeId(releaseById.getId() + "_" + UUID.randomUUID());
         releaseLink.setParentNodeId(parentId);
-        releaseLink.setLayer(layer);
         releaseLink.setProjectId(projectId);
-        releaseLink.setReleaseMainLineState(releaseById.getMainlineState());
-        releaseLink.setAttachments(releaseById.getAttachments() != null ? Lists.newArrayList(releaseById.getAttachments()) : Collections.emptyList());
+        releaseLink.setVendor((isAccessible && releaseById.getVendor() != null) ? releaseById.getVendor().getFullname() : "");
 
-        if (releaseById.getVendor() != null) {
-            releaseLink.setVendor(releaseById.getVendor().getFullname());
-        } else {
-            releaseLink.setVendor("");
+        if (isAccessible) {
+            releaseLink.setReleaseRelationship(ReleaseRelationship.valueOf(releaseNode.getReleaseRelationship()));
+            releaseLink.setMainlineState(MainlineState.valueOf(releaseNode.getMainlineState()));
+            releaseLink.setComment(releaseNode.getComment());
+            releaseLink.setClearingState(releaseById.getClearingState());
+            releaseLink.setLicenseIds(releaseById.getMainLicenseIds());
+            releaseLink.setOtherLicenseIds(releaseById.getOtherLicenseIds());
+            releaseLink.setReleaseMainLineState(releaseById.getMainlineState());
+            releaseLink.setAttachments(releaseById.getAttachments() != null ? Lists.newArrayList(releaseById.getAttachments()) : Collections.emptyList());
+            if (releaseById.getComponentType() != null) {
+                releaseLink.setComponentType(releaseById.getComponentType());
+            } else {
+                Component componentById = componentDatabaseHandler.getComponent(releaseById.getComponentId(), user);
+                releaseLink.setComponentType(componentById.getComponentType());
+            }
         }
 
-        if (releaseById.getComponentType() != null) {
-            releaseLink.setComponentType(releaseById.getComponentType());
-        } else {
-            Component componentById = componentDatabaseHandler.getComponent(releaseById.getComponentId(), user);
-            releaseLink.setComponentType(componentById.getComponentType());
-        }
         return releaseLink;
+    }
+
+    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByIndexPath(List<String> indexPath, String projectId, User user) throws SW360Exception {
+        Project project = getProjectById(projectId, user);
+
+        if (project == null) {
+            throw new SW360Exception("Project not found: " + projectId).setErrorCode(404);
+        }
+
+        String releaseNetwork = project.getReleaseRelationNetwork();
+        List<ReleaseLink> linkedReleases = new ArrayList<>();
+        try {
+            List<ReleaseNode> releaseNodes = mapper.readValue(releaseNetwork, new TypeReference<List<ReleaseNode>>() {
+            });
+            ReleaseNode previousNode = releaseNodes.get(Integer.parseInt(indexPath.get(0)));
+            for (int i = 1; i < indexPath.size(); i++){
+                previousNode = previousNode.getReleaseLink().get(Integer.parseInt(indexPath.get(i)));
+            }
+            linkedReleases = convertReleaseNodesToReleaseLinksParallel(previousNode.getReleaseLink(), projectId, user);
+        } catch (JsonProcessingException e) {
+            log.error("JsonProcessingException: " + e);
+        } catch (IndexOutOfBoundsException exception) {
+            throw new SW360Exception("Index path is incorrect").setErrorCode(400);
+        }
+
+        return linkedReleases;
     }
 }
