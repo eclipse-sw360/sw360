@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 
-ARG TOMCAT_VERSION=10-jre21-temurin-noble
+ARG TOMCAT_VERSION=11-jre21-temurin-noble
 
 #--------------------------------------------------------------------------------------------------
 # Thrift
