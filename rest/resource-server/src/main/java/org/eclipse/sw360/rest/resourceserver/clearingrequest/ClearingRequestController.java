@@ -128,6 +128,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         if (StringUtils.hasText(clearingRequest.projectId)) {
             Project project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
             Project projectWithClearingInfo = projectService.getClearingInfo(project, sw360User);
+            restControllerHelper.updateCRSize(clearingRequest, projectWithClearingInfo);
+            halClearingRequest = new HalResource<>(clearingRequest);
             restControllerHelper.addEmbeddedReleaseDetails(halClearingRequest, projectWithClearingInfo);
             restControllerHelper.addEmbeddedProject(halClearingRequest, project, true);
         }
