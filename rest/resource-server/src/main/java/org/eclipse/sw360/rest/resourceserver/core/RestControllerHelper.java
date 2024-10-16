@@ -28,10 +28,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceListController;
-import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.Quadratic;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
@@ -53,6 +50,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
+import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
@@ -131,6 +129,9 @@ public class RestControllerHelper<T> {
     private final Sw360ObligationService obligationService;
 
     @NonNull
+    private final Sw360ClearingRequestService clearingRequestService;
+
+    @NonNull
     private final ResourceComparatorGenerator<T> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
 
     @NonNull
@@ -147,6 +148,12 @@ public class RestControllerHelper<T> {
     private static final double MAX_CVSS = 10;
     public static final String PAGINATION_PARAM_PAGE_ENTRIES = "page_entries";
     private static final String JWT_SUBJECT = "sub";
+    public static final HashMap<ClearingRequestSize, Integer> CLEARING_REQUEST_SIZE_MAP = new HashMap<>() {{
+        put(ClearingRequestSize.VERY_SMALL, 20);
+        put(ClearingRequestSize.SMALL, 50);
+        put(ClearingRequestSize.MEDIUM, 75);
+        put(ClearingRequestSize.LARGE, 150);
+    }};
 
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
@@ -1377,6 +1384,7 @@ public class RestControllerHelper<T> {
         embeddedClearingRequest.setType(null);
         embeddedClearingRequest.setClearingType(clearingRequest.getClearingType());
         embeddedClearingRequest.setTimestamp(clearingRequest.getTimestamp());
+        embeddedClearingRequest.setClearingSize(clearingRequest.getClearingSize());
         return embeddedClearingRequest;
     }
 
@@ -1581,5 +1589,18 @@ public class RestControllerHelper<T> {
         int totalReleaseCount = SW360Utils.getTotalReleaseCount(clearingInfo);
         halClearingRequest.addEmbeddedResource("openRelease", openReleaseCount);
         halClearingRequest.addEmbeddedResource("totalRelease", totalReleaseCount);
+    }
+
+    public void updateCRSize(ClearingRequest clearingRequest, Project project) throws TException {
+        int openReleaseCount = SW360Utils.getOpenReleaseCount(project.getReleaseClearingStateSummary());
+        ClearingRequestSize currentSize = SW360Utils.determineCRSize(openReleaseCount);
+        ClearingRequestSize initialSize = clearingRequest.getClearingSize();
+        if(initialSize == null) return;
+        if(!initialSize.equals(ClearingRequestSize.VERY_LARGE)) {
+            int limit = CLEARING_REQUEST_SIZE_MAP.get(initialSize);
+            if(openReleaseCount > limit){
+                clearingRequestService.updateClearingRequestForChangeInClearingSize(clearingRequest.getId(), currentSize);
+            }
+        }
     }
 }

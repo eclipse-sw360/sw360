@@ -363,6 +363,15 @@ public class ThriftEnumUtils {
             ClearingRequestType.HIGH, "High ISR"
     );
 
+    private static final ImmutableMap<ClearingRequestSize, String> MAP_CLEARING_REQUEST_SIZE_STRING = ImmutableMap.of(
+            ClearingRequestSize.VERY_SMALL, "Very Small",
+            ClearingRequestSize.SMALL, "Small",
+            ClearingRequestSize.MEDIUM, "Medium",
+            ClearingRequestSize.LARGE, "Large",
+            ClearingRequestSize.VERY_LARGE, "Very Large"
+    );
+
+
     private static final ImmutableMap<UserAccess, String> MAP_USER_ACCESS_STRING = ImmutableMap.<UserAccess, String>builder()
             .put(UserAccess.READ, "Read")
             .put(UserAccess.READ_WRITE, "Read and Write")
@@ -456,6 +465,7 @@ public class ThriftEnumUtils {
             .put(PackageManager.class, MAP_PACKAGE_MANAGER_STRING)
             .put(CycloneDxComponentType.class, MAP_CYCLONE_DX_COMPONENT_TYPE_STRING)
             .put(ClearingRequestType.class, MAP_CLEARING_REQUEST_TYPE_STRING)
+            .put(ClearingRequestSize.class, MAP_CLEARING_REQUEST_SIZE_STRING)
             .build();
 
     public static String enumToString(TEnum value) {

@@ -744,6 +744,20 @@ public class SW360Utils {
         return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     }
 
+    public static ClearingRequestSize determineCRSize(int totalReleaseCount) {
+        if (totalReleaseCount >= 0 && totalReleaseCount <= 20) {
+            return ClearingRequestSize.VERY_SMALL;
+        } else if (totalReleaseCount >= 21 && totalReleaseCount <= 50) {
+            return ClearingRequestSize.SMALL;
+        } else if (totalReleaseCount > 50 && totalReleaseCount <= 75) {
+            return ClearingRequestSize.MEDIUM;
+        } else if (totalReleaseCount > 75 && totalReleaseCount <= 150) {
+            return ClearingRequestSize.LARGE;
+        } else {
+            return ClearingRequestSize.VERY_LARGE;
+        }
+    }
+
     /**
      * Assumes that the process exists.
      */

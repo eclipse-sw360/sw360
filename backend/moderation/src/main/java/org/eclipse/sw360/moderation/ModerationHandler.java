@@ -13,12 +13,7 @@ package org.eclipse.sw360.moderation;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.db.ModerationSearchHandler;
-import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.ModerationState;
-import org.eclipse.sw360.datahandler.thrift.PaginationData;
-import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -356,6 +351,14 @@ public class ModerationHandler implements ModerationService.Iface {
         assertUser(user);
 
         handler.updateClearingRequestForChangeInProjectBU(crId, businessUnit, user);
+    }
+
+    @Override
+    public void updateClearingRequestForChangeInClearingSize(String crId, ClearingRequestSize size) throws TException {
+        assertId(crId);
+        assertNotNull(size);
+
+        handler.updateClearingRequestForChangeInClearingSize(crId, size);
     }
 
     @Override

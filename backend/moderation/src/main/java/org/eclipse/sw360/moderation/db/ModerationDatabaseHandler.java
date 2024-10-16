@@ -30,6 +30,7 @@ import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabase
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -315,6 +316,15 @@ public class ModerationDatabaseHandler {
         try {
             ClearingRequest clearingRequest = clearingRequestRepository.get(crId);
             clearingRequest.setProjectBU(businessUnit);
+            clearingRequestRepository.update(clearingRequest);
+        } catch (Exception e) {
+            log.error("Failed to update CR-ID: %s with error: %s", crId, e.getMessage());
+        }
+    }
+    public void updateClearingRequestForChangeInClearingSize(String crId, ClearingRequestSize size) {
+        try{
+            ClearingRequest clearingRequest = clearingRequestRepository.get(crId);
+            clearingRequest.setClearingSize(size);
             clearingRequestRepository.update(clearingRequest);
         } catch (Exception e) {
             log.error("Failed to update CR-ID: %s with error: %s", crId, e.getMessage());
