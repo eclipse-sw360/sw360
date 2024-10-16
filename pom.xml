@@ -63,6 +63,7 @@
     <!-- Build version properties -->
     <java_source.version>21</java_source.version>
     <java_target.version>21</java_target.version>
+    <java_release.version>21</java_release.version>
     <maven.compiler.source>21</maven.compiler.source>
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -115,8 +116,9 @@
     <httpcore5.version>5.2.5</httpcore5.version>
     <jakarta-xml-bind.version>4.0.2</jakarta-xml-bind.version>
     <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
-    <javax-activation.version>1.1.1</javax-activation.version>
-    <javax-annotation.version>1.3.2</javax-annotation.version>
+    <jakarta.annotation-api.version>3.0.0</jakarta.annotation-api.version>
+    <jakarta.activation-api.version>2.0.1</jakarta.activation-api.version>
+    <jakarta.mail-api.version>2.0.1</jakarta.mail-api.version>
     <jaxen.version>2.0.0</jaxen.version>
     <jcip-annotations.version>1.0</jcip-annotations.version>
     <jcraft.version>0.1.54</jcraft.version>
@@ -196,11 +198,10 @@
         <artifactId>packageurl-java</artifactId>
         <version>${package-url.version}</version>
       </dependency>
-      <!-- javax.annotation: java 11 compatibility -->
       <dependency>
-        <groupId>javax.annotation</groupId>
-        <artifactId>javax.annotation-api</artifactId>
-        <version>${javax-annotation.version}</version>
+        <groupId>jakarta.annotation</groupId>
+        <artifactId>jakarta.annotation-api</artifactId>
+        <version>${jakarta.annotation-api.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -352,9 +353,9 @@
         <version>${httpclient5.version}</version>
       </dependency>
       <dependency>
-        <groupId>javax.activation</groupId>
-        <artifactId>activation</artifactId>
-        <version>1.1.1</version>
+        <groupId>jakarta.activation</groupId>
+        <artifactId>jakarta.activation-api</artifactId>
+        <version>${jakarta.activation-api.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.code.gson</groupId>
@@ -662,6 +663,7 @@
         <configuration>
           <source>${java_source.version}</source>
           <target>${java_target.version}</target>
+          <release>${java_release.version}</release>
           <parameters>true</parameters>
         </configuration>
       </plugin>

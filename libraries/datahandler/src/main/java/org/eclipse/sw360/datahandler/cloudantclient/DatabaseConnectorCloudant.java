@@ -398,7 +398,7 @@ public class DatabaseConnectorCloudant {
                     .db(this.dbName)
                     .ddoc(type.getSimpleName())
                     .view(viewName)
-                    .keys(Arrays.asList(keys))
+                    .keys(Collections.singletonList(keys))
                     .includeDocs(false)
                     .group(true)
                     .reduce(true)
