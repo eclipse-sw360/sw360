@@ -60,10 +60,10 @@
     <rest.deploy.dir>${base.deploy.dir}/webapps</rest.deploy.dir>
     <jars.deploy.dir>${base.deploy.dir}</jars.deploy.dir>
     <!-- Build version properties -->
-    <java_source.version>17</java_source.version>
-    <java_target.version>17</java_target.version>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
+    <java_source.version>21</java_source.version>
+    <java_target.version>21</java_target.version>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <!-- Plugin version properties -->
@@ -71,7 +71,7 @@
     <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
     <maven-assembly-plugin.version>3.4.2</maven-assembly-plugin.version>
     <maven-bundle-plugin.version>5.1.8</maven-bundle-plugin.version>
-    <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
+    <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
     <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
     <maven-failsafe-plugin.version>3.3.0</maven-failsafe-plugin.version>
@@ -80,7 +80,7 @@
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.3.0</maven-surefire-plugin.version>
     <maven-war-plugin.version>3.4.0</maven-war-plugin.version>
-    <versions-maven-plugin.version>2.12.0</versions-maven-plugin.version>
+    <versions-maven-plugin.version>2.17.1</versions-maven-plugin.version>
     <!-- JSON Libraries used in the project -->
     <gson.version>2.10.1</gson.version>
     <json.version>20240303</json.version>
@@ -90,8 +90,10 @@
     <jackson.version>2.17.1</jackson.version>
 
     <!-- Dependencies version properties -->
-    <byte-buddy.version>1.12.13</byte-buddy.version>
+    <assertj.version>3.26.3</assertj.version>
+    <byte-buddy.version>1.15.4</byte-buddy.version>
     <cloudantsdk.version>0.9.1</cloudantsdk.version>
+    <commons-cli.version>1.9.0</commons-cli.version>
     <commons-codec.version>1.17.1</commons-codec.version>
     <commons-collection4.version>4.4</commons-collection4.version>
     <commons-compress.version>1.21</commons-compress.version>
@@ -101,51 +103,55 @@
     <commons-lang3.version>3.12.0</commons-lang3.version>
     <commons-text.version>1.10.0</commons-text.version>
     <dom4j.version>2.1.3</dom4j.version>
+    <equalsverifier.version>3.17.1</equalsverifier.version>
     <failureaccess.version>1.0.1</failureaccess.version>
     <findbugs-annotations.version>1.3.9-1</findbugs-annotations.version>
     <glassfish-jaxb.version>2.3.9</glassfish-jaxb.version>
     <guava.version>32.0.0-jre</guava.version>
     <hamcrest.version>1.3</hamcrest.version>
+    <httpclient5.version>5.3.1</httpclient5.version>
     <httpcore.version>4.4.16</httpcore.version>
     <httpcore5.version>5.2.5</httpcore5.version>
-    <httpclient5.version>5.3.1</httpclient5.version>
     <jakarta-xml-bind.version>4.0.2</jakarta-xml-bind.version>
+    <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
     <javax-activation.version>1.1.1</javax-activation.version>
     <javax-annotation.version>1.3.2</javax-annotation.version>
+    <jaxen.version>2.0.0</jaxen.version>
     <jcip-annotations.version>1.0</jcip-annotations.version>
     <jcraft.version>0.1.54</jcraft.version>
+    <jetbrains-annotations.version>26.0.0</jetbrains-annotations.version>
     <jetty.version>10.0.15</jetty.version>
-    <jgiven.version>0.17.0</jgiven.version>
+    <jgiven.version>1.3.1</jgiven.version>
+    <jose4j.version>0.9.6</jose4j.version>
     <json.version>20230227</json.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>4.13.2</junit.version>
-    <maven-javadoc.version>3.6.2</maven-javadoc.version>
     <log4j2.version>2.19.0</log4j2.version>
+    <maven-javadoc.version>3.6.2</maven-javadoc.version>
     <mockito.version>4.7.0</mockito.version>
     <okhttp.version>4.10.0</okhttp.version>
     <org.spdx.java.spdx.library.version>1.1.1</org.spdx.java.spdx.library.version>
     <org.spdx.tools.java.version>1.1.5</org.spdx.tools.java.version>
     <package-url.version>1.4.1</package-url.version>
+    <plexus-utils.version>4.0.2</plexus-utils.version>
     <poi.version>4.1.2</poi.version>
-    <project-lombok.version>1.18.24</project-lombok.version>
+    <project-lombok.version>1.18.34</project-lombok.version>
     <slf4j.version>2.0.16</slf4j.version>
     <spotless.version>2.29.0</spotless.version>
     <spring-boot.version>3.3.3</spring-boot.version>
     <spring-restdocs.version>3.0.1</spring-restdocs.version>
-    <spring-security.version>6.3.3</spring-security.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
+    <spring-security-oauth2-authorization-server.version>1.3.2</spring-security-oauth2-authorization-server.version>
+    <spring-security.version>6.3.3</spring-security.version>
     <springdoc-openapi-hateos.version>2.6.0</springdoc-openapi-hateos.version>
     <springdoc-openapi-security.version>2.6.0</springdoc-openapi-security.version>
     <springdoc-openapi-stater-common.version>2.6.0</springdoc-openapi-stater-common.version>
     <springdoc-openapi-ui.version>1.7.0</springdoc-openapi-ui.version>
     <springdoc-openapi-webmvc.version>2.6.0</springdoc-openapi-webmvc.version>
     <springframework.version>6.1.12</springframework.version>
-    <spring-security-oauth2-authorization-server.version>1.3.2</spring-security-oauth2-authorization-server.version>
     <thrift.version>0.20.0</thrift.version>
     <tika.version>1.28.5</tika.version>
     <wiremock.version>2.26.0</wiremock.version>
-    <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
-    <jose4j.version>0.9.6</jose4j.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -260,7 +266,7 @@
       <dependency>
         <groupId>commons-cli</groupId>
         <artifactId>commons-cli</artifactId>
-        <version>1.4</version>
+        <version>1.9.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.thrift</groupId>
@@ -282,12 +288,12 @@
       <dependency>
         <groupId>org.cyclonedx</groupId>
         <artifactId>cyclonedx-core-java</artifactId>
-        <version>9.0.4</version>
+        <version>9.0.5</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-model</artifactId>
-        <version>3.9.2</version>
+        <version>4.0.0-beta-4</version>
       </dependency>
       <dependency>
         <groupId>org.glassfish.jaxb</groupId>
@@ -372,7 +378,7 @@
       <dependency>
         <groupId>org.apache.velocity</groupId>
         <artifactId>velocity-engine-core</artifactId>
-        <version>2.3</version>
+        <version>2.4</version>
         <exclusions>
           <exclusion>
             <groupId>org.apache.commons</groupId>
@@ -398,7 +404,7 @@
       <dependency>
         <groupId>org.jetbrains</groupId>
         <artifactId>annotations</artifactId>
-        <version>15.0</version>
+        <version>${jetbrains-annotations.version}</version>
       </dependency>
       <dependency>
         <groupId>net.sf.saxon</groupId>
@@ -408,7 +414,7 @@
       <dependency>
         <groupId>org.assertj</groupId>
         <artifactId>assertj-core</artifactId>
-        <version>3.11.1</version>
+        <version>${assertj.version}</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -437,7 +443,7 @@
       <dependency>
         <groupId>jaxen</groupId>
         <artifactId>jaxen</artifactId>
-        <version>1.1.6</version>
+        <version>${jaxen.version}</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -467,7 +473,7 @@
       <dependency>
         <groupId>nl.jqno.equalsverifier</groupId>
         <artifactId>equalsverifier</artifactId>
-        <version>3.1.12</version>
+        <version>${equalsverifier.version}</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -548,6 +554,12 @@
         <artifactId>jose4j</artifactId>
         <version>${jose4j.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-utils</artifactId>
+        <version>${plexus-utils.version}</version>
+    </dependency>
+    
     </dependencies>
   </dependencyManagement>
   <build>
@@ -701,7 +713,7 @@
                   </regexMessage>
                 </requireProperty>
                 <requireJavaVersion>
-                  <version>[17,18)</version>
+                  <version>[21,23)</version>
                 </requireJavaVersion>
               </rules>
               <fail>true</fail>
