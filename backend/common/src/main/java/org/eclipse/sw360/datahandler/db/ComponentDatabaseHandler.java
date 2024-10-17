@@ -768,6 +768,16 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     }
 
+    public Component getComponentByName(String name) {
+        Set<String> components = componentRepository.getComponentIdsByName(name,true);
+        if (components != null && components.size() == 1) {
+            Component comp = componentRepository.get(components.iterator().next());
+            return comp;
+        } else {
+            return null;
+        }
+    }
+
     private boolean isDependenciesExistInComponent(Component component) {
         boolean isValidDependentIds = true;
         if (component.isSetReleaseIds()) {
