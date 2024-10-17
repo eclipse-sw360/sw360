@@ -105,6 +105,8 @@ public class SearchController implements RepresentationModelProcessor<Repository
         CollectionModel resources = null;
         if (CommonUtils.isNotEmpty(searchResources)) {
             resources = restControllerHelper.generatePagesResource(paginationResult, searchResources);
+        }else{
+            resources = restControllerHelper.emptyPageResource(SearchResult.class, paginationResult);
         }
 
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
