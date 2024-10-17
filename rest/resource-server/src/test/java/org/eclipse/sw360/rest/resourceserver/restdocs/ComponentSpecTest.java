@@ -1333,13 +1333,16 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         .queryParam("withlinkedreleases", "true")
                         .queryParam("mimetype", "xlsx")
                         .queryParam("module", "components")
+                        .queryParam("excludeReleaseVersion", "false")
                         .accept(MediaTypes.HAL_JSON))
              .andExpect(status().isOk())
              .andDo(this.documentationHandler.document(
                      queryParameters(
                              parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
                              parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
-                             parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`")
+                             parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
+                             parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
+                                     + "Possible values are `<true|false>`")
                      )));
     }
 }
