@@ -1370,6 +1370,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "template", required = false) String template,
             @Parameter(description = "Generate license info including all attachments of the linked releases")
             @RequestParam(value = "includeAllAttachments", required = false ) boolean includeAllAttachments,
+            @Parameter(description = "Exclude release version from the license info file")
+            @RequestParam(value = "excludeReleaseVersion", required = false, defaultValue = "false") boolean excludeReleaseVersion,
             HttpServletResponse response
     ) throws TException, IOException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -1448,7 +1450,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User,
                 outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments,
-                externalIds, fileName);
+                externalIds, fileName, excludeReleaseVersion);
         byte[] byteContent = licenseInfoFile.bufferForGeneratedOutput().array();
         response.setContentType(outputFormatInfo.getMimeType());
         response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));

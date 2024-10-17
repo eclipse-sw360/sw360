@@ -101,7 +101,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     }
 
     @Override
-    public byte[] generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception {
+    public byte[] generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project,
+            Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds,
+            Map<String, ObligationStatusInfo> obligationsStatus, String fileName, boolean excludeReleaseVersion) throws SW360Exception {
         String licenseInfoHeaderText = project.getLicenseInfoHeaderText();
 
         ByteArrayOutputStream docxOutputStream = new ByteArrayOutputStream();
@@ -119,7 +121,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                             project,
                             licenseInfoHeaderText,
                             false,
-                            externalIds
+                            externalIds,
+                            excludeReleaseVersion
                             );
                     } else {
                         throw new SW360Exception("Could not load the template for xwpf document: " + DOCX_TEMPLATE_FILE);
@@ -168,7 +171,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         Collection<LicenseInfoParsingResult> projectLicenseInfoResults,
         Project project,
         String licenseInfoHeaderText,
-        boolean includeObligations, Map<String, String> externalIds) throws XmlException, TException {
+        boolean includeObligations, Map<String, String> externalIds, boolean excludeReleaseVersion)
+                throws XmlException, TException {
             if (CommonUtils.isNotEmpty(projectLicenseInfoResults)) {
                 projectLicenseInfoResults = projectLicenseInfoResults.stream().filter(Objects::nonNull)
                     .sorted(Comparator.comparing(li -> getComponentLongName(li), String.CASE_INSENSITIVE_ORDER))
@@ -188,8 +192,8 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
                 return;
             }
 
-            fillReleaseBulletList(document, projectLicenseInfoResults);
-            fillReleaseDetailList(document, projectLicenseInfoResults, includeObligations, licenseToReferenceId);
+            fillReleaseBulletList(document, projectLicenseInfoResults, excludeReleaseVersion);
+            fillReleaseDetailList(document, projectLicenseInfoResults, includeObligations, licenseToReferenceId, excludeReleaseVersion);
             fillLicenseList(document, projectLicenseInfoResults, licenseToReferenceId);
     }
 
@@ -308,9 +312,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
             List<Obligation> obligations = SW360Utils.getObligations();
             fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
                     ObligationLevel.ORGANISATION_OBLIGATION, COMMON_RULES_TABLE_INDEX, NO_ORGANISATION_OBLIGATIONS);
-            fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations, 
+            fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
                     ObligationLevel.PROJECT_OBLIGATION, PROJECT_OBLIGATIONS_TABLE_INDEX, NO_PROJECT_OBLIGATIONS);
-            fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations, 
+            fillProjectComponentOrganisationObligationsTable(document, obligationsStatus, obligations,
                     ObligationLevel.COMPONENT_OBLIGATION, COMPONENT_OBLIGATIONS_TABLE_INDEX, NO_COMPONENT_OBLIGATIONS);
             fillComponentObligationsTable(document, obligationResults, mostLicenses, project);
 
@@ -720,24 +724,38 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
         return cursor;
     }
 
-    private void fillReleaseBulletList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults) throws XmlException {
+    private void fillReleaseBulletList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults,
+            boolean excludeReleaseVersion) throws XmlException {
         List<String> releaseList = new ArrayList<>();
-        for (LicenseInfoParsingResult result : projectLicenseInfoResults) {
-            releaseList.add(getComponentLongName(result));
+
+        if (excludeReleaseVersion) {
+            for (LicenseInfoParsingResult result : projectLicenseInfoResults) {
+                releaseList.add(getComponentLongNameWithoutVersion(result));
+            }
+        } else {
+            for (LicenseInfoParsingResult result : projectLicenseInfoResults) {
+                releaseList.add(getComponentLongName(result));
+            }
         }
         addBulletList(document, releaseList, true);
         addPageBreak(document);
     }
 
-    private void fillReleaseDetailList(XWPFDocument document, Collection<LicenseInfoParsingResult> projectLicenseInfoResults, boolean includeObligations,  Map<LicenseNameWithText, Integer> licenseToReferenceId) throws TException {
+    private void fillReleaseDetailList(XWPFDocument document,
+            Collection<LicenseInfoParsingResult> projectLicenseInfoResults, boolean includeObligations,
+            Map<LicenseNameWithText, Integer> licenseToReferenceId, boolean excludeReleaseVersion) throws TException {
         addFormattedText(document.createParagraph().createRun(), "Detailed Releases Information", FONT_SIZE + 2, true);
         setText(document.createParagraph().createRun(), "Please note the following license conditions and copyright " +
                 "notices applicable to Open Source Software and/or other components (or parts thereof):");
         addNewLines(document, 0);
-        Map<String, Set<String>> sortedAcknowledgement = getAcknowledgement(projectLicenseInfoResults);
+        Map<String, Set<String>> sortedAcknowledgement = getAcknowledgement(projectLicenseInfoResults, excludeReleaseVersion);
         for (LicenseInfoParsingResult parsingResult : projectLicenseInfoResults) {
-            addReleaseTitle(document, parsingResult);
-            addAcknowledgement(document, sortedAcknowledgement.get(getComponentLongName(parsingResult)));
+            addReleaseTitle(document, parsingResult, excludeReleaseVersion);
+            if (excludeReleaseVersion) {
+                addAcknowledgement(document, sortedAcknowledgement.get(getComponentLongNameWithoutVersion(parsingResult)));
+            } else {
+                addAcknowledgement(document, sortedAcknowledgement.get(getComponentLongName(parsingResult)));
+            }
             if (parsingResult.getStatus() == LicenseInfoRequestStatus.SUCCESS) {
                 addLicenses(document, parsingResult, includeObligations, licenseToReferenceId);
                 addNewLines(document, 1);
@@ -766,18 +784,17 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
     }
 
     private SortedMap<String, Set<String>> getAcknowledgement(
-            Collection<LicenseInfoParsingResult> projectLicenseInfoResults) {
+            Collection<LicenseInfoParsingResult> projectLicenseInfoResults, boolean excludeReleaseVersion) {
 
         Map<Boolean, List<LicenseInfoParsingResult>> partitionedResults = projectLicenseInfoResults.stream()
                 .collect(Collectors.partitioningBy(r -> r.getStatus() == LicenseInfoRequestStatus.SUCCESS));
         List<LicenseInfoParsingResult> goodResults = partitionedResults.get(true);
 
-        return getSortedAcknowledgements(getSortedLicenseInfos(goodResults));
-
+        return getSortedAcknowledgements(getSortedLicenseInfos(goodResults, excludeReleaseVersion));
     }
 
-    private void addReleaseTitle(XWPFDocument document, LicenseInfoParsingResult parsingResult) {
-        String releaseTitle = getComponentLongName(parsingResult);
+    private void addReleaseTitle(XWPFDocument document, LicenseInfoParsingResult parsingResult, boolean excludeReleaseVersion) {
+        String releaseTitle = excludeReleaseVersion ? getComponentLongNameWithoutVersion(parsingResult) : getComponentLongName(parsingResult);
         XWPFParagraph releaseTitleParagraph = document.createParagraph();
         releaseTitleParagraph.setStyle(STYLE_HEADING);
         addBookmark(releaseTitleParagraph, releaseTitle, releaseTitle);
