@@ -751,7 +751,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         };
     }
 
-    protected List<ProjectLink> createLinkedProjects(Project project,
+    public List<ProjectLink> createLinkedProjects(Project project,
             Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep, User user) {
         final Collection<ProjectLink> linkedProjects = SW360Utils
                 .flattenProjectLinkTree(SW360Utils.getLinkedProjects(project, deep, new ThriftClients(), log, user));
