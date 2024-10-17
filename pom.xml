@@ -59,7 +59,7 @@
     <rest.version>2.0.0</rest.version>
     <backend.deploy.dir>${base.deploy.dir}/webapps</backend.deploy.dir>
     <rest.deploy.dir>${base.deploy.dir}/webapps</rest.deploy.dir>
-    <jars.deploy.dir>${base.deploy.dir}</jars.deploy.dir>
+    <jars.deploy.dir/> <!-- Prevent copy of jar files to tomcat/webapps. Used by Docker build -->
     <!-- Build version properties -->
     <java_source.version>21</java_source.version>
     <java_target.version>21</java_target.version>
