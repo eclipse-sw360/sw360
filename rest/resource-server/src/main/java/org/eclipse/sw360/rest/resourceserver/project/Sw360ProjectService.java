@@ -44,6 +44,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseObligationsStatusInfo;
@@ -85,6 +86,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -979,5 +981,72 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         // returning default value 7 (days) if variable is not set
         return limit < 1 ? 7 : limit;
     }
-}
+
+
+    public List<LicenseInfoParsingResult> processLicenseInfoWithObligations(
+            List<LicenseInfoParsingResult> licenseInfoWithObligations, Map<String, String> releaseIdToAcceptedCLI,
+            List<Release> releases, User user) throws TException {
+        ThriftClients thriftClients = new ThriftClients();
+        LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
+
+        for (Release release : releases) {
+            List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
+            if (approvedCliAttachments.isEmpty()) {
+                log.info("No approved CLX attachments found for release: {}. Proceeding with attached CLX.",
+                        release.getId());
+                approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
+            }
+            final String releaseId = release.getId();
+
+            for (Attachment filteredAttachment : approvedCliAttachments) {
+                final String attachmentContentId = filteredAttachment.getAttachmentContentId();
+
+                if (releaseIdToAcceptedCLI.containsKey(releaseId)
+                        && releaseIdToAcceptedCLI.get(releaseId).equals(attachmentContentId)) {
+                    releaseIdToAcceptedCLI.remove(releaseId);
+                }
+
+                try {
+                    List<LicenseInfoParsingResult> licenseResults = licenseClient.getLicenseInfoForAttachment(release,
+                            attachmentContentId, false, user);
+                    List<ObligationParsingResult> obligationResults = licenseClient.getObligationsForAttachment(release,
+                            attachmentContentId, user);
+
+                    if (CommonUtils.allAreNotEmpty(licenseResults, obligationResults)
+                            && obligationResults.get(0).getObligationsAtProjectSize() > 0) {
+                        licenseInfoWithObligations.add(licenseClient
+                                .createLicenseToObligationMapping(licenseResults.get(0), obligationResults.get(0)));
+                    }
+                } catch (TException exception) {
+                    log.error(String.format("Error fetching license Information for attachment: %s in release: %s",
+                            filteredAttachment.getFilename(), releaseId), exception);
+                }
+            }
+        }
+
+        Predicate<LicenseNameWithText> filterLicense = license -> (license.isSetObligationsAtProject()
+                && !(SW360Constants.LICENSE_NAME_UNKNOWN.equals(license.getLicenseName())
+                        || SW360Constants.NA.equalsIgnoreCase(license.getLicenseName())));
+
+        licenseInfoWithObligations.stream()
+                .sorted(Comparator.comparing(LicenseInfoParsingResult::getName, String.CASE_INSENSITIVE_ORDER))
+                .forEach(e -> {
+                    Set<LicenseNameWithText> updatedLicenses = e.getLicenseInfo().getLicenseNamesWithTexts().stream()
+                            .filter(filterLicense).map(license -> {
+                                if (SW360Constants.LICENSE_TYPE_GLOBAL.equalsIgnoreCase(license.getType())) {
+                                    license.setType(SW360Constants.LICENSE_TYPE_GLOBAL);
+                                } else {
+                                    license.setType(SW360Constants.LICENSE_TYPE_OTHERS);
+                                }
+                                return license;
+                            })
+                            .sorted(Comparator.comparing(LicenseNameWithText::getType, String.CASE_INSENSITIVE_ORDER)
+                                    .thenComparing(LicenseNameWithText::getLicenseName, String.CASE_INSENSITIVE_ORDER))
+                            .collect(Collectors.toCollection(LinkedHashSet::new));
+                    e.getLicenseInfo().setLicenseNamesWithTexts(updatedLicenses);
+                });
+
+        return licenseInfoWithObligations;
+    }
+ }
 
