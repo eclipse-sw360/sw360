@@ -132,7 +132,7 @@ public class VendorDatabaseHandler {
     }
 
     private boolean isChangeResultInDuplicate(Vendor before, Vendor after) {
-        if (CommonUtils.nullToEmptyString(before.getFullname()).equals(after.getFullname()) &&
+        if (CommonUtils.nullToEmptyString(before.getFullname()).equals(after.getFullname()) ||
                 CommonUtils.nullToEmptyString(before.getUrl()).equals(after.getUrl())) {
             // not duplicated, because fullname and url is same
             return false;

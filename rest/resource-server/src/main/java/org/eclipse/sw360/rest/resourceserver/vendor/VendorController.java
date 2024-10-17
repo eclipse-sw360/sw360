@@ -16,6 +16,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -127,6 +129,33 @@ public class VendorController implements RepresentationModelProcessor<Repository
                 .buildAndExpand(vendor.getId()).toUri();
 
         return ResponseEntity.created(location).body(halResource);
+    }
+
+    @Operation(
+            summary = "Update a vendor.",
+            description = "Update a vendor.",
+            tags = {"Vendor"}
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = VENDORS_URL + "/{id}", method = RequestMethod.PATCH)
+    public ResponseEntity<?> updateVendor(
+            @Parameter(description = "The id of the vendor")
+            @PathVariable("id") String id,
+            @Parameter(description = "The vendor to be updated.")
+            @RequestBody Vendor vendor
+    ) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (vendor.getFullname() == null && vendor.getShortname() == null && vendor.getUrl() == null) {
+            return new ResponseEntity<>("Value cannot be null", HttpStatus.BAD_REQUEST);
+        }
+        RequestStatus status = vendorService.vendorUpdate(vendor, sw360User, id);
+        if (RequestStatus.SUCCESS.equals(status)) {
+            return new ResponseEntity<>("Vendor updated successfully", HttpStatus.OK);
+        } else if (RequestStatus.DUPLICATE.equals(status)) {
+            return new ResponseEntity<>("A Vendor with same fullname '" + vendor.getFullname() + "' already exists!", HttpStatus.CONFLICT);
+        } else {
+            return new ResponseEntity<>("sw360 vendor with id '" + id + " cannot be updated.", HttpStatus.CONFLICT);
+        }
     }
 
     @Override
