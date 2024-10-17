@@ -26,7 +26,7 @@
         <finalName>vulnerabilities-core</finalName>
     </build>
     <properties>
-        <artifact.deploy.dir>${backend.deploy.dir}</artifact.deploy.dir>
+        <artifact.deploy.dir>${jars.deploy.dir}</artifact.deploy.dir>
     </properties>
 
     <dependencies>
