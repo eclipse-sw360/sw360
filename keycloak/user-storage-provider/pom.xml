@@ -11,36 +11,37 @@
     <description>User Storage Provider</description>
     <groupId>org.eclipse</groupId>
     <version>1.0.0-SNAPSHOT</version>
-    
+
     <parent>
         <artifactId>keycloak</artifactId>
         <groupId>org.eclipse.sw360</groupId>
         <version>23.0.4</version>
     </parent>
-    
+
     <properties>
-	    <version.compiler.maven.plugin>3.5.1</version.compiler.maven.plugin>
-	    <maven.compiler.source>17</maven.compiler.source>
+        <version.compiler.maven.plugin>3.5.1</version.compiler.maven.plugin>
+        <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <version.hibernate.javax.persistence>1.0.0.Final</version.hibernate.javax.persistence>
-	    <arquillian-graphene.version>2.5.4</arquillian-graphene.version>
-	    <version.jee.jaxb.api>2.3.1</version.jee.jaxb.api>
-	    <version.keycloak>23.0.4</version.keycloak>
+        <arquillian-graphene.version>2.5.4</arquillian-graphene.version>
+        <version.jee.jaxb.api>2.3.1</version.jee.jaxb.api>
+        <version.keycloak>23.0.4</version.keycloak>
         <spring.security.crypto>6.3.3</spring.security.crypto>
+        <artifact.deploy.dir>${listener.deploy.dir}</artifact.deploy.dir>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
-	    <scope>provided</scope>
-	    <version>${version.keycloak}</version>
+            <scope>provided</scope>
+            <version>${version.keycloak}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
-	    <scope>provided</scope>
-	    <version>${version.keycloak}</version>
+            <scope>provided</scope>
+            <version>${version.keycloak}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -50,8 +51,8 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
-	    <artifactId>jboss-logging</artifactId>
-	    <version>3.5.0.Final</version>
+            <artifactId>jboss-logging</artifactId>
+            <version>3.5.0.Final</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -72,17 +73,22 @@
             <artifactId>spring-security-crypto</artifactId>
             <version>${spring.security.crypto}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
+            <version>${httpcore5.version}</version>
+        </dependency>
 
         <dependency>
-	    <groupId>org.eclipse.sw360</groupId>
-	    <artifactId>commonIO</artifactId>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>commonIO</artifactId>
             <version>18.99.1</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.eclipse.sw360</groupId>
-	    <artifactId>datahandler</artifactId>
-        <version>18.99.1</version>
-	</dependency>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>datahandler</artifactId>
+            <version>18.99.1</version>
+        </dependency>
     </dependencies>
 
     <build>

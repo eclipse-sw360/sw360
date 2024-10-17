@@ -73,21 +73,22 @@ sudo ./kc.sh start  --log="console,file" --hostname-strict-backchannel=false --h
 
 ## Build the Backend:
 
-* Build the SW360 backend code using Maven, `mvn clean install -DskipTests`
-* Copy the generated WAR files to the webapps folder of Apache Tomcat, `cp $(find . -name "*.war")  /opt/apache-tomcat-10.x.x/webapps`
+* Build the SW360 backend code using Maven,
+  `mvn clean install -DskipTests -Dbase.deploy.dir=/opt/apache-tomcat-11.x.x/ -Dlistener.deploy.dir=/opt/keycloak-24.x.x/providers -P deploy`
 * Start the Apache Tomcat server.
 
 ## Keycloak Providers and Libraries:
  Providers are used to read users from sw360 db and register users from keycloak to sw360 db
  
-* After building the backend add the below files to providers folder in /opt/keycloak-24.0.2/providers/:
+* After building the backend with deploy profile, following files should be copied and available at `/opt/keycloak-24.0.2/providers/`:
 ```
-sudo cp sw360/keycloak/user-storage-provider/target/sw360-keycloak-user-storage-provider.jar /opt/keycloak-24.0.2/providers/
-sudo cp sw360/keycloak/event-listner/target/sw360-keycloak-event-listener.jar /opt/keycloak-24.0.2/providers
-sudo cp .m2/repository/org/eclipse/sw360/datahandler/18.99.1-SNAPSHOT/datahandler-18.99.1-SNAPSHOT.jar /opt/keycloak-24.0.2/providers/
-sudo cp .m2/repository/org/eclipse/sw360/commonIO/18.99.1/commonIO-18.99.1.jar /opt/keycloak-24.0.2/providers/
-add libthrift-0.19.0.jar file to providers folder
-sudo wget https://repo1.maven.org/maven2/org/apache/httpcomponents/core5/httpcore5/5.2.4/httpcore5-5.2.4.jar
+commonIO-18.99.1.jar
+datahandler-18.99.1.jar
+httpcore5-5.2.5.jar
+libthrift-0.20.0.jar
+spring-security-crypto-6.3.3.jar
+sw360-keycloak-event-listener.jar
+sw360-keycloak-user-storage-provider.jar
 ```
 
 ## Keycloak Admin Console:
