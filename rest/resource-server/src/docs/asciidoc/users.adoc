@@ -137,3 +137,14 @@ include::{snippets}/should_document_revoke_user_token/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_revoke_user_token/http-response.adoc[]
+
+[[resources-user-get-grouplist]]
+==== Fetch group list for a user.
+
+A `GET` request help to fetch the list of group for a particular user.
+
+===== Example request
+include::{snippets}/should_document_get_grouplist/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_grouplist/http-response.adoc[]
