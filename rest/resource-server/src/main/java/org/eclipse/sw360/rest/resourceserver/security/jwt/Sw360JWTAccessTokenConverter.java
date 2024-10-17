@@ -4,6 +4,7 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.rest.resourceserver.security.jwt;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -91,12 +92,32 @@ public class Sw360JWTAccessTokenConverter implements Converter<Jwt, AbstractAuth
 		User sw360User = userService.getUserByEmail(email);
 		validateUser(email, sw360User);
 		List<GrantedAuthority> grantedAuthorities = Sw360GrantedAuthoritiesCalculator.generateFromUser(sw360User);
-		List<String> scopes = jwt.getClaim(SCOPE);
+		Set<String> scopes = getScopes(jwt);
 		if (null == scopes || scopes.isEmpty()) {
 			return grantedAuthorities;
 		}
 		log.debug("User {} has authorities {} while client {} has scopes {}. Setting intersection as granted authorities for access token", email, grantedAuthorities, jwt.getClaim("client_id"), scopes);
 		return grantedAuthorities.stream().filter(s -> scopes.contains(s.toString())).toList();
+	}
+
+	/**
+	 * Retrieves the scopes from the JWT token.
+	 *
+	 * @param jwt the JWT token
+	 * @return a list of scopes extracted from the JWT token
+	 */
+	private static @NotNull Set<String> getScopes(Jwt jwt) {
+		Object scopeClaim = jwt.getClaim(SCOPE);
+		Set<String> scopes;
+
+		if (scopeClaim instanceof String scopeClaimString) {
+			scopes = new HashSet<>(Arrays.asList(scopeClaimString.split("\\s+")));
+		} else if (scopeClaim instanceof List scopeList) {
+			scopes = new HashSet<>(scopeList);
+		} else {
+			scopes = Collections.emptySet();
+		}
+		return scopes;
 	}
 
 	/**
