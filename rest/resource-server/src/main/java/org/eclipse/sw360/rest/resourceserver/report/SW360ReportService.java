@@ -180,7 +180,9 @@ public class SW360ReportService {
         componentclient.sendExportSpreadsheetSuccessMail(emailURL, email);
     }
 
-    public ByteBuffer getLicenseInfoBuffer(User sw360User, String id, String generatorClassName, String variant, String template, String externalIds) throws TException {
+    public ByteBuffer getLicenseInfoBuffer(User sw360User, String id, String generatorClassName,
+                                           String variant, String template, String externalIds,
+                                           boolean excludeReleaseVersion) throws TException {
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
         List<ProjectLink> mappedProjectLinks = projectService.createLinkedProjects(sw360Project,
@@ -217,7 +219,7 @@ public class SW360ReportService {
         }
         final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User,
                 outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments,
-                externalIds, fileName);
+                externalIds, fileName, excludeReleaseVersion);
         return licenseInfoFile.bufferForGeneratedOutput();
     }
 
