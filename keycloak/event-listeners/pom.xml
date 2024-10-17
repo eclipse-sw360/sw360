@@ -10,7 +10,6 @@
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.eclipse.sw360</groupId>
     <version>23.0.4</version>
     <artifactId>event-listener</artifactId>
     <packaging>jar</packaging>
@@ -26,6 +25,7 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <keycloak.provider.version>23.0.4</keycloak.provider.version>
+        <artifact.deploy.dir>${listener.deploy.dir}</artifact.deploy.dir>
     </properties>
 
     <dependencies>
@@ -48,14 +48,14 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
-	    <artifactId>commonIO</artifactId>
+            <artifactId>commonIO</artifactId>
             <version>18.99.1</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.eclipse.sw360</groupId>
-	    <artifactId>datahandler</artifactId>
-        <version>18.99.1</version>
-	</dependency>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.sw360</groupId>
+            <artifactId>datahandler</artifactId>
+            <version>18.99.1</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.thrift</groupId>
             <artifactId>libthrift</artifactId>
@@ -63,14 +63,14 @@
             <scope>provided</scope>
         </dependency>
 
-	<dependency>
+        <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
             <version>3.5.0.Final</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
-    
+
     <build>
         <finalName>sw360-keycloak-event-listener</finalName>
         <pluginManagement>

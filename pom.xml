@@ -60,6 +60,7 @@
     <backend.deploy.dir>${base.deploy.dir}/webapps</backend.deploy.dir>
     <rest.deploy.dir>${base.deploy.dir}/webapps</rest.deploy.dir>
     <jars.deploy.dir/> <!-- Prevent copy of jar files to tomcat/webapps. Used by Docker build -->
+    <listener.deploy.dir/>
     <!-- Build version properties -->
     <java_source.version>21</java_source.version>
     <java_target.version>21</java_target.version>
