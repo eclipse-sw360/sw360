@@ -2062,15 +2062,17 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     public void should_document_get_download_license_info() throws Exception {
         this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/licenseinfo?generatorClassName=XhtmlGenerator&variant=DISCLOSURE&externalIds=portal-id,main-project-id")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .param("module", "licenseInfo")
+                .param("projectId", project.getId())
+                .param("generatorClassName", "XhtmlGenerator")
+                .param("variant", "DISCLOSURE")
+                .param("externalIds", "portal-id,main-project-id")
                 .accept("application/xhtml+xml"))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler
                         .document(queryParameters(
-                                parameterWithName("generatorClassName")
-                                        .description("All possible values for output generator class names are "
-                                                + Arrays.asList("DocxGenerator", "XhtmlGenerator", "TextGenerator")),
-                                parameterWithName("variant").description("All the possible values for variants are "
-                                        + Arrays.asList(OutputFormatVariant.values())),
+                                parameterWithName("generatorClassName").description("Projects download format. Possible values are `<DocxGenerator|XhtmlGenerator|TextGenerator>`"),
+                                parameterWithName("variant").description("All the possible values for variants are `<REPORT|DISCLOSURE>`"),
                                 parameterWithName("externalIds").description("The external Ids of the project")
                                 )));
     }
