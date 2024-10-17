@@ -37,6 +37,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.springframework.data.domain.Pageable;
 
 import java.io.IOException;
@@ -45,6 +46,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -108,6 +110,32 @@ public class VendorController implements RepresentationModelProcessor<Repository
         Vendor sw360Vendor = vendorService.getVendorById(id);
         HalResource<Vendor> halResource = createHalVendor(sw360Vendor);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Get the releases used by the vendor.",
+            description = "Get the releases by vendor id.",
+            tags = {"Vendor"}
+    )
+    @RequestMapping(value = VENDORS_URL + "/{id}/releases", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleases(
+            @Parameter(description = "The id of the vendor to get.")
+            @PathVariable("id") String id
+    ) throws TException{
+        try{
+            Set<Release> releases = vendorService.getAllReleaseList(id);
+            List<EntityModel<Release>> resources = new ArrayList<>();
+            releases.forEach(rel -> {
+                Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(rel);
+                resources.add(EntityModel.of(embeddedRelease));
+            });
+            CollectionModel<EntityModel<Release>> relResources = restControllerHelper.createResources(resources);
+
+            HttpStatus status = relResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+            return new ResponseEntity<>(relResources, status);
+        } catch (TException e) {
+            throw new TException(e.getMessage());
+        }
     }
 
     @Operation(

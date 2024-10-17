@@ -12,6 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.junit.Before;
@@ -23,10 +24,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
@@ -84,6 +82,23 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
         vendorList.add(vendor);
         vendorList.add(vendor2);
 
+        Set<Release> releases = new HashSet<>();
+        Release release1 = new Release();
+        release1.setId("12345");
+        release1.setName("Release_1");
+        release1.setVersion("1.0.0");
+        release1.setVendor(vendor);
+
+        Release release2 = new Release();
+        release2.setId("123456");
+        release2.setName("Release_2");
+        release2.setVersion("2.0.0");
+        release2.setVendor(vendor);
+
+        releases.add(release1);
+        releases.add(release2);
+
+        given(this.vendorServiceMock.getAllReleaseList(eq(vendor.getId()))).willReturn(releases);
         given(this.vendorServiceMock.getVendors()).willReturn(vendorList);
         given(this.vendorServiceMock.vendorUpdate(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vendorServiceMock.getVendorById(eq(vendor.getId()))).willReturn(vendor);
@@ -139,6 +154,25 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("fullName").description("The full name of the vendor"),
                                 subsectionWithPath("shortName").description("The short name of the vendor, optional"),
                                 subsectionWithPath("url").description("The vendor's home page URL"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_vendor_releases() throws Exception {
+        mockMvc.perform(get("/api/vendors/" + vendor.getId() + "/releases")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:releases.[]id").description("Id of the release"),
+                                subsectionWithPath("_embedded.sw360:releases.[]name").description("The name of the release"),
+                                subsectionWithPath("_embedded.sw360:releases.[]version").description("The version of the release"),
+                                subsectionWithPath("_embedded.sw360:releases.[]_links").description("Self <<resources-index-links,Links>> to Release resource\""),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
