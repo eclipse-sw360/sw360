@@ -85,7 +85,18 @@ jobs:
       - name: Build SW360
         run: |
           export PATH=$PATH:${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
-          mvn clean install --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Djars.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false -DRunRestForceUpdateTest=false -fae
+          mvn clean install \
+            --no-transfer-progress \
+            -P deploy -Dhelp-docs=true \
+            -Dbase.deploy.dir=. \
+            -Djars.deploy.dir=${PWD}/deploy \
+            -Dbackend.deploy.dir=${PWD}/deploy/webapps \
+            -Drest.deploy.dir=${PWD}/deploy/webapps \
+            -DRunComponentVisibilityRestrictionTest=false \
+            -DRunPrivateProjectAccessTest=false \
+            -DRunRestForceUpdateTest=false \
+            -fae \
+            -Dmaven.plugin.validation=VERBOSE
 
       - name: Run PrivateProjectAccessTest
         run: |
