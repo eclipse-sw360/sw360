@@ -2632,4 +2632,62 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                     subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"))));
         }
     }
+
+    @Test
+    public void should_document_get_list_view_of_dependencies_network() throws Exception {
+        Map<String, String> subProjectView = new HashMap<>();
+        subProjectView.put("isAccessible", "true");
+        subProjectView.put("clearingState", "In Progress");
+        subProjectView.put("type", "Product");
+        subProjectView.put("relation", "Is a subproject");
+        subProjectView.put("isRelease", "false");
+        subProjectView.put("projectState", "Unknown");
+        subProjectView.put("projectOrigin", "Project3 (v0.1)");
+        subProjectView.put("id", "61f4d4781d0a40df9c92d9c79e08030a");
+
+        Map<String, String> rootReleaseView = new HashMap<>();
+        rootReleaseView.put("isAccessible", "true");
+        rootReleaseView.put("clearingState", "Report available");
+        rootReleaseView.put("mainLicenses", "Apache-2.0");
+        rootReleaseView.put("type", "OSS");
+        rootReleaseView.put("projectMainlineState", "Open");
+        rootReleaseView.put("relation", "Contained");
+        rootReleaseView.put("isRelease", "true");
+        rootReleaseView.put("releaseMainlineState", "Open");
+        rootReleaseView.put("projectOrigin", "");
+        rootReleaseView.put("name", "Release1 (2.0)");
+        rootReleaseView.put("releaseOrigin", "");
+        rootReleaseView.put("comment", "Comment");
+        rootReleaseView.put("id", "d8407b28b8c34c71913b324870e38bdc");
+
+        Map<String, String> leafReleaseView = new HashMap<>();
+        leafReleaseView.put("isAccessible", "true");
+        leafReleaseView.put("clearingState", "Report available");
+        leafReleaseView.put("mainLicenses", "Apache-2.0");
+        leafReleaseView.put("type", "OSS");
+        leafReleaseView.put("projectMainlineState", "Open");
+        leafReleaseView.put("relation", "Contained");
+        leafReleaseView.put("isRelease", "true");
+        leafReleaseView.put("releaseMainlineState", "Open");
+        leafReleaseView.put("projectOrigin", "");
+        leafReleaseView.put("name", "Release2 (2.0)");
+        leafReleaseView.put("releaseOrigin", "Release1 (2.0)");
+        leafReleaseView.put("comment", "Comment");
+        leafReleaseView.put("id", "f8407a28b8434c71913b32a870e38bdc");
+
+
+        given(this.projectServiceMock.serveDependencyNetworkListView(eq(project.getId()), any()))
+                .willReturn(List.of(subProjectView, rootReleaseView, leafReleaseView));
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            mockMvc.perform(get("/api/projects/network/" + project.getId() + "/listView")
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON)
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            mockMvc.perform(get("/api/projects/network/" + project.getId() + "/listView")
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON)
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isOk());
+        }
+    }
 }
