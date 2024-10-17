@@ -136,7 +136,7 @@ public class CycloneDxBOMImporter {
                         .filter(Objects::nonNull)
                         .filter(ref -> ExternalReference.Type.VCS.equals(ref.getType()))
                         .map(ExternalReference::getUrl)
-                        .map(url -> sanitizeVCS(url))
+                        .map(url -> sanitizeVCS(url.toLowerCase()))
                         .filter(url -> CommonUtils.isValidUrl(url))
                         .map(url -> new AbstractMap.SimpleEntry<>(url, comp)))
                 .collect(Collectors.groupingBy(e -> e.getKey(),
@@ -986,20 +986,24 @@ public class CycloneDxBOMImporter {
      * Sanitize different repository URLS based on their defined schema
      */
     public String sanitizeVCS(String vcs) {
-        // GitHub repository URL Format: https://github.com/supplier/name
-        if (vcs.toLowerCase().contains("github.com")) {
-            URI uri = URI.create(vcs);
-            String[] urlParts = uri.getPath().split("/");
-            if (urlParts.length >= 3) {
-                String firstSegment = urlParts[1];
-                String secondSegment = urlParts[2].replaceAll("\\.git.*", "").replaceAll("#.*", "");
-                vcs = "https://github.com/" + firstSegment + "/" + secondSegment;
-                return vcs;
-            } else {
-                log.error("Invalid GitHub repository URL: " + vcs);
+        if (vcs.contains("github.com")) {
+            vcs = "https://" + vcs.substring(vcs.indexOf("github.com")).trim();
+            try {
+                URI uri = URI.create(vcs);
+                String[] urlParts = uri.getPath().split("/");
+
+                if (urlParts.length >= 3) {
+                    String firstSegment = urlParts[1];
+                    String secondSegment = urlParts[2].replaceAll("\\.git.*", "").replaceAll("#.*", "");
+                    vcs = "https://github.com/" + firstSegment + "/" + secondSegment;
+                    return vcs;
+                } else {
+                    log.error("Invalid GitHub repository URL: {}", vcs);
+                }
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid URL format: {}", vcs, e);
             }
         }
-        // Other formats yet to be defined
         return vcs;
     }
 
