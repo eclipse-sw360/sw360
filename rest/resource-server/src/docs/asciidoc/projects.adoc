@@ -508,6 +508,23 @@ include::{snippets}/should_document_get_license_obligations/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_get_license_obligations/http-response.adoc[]
 
+[[resources-project-get-project-page-obligations-information]]
+==== List project page obligations
+
+A `GET` request will list obligations of a project depending upon the type of obigation level.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_page_obligations/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_page_obligations/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_page_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_page_obligations/http-response.adoc[]
+
 [[resources-projects-create]]
 ==== Creating a project
 
