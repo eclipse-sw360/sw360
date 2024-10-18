@@ -24,7 +24,7 @@
         <version.compiler.maven.plugin>3.5.1</version.compiler.maven.plugin>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <keycloak.provider.version>23.0.4</keycloak.provider.version>
+        <keycloak.provider.version>25.0.4</keycloak.provider.version>
         <artifact.deploy.dir>${listener.deploy.dir}</artifact.deploy.dir>
     </properties>
 
