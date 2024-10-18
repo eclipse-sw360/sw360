@@ -25,7 +25,7 @@
         <version.hibernate.javax.persistence>1.0.0.Final</version.hibernate.javax.persistence>
         <arquillian-graphene.version>2.5.4</arquillian-graphene.version>
         <version.jee.jaxb.api>2.3.1</version.jee.jaxb.api>
-        <version.keycloak>23.0.4</version.keycloak>
+        <version.keycloak>25.0.4</version.keycloak>
         <spring.security.crypto>6.3.3</spring.security.crypto>
         <artifact.deploy.dir>${listener.deploy.dir}</artifact.deploy.dir>
     </properties>
