@@ -493,11 +493,14 @@ public class CycloneDxBOMImporter {
 
                 // update components specific fields
                 comp = componentDatabaseHandler.getComponent(compAddSummary.getId(), user);
-                if (AddDocumentRequestStatus.SUCCESS.equals(compAddSummary.getRequestStatus()) && (null != bomComp.getType() && null == comp.getCdxComponentType())) {
+                if (null != bomComp.getType() && null == comp.getCdxComponentType()) {
                     comp.setCdxComponentType(getCdxComponentType(bomComp.getType()));
                 }
-                if (AddDocumentRequestStatus.SUCCESS.equals(compAddSummary.getRequestStatus()) && (CommonUtils.isNullEmptyOrWhitespace(comp.getDescription()) && CommonUtils.isNotNullEmptyOrWhitespace(bomComp.getDescription()))) {
-                    comp.setDescription(bomComp.getDescription().trim());
+                StringBuilder description = new StringBuilder();
+                if (CommonUtils.isNullEmptyOrWhitespace(comp.getDescription()) && CommonUtils.isNotNullEmptyOrWhitespace(bomComp.getDescription())) {
+                    description.append(bomComp.getDescription().trim());
+                } else if (CommonUtils.isNotNullEmptyOrWhitespace(bomComp.getDescription())) {
+                    description.append(" || ").append(bomComp.getDescription().trim());
                 }
                 if (CommonUtils.isNotEmpty(comp.getMainLicenseIds())) {
                     comp.getMainLicenseIds().addAll(licenses);
@@ -513,7 +516,7 @@ public class CycloneDxBOMImporter {
                         comp.setWiki(CommonUtils.nullToEmptyString(extRef.getUrl()));
                     }
                 }
-
+                comp.setDescription(description.toString());
                 RequestStatus updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
                 if (RequestStatus.SUCCESS.equals(updateStatus)) {
                     log.info("updating component successfull: " + comp.getName());
@@ -557,6 +560,7 @@ public class CycloneDxBOMImporter {
 
             Release release = new Release();
             String relName = "";
+            StringBuilder description = new StringBuilder();
             AddDocumentRequestSummary compAddSummary;
             try {
                 Component dupCompByName = componentDatabaseHandler.getComponentByName(comp.getName());
@@ -612,11 +616,13 @@ public class CycloneDxBOMImporter {
 
                     // update components specific fields
                     comp = componentDatabaseHandler.getComponent(compAddSummary.getId(), user);
-                    if (AddDocumentRequestStatus.SUCCESS.equals(compAddSummary.getRequestStatus()) && (null != bomComp.getType() && null == comp.getCdxComponentType())) {
+                    if (null != bomComp.getType() && null == comp.getCdxComponentType()) {
                         comp.setCdxComponentType(getCdxComponentType(bomComp.getType()));
                     }
-                    if (AddDocumentRequestStatus.SUCCESS.equals(compAddSummary.getRequestStatus()) && (CommonUtils.isNullEmptyOrWhitespace(comp.getDescription()) && CommonUtils.isNotNullEmptyOrWhitespace(bomComp.getDescription()))) {
-                        comp.setDescription(bomComp.getDescription().trim());
+                    if (CommonUtils.isNullEmptyOrWhitespace(comp.getDescription()) && CommonUtils.isNotNullEmptyOrWhitespace(bomComp.getDescription())) {
+                        description.append(bomComp.getDescription().trim());
+                    } else if (CommonUtils.isNotNullEmptyOrWhitespace(bomComp.getDescription())) {
+                        description.append(" || ").append(bomComp.getDescription().trim());
                     }
                     if (CommonUtils.isNotEmpty(comp.getMainLicenseIds())) {
                         comp.getMainLicenseIds().addAll(licenses);
@@ -635,6 +641,7 @@ public class CycloneDxBOMImporter {
                         }
                     }
 
+                    comp.setDescription(description.toString());
                     RequestStatus updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
                     if (RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("updating component successfull: " + comp.getName());
