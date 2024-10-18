@@ -573,4 +573,8 @@ public class ProjectHandler implements ProjectService.Iface {
         return handler.getLinkedProjectsWithAllReleases(project, deep, user);
     }
 
+    @Override
+    public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByIndexPath(String projectId, List<String> indexPath, User user) throws SW360Exception {
+        return handler.getReleaseLinksOfProjectNetWorkByIndexPath(indexPath, projectId, user);
+    }
 }
