@@ -625,10 +625,14 @@ public class DatabaseHandlerUtil {
                 referenceDocLogList.stream().forEach(referenceDocLog -> {
                     referenceDocLog.setDocumentId(changeLogParentId);
                     changelog.debug(convertObjectToJson(referenceDocLog));
-                    changeLogRepository.add(referenceDocLog);
+                    try {
+                        changeLogRepository.add(referenceDocLog);
+                    } catch (SW360Exception e) {
+                        log.error("Error occurred while adding change log", e);
+                    }
                 });
             } catch (Exception exp) {
-                log.error("Error occured while creating Change Logs", exp);
+                log.error("Error occurred while creating Change Logs", exp);
             }
         };
     }

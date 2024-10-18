@@ -80,7 +80,12 @@ public class VendorDatabaseHandler {
             log.error("Error creating the vendor: " + e.why);
             return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE).setMessage(e.why);
         }
-        repository.add(vendor);
+        try {
+            repository.add(vendor);
+        } catch (SW360Exception e) {
+            log.error("Error adding vendor", e);
+            return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.FAILURE).setMessage(e.why);
+        }
         return new AddDocumentRequestSummary().setRequestStatus(AddDocumentRequestStatus.SUCCESS).setId(vendor.getId());
     }
 
