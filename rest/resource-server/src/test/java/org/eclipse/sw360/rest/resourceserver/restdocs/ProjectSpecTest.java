@@ -2357,13 +2357,17 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .queryParam("withlinkedreleases", "true")
                 .queryParam("mimetype", "xlsx")
                 .queryParam("module", "projects")
+                .queryParam("excludeReleaseVersion", "false")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         queryParameters(
                                 parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
                                 parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
-                                parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"))
+                                parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
+                                parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
+                                        + "Possible values are `<true|false>`")
+                        )
                 ));
     }
 
@@ -2375,6 +2379,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         .queryParam("mimetype", "xlsx")
                         .queryParam("module", "projects")
                         .queryParam("projectId", project.getId())
+                        .queryParam("excludeReleaseVersion", "false")
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -2382,8 +2387,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
                                 parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
                                 parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
-                                parameterWithName("projectId").description("Id of a project"))
-                        ));
+                                parameterWithName("projectId").description("Id of a project"),
+                                parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
+                                        + "Possible values are `<true|false>`")
+                        )));
     }
 
     @Test
