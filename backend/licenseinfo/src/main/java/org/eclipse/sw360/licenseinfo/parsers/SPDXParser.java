@@ -112,6 +112,7 @@ public class SPDXParser extends LicenseInfoParser {
         } catch (SAXException e) {
             String msg = "failed to parse attachment=" + attachmentContent.getFilename() + " with id="
                     + attachmentContent.getId();
+            log.error(msg, e);
             throw new SW360Exception(msg);
         }
     }
