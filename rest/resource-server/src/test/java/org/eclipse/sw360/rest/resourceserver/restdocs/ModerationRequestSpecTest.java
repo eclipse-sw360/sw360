@@ -13,6 +13,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
@@ -62,6 +63,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -80,6 +82,9 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360ModerationRequestService moderationRequestServiceMock;
+
+    @MockBean
+    private ModerationRequest moderationRequest;
 
     @Before
     public void before() throws TException, IOException {
@@ -126,7 +131,7 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         project2Deletions.setProjectType(ProjectType.CUSTOMER);
         project2Deletions.setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS);
 
-        ModerationRequest moderationRequest = new ModerationRequest();
+        moderationRequest = new ModerationRequest();
         moderationRequest.setId("MR-101");
         moderationRequest.setTimestamp(System.currentTimeMillis() / 1000L - 172800);
         moderationRequest.setDocumentId("R-101");
@@ -481,5 +486,17 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.number").description("Number of the current page"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_delete_moderationrequests() throws Exception {
+        String accessToken = TestHelper.generateAuthHeader(testUserId, testUserPassword);
+        given(this.moderationRequestServiceMock.deleteModerationRequestInfo(any(), any(), any(), any())).willReturn(RequestStatus.SUCCESS);
+        mockMvc.perform(delete("/api/moderationrequest/delete")
+                .content("[\"id1\", \"id2\"]")
+                .header("Authorization", accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
     }
 }
