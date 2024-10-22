@@ -475,6 +475,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         osi.setStatus(ObligationStatus.OPEN);
         osi.setObligationType(obligation.getObligationType());
         Map<String, ObligationStatusInfo> obligationStatusMap = Map.of(obligation.getTitle(), osi);
+        Map<String, ObligationStatusInfo> obligationStatusMapFromAdminSection = new HashMap<>();
 
         ObligationList obligationLists = new ObligationList();
         obligationLists.setProjectId(project8.getId());
@@ -588,6 +589,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.sw360ReportServiceMock.getSourceCodeBundleName(any(), any())).willReturn("SourceCodeBundle-ProjectName");
         given(this.projectServiceMock.getLicenseInfoAttachmentUsage(eq(project8.getId()))).willReturn(licenseInfoUsages);
         given(this.projectServiceMock.getObligationData(eq(project8.getLinkedObligationId()), any())).willReturn(obligationLists);
+        given(this.projectServiceMock.setObligationsFromAdminSection(any(), any(), any(), any())).willReturn(obligationStatusMapFromAdminSection);
         given(this.projectServiceMock.setLicenseInfoWithObligations(eq(obligationStatusMap), eq(releaseIdToAcceptedCLI), any(), any())).willReturn(obligationStatusMap);
         given(this.projectServiceMock.getLicensesFromAttachmentUsage(eq(licenseInfoUsages), any())).willReturn(licensesFromAttachmentUsage);
         given(this.projectServiceMock.getLicenseObligationData(eq(licensesFromAttachmentUsage), any())).willReturn(obligationStatusMap);
@@ -909,12 +911,12 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("page_entries").description("Amount of projects per page")
                         ),
                         responseFields(
-                                subsectionWithPath("licenseObligations.obligation_title").description("Title of license obligation"),
-                                subsectionWithPath("licenseObligations.obligation_title.text").description("Text of license obligation"),
-                                subsectionWithPath("licenseObligations.obligation_title.licenseIds[]").description("List of licenseIds"),
-                                subsectionWithPath("licenseObligations.obligation_title.id").description("Id of the obligation"),
-                                subsectionWithPath("licenseObligations.obligation_title.releaseIdToAcceptedCLI").description("Releases having accepted attachments"),
-                                subsectionWithPath("licenseObligations.obligation_title.obligationType").description("Type of the obligation"),
+                                subsectionWithPath("obligations.obligation_title").description("Title of license obligation"),
+                                subsectionWithPath("obligations.obligation_title.text").description("Text of license obligation"),
+                                subsectionWithPath("obligations.obligation_title.licenseIds[]").description("List of licenseIds"),
+                                subsectionWithPath("obligations.obligation_title.id").description("Id of the obligation"),
+                                subsectionWithPath("obligations.obligation_title.releaseIdToAcceptedCLI").description("Releases having accepted attachments"),
+                                subsectionWithPath("obligations.obligation_title.obligationType").description("Type of the obligation"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of obligations per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all license obligations"),
@@ -1159,14 +1161,46 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("page_entries").description("Amount of projects per page")
                         ),
                         responseFields(
-                                subsectionWithPath("licenseObligations.obligation_title").description("Title of license obligation"),
-                                subsectionWithPath("licenseObligations.obligation_title.text").description("Text of license obligation"),
-                                subsectionWithPath("licenseObligations.obligation_title.releaseIdToAcceptedCLI").description("Release Ids having accepted attachments"),
-                                subsectionWithPath("licenseObligations.obligation_title.licenseIds[]").description("List of licenseIds"),
-                                subsectionWithPath("licenseObligations.obligation_title.comment").description("Comment on the obligation"),
-                                subsectionWithPath("licenseObligations.obligation_title.status").description("Status of the obligation"),
-                                subsectionWithPath("licenseObligations.obligation_title.id").description("Id of the obligation"),
-                                subsectionWithPath("licenseObligations.obligation_title.obligationType").description("Type of the obligation"),
+                                subsectionWithPath("obligations.obligation_title").description("Title of license obligation"),
+                                subsectionWithPath("obligations.obligation_title.text").description("Text of license obligation"),
+                                subsectionWithPath("obligations.obligation_title.releaseIdToAcceptedCLI").description("Release Ids having accepted attachments"),
+                                subsectionWithPath("obligations.obligation_title.licenseIds[]").description("List of licenseIds"),
+                                subsectionWithPath("obligations.obligation_title.comment").description("Comment on the obligation"),
+                                subsectionWithPath("obligations.obligation_title.status").description("Status of the obligation"),
+                                subsectionWithPath("obligations.obligation_title.id").description("Id of the obligation"),
+                                subsectionWithPath("obligations.obligation_title.obligationType").description("Type of the obligation"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of obligations per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all license obligations"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_project_page_obligations() throws Exception {
+        mockMvc.perform(get("/api/projects/" + project8.getId() + "/obligation")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .param("obligationLevel", "License")
+                        .param("page", "0")
+                        .param("page_entries", "5")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("obligationLevel").description("Possible values are: [LICENSE, PROJECT, COMPONENT or ORGANIZATION]"),
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects per page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("obligations.obligation_title").description("Title of license obligation"),
+                                subsectionWithPath("obligations.obligation_title.text").description("Text of license obligation"),
+                                subsectionWithPath("obligations.obligation_title.releaseIdToAcceptedCLI").description("Release Ids having accepted attachments"),
+                                subsectionWithPath("obligations.obligation_title.licenseIds[]").description("List of licenseIds"),
+                                subsectionWithPath("obligations.obligation_title.comment").description("Comment on the obligation"),
+                                subsectionWithPath("obligations.obligation_title.status").description("Status of the obligation"),
+                                subsectionWithPath("obligations.obligation_title.id").description("Id of the obligation"),
+                                subsectionWithPath("obligations.obligation_title.obligationType").description("Type of the obligation"),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of obligations per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all license obligations"),
