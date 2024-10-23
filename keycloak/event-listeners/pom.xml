@@ -10,14 +10,13 @@
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <version>23.0.4</version>
     <artifactId>event-listener</artifactId>
     <packaging>jar</packaging>
 
     <parent>
         <artifactId>keycloak</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>23.0.4</version>
+        <version>19.0.0</version>
     </parent>
 
     <properties>
@@ -46,12 +45,12 @@
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>commonIO</artifactId>
-            <version>18.99.1</version>
+            <version>19.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>datahandler</artifactId>
-            <version>18.99.1</version>
+            <version>19.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.thrift</groupId>

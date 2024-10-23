@@ -82,8 +82,8 @@ sudo ./kc.sh start  --log="console,file" --hostname-strict-backchannel=false --h
  
 * After building the backend with deploy profile, following files should be copied and available at `/opt/keycloak-24.0.2/providers/`:
 ```
-commonIO-18.99.1.jar
-datahandler-18.99.1.jar
+commonIO-19.0.0.jar
+datahandler-19.0.0.jar
 httpcore5-5.2.5.jar
 libthrift-0.20.0.jar
 spring-security-crypto-6.3.3.jar
