@@ -701,7 +701,7 @@ include::{snippets}/should_document_get_download_license_info/http-response.adoc
 [[resources-project-get-download-licenseinfo-with-all-attachments]]
 ==== Download License Info with all attachments
 
-A `GET` request is used to download the project's license information. The resulting file will include findings from either the CLX or ISR attachment of a linked release.
+A `GET` request is used to download the project's license information. The resulting file will include findings from the CLX, and if not available, the ISR attachment of a linked release.
 
 ===== Request parameter
 include::{snippets}/should_document_get_download_license_info_with_all_attachemnts/request-parameters.adoc[]
@@ -711,6 +711,20 @@ include::{snippets}/should_document_get_download_license_info_with_all_attachemn
 
 ===== Example response
 include::{snippets}/should_document_get_download_license_info_with_all_attachemnts/http-response.adoc[]
+
+[[resources-project-get-download-licenseinfo-without-release-version]]
+==== Download License Info without component versions
+
+A `GET` request is used to download license info for the project. If the `excludeReleaseVersion` parameter is set to true, the component versions will be omitted from the output file.
+
+===== Request parameter
+include::{snippets}/should_document_get_download_license_info_without_release_version/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_download_license_info_without_release_version/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_license_info_without_release_version/http-response.adoc[]
 
 [[resources-project-usedby-list]]
 ==== Resources using the project
@@ -742,6 +756,30 @@ include::{snippets}/should_document_get_attachment_usage_for_project/curl-reques
 
 ===== Example response
 include::{snippets}/should_document_get_attachment_usage_for_project/http-response.adoc[]
+
+[[resources-project-save-attachmentUsages]]
+==== Save attachmentUsages of the project
+
+A `POST` request is used to save attachmentUsages of the project. Please pass a Map<String, List<String>> having string as key and list<string> as value in request body.
+
+===== Request structure 1
+Pass a Map<String, List<String>> in request body.
+
+Keys can be selected, deselected, selectedConcludedUsages or deselectedConcludedUsages.
+
+Format of String inside list varies according to the usageFields (sourcePackage, licenseInfo, manuallySet) :
+
+for `sourcePackage`, releaseId_sourcePakage_attachmentContentId
+
+for `licenseInfo`, projectId-releaseId_licenseInfo_attachmentContentId (for directly linked project) OR projectPath-releaseId_licenseInfo_attachmentContentId (for nested projects)
+
+for `manuallySet`, releaseId_manuallySet_attachmentContentId
+
+===== Example request 1
+include::{snippets}/should_document_save_usages/curl-request.adoc[]
+
+===== Example response 1
+include::{snippets}/should_document_save_usages/http-response.adoc[]
 
 [[resources-project-get-project-vulnerabilities]]
 ==== Listing project vulnerabilities
@@ -1005,3 +1043,62 @@ include::{snippets}/should_document_create_clearing_request/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_create_clearing_request/http-response.adoc[]
 
+[[resources-projects-get-network-in-list-view]]
+==== Get list view of a project's dependencies network
+
+A `GET` request is used to get list view of a project's dependencies network
+
+===== Example response
+include::{snippets}/should_document_get_list_view_of_dependencies_network/http-response.adoc[]
+
+[[resources-project-get-linked-resources-in-dependency-network]]
+==== Get linked resources (projects, releases) in dependency network of a project
+
+A `GET` request will get linked resources (projects, releases) in dependency network of a project
+
+===== Request parameters
+include::{snippets}/should_document_get_linked_resources_of_project_in_dependency_network/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_linked_resources_of_project_in_dependency_network/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_resources_of_project_in_dependency_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_resources_of_project_in_dependency_network/http-response.adoc[]
+
+[[resources-project-get-indirect-linked-release-of-project-in-dependency-network-by-index-path]]
+
+==== Get indirect linked releases of a project in dependency network by release's index path
+
+A `GET` request will get indirect linked releases of a project in dependency network by release's index path
+
+===== Request parameters
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_by_index_path/http-response.adoc[]
+
+[[resources-projects-download-sourcebundle]]
+==== Downloading resource sourcebundle
+
+A `GET` request help to download the projects license clearing resource bundle.
+
+===== Request parameter
+include::{snippets}/should_document_get_resource_source_bundle/request-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_resource_source_bundle/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_resource_source_bundle/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_resource_source_bundle/http-response.adoc[]

@@ -11,8 +11,8 @@ package org.eclipse.sw360.rest.resourceserver;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.cloudantclient.DatabaseInstanceCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.eclipse.sw360.datahandler.couchdb.DatabaseInstance;
 import org.eclipse.sw360.datahandler.thrift.health.Health;
 import org.eclipse.sw360.datahandler.thrift.health.HealthService;
 import org.eclipse.sw360.datahandler.thrift.health.Status;
@@ -61,7 +61,7 @@ public class SW360RestHealthIndicatorTest {
     private static final String IS_THRIFT_REACHABLE = "isThriftReachable";
     private static final String ERROR = "error";
 
-    private DatabaseInstance databaseInstanceMock;
+    private DatabaseInstanceCloudant databaseInstanceMock;
 
     /**
      * Makes a request to localhost with the default server port and returns
@@ -83,7 +83,7 @@ public class SW360RestHealthIndicatorTest {
 
     @Test
     public void health_should_return_503_with_missing_db() throws TException, MalformedURLException {
-        databaseInstanceMock = mock(DatabaseInstance.class);
+        databaseInstanceMock = mock(DatabaseInstanceCloudant.class);
         when(databaseInstanceMock.checkIfDbExists(anyString()))
                 .thenReturn(false);
 
@@ -113,7 +113,7 @@ public class SW360RestHealthIndicatorTest {
 
     @Test
     public void health_should_return_503_with_unhealthy_thrift() throws TException, MalformedURLException {
-        databaseInstanceMock = mock(DatabaseInstance.class);
+        databaseInstanceMock = mock(DatabaseInstanceCloudant.class);
         when(databaseInstanceMock.checkIfDbExists(anyString()))
                 .thenReturn(true);
 
@@ -148,7 +148,7 @@ public class SW360RestHealthIndicatorTest {
 
     @Test
     public void health_should_return_503_with_unreachable_thrift() throws TException, MalformedURLException {
-        databaseInstanceMock = mock(DatabaseInstance.class);
+        databaseInstanceMock = mock(DatabaseInstanceCloudant.class);
         when(databaseInstanceMock.checkIfDbExists(anyString()))
                 .thenReturn(true);
         when(restHealthIndicatorMock.makeDatabaseInstance())
@@ -178,7 +178,7 @@ public class SW360RestHealthIndicatorTest {
 
     @Test
     public void health_should_return_503_with_throwable() throws MalformedURLException {
-        final DatabaseInstance databaseInstanceMock = mock(DatabaseInstance.class);
+        final DatabaseInstanceCloudant databaseInstanceMock = mock(DatabaseInstanceCloudant.class);
         when(databaseInstanceMock.checkIfDbExists(anyString()))
                 .thenThrow(new RuntimeException());
 
@@ -201,7 +201,7 @@ public class SW360RestHealthIndicatorTest {
 
     @Test
     public void health_should_return_200_when_healthy() throws TException, MalformedURLException {
-        databaseInstanceMock = mock(DatabaseInstance.class);
+        databaseInstanceMock = mock(DatabaseInstanceCloudant.class);
         when(databaseInstanceMock.checkIfDbExists(anyString()))
                 .thenReturn(true);
 

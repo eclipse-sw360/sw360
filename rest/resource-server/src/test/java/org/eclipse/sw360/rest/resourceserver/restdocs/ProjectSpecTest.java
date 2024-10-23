@@ -28,19 +28,14 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestPriority;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
@@ -53,6 +48,7 @@ import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
@@ -366,6 +362,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         projectList.add(project2);
 
         Map<String, ProjectReleaseRelationship> linkedReleases2 = new HashMap<>();
+        Map<String, ProjectReleaseRelationship> linkedReleases3 = new HashMap<>();
+        Map<String, ProjectReleaseRelationship> linkedReleases4 = new HashMap<>();
         Map<String, ProjectProjectRelationship> linkedProjects2 = new HashMap<>();
         Map<String, ProjectProjectRelationship> linkedProjects3 = new HashMap<>();
         Project project4 = new Project();
@@ -412,7 +410,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project7.setClearingState(ProjectClearingState.OPEN);
         project7.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
 
-        Map<String, ProjectReleaseRelationship> linkedReleases3 = new HashMap<>();
         Set<Attachment> attachmentSet = new HashSet<Attachment>();
         List<Obligation> obligationList = new ArrayList<>();
         Set<String> licenseIds2 = new HashSet<>();
@@ -492,6 +489,32 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release5.setVersion("2.3.1");
         release5.setCreatedOn("2016-12-28");
 
+        Project project9 = new Project();
+        project9.setId("0000007");
+        project9.setName("attachUsages");
+        project9.setVersion("2");
+        project9.setCreatedBy(testUserId);
+        project9.setProjectType(ProjectType.PRODUCT);
+        project9.setState(ProjectState.ACTIVE);
+        project9.setClearingState(ProjectClearingState.OPEN);
+        linkedReleases4.put("00000071", projectReleaseRelationship);
+        project9.setReleaseIdToUsage(linkedReleases4);
+
+        Release release9 = new Release();
+        release9.setId("00000071");
+        release9.setName("docker");
+        release9.setCpeid("cpe:/a:Google:Angular:2.3.1:");
+        release9.setReleaseDate("2024-03-17");
+        release9.setVersion("2");
+        release9.setCreatedOn("2024-03-28");
+        release9.setAttachments(setOfAttachment);
+
+        List<AttachmentUsage> attachmentUsageNewList = new ArrayList<>();
+        List<AttachmentUsage> deselectedUsagesFromRequest = new ArrayList<>();
+        List<AttachmentUsage> selectedUsagesFromRequest = new ArrayList<>();
+        List<String> selectedUsages = Arrays.asList("00000071_sourcePackage_1234");
+
+        Set<String> releaseIds2 = new HashSet<>(Collections.singletonList("00000071"));
         Set<String> releaseIds = new HashSet<>(Collections.singletonList("3765276512"));
         Set<String> releaseIdsTransitive = new HashSet<>(Arrays.asList("3765276512", "5578999"));
 
@@ -561,6 +584,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getProjectForUserById(eq(project6.getId()), any())).willReturn(project6);
         given(this.projectServiceMock.getProjectForUserById(eq(project7.getId()), any())).willReturn(project7);
         given(this.projectServiceMock.getProjectForUserById(eq(project8.getId()), any())).willReturn(project8);
+        given(this.sw360ReportServiceMock.downloadSourceCodeBundle(any(), any(), any())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.getSourceCodeBundleName(any(), any())).willReturn("SourceCodeBundle-ProjectName");
         given(this.projectServiceMock.getLicenseInfoAttachmentUsage(eq(project8.getId()))).willReturn(licenseInfoUsages);
         given(this.projectServiceMock.getObligationData(eq(project8.getLinkedObligationId()), any())).willReturn(obligationLists);
         given(this.projectServiceMock.setLicenseInfoWithObligations(eq(obligationStatusMap), eq(releaseIdToAcceptedCLI), any(), any())).willReturn(obligationStatusMap);
@@ -569,6 +594,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.addLinkedObligations(any(), any(), eq(obligationStatusMap))).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.compareObligationStatusMap(any(), any(), any())).willReturn(obligationStatusMap);
         given(this.projectServiceMock.patchLinkedObligations(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.projectServiceMock.getProjectForUserById(eq(project9.getId()), any())).willReturn(project9);
+        given(this.projectServiceMock.getUsedAttachments(any(), any())).willReturn(attachmentUsageNewList);
+        given(this.projectServiceMock.validate(any(), any(), any(), any())).willReturn(true);
+        given(this.projectServiceMock.deselectedAttachmentUsagesFromRequest(any(), eq(selectedUsages), any(), any(), any())).willReturn(deselectedUsagesFromRequest);
+        given(this.projectServiceMock.selectedAttachmentUsagesFromRequest(any(), eq(selectedUsages), any(), any(), any())).willReturn(selectedUsagesFromRequest);
         given(this.projectServiceMock.getProjectForUserById(eq(projectForAtt.getId()), any())).willReturn(projectForAtt);
         given(this.projectServiceMock.getProjectForUserById(eq(SPDXProject.getId()), any())).willReturn(SPDXProject);
         given(this.projectServiceMock.getProjectForUserById(eq(cycloneDXProject.getId()), any())).willReturn(cycloneDXProject);
@@ -579,6 +609,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.searchProjectByGroup(any(), any())).willReturn(new ArrayList<Project>(projectList));
         given(this.projectServiceMock.refineSearch(any(), any())).willReturn(projectListByName);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(false))).willReturn(releaseIds);
+        given(this.projectServiceMock.getReleaseIds(eq(project9.getId()), any(), eq(true))).willReturn(releaseIds2);
         given(this.projectServiceMock.getReleaseIds(eq(project.getId()), any(), eq(true))).willReturn(releaseIdsTransitive);
         given(this.projectServiceMock.deleteProject(eq(project.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(projectReleaseRelationshipResponseBody);
@@ -709,7 +740,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         LicenseInfoFile licenseInfoFile = new LicenseInfoFile();
         licenseInfoFile.setGeneratedOutput(new byte[0]);
         given(this.licenseInfoMockService.getLicenseInfoFile(any(), any(), any(), any(),
-                any(),any(), any())).willReturn(licenseInfoFile);
+                any(),any(), any(), eq(false))).willReturn(licenseInfoFile);
+        given(this.licenseInfoMockService.getLicenseInfoFile(any(), any(), any(), any(),
+                any(),any(), any(), eq(true))).willReturn(licenseInfoFile);
 
         Source ownerSrc1 = Source.releaseId("9988776655");
         Source usedBySrc = Source.projectId(project.getId());
@@ -1992,6 +2025,21 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_save_usages() throws Exception {
+        MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + "0000007" + "/saveAttachmentUsages");
+        Map<String, List<String>> usages = Map.of(
+            "selected", new ArrayList<>(List.of("00000071_sourcePackage_1234")),
+            "deselected", new ArrayList<>(List.of()),
+            "selectedConcludedUsages", new ArrayList<>(List.of()),
+            "deselectedConcludedUsages", new ArrayList<>(List.of()));
+
+        this.mockMvc.perform(requestBuilder.contentType(MediaTypes.HAL_JSON)
+                .content(this.objectMapper.writeValueAsString(usages))
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
     public void should_document_upload_attachment_to_project() throws Exception {
         testAttachmentUpload("/api/projects/", project.getId());
     }
@@ -2060,6 +2108,25 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     public void should_document_get_download_license_info() throws Exception {
         this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/licenseinfo?generatorClassName=XhtmlGenerator&variant=DISCLOSURE&externalIds=portal-id,main-project-id")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .param("module", "licenseInfo")
+                .param("projectId", project.getId())
+                .param("generatorClassName", "XhtmlGenerator")
+                .param("variant", "DISCLOSURE")
+                .param("externalIds", "portal-id,main-project-id")
+                .accept("application/xhtml+xml"))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler
+                        .document(queryParameters(
+                                parameterWithName("generatorClassName").description("Projects download format. Possible values are `<DocxGenerator|XhtmlGenerator|TextGenerator>`"),
+                                parameterWithName("variant").description("All the possible values for variants are `<REPORT|DISCLOSURE>`"),
+                                parameterWithName("externalIds").description("The external Ids of the project")
+                                )));
+    }
+    
+    @Test
+    public void should_document_get_download_license_info_without_release_version() throws Exception {
+        this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/licenseinfo?generatorClassName=XhtmlGenerator&variant=DISCLOSURE&excludeReleaseVersion=true")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept("application/xhtml+xml"))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler
@@ -2069,7 +2136,8 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                                 + Arrays.asList("DocxGenerator", "XhtmlGenerator", "TextGenerator")),
                                 parameterWithName("variant").description("All the possible values for variants are "
                                         + Arrays.asList(OutputFormatVariant.values())),
-                                parameterWithName("externalIds").description("The external Ids of the project")
+                                parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
+                                		+ "Possible values are `<true|false>`")
                                 )));
     }
 
@@ -2335,13 +2403,17 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .queryParam("withlinkedreleases", "true")
                 .queryParam("mimetype", "xlsx")
                 .queryParam("module", "projects")
+                .queryParam("excludeReleaseVersion", "false")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         queryParameters(
                                 parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
                                 parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
-                                parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"))
+                                parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
+                                parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
+                                        + "Possible values are `<true|false>`")
+                        )
                 ));
     }
 
@@ -2353,6 +2425,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         .queryParam("mimetype", "xlsx")
                         .queryParam("module", "projects")
                         .queryParam("projectId", project.getId())
+                        .queryParam("excludeReleaseVersion", "false")
                         .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -2360,8 +2433,10 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
                                 parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
                                 parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
-                                parameterWithName("projectId").description("Id of a project"))
-                        ));
+                                parameterWithName("projectId").description("Id of a project"),
+                                parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
+                                        + "Possible values are `<true|false>`")
+                        )));
     }
 
     @Test
@@ -2632,4 +2707,222 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                     subsectionWithPath("_embedded.sw360:attachments").description("An array of all project attachments and link to their <<resources-attachment-get,Attachment resource>>"))));
         }
     }
+
+    @Test
+    public void should_document_get_list_view_of_dependencies_network() throws Exception {
+        Map<String, String> subProjectView = new HashMap<>();
+        subProjectView.put("isAccessible", "true");
+        subProjectView.put("clearingState", "In Progress");
+        subProjectView.put("type", "Product");
+        subProjectView.put("relation", "Is a subproject");
+        subProjectView.put("isRelease", "false");
+        subProjectView.put("projectState", "Unknown");
+        subProjectView.put("projectOrigin", "Project3 (v0.1)");
+        subProjectView.put("id", "61f4d4781d0a40df9c92d9c79e08030a");
+
+        Map<String, String> rootReleaseView = new HashMap<>();
+        rootReleaseView.put("isAccessible", "true");
+        rootReleaseView.put("clearingState", "Report available");
+        rootReleaseView.put("mainLicenses", "Apache-2.0");
+        rootReleaseView.put("type", "OSS");
+        rootReleaseView.put("projectMainlineState", "Open");
+        rootReleaseView.put("relation", "Contained");
+        rootReleaseView.put("isRelease", "true");
+        rootReleaseView.put("releaseMainlineState", "Open");
+        rootReleaseView.put("projectOrigin", "");
+        rootReleaseView.put("name", "Release1 (2.0)");
+        rootReleaseView.put("releaseOrigin", "");
+        rootReleaseView.put("comment", "Comment");
+        rootReleaseView.put("id", "d8407b28b8c34c71913b324870e38bdc");
+
+        Map<String, String> leafReleaseView = new HashMap<>();
+        leafReleaseView.put("isAccessible", "true");
+        leafReleaseView.put("clearingState", "Report available");
+        leafReleaseView.put("mainLicenses", "Apache-2.0");
+        leafReleaseView.put("type", "OSS");
+        leafReleaseView.put("projectMainlineState", "Open");
+        leafReleaseView.put("relation", "Contained");
+        leafReleaseView.put("isRelease", "true");
+        leafReleaseView.put("releaseMainlineState", "Open");
+        leafReleaseView.put("projectOrigin", "");
+        leafReleaseView.put("name", "Release2 (2.0)");
+        leafReleaseView.put("releaseOrigin", "Release1 (2.0)");
+        leafReleaseView.put("comment", "Comment");
+        leafReleaseView.put("id", "f8407a28b8434c71913b32a870e38bdc");
+
+
+        given(this.projectServiceMock.serveDependencyNetworkListView(eq(project.getId()), any()))
+                .willReturn(List.of(subProjectView, rootReleaseView, leafReleaseView));
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            mockMvc.perform(get("/api/projects/network/" + project.getId() + "/listView")
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON)
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            mockMvc.perform(get("/api/projects/network/" + project.getId() + "/listView")
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON)
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    public void should_document_get_linked_resources_of_project_in_dependency_network() throws Exception {
+        ReleaseLink releaseLink = new ReleaseLink();
+        releaseLink.setId("d86a45f8288243fd8395052f1f25b50c");
+        releaseLink.setVendor("");
+        releaseLink.setName("release1");
+        releaseLink.setVersion("v1");
+        releaseLink.setLongName("release1 v1");
+        releaseLink.setReleaseRelationship(CONTAINED);
+        releaseLink.setMainlineState(MAINLINE);
+        releaseLink.setHasSubreleases(true);
+        releaseLink.setClearingState(ClearingState.NEW_CLEARING);
+        releaseLink.setAttachments(List.of(attachment));
+        releaseLink.setComponentType(ComponentType.OSS);
+        releaseLink.setComment("Comment 1");
+        releaseLink.setLayer(0);
+        releaseLink.setIndex(0);
+        releaseLink.setProjectId(project.getId());
+        releaseLink.setReleaseMainLineState(OPEN);
+
+        ProjectLink subProject = new ProjectLink();
+        subProject.setId(project.getId());
+        subProject.setName(project.getName());
+        subProject.setRelation(ProjectRelationship.UNKNOWN);
+        subProject.setVersion(project.getVersion());
+        subProject.setProjectType(project.getProjectType());
+        subProject.setState(project.getState());
+        subProject.setClearingState(project.getClearingState());
+        subProject.setSubprojects(Collections.emptyList());
+        subProject.setEnableSvm(true);
+
+        ProjectLink requestedProject = new ProjectLink();
+        requestedProject.setId("00d7fa23c80e46cc85e4194c3f78a7f2");
+        requestedProject.setName("Subproject");
+        requestedProject.setRelation(ProjectRelationship.CONTAINED);
+        requestedProject.setVersion("v1.1");
+        requestedProject.setProjectType(ProjectType.PRODUCT);
+        requestedProject.setState(ProjectState.ACTIVE);
+        requestedProject.setClearingState(ProjectClearingState.OPEN);
+        requestedProject.setSubprojects(Collections.singletonList(subProject));
+        requestedProject.setLinkedReleases(Collections.singletonList(releaseLink));
+        requestedProject.setEnableSvm(true);
+
+        given(this.projectServiceMock.serveLinkedResourcesOfProjectInDependencyNetwork(eq(project.getId()), eq(false), any())).willReturn(requestedProject);
+
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            this.mockMvc
+                    .perform(get("/api/projects/network/"+project.getId()+"/linkedResources")
+                            .param("transitive", "false")
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            this.mockMvc
+                    .perform(
+                            get("/api/projects/network/"+project.getId()+ "/linkedResources")
+                                    .param("transitive", "false")
+                                    .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(this.documentationHandler.document(
+                            queryParameters(
+                                    parameterWithName("transitive").description("This allow to get all transitive linked releases in network")
+                            ),
+                            responseFields(
+                                    fieldWithPath("id").description("The id of the project"),
+                                    fieldWithPath("name").description("The name of the project"),
+                                    fieldWithPath("relation").description("The relationship of the project"),
+                                    fieldWithPath("version").description("The version of the project"),
+                                    fieldWithPath("projectType").description("The project type, possible values are: "
+                                            + Arrays.asList(ProjectType.values())),
+                                    fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
+                                    fieldWithPath("clearingState").description("The clearing state of project, possible values are:" + Arrays.asList(ClearingState.values())),
+                                    fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                                    subsectionWithPath("linkedReleases").description("List of linked releases in dependency network"),
+                                    subsectionWithPath("subprojects").description("List of sub projects of requested project")
+                            )
+                    ));
+        }
+    }
+
+    @Test
+    public void should_document_get_linked_releases_in_dependency_network_by_index_path() throws Exception {
+        ReleaseLink releaseLink = new ReleaseLink();
+        releaseLink.setId("d86a45f8288243fd8395052f1f25b50c");
+        releaseLink.setVendor("");
+        releaseLink.setName("release1");
+        releaseLink.setVersion("v1");
+        releaseLink.setLongName("release1 v1");
+        releaseLink.setReleaseRelationship(CONTAINED);
+        releaseLink.setMainlineState(MAINLINE);
+        releaseLink.setHasSubreleases(true);
+        releaseLink.setClearingState(ClearingState.NEW_CLEARING);
+        releaseLink.setAttachments(List.of(attachment));
+        releaseLink.setComponentType(ComponentType.OSS);
+        releaseLink.setComment("Comment 1");
+        releaseLink.setLayer(0);
+        releaseLink.setIndex(0);
+        releaseLink.setProjectId(project.getId());
+        releaseLink.setReleaseMainLineState(OPEN);
+
+        given(this.projectServiceMock.serveLinkedReleasesInDependencyNetworkByIndexPath(eq(project.getId()), any(), any())).willReturn(List.of(releaseLink));
+
+
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            this.mockMvc
+                    .perform(get("/api/projects/network/" + project.getId() + "/releases?path=0->1")
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            this.mockMvc
+                    .perform(
+                            get("/api/projects/network/" + project.getId() + "/releases?path=0")
+                                    .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                                    .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(this.documentationHandler.document(
+                            queryParameters(
+                                    parameterWithName("path").description("Index path of to get indirect release" +
+                                            " in dependency network, each index is separated by -> character, e,g: 0->2")
+                            ),
+                            links(
+                                    linkWithRel("curies").description("Curies are used for online documentation")
+                            ),
+                            responseFields(
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].id").description("Release's id"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].name").description("Release's name"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].version").description("Release's version"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].longName").description("Release's long name"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].releaseRelationship").description("Release's relationship"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].mainlineState").description("Release's mainline state"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].hasSubreleases").description("Is release have release or not"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].clearingState").description("Release's clearing state"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].attachments").description("Release's attachments"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].componentType").description("Release's type"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].comment").description("Release's comment"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].accessible").description("Is release accessible"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].index").description("Index of release"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].projectId").description("Project's id that release is linked to"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].releaseMainLineState").description("Release's mainline state"),
+                                    subsectionWithPath("_embedded.sw360:releaseLinks.[].vendor").description("Release's vendor"),
+                                    subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                            )
+                    ));
+        }
+    }
+
+    @Test
+    public void should_document_get_resource_source_bundle() throws Exception {
+        mockMvc.perform(get("/api/reports").header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .param("module", "licenseResourceBundle").param("projectId", project.getId())
+                .param("isAllAttachmentSelected", "true").accept(MediaTypes.HAL_JSON)).andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(queryParameters(
+                        parameterWithName("projectId").description("Project id"),
+                        parameterWithName("isAllAttachmentSelected").description(
+                                "All attachment selected to download source code bundle. Possible values are `<true|false>`"),
+                        parameterWithName("module").description(
+                                "module represent the type oa document. Possible values are `<licenseResourceBundle>`"))));
+    }
+
 }

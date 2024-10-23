@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,7 +37,6 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -99,7 +99,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     ) throws TException, URISyntaxException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestById(docId, sw360User);
-        HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User);
+        HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User, true);
         HttpStatus status = halClearingRequest == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(halClearingRequest, status);
     }
@@ -118,26 +118,32 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     ) throws TException, URISyntaxException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestByProjectId(projectId, sw360User);
-        HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User);
+        HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User, true);
         HttpStatus status = halClearingRequest == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(halClearingRequest, status);
     }
 
-    private HalResource<ClearingRequest> createHalClearingRequestWithAllDetails(ClearingRequest clearingRequest, User sw360User) throws TException {
+    private HalResource<ClearingRequest> createHalClearingRequestWithAllDetails(ClearingRequest clearingRequest, User sw360User, boolean isSingleRequest) throws TException {
         HalResource<ClearingRequest> halClearingRequest = new HalResource<>(clearingRequest);
         if (StringUtils.hasText(clearingRequest.projectId)) {
             Project project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
+            Project projectWithClearingInfo = projectService.getClearingInfo(project, sw360User);
+            restControllerHelper.addEmbeddedReleaseDetails(halClearingRequest, projectWithClearingInfo);
             restControllerHelper.addEmbeddedProject(halClearingRequest, project, true);
         }
         User requestingUser = restControllerHelper.getUserByEmail(clearingRequest.getRequestingUser());
         restControllerHelper.addEmbeddedUser(halClearingRequest, requestingUser, "requestingUser");
-        User clearingTeam = restControllerHelper.getUserByEmail(clearingRequest.getClearingTeam());
-        restControllerHelper.addEmbeddedUser(halClearingRequest, clearingTeam, "clearingTeam");
+        if(isSingleRequest){
+            User clearingTeam = restControllerHelper.getUserByEmail(clearingRequest.getClearingTeam());
+            restControllerHelper.addEmbeddedUser(halClearingRequest, clearingTeam, "clearingTeam");
+        }
         if(clearingRequest.getClearingState().equals(ClearingRequestState.CLOSED) || clearingRequest.getClearingState().equals(ClearingRequestState.REJECTED)){
             restControllerHelper.addEmbeddedTimestampOfDecision(halClearingRequest,clearingRequest.getTimestampOfDecision());
         }
+        restControllerHelper.addEmbeddedDatesClearingRequest(halClearingRequest, clearingRequest, isSingleRequest);
         return halClearingRequest;
     }
+
 
     @Operation(
             summary = "Get all the Clearing Requests visible to the user.",
@@ -170,17 +176,15 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
 
         List<EntityModel<ClearingRequest>> clearingRequestList = new ArrayList<>();
         for (ClearingRequest cr : clearingRequestSet) {
-            EntityModel<ClearingRequest> embeddedCRresource = null;
             ClearingRequest embeddedCR = restControllerHelper.convertToEmbeddedClearingRequest(cr);
-            embeddedCRresource = EntityModel.of(embeddedCR);
-            clearingRequestList.add(embeddedCRresource);
+            HalResource<ClearingRequest> halResource = createHalClearingRequestWithAllDetails(embeddedCR, sw360User, false);
+            clearingRequestList.add(halResource);
         }
 
         CollectionModel<EntityModel<ClearingRequest>> resources = CollectionModel.of(clearingRequestList);
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
-
 
     @Operation(
             summary = "Get comments for a specific clearing request",
@@ -222,6 +226,47 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             return new ResponseEntity<>(resources, status);
         } catch (Exception e) {
             throw new TException(e.getMessage());
+        }
+    }
+
+    @Operation(
+            summary = "Add a new comment to a clearing request.",
+            description = "Create a new comment for the clearing request.",
+            tags = {"ClearingRequest"}
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = CLEARING_REQUEST_URL + "/{id}/comments", method = RequestMethod.POST)
+    public ResponseEntity<?> addComment(
+            @Parameter(description = "ID of the clearing request")
+            @PathVariable("id") String crId,
+            @Parameter(description = "Comment to be added to the clearing request",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Comment.class)))
+            @RequestBody Comment comment,
+            HttpServletRequest request
+    ) {
+        try {
+            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+            ClearingRequest existingClearingRequest = sw360ClearingRequestService.getClearingRequestById(crId, sw360User);
+            ClearingRequest updatedClearingRequest = sw360ClearingRequestService.addCommentToClearingRequest(crId, comment, sw360User);
+
+            List<Comment> sortedComments = updatedClearingRequest.getComments().stream()
+                    .sorted((c1, c2) -> Long.compare(c2.getCommentedOn(), c1.getCommentedOn()))
+                    .toList();
+            List<EntityModel<Comment>> commentList = new ArrayList<>();
+
+            for (Comment c : sortedComments) {
+                HalResource<Comment> resource = createHalComment(c);
+                commentList.add(resource);
+            }
+            CollectionModel<EntityModel<Comment>> resources = CollectionModel.of(commentList);
+            return new ResponseEntity<>(resources, HttpStatus.OK);
+        }catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Clearing request not found.");
+        }catch (TException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while processing the request.");
         }
     }
 

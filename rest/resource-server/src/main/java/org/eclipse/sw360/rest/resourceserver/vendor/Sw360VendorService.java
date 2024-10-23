@@ -12,17 +12,17 @@ package org.eclipse.sw360.rest.resourceserver.vendor;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -105,6 +106,28 @@ public class Sw360VendorService {
         }
     }
 
+    public RequestStatus vendorUpdate(Vendor vendor, User sw360User, String id) {
+        try {
+            VendorService.Iface sw360VendorClient = getThriftVendorClient();
+            Vendor existingVendor = sw360VendorClient.getByID(id);
+            if (existingVendor != null) {
+                if (vendor.getShortname() != null) {
+                    existingVendor.setShortname(vendor.getShortname());
+                }
+                if (vendor.getFullname() != null) {
+                    existingVendor.setFullname(vendor.getFullname());
+                }
+                if (vendor.getUrl() != null) {
+                    existingVendor.setUrl(vendor.getUrl());
+                }
+            }
+            RequestStatus requestStatus = sw360VendorClient.updateVendor(existingVendor, sw360User);
+            return requestStatus;
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void deleteVendor(Vendor vendor, User sw360User) {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
@@ -131,9 +154,11 @@ public class Sw360VendorService {
     }
 
     private VendorService.Iface getThriftVendorClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/vendors/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new VendorService.Client(protocol);
+        return new ThriftClients().makeVendorClient();
+    }
+
+    public ComponentService.Iface getThriftComponentClient() throws TTransportException {
+        return new ThriftClients().makeComponentClient();
     }
 
     public ByteBuffer exportExcel() throws TException {
@@ -145,5 +170,11 @@ public class Sw360VendorService {
     private List<Vendor> getAllVendorList() throws TException {
         VendorService.Iface sw360VendorClient = getThriftVendorClient();
         return sw360VendorClient.getAllVendors();
+    }
+
+    public Set<Release> getAllReleaseList(String vendorId) throws TException {
+        ComponentService.Iface componentsClient = getThriftComponentClient();
+        Set<Release> releases = componentsClient.getReleasesByVendorId(vendorId);
+        return releases;
     }
 }

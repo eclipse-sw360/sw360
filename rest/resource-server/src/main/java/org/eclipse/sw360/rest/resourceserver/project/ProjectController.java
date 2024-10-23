@@ -39,14 +39,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.apache.thrift.protocol.TSimpleJSONProtocol;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
-import org.eclipse.sw360.datahandler.couchdb.lucene.LuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -64,6 +64,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
@@ -119,6 +120,7 @@ import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
@@ -290,7 +292,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
             if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
                 Set<String> values = CommonUtils.splitToSet(name);
-                values = values.stream().map(LuceneAwareDatabaseConnector::prepareWildcardQuery)
+                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
                 filterMap.put(Project._Fields.NAME.getFieldName(), values);
             }
@@ -1371,6 +1373,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "template", required = false) String template,
             @Parameter(description = "Generate license info including all attachments of the linked releases")
             @RequestParam(value = "includeAllAttachments", required = false ) boolean includeAllAttachments,
+            @Parameter(description = "Exclude release version from the license info file")
+            @RequestParam(value = "excludeReleaseVersion", required = false, defaultValue = "false") boolean excludeReleaseVersion,
             HttpServletResponse response
     ) throws TException, IOException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -1449,7 +1453,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         final LicenseInfoFile licenseInfoFile = licenseInfoService.getLicenseInfoFile(sw360Project, sw360User,
                 outputGeneratorClassNameWithVariant, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments,
-                externalIds, fileName);
+                externalIds, fileName, excludeReleaseVersion);
         byte[] byteContent = licenseInfoFile.bufferForGeneratedOutput().array();
         response.setContentType(outputFormatInfo.getMimeType());
         response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", filename));
@@ -1665,6 +1669,87 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
     }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "save attachment usages",
+			description = "Pass an array of string in request body.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/saveAttachmentUsages", method = RequestMethod.POST)
+    public ResponseEntity<?> saveAttachmentUsages(
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id,
+			@Parameter(description = "Map of key-value pairs where each key is associated with a list of strings.",
+                    example = "{\"selected\": [\"4427a8e723ad405db63f75170ef240a2_sourcePackage_5c5d6f54ac6a4b33bcd3c5d3a8fefc43\", \"value2\"],"
+                            + " \"deselected\": [\"de213309ba0842ac8a7251bf27ea8f36_manuallySet_eec66c3465f64f0292dfc2564215c681\", \"value2\"],"
+                            + " \"selectedConcludedUsages\": [\"de213309ba0842ac8a7251bf27ea8f36_licenseInfo_eec66c3465f64f0292dfc2564215c681\", \"value2\"],"
+                            + " \"deselectedConcludedUsages\": [\"ade213309ba0842ac8a7251bf27ea8f36_licenseInfo_aeec66c3465f64f0292dfc2564215c681\", \"value2\"]}"
+            )
+			@RequestBody Map<String,List<String>> allUsages
+    ) throws TException {
+        final User user = restControllerHelper.getSw360UserFromAuthentication();
+	    final Project project = projectService.getProjectForUserById(id, user);
+	    try {
+            if (PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE)) {
+                Source usedBy = Source.projectId(id);
+                List<String> selectedUsages = new ArrayList<>();
+                List<String> deselectedUsages = new ArrayList<>();
+                List<String> selectedConcludedUsages = new ArrayList<>();
+                List<String> deselectedConcludedUsages = new ArrayList<>();
+                List<String> changedUsages = new ArrayList<>();
+                for (Map.Entry<String, List<String>> entry : allUsages.entrySet()) {
+                    String key = entry.getKey();
+                    List<String> list = entry.getValue();
+                    if (key.equals("selected")) {
+                        selectedUsages.addAll(list);
+                    } else if (key.equals("deselected")) {
+                        deselectedUsages.addAll(list);
+                    } else if (key.equals("selectedConcludedUsages")) {
+                        selectedConcludedUsages.addAll(list);
+                    } else if (key.equals("deselectedConcludedUsages")) {
+                        deselectedConcludedUsages.addAll(list);
+                    }
+                }
+                Set<String> totalReleaseIds = projectService.getReleaseIds(id, user, true);
+                changedUsages.addAll(selectedUsages);
+                changedUsages.addAll(deselectedUsages);
+                boolean valid = projectService.validate(changedUsages, user, releaseService, totalReleaseIds);
+                if (!valid) {
+                    return new ResponseEntity<>("Not a valid attachment type OR release does not belong to project", HttpStatus.CONFLICT);
+                }
+                List<AttachmentUsage> allUsagesByProject = projectService.getUsedAttachments(usedBy, null);
+                List<String> savedUsages = projectService.savedUsages(allUsagesByProject);
+                savedUsages.removeAll(deselectedUsages);
+                deselectedUsages.addAll(selectedUsages);
+                selectedUsages.addAll(savedUsages);
+                deselectedConcludedUsages.addAll(selectedConcludedUsages);
+                List<AttachmentUsage> deselectedUsagesFromRequest = projectService.deselectedAttachmentUsagesFromRequest(deselectedUsages, selectedUsages, deselectedConcludedUsages, selectedConcludedUsages, id);
+                List<AttachmentUsage> selectedUsagesFromRequest = projectService.selectedAttachmentUsagesFromRequest(deselectedUsages, selectedUsages, deselectedConcludedUsages, selectedConcludedUsages, id);
+                List<AttachmentUsage> usagesToDelete = allUsagesByProject.stream()
+                        .filter(usage -> deselectedUsagesFromRequest.stream()
+                                .anyMatch(projectService.isUsageEquivalent(usage)))
+                        .collect(Collectors.toList());
+                if (!usagesToDelete.isEmpty()) {
+                    projectService.deleteAttachmentUsages(usagesToDelete);
+                }
+                List<AttachmentUsage> allUsagesByProjectAfterCleanUp = projectService.getUsedAttachments(usedBy, null);
+                List<AttachmentUsage> usagesToCreate = selectedUsagesFromRequest.stream()
+                        .filter(usage -> allUsagesByProjectAfterCleanUp.stream()
+                                .noneMatch(projectService.isUsageEquivalent(usage)))
+                        .collect(Collectors.toList());
+
+                if (!usagesToCreate.isEmpty()) {
+                    projectService.makeAttachmentUsages(usagesToCreate);
+                }
+                return new ResponseEntity<>("AttachmentUsages Saved Successfully", HttpStatus.CREATED);
+            } else {
+                return new ResponseEntity<>("No write permission for project", HttpStatus.FORBIDDEN);
+            }
+        } catch (TException e) {
+            return new ResponseEntity<>("Saving attachment usages for project " + id + " failed", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+	}
 
     @Operation(
             description = "Get all attachmentUsages of the projects.",
@@ -2604,6 +2689,76 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360Project.unsetLicenseInfoHeaderText();
 
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Get a list view of dependency network for a project.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}/listView", method = RequestMethod.GET)
+    public ResponseEntity<?> getListViewDependencyNetwork(
+            @Parameter(description = "Project ID", example = "376576")
+            @PathVariable("id") String projectId
+    ) throws TException {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return new ResponseEntity<>(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<Map<String, String>> clearingStatusList = projectService.serveDependencyNetworkListView(projectId, sw360User);
+        return new ResponseEntity<>(clearingStatusList, HttpStatus.OK);
+    }
+
+    @Operation(
+            description = "Get linked resources (projects, releases) of a project",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}/linkedResources", method = RequestMethod.GET)
+    public ResponseEntity<?> getLinkedResourcesOfProjectForDependencyNetwork(
+            @Parameter(description = "Project ID", example = "376576")
+            @PathVariable("id") String id,
+            @Parameter(description = "Get linked releases transitively (default is false)", example = "true")
+            @RequestParam(value = "transitive", required = false, defaultValue = "false") boolean transitive) throws TException {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return new ResponseEntity<>(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        ProjectLink projectLink = projectService.serveLinkedResourcesOfProjectInDependencyNetwork(id, transitive, sw360User);
+        return new ResponseEntity<>(projectLink, HttpStatus.OK);
+    }
+
+    @Operation(
+            description = "Get indirect linked releases of a project in dependency network by release's index path",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/network/{id}/releases", method = RequestMethod.GET)
+    public ResponseEntity<?> getLinkedReleasesInDependencyNetworkByIndexPath(
+        @Parameter(description = "Project ID", example = "376576")
+        @PathVariable("id") String projectId,
+        @Parameter(description = "Index path", example = "0->1")
+        @RequestParam(value = "path", required = false) String releaseIndexPath
+    ) throws TException {
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            return new ResponseEntity<>(SW360Constants.PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (!CommonUtils.isNotNullEmptyOrWhitespace(releaseIndexPath)) {
+            ProjectLink projectLink = projectService.serveLinkedResourcesOfProjectInDependencyNetwork(projectId, false, sw360User);
+            return new ResponseEntity<>(CollectionModel.of(projectLink.getLinkedReleases()), HttpStatus.OK);
+        }
+
+        List<String> indexPath = Arrays.asList(releaseIndexPath.split("->"));
+        try {
+            List<ReleaseLink> releaseLinks = projectService.serveLinkedReleasesInDependencyNetworkByIndexPath(projectId, indexPath, sw360User);
+            CollectionModel<ReleaseLink> resources = CollectionModel.of(releaseLinks);
+            return new ResponseEntity<>(resources, HttpStatus.OK);
+        } catch (SW360Exception exception) {
+            if (exception.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("Requested project not found: " + projectId);
+            }
+            throw new RuntimeException(exception.getWhy());
+        }
     }
 
     private void setAdditionalFieldsToHalResource(Project sw360Project, HalResource<Project> userHalResource) throws TException {

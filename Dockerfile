@@ -10,7 +10,7 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 
-ARG TOMCAT_VERSION=10-jre17-temurin-noble
+ARG TOMCAT_VERSION=11-jre21-temurin-noble
 
 #--------------------------------------------------------------------------------------------------
 # Thrift
@@ -47,7 +47,7 @@ COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
 #--------------------------------------------------------------------------------------------------
 # SW360 Build Test image
 
-FROM maven:3-eclipse-temurin-17 AS sw360test
+FROM maven:3-eclipse-temurin-21 AS sw360test
 
 COPY --from=localthrift /usr/local/bin/thrift /usr/bin
 
@@ -59,7 +59,7 @@ SHELL ["/bin/bash", "-c"]
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-FROM maven:3-eclipse-temurin-17 AS sw360build
+FROM maven:3-eclipse-temurin-21 AS sw360build
 
 ARG COUCHDB_HOST=localhost
 

@@ -670,7 +670,7 @@ service ProjectService {
     /**
     * get dependency network for list view
     */
-    list<map<string, string>> getAccessibleDependencyNetworkForListView(1: string projectId, 2: User user);
+    list<map<string, string>> getAccessibleDependencyNetworkForListView(1: string projectId, 2: User user) throws (1: SW360Exception exp);
 
 
     /**
@@ -700,4 +700,10 @@ service ProjectService {
      * is equivalent to `getLinkedProjectsOfProject(getProjectById(id, user))`
      */
     list<ProjectLink> getLinkedProjectsOfProjectWithAllReleases(1: Project project, 2: bool deep, 3: User user);
+
+    /**
+    * get list ReleaseLink in dependency network of project by project id and index path
+    */
+    list<ReleaseLink> getReleaseLinksOfProjectNetWorkByIndexPath(1: string projectId, 2: list<string> indexPath, 3: User user) throws (1: SW360Exception exp);
+
 }

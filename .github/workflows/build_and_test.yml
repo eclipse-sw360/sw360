@@ -56,10 +56,10 @@ jobs:
           sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
           sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: "17"
+          java-version: "21"
           distribution: "temurin"
           check-latest: true
           cache: "maven"
@@ -85,7 +85,18 @@ jobs:
       - name: Build SW360
         run: |
           export PATH=$PATH:${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }}/usr/local/bin
-          mvn clean install --no-transfer-progress -P deploy -Dhelp-docs=true -Dbase.deploy.dir=. -Djars.deploy.dir=${PWD}/deploy -Dbackend.deploy.dir=${PWD}/deploy/webapps -Drest.deploy.dir=${PWD}/deploy/webapps -DRunComponentVisibilityRestrictionTest=false -DRunPrivateProjectAccessTest=false -DRunRestForceUpdateTest=false -fae
+          mvn clean install \
+            --no-transfer-progress \
+            -P deploy -Dhelp-docs=true \
+            -Dbase.deploy.dir=. \
+            -Djars.deploy.dir=${PWD}/deploy \
+            -Dbackend.deploy.dir=${PWD}/deploy/webapps \
+            -Drest.deploy.dir=${PWD}/deploy/webapps \
+            -DRunComponentVisibilityRestrictionTest=false \
+            -DRunPrivateProjectAccessTest=false \
+            -DRunRestForceUpdateTest=false \
+            -fae \
+            -Dmaven.plugin.validation=VERBOSE
 
       - name: Run PrivateProjectAccessTest
         run: |
@@ -94,7 +105,7 @@ jobs:
 
       - name: Run BulkReleaseDeletingTest
         run: |
-          mvn -pl :src-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=.
+          mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=.
 
       # - name: Deploy Backend and Rest Server
       #   run: |

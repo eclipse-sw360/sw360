@@ -11,7 +11,7 @@ package org.eclipse.sw360.rest.authserver.security.customheaderauth;
 
 import java.io.IOException;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;

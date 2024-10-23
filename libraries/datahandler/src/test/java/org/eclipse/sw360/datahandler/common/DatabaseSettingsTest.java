@@ -9,20 +9,15 @@
  */
 package org.eclipse.sw360.datahandler.common;
 
+import com.ibm.cloud.cloudant.security.CouchDbSessionAuthenticator;
+import com.ibm.cloud.cloudant.v1.Cloudant;
+import com.ibm.cloud.sdk.core.security.Authenticator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
-import org.ektorp.http.HttpClient;
-import org.ektorp.http.StdHttpClient;
+import org.jetbrains.annotations.NotNull;
 
-import com.cloudant.client.api.ClientBuilder;
-import com.cloudant.client.api.CloudantClient;
-import com.google.gson.GsonBuilder;
-
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.util.Optional;
 import java.util.Properties;
-import java.util.function.Supplier;
 
 /**
  * Constants for the database address
@@ -30,10 +25,10 @@ import java.util.function.Supplier;
 public class DatabaseSettingsTest {
 
     private static final Logger log = LogManager.getLogger(DatabaseSettingsTest.class);
-    public static final String PROPERTIES_FILE_PATH = "/couchdb-test.properties";
+    public static final String PROPERTIES_FILE_PATH;
+
 
     public static final String COUCH_DB_URL;
-    public static final String COUCH_DB_LUCENE_URL;
     public static final String COUCH_DB_DATABASE;
     public static final String COUCH_DB_ATTACHMENTS;
     public static final String COUCH_DB_CONFIG;
@@ -41,17 +36,28 @@ public class DatabaseSettingsTest {
     public static final String COUCH_DB_VM;
     public static final String COUCH_DB_CHANGELOGS;
 
-    private static final String COUCH_DB_USERNAME;
-    private static final String COUCH_DB_PASSWORD;
+    private static final Optional<String> COUCH_DB_USERNAME;
+    private static final Optional<String> COUCH_DB_PASSWORD;
 
     static {
-        Properties props = CommonUtils.loadProperties(DatabaseSettingsTest.class, PROPERTIES_FILE_PATH);
+        PROPERTIES_FILE_PATH = System.getenv("PROPERTIES_FILE_PATH") != null
+                ? System.getenv("PROPERTIES_FILE_PATH") + "/couchdb-test.properties"
+                : "/couchdb-test.properties";
 
-        COUCH_DB_URL = props.getProperty("couchdb.url", "http://localhost:5984");
-        COUCH_DB_LUCENE_URL = props.getProperty("couchdb.lucene.url", "http://localhost:8080/couchdb-lucene");
+        Properties props =
+                CommonUtils.loadProperties(DatabaseSettingsTest.class, PROPERTIES_FILE_PATH);
+
+        // Try ENV if set first
+        COUCH_DB_URL = System.getenv("COUCHDB_URL") != null ? System.getenv("COUCHDB_URL")
+                : props.getProperty("couchdb.url", "http://localhost:5984");
+        COUCH_DB_USERNAME = Optional
+                .ofNullable(System.getenv("COUCHDB_USER") != null ? System.getenv("COUCHDB_USER")
+                        : props.getProperty("couchdb.user", ""));
+        COUCH_DB_PASSWORD = Optional.ofNullable(
+                System.getenv("COUCHDB_PASSWORD") != null ? System.getenv("COUCHDB_PASSWORD")
+                        : props.getProperty("couchdb.password", ""));
+
         COUCH_DB_DATABASE = props.getProperty("couchdb.database", "sw360_test_db");
-        COUCH_DB_USERNAME = props.getProperty("couchdb.user", "");
-        COUCH_DB_PASSWORD = props.getProperty("couchdb.password", "");
         COUCH_DB_ATTACHMENTS = props.getProperty("couchdb.attachments", "sw360_test_attachments");
         COUCH_DB_CONFIG = props.getProperty("couchdb.config", "sw360_test_config");
         COUCH_DB_USERS = props.getProperty("couchdb.usersdb", "sw360_test_users");
@@ -59,44 +65,32 @@ public class DatabaseSettingsTest {
         COUCH_DB_CHANGELOGS = props.getProperty("couchdb.change_logs", "sw360_test_changelogs");
     }
 
-    public static Supplier<HttpClient> getConfiguredHttpClient() throws MalformedURLException {
-        StdHttpClient.Builder httpClientBuilder = new StdHttpClient.Builder().url(COUCH_DB_URL);
-        if(! "".equals(COUCH_DB_USERNAME)) {
-            httpClientBuilder.username(COUCH_DB_USERNAME);
-        }
-        if (! "".equals(COUCH_DB_PASSWORD)) {
-            httpClientBuilder.password(COUCH_DB_PASSWORD);
-        }
-        return httpClientBuilder::build;
-    }
-
-    public static Supplier<CloudantClient> getConfiguredClient() {
-        ClientBuilder clientBuilder = null;
-        GsonBuilder gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping();
-        for (Class<?> c : ThriftUtils.THRIFT_CLASSES) {
-            gson.registerTypeAdapter(c, new CustomThriftDeserializer());
-            gson.registerTypeAdapter(c, new CustomThriftSerializer());
-        }
-        for (Class<?> c : ThriftUtils.THRIFT_NESTED_CLASSES) {
-            gson.registerTypeAdapter(c, new CustomThriftSerializer());
+    public static @NotNull Cloudant getConfiguredClient() {
+        Cloudant client;
+        if (COUCH_DB_USERNAME.isPresent() && !COUCH_DB_USERNAME.get().isEmpty() &&
+            COUCH_DB_PASSWORD.isPresent() && !COUCH_DB_PASSWORD.get().isEmpty()) {
+            Authenticator authenticator = CouchDbSessionAuthenticator.newAuthenticator(
+                    COUCH_DB_USERNAME.get(),
+                    COUCH_DB_PASSWORD.get());
+            client = new Cloudant("sw360-couchdb-test", authenticator);
+        } else {
+            client = Cloudant.newInstance("sw360-couchdb-test");
         }
         try {
-            clientBuilder = ClientBuilder.url(new URL(COUCH_DB_URL)).gsonBuilder(gson);
-            if (!"".equals(COUCH_DB_USERNAME)) {
-                clientBuilder.username(COUCH_DB_USERNAME);
-            }
-            if (!"".equals(COUCH_DB_PASSWORD)) {
-                clientBuilder.password(COUCH_DB_PASSWORD);
-            }
-        } catch (MalformedURLException e) {
-            log.error("Error creating client", e);
+            client.setServiceUrl(COUCH_DB_URL);
+        } catch (IllegalArgumentException e) {
+            log.error("Error creating client: {}", e.getMessage(), e);
         }
-        return clientBuilder::build;
+        return client;
     }
 
 
     private DatabaseSettingsTest() {
         // Utility class with only static functions
+    }
+
+    public static String getCouchDbUrl() {
+        return COUCH_DB_URL;
     }
 
 }

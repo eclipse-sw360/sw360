@@ -11,9 +11,7 @@
 package org.eclipse.sw360.importer;
 
 import com.google.common.collect.FluentIterable;
-import org.eclipse.sw360.attachments.AttachmentHandler;
 import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
-import org.eclipse.sw360.components.ComponentHandler;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.ImportCSV;
@@ -23,7 +21,6 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
-import org.eclipse.sw360.vendors.VendorHandler;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.thrift.TException;
 import org.junit.After;
@@ -51,21 +48,27 @@ public class ComponentAndAttachmentAwareDBTest {
     protected AttachmentContentRepository attachmentContentRepository;
     protected User user;
 
-    protected  static  DatabaseConnectorCloudant getDBConnector(String couchDbDatabase) throws MalformedURLException {
-        return new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(), couchDbDatabase);
+    protected static DatabaseConnectorCloudant getDBConnector(String couchDbDatabase)
+            throws MalformedURLException {
+        return new DatabaseConnectorCloudant(DatabaseSettingsTest.getConfiguredClient(),
+                couchDbDatabase);
     }
 
-    protected static AttachmentContentRepository getAttachmentContentRepository() throws MalformedURLException {
-        return new AttachmentContentRepository(getDBConnector(DatabaseSettingsTest.COUCH_DB_ATTACHMENTS));
+    protected static AttachmentContentRepository getAttachmentContentRepository()
+            throws MalformedURLException {
+        return new AttachmentContentRepository(
+                getDBConnector(DatabaseSettingsTest.COUCH_DB_ATTACHMENTS));
     }
 
-    protected static FluentIterable<ComponentCSVRecord> getCompCSVRecordsFromTestFile(String fileName) throws IOException {
+    protected static FluentIterable<ComponentCSVRecord> getCompCSVRecordsFromTestFile(
+            String fileName) throws IOException {
         InputStream testStream = ComponentImportUtilsTest.class.getResourceAsStream(fileName);
         List<CSVRecord> testRecords = ImportCSV.readAsCSVRecords(testStream);
         return convertCSVRecordsToCompCSVRecords(testRecords);
     }
 
-    protected static FluentIterable<ComponentAttachmentCSVRecord> getCompAttachmentCSVRecordsFromTestFile(String fileName) throws IOException {
+    protected static FluentIterable<ComponentAttachmentCSVRecord> getCompAttachmentCSVRecordsFromTestFile(
+            String fileName) throws IOException {
         InputStream testStream = ComponentImportUtilsTest.class.getResourceAsStream(fileName);
 
         List<CSVRecord> testRecords = ImportCSV.readAsCSVRecords(testStream);
@@ -73,29 +76,26 @@ public class ComponentAndAttachmentAwareDBTest {
     }
 
     protected void deleteDatabases() throws MalformedURLException {
-        deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
-        deleteDatabase(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
+        deleteDatabase(DatabaseSettingsTest.getConfiguredClient(),
+                DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
+        deleteDatabase(DatabaseSettingsTest.getConfiguredClient(),
+                DatabaseSettingsTest.COUCH_DB_DATABASE);
     }
+
     protected static ThriftClients getThriftClients() throws TException, IOException {
         assertTestDbNames();
 
         ThriftClients thriftClients = failingMock(ThriftClients.class);
 
-        ComponentHandler componentHandler = new ComponentHandler(DatabaseSettingsTest.getConfiguredHttpClient(),DatabaseSettingsTest.getConfiguredClient(),DatabaseSettingsTest.COUCH_DB_DATABASE, DatabaseSettingsTest.COUCH_DB_CHANGELOGS, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS, thriftClients);
-        VendorHandler vendorHandler = new VendorHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.getConfiguredHttpClient(), DatabaseSettingsTest.COUCH_DB_DATABASE);
-        AttachmentHandler attachmentHandler = new AttachmentHandler(DatabaseSettingsTest.getConfiguredClient(), DatabaseSettingsTest.COUCH_DB_DATABASE, DatabaseSettingsTest.COUCH_DB_ATTACHMENTS);
-
         ModerationService.Iface moderationService = failingMock(ModerationService.Iface.class);
 
         doNothing().when(moderationService).deleteRequestsOnDocument(anyString());
 
-        doReturn(componentHandler).when(thriftClients).makeComponentClient();
-        doReturn(vendorHandler).when(thriftClients).makeVendorClient();
-        doReturn(attachmentHandler).when(thriftClients).makeAttachmentClient();
         doReturn(moderationService).when(thriftClients).makeModerationClient();
 
         return thriftClients;
     }
+
     @Before
     public void setUp() throws Exception {
         deleteDatabases();

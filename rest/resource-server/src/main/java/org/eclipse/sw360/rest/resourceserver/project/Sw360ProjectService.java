@@ -34,11 +34,8 @@ import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
+import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
@@ -63,6 +60,7 @@ import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -77,7 +75,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PreDestroy;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -104,6 +102,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.nullToEmpty;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.arrayToList;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.getSortedMap;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
@@ -155,6 +154,177 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             }
         }
     }
+
+    public boolean validate(List<String> changedUsages, User sw360User, Sw360ReleaseService releaseService, Set<String> totalReleaseIds) throws TException {
+		for (String data : changedUsages) {
+			String releaseId;
+			String usageData;
+			String attachmentContentId;
+			String[] parts = data.split("-");
+			if (parts.length > 1) {
+				String[] components = parts[1].split("_");
+	            releaseId = components[0];
+	            usageData = components[1];
+	            attachmentContentId = components[2];
+			}
+			else {
+				String[] components = data.split("_");
+	            releaseId = components[0];
+	            usageData = components[1];
+	            attachmentContentId = components[2];
+			}
+			boolean relPresent = totalReleaseIds.contains(releaseId);
+			if (!relPresent) {
+				return false;
+			}
+            Release release = releaseService.getReleaseForUserById(releaseId, sw360User);
+            Set<Attachment> attachments = release.getAttachments();
+            if (usageData.equals("sourcePackage")) {
+                for (Attachment attach : attachments) {
+                    if (attach.getAttachmentContentId().equals(attachmentContentId) && (attach.getAttachmentType() != AttachmentType.SOURCE && attach.getAttachmentType() != AttachmentType.SOURCE_SELF)) {
+                        return false;
+                    }
+                }
+            }
+            if (usageData.equals("licenseInfo")) {
+                for (Attachment attach : attachments) {
+                    if (attach.getAttachmentContentId().equals(attachmentContentId) && (attach.getAttachmentType() != AttachmentType.COMPONENT_LICENSE_INFO_COMBINED && attach.getAttachmentType() != AttachmentType.COMPONENT_LICENSE_INFO_XML)) {
+                        return false;
+                    }
+                }
+            }
+        } return true;
+    }
+
+    public List<String> savedUsages(List<AttachmentUsage> allUsagesByProject) {
+        List<String> selectedData = new ArrayList<>();
+        for (AttachmentUsage usage : allUsagesByProject) {
+            if (usage.getUsageData().getSetField().equals(UsageData._Fields.LICENSE_INFO)) {
+                StringBuilder result = new StringBuilder();
+                result.append(usage.getUsageData().getLicenseInfo().getProjectPath())
+                      .append("-")
+                      .append(usage.getOwner().getReleaseId())
+                      .append("_")
+                      .append(usage.getUsageData().getSetField().getFieldName())
+                      .append("_")
+                      .append(usage.getAttachmentContentId());
+                String stringResult = result.toString();
+                selectedData.add(stringResult);
+            }
+            else {
+                StringBuilder result = new StringBuilder();
+                result.append(usage.getOwner().getReleaseId())
+                      .append("_")
+                      .append(usage.getUsageData().getSetField().getFieldName())
+                      .append("_")
+                      .append(usage.getAttachmentContentId());
+                String stringResult = result.toString();
+                selectedData.add(stringResult);
+            }
+        }
+        System.out.println("Resulting string: " + selectedData);
+        return selectedData;
+    }
+
+    public List<AttachmentUsage> deselectedAttachmentUsagesFromRequest(List<String> deselectedUsages, List<String> selectedUsages, List<String> deselectedConcludedUsages, List<String> selectedConcludedUsages, String id) {
+        return makeAttachmentUsagesFromParameters(deselectedUsages, selectedUsages, deselectedConcludedUsages, selectedConcludedUsages,  Sets::difference, true, id);
+    }
+
+    public List<AttachmentUsage> selectedAttachmentUsagesFromRequest(List<String> deselectedUsages, List<String> selectedUsages, List<String> deselectedConcludedUsages, List<String> selectedConcludedUsages, String id) {
+        return makeAttachmentUsagesFromParameters(deselectedUsages, selectedUsages, deselectedConcludedUsages, selectedConcludedUsages, Sets::intersection, false, id);
+    }
+
+    private static List<AttachmentUsage> makeAttachmentUsagesFromParameters(List<String> deselectedUsages, List<String> selectedUsage,
+            List<String> deselectedConcludedUsages, List<String> selectedConcludedUsages,
+            BiFunction<Set<String>, Set<String>, Set<String>> computeUsagesFromCheckboxes, boolean deselectUsage, String projectId) {
+        Set<String> selectedUsages = new HashSet<>(selectedUsage);
+        Set<String> changedUsages = new HashSet<>(deselectedUsages);
+        Set<String> changedIncludeConludedLicenses = new HashSet<>(deselectedConcludedUsages);
+        changedUsages = Sets.union(changedUsages, new HashSet(changedIncludeConludedLicenses));
+        List<String> includeConludedLicenses = new ArrayList<>(selectedConcludedUsages);
+        Set<String> usagesSubset = computeUsagesFromCheckboxes.apply(changedUsages, selectedUsages);
+        if (deselectUsage) {
+            usagesSubset = Sets.union(usagesSubset, new HashSet(changedIncludeConludedLicenses));
+        }
+        return usagesSubset.stream()
+                .map(s -> parseAttachmentUsageFromString(projectId, s, includeConludedLicenses))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private static AttachmentUsage parseAttachmentUsageFromString(String projectId, String s, List<String> includeConludedLicense) {
+        String[] split = s.split("_");
+        if (split.length != 3) {
+            log.warn(String.format("cannot parse attachment usage from %s for project id %s", s, projectId));
+            return null;
+        }
+
+        String releaseId = split[0];
+        String type = split[1];
+        String attachmentContentId = split[2];
+        String projectPath = null;
+        if (UsageData._Fields.findByName(type).equals(UsageData._Fields.LICENSE_INFO)) {
+            String[] projectPath_releaseId = split[0].split("-");
+            if (projectPath_releaseId.length == 2) {
+                releaseId = projectPath_releaseId[1];
+                projectPath = projectPath_releaseId[0];
+            }
+        }
+
+        AttachmentUsage usage = new AttachmentUsage(Source.releaseId(releaseId), attachmentContentId, Source.projectId(projectId));
+        final UsageData usageData;
+        switch (UsageData._Fields.findByName(type)) {
+            case LICENSE_INFO:
+                LicenseInfoUsage licenseInfoUsage = new LicenseInfoUsage(Collections.emptySet());
+                licenseInfoUsage.setIncludeConcludedLicense(includeConludedLicense.contains(s));
+                if (projectPath != null) {
+                    licenseInfoUsage.setProjectPath(projectPath);
+                }
+                usageData = UsageData.licenseInfo(licenseInfoUsage);
+                break;
+            case SOURCE_PACKAGE:
+                usageData = UsageData.sourcePackage(new SourcePackageUsage());
+                break;
+            case MANUALLY_SET:
+                usageData = UsageData.manuallySet(new ManuallySetUsage());
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected UsageData type: " + type);
+        }
+        usage.setUsageData(usageData);
+        return usage;
+    }
+
+    /**
+     * Here, "equivalent" means an AttachmentUsage should replace another one in the DB, not that they are equal.
+     * I.e, they have the same attachmentContentId, owner, usedBy, and same UsageData type.
+     */
+    @NotNull
+    public Predicate<AttachmentUsage> isUsageEquivalent(AttachmentUsage usage) {
+        return equivalentUsage -> usage.getAttachmentContentId().equals(equivalentUsage.getAttachmentContentId()) &&
+                usage.getOwner().equals(equivalentUsage.getOwner()) &&
+                usage.getUsedBy().equals(equivalentUsage.getUsedBy()) &&
+                usage.getUsageData().getSetField().equals(equivalentUsage.getUsageData().getSetField());
+    }
+
+    public void deleteAttachmentUsages(List<AttachmentUsage> usagesToDelete) throws TException {
+        ThriftClients thriftClients = new ThriftClients();
+        AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+        attachmentClient.deleteAttachmentUsages(usagesToDelete);
+	}
+
+	public void makeAttachmentUsages(List<AttachmentUsage> usagesToCreate) throws TException {
+		ThriftClients thriftClients = new ThriftClients();
+		AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+		attachmentClient.makeAttachmentUsages(usagesToCreate);
+	}
+
+	public List<AttachmentUsage> getUsedAttachments(Source usedBy, Object object) throws TException {
+		ThriftClients thriftClients = new ThriftClients();
+		AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+		List<AttachmentUsage> allUsagesByProjectAfterCleanUp = attachmentClient.getUsedAttachments(usedBy, null);
+		return allUsagesByProjectAfterCleanUp;
+	}
 
     public String getCyclicLinkedProjectPath(Project project, User user) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
@@ -751,7 +921,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         };
     }
 
-    protected List<ProjectLink> createLinkedProjects(Project project,
+    public List<ProjectLink> createLinkedProjects(Project project,
             Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep, User user) {
         final Collection<ProjectLink> linkedProjects = SW360Utils
                 .flattenProjectLinkTree(SW360Utils.getLinkedProjects(project, deep, new ThriftClients(), log, user));
@@ -979,5 +1149,37 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         // returning default value 7 (days) if variable is not set
         return limit < 1 ? 7 : limit;
     }
-}
 
+    public List<Map<String, String>> serveDependencyNetworkListView(String projectId, User sw360User) throws TException {
+        try {
+            ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+            return sw360ProjectClient.getAccessibleDependencyNetworkForListView(projectId, sw360User);
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("Requested Project Not Found");
+            } else if (sw360Exp.getErrorCode() == 403) {
+                throw new AccessDeniedException(
+                        "Project or its Linked Projects are restricted and / or not accessible");
+            } else {
+                throw sw360Exp;
+            }
+        }
+    }
+
+    public ProjectLink serveLinkedResourcesOfProjectInDependencyNetwork(String projectId, boolean transitive, User sw360User) throws TException {
+        Project project = getProjectForUserById(projectId, sw360User);
+        final Collection<ProjectLink> linkedProjects = (!transitive)
+                ? SW360Utils.getLinkedProjectsAsFlatList(project, false, new ThriftClients(), log, sw360User)
+                : SW360Utils.getLinkedProjectsWithAllReleasesAsFlatList(project, false, new ThriftClients(), log, sw360User);
+        if (linkedProjects.isEmpty()) {
+            throw new AccessDeniedException(
+                    "Project or its Linked Projects are restricted and / or not accessible");
+        }
+        return new ArrayList<>(linkedProjects).get(0);
+    }
+
+    public List<ReleaseLink> serveLinkedReleasesInDependencyNetworkByIndexPath(String projectId, List<String> indexPath, User sw360User) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.getReleaseLinksOfProjectNetWorkByIndexPath(projectId, indexPath, sw360User);
+    }
+}

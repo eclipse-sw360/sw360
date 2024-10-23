@@ -49,7 +49,7 @@ public class OAuthClientController {
 
     public static final String ENDPOINT_URL = "client-management";
 
-    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Value("${security.oauth2.resource.id}")
     private String resourceId;

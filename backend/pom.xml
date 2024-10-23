@@ -9,8 +9,8 @@
   ~ SPDX-License-Identifier: EPL-2.0
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -23,10 +23,31 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>src-common</module>
-        <module>src</module>
-        <module>svc-common</module>
-        <module>svc</module>
+        <module>common</module>
+        <module>changelogs</module>
+        <module>attachments</module>
+        <module>components</module>
+        <module>cvesearch</module>
+        <module>fossology</module>
+        <module>health</module>
+        <module>licenseinfo</module>
+        <module>licenses</module>
+        <module>licenses-core</module>
+        <module>moderation</module>
+        <module>packages</module>
+        <module>projects</module>
+        <module>schedule</module>
+        <module>search</module>
+        <module>service-core</module>
+        <module>spdxdocument</module>
+        <module>spdxdocumentcreationinfo</module>
+        <module>spdxpackageinfo</module>
+        <module>users</module>
+        <module>vendors</module>
+        <module>vmcomponents</module>
+        <module>vulnerabilities</module>
+        <module>vulnerabilities-core</module>
+        <module>wsimport</module>
         <module>utils</module>
     </modules>
 
@@ -95,12 +116,31 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>mail</artifactId>
-            <version>1.4.7</version>
+            <groupId>jakarta.mail</groupId>
+            <artifactId>jakarta.mail-api</artifactId>
+            <version>${jakarta.mail-api.version}</version>
         </dependency>
     </dependencies>
 
+    <!-- Needed by Servlets to be activated by Tomcat -->
+    <profiles>
+        <profile>
+            <id>war-dependencies</id>
+            <activation>
+                <property>
+                    <name>packaging</name>
+                    <value>war</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.eclipse.sw360</groupId>
+                    <artifactId>backend-service-core</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
     <build>
         <pluginManagement>
             <plugins>
@@ -111,8 +151,15 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <finalName>sw360-${project.artifactId}-${project.version}</finalName>
+                </configuration>
+            </plugin>
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
             </plugin>
