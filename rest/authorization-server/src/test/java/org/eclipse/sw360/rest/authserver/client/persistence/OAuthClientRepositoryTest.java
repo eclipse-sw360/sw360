@@ -9,6 +9,7 @@
  */
 package org.eclipse.sw360.rest.authserver.client.persistence;
 
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.authserver.IntegrationTestBase;
 
 import org.junit.Before;
@@ -50,7 +51,7 @@ public class OAuthClientRepositoryTest extends IntegrationTestBase {
     }
 
     // @Test
-    public void testInsertNewClient() {
+    public void testInsertNewClient() throws SW360Exception {
         // given:
         String clientId = "foo";
         OAuthClientEntity client = new OAuthClientEntity();

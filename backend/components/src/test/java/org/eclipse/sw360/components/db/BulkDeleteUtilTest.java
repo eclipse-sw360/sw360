@@ -1138,7 +1138,7 @@ public class BulkDeleteUtilTest {
         assertTrue(CommonUtils.isNullOrEmptyMap(relationShip_c1));
     }
     
-    private void createTestRecords001() {
+    private void createTestRecords001() throws SW360Exception {
         
         List<Component> components = new ArrayList<Component>();
         Component component_dr_A = new Component().setId(COMPONENT_ID_A).setName("DR_A").setDescription("DR Component A").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
@@ -1208,7 +1208,7 @@ public class BulkDeleteUtilTest {
     }
     
 
-    private void createTestRecords002() {
+    private void createTestRecords002() throws SW360Exception {
         
         List<Component> components = new ArrayList<Component>();
         Component component_dr_A = new Component().setId(COMPONENT_ID_A).setName("DR_A").setDescription("DR Component A").setCreatedBy(USER_EMAIL1).setMainLicenseIds(new HashSet<>(Arrays.asList("lic1"))).setCreatedOn("2022-07-20");
@@ -1300,7 +1300,7 @@ public class BulkDeleteUtilTest {
         }
     }
 
-    private void createTestRecords002(int maxLink, int depth, List<String> releaseIdList, List<String> componentIdList) {
+    private void createTestRecords002(int maxLink, int depth, List<String> releaseIdList, List<String> componentIdList) throws SW360Exception {
         //create root node
         String componentId = String.format("dr_%08x", treeNodeCreateReleaseCounter);
         treeNodeCreateReleaseCounter++;
@@ -1323,7 +1323,7 @@ public class BulkDeleteUtilTest {
         createReleaseTree(releaseId, 0, releaseIdList, componentIdList);
     }
     
-    private void createReleaseTree(String parentId, int level, List<String> outReleaseIdList, List< String> outComponentIdList) {
+    private void createReleaseTree(String parentId, int level, List<String> outReleaseIdList, List< String> outComponentIdList) throws SW360Exception {
         //create a compoent
         String componentId = String.format("dr_%08x", treeNodeCreateReleaseCounter);
         treeNodeCreateReleaseCounter++;

@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TFieldIdEnum;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 
@@ -347,7 +348,7 @@ public class DatabaseRepositoryCloudantClient<T> {
                 .build();
     }
 
-    public boolean add(T doc) {
+    public boolean add(T doc) throws SW360Exception {
         return connector.add(doc);
     }
 
