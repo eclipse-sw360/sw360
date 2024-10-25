@@ -92,17 +92,19 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
             }
 
             boolean isPrivateAccessAllowed = SW360Utils.readConfig(IS_ADMIN_PRIVATE_ACCESS_ENABLED, false) && isUserAtLeast(ADMIN, user);
+            boolean isSecurityUser = PermissionUtils.isSecurityUser(user);
 
             switch (visibility) {
                 case PRIVATE:
-                    return user.getEmail().equals(input.getCreatedBy()) || isPrivateAccessAllowed;
+                    return user.getEmail().equals(input.getCreatedBy()) || isPrivateAccessAllowed || isSecurityUser;
                 case ME_AND_MODERATORS: {
-                    return userIsEquivalentToModeratorInProject(input, user.getEmail()) || isPrivateAccessAllowed;
+                    return userIsEquivalentToModeratorInProject(input, user.getEmail()) || isPrivateAccessAllowed || isSecurityUser;
                 }
             case BUISNESSUNIT_AND_MODERATORS: {
                 boolean isVisibleBasedOnPrimaryCondition = isUserInBU(input, user.getDepartment())
                         || userIsEquivalentToModeratorInProject(input, user.getEmail())
-                        || isUserAtLeast(CLEARING_ADMIN, user);
+                        || isUserAtLeast(CLEARING_ADMIN, user)
+                        || isSecurityUser;
                 boolean isVisibleBasedOnSecondaryCondition = false;
                 if (!isVisibleBasedOnPrimaryCondition) {
                     Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = user.getSecondaryDepartmentsAndRoles();

@@ -62,6 +62,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.server.ResponseStatusException;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -105,6 +107,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             @PathVariable("id") String docId
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestById(docId, sw360User);
         HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User, true);
         HttpStatus status = halClearingRequest == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
@@ -122,6 +125,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             @PathVariable("id") String projectId
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestByProjectId(projectId, sw360User);
         HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User, true);
         HttpStatus status = halClearingRequest == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;

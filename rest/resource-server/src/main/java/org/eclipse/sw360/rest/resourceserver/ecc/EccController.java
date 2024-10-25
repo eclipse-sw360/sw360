@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.client.HttpClientErrorException;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -73,6 +74,7 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
             Pageable pageable
     ) throws SW360Exception {
         User user = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(user);
         try {
             List<Release> releases = releaseService.getReleasesForUser(user);
             PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable,

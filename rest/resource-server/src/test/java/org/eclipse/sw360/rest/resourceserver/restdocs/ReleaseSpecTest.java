@@ -81,6 +81,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReferen
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelationDTO;
@@ -469,7 +470,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.releaseServiceMock.convertToEmbeddedLinkedRelease(any(), any(), any())).willReturn(releaseLink4);
 
         given(this.userServiceMock.getUserByEmailOrExternalId("admin@sw360.org")).willReturn(
-                new User("admin@sw360.org", "sw360").setId("123456789"));
+                new User("admin@sw360.org", "sw360").setId("123456789").setUserGroup(UserGroup.ADMIN));
         given(this.userServiceMock.getUserByEmail("admin@sw360.org")).willReturn(
                 new User("admin@sw360.org", "sw360").setId("123456789"));
         given(this.userServiceMock.getUserByEmail("jane@sw360.org")).willReturn(

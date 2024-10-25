@@ -269,6 +269,7 @@ public class ThriftEnumUtils {
             .put(UserGroup.ECC_ADMIN, "ECC Admin")
             .put(UserGroup.SECURITY_ADMIN, "Security Admin")
             .put(UserGroup.SW360_ADMIN, "SW360 Admin")
+            .put(UserGroup.SECURITY_USER, "Security User")
             .build();
 
     private static final ImmutableMap<VulnerabilityImpact, String> MAP_VULNERABILITY_IMPACT = ImmutableMap.of(

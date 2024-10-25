@@ -125,6 +125,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
             @RequestParam(value = "allDetails", required = false) boolean allDetails
     ) throws TException, ResourceClassNotFoundException, URISyntaxException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         List<ModerationRequest> moderationRequests = sw360ModerationRequestService.getRequestsByModerator(sw360User, pageable);
 
         Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
@@ -147,6 +148,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
             @PathVariable String id
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         ModerationRequest moderationRequest = filterModerationRequestNoDuplicates(
                 sw360ModerationRequestService.getModerationRequestById(id));
         Map<String, Object> modObjectMapper = getModObjectMapper(moderationRequest);
@@ -191,12 +193,13 @@ public class ModerationRequestController implements RepresentationModelProcessor
         List<String> stateOptions = new ArrayList<>();
         stateOptions.add("open");
         stateOptions.add("closed");
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         if (!stateOptions.contains(state)) {
             throw new BadRequestClientException(String.format(
                     "Invalid ModerationRequest state '%s', possible values are: %s", state, stateOptions));
         }
 
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         boolean stateOpen = stateOptions.get(0).equalsIgnoreCase(state);
         Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
                 sw360ModerationRequestService.getRequestsByState(sw360User, pageable, stateOpen, allDetails);
@@ -346,6 +349,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
             HttpServletRequest request
     ) throws TException, URISyntaxException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         Map<PaginationData, List<ModerationRequest>> modRequestsWithPageData =
                 sw360ModerationRequestService.getRequestsByRequestingUser(sw360User, pageable);
         return getModerationResponseEntity(pageable, request, false, modRequestsWithPageData);
