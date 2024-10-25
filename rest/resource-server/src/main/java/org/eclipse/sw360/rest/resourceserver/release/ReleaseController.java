@@ -14,21 +14,10 @@ package org.eclipse.sw360.rest.resourceserver.release;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.LinkedHashMap;
-import java.util.Objects;
-import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -67,14 +56,11 @@ import org.eclipse.sw360.datahandler.thrift.RestrictedResource;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.components.Component;
-import org.eclipse.sw360.datahandler.thrift.components.ExternalToolProcess;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
@@ -92,7 +78,6 @@ import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.licenseinfo.Sw360LicenseInfoService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -107,7 +92,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
@@ -178,6 +162,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "name", required = false) String name,
             @Parameter(description = "luceneSearch parameter to filter the releases.")
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            @Parameter(description = "fetch releases that are in NEW state and have a SRC/SRS attachment")
+            @RequestParam(value = "isNewClearingWithSourceAvailable", required = false) boolean isNewClearingWithSourceAvailable,
             @Parameter(description = "allDetails of the release")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
             HttpServletRequest request
@@ -193,6 +179,12 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         } else {
             if (sha1 != null && !sha1.isEmpty()) {
                 sw360Releases.addAll(searchReleasesBySha1(sha1, sw360User));
+            } else if (isNewClearingWithSourceAvailable) {
+                sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
+                sw360Releases = sw360Releases.stream()
+                        .filter(release -> release.getClearingState() == ClearingState.NEW_CLEARING && !CommonUtils.isNullOrEmptyCollection(release.getAttachments())
+                                && release.getAttachments().stream().anyMatch(attachment -> attachment.getAttachmentType() == AttachmentType.SOURCE
+                                        || attachment.getAttachmentType() == AttachmentType.SOURCE_SELF)).collect(Collectors.toList());
             } else {
                 sw360Releases.addAll(releaseService.getReleasesForUser(sw360User));
                 sw360Releases = sw360Releases.stream()
