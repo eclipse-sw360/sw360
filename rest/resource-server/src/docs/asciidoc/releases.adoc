@@ -125,6 +125,25 @@ include::{snippets}/should_document_get_releases_by_name/http-response.adoc[]
 include::{snippets}/should_document_get_releases_by_name/links.adoc[]
 
 
+[[resources-releases-list-by-isNewClearingWithSourceAvailable-filter]]
+==== Listing releases in new clearing state with a source attachment available
+
+A `GET` request will list all the releases in NEW_CLEARING state that have a source attachment available. +
+Please set the request parameter `&isNewClearingWithSourceAvailable=true`.
+
+===== Response structure
+include::{snippets}/should_document_get_releases_by_isNewClearingWithSourceAvailable_filter/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_releases_by_isNewClearingWithSourceAvailable_filter/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_releases_by_isNewClearingWithSourceAvailable_filter/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_releases_by_isNewClearingWithSourceAvailable_filter/links.adoc[]
+
+
 [[resources-releases-get-by-externalids]]
 ==== Listing by external ids
 
