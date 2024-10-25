@@ -202,6 +202,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             @PathVariable("id") String id
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         Package sw360Package = packageService.getPackageForUserById(id);
         HalResource<Package> halPackage = createHalPackage(sw360Package, sw360User);
         return new ResponseEntity<>(halPackage, HttpStatus.OK);
@@ -252,6 +253,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        restControllerHelper.throwIfSecurityUser(sw360User);
         List<Package> sw360Packages = new ArrayList<>();
         Map<String, Set<String>> restrictions = getFilterMap(name, version, purl, packageManager, licenses, createdBy, createdOn);
         if (luceneSearch) {

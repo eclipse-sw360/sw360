@@ -22,11 +22,17 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import lombok.NonNull;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.filter.OncePerRequestFilter;
+
 
 @Component
 public class EndpointsFilter extends OncePerRequestFilter {
@@ -34,18 +40,34 @@ public class EndpointsFilter extends OncePerRequestFilter {
     @Value("${blacklist.sw360.rest.api.endpoints}")
     String endpointsTobeBlackListed;
 
+    @NonNull
+    private final RestControllerHelper restControllerHelper;
+
+    public EndpointsFilter(RestControllerHelper restControllerHelper) {
+        this.restControllerHelper = restControllerHelper;
+    }
+
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
         String method = request.getMethod();
-
         String[] endpointMethodPairs = endpointsTobeBlackListed.split(",");
         Map<String, Set<String>> endpointHttpMethods = getMapOfEndpointToHttpMethods(endpointMethodPairs);
         boolean isAMatch = verifyMatchingOfRequestURIToEndpoints(requestURI, endpointHttpMethods);
 
-        if (!isAMatch) {
+        if (Arrays.asList("POST", "PATCH", "PUT", "DELETE").contains(method) && !isAMatch) {
+            User user = restControllerHelper.getSw360UserFromAuthentication();
+
+            // Inline check for Security User role having read only access
+            if (user.getUserGroup().name().equals("SECURITY_USER")) {
+                response.sendError(HttpStatus.SERVICE_UNAVAILABLE.value());
+            } else {
+                filterChain.doFilter(request, response);
+            }
+        } else if (!isAMatch) {
             filterChain.doFilter(request, response);
         } else {
             Set<String> httpMethodsToBeBlocked = new HashSet<>();
@@ -56,7 +78,6 @@ public class EndpointsFilter extends OncePerRequestFilter {
             if (matchedEndpointToHttpMethods.isPresent()) {
                 httpMethodsToBeBlocked = matchedEndpointToHttpMethods.get().getValue();
             }
-
             if (CommonUtils.isNullOrEmptyCollection(httpMethodsToBeBlocked)) {
                 response.sendError(HttpStatus.SERVICE_UNAVAILABLE.value());
             } else {

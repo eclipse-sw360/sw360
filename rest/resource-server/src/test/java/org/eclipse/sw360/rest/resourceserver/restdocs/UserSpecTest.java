@@ -111,10 +111,10 @@ public class UserSpecTest extends TestRestDocsSpecBase {
         user = new User();
         user.setEmail("admin@sw360.org");
         user.setId("4784587578e87989");
-        user.setUserGroup(UserGroup.ADMIN);
         user.setFullname("John Doe");
         user.setGivenname("John");
         user.setLastname("Doe");
+        user.setUserGroup(UserGroup.ADMIN);
         user.setDepartment("SW360 Administration");
         user.setWantsMailNotification(true);
         user.setFormerEmailAddresses(Sets.newHashSet("admin_bachelor@sw360.org"));

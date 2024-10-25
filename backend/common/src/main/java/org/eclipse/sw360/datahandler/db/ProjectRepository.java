@@ -407,6 +407,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         final Map<String, Object> buAndModorator_visibility_Selector = eq("visbility", "BUISNESSUNIT_AND_MODERATORS");
         final Map<String, Object> userBuSelector = eq("businessUnit", userBU);
         boolean isAdmin = PermissionUtils.isAdmin(user);
+        boolean isSecurityUser = PermissionUtils.isSecurityUser(user);
         boolean isClearingAdmin = PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user);
         Map<String, Object> isUserBelongToBuAndModerator;
 
@@ -426,7 +427,9 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
 
         Map<String, Object> finalSelector;
         if (SW360Utils.readConfig(IS_ADMIN_PRIVATE_ACCESS_ENABLED, false) && isAdmin) {
-                finalSelector = typeSelector;
+            finalSelector = typeSelector;
+        } else if (isSecurityUser) {
+            finalSelector = typeSelector;
         } else {
             if (isClearingAdmin) {
                 finalSelector = and(List.of(typeSelector, or(List.of(getAllPrivateProjects, everyone_visibility_Selector,
