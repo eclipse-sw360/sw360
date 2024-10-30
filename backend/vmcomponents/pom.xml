@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend</artifactId>
-        <version>19.0.0</version>
+        <version>19.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>backend-vmcomponents</artifactId>
