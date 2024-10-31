@@ -21,8 +21,6 @@ on:
       - ".github/workflows/scorecard.yml"
   workflow_dispatch:
 
-permissions: write-all
-
 env:
   COUCHDB_USER: sw360
   COUCHDB_PASSWORD: sw360fossie
