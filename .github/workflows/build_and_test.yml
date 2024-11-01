@@ -25,6 +25,9 @@ env:
   COUCHDB_USER: sw360
   COUCHDB_PASSWORD: sw360fossie
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build and Test
