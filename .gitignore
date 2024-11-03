@@ -70,3 +70,5 @@ tmp/**/*
 logs
 scripts/docker-config/etc_sw360/couchdb-test.properties
 scripts/docker-config/etc_sw360/couchdb.properties
+**/*.versionsBackup
+output
