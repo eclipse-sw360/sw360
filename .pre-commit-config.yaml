@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v5.0.0
     hooks:
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
@@ -9,23 +9,23 @@ repos:
     # -   id: trailing-whitespace
 
 -   repo: https://github.com/compilerla/conventional-pre-commit
-    rev: 'v2.1.1'
+    rev: 'v3.6.0'
     hooks:
     -   id: conventional-pre-commit
         stages: [commit-msg]
 
 -   repo: https://github.com/ejba/pre-commit-maven
-    rev: v0.3.3
+    rev: v0.3.4
     hooks:
     -   id: maven-spotless-apply
         stages: [manual]
         always_run: false
 -   repo: https://github.com/gherynos/pre-commit-java
-    rev: v0.2.4
+    rev: v0.6.4
     hooks:
-    -   id: Checkstyle
+    -   id: checkstyle
 -   repo: https://github.com/gitleaks/gitleaks
-    rev: v8.16.3
+    rev: v8.21.2
     hooks:
     -   id: gitleaks
 -   repo: https://github.com/jumanjihouse/pre-commit-hooks
@@ -33,6 +33,6 @@ repos:
     hooks:
     -   id: shellcheck
 -   repo: https://github.com/pylint-dev/pylint
-    rev: v2.17.2
+    rev: v3.3.1
     hooks:
     -   id: pylint

@@ -20,7 +20,7 @@
     </parent>
 
     <properties>
-        <keycloak.provider.version>25.0.4</keycloak.provider.version>
+        <keycloak.provider.version>26.0.5</keycloak.provider.version>
         <artifact.deploy.dir>${listener.deploy.dir}</artifact.deploy.dir>
     </properties>
 
