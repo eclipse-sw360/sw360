@@ -5,21 +5,12 @@ repos:
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
     -   id: check-merge-conflict
-    # -   id: end-of-file-fixer
-    # -   id: trailing-whitespace
 
 -   repo: https://github.com/compilerla/conventional-pre-commit
     rev: 'v3.6.0'
     hooks:
     -   id: conventional-pre-commit
         stages: [commit-msg]
-
--   repo: https://github.com/ejba/pre-commit-maven
-    rev: v0.3.4
-    hooks:
-    -   id: maven-spotless-apply
-        stages: [manual]
-        always_run: false
 -   repo: https://github.com/gherynos/pre-commit-java
     rev: v0.6.4
     hooks:
