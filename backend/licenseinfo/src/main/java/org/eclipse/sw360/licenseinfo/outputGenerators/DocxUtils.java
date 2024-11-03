@@ -34,16 +34,15 @@ public class DocxUtils {
     private static final int ANCHOR_MAX_SIZE = 40;
     private static final String BOOKMARK_PREFIX = "bookmark_";
 
-    private static String cTAbstractNumBulletXML =
-            "<w:abstractNum xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" w:abstractNumId=\"0\">"
-                    + "<w:multiLevelType w:val=\"hybridMultilevel\"/>"
-                    + "<w:lvl w:ilvl=\"0\"><w:start w:val=\"1\"/><w:numFmt w:val=\"bullet\"/><w:lvlText w:val=\"\"/><w:lvlJc w:val=\"left\"/><w:pPr><w:ind w:left=\"720\" w:hanging=\"360\"/></w:pPr><w:rPr><w:rFonts w:ascii=\"Wingdings\" w:hAnsi=\"Wingdings\" w:hint=\"default\"/></w:rPr></w:lvl>"
-                    + "<w:lvl w:ilvl=\"1\" w:tentative=\"1\"><w:start w:val=\"1\"/><w:numFmt w:val=\"bullet\"/><w:lvlText w:val=\"-\"/><w:lvlJc w:val=\"left\"/><w:pPr><w:ind w:left=\"1440\" w:hanging=\"360\"/></w:pPr><w:rPr><w:rFonts w:ascii=\"Courier New\" w:hAnsi=\"Courier New\" w:cs=\"Courier New\" w:hint=\"default\"/></w:rPr></w:lvl>"
-                    + "<w:lvl w:ilvl=\"2\" w:tentative=\"1\"><w:start w:val=\"1\"/><w:numFmt w:val=\"bullet\"/><w:lvlText w:val=\"\"/><w:lvlJc w:val=\"left\"/><w:pPr><w:ind w:left=\"2160\" w:hanging=\"360\"/></w:pPr><w:rPr><w:rFonts w:ascii=\"Symbol\" w:hAnsi=\"Symbol\" w:hint=\"default\"/></w:rPr></w:lvl>"
-                    + "</w:abstractNum>";
+    private static String cTAbstractNumBulletXML = "<w:abstractNum xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" w:abstractNumId=\"0\">"
+            + "<w:multiLevelType w:val=\"hybridMultilevel\"/>"
+            + "<w:lvl w:ilvl=\"0\"><w:start w:val=\"1\"/><w:numFmt w:val=\"bullet\"/><w:lvlText w:val=\"\"/><w:lvlJc w:val=\"left\"/><w:pPr><w:ind w:left=\"720\" w:hanging=\"360\"/></w:pPr><w:rPr><w:rFonts w:ascii=\"Wingdings\" w:hAnsi=\"Wingdings\" w:hint=\"default\"/></w:rPr></w:lvl>"
+            + "<w:lvl w:ilvl=\"1\" w:tentative=\"1\"><w:start w:val=\"1\"/><w:numFmt w:val=\"bullet\"/><w:lvlText w:val=\"-\"/><w:lvlJc w:val=\"left\"/><w:pPr><w:ind w:left=\"1440\" w:hanging=\"360\"/></w:pPr><w:rPr><w:rFonts w:ascii=\"Courier New\" w:hAnsi=\"Courier New\" w:cs=\"Courier New\" w:hint=\"default\"/></w:rPr></w:lvl>"
+            + "<w:lvl w:ilvl=\"2\" w:tentative=\"1\"><w:start w:val=\"1\"/><w:numFmt w:val=\"bullet\"/><w:lvlText w:val=\"\"/><w:lvlJc w:val=\"left\"/><w:pPr><w:ind w:left=\"2160\" w:hanging=\"360\"/></w:pPr><w:rPr><w:rFonts w:ascii=\"Symbol\" w:hAnsi=\"Symbol\" w:hint=\"default\"/></w:rPr></w:lvl>"
+            + "</w:abstractNum>";
 
     private DocxUtils() {
-        //only static members
+        // only static members
     }
 
     public static void addNewLines(XWPFDocument document, int numberOfNewlines) {
@@ -85,7 +84,8 @@ public class DocxUtils {
         addFormattedText(run, text, "Arial", 9, false, null);
     }
 
-    public static void addFormattedText(XWPFRun run, String text, String fontFamily, int fontSize, boolean bold, String rrggbbColor) {
+    public static void addFormattedText(XWPFRun run, String text, String fontFamily, int fontSize, boolean bold,
+            String rrggbbColor) {
         run.setFontSize(fontSize);
         run.setFontFamily(fontFamily);
         run.setBold(bold);
@@ -111,15 +111,16 @@ public class DocxUtils {
         replaceAllBodyElements(document.getBodyElements(), placeHolder, replaceText);
 
         for (XWPFTable table : document.getTables()) {
-            for(XWPFTableRow row : table.getRows()) {
-                for(XWPFTableCell cell : row.getTableCells()) {
+            for (XWPFTableRow row : table.getRows()) {
+                for (XWPFTableCell cell : row.getTableCells()) {
                     replaceAllBodyElements(cell.getBodyElements(), placeHolder, replaceText);
                 }
             }
         }
     }
 
-    private static void replaceAllBodyElements(List<IBodyElement> bodyElements, String placeHolder, String replaceText) {
+    private static void replaceAllBodyElements(List<IBodyElement> bodyElements, String placeHolder,
+            String replaceText) {
         for (IBodyElement bodyElement : bodyElements) {
             if (bodyElement.getElementType().compareTo(BodyElementType.PARAGRAPH) == 0)
                 replaceParagraph((XWPFParagraph) bodyElement, placeHolder, replaceText);
@@ -141,7 +142,8 @@ public class DocxUtils {
         }
     }
 
-    public static void addBulletList(XWPFDocument document, List<String> bulletListItems, boolean bulletListItemsAsLink) throws XmlException {
+    public static void addBulletList(XWPFDocument document, List<String> bulletListItems, boolean bulletListItemsAsLink)
+            throws XmlException {
         CTNumbering cTNumbering = CTNumbering.Factory.parse(cTAbstractNumBulletXML);
         CTAbstractNum cTAbstractNum = cTNumbering.getAbstractNumArray(0);
         XWPFAbstractNum abstractNum = new XWPFAbstractNum(cTAbstractNum);
@@ -175,17 +177,15 @@ public class DocxUtils {
         CTText ctText = CTText.Factory.newInstance();
         ctText.setStringValue(hyperlinkText);
         CTR ctr = CTR.Factory.newInstance();
-        ctr.setTArray(new CTText[]{ctText});
+        ctr.setTArray(new CTText[] { ctText });
 
         // format the hyperlink (underline + color)
-        CTRPr rpr = ctr.addNewRPr();
-        CTColor colour = CTColor.Factory.newInstance();
-        colour.setVal("0000FF");
-        rpr.setColor(colour);
-        CTRPr rpr1 = ctr.addNewRPr();
-        rpr1.addNewU().setVal(STUnderline.SINGLE);
+        XWPFRun run = paragraph.createRun();
+        run.setText(hyperlinkText);
+        run.setColor("0000FF"); // Set the color to blue
+        run.setUnderline(UnderlinePatterns.SINGLE); // Set underline
 
-        cLink.setRArray(new CTR[]{ctr});
+        cLink.setRArray(new CTR[] { ctr });
     }
 
     public static void addBookmark(XWPFParagraph paragraph, String bookmarkAnchor, String bookmarkText) {
