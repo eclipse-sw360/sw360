@@ -58,7 +58,6 @@ jobs:
         run: |
           sudo mkdir -p /etc/sw360
           sudo cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/
-          sudo cp ./scripts/sw360BackendRestDockerConfig/etc_sw360/rest-test.properties /etc/sw360/
           sudo sed -i 's/^couchdb.user\s*=/& '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties
           sudo sed -i 's/^couchdb.password\s*=/& '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties
 
@@ -112,17 +111,3 @@ jobs:
       - name: Run BulkReleaseDeletingTest
         run: |
           mvn -pl :backend-components test -Dtest=BulkDeleteUtilTest -DRunPrivateProjectAccessTest=true -DRunBulkReleaseDeletingTest=true -Dbase.deploy.dir=.
-
-      # - name: Deploy Backend and Rest Server
-      #   run: |
-      #     sudo docker build -t sw360backendrest -f sw360BackendRest.Dockerfile .
-      #     sudo docker run -dt --network=host sw360backendrest
-      #     bash scripts/sw360BackendRestDockerConfig/scripts/checkDeploymentIsSuccess.sh
-
-      # - name: Create users and oauth client
-      #   run: bash scripts/sw360BackendRestDockerConfig/scripts/createUserAndOauthClient.sh
-
-      # - name: Run Client Integration Test for Rest Api
-      #   run: |
-      #     cd clients
-      #     mvn clean install --no-transfer-progress -DRunRestIntegrationTest=true
