@@ -30,6 +30,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -1665,21 +1666,70 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
-            summary = "save attachment usages",
+            summary = "Save attachment usages",
 			description = "Pass an array of string in request body.",
             tags = {"Projects"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "AttachmentUsages Saved Successfully.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"AttachmentUsages Saved Successfully\"}"
+                                    ))
+                    }),
+            @ApiResponse(
+                    responseCode = "403", description = "No write permission for project.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"No write permission for project\"}"
+                                    ))
+                    }),
+            @ApiResponse(
+                    responseCode = "409", description = "Not a valid attachment type OR release does not belong to project.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Not a valid attachment type OR release does not belong to project\"}"
+                                    ))
+                    }
+            ),
+            @ApiResponse(
+                    responseCode = "500", description = "Internal Server Error.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Saving attachment usages for project 123456 failed\"}"
+                                    ))
+                    }
+            )
+    })
     @RequestMapping(value = PROJECTS_URL + "/{id}/saveAttachmentUsages", method = RequestMethod.POST)
     public ResponseEntity<?> saveAttachmentUsages(
             @Parameter(description = "Project ID.")
             @PathVariable("id") String id,
 			@Parameter(description = "Map of key-value pairs where each key is associated with a list of strings.",
-                    example = "{\"selected\": [\"4427a8e723ad405db63f75170ef240a2_sourcePackage_5c5d6f54ac6a4b33bcd3c5d3a8fefc43\", \"value2\"],"
-                            + " \"deselected\": [\"de213309ba0842ac8a7251bf27ea8f36_manuallySet_eec66c3465f64f0292dfc2564215c681\", \"value2\"],"
-                            + " \"selectedConcludedUsages\": [\"de213309ba0842ac8a7251bf27ea8f36_licenseInfo_eec66c3465f64f0292dfc2564215c681\", \"value2\"],"
-                            + " \"deselectedConcludedUsages\": [\"ade213309ba0842ac8a7251bf27ea8f36_licenseInfo_aeec66c3465f64f0292dfc2564215c681\", \"value2\"]}"
+                    schema = @Schema(
+                            example = """
+                            {
+                                "selected": [
+                                    "4427a8e723ad405db63f75170ef240a2_sourcePackage_5c5d6f54ac6a4b33bcd3c5d3a8fefc43", "value2"
+                                ],
+                                "deselected": [
+                                    "de213309ba0842ac8a7251bf27ea8f36_manuallySet_eec66c3465f64f0292dfc2564215c681", "value2"
+                                ],
+                                "selectedConcludedUsages": [
+                                    "de213309ba0842ac8a7251bf27ea8f36_licenseInfo_eec66c3465f64f0292dfc2564215c681", "value2"
+                                ],
+                                "deselectedConcludedUsages": [
+                                    "ade213309ba0842ac8a7251bf27ea8f36_licenseInfo_aeec66c3465f64f0292dfc2564215c681", "value2"
+                                ]
+                            }
+                            """
+                    )
             )
-			@RequestBody Map<String,List<String>> allUsages
+			@RequestBody Map<String, List<String>> allUsages
     ) throws TException {
         final User user = restControllerHelper.getSw360UserFromAuthentication();
 	    final Project project = projectService.getProjectForUserById(id, user);
@@ -1694,14 +1744,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 for (Map.Entry<String, List<String>> entry : allUsages.entrySet()) {
                     String key = entry.getKey();
                     List<String> list = entry.getValue();
-                    if (key.equals("selected")) {
-                        selectedUsages.addAll(list);
-                    } else if (key.equals("deselected")) {
-                        deselectedUsages.addAll(list);
-                    } else if (key.equals("selectedConcludedUsages")) {
-                        selectedConcludedUsages.addAll(list);
-                    } else if (key.equals("deselectedConcludedUsages")) {
-                        deselectedConcludedUsages.addAll(list);
+                    switch (key) {
+                        case "selected" -> selectedUsages.addAll(list);
+                        case "deselected" -> deselectedUsages.addAll(list);
+                        case "selectedConcludedUsages" -> selectedConcludedUsages.addAll(list);
+                        case "deselectedConcludedUsages" -> deselectedConcludedUsages.addAll(list);
                     }
                 }
                 Set<String> totalReleaseIds = projectService.getReleaseIds(id, user, true);
@@ -1749,17 +1796,23 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/attachmentUsage", method = RequestMethod.GET)
-    public ResponseEntity attachmentUsages(@Parameter(description = "Project ID.") @PathVariable("id") String id,
-            @Parameter(description = "filtering attachmentUsages")
+    public ResponseEntity attachmentUsages(
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id,
+            @Parameter(
+                    description = "filtering attachmentUsages",
+                    schema = @Schema(allowableValues = {
+                            "withSourceAttachment", "withoutSourceAttachment", "withoutAttachment",
+                            "withAttachment", "withCliAttachment"})
+            )
             @RequestParam(value = "filter", required = false) String filter,
             @Parameter(description = "Get the transitive releases.")
-            @RequestParam(value = "transitive", required = true) String transitive)
-            throws TException {
+            @RequestParam(value = "transitive", required = true) boolean transitive
+    ) throws TException {
 
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        boolean isTransitive = Boolean.parseBoolean(transitive);
-        final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, isTransitive);
+        final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
         List<Release> releases = null;
         if (filter != null) {
             releases = filterReleases(sw360User, filter, releaseIds);
@@ -1785,7 +1838,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<String, Object> attachmentUsageMap = parser.parseMap(serializedUsages);
         List<Map<String, Object>> listOfAttachmentUsages = (List<Map<String, Object>>) attachmentUsageMap
                 .get(SW360_ATTACHMENT_USAGES);
-        listOfAttachmentUsages.removeIf(item -> item == null);
+        listOfAttachmentUsages.removeIf(Objects::isNull);
         for (Map<String, Object> attachmentUsage : listOfAttachmentUsages) {
             attachmentUsage.remove("revision");
             attachmentUsage.remove("type");
