@@ -47,6 +47,7 @@
     <module>backend</module>
     <module>rest</module>
     <module>keycloak</module>
+    <module>clients</module>
   </modules>
   <distributionManagement>
     <repository>
