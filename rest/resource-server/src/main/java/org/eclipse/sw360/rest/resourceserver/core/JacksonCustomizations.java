@@ -144,6 +144,7 @@ public class JacksonCustomizations {
                     .replaceWithClass(ProjectUsage.class, ProjectUsageMixin.class)
                     .replaceWithClass(Vendor.class, VendorMixin.class)
                     .replaceWithClass(License.class, LicenseMixin.class)
+                    .replaceWithClass(LicenseType.class, Sw360Module.LicenseTypeMixin.class)
                     .replaceWithClass(Obligation.class, ObligationMixin.class)
                     .replaceWithClass(Vulnerability.class, VulnerabilityMixin.class)
                     .replaceWithClass(VulnerabilityState.class, VulnerabilityStateMixin.class)
@@ -1189,6 +1190,30 @@ public class JacksonCustomizations {
                 "setLicenseType",
                 "setId",
                 "setLicenseTypeId",
+                "setText",
+                "setShortname",
+                "setFullname",
+                "setExternalIds",
+                "setAdditionalData",
+                "externalIdsSize",
+                "additionalDataSize",
+                "setLicenseTypeDatabaseId",
+                "setExternalLicenseLink",
+                "setNote",
+                "setDocumentState",
+                "setPermissions",
+                "permissionsSize",
+                "setReviewdate",
+                "setOSIApproved",
+                "setFSFLibre",
+                "setObligations",
+                "setObligationDatabaseIds",
+                "setObligationListId",
+                "setChecked",
+                "obligationsSize",
+                "obligationsIterator",
+                "obligationDatabaseIdsSize",
+                "obligationDatabaseIdsIterator"
         })
         static abstract class LicenseTypeMixin extends License {
         }
