@@ -179,6 +179,7 @@ public class JacksonCustomizations {
                     .replaceWithClass(EmbeddedProjectDTO.class, EmbeddedProjectDTOMixin.class)
                     .replaceWithClass(ReleaseNode.class, ReleaseNodeMixin.class)
                     .replaceWithClass(RestrictedResource.class, RestrictedResourceMixin.class)
+                    .replaceWithClass(RestApiToken.class, Sw360Module.RestApiTokenMixin.class)
                     .replaceWithClass(ProjectLink.class, ProjectLinkMixin.class);
         }
 
@@ -2304,7 +2305,10 @@ public class JacksonCustomizations {
                 "authoritiesIterator",
                 "authoritiesSize",
                 "setAuthorities",
-                "token"
+                "nameIsSet",
+                "createdOnIsSet",
+                "tokenIsSet",
+                "authoritiesIsSet"
         })
         public abstract static class RestApiTokenMixin extends RestApiToken {
         }
