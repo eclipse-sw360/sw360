@@ -52,10 +52,10 @@ public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-    
+
     @MockBean
     private Sw360DatabaseSanitationService sanitationService;
-    
+
     private Component component,component1;
     private Release release,release1;
     private Project project, project1;
@@ -66,7 +66,7 @@ public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
 
     @Before
     public void before() throws TException, IOException {
-        Map<String, Object> responseMap = new HashMap<>();
+        Map<String, Map<String, List<String>>> responseMap = new HashMap<>();
 
         List<String> attachmentList = new ArrayList<>();
         attachment = new Attachment.Builder()
@@ -136,7 +136,7 @@ public class DatabaseSanitationSpecTest extends TestRestDocsSpecBase {
 
         when(sw360CustomUserDetailsService.loadUserByUsername("admin@sw360.org")).thenReturn(new org.springframework.security.core.userdetails.User("admin@sw360.org", encoder.encode("12345"), List.of(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()))));
     }
-    
+
     @Test
     public void should_document_search_duplicate() throws Exception {
         mockMvc.perform(get("/api/databaseSanitation/searchDuplicate")
