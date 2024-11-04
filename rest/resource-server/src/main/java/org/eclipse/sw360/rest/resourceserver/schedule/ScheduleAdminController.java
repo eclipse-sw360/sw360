@@ -24,14 +24,18 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-    
+
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @RestController
@@ -53,23 +57,56 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return resource;
     }
 
-    @RequestMapping(value = SCHEDULE_URL + "/unscheduleAllServices", method = RequestMethod.POST)
+    @Operation(
+            summary = "Cancel all scheduled services.",
+            description = "Cancel all services scheduled for the instance.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/unscheduleAllServices")
     public ResponseEntity<?> unscheduleAllServices()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelAllServices(sw360User);
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestStatus, status);
     }
-    
-    @RequestMapping(value = SCHEDULE_URL + "/cveService", method = RequestMethod.POST)
+
+    @Operation(
+            summary = "Schedule the CVE service.",
+            description = "Manually schedule the CVE service.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/cveService")
     public ResponseEntity<?> scheduleCve()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = scheduleService.scheduleCveSearch(sw360User);
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestSummary, status);
     }
-    
-    @RequestMapping(value = SCHEDULE_URL + "/unscheduleCve", method = RequestMethod.POST)
+
+    @Operation(
+            summary = "Unschedule the CVE service.",
+            description = "Unschedule the CVE service.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/unscheduleCve")
     public ResponseEntity<?> unscheduleCveSearch()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelCveSearch(sw360User);
@@ -77,7 +114,18 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return new ResponseEntity<>(requestStatus, status);
     }
 
-    @RequestMapping(value = SCHEDULE_URL + "/deleteAttachment", method = RequestMethod.POST)
+    @Operation(
+            summary = "Schedule the attachment deletion service.",
+            description = "Schedule service for attachment deletion from local FS.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/deleteAttachment")
     public ResponseEntity<?> scheduleDeleteAttachment()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = scheduleService.deleteAttachmentService(sw360User);
@@ -85,7 +133,18 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return new ResponseEntity<>(requestSummary, status);
     }
 
-    @RequestMapping(value = SCHEDULE_URL + "/unScheduleDeleteAttachment", method = RequestMethod.POST)
+    @Operation(
+            summary = "Unschedule the attachment deletion service.",
+            description = "Unschedule the service for attachment deletion from local FS.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/unScheduleDeleteAttachment")
     public ResponseEntity<?> unscheduleDeleteAttachment()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelDeleteAttachment(sw360User);
@@ -93,7 +152,18 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return new ResponseEntity<>(requestStatus, status);
     }
 
-    @RequestMapping(value = SCHEDULE_URL + "/cancelAttachmentDeletion", method = RequestMethod.POST)
+    @Operation(
+            summary = "Cancel the attachment deletion service.",
+            description = "Cancel service for attachment deletion from local FS.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/cancelAttachmentDeletion")
     public ResponseEntity<?> attachmentDeleteLocalFS()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelAttachmentDeletionLocalFS(sw360User);
@@ -101,7 +171,18 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return new ResponseEntity<>(requestStatus, status);
     }
 
-    @RequestMapping(value = SCHEDULE_URL + "/cveSearch", method = RequestMethod.POST)
+    @Operation(
+            summary = "Schedule the CVE search.",
+            description = "Schedule the CVE search.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/cveSearch")
     public ResponseEntity<?> cveSearch()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.triggerCveSearch(sw360User);

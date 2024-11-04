@@ -17,7 +17,7 @@ The Schedule resource is used to get and list the Schedule requests.
 [[unschedule-services]]
 ==== Cancel all schedule services.
 
-A `DELETE` request will cancel all the services.
+A `POST` request will cancel all the services.
 
 ===== Example request
 include::{snippets}/should_document_cancel_all_schedule/curl-request.adoc[]
