@@ -11,7 +11,11 @@ package org.eclipse.sw360.rest.resourceserver.user;
 
 import com.google.common.collect.ImmutableSet;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.NonNull;
@@ -244,8 +248,8 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     }
 
     @Operation(
-            summary = "Get user's profile.",
-            description = "Get user's profile.",
+            summary = "Get current user's profile.",
+            description = "Get current user's profile.",
             tags = {"Users"}
     )
     @GetMapping(value = USERS_URL + "/profile")
@@ -262,6 +266,34 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     )
     @PatchMapping(value = USERS_URL + "/profile")
     public ResponseEntity<HalResource<User>> updateUserProfile(
+            @Parameter(description = "Updated user profile",
+                    schema = @Schema(example = """
+                            {
+                                "wantsMailNotification": true,
+                                "notificationPreferences": {
+                                    "releaseCONTRIBUTORS": true,
+                                    "componentCREATED_BY": false,
+                                    "releaseCREATED_BY": false,
+                                    "moderationREQUESTING_USER": false,
+                                    "projectPROJECT_OWNER": true,
+                                    "moderationMODERATORS": false,
+                                    "releaseSUBSCRIBERS": true,
+                                    "componentMODERATORS": true,
+                                    "projectMODERATORS": false,
+                                    "projectROLES": false,
+                                    "releaseROLES": true,
+                                    "componentROLES": true,
+                                    "projectLEAD_ARCHITECT": false,
+                                    "componentCOMPONENT_OWNER": true,
+                                    "projectSECURITY_RESPONSIBLES": true,
+                                    "clearingREQUESTING_USER": true,
+                                    "projectCONTRIBUTORS": true,
+                                    "componentSUBSCRIBERS": true,
+                                    "projectPROJECT_RESPONSIBLE": false,
+                                    "releaseMODERATORS": false
+                                }
+                            }
+                            """))
             @RequestBody Map<String, Object> userProfile
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -305,6 +337,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     )
     @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.POST)
     public ResponseEntity<String> createUserRestApiToken(
+            @Parameter(description = "Token request", schema = @Schema(implementation = RestApiToken.class))
             @RequestBody Map<String, Object> requestBody
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -352,8 +385,28 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         return new HalResource<>(sw360User);
     }
 
+    @Operation(
+            summary = "Fetch group list of a user.",
+            description = "Fetch the list of group for a particular user.",
+            tags = {"Users"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User and its groups.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = """
+                                    {
+                                        "primaryGrpList": ["DEPARTMENT"],
+                                        "secondaryGrpList": ["DEPARTMENT1","DEPARTMENT2"]
+                                    }
+                                    """
+                                    ))
+                    }
+            )
+    })
     @RequestMapping(value = USERS_URL + "/groupList", method = RequestMethod.GET)
-    public ResponseEntity<Map<String, List<String>>> getGroupList() throws TException {
+    public ResponseEntity<Map<String, List<String>>> getGroupList() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<String> primaryGrpList = new ArrayList<>();
         List<String> secondaryGrpList = new ArrayList<>();
@@ -368,7 +421,6 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         }
         userGroupMap.put("primaryGrpList", primaryGrpList);
         userGroupMap.put("secondaryGrpList", secondaryGrpList);
-        HttpStatus status = userGroupMap == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-        return new ResponseEntity<>(userGroupMap, status);
+        return new ResponseEntity<>(userGroupMap, HttpStatus.OK);
     }
 }
