@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2017.
 # Copyright Bosch.IO 2020.
@@ -20,6 +20,7 @@ cd "$(dirname "$0")/.." || exit 1
 failure=false
 
 while read -r file ; do
+    # shellcheck disable=SC2086
     if ! head -15 "$file" | grep -q 'SPDX-License-Identifier:' $file; then
         echo "WARN: no 'SPDX-License-Identifier' in  $file"
     fi
@@ -39,12 +40,14 @@ done <<< "$(git ls-files \
     | grep -v 'id_rsa' \
     | grep -v '.versions' \
     | grep -v '.github/*' \
+    | grep -v 'scripts/lint/checkstyle.xml' \
+    | grep -v 'scripts/lint/google_checks.xml' \
     | grep -v 'sw360.code-workspace' \
     | grep -v 'default_secrets' \
     | grep -v 'requirements.txt' \
-    | grep -Ev '*/asciidoc/*' \
+    | grep -Ev '.*/asciidoc/.*' \
     | grep -Ev '.vscode/*' \
-    | grep -Ev 'config/*')" \
+    | grep -Ev 'config/*')"
 
 if [ "$failure" = true ]; then
     echo "test failed"
