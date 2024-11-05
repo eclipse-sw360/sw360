@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN" "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+    <!-- Set the charset to UTF-8 -->
+    <property name="charset" value="UTF-8"/>
+
+    <!-- Maximum line length configuration -->
+    <module name="TreeWalker">
+        <module name="LineLength">
+            <property name="max" value="120"/>
+            <property name="ignorePattern" value="^$"/> <!-- Allows empty lines to be ignored -->
+        </module>
+    </module>
+</module>
+git status

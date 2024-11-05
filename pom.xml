@@ -59,7 +59,8 @@
     <rest.version>2.0.0</rest.version>
     <backend.deploy.dir>${base.deploy.dir}/webapps</backend.deploy.dir>
     <rest.deploy.dir>${base.deploy.dir}/webapps</rest.deploy.dir>
-    <jars.deploy.dir/> <!-- Prevent copy of jar files to tomcat/webapps. Used by Docker build -->
+    <jars.deploy.dir/>
+    <!-- Prevent copy of jar files to tomcat/webapps. Used by Docker build -->
     <listener.deploy.dir/>
     <!-- Build version properties -->
     <java_source.version>21</java_source.version>
@@ -566,8 +567,7 @@
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-utils</artifactId>
         <version>${plexus-utils.version}</version>
-    </dependency>
-    
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <build>
@@ -606,7 +606,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>3.3.1</version>
+          <version>${maven-source-plugin.version}</version>
           <executions>
             <execution>
               <id>attach-sources</id>
