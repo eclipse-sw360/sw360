@@ -144,6 +144,7 @@ public class JacksonCustomizations {
                     .replaceWithClass(ProjectUsage.class, ProjectUsageMixin.class)
                     .replaceWithClass(Vendor.class, VendorMixin.class)
                     .replaceWithClass(License.class, LicenseMixin.class)
+                    .replaceWithClass(LicenseType.class, Sw360Module.LicenseTypeMixin.class)
                     .replaceWithClass(Obligation.class, ObligationMixin.class)
                     .replaceWithClass(Vulnerability.class, VulnerabilityMixin.class)
                     .replaceWithClass(VulnerabilityState.class, VulnerabilityStateMixin.class)
@@ -178,6 +179,7 @@ public class JacksonCustomizations {
                     .replaceWithClass(EmbeddedProjectDTO.class, EmbeddedProjectDTOMixin.class)
                     .replaceWithClass(ReleaseNode.class, ReleaseNodeMixin.class)
                     .replaceWithClass(RestrictedResource.class, RestrictedResourceMixin.class)
+                    .replaceWithClass(RestApiToken.class, Sw360Module.RestApiTokenMixin.class)
                     .replaceWithClass(ProjectLink.class, ProjectLinkMixin.class);
         }
 
@@ -1189,6 +1191,30 @@ public class JacksonCustomizations {
                 "setLicenseType",
                 "setId",
                 "setLicenseTypeId",
+                "setText",
+                "setShortname",
+                "setFullname",
+                "setExternalIds",
+                "setAdditionalData",
+                "externalIdsSize",
+                "additionalDataSize",
+                "setLicenseTypeDatabaseId",
+                "setExternalLicenseLink",
+                "setNote",
+                "setDocumentState",
+                "setPermissions",
+                "permissionsSize",
+                "setReviewdate",
+                "setOSIApproved",
+                "setFSFLibre",
+                "setObligations",
+                "setObligationDatabaseIds",
+                "setObligationListId",
+                "setChecked",
+                "obligationsSize",
+                "obligationsIterator",
+                "obligationDatabaseIdsSize",
+                "obligationDatabaseIdsIterator"
         })
         static abstract class LicenseTypeMixin extends License {
         }
@@ -2279,7 +2305,10 @@ public class JacksonCustomizations {
                 "authoritiesIterator",
                 "authoritiesSize",
                 "setAuthorities",
-                "token"
+                "nameIsSet",
+                "createdOnIsSet",
+                "tokenIsSet",
+                "authoritiesIsSet"
         })
         public abstract static class RestApiTokenMixin extends RestApiToken {
         }
