@@ -80,7 +80,7 @@
     <maven-failsafe-plugin.version>3.3.0</maven-failsafe-plugin.version>
     <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
     <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
-    <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+    <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
     <maven-war-plugin.version>3.4.0</maven-war-plugin.version>
     <versions-maven-plugin.version>2.17.1</versions-maven-plugin.version>
@@ -606,7 +606,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>3.3.0</version>
+          <version>3.3.1</version>
           <executions>
             <execution>
               <id>attach-sources</id>
