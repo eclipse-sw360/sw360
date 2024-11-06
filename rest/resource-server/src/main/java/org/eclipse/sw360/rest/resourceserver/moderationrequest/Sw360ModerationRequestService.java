@@ -28,13 +28,11 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
-import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService.Iface;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocumentService;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -58,7 +56,6 @@ import java.util.Map;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ModerationRequestService {
     private static final Logger log = LogManager.getLogger(Sw360ModerationRequestService.class);
-
 
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
@@ -244,82 +241,82 @@ public class Sw360ModerationRequestService {
      * @throws TException Exception in case of error.
      */
     public ModerationState acceptRequest(ModerationRequest request, String moderatorComment, @NotNull User reviewer)
-            throws SW360Exception, TTransportException, TException {
+            throws TException {
         User userFromRequest = getUserFromRequest(request);
         RequestStatus actionStatus = null;
 
         try {
             switch (request.getDocumentType()) {
-            case COMPONENT: {
-                ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-                if (request.isRequestDocumentDelete()) {
-                    actionStatus = sw360ComponentClient.deleteComponent(request.getDocumentId(), reviewer);
-                } else {
-                    actionStatus = sw360ComponentClient.updateComponentFromModerationRequest(
-                            request.getComponentAdditions(), request.getComponentDeletions(), reviewer);
-                }
-            }
-                break;
-            case PROJECT: {
-                ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-                if (request.isRequestDocumentDelete()) {
-                    actionStatus = sw360ProjectClient.deleteProject(request.getDocumentId(), reviewer);
-                } else {
-                    actionStatus = sw360ProjectClient.updateProjectFromModerationRequest(request.getProjectAdditions(),
-                            request.getProjectDeletions(), reviewer);
-                }
-            }
-                break;
-            case RELEASE: {
-                ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-                if (request.isRequestDocumentDelete()) {
-                    actionStatus = sw360ComponentClient.deleteRelease(request.getDocumentId(), reviewer);
-                    if (actionStatus.equals(RequestStatus.SUCCESS)) {
-                        SW360Utils.removeReleaseVulnerabilityRelation(request.getDocumentId(), userFromRequest);
+                case COMPONENT: {
+                    ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+                    if (request.isRequestDocumentDelete()) {
+                        actionStatus = sw360ComponentClient.deleteComponent(request.getDocumentId(), reviewer);
+                    } else {
+                        actionStatus = sw360ComponentClient.updateComponentFromModerationRequest(
+                                request.getComponentAdditions(), request.getComponentDeletions(), reviewer);
                     }
-                } else {
-                    actionStatus = sw360ComponentClient.updateReleaseFromModerationRequest(
-                            request.getReleaseAdditions(), request.getReleaseDeletions(), reviewer);
                 }
-            }
                 break;
-            case LICENSE: {
-                LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
-                actionStatus = sw360LicenseClient.updateLicenseFromModerationRequest(request.getLicenseAdditions(),
-                        request.getLicenseDeletions(), reviewer, userFromRequest);
-            }
-                break;
-            case SPDX_DOCUMENT: {
-                SPDXDocumentService.Iface sw360SPDXClient = getThriftSPDXDocumentClient();
-                if (request.isRequestDocumentDelete()) {
-                    actionStatus = sw360SPDXClient.deleteSPDXDocument(request.getDocumentId(), reviewer);
-                } else {
-                    actionStatus = sw360SPDXClient.updateSPDXDocumentFromModerationRequest(
-                            request.getSPDXDocumentAdditions(), request.getSPDXDocumentDeletions(), reviewer);
+                case PROJECT: {
+                    ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+                    if (request.isRequestDocumentDelete()) {
+                        actionStatus = sw360ProjectClient.deleteProject(request.getDocumentId(), reviewer);
+                    } else {
+                        actionStatus = sw360ProjectClient.updateProjectFromModerationRequest(request.getProjectAdditions(),
+                                request.getProjectDeletions(), reviewer);
+                    }
                 }
-            }
                 break;
-            case SPDX_DOCUMENT_CREATION_INFO: {
-                DocumentCreationInformationService.Iface documentCreationInfoClient = getThriftDocumentCreationInfo();
-                if (request.isRequestDocumentDelete()) {
-                    actionStatus = documentCreationInfoClient.deleteDocumentCreationInformation(request.getDocumentId(),
-                            reviewer);
-                } else {
-                    actionStatus = documentCreationInfoClient.updateDocumentCreationInfomationFromModerationRequest(
-                            request.getDocumentCreationInfoAdditions(), request.getDocumentCreationInfoDeletions(),
-                            reviewer);
+                case RELEASE: {
+                    ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+                    if (request.isRequestDocumentDelete()) {
+                        actionStatus = sw360ComponentClient.deleteRelease(request.getDocumentId(), reviewer);
+                        if (actionStatus.equals(RequestStatus.SUCCESS)) {
+                            SW360Utils.removeReleaseVulnerabilityRelation(request.getDocumentId(), userFromRequest);
+                        }
+                    } else {
+                        actionStatus = sw360ComponentClient.updateReleaseFromModerationRequest(
+                                request.getReleaseAdditions(), request.getReleaseDeletions(), reviewer);
+                    }
                 }
-            }
                 break;
-            case SPDX_PACKAGE_INFO: {
-                PackageInformationService.Iface packageInfoClient = getThriftPackageInfo();
-                if (request.isRequestDocumentDelete()) {
-                    actionStatus = packageInfoClient.deletePackageInformation(request.getDocumentId(), reviewer);
-                } else {
-                    actionStatus = packageInfoClient.updatePackageInfomationFromModerationRequest(
-                            request.getPackageInfoAdditions(), request.getPackageInfoDeletions(), reviewer);
+                case LICENSE: {
+                    LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+                    actionStatus = sw360LicenseClient.updateLicenseFromModerationRequest(request.getLicenseAdditions(),
+                            request.getLicenseDeletions(), reviewer, userFromRequest);
                 }
-            }
+                break;
+                case SPDX_DOCUMENT: {
+                    SPDXDocumentService.Iface sw360SPDXClient = getThriftSPDXDocumentClient();
+                    if (request.isRequestDocumentDelete()) {
+                        actionStatus = sw360SPDXClient.deleteSPDXDocument(request.getDocumentId(), reviewer);
+                    } else {
+                        actionStatus = sw360SPDXClient.updateSPDXDocumentFromModerationRequest(
+                                request.getSPDXDocumentAdditions(), request.getSPDXDocumentDeletions(), reviewer);
+                    }
+                }
+                break;
+                case SPDX_DOCUMENT_CREATION_INFO: {
+                    DocumentCreationInformationService.Iface documentCreationInfoClient = getThriftDocumentCreationInfo();
+                    if (request.isRequestDocumentDelete()) {
+                        actionStatus = documentCreationInfoClient.deleteDocumentCreationInformation(request.getDocumentId(),
+                                reviewer);
+                    } else {
+                        actionStatus = documentCreationInfoClient.updateDocumentCreationInfomationFromModerationRequest(
+                                request.getDocumentCreationInfoAdditions(), request.getDocumentCreationInfoDeletions(),
+                                reviewer);
+                    }
+                }
+                break;
+                case SPDX_PACKAGE_INFO: {
+                    PackageInformationService.Iface packageInfoClient = getThriftPackageInfo();
+                    if (request.isRequestDocumentDelete()) {
+                        actionStatus = packageInfoClient.deletePackageInformation(request.getDocumentId(), reviewer);
+                    } else {
+                        actionStatus = packageInfoClient.updatePackageInfomationFromModerationRequest(
+                                request.getPackageInfoAdditions(), request.getPackageInfoDeletions(), reviewer);
+                    }
+                }
                 break;
             }
         } catch (SW360Exception sw360Exp) {
