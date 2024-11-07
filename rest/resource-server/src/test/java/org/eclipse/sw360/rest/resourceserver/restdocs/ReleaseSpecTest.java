@@ -311,7 +311,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release2.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
         release2.setComponentId(component.getId());
         release2.setComponentType(ComponentType.OSS);
-        release2.setClearingState(ClearingState.APPROVED);
+        release2.setClearingState(ClearingState.NEW_CLEARING);
         release2.setMainlineState(MainlineState.MAINLINE);
         release2.setExternalIds(release2ExternalIds);
         release2.setLanguages(new HashSet<>(Arrays.asList("C++", "Java")));
@@ -323,6 +323,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         release2.setClearingInformation(clearingInfo);
         release2.setCotsDetails(cotsDetails);
         release2.setEccInformation(eccInformation);
+        release2.setAttachments(ImmutableSet.of(att1));
         releaseList.add(release2);
 
         Package package2 = new Package()
@@ -937,6 +938,21 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
+
+        @Test
+        public void should_document_get_releases_by_isNewClearingWithSourceAvailable_filter() throws Exception {
+            mockMvc.perform(get("/api/releases?isNewClearingWithSourceAvailable=" + true)
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(this.documentationHandler.document(
+                            links(linkWithRel("curies").description("Curies are used for online documentation")),
+                            responseFields(
+                                    subsectionWithPath("_embedded.sw360:releases.[]name").description("The name of the release, optional"),
+                                    subsectionWithPath("_embedded.sw360:releases.[]version").description("The version of the release"),
+                                    subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
+                                    subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")))
+                    );
+        }
 
     @Test
     public void should_document_trigger_fossology_process() throws Exception {

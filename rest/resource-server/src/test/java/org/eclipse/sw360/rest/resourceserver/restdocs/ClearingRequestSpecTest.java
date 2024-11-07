@@ -309,11 +309,15 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         mockMvc.perform(get("/api/clearingrequests")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .queryParam("state", "NEW")
+                .queryParam("page", "0")
+                .queryParam("page_entries", "2")
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         queryParameters(
-                                parameterWithName("state").description("The clearing request state of the request. Possible values are:  " + Arrays.asList(ClearingRequestState.values()))
+                                parameterWithName("state").description("The clearing request state of the request. Possible values are:  " + Arrays.asList(ClearingRequestState.values())),
+                                parameterWithName("page").description("The page number for pagination."),
+                                parameterWithName("page_entries").description("The number of clearing requests per page.")
                         ),
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]id").description("The id of the clearing request"),
@@ -331,8 +335,12 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.createdOn").description("The date when the clearing request was created"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests.[]_embedded.requestingUser").description("The user who created the clearing request"),
                                 subsectionWithPath("_embedded.sw360:clearingRequests").description("An array of <<resources-clearingRequest, ClearingRequests>>"),
-                                subsectionWithPath("_links").description("Link to <<resources-clearingRequest, ClearingRequest resource>>")
-
+                                subsectionWithPath("_links").description("Link to <<resources-clearingRequest, ClearingRequest resource>>"),
+                                fieldWithPath("page").description("Additional paging information for the clearing requests."),
+                                fieldWithPath("page.size").description("Number of Clearing requests per page."),
+                                fieldWithPath("page.totalElements").description("Total number of clearing requests available."),
+                                fieldWithPath("page.totalPages").description("Total number of pages available."),
+                                fieldWithPath("page.number").description("Current page number.")
                         )));
     }
 

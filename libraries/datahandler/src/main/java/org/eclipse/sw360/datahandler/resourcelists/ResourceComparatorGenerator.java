@@ -30,6 +30,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationRequest;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -57,6 +58,7 @@ public class ResourceComparatorGenerator<T> {
     private static final Map<VulnerabilitySummary._Fields, Comparator<VulnerabilitySummary>> vSumm = generateVulSumm();
     private static final Map<ModerationRequest._Fields, Comparator<ModerationRequest>> moderationRequestMap = generateModerationRequestMap();
     private static final Map<Comment._Fields, Comparator<Comment>> commentMap = generateCommentMap();
+    private static final Map<ClearingRequest._Fields, Comparator<ClearingRequest>> clearingRequestMap = generateClearingRequestMap();
 
 
     private static Map<Component._Fields, Comparator<Component>> generateComponentMap() {
@@ -201,6 +203,17 @@ public class ResourceComparatorGenerator<T> {
         return Collections.unmodifiableMap(moderationRequestMap);
     }
 
+    private static Map<ClearingRequest._Fields, Comparator<ClearingRequest>> generateClearingRequestMap() {
+        Map<ClearingRequest._Fields, Comparator<ClearingRequest>> clearingRequestMap = new HashMap<>();
+        clearingRequestMap.put(ClearingRequest._Fields.TIMESTAMP,
+                Comparator.comparingLong(ClearingRequest::getTimestamp));
+        clearingRequestMap.put(ClearingRequest._Fields.REQUESTING_USER,
+                Comparator.comparing(ClearingRequest::getRequestingUser, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        clearingRequestMap.put(ClearingRequest._Fields.CLEARING_STATE,
+                Comparator.comparing(c -> Optional.ofNullable(c.getClearingState()).map(Object::toString).orElse(null), Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER)));
+        return Collections.unmodifiableMap(clearingRequestMap);
+    }
+
     private static Map<Comment._Fields, Comparator<Comment>> generateCommentMap() {
         Map<Comment._Fields, Comparator<Comment>> commentMap = new HashMap<>();
         commentMap.put(Comment._Fields.COMMENTED_ON,
@@ -235,6 +248,8 @@ public class ResourceComparatorGenerator<T> {
                 return (Comparator<T>)defaultVulSummComparator();
             case SW360Constants.TYPE_MODERATION:
                 return (Comparator<T>)defaultModerationRequestComparator();
+            case SW360Constants.TYPE_CLEARING:
+                return (Comparator<T>)defaultClearingRequestComparator();
             case SW360Constants.TYPE_PACKAGE:
                 return (Comparator<T>)defaultPackageComparator();
             case SW360Constants.TYPE_ECC:
@@ -377,6 +392,15 @@ public class ResourceComparatorGenerator<T> {
                     }
                 }
                 return generateModerationRequestComparatorWithFields(type, modFields);
+            case SW360Constants.TYPE_CLEARING:
+                List<ClearingRequest._Fields> clearingFields = new ArrayList<>();
+                for (String property : properties) {
+                    ClearingRequest._Fields field = ClearingRequest._Fields.findByName(property);
+                    if (field != null) {
+                        clearingFields.add(field);
+                    }
+                }
+                return generateClearingRequestComparatorWithFields(type, clearingFields);
             case SW360Constants.TYPE_COMMENT:
                 List<Comment._Fields> commentFields = new ArrayList<>();
                 for (String property : properties) {
@@ -515,6 +539,16 @@ public class ResourceComparatorGenerator<T> {
         switch (type) {
             case SW360Constants.TYPE_MODERATION:
                 return (Comparator<T>) moderationComparator(fields);
+            default:
+                throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
+        }
+    }
+
+    public Comparator<T> generateClearingRequestComparatorWithFields(
+            String type, List<ClearingRequest._Fields> fields) throws ResourceClassNotFoundException {
+        switch (type) {
+            case SW360Constants.TYPE_CLEARING:
+                return (Comparator<T>) clearingComparator(fields);
             default:
                 throw new ResourceClassNotFoundException("No comparator for resource class with name " + type);
         }
@@ -704,6 +738,18 @@ public class ResourceComparatorGenerator<T> {
         return comparator;
     }
 
+    private Comparator<ClearingRequest> clearingComparator(List<ClearingRequest._Fields> fields) {
+        Comparator<ClearingRequest> comparator = Comparator.comparing(x -> true);
+        for (ClearingRequest._Fields field : fields) {
+            Comparator<ClearingRequest> fieldComparator = clearingRequestMap.get(field);
+            if (fieldComparator != null) {
+                comparator = comparator.thenComparing(fieldComparator);
+            }
+        }
+        comparator = comparator.thenComparing(defaultClearingRequestComparator());
+        return comparator;
+    }
+
     private Comparator<Component> defaultComponentComparator() {
         return componentMap.get(Component._Fields.NAME);
     }
@@ -746,6 +792,10 @@ public class ResourceComparatorGenerator<T> {
 
     private Comparator<ModerationRequest> defaultModerationRequestComparator() {
         return moderationRequestMap.get(ModerationRequest._Fields.TIMESTAMP);
+    }
+
+    private Comparator<ClearingRequest> defaultClearingRequestComparator() {
+        return clearingRequestMap.get(ClearingRequest._Fields.TIMESTAMP);
     }
 
     private Comparator<Package> defaultPackageComparator() {
