@@ -36,8 +36,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.subsecti
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
@@ -102,6 +101,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
         given(this.vendorServiceMock.getVendors()).willReturn(vendorList);
         given(this.vendorServiceMock.vendorUpdate(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vendorServiceMock.getVendorById(eq(vendor.getId()))).willReturn(vendor);
+        given(this.vendorServiceMock.deleteVendorByid(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vendorServiceMock.exportExcel()).willReturn(ByteBuffer.allocate(10000));
 
         when(this.vendorServiceMock.createVendor(any())).then(invocation ->
@@ -177,6 +177,13 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                         )));
     }
 
+    @Test
+    public void should_document_delete_vendor() throws Exception {
+        mockMvc.perform(delete("/api/vendors/" + vendor.getId())
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
+    }
 
     @Test
     public void should_document_create_vendor() throws Exception {
