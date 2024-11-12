@@ -7,17 +7,11 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 
-FROM debian:jessie
-MAINTAINER admin@sw360.org
-ENV DEBIAN_FRONTEND noninteractive
-
-ENV _update="apt-get update"
-ENV _install="apt-get install -y --no-install-recommends"
-ENV _cleanup="eval apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*"
+# Python 3.10 Bookworm
+FROM python:3.10-bookworm@sha256:2c7bb615d8d39334f857260dc012e27070f04bea5d653e687f5f6fb643637e15
 
 RUN set -x \
- && $_update && $_install python python-couchdb \
- && $_cleanup
+    && pip install pycouchdb \
+    && mkdir -p /migrations
 
-RUN mkdir -p /migrations
 WORKDIR /migrations
