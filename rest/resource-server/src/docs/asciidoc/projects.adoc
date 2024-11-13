@@ -582,6 +582,20 @@ include::{snippets}/should_document_delete_project/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_delete_project/http-response.adoc[]
 
+[[resources-projects-remove-orphaned-obligations]]
+==== Remove orphaned obligations
+
+A `PATCH` request will update the project's obligations.
+
+===== Request structure 1
+Pass an array of orphaned obligations title in request body.
+
+===== Example request
+include::{snippets}/should_document_remove_orphaned_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_remove_orphaned_obligations/http-response.adoc[]
+
 [[resources-project-link-projects]]
 ==== Link project to the projects
 
