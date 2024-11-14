@@ -20,6 +20,9 @@ management:
       base-path: /
       exposure:
         include: health,info
+      path-mapping:
+        health: /api/health
+        info: /api/info
   endpoint:
     health:
       show-details: always
@@ -28,6 +31,11 @@ management:
       enabled: true
   security:
     enabled: true
+  health:
+    diskspace:
+      enabled: true    # Disable to hide sensitive system information
+    ping:
+      enabled: true
 
 spring:
   application:
