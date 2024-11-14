@@ -122,6 +122,7 @@
     <jakarta.activation-api.version>2.0.1</jakarta.activation-api.version>
     <jakarta.mail-api.version>2.0.1</jakarta.mail-api.version>
     <jaxen.version>2.0.0</jaxen.version>
+    <jboss-logging.version>3.5.0.Final</jboss-logging.version>
     <jcip-annotations.version>1.0</jcip-annotations.version>
     <jcraft.version>0.1.55</jcraft.version>
     <jetbrains-annotations.version>26.0.1</jetbrains-annotations.version>
@@ -160,7 +161,7 @@
     <version.hibernate.javax.persistence>1.0.0.Final</version.hibernate.javax.persistence>
     <arquillian-graphene.version>2.5.4</arquillian-graphene.version>
     <version.jee.jaxb.api>2.3.1</version.jee.jaxb.api>
-    <version.keycloak>25.0.4</version.keycloak>
+    <keycloak.version>25.0.6</keycloak.version>
     <spring.security.crypto>6.3.3</spring.security.crypto>
   </properties>
   <dependencyManagement>
@@ -539,6 +540,11 @@
       </dependency>
       <dependency>
         <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-crypto</artifactId>
+        <version>${spring-security.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.security</groupId>
         <artifactId>spring-security-jwt</artifactId>
         <version>${spring-security-jwt.version}</version>
       </dependency>
@@ -567,6 +573,49 @@
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-utils</artifactId>
         <version>${plexus-utils.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>${project-lombok.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-core</artifactId>
+        <scope>provided</scope>
+        <version>${keycloak.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-server-spi</artifactId>
+        <scope>provided</scope>
+        <version>${keycloak.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-server-spi-private</artifactId>
+        <version>${keycloak.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-model-jpa</artifactId>
+        <version>${keycloak.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.logging</groupId>
+        <artifactId>jboss-logging</artifactId>
+        <version>${jboss-logging.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.arquillian.graphene</groupId>
+        <artifactId>graphene-webdriver</artifactId>
+        <version>${arquillian-graphene.version}</version>
+        <type>pom</type>
+        <scope>test</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>

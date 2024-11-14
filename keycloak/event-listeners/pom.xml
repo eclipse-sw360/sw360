@@ -20,7 +20,6 @@
     </parent>
 
     <properties>
-        <keycloak.provider.version>26.0.5</keycloak.provider.version>
         <artifact.deploy.dir>${listener.deploy.dir}</artifact.deploy.dir>
     </properties>
 
@@ -28,19 +27,14 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
-            <version>${keycloak.provider.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
-            <version>${keycloak.provider.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi-private</artifactId>
-            <version>${keycloak.provider.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>

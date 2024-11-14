@@ -23,8 +23,6 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>${project-lombok.version}</version>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -33,13 +31,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>${project-lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
