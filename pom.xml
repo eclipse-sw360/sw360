@@ -161,7 +161,7 @@
     <version.hibernate.javax.persistence>1.0.0.Final</version.hibernate.javax.persistence>
     <arquillian-graphene.version>2.5.4</arquillian-graphene.version>
     <version.jee.jaxb.api>2.3.1</version.jee.jaxb.api>
-    <keycloak.version>25.0.6</keycloak.version>
+    <keycloak.version>26.0.5</keycloak.version>
     <spring.security.crypto>6.3.3</spring.security.crypto>
   </properties>
   <dependencyManagement>
