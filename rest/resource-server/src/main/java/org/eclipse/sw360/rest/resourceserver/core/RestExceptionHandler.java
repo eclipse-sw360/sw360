@@ -29,7 +29,6 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
@@ -84,7 +83,7 @@ public class RestExceptionHandler {
 
     @Data
     @RequiredArgsConstructor
-    private static class ErrorMessage {
+    public static class ErrorMessage {
 
         @JsonSerialize(using = JsonInstantSerializer.class)
         private Instant timestamp = Instant.now();
