@@ -2217,9 +2217,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         project.unsetReleaseIdToUsage();
         try {
             addOrPatchDependencyNetworkToProject(project, reqBodyMap, ProjectOperation.CREATE);
-        } catch (JsonProcessingException | NoSuchElementException | InvalidPropertiesFormatException e) {
+        } catch (JsonProcessingException e) {
             log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body("Invalid dependency network format");
+        } catch (SW360Exception sw360Exception) {
+            log.error(sw360Exception.getWhy());
+            return ResponseEntity.badRequest().body(sw360Exception.getWhy());
         }
 
         projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(project, sw360User);
@@ -2259,9 +2262,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         try {
             addOrPatchDependencyNetworkToProject(updateProject, reqBodyMap, ProjectOperation.UPDATE);
-        } catch (JsonProcessingException | NoSuchElementException | InvalidPropertiesFormatException e) {
+        } catch (JsonProcessingException e) {
             log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body("Invalid dependency network format");
+        } catch (SW360Exception sw360Exception) {
+            log.error(sw360Exception.getWhy());
+            return ResponseEntity.badRequest().body(sw360Exception.getWhy());
         }
 
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
@@ -2988,7 +2994,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return halProject;
     }
 
-    private void addOrPatchDependencyNetworkToProject(Project project, Map<String, Object> requestBody, ProjectOperation operation) throws JsonProcessingException, InvalidPropertiesFormatException {
+    private void addOrPatchDependencyNetworkToProject(Project project, Map<String, Object> requestBody, ProjectOperation operation)
+            throws JsonProcessingException, SW360Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         List<ReleaseNode> releaseNodes = null;
@@ -3004,7 +3011,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 List<String> releaseWithSameLevel = new ArrayList<>();
                 for (ReleaseNode releaseNode : releaseNodes) {
                     if (CommonUtils.isNullEmptyOrWhitespace(releaseNode.getReleaseId())) {
-                        throw new InvalidPropertiesFormatException("releaseId cannot be null or empty");
+                        throw new SW360Exception("releaseId cannot be null or empty");
                     }
 
                     if (releaseWithSameLevel.contains(releaseNode.getReleaseId())) {
@@ -3030,12 +3037,12 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
     }
 
-    private List<ReleaseNode> checkAndUpdateSubNodes(List<ReleaseNode> releaseNodes, ProjectOperation operation, List<String> loadedReleases) throws InvalidPropertiesFormatException {
+    private List<ReleaseNode> checkAndUpdateSubNodes(List<ReleaseNode> releaseNodes, ProjectOperation operation, List<String> loadedReleases) throws SW360Exception {
         List<ReleaseNode> uniqueDependencyNetwork = new ArrayList<>();
         List<String> releaseIdsWithSameLevel = new ArrayList<>();
         for (ReleaseNode releaseNode : releaseNodes) {
             if (CommonUtils.isNullEmptyOrWhitespace(releaseNode.getReleaseId())) {
-                throw new InvalidPropertiesFormatException("releaseId cannot be null or empty");
+                throw new SW360Exception("releaseId cannot be null or empty");
             }
 
             if (releaseIdsWithSameLevel.contains(releaseNode.getReleaseId())) {
@@ -3046,7 +3053,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             if (loadedReleases.contains(releaseNode.getReleaseId())) {
                 loadedReleases.add(releaseNode.getReleaseId());
                 String cyclicHierarchy = String.join(" -> ", loadedReleases);
-                throw new InvalidPropertiesFormatException("Cyclic hierarchy in dependency network: " + cyclicHierarchy);
+                throw new SW360Exception("Cyclic hierarchy in dependency network: " + cyclicHierarchy);
             }
 
             loadedReleases.add(releaseNode.getReleaseId());
@@ -3063,16 +3070,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         return uniqueDependencyNetwork;
     }
 
-    private void updateReleaseNodeData(ReleaseNode releaseNode, ProjectOperation operation) {
+    private void updateReleaseNodeData(ReleaseNode releaseNode, ProjectOperation operation) throws SW360Exception {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         String mainLineStateUpper = (releaseNode.getMainlineState() != null) ? releaseNode.getMainlineState().toUpperCase() : MainlineState.OPEN.toString();
         String releaseRelationShipUpper = (releaseNode.getReleaseRelationship() != null) ? releaseNode.getReleaseRelationship().toUpperCase() : ReleaseRelationship.CONTAINED.toString();
 
         if (!enumMainlineStateValues.contains(mainLineStateUpper)) {
-            throw new NoSuchElementException("mainLineState of release " + releaseNode.getReleaseId() + " must be in Enum " + enumMainlineStateValues);
+            throw new SW360Exception("mainLineState of release " + releaseNode.getReleaseId() + " must be in Enum " + enumMainlineStateValues);
         }
         if (!enumReleaseRelationshipValues.contains(releaseRelationShipUpper)) {
-            throw new NoSuchElementException("releaseRelationShip of release " + releaseNode.getReleaseId() + " must be in Enum " + enumReleaseRelationshipValues);
+            throw new SW360Exception("releaseRelationShip of release " + releaseNode.getReleaseId() + " must be in Enum " + enumReleaseRelationshipValues);
         }
 
         releaseNode.setReleaseRelationship(releaseRelationShipUpper);
