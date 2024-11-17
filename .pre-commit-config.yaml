@@ -11,10 +11,6 @@ repos:
     hooks:
     -   id: conventional-pre-commit
         stages: [commit-msg]
-#-   repo: https://github.com/gherynos/pre-commit-java
-#    rev: v0.6.4
-#    hooks:
-#    -   id: checkstyle
 -   repo: https://github.com/gitleaks/gitleaks
     rev: v8.21.2
     hooks:

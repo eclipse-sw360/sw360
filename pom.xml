@@ -59,7 +59,8 @@
     <rest.version>2.0.0</rest.version>
     <backend.deploy.dir>${base.deploy.dir}/webapps</backend.deploy.dir>
     <rest.deploy.dir>${base.deploy.dir}/webapps</rest.deploy.dir>
-    <jars.deploy.dir/> <!-- Prevent copy of jar files to tomcat/webapps. Used by Docker build -->
+    <jars.deploy.dir/>
+    <!-- Prevent copy of jar files to tomcat/webapps. Used by Docker build -->
     <listener.deploy.dir/>
     <!-- Build version properties -->
     <java_source.version>21</java_source.version>
@@ -95,7 +96,7 @@
     <!-- Dependencies version properties -->
     <assertj.version>3.26.3</assertj.version>
     <byte-buddy.version>1.15.4</byte-buddy.version>
-    <cloudantsdk.version>0.9.1</cloudantsdk.version>
+    <cloudantsdk.version>0.9.3</cloudantsdk.version>
     <commons-cli.version>1.9.0</commons-cli.version>
     <commons-codec.version>1.17.1</commons-codec.version>
     <commons-collection4.version>4.4</commons-collection4.version>
@@ -116,13 +117,14 @@
     <httpcore.version>4.4.16</httpcore.version>
     <httpcore5.version>5.3.1</httpcore5.version>
     <jakarta-xml-bind.version>4.0.2</jakarta-xml-bind.version>
-    <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
+    <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>
     <jakarta.annotation-api.version>3.0.0</jakarta.annotation-api.version>
     <jakarta.activation-api.version>2.0.1</jakarta.activation-api.version>
     <jakarta.mail-api.version>2.0.1</jakarta.mail-api.version>
     <jaxen.version>2.0.0</jaxen.version>
+    <jboss-logging.version>3.5.0.Final</jboss-logging.version>
     <jcip-annotations.version>1.0</jcip-annotations.version>
-    <jcraft.version>0.1.54</jcraft.version>
+    <jcraft.version>0.1.55</jcraft.version>
     <jetbrains-annotations.version>26.0.1</jetbrains-annotations.version>
     <jetty.version>10.0.15</jetty.version>
     <jgiven.version>1.3.1</jgiven.version>
@@ -159,7 +161,7 @@
     <version.hibernate.javax.persistence>1.0.0.Final</version.hibernate.javax.persistence>
     <arquillian-graphene.version>2.5.4</arquillian-graphene.version>
     <version.jee.jaxb.api>2.3.1</version.jee.jaxb.api>
-    <version.keycloak>25.0.4</version.keycloak>
+    <keycloak.version>26.0.5</keycloak.version>
     <spring.security.crypto>6.3.3</spring.security.crypto>
   </properties>
   <dependencyManagement>
@@ -538,6 +540,11 @@
       </dependency>
       <dependency>
         <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-crypto</artifactId>
+        <version>${spring-security.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.security</groupId>
         <artifactId>spring-security-jwt</artifactId>
         <version>${spring-security-jwt.version}</version>
       </dependency>
@@ -566,8 +573,50 @@
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-utils</artifactId>
         <version>${plexus-utils.version}</version>
-    </dependency>
-    
+      </dependency>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>${project-lombok.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-core</artifactId>
+        <scope>provided</scope>
+        <version>${keycloak.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-server-spi</artifactId>
+        <scope>provided</scope>
+        <version>${keycloak.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-server-spi-private</artifactId>
+        <version>${keycloak.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-model-jpa</artifactId>
+        <version>${keycloak.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.logging</groupId>
+        <artifactId>jboss-logging</artifactId>
+        <version>${jboss-logging.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.arquillian.graphene</groupId>
+        <artifactId>graphene-webdriver</artifactId>
+        <version>${arquillian-graphene.version}</version>
+        <type>pom</type>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <build>
@@ -606,7 +655,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>3.3.1</version>
+          <version>${maven-source-plugin.version}</version>
           <executions>
             <execution>
               <id>attach-sources</id>

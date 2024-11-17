@@ -109,6 +109,17 @@ public class Sw360ClearingRequestService {
         return getClearingRequestById(crId, sw360User);
     }
 
+    public RequestStatus updateClearingRequest(ClearingRequest clearingRequest, User sw360User, String baseUrl, String projectId) throws TException {
+        ModerationService.Iface sw360ModerationClient = getThriftModerationClient();
+        String projectUrl = baseUrl + "/projects/-/project/detail/" + projectId;
 
+        RequestStatus requestStatus;
+        requestStatus = sw360ModerationClient.updateClearingRequest(clearingRequest, sw360User, projectUrl);
+
+        if (requestStatus == RequestStatus.FAILURE) {
+            throw new RuntimeException("Clearing Request with id '" + clearingRequest.getId() + " cannot be updated.");
+        }
+        return requestStatus;
+    }
 
 }

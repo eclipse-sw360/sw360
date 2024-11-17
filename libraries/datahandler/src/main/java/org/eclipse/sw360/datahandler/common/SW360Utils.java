@@ -277,6 +277,17 @@ public class SW360Utils {
         }
     }
 
+    public static boolean isValidDate(String currRequestedClearingDate, String newRequestedClearingDate, DateTimeFormatter format) {
+        try {
+            LocalDate currLocalDate = LocalDate.parse(currRequestedClearingDate, format);
+            LocalDate requestedLocalDate = LocalDate.parse(newRequestedClearingDate, format);
+
+            return requestedLocalDate.isAfter(currLocalDate);
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+    }
+
     public static String printFullname(Release release) {
         if (release == null || isNullOrEmpty(release.getName())) {
             return "New Release";
