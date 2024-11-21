@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RemoveModeratorRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -356,6 +357,14 @@ public class ModerationHandler implements ModerationService.Iface {
         assertUser(user);
 
         handler.updateClearingRequestForChangeInProjectBU(crId, businessUnit, user);
+    }
+
+    @Override
+    public void updateClearingRequestForChangeInClearingSize(String crId, ClearingRequestSize size) throws TException {
+        assertId(crId);
+        assertNotNull(size);
+
+        handler.updateClearingRequestForChangeInClearingSize(crId, size);
     }
 
     @Override

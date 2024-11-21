@@ -29,6 +29,7 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceListController;
 import org.eclipse.sw360.datahandler.thrift.Comment;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -54,6 +55,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
+import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
@@ -130,6 +132,9 @@ public class RestControllerHelper<T> {
 
     @NonNull
     private final Sw360ObligationService obligationService;
+
+    @NonNull
+    private final Sw360ClearingRequestService clearingRequestService;
 
     @NonNull
     private final ResourceComparatorGenerator<T> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
@@ -1394,6 +1399,7 @@ public class RestControllerHelper<T> {
         embeddedClearingRequest.setType(null);
         embeddedClearingRequest.setClearingType(clearingRequest.getClearingType());
         embeddedClearingRequest.setTimestamp(clearingRequest.getTimestamp());
+        embeddedClearingRequest.setClearingSize(clearingRequest.getClearingSize());
         return embeddedClearingRequest;
     }
 
@@ -1635,5 +1641,18 @@ public class RestControllerHelper<T> {
         // Do not add attachment as it is an embedded field
         release.unsetAttachments();
         return halRelease;
+    }
+    public ClearingRequest updateCRSize(ClearingRequest clearingRequest, Project project, User sw360User) throws TException {
+        int openReleaseCount = SW360Utils.getOpenReleaseCount(project.getReleaseClearingStateSummary());
+        ClearingRequestSize currentSize = SW360Utils.determineCRSize(openReleaseCount);
+        ClearingRequestSize initialSize = clearingRequest.getClearingSize();
+        if(initialSize == null) return clearingRequest;
+        if(!initialSize.equals(ClearingRequestSize.VERY_LARGE)) {
+            int limit = SW360Utils.CLEARING_REQUEST_SIZE_MAP.get(initialSize);
+            if(openReleaseCount > limit){
+                clearingRequestService.updateClearingRequestForChangeInClearingSize(clearingRequest.getId(), currentSize);
+            }
+        }
+        return clearingRequestService.getClearingRequestById(clearingRequest.getId(), sw360User);
     }
 }

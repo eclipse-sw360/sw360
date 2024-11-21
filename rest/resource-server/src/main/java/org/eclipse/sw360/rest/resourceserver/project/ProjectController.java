@@ -3264,7 +3264,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (reqBodyMap.get("dependencyNetwork") != null) {
             try {
                 addOrPatchDependencyNetworkToProject(duplicatedProject, reqBodyMap, ProjectOperation.CREATE);
-            } catch (JsonProcessingException | NoSuchElementException | InvalidPropertiesFormatException e) {
+            } catch (JsonProcessingException | NoSuchElementException e) {
                 log.error(e.getMessage());
                 return ResponseEntity.badRequest().body(e.getMessage());
             }
