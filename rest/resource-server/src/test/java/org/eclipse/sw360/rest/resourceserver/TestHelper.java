@@ -1,10 +1,9 @@
 /*
- * Copyright Siemens AG, 2017. Part of the SW360 Portal Project.
- * Copyright Bosch Software Innovations GmbH, 2018.
+ * Copyright Siemens AG, 2017. Part of the SW360 Portal Project. Copyright Bosch Software
+ * Innovations GmbH, 2018.
  *
-  * This program and the accompanying materials are made
- * available under the terms of the Eclipse Public License 2.0
- * which is available at https://www.eclipse.org/legal/epl-2.0/
+ * This program and the accompanying materials are made available under the terms of the Eclipse
+ * Public License 2.0 which is available at https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
  */
@@ -25,8 +24,6 @@ import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.util.Base64Utils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -40,8 +37,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+
 
 public class TestHelper {
     private static final String AUTH_BASIC = "Basic ";
@@ -50,11 +46,13 @@ public class TestHelper {
     public static String releaseId2 = "3451831bjh1v2jxxz";
     public static String attachmentShaUsedMultipleTimes = "12345";
 
-    static public void checkResponse(String responseBody, String linkRelation, int embeddedArraySize) throws IOException {
+    public static void checkResponse(String responseBody, String linkRelation,
+            int embeddedArraySize) throws IOException {
         TestHelper.checkResponse(responseBody, linkRelation, embeddedArraySize, null);
     }
 
-    static public void checkResponse(String responseBody, String linkRelation, int embeddedArraySize, List<String> fields) throws IOException {
+    public static void checkResponse(String responseBody, String linkRelation,
+            int embeddedArraySize, List<String> fields) throws IOException {
         JsonNode responseBodyJsonNode = new ObjectMapper().readTree(responseBody);
 
         assertThat(responseBodyJsonNode.has("_embedded"), is(true));
@@ -63,11 +61,11 @@ public class TestHelper {
         assertThat(embeddedNode.has("sw360:" + linkRelation), is(true));
 
         JsonNode sw360UsersNode = embeddedNode.get("sw360:" + linkRelation);
-        assertThat(sw360UsersNode.isArray(),is(true));
-        assertThat(sw360UsersNode.size(),is(embeddedArraySize));
-        if(fields != null && embeddedArraySize > 0) {
+        assertThat(sw360UsersNode.isArray(), is(true));
+        assertThat(sw360UsersNode.size(), is(embeddedArraySize));
+        if (fields != null && embeddedArraySize > 0) {
             JsonNode itemNode = sw360UsersNode.get(0);
-            for(String field:fields) {
+            for (String field : fields) {
                 assertTrue(itemNode.has(field));
             }
         }
@@ -85,15 +83,19 @@ public class TestHelper {
 
     public static String generateAuthHeader(String user, String password) {
         String credentials = user + ":" + password;
-        String credentialsEncoded = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+        String credentialsEncoded =
+                Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
         return AUTH_BASIC + credentialsEncoded;
     }
 
-    public static void handleBatchDeleteResourcesResponse(ResponseEntity<String> response, String resourceId, int statusCode) throws IOException {
-        handleBatchDeleteResourcesResponse(response, Collections.singletonList(new MultiStatus(resourceId, HttpStatus.valueOf(statusCode))));
+    public static void handleBatchDeleteResourcesResponse(ResponseEntity<String> response,
+            String resourceId, int statusCode) throws IOException {
+        handleBatchDeleteResourcesResponse(response, Collections
+                .singletonList(new MultiStatus(resourceId, HttpStatus.valueOf(statusCode))));
     }
 
-    public static void handleBatchDeleteResourcesResponse(ResponseEntity<String> response, List<MultiStatus> responseStatusList) throws IOException {
+    public static void handleBatchDeleteResourcesResponse(ResponseEntity<String> response,
+            List<MultiStatus> responseStatusList) throws IOException {
         assertEquals(HttpStatus.MULTI_STATUS, response.getStatusCode());
 
         JsonNode responseNode = new ObjectMapper().readTree(response.getBody());
@@ -158,11 +160,13 @@ public class TestHelper {
         Source source2 = new Source(Source._Fields.RELEASE_ID, releaseId2);
 
         List<AttachmentInfo> attachmentInfos = new ArrayList<>();
-        AttachmentInfo attachmentInfo1 = new AttachmentInfo(getDummyAttachmentsListForTest().get(0));
+        AttachmentInfo attachmentInfo1 =
+                new AttachmentInfo(getDummyAttachmentsListForTest().get(0));
         attachmentInfo1.setOwner(source1);
         attachmentInfos.add(attachmentInfo1);
 
-        AttachmentInfo attachmentInfo2 = new AttachmentInfo(getDummyAttachmentsListForTest().get(1));
+        AttachmentInfo attachmentInfo2 =
+                new AttachmentInfo(getDummyAttachmentsListForTest().get(1));
         attachmentInfo2.setOwner(source2);
         attachmentInfos.add(attachmentInfo2);
 
