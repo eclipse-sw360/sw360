@@ -948,13 +948,15 @@ public class JacksonCustomizations {
                 "setAccessible",
                 "setId",
                 "setClearingReport",
+                "layer",
+                "setIndex",
+                "releaseWithSameComponentSize",
                 "setReleaseWithSameComponent",
                 "setLayer",
                 "setDefaultValue",
-                "setReleaseMainLineState",
-                "setIndex",
                 "setProjectId",
-                "releaseWithSameComponentSize",
+                "setReleaseMainLineState",
+                "setComponentId"
         })
         static abstract class ReleaseLinkMixin extends ReleaseLink {
 
@@ -1888,7 +1890,8 @@ public class JacksonCustomizations {
                 "modifiedOn",
                 "commentsSize",
                 "setPriority",
-                "setClearingType"
+                "setClearingType",
+                "setClearingSize"
         })
         @JsonRootName(value = "clearingRequest")
         public static abstract class ClearingRequestMixin extends ClearingRequest {
@@ -2283,7 +2286,10 @@ public class JacksonCustomizations {
                 "releaseLinkSize",
                 "releaseLinkIterator",
                 "setReleaseLink",
-                "setReleaseRelationship"
+                "setReleaseRelationship",
+                "setReleaseName",
+                "setReleaseVersion",
+                "setComponentId",
         })
         public abstract static class ReleaseNodeMixin extends ReleaseNode {
         }

@@ -115,4 +115,17 @@ include::{snippets}/should_document_add_comment_to_clearingrequest/response-fiel
 include::{snippets}/should_document_add_comment_to_clearingrequest/http-response.adoc[]
 
 
+[[resources-clearingRequest-update]]
+==== Update a clearingRequest
+
+A `PATCH` request is used to update an existing clearingRequest
+
+===== Response structure
+include::{snippets}/should_document_patch_clearingrequest/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_patch_clearingrequest/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_patch_clearingrequest/http-response.adoc[]
 

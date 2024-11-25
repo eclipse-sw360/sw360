@@ -30,6 +30,7 @@ typedef sw360.SW360Exception SW360Exception
 typedef sw360.ClearingRequestState ClearingState
 typedef sw360.ClearingRequestPriority ClearingPriority
 typedef sw360.ClearingRequestType ClearingType
+typedef sw360.ClearingRequestSize ClearingSize
 typedef sw360.Comment Comment
 typedef sw360.PaginationData PaginationData
 typedef components.Release Release
@@ -247,7 +248,8 @@ struct ClearingRequest {
     17: optional i64 modifiedOn,
     18: optional list<i64> reOpenOn,
     19: optional ClearingPriority priority,
-    20: optional ClearingType clearingType
+    20: optional ClearingType clearingType,
+    21: optional ClearingSize clearingSize
 }
 
 struct ProjectDTO{
@@ -706,4 +708,8 @@ service ProjectService {
     */
     list<ReleaseLink> getReleaseLinksOfProjectNetWorkByIndexPath(1: string projectId, 2: list<string> indexPath, 3: User user) throws (1: SW360Exception exp);
 
+    /**
+    * Get linked releases information in dependency network of a project
+    */
+    list<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(1: string projectId, 2: User sw360User) throws (1: SW360Exception exp);
 }

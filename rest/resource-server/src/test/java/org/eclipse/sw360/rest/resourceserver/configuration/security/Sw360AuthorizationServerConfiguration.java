@@ -11,6 +11,7 @@
 package org.eclipse.sw360.rest.resourceserver.configuration.security;
 
 import lombok.RequiredArgsConstructor;
+import org.eclipse.sw360.rest.resourceserver.core.SimpleAuthenticationEntryPoint;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360UserAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -36,12 +37,14 @@ public class Sw360AuthorizationServerConfiguration {
 	@Order(1)
 	@Bean
 	public SecurityFilterChain appSecurtiy(HttpSecurity httpSecurity) throws Exception {
-		httpSecurity.authorizeRequests(
+		SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
+		httpSecurity.authorizeHttpRequests(
 				authz -> authz
 				         .requestMatchers(HttpMethod.GET, "/health").permitAll()
 						.requestMatchers(HttpMethod.GET, "/info").permitAll()
 						.anyRequest().authenticated()
-		).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults());
+		).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults())
+				.exceptionHandling(x -> x.authenticationEntryPoint(saep));
 		return httpSecurity.csrf(csrf -> csrf.disable()).build();
 	}
 

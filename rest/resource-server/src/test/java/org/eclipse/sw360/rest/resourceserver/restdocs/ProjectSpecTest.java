@@ -36,12 +36,12 @@ import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
 import org.eclipse.sw360.datahandler.thrift.components.EccInformation;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationType;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
@@ -846,6 +846,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.vulnerabilityMockService.fillVulnerabilityMetadata(any(), any())).willReturn(vulIdToRelIdToRatings);
         given(this.vulnerabilityMockService.updateProjectVulnerabilityRating(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.getReleasesFromProjectIds(any(), anyBoolean(), any(), any())).willReturn(Set.of(rel));
+        given(this.projectServiceMock.getLinkedReleasesOfSubProjects(any(), any())).willReturn(List.of(release, release2));
     }
 
     @Test
@@ -2809,6 +2810,42 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
             mockMvc.perform(get("/api/projects/network/" + project.getId() + "/listView")
                             .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON)
                             .accept(MediaTypes.HAL_JSON))
+                            .andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    public void should_document_get_linked_releases_in_dependency_network_of_project() throws Exception {
+        ReleaseNode subRelease = new ReleaseNode();
+        subRelease.setReleaseId("98765");
+        subRelease.setReleaseName("Component2");
+        subRelease.setReleaseVersion("v2");
+        subRelease.setComponentId("888888");
+        subRelease.setReleaseRelationship(CONTAINED.toString());
+        subRelease.setMainlineState(OPEN.toString());
+        subRelease.setComment("Comment");
+
+        ReleaseNode release = new ReleaseNode();
+        release.setReleaseId("12345");
+        release.setReleaseName("Component1");
+        release.setReleaseVersion("v1");
+        release.setComponentId("777777777");
+        release.setReleaseRelationship(CONTAINED.toString());
+        release.setMainlineState(OPEN.toString());
+        release.setComment("Comment");
+        release.setReleaseLink(List.of(subRelease));
+
+        given(this.projectServiceMock.getLinkedReleasesInDependencyNetworkOfProject(any(), any())).willReturn(List.of(release));
+
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            mockMvc.perform(get("/api/projects/network/888888/linkedReleases")
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            mockMvc.perform(get("/api/projects/network/888888/linkedReleases")
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
                     .andExpect(status().isOk());
         }
     }
@@ -2972,4 +3009,140 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 "module represent the type oa document. Possible values are `<licenseResourceBundle>`"))));
     }
 
+    @Test
+    public void should_document_get_linked_releases_of_linked_projects() throws Exception {
+        mockMvc.perform(get("/api/projects/888888/subProjects/releases")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
+    @Test
+    public void should_document_compare_dependency_network_with_default_releases_relationship() throws Exception {
+        ReleaseNode subRelease = new ReleaseNode();
+        subRelease.setReleaseId("98765");
+        subRelease.setReleaseName("Component2");
+        subRelease.setReleaseVersion("v2");
+        subRelease.setComponentId("888888");
+        subRelease.setReleaseRelationship(CONTAINED.toString());
+        subRelease.setMainlineState(OPEN.toString());
+        subRelease.setComment("Comment");
+        subRelease.setReleaseLink(Collections.emptyList());
+
+        ReleaseNode release = new ReleaseNode();
+        release.setReleaseId("12345");
+        release.setReleaseName("Component1");
+        release.setReleaseVersion("v1");
+        release.setComponentId("777777777");
+        release.setReleaseRelationship(CONTAINED.toString());
+        release.setMainlineState(OPEN.toString());
+        release.setComment("Comment");
+        release.setReleaseLink(List.of(subRelease));
+
+        Map<String, Object> comparedChild = (Map<String, Object>) objectMapper.convertValue(subRelease, Map.class);
+        comparedChild.put("isDiff", true);
+        comparedChild.put("releaseLink", Collections.emptyList());
+        Map<String, Object> comparedRoot = (Map<String, Object>) objectMapper.convertValue(release, Map.class);
+        comparedRoot.put("isDiff", false);
+        comparedRoot.put("releaseLink", List.of(comparedChild));
+
+        String jsonData = this.objectMapper.writeValueAsString(List.of(release));
+        given(projectServiceMock.compareWithDefaultNetwork(any(), any())).willReturn(List.of(comparedRoot));
+
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            mockMvc.perform(post("/api/projects/network/compareDefaultNetwork")
+                            .contentType(MediaTypes.HAL_JSON)
+                            .accept(MediaTypes.HAL_JSON_VALUE)
+                            .content(jsonData)
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            mockMvc.perform(post("/api/projects/network/compareDefaultNetwork")
+                            .contentType(MediaTypes.HAL_JSON)
+                            .accept(MediaTypes.HAL_JSON_VALUE)
+                            .content(jsonData)
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    public void should_document_duplicate_project_with_dependency_network() throws Exception {
+        ReleaseNode release = new ReleaseNode();
+        release.setReleaseId("3765276512");
+        release.setReleaseRelationship(CONTAINED.toString());
+        release.setMainlineState(OPEN.toString());
+        release.setComment("Test Comment");
+        release.setReleaseLink(new ArrayList<>());
+        release.setCreateBy("admin@sw360.org");
+        release.setCreateOn("2024-07-04");
+
+        Map<String, Object> newProject = new HashMap<>();
+        newProject.put("name", "Test Project");
+        newProject.put("description", "This is the description of my Test Project");
+        newProject.put("version", "1.0");
+        newProject.put("dependencyNetwork", List.of(release));
+
+        when(this.projectServiceMock.createProject(any(), any())).
+                thenReturn(
+                        new Project("Test Project")
+                                .setId("1234567890")
+                                .setDescription("This is the description of my Test Project")
+                                .setProjectType(ProjectType.PRODUCT)
+                                .setVersion("1.0")
+                                .setCreatedBy("admin@sw360.org")
+                                .setPhaseOutSince("2020-06-25")
+                                .setState(ProjectState.ACTIVE)
+                                .setReleaseRelationNetwork("[{\"comment\":\"Test Comment\",\"releaseLink\":[],\"createBy\":\"admin@sw360.org\",\"createOn\":\"2024-07-04\",\"mainlineState\":\"OPEN\",\"releaseId\":\"3765276512\",\"releaseRelationship\":\"CONTAINED\"}]")
+                                .setVendor((new Vendor("Test", "Test short", "http://testvendoraddress.com").setId("987567468")))
+                                .setCreatedOn(new SimpleDateFormat("yyyy-MM-dd").format(new Date())));
+        if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+            this.mockMvc
+                    .perform(post("/api/projects/network/duplicate/376576").contentType(MediaTypes.HAL_JSON)
+                            .content(this.objectMapper.writeValueAsString(newProject))
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            this.mockMvc
+                    .perform(post("/api/projects/network/duplicate/376576").contentType(MediaTypes.HAL_JSON)
+                            .content(this.objectMapper.writeValueAsString(newProject))
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isCreated())
+                    .andDo(this.documentationHandler.document(
+                            requestFields(
+                                    fieldWithPath("name").description("The name of the project"),
+                                    fieldWithPath("version").description("The version of new project"),
+                                    fieldWithPath("description").description("The description of new project"),
+                                    subsectionWithPath("dependencyNetwork").description("Dependency network")
+                            ),
+                            responseFields(
+                                    fieldWithPath("name").description("The name of the project"),
+                                    fieldWithPath("version").description("The project version"),
+                                    fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
+                                    fieldWithPath("createdOn").description("The date the project was created"),
+                                    fieldWithPath("description").description("The project description"),
+                                    fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
+                                    fieldWithPath("securityResponsibles").description("An array of users responsible for security of the project."),
+                                    fieldWithPath("enableSvm").description("Security vulnerability monitoring flag"),
+                                    fieldWithPath("considerReleasesFromExternalList").description("Consider list of releases from existing external list"),
+                                    fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
+                                    fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
+                                    fieldWithPath("phaseOutSince").description("The project phase-out date"),
+                                    subsectionWithPath("dependencyNetwork").description("Dependency network"),
+                                    subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                    subsectionWithPath("_embedded.sw360:vendors").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
+                                    subsectionWithPath("_embedded.createdBy").description("The user who created this project")
+                            )));
+        }
+    }
 }

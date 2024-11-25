@@ -113,6 +113,16 @@ public class CycloneDxBOMImporter {
     private final User user;
     private final AttachmentConnector attachmentConnector;
 
+    // Map of supported hosts and base URL formats
+    private static final Map<String, String> VCS_HOSTS = Map.of(
+            "github.com", "https://github.com/%s/%s",
+            "gitlab.com", "https://gitlab.com/%s/%s",
+            "bitbucket.org", "https://bitbucket.org/%s/%s",
+            "cs.opensource.google", "https://cs.opensource.google/%s/%s",
+            "go.googlesource.com", "https://go.googlesource.com/%s",
+            "pypi.org", "https://pypi.org/project/%s"
+    );
+
     public CycloneDxBOMImporter(ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler,
             PackageDatabaseHandler packageDatabaseHandler, AttachmentConnector attachmentConnector, User user) {
         this.projectDatabaseHandler = projectDatabaseHandler;
@@ -986,25 +996,80 @@ public class CycloneDxBOMImporter {
      * Sanitize different repository URLS based on their defined schema
      */
     public String sanitizeVCS(String vcs) {
-        if (vcs.contains("github.com")) {
-            vcs = "https://" + vcs.substring(vcs.indexOf("github.com")).trim();
-            try {
-                URI uri = URI.create(vcs);
-                String[] urlParts = uri.getPath().split("/");
-
-                if (urlParts.length >= 3) {
-                    String firstSegment = urlParts[1];
-                    String secondSegment = urlParts[2].replaceAll("\\.git.*", "").replaceAll("#.*", "");
-                    vcs = "https://github.com/" + firstSegment + "/" + secondSegment;
-                    return vcs;
-                } else {
-                    log.error("Invalid GitHub repository URL: {}", vcs);
-                }
-            } catch (IllegalArgumentException e) {
-                log.error("Invalid URL format: {}", vcs, e);
+        for (String host : VCS_HOSTS.keySet()) {
+            if (vcs.contains(host)) {
+                return sanitizeVCSByHost(vcs, host);
             }
         }
-        return vcs;
+        return vcs; // Return unchanged if no known host is found
+    }
+
+    private String sanitizeVCSByHost(String vcs, String host) {
+        vcs = "https://" + vcs.substring(vcs.indexOf(host)).trim();
+
+        try {
+            URI uri = URI.create(vcs);
+            String[] urlParts = uri.getPath().split("/");
+            String formattedUrl = formatVCSUrl(host, urlParts);
+
+            if (formattedUrl == null) {
+                log.error("Invalid {} repository URL: {}", host, vcs);
+                return vcs;
+            }
+            return formattedUrl.endsWith("/") ? formattedUrl.substring(0, formattedUrl.length() - 1) : formattedUrl;
+
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid URL format: {}", vcs, e);
+            return vcs;
+        }
+    }
+
+    private String formatVCSUrl(String host, String[] urlParts) {
+        String formattedUrl = null;
+
+        switch (host) {
+            case "github.com":
+            case "bitbucket.org":
+                if (urlParts.length >= 3) {
+                    formattedUrl = String.format(VCS_HOSTS.get(host),
+                            urlParts[1], urlParts[2].replaceAll("\\.git.*|#.*", ""));
+                }
+                break;
+
+            case "gitlab.com":
+                if (urlParts.length >= 2) {
+                    // Join everything after the main host to get the full nested path
+                    String repoPath = String.join("/", Arrays.copyOfRange(urlParts, 1, urlParts.length));
+
+                    // Remove everything from the first occurrence of .git or #
+                    repoPath = repoPath.replaceAll("\\.git.*|#.*", "");
+
+                    formattedUrl = String.format(VCS_HOSTS.get(host), repoPath);
+                }
+                break;
+
+            case "cs.opensource.google":
+                if (urlParts.length >= 3) {
+                    String thirdSegment = urlParts.length > 3 && !urlParts[3].isEmpty() && !urlParts[3].equals("+")
+                            ? urlParts[3] : "";
+                    formattedUrl = String.format(VCS_HOSTS.get(host), urlParts[1], urlParts[2], thirdSegment);
+                }
+                break;
+
+            case "go.googlesource.com":
+                if (urlParts.length >= 2) {
+                    formattedUrl = String.format(VCS_HOSTS.get(host), urlParts[1]);
+                }
+                break;
+
+            case "pypi.org":
+                if (urlParts.length >= 3) {
+                    formattedUrl = String.format(VCS_HOSTS.get(host), urlParts[2].replaceAll("\\.git.*|#.*", ""));
+                }
+                break;
+        }
+
+        return formattedUrl;
     }
 
     public static boolean containsComp(Map<String, List<org.cyclonedx.model.Component>> map, org.cyclonedx.model.Component element) {

@@ -12,14 +12,12 @@ package org.eclipse.sw360.rest.resourceserver.core;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -30,15 +28,12 @@ public class SimpleAuthenticationEntryPoint implements AuthenticationEntryPoint 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException) throws IOException, ServletException {
-        HashMap<String, Object> map = new LinkedHashMap<>();
-        map.put("status", HttpServletResponse.SC_UNAUTHORIZED);
-        map.put("message", authException.getMessage());
-        map.put("timestamp", Calendar.getInstance().getTime().toGMTString());
+        RestExceptionHandler.ErrorMessage message = new RestExceptionHandler.ErrorMessage(authException, HttpStatus.UNAUTHORIZED);
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setCharacterEncoding("utf-8");
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         ObjectMapper objectMapper = new ObjectMapper();
-        String resBody = objectMapper.writeValueAsString(map);
+        String resBody = objectMapper.writeValueAsString(message);
         PrintWriter printWriter = response.getWriter();
         printWriter.print(resBody);
         printWriter.flush();

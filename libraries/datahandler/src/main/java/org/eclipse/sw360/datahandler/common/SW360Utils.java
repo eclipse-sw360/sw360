@@ -277,6 +277,17 @@ public class SW360Utils {
         }
     }
 
+    public static boolean isValidDate(String currRequestedClearingDate, String newRequestedClearingDate, DateTimeFormatter format) {
+        try {
+            LocalDate currLocalDate = LocalDate.parse(currRequestedClearingDate, format);
+            LocalDate requestedLocalDate = LocalDate.parse(newRequestedClearingDate, format);
+
+            return requestedLocalDate.isAfter(currLocalDate);
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+    }
+
     public static String printFullname(Release release) {
         if (release == null || isNullOrEmpty(release.getName())) {
             return "New Release";
@@ -743,6 +754,27 @@ public class SW360Utils {
         LocalDate date = Instant.ofEpochMilli(timestamp).atZone(ZoneId.of("UTC")).toLocalDate();
         return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     }
+
+    public static ClearingRequestSize determineCRSize(int totalReleaseCount) {
+        if (totalReleaseCount <= CLEARING_REQUEST_SIZE_MAP.get(ClearingRequestSize.VERY_SMALL)) {
+            return ClearingRequestSize.VERY_SMALL;
+        } else if (totalReleaseCount <= CLEARING_REQUEST_SIZE_MAP.get(ClearingRequestSize.SMALL)) {
+            return ClearingRequestSize.SMALL;
+        } else if (totalReleaseCount <= CLEARING_REQUEST_SIZE_MAP.get(ClearingRequestSize.MEDIUM)) {
+            return ClearingRequestSize.MEDIUM;
+        } else if (totalReleaseCount <= CLEARING_REQUEST_SIZE_MAP.get(ClearingRequestSize.LARGE)) {
+            return ClearingRequestSize.LARGE;
+        } else {
+            return ClearingRequestSize.VERY_LARGE;
+        }
+    }
+
+    public static final HashMap<ClearingRequestSize, Integer> CLEARING_REQUEST_SIZE_MAP = new HashMap<>() {{
+        put(ClearingRequestSize.VERY_SMALL, 20);
+        put(ClearingRequestSize.SMALL, 50);
+        put(ClearingRequestSize.MEDIUM, 75);
+        put(ClearingRequestSize.LARGE, 150);
+    }};
 
     /**
      * Assumes that the process exists.

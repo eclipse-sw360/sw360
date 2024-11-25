@@ -2,8 +2,8 @@
 ~ SPDX-FileCopyrightText: © 2024 Siemens AG
 ~ SPDX-License-Identifier: EPL-2.0
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <artifactId>user-storage-provider</artifactId>
     <packaging>jar</packaging>
@@ -24,49 +24,37 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
-            <scope>provided</scope>
-            <version>${version.keycloak}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
-            <scope>provided</scope>
-            <version>${version.keycloak}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-jpa</artifactId>
-            <version>${version.keycloak}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-            <version>3.5.0.Final</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.graphene</groupId>
             <artifactId>graphene-webdriver</artifactId>
             <version>${arquillian-graphene.version}</version>
             <type>pom</type>
-            <scope>test</scope>
+            <scope>test</scope>    
         </dependency>
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>${version.jee.jaxb.api}</version>
-            <scope>test</scope>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
-            <version>${spring.security.crypto}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents.core5</groupId>
             <artifactId>httpcore5</artifactId>
-            <version>${httpcore5.version}</version>
         </dependency>
 
         <dependency>

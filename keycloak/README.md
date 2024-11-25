@@ -34,8 +34,8 @@ GRANT ALL PRIVILEGES ON DATABASE keycloak TO keycloak;
 
 ## Install Keycloak:
 
-* Download Keycloak 24.0.2 from the official repository.
-* Or download the tar file `wget https://github.com/keycloak/keycloak/releases/download/24.0.2/keycloak-24.0.2.tar.gz`
+* Download Keycloak 26.0.5 from the official repository.
+* Or download the tar file `wget https://github.com/keycloak/keycloak/releases/download/26.0.5/keycloak-26.0.5.tar.gz`
 * Extract the downloaded file to the /opt folder, `sudo tar -xvf myfiles.tar -C /opt`
 * Goto keycloak conf folder and uncomment the following from keycloak.conf file:
 ```
@@ -74,13 +74,13 @@ sudo ./kc.sh start  --log="console,file" --hostname-strict-backchannel=false --h
 ## Build the Backend:
 
 * Build the SW360 backend code using Maven,
-  `mvn clean install -DskipTests -Dbase.deploy.dir=/opt/apache-tomcat-11.x.x/ -Dlistener.deploy.dir=/opt/keycloak-24.x.x/providers -P deploy`
+  `mvn clean install -DskipTests -Dbase.deploy.dir=/opt/apache-tomcat-11.x.x/ -Dlistener.deploy.dir=/opt/keycloak-26.x.x/providers -P deploy`
 * Start the Apache Tomcat server.
 
 ## Keycloak Providers and Libraries:
- Providers are used to read users from sw360 db and register users from keycloak to sw360 db
- 
-* After building the backend with deploy profile, following files should be copied and available at `/opt/keycloak-24.0.2/providers/`:
+ Providers are used to read users from sw360 db and register users from keycloak to sw360 db.
+
+* After building the backend with deploy profile, following files should be copied and available at `/opt/keycloak-26.0.5/providers/`:
 ```
 commonIO-19.0.0.jar
 datahandler-19.0.0.jar
@@ -102,6 +102,14 @@ sw360-keycloak-user-storage-provider.jar
 
 * Create Realm and name it sw360. ![createRealm](https://github.com/siemens/sw360/assets/58290634/027539e3-5152-484f-ba8c-b625c81e59c0)
 
+* Get the JWT issuer and key set for realm and update the backend file at
+  `rest/resource-server/src/main/resources/application.yml` and reinstall the backend with Tomcat restart
+  * Select "OpenID Endpoint Configuration" from the "Realm Settings" and copy "jwks_uri". It will look something like
+    `http://localhost:8083/realms/sw360/protocol/openid-connect/certs`
+    ![OpenIDEndpoints](https://github.com/user-attachments/assets/cb2aad22-c743-4ef5-af13-3cd0141622a2)
+  * Update the `issuer-uri` and `jwk-set-uri` in the `application.yml` file with this copied `jwks_uri`.
+  * Build and install the backend one more time.
+
 * Create Client in Keycloak. ![clientCreation](https://github.com/siemens/sw360/assets/58290634/c3d6e93c-554a-4050-b3ce-4bc6b9a3f346)
 
   * Follow the below steps for client creation:
@@ -118,12 +126,12 @@ sw360-keycloak-user-storage-provider.jar
 	Web origins: *
 	```
 
-* Create Client Scopes. 
+* Create Client Scopes.
   * Create READ scope by clicking on Create client scope button. ![createScope2](https://github.com/siemens/sw360/assets/58290634/60769c25-cc10-4299-9a67-ce9a5f08ac28)
 
   * Similarly create WRITE scope.
 
-* Add Scopes to our Client. 
+* Add Scopes to our Client.
   * Goto Clients, then select your newly created client in *Client lists* page.
   * Goto *Client scopes* page, click on Add client scope and there you will see your READ and WRITE scopes that you need to add.
   * Select both scopes and then click on Add(default). ![AddScopeToClient](https://github.com/siemens/sw360/assets/58290634/60e69e0d-0ef4-4dcf-9afd-2dd81b9a4dac)
@@ -159,7 +167,7 @@ sw360-keycloak-user-storage-provider.jar
 ## Clone SW360 Frontend Repository
 
 * Run the git clone command, `git clone git@github.com:eclipse-sw360/sw360-frontend.git`
-* Create .env file inside the repository and add the following data: 
+* Create .env file inside the repository and add the following data:
 ```
 NEXTAUTH_SECRET = 'secret'
 NEXT_PUBLIC_SW360_API_URL = 'http://localhost:8080'
@@ -188,7 +196,7 @@ AUTH_ISSUER=http://localhost:8083/realms/sw360
 `node -v` # should print `v20.5.1`
 * Verifies the right NPM version is in the environment
 `npm -v` # should print `10.2.4`
-* Installs next 
+* Installs next
 `npm install next@latest react@latest react-dom@latest`
 
 ## Build the Frontend
