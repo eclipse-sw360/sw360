@@ -137,6 +137,7 @@
     <maven-javadoc.version>3.6.2</maven-javadoc.version>
     <mockito.version>4.7.0</mockito.version>
     <okhttp.version>4.10.0</okhttp.version>
+    <org.ow2.asm.version>9.7.1</org.ow2.asm.version>
     <org.spdx.java.spdx.library.version>1.1.1</org.spdx.java.spdx.library.version>
     <org.spdx.tools.java.version>1.1.5</org.spdx.tools.java.version>
     <package-url.version>1.5.0</package-url.version>
@@ -176,11 +177,22 @@
         <groupId>net.bytebuddy</groupId>
         <artifactId>byte-buddy</artifactId>
         <version>${byte-buddy.version}</version>
+        <scope>test</scope>
       </dependency>
       <dependency>
         <groupId>com.squareup.okhttp3</groupId>
         <artifactId>okhttp</artifactId>
         <version>${okhttp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>${org.ow2.asm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm-util</artifactId>
+        <version>${org.ow2.asm.version}</version>
       </dependency>
       <dependency>
         <groupId>com.github.cliftonlabs</groupId>
