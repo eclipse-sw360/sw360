@@ -50,7 +50,7 @@ public class OAuthClientRepository extends DatabaseRepositoryCloudantClient<OAut
         super(OAuthClientEntity.class);
 
         DatabaseConnectorCloudant db = new DatabaseConnectorCloudant(DatabaseSettings.getConfiguredClient(),
-                DatabaseSettings.COUCH_DB_DATABASE);
+                DatabaseSettings.COUCH_DB_OAUTHCLIENTS);
 
         super.setConnector(db);
 
