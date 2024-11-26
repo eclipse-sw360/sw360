@@ -32,8 +32,6 @@
     </dependencies>
 
     <build>
-        <finalName>backend-utils</finalName>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
