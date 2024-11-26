@@ -155,7 +155,7 @@
     <springdoc-openapi-security.version>2.6.0</springdoc-openapi-security.version>
     <springdoc-openapi-stater-common.version>2.6.0</springdoc-openapi-stater-common.version>
     <springdoc-openapi-ui.version>1.7.0</springdoc-openapi-ui.version>
-    <springdoc-openapi-webmvc.version>2.6.0</springdoc-openapi-webmvc.version>
+    <springdoc-openapi-webmvc.version>2.7.0</springdoc-openapi-webmvc.version>
     <springframework.version>6.2.0</springframework.version>
     <thrift.version>0.20.0</thrift.version>
     <tika.version>1.28.5</tika.version>
