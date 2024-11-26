@@ -12,7 +12,7 @@
 
 package org.eclipse.sw360.licenseinfo.outputGenerators;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -68,7 +68,7 @@ public class XhtmlGenerator extends OutputGenerator<String> {
     }
 
     private String convertHeaderTextToHTML(String headerText) {
-        String html = StringEscapeUtils.escapeHtml(headerText);
+        String html = StringEscapeUtils.escapeHtml4(headerText);
         html = html.replace("\n", "<br>");
         return html;
     }

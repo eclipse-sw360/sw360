@@ -6,7 +6,7 @@ package org.eclipse.sw360.vmcomponents.common;
 
 import com.google.common.base.Joiner;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
