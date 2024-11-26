@@ -25,7 +25,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.fossology.config.FossologyRestConfig;
 import org.eclipse.sw360.fossology.rest.FossologyRestClient;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,7 +159,7 @@ public class FossologyHandler implements FossologyService.Iface {
 
         FossologyUtils.ensureOrderOfProcessSteps(fossologyProcess);
 
-        ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps().get(fossologyProcess.getProcessSteps().size() - 1); 
+        ExternalToolProcessStep furthestStep = fossologyProcess.getProcessSteps().get(fossologyProcess.getProcessSteps().size() - 1);
         if (FossologyUtils.FOSSOLOGY_STEP_NAME_UPLOAD.equals(furthestStep.getStepName())) {
             handleUploadStep(componentClient, release, user, fossologyProcess, sourceAttachment, uploadDescription);
         } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(furthestStep.getStepName())) {

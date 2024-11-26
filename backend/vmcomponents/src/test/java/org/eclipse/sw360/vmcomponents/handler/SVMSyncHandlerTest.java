@@ -7,7 +7,7 @@ package org.eclipse.sw360.vmcomponents.handler;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 import org.eclipse.sw360.vmcomponents.AbstractJSONMockTest;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;

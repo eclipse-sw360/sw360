@@ -10,7 +10,7 @@
 package org.eclipse.sw360.licenseinfo.parsers;
 
 import com.google.common.collect.Sets;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -88,7 +88,7 @@ public abstract class AbstractCLIParser extends LicenseInfoParser {
     }
 
     protected static String normalizeEscapedXhtml(Node node) {
-        return StringEscapeUtils.unescapeHtml(StringEscapeUtils.unescapeXml(node.getTextContent().trim()));
+        return StringEscapeUtils.unescapeHtml4(StringEscapeUtils.unescapeXml(node.getTextContent().trim()));
     }
 
     protected static String normalizeSpace(Node node) {

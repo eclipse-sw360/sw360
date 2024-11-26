@@ -165,6 +165,10 @@
             <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-runtime</artifactId>
         </dependency>
@@ -200,7 +204,6 @@
             <artifactId>springdoc-openapi-starter-common</artifactId>
             <version>${springdoc-openapi-stater-common.version}</version>
         </dependency>
-
     </dependencies>
     <dependencyManagement>
         <dependencies>
