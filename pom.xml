@@ -41,8 +41,6 @@
     <url>https://github.com/eclipse-sw360/sw360.git</url>
   </scm>
   <modules>
-    <module>build-configuration</module>
-    <module>utils</module>
     <module>libraries</module>
     <module>backend</module>
     <module>rest</module>

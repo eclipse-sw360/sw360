@@ -109,53 +109,6 @@
                     </archive>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>${maven-dependency-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>add-build-configuration-resources</id>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <artifactItems combine.children="append">
-                                <artifactItem>
-                                    <groupId>
-                                        org.eclipse.sw360</groupId>
-                                    <artifactId>build-configuration</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>
-                                        jar</type>
-                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>add-build-configuration-test-resources</id>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <phase>generate-test-resources</phase>
-                        <configuration>
-                            <artifactItems combine.children="append">
-                                <artifactItem>
-                                    <groupId>
-                                        org.eclipse.sw360</groupId>
-                                    <artifactId>build-configuration</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>
-                                        test-jar</type>
-                                    <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
     <dependencies>
