@@ -12,7 +12,10 @@ package org.eclipse.sw360.cyclonedx;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.function.Predicate;
@@ -104,8 +107,11 @@ public class CycloneDxBOMImporter {
     private static final String INVALID_PACKAGE = "invalidPkg";
     private static final String PROJECT_ID = "projectId";
     private static final String PROJECT_NAME = "projectName";
+    private static final String REDIRECTED_VCS = "redirectedVCS";
     private static final boolean IS_PACKAGE_PORTLET_ENABLED = SW360Constants.IS_PACKAGE_PORTLET_ENABLED;
     private static final Predicate<ExternalReference.Type> typeFilter = type -> ExternalReference.Type.VCS.equals(type);
+
+    private Set<String> redirectedUrls = new HashSet<>();
 
     private final ProjectDatabaseHandler projectDatabaseHandler;
     private final ComponentDatabaseHandler componentDatabaseHandler;
@@ -148,6 +154,7 @@ public class CycloneDxBOMImporter {
                         .map(ExternalReference::getUrl)
                         .map(url -> sanitizeVCS(url.toLowerCase()))
                         .filter(url -> CommonUtils.isValidUrl(url))
+                        .map(url -> getFinalURL(url))
                         .map(url -> new AbstractMap.SimpleEntry<>(url, comp)))
                 .collect(Collectors.groupingBy(e -> e.getKey(),
                         Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
@@ -287,6 +294,7 @@ public class CycloneDxBOMImporter {
                         // all components does not have VCS, so return & show appropriate error in UI
                         messageMap.put(INVALID_COMPONENT, String.join(JOINER, componentsWithoutVcs));
                         messageMap.put(INVALID_PACKAGE, String.join(JOINER, invalidPackages));
+                        messageMap.put(REDIRECTED_VCS, String.join(JOINER, this.redirectedUrls));
                         messageMap.put(DUPLICATE_PACKAGE, String.join(JOINER, duplicatePackages));
                         messageMap.put(SW360Constants.MESSAGE,
                                 String.format("VCS information is missing for <b>%s</b> / <b>%s</b> Components!",
@@ -708,6 +716,7 @@ public class CycloneDxBOMImporter {
         messageMap.put(DUPLICATE_RELEASE, String.join(JOINER, duplicateReleases));
         messageMap.put(DUPLICATE_PACKAGE, String.join(JOINER, duplicatePackages));
         messageMap.put(INVALID_RELEASE, String.join(JOINER, invalidReleases));
+        messageMap.put(REDIRECTED_VCS, String.join(JOINER, this.redirectedUrls));
         messageMap.put(INVALID_PACKAGE, String.join(JOINER, invalidPackages));
         messageMap.put(PROJECT_ID, project.getId());
         messageMap.put(PROJECT_NAME, SW360Utils.getVersionedName(project.getName(), project.getVersion()));
@@ -1084,5 +1093,62 @@ public class CycloneDxBOMImporter {
             }
         }
         return false;
+    }
+
+    public String getFinalURL(String urlString) {
+        URL url;
+        try {
+            url = new URL(urlString);
+        } catch (MalformedURLException e) {
+            log.error("Invalid URL format: {}", e.getMessage());
+            return urlString;
+        }
+
+        int redirectCount = 0;
+
+        while (redirectCount < SW360Constants.VCS_REDIRECTION_LIMIT) {
+            try {
+                HttpURLConnection connection = openConnection(url);
+                int status = connection.getResponseCode();
+
+                if (status == HttpURLConnection.HTTP_MOVED_PERM || status == 308) {
+                    String newUrl = connection.getHeaderField("Location");
+                    connection.disconnect();
+
+                    // Resolve relative URLs
+                    url = new URL(url, newUrl);
+
+                    if (!"https".equalsIgnoreCase(url.getProtocol())) {
+                        log.error("Insecure redirection to non-HTTPS URL: {}", url);
+                        return urlString;
+                    }
+
+                    redirectCount++;
+                    this.redirectedUrls.add(urlString);
+                } else {
+                    connection.disconnect();
+                    break;
+                }
+            } catch (IOException e) {
+                log.error("Error during redirection handling: {}", e.getMessage());
+                return urlString;
+            }
+        }
+
+        if (redirectCount == 0 || redirectCount == SW360Constants.VCS_REDIRECTION_LIMIT) {
+            if (redirectCount == SW360Constants.VCS_REDIRECTION_LIMIT) {
+                log.error("Exceeded maximum redirect limit. Returning original URL.");
+            }
+            return urlString;
+        }
+        return sanitizeVCS(url.toString());
+    }
+
+    private static HttpURLConnection openConnection(URL url) throws IOException{
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setInstanceFollowRedirects(false);
+        connection.setConnectTimeout(SW360Constants.VCS_REDIRECTION_TIMEOUT_LIMIT);
+        connection.setReadTimeout(SW360Constants.VCS_REDIRECTION_TIMEOUT_LIMIT);
+        return connection;
     }
 }
