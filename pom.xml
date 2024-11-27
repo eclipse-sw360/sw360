@@ -149,7 +149,7 @@
     <spring-boot.version>3.3.3</spring-boot.version>
     <spring-restdocs.version>3.0.1</spring-restdocs.version>
     <spring-security-jwt.version>1.1.1.RELEASE</spring-security-jwt.version>
-    <spring-security-oauth2-authorization-server.version>1.3.3</spring-security-oauth2-authorization-server.version>
+    <spring-security-oauth2-authorization-server.version>1.4.0</spring-security-oauth2-authorization-server.version>
     <spring-security.version>6.4.1</spring-security.version>
     <springdoc-openapi-hateos.version>2.6.0</springdoc-openapi-hateos.version>
     <springdoc-openapi-security.version>2.6.0</springdoc-openapi-security.version>
