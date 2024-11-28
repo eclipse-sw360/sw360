@@ -90,6 +90,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
@@ -125,6 +126,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -1573,21 +1575,26 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Updated values", schema = @Schema(implementation = Project.class))
             @RequestBody Map<String, Object> reqBodyMap
     ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        Project sw360Project = projectService.getProjectForUserById(id, user);
-        Project updateProject = convertToProject(reqBodyMap);
-        updateProject.unsetReleaseRelationNetwork();
-        sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
-        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP && updateProject.getReleaseIdToUsage() != null) {
-            sw360Project.unsetReleaseRelationNetwork();
-            projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
-        }
-        RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
-        HalResource<Project> userHalResource = createHalProject(sw360Project, user);
-        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+            User user = restControllerHelper.getSw360UserFromAuthentication();
+            Project sw360Project = projectService.getProjectForUserById(id, user);
+            boolean editPermitted = PermissionUtils.checkEditablePermission(sw360Project.getClearingState().name(),user,reqBodyMap, sw360Project);
+            if (!editPermitted) {
+                log.error("No write permission for project");
+                throw new AccessDeniedException("No write permission for project");
+            }
+            Project updateProject = convertToProject(reqBodyMap);
+            updateProject.unsetReleaseRelationNetwork();
+            sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
+            if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP && updateProject.getReleaseIdToUsage() != null) {
+                sw360Project.unsetReleaseRelationNetwork();
+                projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
+            }
+            RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
+            HalResource<Project> userHalResource = createHalProject(sw360Project, user);
+            if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
+                return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+            }
+            return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
     @Operation(
