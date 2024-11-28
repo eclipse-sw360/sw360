@@ -1957,6 +1957,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_update_project() throws Exception {
+        project.setClearingState(ProjectClearingState.OPEN);
         Project updateProject = new Project();
         updateProject.setName("updated project");
         updateProject.setDescription("Project description updated");
@@ -1964,7 +1965,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         updateProject.setState(ProjectState.PHASE_OUT);
         updateProject.setPhaseOutSince("2020-06-24");
         this.mockMvc
-                .perform(patch("/api/projects/376576").contentType(MediaTypes.HAL_JSON)
+                .perform(patch("/api/projects/"+project.getId()).contentType(MediaTypes.HAL_JSON)
                         .content(this.objectMapper.writeValueAsString(updateProject))
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
@@ -2040,6 +2041,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         subsectionWithPath("externalUrls").description("A place to store additional data used by external URLs"),
                         fieldWithPath("considerReleasesFromExternalList").description("Consider list of releases from existing external list"),
                         fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
+                        fieldWithPath("clearingState").description("The clearingState of the project"),
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
                         subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                         subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
