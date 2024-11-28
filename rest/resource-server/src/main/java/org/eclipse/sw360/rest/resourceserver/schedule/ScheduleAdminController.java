@@ -24,9 +24,8 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -95,8 +94,19 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestSummary, status);
     }
-        
-    @RequestMapping(value = SCHEDULE_URL + "/scheduleSvmSync", method = RequestMethod.POST)
+
+    @Operation(
+            summary = "Schedule the SVM sync.",
+            description = "Manually schedule the SVM Sync service.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/scheduleSvmSync")
     public ResponseEntity<?> scheduleSvmSync()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = scheduleService.svmSync(sw360User);
@@ -122,7 +132,19 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestStatus, status);
     }
-    @RequestMapping(value = SCHEDULE_URL + "/unscheduleSvmSync", method = RequestMethod.DELETE)
+
+    @Operation(
+            summary = "Cancel scheduled SVM sync.",
+            description = "Cancel the scheduled SVM Sync service.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @DeleteMapping(SCHEDULE_URL + "/unscheduleSvmSync")
     public ResponseEntity<?> unscheduleSvmSync() throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelSvmSync(sw360User);
@@ -149,13 +171,24 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return new ResponseEntity<>(requestSummary, status);
     }
 
-    @RequestMapping(value = SCHEDULE_URL + "/svmReverseMatch", method = RequestMethod.POST)
+    @Operation(
+            summary = "Reverse SVM match.",
+            description = "Reverse SVM match.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/svmReverseMatch")
     public ResponseEntity<?> svmReverseMatch() throws TException {
-            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-            RequestSummary requestSummary = scheduleService.scheduleSvmReverseMatch(sw360User);
-            HttpStatus status = HttpStatus.ACCEPTED;
-            return new ResponseEntity<>(requestSummary, status);
-        }
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestSummary requestSummary = scheduleService.scheduleSvmReverseMatch(sw360User);
+        HttpStatus status = HttpStatus.ACCEPTED;
+        return new ResponseEntity<>(requestSummary, status);
+    }
 
     @Operation(
             summary = "Unschedule the attachment deletion service.",
@@ -168,7 +201,6 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
                             schema = @Schema(implementation = String.class,
                                     example = "SUCCESS")))
     })
-
     @PostMapping(SCHEDULE_URL + "/unScheduleDeleteAttachment")
     public ResponseEntity<?> unscheduleDeleteAttachment()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -177,7 +209,18 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return new ResponseEntity<>(requestStatus, status);
     }
 
-    @RequestMapping(value = SCHEDULE_URL + "/unscheduleSvmReverseMatch", method = RequestMethod.DELETE)
+    @Operation(
+            summary = "Cancel scheduled reverse SVM match.",
+            description = "Cancel the scheduled reverse SVM match service.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @DeleteMapping(SCHEDULE_URL + "/unscheduleSvmReverseMatch")
     public ResponseEntity<?> unscheduleSvmReverseMatch()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelSvmReverseMatch(sw360User);
@@ -204,7 +247,18 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return new ResponseEntity<>(requestStatus, status);
     }
 
-    @RequestMapping(value = SCHEDULE_URL + "/trackingFeedback", method = RequestMethod.POST)
+    @Operation(
+            summary = "Track the user feedback.",
+            description = "Track the user feedback.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/trackingFeedback")
     public ResponseEntity<?> svmTrackingFeedback()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = scheduleService.svmReleaseTrackingFeedback(sw360User);
@@ -212,7 +266,18 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return new ResponseEntity<>(requestSummary, status);
     }
 
-    @RequestMapping(value = SCHEDULE_URL + "/monitoringListUpdate", method = RequestMethod.POST)
+    @Operation(
+            summary = "Update the SVM list.",
+            description = "Update the SVM list.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/monitoringListUpdate")
     public ResponseEntity<?> monitoringListUpdate()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = scheduleService.svmMonitoringListUpdate(sw360User);
@@ -220,7 +285,18 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return new ResponseEntity<>(requestSummary, status);
     }
 
-    @RequestMapping(value = SCHEDULE_URL + "/cancelMonitoringListUpdate", method = RequestMethod.DELETE)
+    @Operation(
+            summary = "Cancel the SVM list update.",
+            description = "Cancel the scheduled SVM list update.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @DeleteMapping(SCHEDULE_URL + "/cancelMonitoringListUpdate")
     public ResponseEntity<?> cancelMonitoringListUpdate()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.cancelSvmMonitoringListUpdate(sw360User);
@@ -247,7 +323,18 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return new ResponseEntity<>(requestStatus, status);
     }
 
-    @RequestMapping(value = SCHEDULE_URL + "/srcUpload", method = RequestMethod.POST)
+    @Operation(
+            summary = "Upload the source attachment.",
+            description = "Upload the source attachment.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/srcUpload")
     public ResponseEntity<?> srcUpload()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = scheduleService.triggeSrcUpload(sw360User);
@@ -255,7 +342,18 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         return new ResponseEntity<>(requestSummary, status);
     }
 
-    @RequestMapping(value = SCHEDULE_URL + "/cancelSrcUpload", method = RequestMethod.DELETE)
+    @Operation(
+            summary = "Cancel the source attachment upload.",
+            description = "Cancel the source attachment upload.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @DeleteMapping(SCHEDULE_URL + "/cancelSrcUpload")
     public ResponseEntity<?> cancelsrcUpload()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestStatus requestStatus = scheduleService.unscheduleSrcUpload(sw360User);
