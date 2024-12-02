@@ -19,6 +19,7 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.PathParameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -151,7 +152,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                                 .responses(new ApiResponses().addApiResponse("200",
                                         new ApiResponse().description("OK")
                                                 .content(new Content()
-                                                        .addMediaType("application/json", new MediaType()
+                                                        .addMediaType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE, new MediaType()
                                                                 .example("""
                                                                         {
                                                                           "status": "UP",
@@ -173,6 +174,40 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                                                                         """)
                                                                 .schema(new Schema<Health>())
                                                 ))
+                                ))
+                ))
+                .path("/config", new PathItem().get(
+                        new Operation().tags(Collections.singletonList("Health"))
+                                .summary("Configuration properties").operationId("get-config")
+                                .responses(new ApiResponses().addApiResponse("200",
+                                        new ApiResponse().description("OK")
+                                                .content(new Content()
+                                                        .addMediaType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE, new MediaType()
+                                                                .example("""
+                                                                        {
+                                                                          "property.1": "value1",
+                                                                          "property.2": "false",
+                                                                          "property.3": "value3,value4"
+                                                                        }
+                                                                        """)
+                                                                .schema(new Schema<Map<String, String>>())
+                                                        ))
+                                ))
+                ))
+                .path("/config/{key}", new PathItem().get(
+                        new Operation().tags(Collections.singletonList("Health"))
+                                .summary("Get single configuration property").operationId("get-single-config")
+                                .addParametersItem(new PathParameter()
+                                        .required(true).in("path").description("Property key").example("operating.systems")
+                                        .name("key")
+                                )
+                                .responses(new ApiResponses().addApiResponse("200",
+                                        new ApiResponse().description("OK")
+                                                .content(new Content()
+                                                        .addMediaType(org.springframework.http.MediaType.TEXT_PLAIN_VALUE, new MediaType()
+                                                                .example("Android,BSD,iOS,Linux,OS X,QNX,Microsoft Windows,Windows Phone,IBM z/OS")
+                                                                .schema(new Schema<Map<String, String>>())
+                                                        ))
                                 ))
                 ));
     }

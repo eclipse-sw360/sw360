@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.endpoint.annotation.Selector;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -78,7 +79,7 @@ public class SW360ConfigActuator {
         return properties;
     }
 
-    @ReadOperation
+    @ReadOperation(produces = MediaType.TEXT_PLAIN_VALUE)
     public String config(@Selector String name) {
         return properties.get(name);
     }

@@ -1,0 +1,46 @@
+//
+// Copyright Siemens AG, 2024. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+[[resources-config]]
+=== Config
+
+The config resource is used to give information from the `sw360.properties` file.
+The configurations exposed are useful for the frontend UI. The backend only configs are not exposed.
+
+[[resources-config-get]]
+==== Getting config
+
+A `GET` request will get the service's configurations.
+
+===== Example request
+include::{snippets}/should_document_get_config/curl-request.adoc[]
+
+The response structure is the config object of the config actuator.
+
+===== Response structure
+include::{snippets}/should_document_get_config/response-fields.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_config/http-response.adoc[]
+
+The response structure is not complete as it will grow overtime. But it is a key-value pair of strings.
+
+[[resources-config-get-single]]
+==== Getting single config value
+
+A `GET` request will get the service's single configuration.
+
+===== Request Parameters
+include::{snippets}/should_document_get_single_config/path-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_single_config/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_single_config/http-response.adoc[]

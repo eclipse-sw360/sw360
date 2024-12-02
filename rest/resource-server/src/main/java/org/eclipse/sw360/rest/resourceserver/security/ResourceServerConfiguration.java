@@ -62,7 +62,7 @@ public class ResourceServerConfiguration {
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().requestMatchers("/", "/*/*.html", "/*/*.css", "/*/*.js", "/*.js", "/*.json",
                 "/*/*.json", "/*/*.png", "/*/*.gif", "/*/*.ico", "/*/*.woff/*", "/*/*.ttf", "/*/*.html", "/*/*/*.html",
-                "/*/*.yaml", "/v3/api-docs/**", "/api/health", "/api/info");
+                "/*/*.yaml", "/v3/api-docs/**", "/api/health", "/api/info", "/api/config", "/api/config/*");
     }
 
     @Bean
@@ -84,6 +84,8 @@ public class ResourceServerConfiguration {
         return http.addFilterBefore(filter, BasicAuthenticationFilter.class).authorizeHttpRequests(auth -> {
             auth.requestMatchers(HttpMethod.GET, "/api/health").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority("WRITE");
+            auth.requestMatchers(HttpMethod.GET, "/api/config").permitAll();
+            auth.requestMatchers(HttpMethod.GET, "/api/config/*").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/api").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/api/reports/download").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/api/**").hasAuthority("READ");

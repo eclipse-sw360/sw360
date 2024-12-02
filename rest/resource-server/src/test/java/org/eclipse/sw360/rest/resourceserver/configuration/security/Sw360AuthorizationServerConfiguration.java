@@ -42,6 +42,8 @@ public class Sw360AuthorizationServerConfiguration {
 				authz -> authz
 						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/info").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/config").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/config/*").permitAll()
 						.anyRequest().authenticated()
 		).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults())
 				.exceptionHandling(x -> x.authenticationEntryPoint(saep));

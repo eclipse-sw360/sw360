@@ -10,10 +10,11 @@ management:
     web:
       base-path: /
       exposure:
-        include: health,info
+        include: health,info,config
       path-mapping:
         health: /api/health
         info: /api/info
+        config: /api/config
   endpoint:
     health:
       show-details: always
