@@ -16,14 +16,12 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchApi;
 import org.eclipse.sw360.cvesearch.datasource.CveSearchGuesser;
 import org.eclipse.sw360.cvesearch.datasource.matcher.Match;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -31,6 +29,9 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.singletonList;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.CVE_CUTOFF;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.CVE_PRODUCT_THRESHOLD;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.CVE_VENDOR_THRESHOLD;
 
 public class SearchLevels {
 
@@ -40,15 +41,6 @@ public class SearchLevels {
     private static final String OLD_CPE_PREFIX = "cpe:/";
     private static final String CPE_WILDCARD = ".*";
     private static final String CPE_NEEDLE_PREFIX = CPE_PREFIX + ".:";
-
-    private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
-    private static final String VENDOR_THRESHOLD_PROPERTY = "cvesearch.vendor.threshold";
-    private static final String PRODUCT_THRESHOLD_PROPERTY = "cvesearch.product.threshold";
-    private static final String CUTOFF_PROPERTY = "cvesearch.cutoff";
-
-    private static final int DEFAULT_VENDOR_THRESHOLD = 1;
-    private static final int DEFAULT_PRODUCT_THRESHOLD = 0;
-    private static final int DEFAULT_CUTOFF = 6;
 
     private final List<SearchLevel> searchLevels = new ArrayList<>();
 
@@ -69,18 +61,8 @@ public class SearchLevels {
 
     public SearchLevels(CveSearchApi cveSearchApi) {
         log.info("Preparing Search Levels");
-        Properties props = CommonUtils.loadProperties(SearchLevels.class, PROPERTIES_FILE_PATH);
-        int vendorThreshold = getIntFromProperties(props, VENDOR_THRESHOLD_PROPERTY, DEFAULT_VENDOR_THRESHOLD);
-        int productThreshold = getIntFromProperties(props, PRODUCT_THRESHOLD_PROPERTY, DEFAULT_PRODUCT_THRESHOLD);
-        int cutoff = getIntFromProperties(props, CUTOFF_PROPERTY, DEFAULT_CUTOFF);
 
-        setup(cveSearchApi, vendorThreshold, productThreshold, cutoff);
-    }
-
-    private static int getIntFromProperties(Properties properties, String key, int defaultValue) {
-        int value = CommonUtils.getIntOrDefault(properties.getProperty(key), defaultValue);
-        log.info("SearchLevels " + key + ": " + value);
-        return value;
+        setup(cveSearchApi, CVE_VENDOR_THRESHOLD, CVE_PRODUCT_THRESHOLD, CVE_CUTOFF);
     }
 
     private void setup(CveSearchApi cveSearchApi, int vendorThreshold, int productThreshold, int cutoff) {

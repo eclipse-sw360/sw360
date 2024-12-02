@@ -16,8 +16,6 @@ package org.eclipse.sw360.mail;
  */
 public class MailConstants {
 
-    public static final String MAIL_PROPERTIES_FILE_PATH = "/sw360.properties";
-
     public static final String DEFAULT_BEGIN = "defaultBegin";
     public static final String DEFAULT_END = "defaultEnd";
     public static final String UNSUBSCRIBE_NOTICE_BEFORE = "unsubscribeNoticeBefore";

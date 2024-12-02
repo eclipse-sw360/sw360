@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
-import org.eclipse.sw360.rest.resourceserver.SW360RestHealthIndicator;
+import org.eclipse.sw360.rest.resourceserver.actuator.SW360RestHealthIndicator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.actuate.health.Health;

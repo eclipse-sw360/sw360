@@ -9,9 +9,9 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
@@ -29,11 +29,11 @@ public class Sw360GrantedAuthoritiesCalculator {
 
         grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.READ.getAuthority()));
         if (user != null) {
-            if (PermissionUtils.isUserAtLeast(Sw360ResourceServer.CONFIG_WRITE_ACCESS_USERGROUP, user)) {
+            if (PermissionUtils.isUserAtLeast(SW360Constants.CONFIG_WRITE_ACCESS_USERGROUP, user)) {
                 log.debug("User {} has write access", user.getEmail());
                 grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()));
             }
-            if (PermissionUtils.isUserAtLeast(Sw360ResourceServer.CONFIG_ADMIN_ACCESS_USERGROUP, user)) {
+            if (PermissionUtils.isUserAtLeast(SW360Constants.CONFIG_ADMIN_ACCESS_USERGROUP, user)) {
                 log.debug("User {} has admin access", user.getEmail());
                 grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()));
             }

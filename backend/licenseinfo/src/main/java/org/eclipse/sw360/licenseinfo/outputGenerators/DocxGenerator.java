@@ -55,6 +55,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.FRIENDLY_RELEASE_URL;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.licenseinfo.outputGenerators.DocxUtils.*;
 
@@ -90,13 +91,9 @@ public class DocxGenerator extends OutputGenerator<byte[]> {
 
     private static final String EXT_ID_TABLE_HEADER_COL1 = "Identifier Name";
     private static final String EXT_ID_TABLE_HEADER_COL2 = "Identifier Value";
-    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
-    public static String FRIENDLY_RELEASE_URL;
 
     public DocxGenerator(OutputFormatVariant outputFormatVariant, String description) {
         super(DOCX_OUTPUT_TYPE, description, true, DOCX_MIME_TYPE, outputFormatVariant);
-        Properties props = CommonUtils.loadProperties(DocxGenerator.class, PROPERTIES_FILE_PATH);
-        FRIENDLY_RELEASE_URL = props.getProperty("release.friendly.url", "");
     }
 
     @Override

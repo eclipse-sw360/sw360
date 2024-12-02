@@ -14,6 +14,7 @@ import org.eclipse.sw360.components.summary.ProjectSummary;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.SummaryAwareRepository;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -424,7 +425,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         isUserBelongToBuAndModerator = and(List.of(buAndModorator_visibility_Selector, or(buSelectors)));
 
         Map<String, Object> finalSelector;
-        if (PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isAdmin) {
+        if (SW360Constants.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isAdmin) {
                 finalSelector = typeSelector;
         } else {
             if (isClearingAdmin) {
@@ -556,7 +557,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         }
         keys[keys.length - 2] = user.getEmail();
         keys[keys.length - 1] = "everyone";
-        if (PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isAdmin) {
+        if (SW360Constants.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isAdmin) {
             return getConnector().getDocumentCount(Project.class);
         }
         if (isClearingAdmin) {
@@ -586,7 +587,7 @@ public class ProjectRepository extends SummaryAwareRepository<Project> {
         Set<Project> accessibleProjects = filterAccessibleProjectsByIds(user, searchIds);
         return getProjectData(accessibleProjects);
     }
-    
+
     private ProjectData getProjectData(Set<Project> accessibleProjects) {
         int totalSize = accessibleProjects.size();
         ProjectData projectData = new ProjectData();

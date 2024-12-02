@@ -14,8 +14,8 @@ import com.google.common.collect.ImmutableSet;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.common.ThriftConstants;
 import org.eclipse.sw360.datahandler.db.ComponentSearchHandler;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.junit.After;
 import org.junit.Before;
@@ -44,7 +44,7 @@ public class ComponentSearchHandlerTest {
 
     @Before
     public void setUp() throws Exception {
-        assumeCanConnectTo(ThriftClients.BACKEND_URL + "/couchdblucene/");
+        assumeCanConnectTo(ThriftConstants.BACKEND_URL + "/couchdblucene/");
 
         components = new ArrayList<>();
         Component component1 = new Component().setId("C1").setName("component1").setDescription("d1").setCreatedBy(email1);

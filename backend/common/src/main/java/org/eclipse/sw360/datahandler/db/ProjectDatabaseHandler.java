@@ -12,7 +12,6 @@ package org.eclipse.sw360.datahandler.db;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.annotations.VisibleForTesting;
@@ -24,7 +23,6 @@ import com.google.gson.JsonObject;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMExporter;
 import org.eclipse.sw360.cyclonedx.CycloneDxBOMImporter;
@@ -685,7 +683,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void setReleaseRelations(Project updated, User user, Project current) {
-        boolean isMainlineStateDisabled = !(BackendUtils.MAINLINE_STATE_ENABLED_FOR_USER
+        boolean isMainlineStateDisabled = !(SW360Constants.MAINLINE_STATE_ENABLED_FOR_USER
                 || PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user))
                 && updated.getReleaseIdToUsageSize() > 0;
 
@@ -1319,7 +1317,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         return projects;
     }
-    
+
     public Project fillClearingStateSummaryIncludingSubprojectsForSingleProject(Project project, User user) {
         final Map<String, Project> allProjectsIdMap = getRefreshedAllProjectsIdMap();
 

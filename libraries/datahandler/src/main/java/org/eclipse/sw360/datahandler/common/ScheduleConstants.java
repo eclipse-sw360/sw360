@@ -9,10 +9,9 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-package org.eclipse.sw360.schedule.timer;
+package org.eclipse.sw360.datahandler.common;
 
 
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,12 +24,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author stefan.jaeger@evosoft.com
  */
-public class ScheduleConstants {
+public class ScheduleConstants extends SW360Constants {
     private static final Logger log = LogManager.getLogger(ScheduleConstants.class);
 
     private ScheduleConstants(){}
 
-    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
     public static final String CVESEARCH_OFFSET_PROPERTY_NAME = "schedule.cvesearch.firstOffset.seconds";
     public static final String CVESEARCH_INTERVAL_PROPERTY_NAME = "schedule.cvesearch.interval.seconds";
     public static final String AUTOSTART_PROPERTY_NAME = "autostart";
@@ -73,8 +71,6 @@ public class ScheduleConstants {
     public static Set<String> invalidConfiguredServices = new HashSet<>();
 
     static {
-        Properties props = CommonUtils.loadProperties(ScheduleConstants.class, PROPERTIES_FILE_PATH);
-
         loadScheduledServiceProperties(props, ThriftClients.CVESEARCH_SERVICE, CVESEARCH_OFFSET_PROPERTY_NAME, CVESEARCH_OFFSET_DEFAULT, CVESEARCH_INTERVAL_PROPERTY_NAME, CVESEARCH_INTERVAL_DEFAULT);
         loadScheduledServiceProperties(props, ThriftClients.SVMSYNC_SERVICE, SVMSYNC_OFFSET_PROPERTY_NAME, SVMSYNC_OFFSET_DEFAULT, SVMSYNC_INTERVAL_PROPERTY_NAME, SVMSYNC_INTERVAL_DEFAULT);
         loadScheduledServiceProperties(props, ThriftClients.SVMMATCH_SERVICE, SVMMATCH_OFFSET_PROPERTY_NAME, SVMMATCH_OFFSET_DEFAULT, SVMMATCH_INTERVAL_PROPERTY_NAME, SVMMATCH_INTERVAL_DEFAULT);

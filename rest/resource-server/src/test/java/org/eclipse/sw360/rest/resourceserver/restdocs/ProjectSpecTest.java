@@ -999,7 +999,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]createdOn").description("The date the project was created"),
                                 subsectionWithPath("_embedded.sw360:projects.[]description").description("The project description"),
                                 subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
-                                subsectionWithPath("_embedded.sw360:projects.[]domain").description("The domain, possible values are:"  + Sw360ResourceServer.DOMAIN.toString()).optional(),
+                                subsectionWithPath("_embedded.sw360:projects.[]domain").description("The domain, possible values are:"  + SW360Constants.DOMAIN).optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 subsectionWithPath("_embedded.sw360:projects.[]businessUnit").description("The business unit this project belongs to"),
                                 subsectionWithPath("_embedded.sw360:projects.[]externalIds").description("When projects are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
@@ -1066,7 +1066,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("createdOn").description("The date the project was created"),
                                 fieldWithPath("description").description("The project description"),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
-                                fieldWithPath("domain").description("The domain, possible values are:"  + Sw360ResourceServer.DOMAIN.toString()),
+                                fieldWithPath("domain").description("The domain, possible values are:"  + SW360Constants.DOMAIN),
                                 fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 fieldWithPath("businessUnit").description("The business unit this project belongs to"),
                                 subsectionWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
@@ -1989,7 +1989,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("version").description("The project version"),
                         fieldWithPath("createdOn").description("The date the project was created"),
                         fieldWithPath("description").description("The project description"),
-                        fieldWithPath("domain").description("The domain, possible values are:"  + Sw360ResourceServer.DOMAIN.toString()),
+                        fieldWithPath("domain").description("The domain, possible values are:"  + SW360Constants.DOMAIN),
                         fieldWithPath("projectType").description("The project type, possible values are: "
                                 + Arrays.asList(ProjectType.values())),
                         fieldWithPath("visibility").description("The project visibility, possible values are: "
@@ -2159,7 +2159,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("externalIds").description("The external Ids of the project")
                                 )));
     }
-    
+
     @Test
     public void should_document_get_download_license_info_without_release_version() throws Exception {
         this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/licenseinfo?generatorClassName=XhtmlGenerator&variant=DISCLOSURE&excludeReleaseVersion=true")
@@ -2404,7 +2404,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("version").description("The project version"),
                                 fieldWithPath("createdOn").description("The date the project was created"),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
-                                fieldWithPath("domain").description("The domain, possible values are:"  + Sw360ResourceServer.DOMAIN.toString()),
+                                fieldWithPath("domain").description("The domain, possible values are:"  + SW360Constants.DOMAIN),
                                 fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                 subsectionWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
                                 subsectionWithPath("additionalData").description("A place to store additional data used by external tools"),
@@ -2531,7 +2531,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                     fieldWithPath("createdOn").description("The date the project was created"),
                                     fieldWithPath("description").description("The project description"),
                                     fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
-                                    fieldWithPath("domain").description("The domain, possible values are:"  + Sw360ResourceServer.DOMAIN.toString()),
+                                    fieldWithPath("domain").description("The domain, possible values are:"  + SW360Constants.DOMAIN),
                                     fieldWithPath("visibility").description("The project visibility, possible values are: " + Arrays.asList(Visibility.values())),
                                     fieldWithPath("businessUnit").description("The business unit this project belongs to"),
                                     subsectionWithPath("externalIds").description("When projects are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
@@ -2703,7 +2703,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                     fieldWithPath("version").description("The project version"),
                                     fieldWithPath("createdOn").description("The date the project was created"),
                                     fieldWithPath("description").description("The project description"),
-                                    fieldWithPath("domain").description("The domain, possible values are:" + Sw360ResourceServer.DOMAIN.toString()),
+                                    fieldWithPath("domain").description("The domain, possible values are:" + SW360Constants.DOMAIN),
                                     fieldWithPath("projectType").description("The project type, possible values are: "
                                             + Arrays.asList(ProjectType.values())),
                                     fieldWithPath("visibility").description("The project visibility, possible values are: "

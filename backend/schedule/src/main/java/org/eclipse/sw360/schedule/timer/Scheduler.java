@@ -12,6 +12,7 @@ package org.eclipse.sw360.schedule.timer;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.ScheduleConstants;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

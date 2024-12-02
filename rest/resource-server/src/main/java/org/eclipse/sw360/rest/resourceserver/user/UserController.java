@@ -58,7 +58,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +66,6 @@ import java.util.Set;
 import java.util.Collections;
 import java.util.stream.Collectors;
 
-import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_HASH_SALT;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -344,7 +342,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RestApiToken restApiToken = userService.convertToRestApiToken(requestBody, sw360User);
         String token = RandomStringUtils.random(20, true, true);
-        restApiToken.setToken(BCrypt.hashpw(token, API_TOKEN_HASH_SALT));
+        restApiToken.setToken(BCrypt.hashpw(token, SW360Constants.REST_API_TOKEN_HASH_SALT));
         sw360User.addToRestApiTokens(restApiToken);
         userService.updateUser(sw360User);
 

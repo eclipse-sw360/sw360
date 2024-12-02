@@ -10,6 +10,7 @@
 package org.eclipse.sw360.datahandler.permissions;
 
 import com.google.common.collect.Sets;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -29,7 +30,6 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.toSingletonSet;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.*;
-import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.ADMIN;
 import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.CLEARING_ADMIN;
 
 
@@ -72,10 +72,10 @@ public class ComponentPermissions extends DocumentPermissions<Component> {
     public static Predicate<Component> isVisible(final User user) {
         return input -> {
 
-            if(!PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+            if(!SW360Constants.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
                 return true;
             }
-            
+
             Visibility visibility = input.getVisbility();
             if (visibility == null) {
                 visibility = Visibility.BUISNESSUNIT_AND_MODERATORS; // the current default
@@ -147,7 +147,7 @@ public class ComponentPermissions extends DocumentPermissions<Component> {
             departments.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
         }
         departments.add(user.getDepartment());
-        if(!PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+        if(!SW360Constants.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
             return departments;
         }
         Set<String> finalDepartments = new HashSet<String>();
@@ -155,7 +155,7 @@ public class ComponentPermissions extends DocumentPermissions<Component> {
         finalDepartments.add(departmentIfUserInBU);
         return departmentIfUserInBU == null ? null : finalDepartments;
     }
-    
+
     private static String getDepartmentIfUserInBU(Component document, Set<String> BUs) {
         for (String bu:BUs) {
             String buFromOrganisation = getBUFromOrganisation(bu);

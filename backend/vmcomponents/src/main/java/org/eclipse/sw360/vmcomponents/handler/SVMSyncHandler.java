@@ -11,6 +11,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TBase;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -631,7 +632,7 @@ public class SVMSyncHandler<T extends TBase> {
     private Set<String> getVulIdsPerComponentVmId(String componentVmId, String url){
         if (!StringUtils.isEmpty(componentVmId)){
             try {
-                url = url.replace(SVMConstants.COMPONENTS_ID_WILDCARD, componentVmId);
+                url = url.replace(SW360Constants.SVM_COMPONENTS_ID_WILDCARD, componentVmId);
                 String response = SVMUtils.prepareJSONRequestAndGetResponse(url);
                 JsonArray ids = Jsoner.deserialize(response, new JsonArray());
 

@@ -33,7 +33,6 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
@@ -95,7 +94,7 @@ public class CycloneDxBOMExporter {
                 linkedPackageIds.addAll(idsMap.get(SW360Constants.PACKAGE_IDS));
             }
 
-            if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+            if (SW360Constants.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
                 List<Release> releaseList = componentDatabaseHandler.getAccessibleReleaseSummary(user);
                 Set<String> releaseListIds = releaseList.stream().map(Release::getId).collect(Collectors.toSet());
                 linkedReleaseIds = CollectionUtils.intersection(releaseListIds, linkedReleaseIds).stream().collect(Collectors.toSet());

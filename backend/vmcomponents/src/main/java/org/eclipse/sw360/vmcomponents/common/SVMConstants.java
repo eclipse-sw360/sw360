@@ -4,10 +4,6 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.common;
 
-import org.eclipse.sw360.datahandler.common.CommonUtils;
-
-import java.util.Properties;
-
 /**
  * @author stefan.jaeger@evosoft.com
  * @author alex.borodin@evosoft.com
@@ -15,16 +11,6 @@ import java.util.Properties;
 public class SVMConstants {
 
     private SVMConstants(){}
-
-    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
-
-    // urls of SVM server
-    public static final String COMPONENTS_URL;
-    public static final String ACTIONS_URL;
-    public static final String PRIORITIES_URL;
-    public static final String COMPONENTS_ID_WILDCARD = "#compVmId#";
-    public static final String VULNERABILITIES_PER_COMPONENT_URL;
-    public static final String VULNERABILITIES_URL;
 
     // JSON components field names
     public static final String COMPONENT_VENDOR             = "vendor";
@@ -68,21 +54,4 @@ public class SVMConstants {
     public static final int PROCESSING_CORE_POOL_SIZE       = 20;
     public static final int PROCESSING_MAX_POOL_SIZE        = 20;
     public static final int PROCESSING_KEEP_ALIVE_SECONDS   = 60;
-
-    private static final String SVM_BASE_HOST_URL;
-    private static final String SVM_API_ROOT_PATH;
-
-    static {
-        Properties props = CommonUtils.loadProperties(SVMConstants.class, PROPERTIES_FILE_PATH);
-
-        SVM_BASE_HOST_URL = props.getProperty("svm.base.path", "");
-        SVM_API_ROOT_PATH = props.getProperty("svm.api.root.path", "");
-        COMPONENTS_URL  = props.getProperty("svm.components.url", SVM_BASE_HOST_URL + SVM_API_ROOT_PATH + "/components");
-        ACTIONS_URL     = props.getProperty("svm.actions.url", SVM_BASE_HOST_URL + SVM_API_ROOT_PATH + "/actions");
-        PRIORITIES_URL  = props.getProperty("svm.priorities.url", SVM_BASE_HOST_URL + SVM_API_ROOT_PATH + "/priorities");
-        VULNERABILITIES_PER_COMPONENT_URL  = props.getProperty("svm.components.vulnerabilities.url",
-                            SVM_BASE_HOST_URL + SVM_API_ROOT_PATH + "/components/" +COMPONENTS_ID_WILDCARD+"/notifications");
-        VULNERABILITIES_URL  = props.getProperty("svm.vulnerabilities.url", SVM_BASE_HOST_URL + SVM_API_ROOT_PATH + "/notifications");
-    }
-
 }

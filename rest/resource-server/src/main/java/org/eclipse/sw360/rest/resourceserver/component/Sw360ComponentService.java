@@ -20,6 +20,7 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -34,7 +35,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
-import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
@@ -147,7 +147,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     public RequestStatus updateComponent(Component component, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         RequestStatus requestStatus;
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             requestStatus = sw360ComponentClient.updateComponentWithForceFlag(component, sw360User, true);
         } else {
             requestStatus = sw360ComponentClient.updateComponent(component, sw360User);
@@ -164,7 +164,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
 
     public RequestStatus deleteComponent(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             return sw360ComponentClient.deleteComponentWithForceFlag(componentId, sw360User, true);
         } else {
             return sw360ComponentClient.deleteComponent(componentId, sw360User);
@@ -252,7 +252,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.getMyComponents(sw360User);
     }
-    
+
     public List<VulnerabilityDTO> getVulnerabilitiesByComponent(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         List<String> releaseIds = sw360ComponentClient.getReleaseIdsFromComponentId(componentId, sw360User);

@@ -37,7 +37,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -48,15 +47,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.hateoas.Link;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
-import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -175,7 +171,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         } catch (TException e) {
             throw new HttpMessageNotReadableException("No Components found");
         }
-        
+
         for (Release release : releases) {
             String componentId = release.getComponentId();
             if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
@@ -189,7 +185,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
         return releases;
     }
-    
+
     public List<Release> getReleaseSubscriptions(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.getSubscribedReleases(sw360User);
@@ -248,7 +244,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         rch.checkForCyclicOrInvalidDependencies(sw360ComponentClient, release, sw360User);
 
         RequestStatus requestStatus;
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             requestStatus = sw360ComponentClient.updateReleaseWithForceFlag(release, sw360User, true);
         } else {
             requestStatus = sw360ComponentClient.updateRelease(release, sw360User);
@@ -275,7 +271,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             }
         }
 
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             deleteStatus = sw360ComponentClient.deleteReleaseWithForceFlag(releaseId, sw360User, true);
         } else {
             deleteStatus = sw360ComponentClient.deleteRelease(releaseId, sw360User);

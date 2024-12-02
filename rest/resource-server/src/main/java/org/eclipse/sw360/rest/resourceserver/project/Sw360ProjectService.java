@@ -57,7 +57,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -775,7 +774,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         RequestStatus requestStatus;
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             requestStatus = sw360ProjectClient.updateProjectWithForceFlag(project, sw360User, true);
         } else {
             requestStatus = sw360ProjectClient.updateProject(project, sw360User);
@@ -796,7 +795,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public RequestStatus deleteProject(String projectId, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             return sw360ProjectClient.deleteProjectWithForceFlag(projectId, sw360User, true);
         } else {
             return sw360ProjectClient.deleteProject(projectId, sw360User);
@@ -807,7 +806,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         List<Project> projects = sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
         for (Project project : projects) {
-            if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+            if (SW360Constants.IS_FORCE_UPDATE_ENABLED) {
                 sw360ProjectClient.deleteProjectWithForceFlag(project.getId(), sw360User, true);
             } else {
                 sw360ProjectClient.deleteProject(project.getId(), sw360User);

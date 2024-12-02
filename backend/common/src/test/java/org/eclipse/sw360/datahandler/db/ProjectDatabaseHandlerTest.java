@@ -13,10 +13,10 @@ package org.eclipse.sw360.datahandler.db;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.SetMultimap;
 
-import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -172,10 +172,10 @@ public class ProjectDatabaseHandlerTest {
         // Now contributors can also change the project
         assertEquals(RequestStatus.SUCCESS, status);
     }
-    
+
     @Test
     public void testForceUpdateProject() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         Project project1 = handler.getProjectById("P1", user1);
@@ -185,7 +185,7 @@ public class ProjectDatabaseHandlerTest {
 
         RequestStatus status = handler.updateProject(project1, user2, true);
 
-        // if force option is enabled, the project can be changed. 
+        // if force option is enabled, the project can be changed.
         assertEquals(RequestStatus.SUCCESS, status);
     }
 
@@ -304,10 +304,10 @@ public class ProjectDatabaseHandlerTest {
         boolean deleted = (handler.getProjectById("P3", user3) == null);
         assertEquals(false, deleted);
     }
-    
+
     @Test
     public void testForceDeleteProject() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         int expect = handler.getMyProjectsSummary(user1.getEmail()).size() - 1;
