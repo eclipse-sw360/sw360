@@ -496,6 +496,8 @@ public class RestControllerHelper<T> {
         embeddedRelease.setName(release.getName());
         embeddedRelease.setVersion(release.getVersion());
         embeddedRelease.setAttachments(release.getAttachments());
+        embeddedRelease.setComponentType(release.getComponentType());
+        embeddedRelease.setClearingState(release.getClearingState());
         embeddedRelease.setType(null);
         return embeddedRelease;
     }
