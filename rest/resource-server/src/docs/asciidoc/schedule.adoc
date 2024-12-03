@@ -90,3 +90,102 @@ include::{snippets}/should_document_schedule_cve_search/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_schedule_cve_search/http-response.adoc[]
+
+[[schedule-svmsync]]
+==== Schedule svm sync for user.
+
+A `POST` request will schedule svm sync for user.
+
+===== Example request
+include::{snippets}/should_document_schedule_svm_sync/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_schedule_svm_sync/http-response.adoc[]
+
+[[unschedule-svmSync]]
+==== Cancel schedule svm sync for user.
+
+A `DELETE` request will cancel schedule svm sync for user.
+
+===== Example request
+include::{snippets}/should_document_cancel_schedule_svm_sync/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_cancel_schedule_svm_sync/http-response.adoc[]
+
+[[reverse-svmmatch]]
+==== Svm reverse match for user.
+
+A `POST` request will reverse svm match.
+
+===== Example request
+include::{snippets}/should_document_reverse_svm_match/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_reverse_svm_match/http-response.adoc[]
+
+[[unschedule-reversematch]]
+==== Cancel reverse match for user.
+
+A `DELETE` request will cancel the reverse match.
+
+===== Example request
+include::{snippets}/should_document_cancel_reverse_match/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_cancel_reverse_match/http-response.adoc[]
+
+[[tracking-feedback]]
+==== Tracking feedback for user.
+
+A `POST` request will track the user feedback.
+
+===== Example request
+include::{snippets}/should_document_track_feedback/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_track_feedback/http-response.adoc[]
+
+[[monitoring-listUpdate]]
+==== Monitoring a svm list Update.
+
+A `POST` request will update svm list.
+
+===== Example request
+include::{snippets}/should_document_svm_list_update/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_svm_list_update/http-response.adoc[]
+
+[[cancel-monitoringlist]]
+==== Cancel monitoring svm list and update.
+
+A `DELETE` request will cancel the monitoring svm list and update.
+
+===== Example request
+include::{snippets}/should_document_cancel_monitoring_svm_list/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_cancel_monitoring_svm_list/http-response.adoc[]
+
+[[src-upload]]
+==== Source attachment upload service.
+
+A `POST` request will upload the source attachment.
+
+===== Example request
+include::{snippets}/should_document_src_upload/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_src_upload/http-response.adoc[]
+
+[[cancel-srcupload]]
+==== Cancel source attachment upload service.
+
+A `DELETE` request will cancel the src upload.
+
+===== Example request
+include::{snippets}/should_document_cancel_monitoring_cancel_svm_list/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_cancel_monitoring_cancel_svm_list/http-response.adoc[]

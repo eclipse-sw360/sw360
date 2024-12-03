@@ -275,6 +275,13 @@ public class ProjectHandler implements ProjectService.Iface {
     }
 
     @Override
+    public RequestSummary importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(User user, String attachmentContentId, String projectId, boolean doNotReplacePackageAndRelease) throws SW360Exception {
+        assertId(attachmentContentId);
+        assertUser(user);
+        return handler.importCycloneDxFromAttachmentContent(user, attachmentContentId, projectId, doNotReplacePackageAndRelease);
+    }
+
+    @Override
     public RequestSummary exportCycloneDxSbom(String projectId, String bomType, boolean includeSubProjReleases, User user) throws SW360Exception {
         assertId(projectId);
         assertUser(user);
