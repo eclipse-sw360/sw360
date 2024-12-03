@@ -67,7 +67,6 @@ jobs:
           java-version: "21"
           distribution: "temurin"
           check-latest: true
-          cache: "maven"
 
       - name: Cache Thrift
         id: cache-thrift
