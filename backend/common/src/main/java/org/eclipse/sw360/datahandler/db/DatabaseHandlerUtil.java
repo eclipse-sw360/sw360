@@ -39,7 +39,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -64,6 +63,7 @@ import org.apache.thrift.TFieldIdEnum;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.DatabaseConstants;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
@@ -140,42 +140,14 @@ public class DatabaseHandlerUtil {
     public static final String SEPARATOR = " -> ";
     private static ChangeLogsRepository changeLogRepository;
     private static ObjectMapper mapper = initAndGetObjectMapper();
-    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
-    private static final String SVM_JSON_LOG_OUTPUT_LOCATION;
     private static final String SVM_JSON_FILE_PREFIX = "svm_json_output_";
     private static final String SVM_JSON_FILE_SUFFIX = ".json";
     private static final String SVM_JSON_LOG_OUTPUT_FILE_PERMISSION = "rw-------";
     private static final String ATTACHMENT_ID = "attachmentId_";
     private static final String DOCUMENT_ID = "documentId_";
-    private static final boolean IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED;
-    private static final String ATTACHMENT_STORE_FILE_SYSTEM_LOCATION;
-    private static final String ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION;
     private static ExecutorService ATTACHMENT_FILE_SYSTEM_STORE_THREAD_POOL = Executors.newFixedThreadPool(5);
-    private static final String ATTACHMENT_DELETE_NO_OF_DAYS;
-    private static final boolean IS_SW360CHANGELOG_ENABLED;
-    private static final String CHANGE_LOG_CONFIG_FILE_PATH;
-    private static final String SW360CHANGELOG_OUTPUT_PATH;
     private static boolean isChangeLogDisabledMessageLogged = false;
     private static boolean isLiferayEnvVarNotPresent = true;
-    public static final boolean AUTO_SET_ECC_STATUS;
-
-    static {
-        Properties props = CommonUtils.loadProperties(DatabaseSettings.class, PROPERTIES_FILE_PATH);
-        SVM_JSON_LOG_OUTPUT_LOCATION = props.getProperty("svm.json.log.output.location", "/tmp");
-        ATTACHMENT_STORE_FILE_SYSTEM_LOCATION = props.getProperty("attachment.store.file.system.location",
-                "/opt/sw360tempattachments");
-        ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION = props.getProperty("attachment.store.file.system.permission",
-                "rwx------");
-        IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED = Boolean.parseBoolean(props.getProperty("enable.attachment.store.to.file.system", "false"));
-        ATTACHMENT_DELETE_NO_OF_DAYS = props.getProperty("attachemnt.delete.no.of.days",
-                "30");
-        IS_SW360CHANGELOG_ENABLED = Boolean.parseBoolean(props.getProperty("enable.sw360.change.log", "false"));
-        CHANGE_LOG_CONFIG_FILE_PATH = props.getProperty("sw360changelog.config.file.location",
-                "/etc/sw360/log4j2.xml");
-        SW360CHANGELOG_OUTPUT_PATH = props.getProperty("sw360changelog.output.path",
-                "sw360changelog/sw360changelog");
-        AUTO_SET_ECC_STATUS = Boolean.parseBoolean(props.getProperty("auto.set.ecc.status", "false"));
-    }
 
     public DatabaseHandlerUtil(DatabaseConnectorCloudant db) {
             changeLogRepository = new ChangeLogsRepository(db);
@@ -525,7 +497,7 @@ public class DatabaseHandlerUtil {
      */
     public static <T extends TBase> void addSelectLogs(T newDocVersion, String userEdited, AttachmentConnector attachmentConnector) {
 
-        if (!IS_SW360CHANGELOG_ENABLED) {
+        if (!DatabaseConstants.IS_SW360CHANGELOG_ENABLED) {
             if (!isChangeLogDisabledMessageLogged) {
                 log.info("sw360change log is disabled");
                 isChangeLogDisabledMessageLogged = true;
@@ -552,7 +524,7 @@ public class DatabaseHandlerUtil {
         };
 
         Thread changeLogsThread = new Thread(changeLogRunnable);
-        File sw360ChangeLogFileLocation = new File(CHANGE_LOG_CONFIG_FILE_PATH);
+        File sw360ChangeLogFileLocation = new File(DatabaseConstants.CHANGE_LOG_CONFIG_FILE_PATH);
         if (sw360ChangeLogFileLocation.exists()) {
             LoggerContext context = (LoggerContext) LogManager.getContext(false);
             context.setConfigLocation(sw360ChangeLogFileLocation.toURI());
@@ -564,7 +536,7 @@ public class DatabaseHandlerUtil {
                 return;
             }
             String LIFERAY_HOME = env.get("LIFERAY_INSTALL");
-            configureLog4J(SW360CHANGELOG_OUTPUT_PATH, LIFERAY_HOME);
+            configureLog4J(DatabaseConstants.SW360CHANGELOG_OUTPUT_PATH, LIFERAY_HOME);
         }
         changeLogsThread.start();
     }
@@ -948,7 +920,7 @@ public class DatabaseHandlerUtil {
                 log.info("Preparing to write content to file");
                 StringBuilder fileNameSb = new StringBuilder(SVM_JSON_FILE_PREFIX)
                         .append(getTimeStamp().replaceAll(" ", "_").replaceAll(":", "-")).append(SVM_JSON_FILE_SUFFIX);
-                Path outputFile = Paths.get(SVM_JSON_LOG_OUTPUT_LOCATION, fileNameSb.toString());
+                Path outputFile = Paths.get(DatabaseConstants.SVM_JSON_LOG_OUTPUT_LOCATION, fileNameSb.toString());
                 if (!Files.exists(outputFile)) {
                     Set<PosixFilePermission> perms = PosixFilePermissions.fromString(SVM_JSON_LOG_OUTPUT_FILE_PERMISSION);
                     FileAttribute<Set<PosixFilePermission>> fileAttribute = PosixFilePermissions.asFileAttribute(perms);
@@ -988,14 +960,14 @@ public class DatabaseHandlerUtil {
             String attachmentId, String fileName) {
         return () -> {
             try {
-                Path outputDir = Paths.get(ATTACHMENT_STORE_FILE_SYSTEM_LOCATION, userEmail, DOCUMENT_ID + documentId,
+                Path outputDir = Paths.get(DatabaseConstants.ATTACHMENT_STORE_FILE_SYSTEM_LOCATION, userEmail, DOCUMENT_ID + documentId,
                         ATTACHMENT_ID + attachmentId);
                 Path outputFile = Paths.get(fileName);
                 Path outputFilePath = outputDir.resolve(outputFile);
                 log.info("Preparing to store attachment in file system" + outputFilePath);
                 if (!Files.exists(outputFile)) {
                     Set<PosixFilePermission> perms = PosixFilePermissions
-                            .fromString(ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION);
+                            .fromString(DatabaseConstants.ATTACHMENT_STORE_FILE_SYSTEM_PERMISSION);
                     FileAttribute<Set<PosixFilePermission>> fileAttribute = PosixFilePermissions.asFileAttribute(perms);
                     Files.createDirectories(outputDir, fileAttribute);
                     Files.createFile(outputFilePath, fileAttribute);
@@ -1016,7 +988,7 @@ public class DatabaseHandlerUtil {
      */
     public static void saveAttachmentInFileSystem(AttachmentConnector attachmentConnector, Set<Attachment> before,
             Set<Attachment> after, String userEmail, String documentId) {
-        if (!IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED) {
+        if (!DatabaseConstants.IS_STORE_ATTACHMENT_TO_FILE_SYSTEM_ENABLED) {
             log.debug("Store attachment to file system is disabled");
             return;
         }
@@ -1044,13 +1016,13 @@ public class DatabaseHandlerUtil {
     }
 
     public static RequestStatus deleteOldAttachmentFromFileSystem() {
-        int noOfDays = Integer.parseInt(ATTACHMENT_DELETE_NO_OF_DAYS);
+        int noOfDays = Integer.parseInt(DatabaseConstants.ATTACHMENT_DELETE_NO_OF_DAYS);
         RequestStatus status = null;
         LocalDate todayDate = LocalDate.now();
         LocalDate thresholdDateForAttachmentDelete = todayDate.minusDays(noOfDays);
         Date thresholdDate = Date.from(thresholdDateForAttachmentDelete.atStartOfDay(ZoneId.systemDefault()).toInstant());
         try {
-            deleteAttachmentAndDirectory(ATTACHMENT_STORE_FILE_SYSTEM_LOCATION, thresholdDate);
+            deleteAttachmentAndDirectory(DatabaseConstants.ATTACHMENT_STORE_FILE_SYSTEM_LOCATION, thresholdDate);
             status = RequestStatus.SUCCESS;
         } catch (IOException e) {
             log.error("Unable to delete attachment. ", e);
@@ -1126,4 +1098,3 @@ public class DatabaseHandlerUtil {
         return tempFile;
     }
 }
-

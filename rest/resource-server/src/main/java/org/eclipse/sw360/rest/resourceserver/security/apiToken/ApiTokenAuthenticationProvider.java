@@ -14,12 +14,11 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserAccess;
-import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter.ApiTokenAuthentication;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter.AuthType;
 import org.eclipse.sw360.rest.resourceserver.security.jwksvalidation.JWTValidator;
@@ -49,7 +48,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.Math.min;
-import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.*;
 
 @Profile("!SECURITY_MOCK")
 @Component
@@ -60,7 +58,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
     @NotNull
     private final Sw360UserService userService;
-    
+
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         log.info("Authenticating for the user with authentication {}", authentication);
@@ -71,10 +69,10 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
         // Get the corresponding sw360 user and restApiToken based on entered token
         String tokenFromAuthentication = (String) authentication.getCredentials();
-        if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED && authentication instanceof ApiTokenAuthentication
+        if (SW360Constants.REST_IS_JWKS_VALIDATION_ENABLED && authentication instanceof ApiTokenAuthentication
                 && ((ApiTokenAuthentication) authentication).getType() == AuthType.JWKS) {
-            JWTValidator validator = new JWTValidator(Sw360ResourceServer.JWKS_ISSUER_URL,
-                    Sw360ResourceServer.JWKS_ENDPOINT_URL);
+            JWTValidator validator = new JWTValidator(SW360Constants.REST_JWKS_ISSUER_URL,
+                    SW360Constants.REST_JWKS_ENDPOINT_URL);
             JwtClaims jwtClaims = null;
             try {
                 jwtClaims = validator.validateJWT(tokenFromAuthentication);
@@ -90,7 +88,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
             User sw360User = getUserFromClientId(clientIdAsStr);
             return authenticatedOidcUser(sw360User, clientIdAsStr);
         } else {
-            String tokenHash = BCrypt.hashpw(tokenFromAuthentication, API_TOKEN_HASH_SALT);
+            String tokenHash = BCrypt.hashpw(tokenFromAuthentication, SW360Constants.REST_API_TOKEN_HASH_SALT);
             User sw360User = getUserFromTokenHash(tokenHash);
             if (sw360User == null || sw360User.isDeactivated()) {
                 throw new DisabledException("User is deactivated");
@@ -130,7 +128,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
                     "Your entered OIDC token is not associated with any user for authorization.");
         }
     }
-    
+
     private Optional<RestApiToken> getApiTokenFromUser(String tokenHash, User sw360User) {
         return sw360User.getRestApiTokens()
                 .stream()
@@ -140,7 +138,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
 
     private boolean isApiTokenExpired(RestApiToken restApiToken) {
         String configExpireDays = restApiToken.getAuthorities().contains("WRITE") ?
-                API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS : API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
+                SW360Constants.REST_API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS : SW360Constants.REST_API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
         Date createdOn = SW360Utils.getDateFromTimeString(restApiToken.createdOn);
         Date tokenExpireDate = DateUtils.addDays(createdOn,
                 min(restApiToken.getNumberOfDaysValid(), Integer.parseInt(configExpireDays)));
@@ -153,7 +151,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet());
     }
-    
+
     private Set<GrantedAuthority> getGrantedAuthoritiesFromUserAccess(UserAccess userAccess) {
         return Stream.of(userAccess.name().split("_"))
                 .map(SimpleGrantedAuthority::new)

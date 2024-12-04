@@ -18,17 +18,16 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.authserver.Sw360AuthorizationServer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.stereotype.Component;
 
 /**
- * This class offer helper methods to calculate the {@GrantedAuthority} for a user and/or client. 
+ * This class offer helper methods to calculate the {@GrantedAuthority} for a user and/or client.
  * In addition it can calculate the correct intersection between them! Therefore it has to
  * know how to map the sw360 user groups on rest authorities. This logic is also
  * centralized here implicitly.
@@ -43,10 +42,10 @@ public class Sw360GrantedAuthoritiesCalculator {
 
         grantedAuthorities.add(new SimpleGrantedAuthority(READ.getAuthority()));
         if (user != null) {
-            if (PermissionUtils.isUserAtLeast(Sw360AuthorizationServer.CONFIG_WRITE_ACCESS_USERGROUP, user)) {
+            if (PermissionUtils.isUserAtLeast(SW360Constants.CONFIG_WRITE_ACCESS_USERGROUP, user)) {
                 grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.WRITE.getAuthority()));
             }
-            if (PermissionUtils.isUserAtLeast(Sw360AuthorizationServer.CONFIG_ADMIN_ACCESS_USERGROUP, user)) {
+            if (PermissionUtils.isUserAtLeast(SW360Constants.CONFIG_ADMIN_ACCESS_USERGROUP, user)) {
                 grantedAuthorities.add(new SimpleGrantedAuthority(Sw360GrantedAuthority.ADMIN.getAuthority()));
             }
         }
@@ -60,7 +59,7 @@ public class Sw360GrantedAuthoritiesCalculator {
         grantedAuthorities = grantedAuthorities.stream()
                 .filter(ga -> clientScopes.contains(ga.toString()))
                 .collect(Collectors.toList());
-        
+
         return grantedAuthorities;
     }
 

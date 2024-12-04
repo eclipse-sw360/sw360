@@ -9,7 +9,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
-import org.eclipse.sw360.rest.resourceserver.SW360RestHealthIndicator;
+import org.eclipse.sw360.rest.resourceserver.actuator.SW360RestHealthIndicator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.actuate.health.Health;
@@ -43,7 +43,7 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
         given(this.restHealthIndicatorMock.health()).willReturn(spring_health);
 
 
-        mockMvc.perform(get("/health")
+        mockMvc.perform(get("/api/health")
                     .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -72,7 +72,7 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
                 .build();
         given(this.restHealthIndicatorMock.health()).willReturn(spring_health_down);
 
-        mockMvc.perform(get("/health")
+        mockMvc.perform(get("/api/health")
                     .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().is2xxSuccessful())
                 .andDo(this.documentationHandler.document(

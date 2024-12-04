@@ -13,7 +13,6 @@ package org.eclipse.sw360.components.db;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -858,7 +857,7 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testForceUpdateComponent() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         // Make some changes in the component
@@ -876,7 +875,7 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(expected, actual.getName());
         verify(moderator, never()).updateComponent(component, user2);
     }
-    
+
     @Test
     public void testUpdateRelease() throws Exception {
         Release expected = releases.get(1);
@@ -928,7 +927,7 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testForceUpdateRelease() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         Release release = releases.get(1);
@@ -943,7 +942,7 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(expected, actual.getName());
         verify(releaseModerator, never()).updateRelease(release, user1);
     }
-    
+
     @Test
     public void testEccUpdateSentToEccModeration() throws Exception {
         Release release = releases.get(1);
@@ -961,7 +960,7 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testForceEccUpdate() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         Release release = releases.get(1);
@@ -976,7 +975,7 @@ public class ComponentDatabaseHandlerTest {
         assertEquals(expected, actual.getEccInformation().getAl());
         verify(releaseModerator, never()).updateReleaseEccInfo(release, user1);
     }
-    
+
     @Test
     public void testDeleteComponent() throws Exception {
         RequestStatus status = handler.deleteComponent("C3", user1);
@@ -999,7 +998,7 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testForceDeleteComponent() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         lenient().when(moderator.deleteComponent(any(Component.class), eq(user2))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
@@ -1010,7 +1009,7 @@ public class ComponentDatabaseHandlerTest {
         assertFalse("Component deleted", componentsContain(componentSummary, "C3"));
         verify(moderator, never()).deleteComponent(any(Component.class), eq(user2));
     }
-    
+
     @Test
     public void testDontDeleteUsedComponent() throws Exception {
         final Release r1A = handler.getRelease("R1A", user1);
@@ -1067,7 +1066,7 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testForceDeleteRelease() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!SW360Constants.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         lenient().when(releaseModerator.deleteRelease(any(Release.class), eq(user1))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
@@ -1078,7 +1077,7 @@ public class ComponentDatabaseHandlerTest {
         assertFalse("Release deleted", releasesContain(releaseSummary, "R1B"));
         verify(releaseModerator, never()).deleteRelease(any(Release.class), eq(user1));
     }
-    
+
     private static boolean componentsContain(Collection<Component> components, @NotNull String id) {
         for (Component component : components) {
             if (id.equals(component.getId()))

@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 
-import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -233,8 +232,8 @@ public class SW360ReportService {
         String outputGeneratorClassNameWithVariant = generatorClassName + "::" + variant;
         String fileName = "";
         if (CommonUtils.isNotNullEmptyOrWhitespace(template)
-                && CommonUtils.isNotNullEmptyOrWhitespace(REPORT_FILENAME_MAPPING)) {
-            Map<String, String> orgToTemplate = Arrays.stream(REPORT_FILENAME_MAPPING.split(","))
+                && CommonUtils.isNotNullEmptyOrWhitespace(SW360Constants.REST_REPORT_FILENAME_MAPPING)) {
+            Map<String, String> orgToTemplate = Arrays.stream(SW360Constants.REST_REPORT_FILENAME_MAPPING.split(","))
                     .collect(Collectors.toMap(k -> k.split(":")[0], v -> v.split(":")[1]));
             fileName = orgToTemplate.get(template);
         }
@@ -297,7 +296,7 @@ public class SW360ReportService {
         return licenseInfoParsingResult.stream().map(LicenseInfoParsingResult::getLicenseInfo)
                 .flatMap(streamLicenseNameWithTexts).filter(filteredLicense).collect(Collectors.toSet());
     }
-    
+
     public ByteBuffer getLicenseResourceBundleBuffer() throws TException {
         return licenseClient.getLicenseReportDataStream();
     }

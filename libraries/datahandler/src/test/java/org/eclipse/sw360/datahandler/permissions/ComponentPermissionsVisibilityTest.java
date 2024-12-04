@@ -14,7 +14,7 @@ import static org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent.C
 import static org.eclipse.sw360.datahandler.thrift.Visibility.*;
 import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.*;
 
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent.ComponentRole;
 import org.eclipse.sw360.datahandler.permissions.jgivens.ThenVisible;
@@ -50,10 +50,10 @@ public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenCompon
 
     @DataProvider
     public static Object[][] componentVisibilityProvider() {
-        if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+        if (SW360Constants.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
             // @formatter:off
             return new Object[][] {
-    
+
                     //test otherDeparment
                     //test User (otherUsers)
                     { PRIVATE, theBu, theOtherDep, USER, false },
@@ -70,7 +70,7 @@ public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenCompon
                     { ME_AND_MODERATORS, theBu, theOtherDep, ADMIN, true },
                     { BUISNESSUNIT_AND_MODERATORS, theBu, theOtherDep, ADMIN, true },
                     { EVERYONE, theBu, theOtherDep, ADMIN, true },
-    
+
                     //test same department
                     //test User (sameGroupUsers)
                     { PRIVATE, theDep, theDep, USER, false },
@@ -142,7 +142,7 @@ public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenCompon
 
     @DataProvider
     public static Object[][] componentVisibilityByRoleProvider() {
-        if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+        if (SW360Constants.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
             // @formatter:off
             return new Object[][] {
                     //test otherDepartment
@@ -157,7 +157,7 @@ public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenCompon
                     { ME_AND_MODERATORS, theBu, CREATED_BY, null, theUser, theOtherUser, false },
                     { BUISNESSUNIT_AND_MODERATORS, theBu, CREATED_BY, null, theUser, theOtherUser, false },
                     { EVERYONE, theBu, CREATED_BY, null, theUser, theOtherUser, true },
-    
+
                     //test different User (Moderators)
                     { PRIVATE, theBu, MODERATOR, theOtherUser, theUser, theOtherUser, false },
                     { ME_AND_MODERATORS, theBu, MODERATOR, theOtherUser, theUser, theOtherUser, true },

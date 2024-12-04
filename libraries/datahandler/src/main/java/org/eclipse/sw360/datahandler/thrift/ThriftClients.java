@@ -23,7 +23,7 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.ThriftConstants;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogsService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
@@ -49,7 +49,6 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityService
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Properties;
 
 /**
  * Created by bodet on 11/02/15.
@@ -60,15 +59,6 @@ import java.util.Properties;
 public class ThriftClients {
 
     private final static Logger log = LogManager.getLogger(ThriftClients.class);
-
-    public static final String PROPERTIES_FILE_PATH = "/sw360.properties";
-
-    public static final String BACKEND_URL;
-    public static final String BACKEND_PROXY_URL;
-    public static final int THRIFT_CONNECTION_TIMEOUT;
-    public static final int THRIFT_READ_TIMEOUT;
-    public static final int THRIFT_MAX_MESSAGE_SIZE;
-    public static final int THRIFT_MAX_FRAME_SIZE;
 
     //! Service addresses
     private static final String ATTACHMENT_SERVICE_URL = "/attachments/thrift";
@@ -107,25 +97,6 @@ public class ThriftClients {
     public static final String SRC_UPLOAD_SERVICE = "srcAttachmentUploadService";
 
 
-    static {
-        Properties props = CommonUtils.loadProperties(ThriftClients.class, PROPERTIES_FILE_PATH);
-
-        BACKEND_URL = props.getProperty("backend.url", "http://127.0.0.1:8080");
-        //Proxy can be set e.g. with "http://localhost:3128". if set all request to the thrift backend are routed through the proxy
-        BACKEND_PROXY_URL = props.getProperty("backend.proxy.url", null);
-        // maximum timeout for connecting and reading
-        THRIFT_CONNECTION_TIMEOUT = Integer.valueOf(props.getProperty("backend.timeout.connection", "5000"));
-        THRIFT_READ_TIMEOUT = Integer.valueOf(props.getProperty("backend.timeout.read", "600000"));
-
-        THRIFT_MAX_MESSAGE_SIZE = Integer.valueOf(props.getProperty("backend.thrift.max.message.size", String.valueOf(TConfiguration.DEFAULT_MAX_MESSAGE_SIZE)));
-        THRIFT_MAX_FRAME_SIZE = Integer.valueOf(props.getProperty("backend.thrift.max.frame.size", String.valueOf(TConfiguration.DEFAULT_MAX_FRAME_SIZE)));
-
-        log.info("The following configuration will be used for connections to the backend:\n" +
-            "\tURL                      : " + BACKEND_URL + "\n" +
-            "\tProxy                    : " + BACKEND_PROXY_URL + "\n" +
-            "\tTimeout Connecting (ms)  : " + THRIFT_CONNECTION_TIMEOUT + "\n" +
-            "\tTimeout Read (ms)        : " + THRIFT_READ_TIMEOUT + "\n");
-    }
     public ThriftClients() {
     }
 
@@ -135,12 +106,12 @@ public class ThriftClients {
     private static TProtocol makeProtocol(String url, String service) {
         THttpClient thriftClient = null;
         final String destinationAddress = url + service;
-        final TConfiguration thriftConfigure = TConfiguration.custom().setMaxMessageSize(THRIFT_MAX_MESSAGE_SIZE)
-                .setMaxFrameSize(THRIFT_MAX_FRAME_SIZE).build();
+        final TConfiguration thriftConfigure = TConfiguration.custom().setMaxMessageSize(ThriftConstants.THRIFT_MAX_MESSAGE_SIZE)
+                .setMaxFrameSize(ThriftConstants.THRIFT_MAX_FRAME_SIZE).build();
 
         try {
-            if (BACKEND_PROXY_URL != null) {
-                URL proxyUrl = new URL(BACKEND_PROXY_URL);
+            if (ThriftConstants.BACKEND_PROXY_URL != null) {
+                URL proxyUrl = new URL(ThriftConstants.BACKEND_PROXY_URL);
                 HttpHost proxy = new HttpHost(proxyUrl.getProtocol(), proxyUrl.getHost(), proxyUrl.getPort());
                 DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxy);
                 CloseableHttpClient httpClient = HttpClients.custom().setRoutePlanner(routePlanner).build();
@@ -148,8 +119,8 @@ public class ThriftClients {
             } else {
                 thriftClient = new THttpClient(thriftConfigure, destinationAddress);
             }
-            thriftClient.setConnectTimeout(THRIFT_CONNECTION_TIMEOUT);
-            thriftClient.setReadTimeout(THRIFT_READ_TIMEOUT);
+            thriftClient.setConnectTimeout(ThriftConstants.THRIFT_CONNECTION_TIMEOUT);
+            thriftClient.setReadTimeout(ThriftConstants.THRIFT_READ_TIMEOUT);
         } catch (TTransportException e) {
             log.error("cannot connect to backend on " + destinationAddress, e);
         } catch (MalformedURLException e) {
@@ -159,94 +130,94 @@ public class ThriftClients {
     }
 
     public AttachmentService.Iface makeAttachmentClient() {
-        return new AttachmentService.Client(makeProtocol(BACKEND_URL, ATTACHMENT_SERVICE_URL));
+        return new AttachmentService.Client(makeProtocol(ThriftConstants.BACKEND_URL, ATTACHMENT_SERVICE_URL));
     }
 
     public ComponentService.Iface makeComponentClient() {
-        return new ComponentService.Client(makeProtocol(BACKEND_URL, COMPONENT_SERVICE_URL));
+        return new ComponentService.Client(makeProtocol(ThriftConstants.BACKEND_URL, COMPONENT_SERVICE_URL));
     }
 
     public CveSearchService.Iface makeCvesearchClient() {
-        return new CveSearchService.Client(makeProtocol(BACKEND_URL, CVESEARCH_SERVICE_URL));
+        return new CveSearchService.Client(makeProtocol(ThriftConstants.BACKEND_URL, CVESEARCH_SERVICE_URL));
     }
 
     public FossologyService.Iface makeFossologyClient() {
-        return new FossologyService.Client(makeProtocol(BACKEND_URL, FOSSOLOGY_SERVICE_URL));
+        return new FossologyService.Client(makeProtocol(ThriftConstants.BACKEND_URL, FOSSOLOGY_SERVICE_URL));
     }
 
     public LicenseService.Iface makeLicenseClient() {
-        return new LicenseService.Client(makeProtocol(BACKEND_URL, LICENSE_SERVICE_URL));
+        return new LicenseService.Client(makeProtocol(ThriftConstants.BACKEND_URL, LICENSE_SERVICE_URL));
     }
 
     public ModerationService.Iface makeModerationClient() {
-        return new ModerationService.Client(makeProtocol(BACKEND_URL, MODERATION_SERVICE_URL));
+        return new ModerationService.Client(makeProtocol(ThriftConstants.BACKEND_URL, MODERATION_SERVICE_URL));
     }
 
     public ProjectService.Iface makeProjectClient() {
-        return new ProjectService.Client(makeProtocol(BACKEND_URL, PROJECT_SERVICE_URL));
+        return new ProjectService.Client(makeProtocol(ThriftConstants.BACKEND_URL, PROJECT_SERVICE_URL));
     }
 
     public SearchService.Iface makeSearchClient() {
-        return new SearchService.Client(makeProtocol(BACKEND_URL, SEARCH_SERVICE_URL));
+        return new SearchService.Client(makeProtocol(ThriftConstants.BACKEND_URL, SEARCH_SERVICE_URL));
     }
 
     public UserService.Iface makeUserClient() {
-        return new UserService.Client(makeProtocol(BACKEND_URL, USER_SERVICE_URL));
+        return new UserService.Client(makeProtocol(ThriftConstants.BACKEND_URL, USER_SERVICE_URL));
     }
 
     public VendorService.Iface makeVendorClient() {
-        return new VendorService.Client(makeProtocol(BACKEND_URL, VENDOR_SERVICE_URL));
+        return new VendorService.Client(makeProtocol(ThriftConstants.BACKEND_URL, VENDOR_SERVICE_URL));
     }
 
     public ProjectImportService.Iface makeProjectImportClient() {
-        return new ProjectImportService.Client(makeProtocol(BACKEND_URL, PROJECTIMPORT_SERVICE_URL));
+        return new ProjectImportService.Client(makeProtocol(ThriftConstants.BACKEND_URL, PROJECTIMPORT_SERVICE_URL));
     }
 
     public VulnerabilityService.Iface makeVulnerabilityClient() {
-        return new VulnerabilityService.Client(makeProtocol(BACKEND_URL, VULNERABILITY_SERVICE_URL));
+        return new VulnerabilityService.Client(makeProtocol(ThriftConstants.BACKEND_URL, VULNERABILITY_SERVICE_URL));
     }
 
     public VMComponentService.Iface makeVMClient() {
-        return new VMComponentService.Client(makeProtocol(BACKEND_URL, VM_SERVICE_URL));
+        return new VMComponentService.Client(makeProtocol(ThriftConstants.BACKEND_URL, VM_SERVICE_URL));
     }
 
     public LicenseInfoService.Client makeLicenseInfoClient() {
-        return new LicenseInfoService.Client(makeProtocol(BACKEND_URL, LICENSEINFO_SERVICE_URL));
+        return new LicenseInfoService.Client(makeProtocol(ThriftConstants.BACKEND_URL, LICENSEINFO_SERVICE_URL));
     }
 
     public ScheduleService.Iface makeScheduleClient() {
-        return new ScheduleService.Client(makeProtocol(BACKEND_URL, SCHEDULE_SERVICE_URL));
+        return new ScheduleService.Client(makeProtocol(ThriftConstants.BACKEND_URL, SCHEDULE_SERVICE_URL));
     }
 
     public ProjectImportService.Iface makeWsImportClient() {
-        return new ProjectImportService.Client(makeProtocol(BACKEND_URL, WSIMPORT_SERVICE_URL));
+        return new ProjectImportService.Client(makeProtocol(ThriftConstants.BACKEND_URL, WSIMPORT_SERVICE_URL));
     }
 
     public ChangeLogsService.Iface makeChangeLogsClient() {
-        return new ChangeLogsService.Client(makeProtocol(BACKEND_URL, CHANGELOGS_SERVICE_URL));
+        return new ChangeLogsService.Client(makeProtocol(ThriftConstants.BACKEND_URL, CHANGELOGS_SERVICE_URL));
     }
 
     public HealthService.Iface makeHealthClient() {
-        return new HealthService.Client(makeProtocol(BACKEND_URL, HEALTH_SERVICE_URL));
+        return new HealthService.Client(makeProtocol(ThriftConstants.BACKEND_URL, HEALTH_SERVICE_URL));
     }
 
     public SPDXDocumentService.Iface makeSPDXClient() {
-        return new SPDXDocumentService.Client(makeProtocol(BACKEND_URL, SPDX_SERVICE_URL));
+        return new SPDXDocumentService.Client(makeProtocol(ThriftConstants.BACKEND_URL, SPDX_SERVICE_URL));
     }
 
     public DocumentCreationInformationService.Iface makeSPDXDocumentInfoClient() {
-        return new DocumentCreationInformationService.Client(makeProtocol(BACKEND_URL, SPDX_DOCUMENT_INFO_SERVICE_URL));
+        return new DocumentCreationInformationService.Client(makeProtocol(ThriftConstants.BACKEND_URL, SPDX_DOCUMENT_INFO_SERVICE_URL));
     }
 
     public PackageInformationService.Iface makeSPDXPackageInfoClient() {
-        return new PackageInformationService.Client(makeProtocol(BACKEND_URL, SPDX_PACKAGE_INFO_SERVICE_URL));
+        return new PackageInformationService.Client(makeProtocol(ThriftConstants.BACKEND_URL, SPDX_PACKAGE_INFO_SERVICE_URL));
     }
 
     public FileInformationService.Iface makeSPDXFileInfoClient() {
-        return new FileInformationService.Client(makeProtocol(BACKEND_URL, SPDX_FILE_INFO_SERVICE_URL));
+        return new FileInformationService.Client(makeProtocol(ThriftConstants.BACKEND_URL, SPDX_FILE_INFO_SERVICE_URL));
     }
 
     public PackageService.Iface makePackageClient() {
-        return new PackageService.Client(makeProtocol(BACKEND_URL, PACKAGE_SERVICE_URL));
+        return new PackageService.Client(makeProtocol(ThriftConstants.BACKEND_URL, PACKAGE_SERVICE_URL));
     }
 }
