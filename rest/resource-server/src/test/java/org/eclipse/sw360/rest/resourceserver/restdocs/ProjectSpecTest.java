@@ -574,6 +574,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.createClearingRequest(any(),any(),any(),eq(project.getId()))).willReturn(requestSummaryForCR);
         given(this.projectServiceMock.loadPreferredClearingDateLimit()).willReturn(Integer.valueOf(7));
 
+        given(this.projectServiceMock.getLicenseInfoHeaderText()).willReturn("Default License Info Header Text");
         given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
         given(this.projectServiceMock.importCycloneDX(any(),any(),any(),anyBoolean())).willReturn(requestSummaryForCycloneDX);
         given(this.sw360ReportServiceMock.getDocumentName(any(), any())).willReturn(projectName);
@@ -2375,6 +2376,19 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                fieldWithPath("status").description("status of the API. Possible values are `<success|failure>`").optional(),
                                fieldWithPath("count").description("Count of projects for a user.").optional()
                        )));
+    }
+
+    @Test
+    public void should_document_get_license_info_header() throws Exception {
+        this.mockMvc.perform(get("/api/projects/licenseInfoHeader")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON)
+                        .contentType(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("licenseInfoHeaderText").description("default license info header text").optional()
+                        )));
     }
 
     @Test

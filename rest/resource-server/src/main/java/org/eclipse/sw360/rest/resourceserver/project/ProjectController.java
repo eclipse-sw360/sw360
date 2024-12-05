@@ -2512,6 +2512,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
+            description = "Get the default license info header text.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/licenseInfoHeader", method = RequestMethod.GET)
+    public void getLicenseInfoheaderText(HttpServletResponse response) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        try {
+            response.setContentType("application/json; charset=UTF-8");
+            response.setCharacterEncoding("UTF-8");
+            String licenseHeaderText = projectService.getLicenseInfoHeaderText();
+            JsonObject resultJson = new JsonObject();
+            resultJson.addProperty("licenseInfoHeaderText", licenseHeaderText);
+            response.getWriter().write(resultJson.toString());
+        } catch (IOException e) {
+            throw new SW360Exception(e.getMessage());
+        }
+    }
+
+    @Operation(
             description = "Get license clearing info for a project.",
             tags = {"Projects"}
     )
