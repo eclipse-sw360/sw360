@@ -18,7 +18,7 @@ import org.eclipse.sw360.vmcomponents.process.VMProcessHandler;
 
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.*;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 

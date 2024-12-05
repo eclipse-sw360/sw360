@@ -12,7 +12,7 @@ package org.eclipse.sw360.datahandler.permissions;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.junit.Test;
 import org.junit.runner.RunWith;

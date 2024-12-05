@@ -34,7 +34,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -297,7 +297,7 @@ public class SW360ReportService {
         return licenseInfoParsingResult.stream().map(LicenseInfoParsingResult::getLicenseInfo)
                 .flatMap(streamLicenseNameWithTexts).filter(filteredLicense).collect(Collectors.toSet());
     }
-    
+
     public ByteBuffer getLicenseResourceBundleBuffer() throws TException {
         return licenseClient.getLicenseReportDataStream();
     }

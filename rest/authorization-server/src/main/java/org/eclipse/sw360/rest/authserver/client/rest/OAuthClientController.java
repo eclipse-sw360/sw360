@@ -16,7 +16,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientEntity;
 import org.eclipse.sw360.rest.authserver.client.persistence.OAuthClientRepository;

@@ -1,9 +1,8 @@
 /*
  * Copyright Siemens AG, 2017-2018. Part of the SW360 Portal Project.
  *
- * This program and the accompanying materials are made
- * available under the terms of the Eclipse Public License 2.0
- * which is available at https://www.eclipse.org/legal/epl-2.0/
+ * This program and the accompanying materials are made available under the terms of the Eclipse
+ * Public License 2.0 which is available at https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
  */
@@ -22,8 +21,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -91,28 +90,25 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     @NonNull
     private final RestControllerHelper restControllerHelper;
 
-    private static final ImmutableSet<User._Fields> setOfUserProfileFields = ImmutableSet.<User._Fields>builder()
-            .add(User._Fields.WANTS_MAIL_NOTIFICATION)
-            .add(User._Fields.NOTIFICATION_PREFERENCES).build();
+    private static final ImmutableSet<User._Fields> setOfUserProfileFields =
+            ImmutableSet.<User._Fields>builder().add(User._Fields.WANTS_MAIL_NOTIFICATION)
+                    .add(User._Fields.NOTIFICATION_PREFERENCES).build();
 
-    @Operation(
-            summary = "List all of the service's users.",
-            description = "List all of the service's users.",
-            tags = {"Users"}
-    )
+    @Operation(summary = "List all of the service's users.",
+            description = "List all of the service's users.", tags = {"Users"})
     @RequestMapping(value = USERS_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers(
-            Pageable pageable,
+    public ResponseEntity<CollectionModel<EntityModel<User>>> getUsers(Pageable pageable,
             HttpServletRequest request,
-            @Parameter(description = "fullName of the users")
-            @RequestParam(value = "givenname", required = false) String givenname,
+            @Parameter(description = "fullName of the users") @RequestParam(value = "givenname",
+                    required = false) String givenname,
             @RequestParam(value = "email", required = false) String email,
-            @Parameter(description = "luceneSearch parameter to filter the users.")
-            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
+            @Parameter(description = "luceneSearch parameter to filter the users.") @RequestParam(
+                    value = "luceneSearch", required = false) boolean luceneSearch,
             @RequestParam(value = "lastname", required = false) String lastname,
             @RequestParam(value = "department", required = false) String department,
-            @RequestParam(value = "usergroup", required = false) UserGroup usergroup
-    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+            @RequestParam(value = "usergroup", required = false) UserGroup usergroup)
+            throws TException, URISyntaxException, PaginationParameterException,
+            ResourceClassNotFoundException {
         PaginationResult<User> paginationResult = null;
         List<User> sw360Users = new ArrayList<>();
         boolean isSearchByName = givenname != null && !givenname.isEmpty();
@@ -124,13 +120,15 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             Map<String, Set<String>> filterMap = new HashMap<>();
             if (CommonUtils.isNotNullEmptyOrWhitespace(givenname)) {
                 Set<String> values = CommonUtils.splitToSet(givenname);
-                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+                values = values.stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
                 filterMap.put(User._Fields.GIVENNAME.getFieldName(), values);
             }
             if (CommonUtils.isNotNullEmptyOrWhitespace(email)) {
                 Set<String> values = CommonUtils.splitToSet(email);
-                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+                values = values.stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
                 filterMap.put(User._Fields.EMAIL.getFieldName(), values);
             }
@@ -142,15 +140,16 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                 Set<String> values = CommonUtils.splitToSet(usergroup.toString());
                 filterMap.put(User._Fields.USER_GROUP.getFieldName(), values);
             }
-           if (CommonUtils.isNotNullEmptyOrWhitespace(lastname)) {
-             Set<String> values = CommonUtils.splitToSet(lastname);
-              values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+            if (CommonUtils.isNotNullEmptyOrWhitespace(lastname)) {
+                Set<String> values = CommonUtils.splitToSet(lastname);
+                values = values.stream()
+                        .map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
                         .collect(Collectors.toSet());
                 filterMap.put(User._Fields.LASTNAME.getFieldName(), values);
             }
             List<User> userByGivenName = userService.refineSearch(filterMap);
-            paginationResult = restControllerHelper.createPaginationResult(request, pageable, userByGivenName,
-                    SW360Constants.TYPE_USER);
+            paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                    userByGivenName, SW360Constants.TYPE_USER);
         } else {
             if (isSearchByName) {
                 sw360Users.addAll(userService.searchUserByName(givenname));
@@ -163,8 +162,8 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             } else {
                 sw360Users = userService.getAllUsers();
             }
-            paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Users,
-                    SW360Constants.TYPE_USER);
+            paginationResult = restControllerHelper.createPaginationResult(request, pageable,
+                    sw360Users, SW360Constants.TYPE_USER);
         }
         List<EntityModel<User>> userResources = new ArrayList<>();
         for (User sw360User : paginationResult.getResources()) {
@@ -186,16 +185,11 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
 
     // '/users/{xyz}' searches by email, as opposed to by id, as is customary,
     // for compatibility with older version of the REST API
-    @Operation(
-            summary = "Get a single user.",
-            description = "Get a single user by email.",
-            tags = {"Users"}
-    )
+    @Operation(summary = "Get a single user.", description = "Get a single user by email.",
+            tags = {"Users"})
     @RequestMapping(value = USERS_URL + "/{email:.+}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<User>> getUserByEmail(
-            @Parameter(description = "The email of the user to be retrieved.")
-            @PathVariable("email") String email
-    ) {
+    public ResponseEntity<EntityModel<User>> getUserByEmail(@Parameter(
+            description = "The email of the user to be retrieved.") @PathVariable("email") String email) {
         String decodedEmail;
         try {
             decodedEmail = URLDecoder.decode(email, "UTF-8");
@@ -208,51 +202,40 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         return new ResponseEntity<>(halResource, HttpStatus.OK);
     }
 
-    // unusual URL mapping for compatibility with older version of the REST API (see getUserByEmail())
-    @Operation(
-            summary = "Get a single user.",
-            description = "Get a single user by id.",
-            tags = {"Users"}
-    )
+    // unusual URL mapping for compatibility with older version of the REST API (see
+    // getUserByEmail())
+    @Operation(summary = "Get a single user.", description = "Get a single user by id.",
+            tags = {"Users"})
     @RequestMapping(value = USERS_URL + "/byid/{id:.+}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<User>> getUser(
-            @Parameter(description = "The id of the user to be retrieved.")
-            @PathVariable("id") String id
-    ) {
+    public ResponseEntity<EntityModel<User>> getUser(@Parameter(
+            description = "The id of the user to be retrieved.") @PathVariable("id") String id) {
         User sw360User = userService.getUser(id);
         HalResource<User> halResource = createHalUser(sw360User);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
     }
 
-    @Operation(
-            summary = "Create a new user.",
-            description = "Create a user (not in Liferay).",
-            tags = {"Users"}
-    )
+    @Operation(summary = "Create a new user.", description = "Create a user (not in Liferay).",
+            tags = {"Users"})
     @PostMapping(value = USERS_URL)
     public ResponseEntity<EntityModel<User>> createUser(
-            @Parameter(description = "The user to be created.")
-            @RequestBody User user
-    ) throws TException {
-        if(CommonUtils.isNullEmptyOrWhitespace(user.getPassword())) {
-            throw new HttpMessageNotReadableException("Password can not be null or empty or whitespace!");
+            @Parameter(description = "The user to be created.") @RequestBody User user)
+            throws TException {
+        if (CommonUtils.isNullEmptyOrWhitespace(user.getPassword())) {
+            throw new HttpMessageNotReadableException(
+                    "Password can not be null or empty or whitespace!");
         }
         String encodedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encodedPassword);
         User createdUser = userService.addUser(user);
         HalResource<User> halResource = createHalUser(createdUser);
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest().path("/{id}")
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
                 .buildAndExpand(createdUser.getId()).toUri();
 
         return ResponseEntity.created(location).body(halResource);
     }
 
-    @Operation(
-            summary = "Get current user's profile.",
-            description = "Get current user's profile.",
-            tags = {"Users"}
-    )
+    @Operation(summary = "Get current user's profile.", description = "Get current user's profile.",
+            tags = {"Users"})
     @GetMapping(value = USERS_URL + "/profile")
     public ResponseEntity<HalResource<User>> getUserProfile() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -260,58 +243,49 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         return ResponseEntity.ok(halUserResource);
     }
 
-    @Operation(
-            summary = "Update user's profile.",
-            description = "Update user's profile.",
-            tags = {"Users"}
-    )
+    @Operation(summary = "Update user's profile.", description = "Update user's profile.",
+            tags = {"Users"})
     @PatchMapping(value = USERS_URL + "/profile")
     public ResponseEntity<HalResource<User>> updateUserProfile(
-            @Parameter(description = "Updated user profile",
-                    schema = @Schema(example = """
-                            {
-                                "wantsMailNotification": true,
-                                "notificationPreferences": {
-                                    "releaseCONTRIBUTORS": true,
-                                    "componentCREATED_BY": false,
-                                    "releaseCREATED_BY": false,
-                                    "moderationREQUESTING_USER": false,
-                                    "projectPROJECT_OWNER": true,
-                                    "moderationMODERATORS": false,
-                                    "releaseSUBSCRIBERS": true,
-                                    "componentMODERATORS": true,
-                                    "projectMODERATORS": false,
-                                    "projectROLES": false,
-                                    "releaseROLES": true,
-                                    "componentROLES": true,
-                                    "projectLEAD_ARCHITECT": false,
-                                    "componentCOMPONENT_OWNER": true,
-                                    "projectSECURITY_RESPONSIBLES": true,
-                                    "clearingREQUESTING_USER": true,
-                                    "projectCONTRIBUTORS": true,
-                                    "componentSUBSCRIBERS": true,
-                                    "projectPROJECT_RESPONSIBLE": false,
-                                    "releaseMODERATORS": false
-                                }
-                            }
-                            """))
-            @RequestBody Map<String, Object> userProfile
-    ) throws TException {
+            @Parameter(description = "Updated user profile", schema = @Schema(example = """
+                    {
+                        "wantsMailNotification": true,
+                        "notificationPreferences": {
+                            "releaseCONTRIBUTORS": true,
+                            "componentCREATED_BY": false,
+                            "releaseCREATED_BY": false,
+                            "moderationREQUESTING_USER": false,
+                            "projectPROJECT_OWNER": true,
+                            "moderationMODERATORS": false,
+                            "releaseSUBSCRIBERS": true,
+                            "componentMODERATORS": true,
+                            "projectMODERATORS": false,
+                            "projectROLES": false,
+                            "releaseROLES": true,
+                            "componentROLES": true,
+                            "projectLEAD_ARCHITECT": false,
+                            "componentCOMPONENT_OWNER": true,
+                            "projectSECURITY_RESPONSIBLES": true,
+                            "clearingREQUESTING_USER": true,
+                            "projectCONTRIBUTORS": true,
+                            "componentSUBSCRIBERS": true,
+                            "projectPROJECT_RESPONSIBLE": false,
+                            "releaseMODERATORS": false
+                        }
+                    }
+                    """)) @RequestBody Map<String, Object> userProfile) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        sw360User = restControllerHelper.updateUserProfile(sw360User, userProfile, setOfUserProfileFields);
+        sw360User = restControllerHelper.updateUserProfile(sw360User, userProfile,
+                setOfUserProfileFields);
         userService.updateUser(sw360User);
         HalResource<User> halUserResource = new HalResource<>(sw360User);
         return ResponseEntity.ok(halUserResource);
     }
 
-    @Operation(
-            summary = "List all of rest api tokens.",
+    @Operation(summary = "List all of rest api tokens.",
             description = "List all of rest api tokens of current user.",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "List of tokens.")
-            },
-            tags = {"Users"}
-    )
+            responses = {@ApiResponse(responseCode = "200", description = "List of tokens.")},
+            tags = {"Users"})
     @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<RestApiToken>>> getUserRestApiTokens() {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -321,26 +295,22 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             return new ResponseEntity<>(CollectionModel.of(Collections.emptyList()), HttpStatus.OK);
         }
 
-        List<EntityModel<RestApiToken>> restApiResources = restApiTokens.stream()
-                .map(EntityModel::of)
-                .collect(Collectors.toList());
+        List<EntityModel<RestApiToken>> restApiResources =
+                restApiTokens.stream().map(EntityModel::of).collect(Collectors.toList());
         return new ResponseEntity<>(CollectionModel.of(restApiResources), HttpStatus.OK);
     }
 
-    @Operation(
-            summary = "Create rest api token.",
+    @Operation(summary = "Create rest api token.",
             description = "Create rest api token for current user.",
             responses = {
                     @ApiResponse(responseCode = "201", description = "Create token successfully."),
-                    @ApiResponse(responseCode = "500", description = "Create token failure.")
-            },
-            tags = {"Users"}
-    )
+                    @ApiResponse(responseCode = "500", description = "Create token failure.")},
+            tags = {"Users"})
     @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.POST)
     public ResponseEntity<String> createUserRestApiToken(
-            @Parameter(description = "Token request", schema = @Schema(implementation = RestApiToken.class))
-            @RequestBody Map<String, Object> requestBody
-    ) throws TException {
+            @Parameter(description = "Token request", schema = @Schema(
+                    implementation = RestApiToken.class)) @RequestBody Map<String, Object> requestBody)
+            throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RestApiToken restApiToken = userService.convertToRestApiToken(requestBody, sw360User);
         String token = RandomStringUtils.random(20, true, true);
@@ -351,24 +321,23 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         return new ResponseEntity<>(token, HttpStatus.CREATED);
     }
 
-    @Operation(
-            summary = "Delete rest api token.",
+    @Operation(summary = "Delete rest api token.",
             description = "Delete rest api token by name for current user.",
             responses = {
                     @ApiResponse(responseCode = "204", description = "Revoke token successfully."),
-                    @ApiResponse(responseCode = "404", description = "Token name not found.")
-            },
-            tags = {"Users"}
-    )
+                    @ApiResponse(responseCode = "404", description = "Token name not found.")},
+            tags = {"Users"})
     @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.DELETE)
     public ResponseEntity<String> revokeUserRestApiToken(
-            @Parameter(description = "Name of token to be revoked.", example = "MyToken")
-            @RequestParam("name") String tokenName
-    ) throws TException {
+            @Parameter(description = "Name of token to be revoked.",
+                    example = "MyToken") @RequestParam("name") String tokenName)
+            throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         if (!userService.isTokenNameExisted(sw360User, tokenName)) {
-            return new ResponseEntity<>("Token not found: " + StringEscapeUtils.escapeHtml(tokenName), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(
+                    "Token not found: " + StringEscapeUtils.escapeHtml4(tokenName),
+                    HttpStatus.NOT_FOUND);
         }
 
         sw360User.getRestApiTokens().removeIf(t -> t.getName().equals(tokenName));
@@ -386,26 +355,16 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         return new HalResource<>(sw360User);
     }
 
-    @Operation(
-            summary = "Fetch group list of a user.",
-            description = "Fetch the list of group for a particular user.",
-            tags = {"Users"}
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User and its groups.",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    examples = @ExampleObject(
-                                            value = """
-                                    {
-                                        "primaryGrpList": ["DEPARTMENT"],
-                                        "secondaryGrpList": ["DEPARTMENT1","DEPARTMENT2"]
-                                    }
-                                    """
-                                    ))
-                    }
-            )
-    })
+    @Operation(summary = "Fetch group list of a user.",
+            description = "Fetch the list of group for a particular user.", tags = {"Users"})
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "User and its groups.",
+            content = {
+                    @Content(mediaType = "application/json", examples = @ExampleObject(value = """
+                            {
+                                "primaryGrpList": ["DEPARTMENT"],
+                                "secondaryGrpList": ["DEPARTMENT1","DEPARTMENT2"]
+                            }
+                            """))})})
     @RequestMapping(value = USERS_URL + "/groupList", method = RequestMethod.GET)
     public ResponseEntity<Map<String, List<String>>> getGroupList() {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -416,7 +375,8 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         if (mainDepartment != null && !mainDepartment.isEmpty()) {
             primaryGrpList.add(mainDepartment);
         }
-        Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = sw360User.getSecondaryDepartmentsAndRoles();
+        Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles =
+                sw360User.getSecondaryDepartmentsAndRoles();
         if (secondaryDepartmentsAndRoles != null) {
             secondaryGrpList.addAll(secondaryDepartmentsAndRoles.keySet());
         }
