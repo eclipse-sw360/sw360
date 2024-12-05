@@ -90,6 +90,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
@@ -1573,21 +1574,68 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Updated values", schema = @Schema(implementation = Project.class))
             @RequestBody Map<String, Object> reqBodyMap
     ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        Project sw360Project = projectService.getProjectForUserById(id, user);
-        Project updateProject = convertToProject(reqBodyMap);
-        updateProject.unsetReleaseRelationNetwork();
-        sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
-        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP && updateProject.getReleaseIdToUsage() != null) {
-            sw360Project.unsetReleaseRelationNetwork();
-            projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
+        try{
+            User user = restControllerHelper.getSw360UserFromAuthentication();
+            Project sw360Project = projectService.getProjectForUserById(id, user);
+            boolean editPermitted = this.checkEditablePermission(sw360Project.getClearingState().name(),user,reqBodyMap, sw360Project);
+            if (!editPermitted) {
+                throw new TException("No write permission for project");
+            }
+            Project updateProject = convertToProject(reqBodyMap);
+            updateProject.unsetReleaseRelationNetwork();
+            sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
+            if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP && updateProject.getReleaseIdToUsage() != null) {
+                sw360Project.unsetReleaseRelationNetwork();
+                projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
+            }
+            RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
+            HalResource<Project> userHalResource = createHalProject(sw360Project, user);
+            if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
+                return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+            }
+            return new ResponseEntity<>(userHalResource, HttpStatus.OK);
         }
-        RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
-        HalResource<Project> userHalResource = createHalProject(sw360Project, user);
-        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        catch (SW360Exception sw360Exception) {
+            log.error(sw360Exception.getWhy());
+            throw new TException("No write permission for project");
         }
-        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
+
+    private boolean checkEditablePermission(String name, User user, Map<String, Object> reqBodyMap, Project sw360Project) {
+        if (!name.equals(ProjectClearingState.CLOSED.name()) || PermissionUtils.isAdmin(user)) {
+            return true;
+        } else {
+            if ((reqBodyMap.containsKey("attachments") || reqBodyMap.containsKey("obligationsText")
+                    || reqBodyMap.containsKey("linkedObligationId")) && !PermissionUtils.isAdmin(user)) {
+                return false;
+            }
+            String createdBy = sw360Project.getCreatedBy();
+            String projectResponsible = sw360Project.getProjectResponsible();
+            Set<String> projModerators = sw360Project.getModerators();
+            Set<String> projContributors = sw360Project.getContributors();
+            String leadArchitect = sw360Project.getLeadArchitect();
+            Set<String> editableParmsSet = new HashSet<>();
+            editableParmsSet.add("enableSvm");
+            editableParmsSet.add("enableVulnerabilitiesDisplay");
+            editableParmsSet.add("projectManager");
+            editableParmsSet.add("projectOwner");
+            editableParmsSet.add("securityResponsibles");
+            editableParmsSet.add("externalIds");
+            editableParmsSet.add("state");
+            editableParmsSet.add("phaseOutSince");
+            Optional<String> match = editableParmsSet.stream()
+                    .filter(reqBodyMap::containsKey)
+                    .findAny();
+            if (match.isPresent() && (PermissionUtils.isAdmin(user)
+                    || PermissionUtils.isClearingAdmin(user)
+                    || user.getUserGroup().name().equalsIgnoreCase(UserGroup.CLEARING_EXPERT.name())
+                    || PermissionUtils.isClearingExpert(user)) || user.getEmail().equals(createdBy)
+                    || user.getEmail().equals(projectResponsible) || user.getEmail().equals(leadArchitect)
+                    || projModerators.contains(user.getEmail()) || projContributors.contains(user.getEmail())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Operation(
