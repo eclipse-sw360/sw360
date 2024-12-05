@@ -80,6 +80,7 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
         clearingRequest.setRequestingUser("test.admin@sw60.org");
         clearingRequest.setRequestingUserComment("testing comment");
         clearingRequest.setClearingType(ClearingRequestType.DEEP);
+        clearingRequest.setClearingSize(ClearingRequestSize.VERY_SMALL);
         clearingRequest.setTimestamp(1599285578);
         clearingRequest.setModifiedOn(1599285580);
 
@@ -228,6 +229,7 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("projectId").description("The id of the Project, for which clearing request is created"),
                                 fieldWithPath("requestedClearingDate").description("The requested clearing date of releases"),
                                 fieldWithPath("clearingType").description("The clearing type of the request, e.g., DEEP."),
+                                fieldWithPath("clearingSize").description("The size of the clearing request, determined dynamically based on the maximum number of open releases. Reflects the effort required to clear the request. Possible values are: " + Arrays.asList(ClearingRequestSize.values())),
                                 fieldWithPath("requestingUser").description("The user who created the clearing request"),
                                 fieldWithPath("requestingUserComment").description("The comment from requesting user"),
                                 fieldWithPath("priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
@@ -263,6 +265,7 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("projectId").description("The id of the Project, for which clearing request is created"),
                                 fieldWithPath("requestedClearingDate").description("The requested clearing date of releases"),
                                 fieldWithPath("clearingType").description("The clearing type of the request, e.g., DEEP."),
+                                fieldWithPath("clearingSize").description("The size of the clearing request, determined dynamically based on the maximum number of open releases. Reflects the effort required to clear the request. Possible values are: " + Arrays.asList(ClearingRequestSize.values())),
                                 fieldWithPath("requestingUser").description("The user who created the clearing request"),
                                 fieldWithPath("requestingUserComment").description("The comment from requesting user"),
                                 fieldWithPath("priority").description("The priority of clearing request. Possible values are:  " + Arrays.asList(ClearingRequestPriority.values())),
@@ -442,6 +445,7 @@ public class ClearingRequestSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.requestingUser").description("Requesting user detail"),
                                 subsectionWithPath("_links").description("Links to other resources"),
                                 fieldWithPath("clearingType").description("The type of clearing, e.g., DEEP"),
+                                fieldWithPath("clearingSize").description("The size of the clearing request, determined dynamically based on the maximum number of open releases. Reflects the effort required to clear the request. Possible values are: " + Arrays.asList(ClearingRequestSize.values())),
                                 fieldWithPath("_embedded.totalRelease").description("Total number of releases"),
                                 fieldWithPath("_embedded.openRelease").description("Number of open releases"),
                                 fieldWithPath("_embedded.lastUpdatedOn").description("Last updated date for the clearing request"),
