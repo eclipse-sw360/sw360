@@ -29,6 +29,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
+import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
@@ -40,6 +41,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,12 +52,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
@@ -80,6 +84,12 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360ModerationRequestService moderationRequestServiceMock;
+
+    @MockBean
+    private Sw360ProjectService projectServiceMock;
+
+    @MockBean
+    private Project project;
 
     @Before
     public void before() throws TException, IOException {
@@ -190,6 +200,7 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         user.setId("123456789");
         user.setEmail(testUserId);
         user.setFullname("John Doe");
+        user.setDepartment("xyz");
 
         given(this.releaseServiceMock.getReleaseForUserById(eq(moderationRequest.getDocumentId()), any())).willReturn(releaseAdditions);
         given(this.userServiceMock.getUserByEmail(moderationRequest.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
@@ -482,5 +493,25 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.number").description("Number of the current page"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+    
+    @Test
+    public void should_document_check_user_message_moderationrequests() throws Exception {
+        project = new Project();
+        project.setId("98745");
+        project.setName("Test Project");
+        project.setProjectType(ProjectType.PRODUCT);
+        project.setVersion("1");
+        project.setCreatedOn("2021-04-27");
+        project.setCreatedBy("admin@sw360.org");
+        given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
+
+       this.mockMvc.perform(post("/api/moderationrequest/validate")
+                .param("entityType", "PROJECT")
+                .param("entityId", project.getId())
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+            .andExpect(status().isOk())
+            .andReturn();
     }
 }
