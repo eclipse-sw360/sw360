@@ -124,7 +124,7 @@ public class CycloneDxBOMImporter {
             "github.com", "https://github.com/%s/%s",
             "gitlab.com", "https://gitlab.com/%s/%s",
             "bitbucket.org", "https://bitbucket.org/%s/%s",
-            "cs.opensource.google", "https://cs.opensource.google/%s/%s",
+            "cs.opensource.google", "https://cs.opensource.google/%s/%s/%s",
             "go.googlesource.com", "https://go.googlesource.com/%s",
             "pypi.org", "https://pypi.org/project/%s"
     );
@@ -995,6 +995,51 @@ public class CycloneDxBOMImporter {
     private String getComponentNameFromVCS(String vcsUrl, boolean isGetVendorandName) {
         String compName = vcsUrl.replaceAll(SCHEMA_PATTERN, "$1");
         String[] parts = compName.split("/");
+
+        String domain = parts[0];
+        String[] pathParts = Arrays.copyOfRange(parts, 1, parts.length);
+
+        if (VCS_HOSTS.containsKey(domain)) {
+            switch (domain) {
+                case "github.com":
+                case "bitbucket.org":
+                    if(pathParts.length >= 2){
+                        if(isGetVendorandName){
+                            return String.join("/", Arrays.copyOfRange(pathParts, 0, pathParts.length));
+                        }else{
+                            return pathParts[pathParts.length - 1];
+                        }
+                    }
+
+                case "gitlab.com":
+                case "cs.opensource.google":
+                    if(pathParts.length >= 2){
+                        if(isGetVendorandName){
+                            return String.join("/", Arrays.copyOfRange(pathParts, 0, pathParts.length));
+                        }else{
+                            return String.join("/", Arrays.copyOfRange(pathParts, 1, pathParts.length));
+                        }
+                    }
+
+                case"go.googlesource.com":
+                    if(pathParts.length >= 1){
+                        if(isGetVendorandName){
+                            return String.join("/", domain, pathParts[pathParts.length - 1]);
+                        }else{
+                            return pathParts[pathParts.length - 1];
+                        }
+                    }
+
+                case"pypi.org":
+                    if(pathParts.length >= 2){
+                        if(isGetVendorandName){
+                            return String.join("/", domain, pathParts[pathParts.length - 1]);
+                        }else{
+                            return pathParts[pathParts.length - 1];
+                        }
+                    }
+            }
+        }
 
         if (parts.length >= 2) {
             if (isGetVendorandName) {
