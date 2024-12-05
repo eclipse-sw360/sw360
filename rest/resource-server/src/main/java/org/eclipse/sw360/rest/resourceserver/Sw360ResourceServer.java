@@ -10,10 +10,17 @@
 
 package org.eclipse.sw360.rest.resourceserver;
 
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
@@ -25,6 +32,7 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
 import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -45,7 +53,7 @@ import java.util.*;
 @Import(Sw360CORSFilter.class)
 public class Sw360ResourceServer extends SpringBootServletInitializer {
 
-    private static final String REST_BASE_PATH = "/api";
+    public static final String REST_BASE_PATH = "/api";
 
     @Value("${spring.data.rest.default-page-size:10}")
     private int defaultPageSize;
@@ -168,6 +176,36 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                 .info(new Info().title("SW360 API").license(new License().name("EPL-2.0")
                                 .url("https://github.com/eclipse-sw360/sw360/blob/main/LICENSE"))
                         .version(restVersionString))
-                .servers(List.of(server));
+                .servers(List.of(server))
+                .path("/health", new PathItem().get(
+                        new Operation().tags(Collections.singletonList("Health"))
+                                .summary("Health endpoint").operationId("health")
+                                .responses(new ApiResponses().addApiResponse("200",
+                                        new ApiResponse().description("OK")
+                                                .content(new Content()
+                                                        .addMediaType("application/json", new MediaType()
+                                                                .example("""
+                                                                        {
+                                                                          "status": "UP",
+                                                                          "components": {
+                                                                            "SW360Rest": {
+                                                                              "status": "UP",
+                                                                              "details": {
+                                                                                "Rest State": {
+                                                                                  "isDbReachable": true,
+                                                                                  "isThriftReachable": true
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            "ping": {
+                                                                              "status": "UP"
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                        """)
+                                                                .schema(new Schema<Health>())
+                                                ))
+                                ))
+                ));
     }
 }
