@@ -51,6 +51,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
@@ -99,6 +100,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
+import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
@@ -1654,5 +1656,9 @@ public class RestControllerHelper<T> {
             }
         }
         return clearingRequestService.getClearingRequestById(clearingRequest.getId(), sw360User);
+    }
+    
+    public boolean isWriteActionAllowed(Object object, User user) {
+        return makePermission(object, user).isActionAllowed(RequestedAction.WRITE);
     }
 }
