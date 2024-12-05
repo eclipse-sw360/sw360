@@ -1876,7 +1876,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 							ThriftEnumUtils.MAP_ATTACHMENT_TYPE_SHORT_STRING.get(type));
 				}
 			}
-			final ImmutableSet<String> fieldsToKeep = ImmutableSet.of("name", "version", ATTACHMENTS);
+			final ImmutableSet<String> fieldsToKeep = ImmutableSet.of("name", "version", "componentType", "clearingState", ATTACHMENTS);
 			Map<String, Object> valueToKeep = new LinkedHashMap<>();
 			Link releaseLink = null;
 			if (relMap != null) {
