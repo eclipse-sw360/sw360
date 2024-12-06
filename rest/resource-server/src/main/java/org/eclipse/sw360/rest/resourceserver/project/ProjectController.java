@@ -167,6 +167,7 @@ import java.util.stream.Stream;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.wrapThriftOptionalReplacement;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
+import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -195,6 +196,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             .put(Project._Fields.RELEASE_RELATION_NETWORK, "dependencyNetwork").build();
     private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
             .put("message", "Moderation request is created").build();
+    private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT = ImmutableMap.<String, String>builder()
+            .put("message", "Unauthorized user or empty commit message passed.").build();
     private static final List<String> enumReleaseRelationshipValues = Stream.of(ReleaseRelationship.values())
             .map(ReleaseRelationship::name)
             .collect(Collectors.toList());
@@ -630,6 +633,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         HalResource<Project> halResource = createHalProject(project, sw360User);
         return ResponseEntity.created(location).body(halResource);
     }
+    
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
@@ -714,80 +718,90 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                             // TODO: Add example for MAP value
                     }
             )
-            @RequestBody List<String> projectIdsInRequestBody
+            @RequestBody List<String> projectIdsInRequestBody,
+            @RequestParam(value = "comment", required = false) String comment
     ) throws URISyntaxException, TException {
 
-    User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-    Project sourceProj = projectService.getProjectForUserById(id, sw360User);
-    Map<String, String> responseMap = new HashMap<>();
-    HttpStatus status = null;
-    Set<String> alreadyLinkedIds= new HashSet<>();
-    Set<String> idsSentToModerator = new HashSet<>();
-    Set<String> idsWithCyclicPath = new HashSet<>();
-    Set<String> linkedProjectIds = new HashSet<>();
-    int count = 0;
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Project sourceProj = projectService.getProjectForUserById(id, sw360User);
+        Map<String, String> responseMap = new HashMap<>();
+        HttpStatus status = null;
+        Set<String> alreadyLinkedIds = new HashSet<>();
+        Set<String> idsSentToModerator = new HashSet<>();
+        Set<String> idsWithCyclicPath = new HashSet<>();
+        Set<String> linkedProjectIds = new HashSet<>();
+        int count = 0;
 
-    try {
+        try {
 
-        for(String projId: projectIdsInRequestBody) {
-            Project proj = projectService.getProjectForUserById(projId, sw360User);
-            Map<String, ProjectProjectRelationship> linkedProject = Optional.ofNullable(proj.getLinkedProjects()).orElse(new HashMap<>());
+            for (String projId : projectIdsInRequestBody) {
+                Project proj = projectService.getProjectForUserById(projId, sw360User);
+                Map<String, ProjectProjectRelationship> linkedProject = Optional.ofNullable(proj.getLinkedProjects())
+                        .orElse(new HashMap<>());
 
-            if (linkedProject.keySet().contains(id)) {
-                alreadyLinkedIds.add(projId);
-                continue;
+                if (linkedProject.keySet().contains(id)) {
+                    alreadyLinkedIds.add(projId);
+                    continue;
+                }
+
+                linkedProject.put(id, new ProjectProjectRelationship(ProjectRelationship.CONTAINED)
+                        .setEnableSvm(sourceProj.isEnableSvm()));
+                proj.setLinkedProjects(linkedProject);
+                String cyclicLinkedProjectPath = projectService.getCyclicLinkedProjectPath(proj, sw360User);
+                if (!CommonUtils.isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
+                    idsWithCyclicPath.add(cyclicLinkedProjectPath);
+                    continue;
+                }
+
+                RequestStatus updatedstatus = projectService.updateProject(proj, sw360User);
+                if (updatedstatus == RequestStatus.SUCCESS) {
+                    linkedProjectIds.add(projId);
+                }
+
+                if (updatedstatus == RequestStatus.SENT_TO_MODERATOR) {
+                    idsSentToModerator.add(projId);
+                }
             }
 
-            linkedProject.put(id, new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(sourceProj.isEnableSvm()));
-            proj.setLinkedProjects(linkedProject);
-            String cyclicLinkedProjectPath = projectService.getCyclicLinkedProjectPath(proj, sw360User);
-            if (!CommonUtils.isNullEmptyOrWhitespace(cyclicLinkedProjectPath)) {
-                idsWithCyclicPath.add(cyclicLinkedProjectPath);
-                continue;
+            if (!alreadyLinkedIds.isEmpty()) {
+                responseMap.put("Message regarding already linked project(s)", "Project ids are: " + alreadyLinkedIds);
+                status = HttpStatus.CONFLICT;
+                count++;
+            }
+            if (!idsWithCyclicPath.isEmpty()) {
+                responseMap.put("Message regarding project(s) having cyclic path",
+                        "Cyclic linked project path: " + idsWithCyclicPath);
+                status = HttpStatus.CONFLICT;
+                count++;
+            }
+            if (!idsSentToModerator.isEmpty()) {
+                responseMap.put("Message regarding project(s) sent to Moderator",
+                        "Project ids are: " + idsSentToModerator);
+                status = HttpStatus.ACCEPTED;
+                count++;
+            }
+            if (!linkedProjectIds.isEmpty()) {
+                responseMap.put("Message regarding successfully linked project(s)",
+                        "Project ids are: " + linkedProjectIds);
+                status = HttpStatus.CREATED;
+                count++;
+            }
+            if (count > 1) {
+                status = HttpStatus.CONFLICT;
             }
 
-            RequestStatus updatedstatus = projectService.updateProject(proj, sw360User);
-            if (updatedstatus == RequestStatus.SUCCESS) {
-                linkedProjectIds.add(projId);
-            }
-
-            if (updatedstatus == RequestStatus.SENT_TO_MODERATOR) {
-                idsSentToModerator.add(projId);
-            }
+        } catch (TException e) {
+            responseMap.put("ErrorMsg: ", "Error fetching project");
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+            log.error("Error: ", e);
         }
 
-        if (!alreadyLinkedIds.isEmpty()) {
-            responseMap.put("Message regarding already linked project(s)", "Project ids are: " + alreadyLinkedIds);
-            status = HttpStatus.CONFLICT;
-            count ++;
-        }
-        if (!idsWithCyclicPath.isEmpty()) {
-            responseMap.put("Message regarding project(s) having cyclic path", "Cyclic linked project path: " + idsWithCyclicPath);
-            status = HttpStatus.CONFLICT;
-            count ++;
-        }
-        if (!idsSentToModerator.isEmpty()) {
-            responseMap.put("Message regarding project(s) sent to Moderator", "Project ids are: " + idsSentToModerator);
-            status = HttpStatus.ACCEPTED;
-            count ++;
-        }
-        if (!linkedProjectIds.isEmpty()) {
-            responseMap.put("Message regarding successfully linked project(s)", "Project ids are: " + linkedProjectIds);
-            status = HttpStatus.CREATED;
-            count ++;
-        }
-        if (count > 1) {
-            status = HttpStatus.CONFLICT;
-        }
-
-    } catch (TException e) {
-          responseMap.put("ErrorMsg: ", "Error fetching project");
-          status = HttpStatus.INTERNAL_SERVER_ERROR;
-          log.error("Error: ", e);
+        HalResource responseResource = new HalResource(responseMap);
+        return new ResponseEntity<>(responseResource, status);
     }
 
-    HalResource responseResource = new HalResource(responseMap);
-    return new ResponseEntity<>(responseResource, status);
+    private boolean isWriteActionAllowedOnProject(Project project, User user) {
+        return makePermission(project, user).isActionAllowed(RequestedAction.WRITE);
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
@@ -807,14 +821,22 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                             // TODO: Add example for MAP value
                     }
             )
-            @RequestBody Object releaseURIs
-    ) throws URISyntaxException, TException {
-        RequestStatus patchReleasesStatus = addOrPatchReleasesToProject(id, releaseURIs, true);
-        if (patchReleasesStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
+            @RequestBody Object releaseURIs,
+            @RequestParam(value = "comment", required = false) String comment
+	) throws URISyntaxException, TException {
+		final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		Project project = projectService.getProjectForUserById(id, sw360User);
+		sw360User.setCommentMadeDuringModerationRequest(comment);
+		if (!isWriteActionAllowedOnProject(project, sw360User) && comment == null) {
+			return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.ACCEPTED);
+		} else {
+			RequestStatus patchReleasesStatus = addOrPatchReleasesToProject(id, releaseURIs, true);
+			if (patchReleasesStatus == RequestStatus.SENT_TO_MODERATOR) {
+				return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+			}
+			return new ResponseEntity<>(HttpStatus.CREATED);
+		}
+	}
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
@@ -833,17 +855,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Set of package IDs to be linked.",
                     example = "[\"3765276512\",\"5578999\",\"3765276513\"]"
             )
-            @RequestBody Set<String> packagesInRequestBody
-    ) throws URISyntaxException, TException {
-        if(!packageService.validatePackageIds(packagesInRequestBody)){
-            return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
-        }
-        RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true);
-        if (linkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
+            @RequestBody Set<String> packagesInRequestBody,
+            @RequestParam(value = "comment", required = false) String comment
+	) throws URISyntaxException, TException {
+		if (!packageService.validatePackageIds(packagesInRequestBody)) {
+			return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
+		}
+		final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		Project project = projectService.getProjectForUserById(id, sw360User);
+		sw360User.setCommentMadeDuringModerationRequest(comment);
+		if (!isWriteActionAllowedOnProject(project, sw360User) && comment == null) {
+			return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.ACCEPTED);
+		} else {
+			RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true);
+			if (linkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
+				return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+			}
+			return new ResponseEntity<>(HttpStatus.CREATED);
+		}
+	}
 
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
@@ -862,17 +892,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Set of package IDs to be linked.",
                     example = "[\"3765276512\",\"5578999\",\"3765276513\"]"
             )
-            @RequestBody Set<String> packagesInRequestBody
-    ) throws URISyntaxException, TException {
-        if(!packageService.validatePackageIds(packagesInRequestBody)){
-            return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
-        }
-        RequestStatus patchPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false);
-        if (patchPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(HttpStatus.CREATED);
-    }
+            @RequestBody Set<String> packagesInRequestBody,
+            @RequestParam(value = "comment", required = false) String comment
+	) throws URISyntaxException, TException {
+		if (!packageService.validatePackageIds(packagesInRequestBody)) {
+			return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
+		}
+		final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+		Project project = projectService.getProjectForUserById(id, sw360User);
+		sw360User.setCommentMadeDuringModerationRequest(comment);
+		if (!isWriteActionAllowedOnProject(project, sw360User) && comment == null) {
+			return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.ACCEPTED);
+		} else {
+			RequestStatus patchPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false);
+			if (patchPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
+				return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+			}
+			return new ResponseEntity<>(HttpStatus.CREATED);
+		}
+	}
 
     @Operation(
             description = "Get releases of a single project.",
@@ -1577,17 +1615,26 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project sw360Project = projectService.getProjectForUserById(id, user);
         Project updateProject = convertToProject(reqBodyMap);
         updateProject.unsetReleaseRelationNetwork();
-        sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
-        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP && updateProject.getReleaseIdToUsage() != null) {
-            sw360Project.unsetReleaseRelationNetwork();
-            projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
+        String comment = (String) reqBodyMap.get("comment");
+        user.setCommentMadeDuringModerationRequest(comment);
+
+        if (isWriteActionAllowedOnProject(updateProject, user) && comment == null) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.ACCEPTED);
+        } else {
+            sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
+                    mapOfProjectFieldsToRequestBody);
+            if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP
+                    && updateProject.getReleaseIdToUsage() != null) {
+                sw360Project.unsetReleaseRelationNetwork();
+                projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
+            }
+            RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
+            HalResource<Project> userHalResource = createHalProject(sw360Project, user);
+            if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
+                return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+            }
+            return new ResponseEntity<>(userHalResource, HttpStatus.OK);
         }
-        RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
-        HalResource<Project> userHalResource = createHalProject(sw360Project, user);
-        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
     @Operation(
