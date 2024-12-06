@@ -34,7 +34,6 @@ import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.hamcrest.Matchers;
@@ -1344,5 +1343,13 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                              parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
                                      + "Possible values are `<true|false>`")
                      )));
+    }
+
+    @Test
+    public void should_subscribe_user_to_component() throws Exception {
+        mockMvc.perform(post("/api/components/" + angularComponent.getId() + "/subscriptions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isOk());
     }
 }
