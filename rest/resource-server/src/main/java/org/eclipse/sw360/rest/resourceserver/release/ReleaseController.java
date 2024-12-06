@@ -1529,6 +1529,29 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
     }
 
+    @Operation(
+            summary = "Handle release subcription for requesting user.",
+            description = "Handle release subcription for requesting user.",
+            tags = {"Releases"}
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @PostMapping(value = RELEASES_URL + "/{id}/subscriptions")
+    public ResponseEntity<String> handleReleaseSubscriptions(
+            @Parameter(description = "The ID of the release.")
+            @PathVariable("id") String releaseId
+    ) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Release releaseById = releaseService.getReleaseForUserById(releaseId, user);
+        Set<String> subscribers = releaseById.getSubscribers();
+        if (subscribers.contains(user.getEmail())) {
+            releaseService.unsubscribeRelease(user, releaseId);
+            return new ResponseEntity<>("Release has been unsubscribed", HttpStatus.OK);
+        } else {
+            releaseService.subscribeRelease(user, releaseId);
+            return new ResponseEntity<>("Release has been subscribed", HttpStatus.OK);
+        }
+    }
+
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ReleaseController.class).slash("api" + RELEASES_URL).withRel("releases"));
