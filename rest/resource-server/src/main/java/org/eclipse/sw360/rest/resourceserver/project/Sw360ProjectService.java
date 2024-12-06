@@ -1131,6 +1131,13 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return sw360ProjectClient.getMyAccessibleProjectCounts(sw360User);
     }
 
+    public String getLicenseInfoHeaderText() throws TException {
+        ThriftClients thriftClients = new ThriftClients();
+        final LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
+        String text = licenseClient.getDefaultLicenseInfoHeaderText(null);
+        return text;
+    }
+
     /**
      * Import SPDX SBOM using the method on the thrift client.
      * @param user                User uploading the SBOM

@@ -973,6 +973,20 @@ include::{snippets}/should_document_get_project_count/response-fields.adoc[]
 ===== Example response
 include::{snippets}/should_document_get_project_count/http-response.adoc[]
 
+[[resources-project-getprojectcount]]
+==== Get license info header text
+
+A `GET` request will get the default license info header text.
+
+===== Example request
+include::{snippets}/should_document_get_license_info_header/curl-request.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_license_info_header/response-fields.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_license_info_header/http-response.adoc[]
+
 [[resources-project-get-summaryadministraion-project]]
 ==== Administration and Summary Info
 
