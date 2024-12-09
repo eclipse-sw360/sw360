@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  */
 
-package org.eclipse.sw360.rest.resourceserver;
+package org.eclipse.sw360.rest.resourceserver.actuator;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.thrift.TException;

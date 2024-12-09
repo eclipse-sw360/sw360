@@ -4,6 +4,7 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.vmcomponents.process;
 
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMAction;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMComponent;
 import org.eclipse.sw360.datahandler.thrift.vmcomponents.VMMatch;
@@ -14,7 +15,6 @@ import org.apache.thrift.TBase;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.Vulnerability;
-import org.eclipse.sw360.vmcomponents.common.SVMConstants;
 import org.eclipse.sw360.vmcomponents.common.SVMUtils;
 import org.eclipse.sw360.vmcomponents.common.VMResult;
 import org.eclipse.sw360.vmcomponents.handler.SVMSyncHandler;
@@ -144,7 +144,7 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
                     }
                     break;
 
-                case MATCH_SVM: 
+                case MATCH_SVM:
                     // try to find a match via cpe and text
                     VMResult<VMMatch> componentMatchResult = syncHandler.findMatchByComponent(this.input.get(0));
                     if (triggerNextStep
@@ -154,7 +154,7 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
                             && !componentMatchResult.elements.isEmpty()
                             && componentMatchResult.requestSummary.totalAffectedElements > 0){
                         // re-queue for get Vulnerabilities
-                        VMProcessHandler.getVulnerabilitiesByComponentId(this.input.get(0), SVMConstants.VULNERABILITIES_PER_COMPONENT_URL, triggerNextStep);
+                        VMProcessHandler.getVulnerabilitiesByComponentId(this.input.get(0), SW360Constants.SVM_VULNERABILITIES_PER_COMPONENT_URL, triggerNextStep);
                     }
                     break;
 
@@ -168,7 +168,7 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
                             && !releaseMatchResult.elements.isEmpty()
                             && releaseMatchResult.requestSummary.totalAffectedElements > 0){
                         // re-queue for get Vulnerabilities
-                        VMProcessHandler.getVulnerabilitiesByComponentIds(releaseMatchResult.elements, SVMConstants.VULNERABILITIES_PER_COMPONENT_URL, triggerNextStep);
+                        VMProcessHandler.getVulnerabilitiesByComponentIds(releaseMatchResult.elements, SW360Constants.SVM_VULNERABILITIES_PER_COMPONENT_URL, triggerNextStep);
                     }
                     break;
 
@@ -181,7 +181,7 @@ public class VMProcessor<T extends TBase> implements Runnable, Comparable<VMProc
                             && !vulResult.elements.isEmpty()
                             && vulResult.requestSummary.totalAffectedElements > 0){
                         // get master data of the vulnerabilities
-                        VMProcessHandler.getMasterData(Vulnerability.class, vulResult.elements, SVMConstants.VULNERABILITIES_URL, true);
+                        VMProcessHandler.getMasterData(Vulnerability.class, vulResult.elements, SW360Constants.SVM_VULNERABILITIES_URL, true);
                     }
                     break;
 

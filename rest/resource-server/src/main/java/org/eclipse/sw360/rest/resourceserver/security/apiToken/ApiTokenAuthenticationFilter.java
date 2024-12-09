@@ -12,7 +12,7 @@ package org.eclipse.sw360.rest.resourceserver.security.apiToken;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -58,7 +58,7 @@ public class ApiTokenAuthenticationFilter implements Filter {
                     Authentication auth = new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS);
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
-            } else if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED && !headers.isEmpty()
+            } else if (SW360Constants.REST_IS_JWKS_VALIDATION_ENABLED && !headers.isEmpty()
                     && headers.containsKey(OIDC_AUTHENTICATION_TOKEN_PARAMETER)) {
                 String authorization = headers.get(OIDC_AUTHENTICATION_TOKEN_PARAMETER);
                 String[] token = authorization.trim().split("\\s+");

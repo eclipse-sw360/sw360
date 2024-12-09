@@ -10,6 +10,7 @@
 
 package org.eclipse.sw360.datahandler.permissions;
 
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenProject;
 import org.eclipse.sw360.datahandler.permissions.jgivens.ThenVisible;
 import org.eclipse.sw360.datahandler.permissions.jgivens.WhenComputeVisibility;
@@ -48,7 +49,7 @@ public class ProjectPermissionsVisibilityTest extends ScenarioTest<GivenProject,
     @DataProvider
     public static Object[][] projectVisibilityProvider() {
         // @formatter:off
-        if (PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED) {
+        if (SW360Constants.IS_ADMIN_PRIVATE_ACCESS_ENABLED) {
             return new Object[][] {
                     //test otherDeparment
                     //test User

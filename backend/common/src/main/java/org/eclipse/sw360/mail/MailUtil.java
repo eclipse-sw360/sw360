@@ -13,7 +13,6 @@ import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -35,13 +34,18 @@ import java.util.concurrent.*;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.props;
+import static org.eclipse.sw360.mail.MailConstants.DEFAULT_BEGIN;
+import static org.eclipse.sw360.mail.MailConstants.DEFAULT_END;
+import static org.eclipse.sw360.mail.MailConstants.UNSUBSCRIBE_NOTICE_AFTER;
+import static org.eclipse.sw360.mail.MailConstants.UNSUBSCRIBE_NOTICE_BEFORE;
 
 /**
  * Provides the possibility to send mail from SW360
  *
  * @author birgit.heydenreich@tngtech.com
  */
-public class MailUtil extends BackendUtils {
+public class MailUtil {
 
     private static final Logger log = LogManager.getLogger(MailUtil.class);
 
@@ -88,18 +92,18 @@ public class MailUtil extends BackendUtils {
     }
 
     private void setBasicProperties() {
-        from = loadedProperties.getProperty("MailUtil_from", "__No_Reply__@sw360.org");
-        host = loadedProperties.getProperty("MailUtil_host", "");
-        port = loadedProperties.getProperty("MailUtil_port", "25");
-        enableStarttls = loadedProperties.getProperty("MailUtil_enableStarttls", "false");
-        enableSsl = loadedProperties.getProperty("MailUtil_enableSsl", "false");
-        isAuthenticationNecessary = loadedProperties.getProperty("MailUtil_isAuthenticationNecessary", "true");
-        login = loadedProperties.getProperty("MailUtil_login", "");
-        password = loadedProperties.getProperty("MailUtil_password", "");
-        enableDebug = loadedProperties.getProperty("MailUtil_enableDebug", "false");
-        supportMailAddress = loadedProperties.getProperty("MailUtil_supportMailAddress","");
-        smtpSSLProtocol = loadedProperties.getProperty("MailUtil_smtpSSLProtocol", "");
-        smtpSSLTrust = loadedProperties.getProperty("MailUtil_smtpSSLTrust", "*");
+        from = props.getProperty("MailUtil_from", "__No_Reply__@sw360.org");
+        host = props.getProperty("MailUtil_host", "");
+        port = props.getProperty("MailUtil_port", "25");
+        enableStarttls = props.getProperty("MailUtil_enableStarttls", "false");
+        enableSsl = props.getProperty("MailUtil_enableSsl", "false");
+        isAuthenticationNecessary = props.getProperty("MailUtil_isAuthenticationNecessary", "true");
+        login = props.getProperty("MailUtil_login", "");
+        password = props.getProperty("MailUtil_password", "");
+        enableDebug = props.getProperty("MailUtil_enableDebug", "false");
+        supportMailAddress = props.getProperty("MailUtil_supportMailAddress","");
+        smtpSSLProtocol = props.getProperty("MailUtil_smtpSSLProtocol", "");
+        smtpSSLTrust = props.getProperty("MailUtil_smtpSSLTrust", "*");
     }
 
     private void setSession() {
@@ -191,7 +195,7 @@ public class MailUtil extends BackendUtils {
     private MimeMessage makeHtmlMessageWithSubjectAndText(ClearingRequestEmailTemplate template, String subjectKeyInPropertiesFile, String ... textParameters) {
         MimeMessage message = new MimeMessage(session);
         String mainContentFormat = "";
-        String subject = loadedProperties.getProperty(subjectKeyInPropertiesFile, "");
+        String subject = props.getProperty(subjectKeyInPropertiesFile, "");
         switch (template) {
         case UPDATED:
             mainContentFormat = UPDATE_CR_EMAIL_HTML_TEMPLATE;
@@ -243,11 +247,11 @@ public class MailUtil extends BackendUtils {
 
     private MimeMessage makeMessageWithSubjectAndText(String subjectKeyInPropertiesFile, String textKeyInPropertiesFile, String ... textParameters) {
         MimeMessage message = new MimeMessage(session);
-        String subject = loadedProperties.getProperty(subjectKeyInPropertiesFile, "");
+        String subject = props.getProperty(subjectKeyInPropertiesFile, "");
 
         StringBuilder text = new StringBuilder();
-        text.append(loadedProperties.getProperty("defaultBegin", ""));
-        String mainContentFormat = loadedProperties.getProperty(textKeyInPropertiesFile, "");
+        text.append(props.getProperty(DEFAULT_BEGIN, ""));
+        String mainContentFormat = props.getProperty(textKeyInPropertiesFile, "");
 
         try {
             String formattedContent = String.format(mainContentFormat, (Object[]) textParameters);
@@ -256,12 +260,12 @@ public class MailUtil extends BackendUtils {
             log.error(String.format("Could not format notification email content for keys %s and %s", subjectKeyInPropertiesFile, textKeyInPropertiesFile), e);
             text.append(mainContentFormat);
         }
-        text.append(loadedProperties.getProperty("defaultEnd", ""));
-        if (!supportMailAddress.equals("")) {
-            text.append(loadedProperties.getProperty("unsubscribeNoticeBefore", ""));
+        text.append(props.getProperty(DEFAULT_END, ""));
+        if (!supportMailAddress.isEmpty()) {
+            text.append(props.getProperty(UNSUBSCRIBE_NOTICE_BEFORE, ""));
             text.append(" ");
             text.append(supportMailAddress);
-            text.append(loadedProperties.getProperty("unsubscribeNoticeAfter", ""));
+            text.append(props.getProperty(UNSUBSCRIBE_NOTICE_AFTER, ""));
         }
         try {
             message.setSubject(subject);
