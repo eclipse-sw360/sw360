@@ -60,7 +60,9 @@ public class ResourceServerConfiguration {
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers("/", "/*/*.html", "/*/*.css", "/*/*.js", "/*.js", "/*.json", "/*/*.json", "/*/*.png", "/*/*.gif", "/*/*.ico", "/*/*.woff/*", "/*/*.ttf", "/*/*.html", "/*/*/*.html", "/*/*.yaml", "/v3/api-docs/**");
+        return (web) -> web.ignoring().requestMatchers("/", "/*/*.html", "/*/*.css", "/*/*.js", "/*.js", "/*.json",
+                "/*/*.json", "/*/*.png", "/*/*.gif", "/*/*.ico", "/*/*.woff/*", "/*/*.ttf", "/*/*.html", "/*/*/*.html",
+                "/*/*.yaml", "/v3/api-docs/**", "/api/health", "/api/info");
     }
 
     @Bean
@@ -80,8 +82,8 @@ public class ResourceServerConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
         return http.addFilterBefore(filter, BasicAuthenticationFilter.class).authorizeHttpRequests(auth -> {
-            auth.requestMatchers(HttpMethod.GET, "/health").permitAll();
-            auth.requestMatchers(HttpMethod.GET, "/info").hasAuthority("WRITE");
+            auth.requestMatchers(HttpMethod.GET, "/api/health").permitAll();
+            auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority("WRITE");
             auth.requestMatchers(HttpMethod.GET, "/api").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/api/reports/download").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/api/**").hasAuthority("READ");
