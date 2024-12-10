@@ -10,7 +10,7 @@
  */
 package org.eclipse.sw360.schedule.service;
 
-import org.eclipse.sw360.schedule.timer.ScheduleConstants;
+import org.eclipse.sw360.datahandler.common.ScheduleConstants;
 import org.eclipse.sw360.datahandler.thrift.schedule.ScheduleService;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
 import org.apache.logging.log4j.LogManager;

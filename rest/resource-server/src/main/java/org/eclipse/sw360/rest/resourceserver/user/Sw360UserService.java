@@ -18,6 +18,7 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
@@ -32,17 +33,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
-import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS;
-import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_WRITE_ACCESS_USERGROUP;
 
 @Service
 public class Sw360UserService {
@@ -217,7 +213,7 @@ public class Sw360UserService {
 
     private boolean isValidExpireDays(RestApiToken restApiToken) {
         String configExpireDays = restApiToken.getAuthorities().contains(AUTHORITIES_WRITE) ?
-                API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS : API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
+                SW360Constants.REST_API_TOKEN_MAX_VALIDITY_WRITE_IN_DAYS : SW360Constants.REST_API_TOKEN_MAX_VALIDITY_READ_IN_DAYS;
 
         try {
             return restApiToken.getNumberOfDaysValid() >= 0 &&
@@ -243,7 +239,7 @@ public class Sw360UserService {
 
         if (restApiToken.getAuthorities().contains(AUTHORITIES_WRITE)) {
             // User needs at least the role which is defined in sw360.properties (default admin)
-            if (!PermissionUtils.isUserAtLeast(API_WRITE_ACCESS_USERGROUP, sw360User))
+            if (!PermissionUtils.isUserAtLeast(SW360Constants.CONFIG_WRITE_ACCESS_USERGROUP, sw360User))
                 throw new IllegalArgumentException("User permission [WRITE] is not allowed for user");
             if (!isValidExpireDays(restApiToken)) {
                 throw new IllegalArgumentException("Token expiration days is not valid for user");

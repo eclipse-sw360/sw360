@@ -12,6 +12,7 @@ package org.eclipse.sw360.datahandler.permissions;
 import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
@@ -89,7 +90,7 @@ public class ProjectPermissions extends DocumentPermissions<Project> {
                 visibility = Visibility.BUISNESSUNIT_AND_MODERATORS; // the current default
             }
 
-            boolean isPrivateAccessAllowed = PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isUserAtLeast(ADMIN, user);
+            boolean isPrivateAccessAllowed = SW360Constants.IS_ADMIN_PRIVATE_ACCESS_ENABLED && isUserAtLeast(ADMIN, user);
 
             switch (visibility) {
                 case PRIVATE:

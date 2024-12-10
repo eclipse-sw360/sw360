@@ -5,6 +5,7 @@ SPDX-License-Identifier: EPL-2.0
 package org.eclipse.sw360.vmcomponents;
 
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
@@ -12,7 +13,6 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.vmcomponents.common.SVMConstants;
 import org.eclipse.sw360.vmcomponents.db.VMDatabaseHandler;
 import org.eclipse.sw360.vmcomponents.process.VMProcessHandler;
 
@@ -69,19 +69,19 @@ public class VMComponentHandler implements VMComponentService.Iface {
         // synchronize VMAction
         String actionStart = SW360Utils.getCreatedOnTime();
         dbHandler.add(new VMProcessReporting(VMAction.class.getSimpleName(), actionStart));
-        VMProcessHandler.getElementIds(VMAction.class, SVMConstants.ACTIONS_URL, true);
+        VMProcessHandler.getElementIds(VMAction.class, SW360Constants.SVM_ACTIONS_URL, true);
         log.info("Storing and getting master data of "+VMAction.class.getSimpleName()+" triggered. waiting for completion...");
 
         // synchronize VMPriority
         String prioStart = SW360Utils.getCreatedOnTime();
         dbHandler.add(new VMProcessReporting(VMPriority.class.getSimpleName(), prioStart));
-        VMProcessHandler.getElementIds(VMPriority.class, SVMConstants.PRIORITIES_URL, true);
+        VMProcessHandler.getElementIds(VMPriority.class, SW360Constants.SVM_PRIORITIES_URL, true);
         log.info("Storing and getting master data of "+VMPriority.class.getSimpleName()+" triggered. waiting for completion...");
 
         // synchronize VMComponent
         String compStart = SW360Utils.getCreatedOnTime();
         dbHandler.add(new VMProcessReporting(VMComponent.class.getSimpleName(), compStart));
-        VMProcessHandler.getElementIds(VMComponent.class, SVMConstants.COMPONENTS_URL, true);
+        VMProcessHandler.getElementIds(VMComponent.class, SW360Constants.SVM_COMPONENTS_URL, true);
         log.info("Storing and getting master data of "+VMComponent.class.getSimpleName()+" triggered. waiting for completion...");
 
         // triggerReporting

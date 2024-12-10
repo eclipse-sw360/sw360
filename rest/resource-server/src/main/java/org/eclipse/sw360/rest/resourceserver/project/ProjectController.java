@@ -167,7 +167,6 @@ import java.util.stream.Stream;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.wrapThriftOptionalReplacement;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
-import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -1439,8 +1438,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 			outputFormatInfo.getFileExtension());
 
         String fileName = "";
-        if (CommonUtils.isNotNullEmptyOrWhitespace(template) && CommonUtils.isNotNullEmptyOrWhitespace(REPORT_FILENAME_MAPPING)) {
-            Map<String, String> orgToTemplate = Arrays.stream(REPORT_FILENAME_MAPPING.split(","))
+        if (CommonUtils.isNotNullEmptyOrWhitespace(template) && CommonUtils.isNotNullEmptyOrWhitespace(SW360Constants.REST_REPORT_FILENAME_MAPPING)) {
+            Map<String, String> orgToTemplate = Arrays.stream(SW360Constants.REST_REPORT_FILENAME_MAPPING.split(","))
                     .collect(Collectors.toMap(k -> k.split(":")[0], v -> v.split(":")[1]));
             fileName = orgToTemplate.get(template);
         }

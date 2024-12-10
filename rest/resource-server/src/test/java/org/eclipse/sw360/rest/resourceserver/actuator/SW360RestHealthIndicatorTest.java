@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.eclipse.sw360.rest.resourceserver;
+package org.eclipse.sw360.rest.resourceserver.actuator;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
@@ -16,6 +16,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.thrift.health.Health;
 import org.eclipse.sw360.datahandler.thrift.health.HealthService;
 import org.eclipse.sw360.datahandler.thrift.health.Status;
+import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,7 +72,7 @@ public class SW360RestHealthIndicatorTest {
      */
     private ResponseEntity<Map> getMapResponseEntityForHealthEndpointRequest(String endpoint) {
         return this.testRestTemplate.getForEntity(
-                "http://localhost:" + this.port + endpoint, Map.class);
+                "http://localhost:" + this.port + Sw360ResourceServer.REST_BASE_PATH + endpoint, Map.class);
     }
 
     @Test

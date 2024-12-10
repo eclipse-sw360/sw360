@@ -14,7 +14,6 @@ import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
@@ -42,6 +41,7 @@ import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.closeQuietly;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.CLI_RELEASE_EXTERNAL_ID_CORRELATION_KEY;
 
 /**
  * Class for extracting copyright and license information from a simple XML file
@@ -57,9 +57,6 @@ public class CombinedCLIParser extends AbstractCLIParser{
     private static final String COMBINED_CLI_ROOT_ELEMENT_NAME = "CombinedCLI";
     private static final String COMBINED_CLI_ROOT_ELEMENT_NAMESPACE = null;
 
-    private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
-    public static final String EXTERNAL_ID_CORRELATION_KEY = "combined.cli.parser.external.id.correlation.key";
-
     private ComponentDatabaseHandler componentDatabaseHandler;
 
     public CombinedCLIParser(AttachmentConnector attachmentConnector, AttachmentContentProvider attachmentContentProvider, ComponentDatabaseHandler componentDatabaseHandler) {
@@ -68,8 +65,7 @@ public class CombinedCLIParser extends AbstractCLIParser{
     }
 
     String getCorrelationKey(){
-        Properties props = CommonUtils.loadProperties(CombinedCLIParser.class, PROPERTIES_FILE_PATH);
-        String releaseExternalIdCorrelationKey = props.getProperty(EXTERNAL_ID_CORRELATION_KEY);
+        String releaseExternalIdCorrelationKey = CLI_RELEASE_EXTERNAL_ID_CORRELATION_KEY;
         if (isNullOrEmpty(releaseExternalIdCorrelationKey)){
             log.warn("Property combined.cli.parser.external.id.correlation.key is not set. Combined CLI parsing will not be able to load names of referenced releases");
         }
