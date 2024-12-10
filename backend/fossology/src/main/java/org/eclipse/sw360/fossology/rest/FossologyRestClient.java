@@ -31,10 +31,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -433,5 +430,86 @@ public class FossologyRestClient {
         String status = response.findValuesAsText("status").get(0);
         responseMap.put("status", status);
         return responseMap;
+    }
+
+    public int getFolderId(String uploadId) {
+        String baseUrl = restConfig.getBaseUrlWithSlash();
+        String token = restConfig.getAccessToken();
+
+        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
+            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+            return -1;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + token);
+
+        try {
+            ResponseEntity<JsonNode> response = restTemplate.exchange(baseUrl + "uploads/" + uploadId,
+                    HttpMethod.GET, new HttpEntity<>(headers), JsonNode.class);
+            JsonNode responseBody = response.getBody();
+            if (!responseBody.has("folderid")) {
+                return -1;
+            }
+            JsonNode folderId = responseBody.get("folderid");
+            return folderId.asInt();
+        } catch (RestClientException e) {
+            log.error("Error while getting the folder details for upload id.", e, uploadId);
+            return -1;
+        }
+    }
+
+    public int getUploadId(String shaValue, String fileName) {
+        String baseUrl = restConfig.getBaseUrlWithSlash();
+        String token = restConfig.getAccessToken();
+        String folderId = restConfig.getFolderId();
+
+        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
+            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+            return -1;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + token);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        List<Map<String, String>> body = new ArrayList<>();
+        Map<String, String> shaVal = new HashMap<>();
+        shaVal.put("sha1", shaValue);
+        body.add(shaVal);
+
+        int lastUploadedValue = -1;
+
+        HttpEntity<List<Map<String, String>>> requestEntity = new HttpEntity<>(body, headers);
+
+        try {
+            ResponseEntity<JsonNode> response = restTemplate.exchange(baseUrl + "filesearch",
+                    HttpMethod.POST, requestEntity, JsonNode.class);
+            JsonNode responseBody = response.getBody();
+            JsonNode firstElement = responseBody.get(0);
+
+            if (!firstElement.has("uploads")) {
+                return -1;
+            }
+            JsonNode uploads = firstElement.get("uploads");
+            List<String> uploadIdList = new ArrayList<>();
+            if (uploads != null && uploads.isArray()) {
+                for (JsonNode upload : uploads) {
+                    uploadIdList.add(upload.asText());
+                }
+                uploadIdList.sort(Collections.reverseOrder());
+            }
+
+            for (String uploadId : uploadIdList) {
+                int id = getFolderId(uploadId);
+                if (id != -1 && id == Integer.parseInt(folderId)) {
+                    lastUploadedValue = Integer.parseInt(uploadId);
+                    break;
+                }
+            }
+            return lastUploadedValue;
+        } catch (RestClientException e) {
+            log.error("Error while uploading file .", e, fileName);
+            return -1;
+        }
     }
 }

@@ -335,16 +335,25 @@ public class FossologyHandler implements FossologyService.Iface {
             String attachmentContentId = sourceAttachment.getAttachmentContentId();
             AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
 
-            InputStream attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, release);
-            int uploadId = fossologyRestClient.uploadFile(attachmentFilename, attachmentStream, uploadDescription);
-            if (uploadId > -1) {
+            String shaValue = sourceAttachment.getSha1();
+            int lastUploadId = fossologyRestClient.getUploadId(shaValue, attachmentFilename);
+            if (lastUploadId > -1) {
                 furthestStep.setFinishedOn(Instant.now().toString());
                 furthestStep.setStepStatus(ExternalToolProcessStatus.DONE);
-                furthestStep.setProcessStepIdInTool(uploadId + "");
-                furthestStep.setResult(uploadId + "");
+                furthestStep.setProcessStepIdInTool(lastUploadId + "");
+                furthestStep.setResult(lastUploadId + "");
             } else {
-                furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
-                furthestStep.setResult(uploadId + "");
+                InputStream attachmentStream = attachmentConnector.getAttachmentStream(attachmentContent, user, release);
+                int uploadId = fossologyRestClient.uploadFile(attachmentFilename, attachmentStream, uploadDescription);
+                if (uploadId > -1) {
+                    furthestStep.setFinishedOn(Instant.now().toString());
+                    furthestStep.setStepStatus(ExternalToolProcessStatus.DONE);
+                    furthestStep.setProcessStepIdInTool(uploadId + "");
+                    furthestStep.setResult(uploadId + "");
+                } else {
+                    furthestStep.setStepStatus(ExternalToolProcessStatus.NEW);
+                    furthestStep.setResult(uploadId + "");
+                }
             }
             break;
         case DONE:
