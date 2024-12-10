@@ -14,7 +14,6 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.eclipse.sw360.projects.Sw360ThriftServlet;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 
 /**
  * Thrift Servlet instantiation

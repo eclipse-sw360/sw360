@@ -1,0 +1,80 @@
+//
+// Copyright Siemens AG, 2024. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+//
+
+[[resources-importExport]]
+=== ImportExport
+
+The ImportExport resource is used to get and upload request.
+
+[[download-component-template]]
+==== Download component template.
+
+A `GET` request to download the component template in csv format.
+
+===== Example request
+include::{snippets}/should_document_get_download_component_template/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_component_template/http-response.adoc[]
+
+[[download-attachment-template]]
+==== Download attachment template.
+
+A `GET` request to download the attachment template in csv format.
+
+===== Example request
+include::{snippets}/should_document_get_download_attachment_template/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_attachment_template/http-response.adoc[]
+
+[[download-attachment-info]]
+==== Download attachment information.
+
+A `GET` request to download the attachment information in csv format.
+
+===== Example request
+include::{snippets}/should_document_get_download_attachment_information/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_attachment_information/http-response.adoc[]
+
+[[download-release-sample]]
+==== Download release link sample.
+
+A `GET` request to download the release link sample in csv format.
+
+===== Example request
+include::{snippets}/should_document_get_download_release_sample/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_release_sample/http-response.adoc[]
+
+[[download-release-link]]
+==== Download release link information.
+
+A `GET` request to download the release link information in csv format.
+
+===== Example request
+include::{snippets}/should_document_get_download_release_link_info/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_release_link_info/http-response.adoc[]
+
+[[download-component]]
+==== Download component information.
+
+A `GET` request to download the component information in csv format.
+
+===== Example request
+include::{snippets}/should_document_get_download_component_details/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_download_component_details/http-response.adoc[]

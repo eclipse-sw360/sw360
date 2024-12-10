@@ -10,7 +10,9 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.junit.Before;
@@ -22,10 +24,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
@@ -40,6 +39,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 
@@ -56,6 +56,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
     private Sw360VendorService vendorServiceMock;
 
     private Vendor vendor;
+    private Vendor vendor3;
 
     @Before
     public void before() throws TException{
@@ -71,11 +72,35 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
         vendor2.setShortname("Pivotal");
         vendor2.setUrl("https://pivotal.io/");
 
+        vendor3 = new Vendor();
+        vendor3.setId("987567468");
+        vendor3.setFullname("AMazon Ltd");
+        vendor3.setShortname("AMazon");
+        vendor3.setUrl("https://AMazon.io/");
+
         List<Vendor> vendorList = new ArrayList<>();
         vendorList.add(vendor);
         vendorList.add(vendor2);
 
+        Set<Release> releases = new HashSet<>();
+        Release release1 = new Release();
+        release1.setId("12345");
+        release1.setName("Release_1");
+        release1.setVersion("1.0.0");
+        release1.setVendor(vendor);
+
+        Release release2 = new Release();
+        release2.setId("123456");
+        release2.setName("Release_2");
+        release2.setVersion("2.0.0");
+        release2.setVendor(vendor);
+
+        releases.add(release1);
+        releases.add(release2);
+
+        given(this.vendorServiceMock.getAllReleaseList(eq(vendor.getId()))).willReturn(releases);
         given(this.vendorServiceMock.getVendors()).willReturn(vendorList);
+        given(this.vendorServiceMock.vendorUpdate(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vendorServiceMock.getVendorById(eq(vendor.getId()))).willReturn(vendor);
         given(this.vendorServiceMock.exportExcel()).willReturn(ByteBuffer.allocate(10000));
 
@@ -133,6 +158,25 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                         )));
     }
 
+    @Test
+    public void should_document_get_vendor_releases() throws Exception {
+        mockMvc.perform(get("/api/vendors/" + vendor.getId() + "/releases")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:releases.[]id").description("Id of the release"),
+                                subsectionWithPath("_embedded.sw360:releases.[]name").description("The name of the release"),
+                                subsectionWithPath("_embedded.sw360:releases.[]version").description("The version of the release"),
+                                subsectionWithPath("_embedded.sw360:releases.[]_links").description("Self <<resources-index-links,Links>> to Release resource\""),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
+    }
+
 
     @Test
     public void should_document_create_vendor() throws Exception {
@@ -160,6 +204,20 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("url").description("The vendor's home page URL"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+
+    @Test
+    public void should_document_update_vendor() throws Exception {
+        Map<String, Object> updateVendor = new HashMap<>();
+        updateVendor.put("fullName", "Amazon Ltd");
+        updateVendor.put("shortName", "Amazon");
+        updateVendor.put("url", "https://Amazon.io/");
+        mockMvc.perform(patch("/api/vendors/" + vendor3.getId())
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(updateVendor))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
     }
 
     @Test

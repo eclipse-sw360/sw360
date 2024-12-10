@@ -18,8 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -33,7 +31,6 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -44,7 +41,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360DatabaseSanitationService {
-    private static final Logger log = LogManager.getLogger(Sw360DatabaseSanitationService.class);
 
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
@@ -81,7 +77,7 @@ public class Sw360DatabaseSanitationService {
             } else if (sw360Exp.getErrorCode() == 204) {
                 throw new SW360Exception(sw360Exp.getMessage()).setErrorCode(204);
             } else {
-                log.error("No dulicate ids found: " + sw360Exp.getMessage());
+                log.error("No duplicate ids found: {}", sw360Exp.getMessage());
             }
             throw sw360Exp;
         }

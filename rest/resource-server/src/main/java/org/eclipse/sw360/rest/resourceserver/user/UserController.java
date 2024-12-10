@@ -351,4 +351,24 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     private HalResource<User> createHalUser(User sw360User) {
         return new HalResource<>(sw360User);
     }
+
+    @RequestMapping(value = USERS_URL + "/groupList", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, List<String>>> getGroupList() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        List<String> primaryGrpList = new ArrayList<>();
+        List<String> secondaryGrpList = new ArrayList<>();
+        Map<String, List<String>> userGroupMap = new HashMap<>();
+        String mainDepartment = sw360User.getDepartment();
+        if (mainDepartment != null && !mainDepartment.isEmpty()) {
+            primaryGrpList.add(mainDepartment);
+        }
+        Map<String, Set<UserGroup>> secondaryDepartmentsAndRoles = sw360User.getSecondaryDepartmentsAndRoles();
+        if (secondaryDepartmentsAndRoles != null) {
+            secondaryGrpList.addAll(secondaryDepartmentsAndRoles.keySet());
+        }
+        userGroupMap.put("primaryGrpList", primaryGrpList);
+        userGroupMap.put("secondaryGrpList", secondaryGrpList);
+        HttpStatus status = userGroupMap == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+        return new ResponseEntity<>(userGroupMap, status);
+    }
 }

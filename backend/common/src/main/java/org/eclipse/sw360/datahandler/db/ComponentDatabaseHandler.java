@@ -225,8 +225,6 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         long isrCountAfter = evaluateClearingStateForScanAvailable(releaseAfter);
         if (isrCountAfter > 0) {
             releaseAfter.setClearingState(ClearingState.SCAN_AVAILABLE);
-        } else {
-            releaseAfter.setClearingState(ClearingState.NEW_CLEARING);
         }
 
         if (newSecondBestCR.isPresent()) {
@@ -768,6 +766,16 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
     }
 
+    public Component getComponentByName(String name) {
+        Set<String> components = componentRepository.getComponentIdsByName(name,true);
+        if (components != null && components.size() == 1) {
+            Component comp = componentRepository.get(components.iterator().next());
+            return comp;
+        } else {
+            return null;
+        }
+    }
+
     private boolean isDependenciesExistInComponent(Component component) {
         boolean isValidDependentIds = true;
         if (component.isSetReleaseIds()) {
@@ -1151,12 +1159,13 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
                 copyFields(actual, release, immutableFields);
 
-                autosetReleaseClearingState(release, actual);
                 if (hasChangesInEccFields) {
                     autosetEccUpdaterInfo(release, user);
                 }
+
                 release.setAttachments(
                         getAllAttachmentsToKeep(toSource(actual), actual.getAttachments(), release.getAttachments()));
+                autosetReleaseClearingState(release, actual);
 
                 List<ChangeLogs> referenceDocLogList = new LinkedList<>();
                 Set<Attachment> attachmentsAfter = release.getAttachments();
@@ -2826,7 +2835,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
             try (final InputStream inputStream = attachmentStreamConnector.unsafeGetAttachmentStream(attachmentContent)) {
                 final SpdxBOMImporterSink spdxBOMImporterSink = new SpdxBOMImporterSink(user, null, this);
                 final SpdxBOMImporter spdxBOMImporter = new SpdxBOMImporter(spdxBOMImporterSink);
-                return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent);
+                return spdxBOMImporter.importSpdxBOMAsRelease(inputStream, attachmentContent, user);
             }
         } catch (IOException e) {
             throw new SW360Exception(e.getMessage());

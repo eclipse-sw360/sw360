@@ -127,6 +127,16 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
             Map<String, Map<String, Boolean>> releaseIdsToSelectedAttachmentIds,
             Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment, String externalIds, String fileName)
             throws TException {
+        return getLicenseInfoFileWithoutReleaseVersion(project, user, outputGenerator,
+                releaseIdsToSelectedAttachmentIds, excludedLicensesPerAttachment, externalIds, fileName, false);
+    }
+
+    @Override
+    public LicenseInfoFile getLicenseInfoFileWithoutReleaseVersion(Project project, User user, String outputGenerator,
+            Map<String, Map<String, Boolean>> releaseIdsToSelectedAttachmentIds,
+            Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachment, String externalIds, String fileName,
+            boolean excludeReleaseVersion)
+            throws TException {
         assertNotNull(project);
         assertNotNull(user);
         assertNotNull(outputGenerator);
@@ -170,7 +180,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         }
 
         Object output = generator.generateOutputFile(projectLicenseInfoResults, project, obligationsResults, user,
-                filteredExtIdMap, obligationsStatusInfoMap, fileName);
+                filteredExtIdMap, obligationsStatusInfoMap, fileName, excludeReleaseVersion);
         if (output instanceof byte[]) {
             licenseInfoFile.setGeneratedOutput((byte[]) output);
         } else if (output instanceof String) {
@@ -182,6 +192,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
         return licenseInfoFile;
     }
 
+    @Override
     public Map<String, Map<String, String>> evaluateAttachments(String releaseId, User user) throws TException {
         Release release = componentDatabaseHandler.getRelease(releaseId, user);
         Map<Attachment, LicenseInfoParsingResult> parsedResults = new HashMap<Attachment, LicenseInfoParsingResult>();
@@ -619,7 +630,7 @@ public class LicenseInfoHandler implements LicenseInfoService.Iface {
     }
 
     @Override
-    public LicenseObligationsStatusInfo getProjectObligationStatus(Map<String, ObligationStatusInfo> obligationStatusMap, List<LicenseInfoParsingResult> licenseResults, 
+    public LicenseObligationsStatusInfo getProjectObligationStatus(Map<String, ObligationStatusInfo> obligationStatusMap, List<LicenseInfoParsingResult> licenseResults,
             Map<String, String> excludedReleaseIdToAcceptedCLI) {
 
         Map<String, ObligationStatusInfo> filteredObligationStatusMap = obligationStatusMap.isEmpty()

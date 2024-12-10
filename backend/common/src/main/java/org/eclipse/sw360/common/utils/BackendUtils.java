@@ -20,6 +20,7 @@ public class BackendUtils {
     public static final Boolean MAINLINE_STATE_ENABLED_FOR_USER;
     public static final Boolean IS_BULK_RELEASE_DELETING_ENABLED;
     public static final Boolean IS_FORCE_UPDATE_ENABLED;
+    public static final Boolean DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD;
 
     static {
         loadedProperties = CommonUtils.loadProperties(BackendUtils.class, PROPERTIES_FILE_PATH);
@@ -27,6 +28,7 @@ public class BackendUtils {
         IS_BULK_RELEASE_DELETING_ENABLED = Boolean.parseBoolean(System.getProperty("RunBulkReleaseDeletingTest", loadedProperties.getProperty("bulk.release.deleting.enabled", "false")));
         IS_FORCE_UPDATE_ENABLED = Boolean.parseBoolean(
                 System.getProperty("RunRestForceUpdateTest", loadedProperties.getProperty("rest.force.update.enabled", "false")));
+        DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD = Boolean.parseBoolean(loadedProperties.getProperty("disable.clearing.fossology.report.download", "false"));
     }
 
     protected BackendUtils() {

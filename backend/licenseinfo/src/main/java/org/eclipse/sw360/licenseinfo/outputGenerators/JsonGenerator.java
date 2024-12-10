@@ -37,8 +37,9 @@ public class JsonGenerator extends OutputGenerator<String> {
     }
 
     @Override
-    public String generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project, Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds, Map<String, ObligationStatusInfo> obligationsStatus, String fileName) throws SW360Exception {
+    public String generateOutputFile(Collection<LicenseInfoParsingResult> projectLicenseInfoResults, Project project,
+            Collection<ObligationParsingResult> obligationResults, User user, Map<String, String> externalIds,
+            Map<String, ObligationStatusInfo> obligationsStatus, String fileName, boolean excludeReleaseVersion) throws SW360Exception {
         return "";
-        
     }
 }

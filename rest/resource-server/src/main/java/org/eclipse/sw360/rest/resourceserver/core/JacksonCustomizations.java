@@ -39,6 +39,7 @@ import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectState;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
@@ -124,6 +125,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(ReleaseNode.class, Sw360Module.ReleaseNodeMixin.class);
             setMixInAnnotation(RestrictedResource.class, Sw360Module.RestrictedResourceMixin.class);
             setMixInAnnotation(RestApiToken.class, Sw360Module.RestApiTokenMixin.class);
+            setMixInAnnotation(ProjectLink.class, Sw360Module.ProjectLinkMixin.class);
 
             // Make spring doc aware of the mixin(s)
             SpringDocUtils.getConfig()
@@ -175,7 +177,8 @@ public class JacksonCustomizations {
                     .replaceWithClass(ProjectDTO.class, ProjectDTOMixin.class)
                     .replaceWithClass(EmbeddedProjectDTO.class, EmbeddedProjectDTOMixin.class)
                     .replaceWithClass(ReleaseNode.class, ReleaseNodeMixin.class)
-                    .replaceWithClass(RestrictedResource.class, RestrictedResourceMixin.class);
+                    .replaceWithClass(RestrictedResource.class, RestrictedResourceMixin.class)
+                    .replaceWithClass(ProjectLink.class, ProjectLinkMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -913,11 +916,9 @@ public class JacksonCustomizations {
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
                 "nodeId",
+                "layer",
                 "parentNodeId",
-                "componentType",
                 "licenseNames",
-                "comment",
-                "otherLicenseIds",
                 "attachmentsSize",
                 "setName",
                 "setVersion",
@@ -944,8 +945,14 @@ public class JacksonCustomizations {
                 "setLicenseNames",
                 "setAccessible",
                 "setId",
-                "setClearingReport"
-
+                "setClearingReport",
+                "setReleaseWithSameComponent",
+                "setLayer",
+                "setDefaultValue",
+                "setReleaseMainLineState",
+                "setIndex",
+                "setProjectId",
+                "releaseWithSameComponentSize",
         })
         static abstract class ReleaseLinkMixin extends ReleaseLink {
 
@@ -2276,5 +2283,30 @@ public class JacksonCustomizations {
         })
         public abstract static class RestApiTokenMixin extends RestApiToken {
         }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "nodeId",
+                "treeLevel",
+                "parentNodeId",
+                "setId",
+                "setName",
+                "setSubprojects",
+                "setNodeId",
+                "setParentNodeId",
+                "setVersion",
+                "setClearingState",
+                "setState",
+                "setProjectType",
+                "setEnableSvm",
+                "linkedReleasesSize",
+                "setRelation",
+                "linkedReleasesIterator",
+                "setLinkedReleases",
+                "subprojectsSize",
+                "subprojectsIterator",
+                "setTreeLevel",
+        })
+        abstract static class ProjectLinkMixin extends ProjectLink {}
     }
 }

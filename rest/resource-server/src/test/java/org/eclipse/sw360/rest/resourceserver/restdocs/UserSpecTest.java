@@ -406,4 +406,13 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                 )
                 .andExpect(status().isNoContent());
     }
+
+    @Test
+    public void should_document_get_grouplist() throws Exception {
+        mockMvc.perform(get("/api/users/groupList")
+                .contentType(MediaTypes.HAL_JSON)
+                .header("Authorization",
+                TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+        .andExpect(status().isOk());
+    }
 }

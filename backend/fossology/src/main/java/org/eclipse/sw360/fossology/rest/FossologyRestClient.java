@@ -103,7 +103,6 @@ public class FossologyRestClient {
         this.restConfig = restConfig;
 
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setBufferRequestBody(false);
         restTemplate.setRequestFactory(requestFactory);
         this.restTemplate = restTemplate;
     }

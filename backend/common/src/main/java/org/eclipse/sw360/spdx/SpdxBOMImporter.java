@@ -11,7 +11,9 @@
  */
 package org.eclipse.sw360.spdx;
 
+import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -21,6 +23,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
@@ -29,6 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelement
 import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.*;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.spdx.library.model.enumerations.Purpose;
 import org.spdx.library.model.enumerations.RelationshipType;
 import org.spdx.library.model.license.ExtractedLicenseInfo;
@@ -116,9 +120,9 @@ public class SpdxBOMImporter {
         return requestPreparation;
     }
 
-    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent)
+    public RequestSummary importSpdxBOMAsRelease(InputStream inputStream, AttachmentContent attachmentContent, User user)
             throws SW360Exception, IOException {
-        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE);
+        return importSpdxBOM(inputStream, attachmentContent, SW360Constants.TYPE_RELEASE, user);
     }
 
     private SpdxDocument openAsSpdx(File file){
@@ -131,17 +135,17 @@ public class SpdxBOMImporter {
         }
     }
 
-    public RequestSummary importSpdxBOMAsProject(InputStream inputStream, AttachmentContent attachmentContent)
+    public RequestSummary importSpdxBOMAsProject(InputStream inputStream, AttachmentContent attachmentContent, User user)
             throws SW360Exception, IOException {
-        return importSpdxBOM(attachmentContent, SW360Constants.TYPE_PROJECT , inputStream);
+        return importSpdxBOM(attachmentContent, SW360Constants.TYPE_PROJECT , inputStream, user);
     }
 
-    private RequestSummary importSpdxBOM( AttachmentContent attachmentContent, String type, InputStream inputStream)
+    private RequestSummary importSpdxBOM( AttachmentContent attachmentContent, String type, InputStream inputStream, User user)
             throws SW360Exception, IOException {
-        return importSpdxBOM(inputStream, attachmentContent, type);
+        return importSpdxBOM(inputStream, attachmentContent, type, user);
     }
 
-    private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type)
+    private RequestSummary importSpdxBOM(InputStream inputStream, AttachmentContent attachmentContent, String type, User user)
             throws SW360Exception, IOException {
         final RequestSummary requestSummary = new RequestSummary();
         List<SpdxElement> describedPackages = new ArrayList<>();
@@ -180,7 +184,7 @@ public class SpdxBOMImporter {
             final SpdxPackage spdxElement = (SpdxPackage) packages.get(0);
             final Optional<SpdxBOMImporterSink.Response> response;
             if (SW360Constants.TYPE_PROJECT.equals(type)) {
-                response = importAsProject(spdxElement, attachmentContent);
+                response = importAsProject(spdxElement, attachmentContent, user);
             } else if (SW360Constants.TYPE_RELEASE.equals(type)) {
                 response = importAsRelease(spdxElement, attachmentContent, spdxDocument);
             } else {
@@ -935,14 +939,27 @@ public class SpdxBOMImporter {
     }
 
 
-    private Optional<SpdxBOMImporterSink.Response> importAsProject(SpdxElement spdxElement, AttachmentContent attachmentContent) throws SW360Exception, InvalidSPDXAnalysisException {
+    private Optional<SpdxBOMImporterSink.Response> importAsProject(SpdxElement spdxElement, AttachmentContent attachmentContent, User user) throws SW360Exception, InvalidSPDXAnalysisException {
         if (spdxElement instanceof SpdxPackage) {
             final SpdxPackage spdxPackage = (SpdxPackage) spdxElement;
 
             final Project project = creatProjectFromSpdxPackage(spdxPackage);
 
             final Relationship[] relationships = spdxPackage.getRelationships().toArray(new Relationship[spdxPackage.getRelationships().size()]);
-            List<SpdxBOMImporterSink.Response> releases = importAsReleases(relationships);
+            List<SpdxBOMImporterSink.Response> releases = new ArrayList<>();
+
+            if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+                releases.addAll(importAsReleases(relationships));
+            } else {
+                List<ReleaseNode> releaseNodes = makeReleaseNodesFromRelationship(relationships, user);
+                releaseNodes.forEach(releaseNode -> {
+                    SpdxBOMImporterSink.Response response = new SpdxBOMImporterSink.Response(releaseNode.releaseId);
+                    response.setReleaseRelationship(ReleaseRelationship.valueOf(releaseNode.releaseRelationship));
+                    releases.add(response);
+                });
+                project.setReleaseRelationNetwork(new Gson().toJson(releaseNodes));
+            }
+
             Map<String, ProjectReleaseRelationship> releaseIdToProjectRelationship = makeReleaseIdToProjectRelationship(releases);
             project.setReleaseIdToUsage(releaseIdToProjectRelationship);
 
@@ -988,5 +1005,103 @@ public class SpdxBOMImporter {
             }
         }
         return ext;
+    }
+
+    /**
+     * Create list of ReleaseNode (release node in dependency network) from SPDX relationships
+     *
+     * @param relationships SPDX relationships
+     * @param user          SW360 user
+     * @return List of ReleaseNode
+     */
+    private List<ReleaseNode> makeReleaseNodesFromRelationship(Relationship[] relationships, User user) {
+        return Arrays.stream(relationships).map(
+                relationship -> {
+                    try {
+                        return buildReleaseNodeByRelationship(relationship, user);
+                    } catch (SW360Exception | InvalidSPDXAnalysisException e) {
+                        log.error(e.getMessage());
+                        return null;
+                    }
+                }
+        ).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    /**
+     * Import as project release
+     *
+     * @param relatedSpdxElement related element in SPDX
+     * @return response
+     * @throws SW360Exception exception throws when build response
+     * @throws InvalidSPDXAnalysisException exception throws when build response
+     */
+    private Optional<SpdxBOMImporterSink.Response> importAsReleaseInProject(SpdxElement relatedSpdxElement) throws SW360Exception, InvalidSPDXAnalysisException {
+        if (relatedSpdxElement instanceof SpdxPackage) {
+            final SpdxPackage spdxPackage = (SpdxPackage) relatedSpdxElement;
+
+            SpdxBOMImporterSink.Response component = importAsComponent(spdxPackage);
+            final String componentId = component.getId();
+
+            final Release release = createReleaseFromSpdxPackage(spdxPackage);
+            release.setComponentId(componentId);
+
+            final SpdxBOMImporterSink.Response response = sink.addRelease(release);
+            response.addChild(component);
+            return Optional.of(response);
+        } else {
+            log.debug("Unsupported SpdxElement: " + relatedSpdxElement.getClass().getCanonicalName());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Build object to present a release node in dependency network by relationship
+     *
+     * @param relationship relationship in SPDX
+     * @param user          user
+     * @return ReleaseNode
+     * @throws SW360Exception exception throws when build ReleaseNode
+     * @throws InvalidSPDXAnalysisException exception throws when build response
+     */
+    private ReleaseNode buildReleaseNodeByRelationship(Relationship relationship, User user) throws SW360Exception, InvalidSPDXAnalysisException {
+        Map<RelationshipType, ReleaseRelationship> typeToSupplierMap = new HashMap<>();
+        typeToSupplierMap.put(RelationshipType.CONTAINS,  ReleaseRelationship.CONTAINED);
+        final RelationshipType relationshipType = relationship.getRelationshipType();
+
+        if (!typeToSupplierMap.containsKey(relationshipType)) {
+            log.info("Unsupported relationshipType:" + relationship.getRelationshipType().toString());
+            return null;
+        }
+
+        SpdxElement relatedSpdxElement = relationship.getRelatedSpdxElement().orElse(null);
+        if (relatedSpdxElement == null) {
+            return null;
+        }
+
+        Optional<SpdxBOMImporterSink.Response> response = importAsReleaseInProject(relatedSpdxElement);
+
+        if (response.isEmpty()) {
+            return null;
+        }
+
+        ReleaseNode releaseNode = new ReleaseNode(response.get().getId());
+        releaseNode.setMainlineState(MainlineState.OPEN.toString());
+        releaseNode.setReleaseRelationship(typeToSupplierMap.get(relationshipType).toString());
+        releaseNode.setComment("");
+        releaseNode.setCreateOn(SW360Utils.getCreatedOn());
+        releaseNode.setCreateBy(user.getEmail());
+
+        List<ReleaseNode> subNodes = relatedSpdxElement.getRelationships().parallelStream().map(spdxRelationShip -> {
+            try {
+                return buildReleaseNodeByRelationship(spdxRelationShip, user);
+            } catch (SW360Exception | InvalidSPDXAnalysisException e) {
+                log.error(e.getMessage());
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+
+        releaseNode.setReleaseLink(subNodes);
+
+        return releaseNode;
     }
 }

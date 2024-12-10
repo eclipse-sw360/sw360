@@ -16,6 +16,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -35,6 +37,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.springframework.data.domain.Pageable;
 
 import java.io.IOException;
@@ -43,6 +46,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -109,6 +113,32 @@ public class VendorController implements RepresentationModelProcessor<Repository
     }
 
     @Operation(
+            summary = "Get the releases used by the vendor.",
+            description = "Get the releases by vendor id.",
+            tags = {"Vendor"}
+    )
+    @RequestMapping(value = VENDORS_URL + "/{id}/releases", method = RequestMethod.GET)
+    public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleases(
+            @Parameter(description = "The id of the vendor to get.")
+            @PathVariable("id") String id
+    ) throws TException{
+        try{
+            Set<Release> releases = vendorService.getAllReleaseList(id);
+            List<EntityModel<Release>> resources = new ArrayList<>();
+            releases.forEach(rel -> {
+                Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(rel);
+                resources.add(EntityModel.of(embeddedRelease));
+            });
+            CollectionModel<EntityModel<Release>> relResources = restControllerHelper.createResources(resources);
+
+            HttpStatus status = relResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
+            return new ResponseEntity<>(relResources, status);
+        } catch (TException e) {
+            throw new TException(e.getMessage());
+        }
+    }
+
+    @Operation(
             summary = "Create a new vendor.",
             description = "Create a new vendor.",
             tags = {"Vendor"}
@@ -127,6 +157,33 @@ public class VendorController implements RepresentationModelProcessor<Repository
                 .buildAndExpand(vendor.getId()).toUri();
 
         return ResponseEntity.created(location).body(halResource);
+    }
+
+    @Operation(
+            summary = "Update a vendor.",
+            description = "Update a vendor.",
+            tags = {"Vendor"}
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = VENDORS_URL + "/{id}", method = RequestMethod.PATCH)
+    public ResponseEntity<?> updateVendor(
+            @Parameter(description = "The id of the vendor")
+            @PathVariable("id") String id,
+            @Parameter(description = "The vendor to be updated.")
+            @RequestBody Vendor vendor
+    ) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (vendor.getFullname() == null && vendor.getShortname() == null && vendor.getUrl() == null) {
+            return new ResponseEntity<>("Value cannot be null", HttpStatus.BAD_REQUEST);
+        }
+        RequestStatus status = vendorService.vendorUpdate(vendor, sw360User, id);
+        if (RequestStatus.SUCCESS.equals(status)) {
+            return new ResponseEntity<>("Vendor updated successfully", HttpStatus.OK);
+        } else if (RequestStatus.DUPLICATE.equals(status)) {
+            return new ResponseEntity<>("A Vendor with same fullname '" + vendor.getFullname() + "' already exists!", HttpStatus.CONFLICT);
+        } else {
+            return new ResponseEntity<>("sw360 vendor with id '" + id + " cannot be updated.", HttpStatus.CONFLICT);
+        }
     }
 
     @Override

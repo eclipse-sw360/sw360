@@ -424,7 +424,7 @@ public class PackageDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return packageRepository.searchByPackageManager(packageManager);
     }
 
-    private List<Package> getPackageByNameAndVersion(String pkgName, String pkgVersion) {
+    public List<Package> getPackageByNameAndVersion(String pkgName, String pkgVersion) {
         if (isNullEmptyOrWhitespace(pkgName)) {
             return Collections.emptyList();
         }

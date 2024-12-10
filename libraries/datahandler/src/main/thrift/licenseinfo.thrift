@@ -145,6 +145,17 @@ service LicenseInfoService {
     LicenseInfoFile getLicenseInfoFile(1: Project project, 2: User user, 3: string outputGeneratorClassName, 4: map<string, map<string, bool>> releaseIdsToSelectedAttachmentIds, 5: map<string, set<LicenseNameWithText>> excludedLicensesPerAttachment, 6: string externalIds, 7: string fileName);
 
     /**
+     * Get copyright and license information file of linked releases of the project and its sub-projects (recursively)
+     * If excludeReleaseVersion is true, the release version will be excluded from the license file
+     * Output format as specified by outputType
+     */
+    LicenseInfoFile getLicenseInfoFileWithoutReleaseVersion(1: Project project, 2: User user, 3: string outputGeneratorClassName,
+    4: map<string, map<string, bool>> releaseIdsToSelectedAttachmentIds,
+    5: map<string, set<LicenseNameWithText>> excludedLicensesPerAttachment, 6: string externalIds, 7: string fileName,
+    8: bool excludeReleaseVersion);
+
+
+    /**
       * returns all available output types
       */
     list<OutputFormatInfo> getPossibleOutputFormats();
