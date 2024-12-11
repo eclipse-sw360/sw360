@@ -18,7 +18,7 @@
     <parent>
         <artifactId>rest</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>19.0.0</version>
+        <version>19.1.0</version>
     </parent>
 
     <artifactId>resource-server</artifactId>
