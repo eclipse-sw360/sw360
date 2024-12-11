@@ -22,6 +22,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransportException;
+import org.bouncycastle.util.test.TestFailedException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
@@ -29,6 +31,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
@@ -50,6 +53,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
@@ -57,6 +61,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -477,5 +482,64 @@ public class ModerationRequestController implements RepresentationModelProcessor
 
         setAddition.apply(addition);
         setDeletion.apply(deletion);
+    }
+    
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+        summary = "Validate Moderation Request",
+        description = "This endpoint validates a user for moderation request.",
+        tags = {"Moderation Requests"})
+    @RequestMapping(value = MODERATION_REQUEST_URL + "/validate", method = RequestMethod.POST)
+    public ResponseEntity<String> validateModerationRequest(
+            @Parameter(description = "Project id.")
+            @RequestParam String entityType,
+            @Parameter(description = "Entity type", example = "Pass entity type like PROJECT/COMPONENT/RELEASE")
+            @RequestParam String entityId,
+            HttpServletRequest request) throws TException{
+
+        try {
+            User user = restControllerHelper.getSw360UserFromAuthentication();
+            Object entity = getEntityByTypeAndId(entityType, entityId, user);
+            if (entity == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Entity not found for the given ID: " + entityId);
+            }
+            boolean isWriteActionAllowed = restControllerHelper.isWriteActionAllowed(entity, user);
+            if (!isWriteActionAllowed) {
+                return ResponseEntity.status(HttpStatus.ACCEPTED).body(
+                        "Validation successful: User is allowed to raise a moderation request.");
+            }
+            return ResponseEntity.ok("User can't create a MR.");
+        } catch (SW360Exception ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Entity not found for the given ID: " + entityId);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid entity type provided: " + ex.getMessage());
+        } catch (TException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while processing the request: " + ex.getMessage());
+        }
+    }
+
+    /**
+     * Helper method to fetch entity by type and ID.
+     */
+    private Object getEntityByTypeAndId(String entityType, String entityId, User user) throws TException {
+        try {
+            switch (entityType.toLowerCase()) {
+                case "project":
+                    return projectService.getProjectForUserById(entityId, user);
+                case "component":
+                    return componentService.getComponentForUserById(entityId, user);
+                case "release":
+                    return releaseService.getReleaseForUserById(entityId, user);
+                default:
+                    throw new IllegalArgumentException("Unsupported entity type: " + entityType);
+            }
+        } catch (TTransportException e) {
+            throw new RuntimeException("Unable to connect to the service. Please check the server status.", e);
+        } catch (TException e) {
+            throw e;
+        }
     }
 }
