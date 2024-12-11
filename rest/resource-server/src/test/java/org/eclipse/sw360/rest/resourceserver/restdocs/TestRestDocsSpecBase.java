@@ -19,8 +19,13 @@ import static org.springframework.restdocs.operation.preprocess.Preprocessors.pr
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360CustomUserDetailsService;
 import org.eclipse.sw360.rest.resourceserver.security.basic.Sw360GrantedAuthority;
@@ -110,10 +115,41 @@ public abstract class TestRestDocsSpecBase {
          */
         MockMultipartFile jsonFile = new MockMultipartFile("attachment", "", "application/json",
                 new ByteArrayInputStream(attachment.getBytes()));
+        MockMultipartFile[] files = new MockMultipartFile[]{jsonFile};
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(url + id + "/attachments")
                 .file("file", "@/spring-core-4.3.4.RELEASE.jar".getBytes())
-                .file(jsonFile)
+                .file(files[0])
                 .contentType(MediaType.MULTIPART_FORM_DATA)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
+        this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
+    }
+
+    public void testAttachmentUploadProject(String url, String id) throws Exception {
+        String attachment = "[{ \"filename\":\"spring-core-4.3.4.RELEASE.jar\", \"attachmentType\":\"SOURCE\", \"checkStatus\":\"ACCEPTED\", \"createdComment\":\"Uploading Sources.\" }]";
+        /*
+         * TODO Suggestion to use better library in future, instead of MockMultipartFile
+         * to have better document generation feature. below logic is used to generate
+         * the correct restapi end point documentation
+         */
+
+        List<Attachment> attchList = new ArrayList<>();
+        Attachment att1 = new Attachment();
+        att1.setFilename("spring-core-4.3.4.RELEASE.jar");
+        att1.setAttachmentContentId("2");
+        att1.setAttachmentType(AttachmentType.valueOf("SOURCE"));
+        att1.setCheckStatus(CheckStatus.valueOf("ACCEPTED"));
+        att1.setCreatedComment("Uploading Sources.");
+
+        attchList.add(att1);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        String attachmentJson = objectMapper.writeValueAsString(attchList);
+        MockMultipartFile jsonFile = new MockMultipartFile("attachment", "", "application/json",
+                new ByteArrayInputStream(attachment.getBytes()));
+        MockMultipartFile[] files = new MockMultipartFile[] { jsonFile };
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(url + id + "/attachments")
+                .file("file", "@/spring-core-4.3.4.RELEASE.jar".getBytes()).file(files[0])
+                .param("attachments", attachmentJson).contentType(MediaType.MULTIPART_FORM_DATA)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
         this.mockMvc.perform(builder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
