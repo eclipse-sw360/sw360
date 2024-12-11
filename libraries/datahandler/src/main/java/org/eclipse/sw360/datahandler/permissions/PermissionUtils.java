@@ -9,8 +9,7 @@
  */
 package org.eclipse.sw360.datahandler.permissions;
 
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -18,6 +17,7 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -47,6 +47,17 @@ public class PermissionUtils {
         IS_ADMIN_PRIVATE_ACCESS_ENABLED = Boolean.parseBoolean(
             System.getProperty("RunPrivateProjectAccessTest", props.getProperty("admin.private.project.access.enabled", "false")));
     }
+
+    public static final Set<String> CLOSED_PROJECT_EDITABLE_PARAMS = Set.of(
+            "enableSvm",
+            "enableVulnerabilitiesDisplay",
+            "projectManager",
+            "projectOwner",
+            "securityResponsibles",
+            "externalIds",
+            "state",
+            "phaseOutSince"
+    );
 
     public static boolean isNormalUser(User user) {
         return isInGroup(user, UserGroup.USER);
@@ -174,4 +185,31 @@ public class PermissionUtils {
         }
     }
 
+    public static boolean checkEditablePermission(String name, User user, Map<String, Object> reqBodyMap, Project sw360Project) {
+        if (!name.equals(ProjectClearingState.CLOSED.name()) || PermissionUtils.isAdmin(user)) {
+            return true;
+        } else {
+            if ((reqBodyMap.containsKey("attachments") || reqBodyMap.containsKey("obligationsText")
+                    || reqBodyMap.containsKey("linkedObligationId")) && !PermissionUtils.isAdmin(user)) {
+                return false;
+            }
+            String createdBy = sw360Project.getCreatedBy();
+            String projectResponsible = sw360Project.getProjectResponsible();
+            Set<String> projModerators = sw360Project.getModerators();
+            Set<String> projContributors = sw360Project.getContributors();
+            String leadArchitect = sw360Project.getLeadArchitect();
+            Optional<String> match = CLOSED_PROJECT_EDITABLE_PARAMS.stream()
+                    .filter(reqBodyMap::containsKey)
+                    .findAny();
+            if (match.isPresent() && (PermissionUtils.isAdmin(user)
+                    || PermissionUtils.isClearingAdmin(user)
+                    || user.getUserGroup().name().equalsIgnoreCase(UserGroup.CLEARING_EXPERT.name())
+                    || PermissionUtils.isClearingExpert(user)) || user.getEmail().equals(createdBy)
+                    || user.getEmail().equals(projectResponsible) || user.getEmail().equals(leadArchitect)
+                    || projModerators.contains(user.getEmail()) || projContributors.contains(user.getEmail())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
