@@ -141,6 +141,15 @@ public class Sw360VendorService {
         }
     }
 
+    public RequestStatus deleteVendorByid(String vendorId, User sw360User) {
+        try {
+            VendorService.Iface sw360VendorClient = getThriftVendorClient();
+            RequestStatus requestStatus = sw360VendorClient.deleteVendor(vendorId, sw360User);
+            return requestStatus;
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public void deleteAllVendors(User sw360User) {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();

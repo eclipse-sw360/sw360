@@ -25,6 +25,8 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
@@ -39,6 +41,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
@@ -456,6 +459,28 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return mergedUsage;
     }
 
+    public RequestStatus removeOrphanObligations(Map<String, ObligationStatusInfo> obligationStatusMap, List<String> obligationTitlesInRequestBody, Project project, User user, ObligationList obligation) {
+        try {
+            ThriftClients thriftClients = new ThriftClients();
+            ProjectService.Iface client = thriftClients.makeProjectClient();
+            RequestStatus status = null;
+
+            for (String topic : obligationTitlesInRequestBody) {
+                if (obligationStatusMap.containsKey(topic)) {
+                    obligationStatusMap.remove(topic);
+                } else {
+                    status = RequestStatus.FAILURE;
+                    return status;
+                }
+            }
+            status = client.updateLinkedObligations(obligation, user);
+            return status;
+        } catch (TException exception) {
+            log.error("Failed to remove orphan obligation for project: " + project.getId(), exception);
+        }
+        return RequestStatus.FAILURE;
+    }
+
     public Map<String, ObligationStatusInfo> getLicenseObligationData(Map<String, Set<Release>> licensesFromAttachmentUsage, User user) {
         ThriftClients thriftClients = new ThriftClients();
         LicenseService.Iface licenseClient = thriftClients.makeLicenseClient();
@@ -605,6 +630,28 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public ObligationList getObligationData(String linkedObligationId, User user) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         return sw360ProjectClient.getLinkedObligations(linkedObligationId, user);
+    }
+
+    public Map<String, ObligationStatusInfo> setObligationsFromAdminSection(User user, Map<String, ObligationStatusInfo> obligationStatusMap,
+                                                                            Project project, String oblLevel) throws TException {
+        List<Obligation> obligations = SW360Utils.getObligations();
+        Map<String, ObligationStatusInfo> updatedObligationStatusMap = Maps.newHashMap();
+        ThriftClients thriftClients = new ThriftClients();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+
+        if (oblLevel.equalsIgnoreCase("Project")) {
+            updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
+                    obligationStatusMap, obligations, ObligationLevel.PROJECT_OBLIGATION, true);
+            return updatedObligationStatusMap;
+        } else if (oblLevel.equalsIgnoreCase("Organization")) {
+            updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
+                    obligationStatusMap, obligations, ObligationLevel.ORGANISATION_OBLIGATION, true);
+            return updatedObligationStatusMap;
+        } else if (oblLevel.equalsIgnoreCase("Component")) {
+            updatedObligationStatusMap = SW360Utils.getProjectComponentOrganisationLicenseObligationToDisplay(
+                    obligationStatusMap, obligations, ObligationLevel.COMPONENT_OBLIGATION, true);
+            return updatedObligationStatusMap;
+        } return updatedObligationStatusMap;
     }
 
     public Map<String, ObligationStatusInfo> setLicenseInfoWithObligations(Map<String, ObligationStatusInfo> obligationStatusMap, Map<String, String> releaseIdToAcceptedCLI,
@@ -1084,6 +1131,13 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return sw360ProjectClient.getMyAccessibleProjectCounts(sw360User);
     }
 
+    public String getLicenseInfoHeaderText() throws TException {
+        ThriftClients thriftClients = new ThriftClients();
+        final LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
+        String licenseInfoHeaderText = licenseClient.getDefaultLicenseInfoHeaderText(null);
+        return licenseInfoHeaderText;
+    }
+
     /**
      * Import SPDX SBOM using the method on the thrift client.
      * @param user                User uploading the SBOM
@@ -1103,9 +1157,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
      * @return RequestSummary
      * @throws TException
      */
-    public RequestSummary importCycloneDX(User user, String attachmentContentId, String projectId) throws TException {
+    public RequestSummary importCycloneDX(User user, String attachmentContentId, String projectId, boolean doNotReplacePackageAndRelease) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        return sw360ProjectClient.importCycloneDxFromAttachmentContent(user, attachmentContentId, CommonUtils.nullToEmptyString(projectId));
+        return sw360ProjectClient.importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(user, attachmentContentId, CommonUtils.nullToEmptyString(projectId), doNotReplacePackageAndRelease);
     }
 
     /**
@@ -1148,6 +1202,111 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 .map(Integer::parseInt).orElse(0);
         // returning default value 7 (days) if variable is not set
         return limit < 1 ? 7 : limit;
+    }
+
+    /**
+     * Get linked releases information in dependency network of a project
+     * @param projectId              Ids of Releases
+     * @param sw360User              Sw360 user
+     * @return List<ReleaseNode>     linked releases information in recursive structure
+     * @throws TException
+     */
+    public List<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(String projectId, User sw360User) throws TException {
+        try {
+            ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+            return sw360ProjectClient.getLinkedReleasesInDependencyNetworkOfProject(projectId, sw360User);
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("Requested Project Not Found");
+            } else if (sw360Exp.getErrorCode() == 403) {
+                throw new AccessDeniedException(
+                        "Project or its Linked Projects are restricted and / or not accessible");
+            } else {
+                throw sw360Exp;
+            }
+        }
+    }
+
+    public List<Release> getLinkedReleasesOfSubProjects(String projectId, User sw360User) throws TException {
+        Project projectById = getProjectForUserById(projectId, sw360User);
+        ComponentService.Iface sw360ComponentClient = new ThriftClients().makeComponentClient();
+        Map<String, ProjectProjectRelationship> linkedProjects = CommonUtils.nullToEmptyMap(projectById.getLinkedProjects());
+        Set<String> releaseIdsFromLinkedProjects = new HashSet<>();
+
+        for (String linkedProjectId : linkedProjects.keySet()) {
+            Project linkedProject = getProjectForUserById(linkedProjectId, sw360User);
+
+            if (linkedProject != null) {
+                if (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP) {
+                    Map<String, ProjectReleaseRelationship> releaseIdToUsage = CommonUtils.nullToEmptyMap(linkedProject.getReleaseIdToUsage());
+                    releaseIdsFromLinkedProjects.addAll(releaseIdToUsage.keySet());
+                } else {
+                    releaseIdsFromLinkedProjects.addAll(SW360Utils.getReleaseIdsLinkedWithProject(linkedProject));
+                }
+            }
+        }
+        return sw360ComponentClient.getAccessibleReleasesById(releaseIdsFromLinkedProjects, sw360User);
+    }
+
+    public List<Map<String, Object>> compareWithDefaultNetwork(List<ReleaseNode> dependencyNetwork, User sw360User) {
+        ComponentService.Iface releaseClient = new ThriftClients().makeComponentClient();
+        List<Map<String, Object>> comparedNetwork = new ArrayList<>();
+        for (ReleaseNode releaseNode : dependencyNetwork) {
+            Map<String, Object> comparedNode = setFlagForNode(releaseNode, false);
+            List<Map<String, Object>> comparedSubNodes = compareSubNodes(releaseNode, sw360User, releaseClient);
+            comparedNode.put("releaseLink", comparedSubNodes);
+            comparedNetwork.add(comparedNode);
+        }
+        return comparedNetwork;
+    }
+
+    private List<Map<String, Object>> compareSubNodes(ReleaseNode releaseNode, User sw360User, ComponentService.Iface releaseClient) {
+        List<Map<String, Object>> comparedSubNodes = new ArrayList<>();
+        try {
+            Release releaseById = releaseClient.getReleaseById(releaseNode.getReleaseId(), sw360User);
+            Map<String, ReleaseRelationship> linkedReleases = releaseById.getReleaseIdToRelationship();
+            List<String> releaseIdsInRelationShip = (linkedReleases != null) ? new ArrayList<>(linkedReleases.keySet()) : Collections.emptyList();
+            if (!CommonUtils.isNullOrEmptyCollection(releaseNode.getReleaseLink())) {
+                for (ReleaseNode subNode : releaseNode.getReleaseLink()) {
+                    Map<String, Object> comparedSubNode;
+                    if (!releaseIdsInRelationShip.contains(subNode.getReleaseId())) {
+                        comparedSubNode = setBranchOfNodeIsDiff(subNode);
+                    } else {
+                        comparedSubNode = setFlagForNode(subNode, false);
+                        comparedSubNode.put("releaseLink", compareSubNodes(subNode, sw360User, releaseClient));
+                    }
+                    comparedSubNodes.add(comparedSubNode);
+                }
+            }
+        } catch (TException e) {
+            log.error("Could not fetch release: " + releaseNode.getReleaseId(), e);
+        }
+        return comparedSubNodes;
+    }
+
+    private Map<String, Object> setBranchOfNodeIsDiff(ReleaseNode releaseNode) {
+        Map<String, Object> comparedNode = setFlagForNode(releaseNode, true);
+        List<Map<String, Object>> comparedSubNodes = new ArrayList<>();
+        if (!CommonUtils.isNullOrEmptyCollection(releaseNode.getReleaseLink())) {
+            for (ReleaseNode subNode : releaseNode.getReleaseLink()) {
+                comparedSubNodes.add(setBranchOfNodeIsDiff(subNode));
+            }
+        }
+        comparedNode.put("releaseLink", comparedSubNodes);
+        return comparedNode;
+    }
+
+    private Map<String, Object> setFlagForNode(ReleaseNode releaseNode, boolean isDiff) {
+        Map<String, Object> setFlagNode = new HashMap<>();
+        for (ReleaseNode._Fields field : ReleaseNode._Fields.values()) {
+            Object fieldValue = releaseNode.getFieldValue(field);
+            if (fieldValue != null) {
+                String fieldName = field.getFieldName();
+                setFlagNode.put(fieldName, fieldValue);
+            }
+        }
+        setFlagNode.put("isDiff", isDiff);
+        return setFlagNode;
     }
 
     public List<Map<String, String>> serveDependencyNetworkListView(String projectId, User sw360User) throws TException {

@@ -508,6 +508,23 @@ include::{snippets}/should_document_get_license_obligations/curl-request.adoc[]
 ===== Example response
 include::{snippets}/should_document_get_license_obligations/http-response.adoc[]
 
+[[resources-project-get-project-page-obligations-information]]
+==== List project page obligations
+
+A `GET` request will list obligations of a project depending upon the type of obigation level.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_page_obligations/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_project_page_obligations/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_page_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_page_obligations/http-response.adoc[]
+
 [[resources-projects-create]]
 ==== Creating a project
 
@@ -564,6 +581,20 @@ include::{snippets}/should_document_delete_project/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_delete_project/http-response.adoc[]
+
+[[resources-projects-remove-orphaned-obligations]]
+==== Remove orphaned obligations
+
+A `PATCH` request will update the project's obligations.
+
+===== Request structure 1
+Pass an array of orphaned obligations title in request body.
+
+===== Example request
+include::{snippets}/should_document_remove_orphaned_obligations/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_remove_orphaned_obligations/http-response.adoc[]
 
 [[resources-project-link-projects]]
 ==== Link project to the projects
@@ -899,7 +930,15 @@ include::{snippets}/should_document_import_cyclonedx/http-response.adoc[]
 [[resources-import-sbom-on-project]]
 ==== Import SBOM on project
 
-A `POST` request is used to import a SBOM on a project. Currently only CycloneDX(.xml/.json) files are supported.
+A `POST` request is used to import a SBOM on a project. The project’s releases and packages will be replaced with the latest data from the SBOM. Currently only CycloneDX(.xml/.json) files are supported.
+
+[red]#Request parameter#
+|===
+|Parameter |Description
+
+|doNotReplacePackageAndRelease
+|When importing an SBOM into an existing project, the project’s releases and packages will be replaced with the latest data from the SBOM. Use the parameter `doNotReplacePackageAndRelease=true` to import new data without replacing the existing releases and packages.
+|===
 
 [red]#Request body#
 |===
@@ -933,6 +972,20 @@ include::{snippets}/should_document_get_project_count/response-fields.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_get_project_count/http-response.adoc[]
+
+[[resources-project-getprojectcount]]
+==== Get license info header text
+
+A `GET` request will get the default license info header text.
+
+===== Example request
+include::{snippets}/should_document_get_license_info_header/curl-request.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_get_license_info_header/response-fields.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_license_info_header/http-response.adoc[]
 
 [[resources-project-get-summaryadministraion-project]]
 ==== Administration and Summary Info
@@ -1011,6 +1064,30 @@ include::{snippets}/should_document_update_project_with_network/curl-request.ado
 ===== Example response
 include::{snippets}/should_document_update_project_with_network/http-response.adoc[]
 
+[[resources-projects-duplicate-with-network]]
+==== Duplicate a project with dependencies network
+
+A `POST` request is used to duplicate a project with dependencies network
+
+===== Request structure
+include::{snippets}/should_document_duplicate_project_with_dependency_network/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_duplicate_project_with_dependency_network/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_duplicate_project_with_dependency_network/http-response.adoc[]
+
+[[resources-linked-releases-in-dependency-network-of-project]]
+==== Get linked releases in dependency network of a project
+
+A `GET` request is used to get linked releases in dependency network of a project.
+
+===== Example request
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_of_project/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_releases_in_dependency_network_of_project/http-response.adoc[]
 
 [[resources-projects-download-licenseclearing-report]]
 ==== Downloading project license clearing report
@@ -1102,3 +1179,43 @@ include::{snippets}/should_document_get_resource_source_bundle/curl-request.adoc
 
 ===== Example response
 include::{snippets}/should_document_get_resource_source_bundle/http-response.adoc[]
+
+[[resources-get-linked-releases-of-linked-projects]]
+==== Get linked releases of linked projects
+
+A `GET` request is used to Get linked releases of linked projects.
+
+===== Response structure
+include::{snippets}/should_document_get_linked_releases_of_linked_projects/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_linked_releases_of_linked_projects/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_linked_releases_of_linked_projects/http-response.adoc[]
+
+[[resources-compare-dependency-network-with-relationship-between-releases]]
+==== Compare dependency network with default network (relationships between releases)
+
+A `POST` request is used to compare dependency network with default network (relationships between releases).
+
+===== Example request
+include::{snippets}/should_document_compare_dependency_network_with_default_releases_relationship/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_compare_dependency_network_with_default_releases_relationship/http-response.adoc[]
+
+[[resources-projects-download-releases-ecc-report]]
+==== Downloading project release with ecc information
+
+A `GET` request help to download the project release with ecc information report.
+
+===== Request parameter
+include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/http-response.adoc[]
+

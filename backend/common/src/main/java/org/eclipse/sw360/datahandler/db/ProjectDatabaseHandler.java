@@ -12,6 +12,7 @@ package org.eclipse.sw360.datahandler.db;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.google.common.annotations.VisibleForTesting;
@@ -249,6 +250,11 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
 
         if (!(ProjectClearingState.CLOSED.equals(project.getClearingState()) || Visibility.PRIVATE.equals(project.getVisbility()))) {
             clearingRequest.setProjectBU(project.getBusinessUnit());
+            Project projectWithInfo = fillClearingStateSummaryIncludingSubprojectsForSingleProject(project, user);
+            int initialOpenReleases = SW360Utils.getOpenReleaseCount(projectWithInfo.releaseClearingStateSummary);
+            ClearingRequestSize initialSize = SW360Utils.determineCRSize(initialOpenReleases);
+            clearingRequest.setClearingSize(initialSize);
+            log.info(initialOpenReleases + " open releases found for project: " + project.getId() + "and initial size is: " + initialSize);
             String crId = moderator.createClearingRequest(clearingRequest, user);
             if (CommonUtils.isNotNullEmptyOrWhitespace(crId)) {
                 project.setClearingRequestId(crId);
@@ -1137,7 +1143,12 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     public RequestStatus updateProjectVulnerabilityRating(ProjectVulnerabilityRating link) {
         if( ! link.isSetId()){
             link.setId(SW360Constants.PROJECT_VULNERABILITY_RATING_ID_PREFIX + link.getProjectId());
-            pvrRepository.add(link);
+            try {
+                pvrRepository.add(link);
+            } catch (SW360Exception e) {
+                log.error("Unable to update project vulnerability rating.", e);
+                return RequestStatus.FAILURE;
+            }
         } else {
             pvrRepository.update(link);
         }
@@ -1848,6 +1859,10 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     public RequestSummary importCycloneDxFromAttachmentContent(User user, String attachmentContentId, String projectId) throws SW360Exception {
+        return importCycloneDxFromAttachmentContent(user, attachmentContentId, projectId, false);
+    }
+
+    public RequestSummary importCycloneDxFromAttachmentContent(User user, String attachmentContentId, String projectId, boolean doNotReplacePackageAndRelease) throws SW360Exception {
         final AttachmentContent attachmentContent = attachmentConnector.getAttachmentContent(attachmentContentId);
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         try {
@@ -1856,7 +1871,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     .unsafeGetAttachmentStream(attachmentContent)) {
                 final CycloneDxBOMImporter cycloneDxBOMImporter = new CycloneDxBOMImporter(this,
                         componentDatabaseHandler, packageDatabaseHandler, attachmentConnector, user);
-                return cycloneDxBOMImporter.importFromBOM(inputStream, attachmentContent, projectId, user);
+                return cycloneDxBOMImporter.importFromBOM(inputStream, attachmentContent, projectId, user, doNotReplacePackageAndRelease);
             }
         } catch (IOException e) {
             log.error("Error while importing / parsing CycloneDX SBOM! ", e);
@@ -2550,5 +2565,43 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
 
         return linkedReleases;
+    }
+
+    public List<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(String projectId, User sw360User) throws SW360Exception {
+        final Project projectById = getProjectById(projectId, sw360User);
+        if (projectById.getReleaseRelationNetwork() == null) {
+            return new ArrayList<>();
+        }
+        List<ReleaseNode> releaseNodes;
+        try {
+            releaseNodes = mapper.readValue(projectById.getReleaseRelationNetwork(), new TypeReference<>() {
+            });
+        } catch (JsonProcessingException e) {
+            log.error("Error while parsing JSON data");
+            return new ArrayList<>();
+        }
+
+        return releaseNodes.stream()
+                .map(releaseNode -> wrapSW360Exception(() -> createReleaseNodeWithDetail(releaseNode, sw360User)))
+                .collect(Collectors.toList());
+    }
+
+    public ReleaseNode createReleaseNodeWithDetail(ReleaseNode releaseNode, User sw360User) throws SW360Exception {
+        Release releaseById = componentDatabaseHandler.getRelease(releaseNode.getReleaseId(), sw360User);
+        boolean isActionAllowed = componentDatabaseHandler.isReleaseActionAllowed(releaseById, sw360User, RequestedAction.READ);
+        ReleaseNode detailReleaseNode = new ReleaseNode();
+        detailReleaseNode.setReleaseId(releaseNode.getReleaseId());
+        detailReleaseNode.setReleaseRelationship(releaseNode.getReleaseRelationship());
+        detailReleaseNode.setMainlineState(releaseNode.getMainlineState());
+        detailReleaseNode.setComment(releaseNode.getComment());
+        detailReleaseNode.setReleaseVersion(isActionAllowed ? releaseById.getVersion() : "");
+        detailReleaseNode.setReleaseName(isActionAllowed ? releaseById.getName() : "");
+        detailReleaseNode.setComponentId(isActionAllowed ? releaseById.getComponentId() : "");
+        detailReleaseNode.setReleaseLink(
+                releaseNode.getReleaseLink().stream()
+                        .map(node -> wrapSW360Exception(() -> createReleaseNodeWithDetail(node, sw360User)))
+                        .collect(Collectors.toList())
+        );
+        return detailReleaseNode;
     }
 }

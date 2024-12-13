@@ -29,9 +29,11 @@ import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundExceptio
 import org.eclipse.sw360.datahandler.resourcelists.ResourceComparatorGenerator;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceListController;
 import org.eclipse.sw360.datahandler.thrift.Comment;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
@@ -53,6 +55,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentController;
+import org.eclipse.sw360.rest.resourceserver.clearingrequest.Sw360ClearingRequestService;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.license.LicenseController;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
@@ -131,6 +134,9 @@ public class RestControllerHelper<T> {
     private final Sw360ObligationService obligationService;
 
     @NonNull
+    private final Sw360ClearingRequestService clearingRequestService;
+
+    @NonNull
     private final ResourceComparatorGenerator<T> resourceComparatorGenerator = new ResourceComparatorGenerator<>();
 
     @NonNull
@@ -152,6 +158,12 @@ public class RestControllerHelper<T> {
     private final com.fasterxml.jackson.databind.Module sw360Module;
     public static final ImmutableSet<ProjectReleaseRelationship._Fields> SET_OF_PROJECTRELEASERELATION_FIELDS_TO_IGNORE = ImmutableSet
             .of(ProjectReleaseRelationship._Fields.CREATED_ON, ProjectReleaseRelationship._Fields.CREATED_BY);
+    private static final ImmutableMap<Release._Fields,String> mapOfReleaseFieldsTobeEmbedded = ImmutableMap.of(
+            Release._Fields.MODERATORS, "sw360:moderators",
+            Release._Fields.ATTACHMENTS, "sw360:attachments",
+            Release._Fields.COTS_DETAILS, "sw360:cotsDetails",
+            Release._Fields.RELEASE_ID_TO_RELATIONSHIP,"sw360:releaseIdToRelationship",
+            Release._Fields.CLEARING_INFORMATION, "sw360:clearingInformation");
 
     public User getSw360UserFromAuthentication() {
         try {
@@ -657,6 +669,16 @@ public class RestControllerHelper<T> {
             }
         }
         return packageToUpdate;
+    }
+
+    public ClearingRequest updateClearingRequest(ClearingRequest crToUpdate, ClearingRequest requestBodyCR) {
+        for(ClearingRequest._Fields field: ClearingRequest._Fields.values()) {
+            Object fieldValue = requestBodyCR.getFieldValue(field);
+            if (fieldValue != null) {
+                crToUpdate.setFieldValue(field, fieldValue);
+            }
+        }
+        return crToUpdate;
     }
 
     public User updateUserProfile(User userToUpdate, Map<String, Object> requestBodyUser, ImmutableSet<User._Fields> setOfUserProfileFields) {
@@ -1377,6 +1399,7 @@ public class RestControllerHelper<T> {
         embeddedClearingRequest.setType(null);
         embeddedClearingRequest.setClearingType(clearingRequest.getClearingType());
         embeddedClearingRequest.setTimestamp(clearingRequest.getTimestamp());
+        embeddedClearingRequest.setClearingSize(clearingRequest.getClearingSize());
         return embeddedClearingRequest;
     }
 
@@ -1581,5 +1604,55 @@ public class RestControllerHelper<T> {
         int totalReleaseCount = SW360Utils.getTotalReleaseCount(clearingInfo);
         halClearingRequest.addEmbeddedResource("openRelease", openReleaseCount);
         halClearingRequest.addEmbeddedResource("totalRelease", totalReleaseCount);
+    }
+
+    public ReleaseLink convertToReleaseLink(Release release, ReleaseRelationship relationship) {
+        ReleaseLink releaseLink = new ReleaseLink();
+        releaseLink.setId(release.getId());
+        releaseLink.setClearingState(release.getClearingState());
+        releaseLink.setLicenseIds(release.getMainLicenseIds());
+        releaseLink.setName(release.getName());
+        releaseLink.setVersion(release.getVersion());
+        releaseLink.setReleaseRelationship(relationship);
+        releaseLink.setComponentId(release.getComponentId());
+        return releaseLink;
+    }
+
+    public HalResource<Release> createHalReleaseResourceWithAllDetails(Release release) {
+        HalResource<Release> halRelease = new HalResource<>(release);
+        Link componentLink = linkTo(ReleaseController.class)
+                .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId())
+                .withRel("component");
+        halRelease.add(componentLink);
+        release.setComponentId(null);
+        Set<String> packageIds = release.getPackageIds();
+
+        if (packageIds != null) {
+            for (String id : release.getPackageIds()) {
+                Link packageLink = linkTo(ReleaseController.class)
+                        .slash("api" + PackageController.PACKAGES_URL + "/" + id).withRel("packages");
+                halRelease.add(packageLink);
+            }
+        }
+        release.setPackageIds(null);
+        for (Map.Entry<Release._Fields, String> field : mapOfReleaseFieldsTobeEmbedded.entrySet()) {
+            addEmbeddedFields(field.getValue(), release.getFieldValue(field.getKey()), halRelease);
+        }
+        // Do not add attachment as it is an embedded field
+        release.unsetAttachments();
+        return halRelease;
+    }
+    public ClearingRequest updateCRSize(ClearingRequest clearingRequest, Project project, User sw360User) throws TException {
+        int openReleaseCount = SW360Utils.getOpenReleaseCount(project.getReleaseClearingStateSummary());
+        ClearingRequestSize currentSize = SW360Utils.determineCRSize(openReleaseCount);
+        ClearingRequestSize initialSize = clearingRequest.getClearingSize();
+        if(initialSize == null) return clearingRequest;
+        if(!initialSize.equals(ClearingRequestSize.VERY_LARGE)) {
+            int limit = SW360Utils.CLEARING_REQUEST_SIZE_MAP.get(initialSize);
+            if(openReleaseCount > limit){
+                clearingRequestService.updateClearingRequestForChangeInClearingSize(clearingRequest.getId(), currentSize);
+            }
+        }
+        return clearingRequestService.getClearingRequestById(clearingRequest.getId(), sw360User);
     }
 }

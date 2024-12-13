@@ -75,9 +75,11 @@ public class ComponentImportUtilsTest extends ComponentAndAttachmentAwareDBTest 
         final String attachmentContentId = getCreatedAttachmentContentId();
 
         final AttachmentContent overwriter = new AttachmentContent().setId(OVERRIDING_ID)
-                .setOnlyRemote(true).setRemoteUrl(REMOTE_URL).setType(TYPE_ATTACHMENT);
+                .setOnlyRemote(true).setRemoteUrl(REMOTE_URL).setType(TYPE_ATTACHMENT)
+                .setFilename(fileName).setContentType("text/plain");
         final AttachmentContent addition = new AttachmentContent().setId(ADDITIONAL_ID)
-                .setOnlyRemote(true).setRemoteUrl(REMOTE_URL).setType(TYPE_ATTACHMENT);
+                .setOnlyRemote(true).setRemoteUrl(REMOTE_URL).setType(TYPE_ATTACHMENT)
+                .setFilename(fileName).setContentType("text/plain");
 
         attachmentContentRepository.add(overwriter);
         attachmentContentRepository.add(addition);

@@ -13,8 +13,6 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
@@ -78,7 +76,6 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
-    @Ignore
     // SecurityContextHolder.getContext in test filter chain supports no mocking.
     // The authentication object is always null in the test class.
     // As result the test filter automatically authenticates the request
@@ -89,8 +86,10 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isUnauthorized())
                 .andDo(this.documentationHandler.document(
                         responseFields(
-                                fieldWithPath("error").description("The error code, e.g. invalid_token"),
-                                fieldWithPath("error_description").description("The description of invalid token"))));
+                                fieldWithPath("timestamp").description("The timestamp when the error occurred"),
+                                fieldWithPath("status").description("The HTTP status code, e.g. 400"),
+                                fieldWithPath("error").description("The HTTP error code, e.g. Bad Request"),
+                                fieldWithPath("message").description("The error message, e.g. JSON parse error: Unexpected end-of-input: expected close marker for Object"))));
     }
 
     @Test

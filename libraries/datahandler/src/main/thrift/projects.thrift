@@ -30,6 +30,7 @@ typedef sw360.SW360Exception SW360Exception
 typedef sw360.ClearingRequestState ClearingState
 typedef sw360.ClearingRequestPriority ClearingPriority
 typedef sw360.ClearingRequestType ClearingType
+typedef sw360.ClearingRequestSize ClearingSize
 typedef sw360.Comment Comment
 typedef sw360.PaginationData PaginationData
 typedef components.Release Release
@@ -247,7 +248,8 @@ struct ClearingRequest {
     17: optional i64 modifiedOn,
     18: optional list<i64> reOpenOn,
     19: optional ClearingPriority priority,
-    20: optional ClearingType clearingType
+    20: optional ClearingType clearingType,
+    21: optional ClearingSize clearingSize
 }
 
 struct ProjectDTO{
@@ -611,6 +613,12 @@ service ProjectService {
     RequestSummary importCycloneDxFromAttachmentContent(1: User user, 2: string attachmentContentId, 3: string projectId) throws (1: SW360Exception exp);
 
     /**
+    * Parse a CycloneDx SBoM file (XML or JSON) during re-import on a project and write the information to SW360 as Project / Component / Release / Package
+    * with replaceReleaseAndPackageFlag
+    */
+    RequestSummary importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(1: User user, 2: string attachmentContentId, 3: string projectId, 4: bool doNotReplacePackageAndRelease) throws (1: SW360Exception exp);
+
+    /**
      * Export a CycloneDx SBoM file (XML or JSON) for a Project
      */
     RequestSummary exportCycloneDxSbom(1: string projectId, 2: string bomType, 3: bool includeSubProjReleases, 4: User user) throws (1: SW360Exception exp);
@@ -706,4 +714,8 @@ service ProjectService {
     */
     list<ReleaseLink> getReleaseLinksOfProjectNetWorkByIndexPath(1: string projectId, 2: list<string> indexPath, 3: User user) throws (1: SW360Exception exp);
 
+    /**
+    * Get linked releases information in dependency network of a project
+    */
+    list<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(1: string projectId, 2: User sw360User) throws (1: SW360Exception exp);
 }

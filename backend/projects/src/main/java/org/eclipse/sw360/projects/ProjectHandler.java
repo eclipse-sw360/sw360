@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
+import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -271,6 +272,13 @@ public class ProjectHandler implements ProjectService.Iface {
         assertId(attachmentContentId);
         assertUser(user);
         return handler.importCycloneDxFromAttachmentContent(user, attachmentContentId, projectId);
+    }
+
+    @Override
+    public RequestSummary importCycloneDxFromAttachmentContentWithReplacePackageAndReleaseFlag(User user, String attachmentContentId, String projectId, boolean doNotReplacePackageAndRelease) throws SW360Exception {
+        assertId(attachmentContentId);
+        assertUser(user);
+        return handler.importCycloneDxFromAttachmentContent(user, attachmentContentId, projectId, doNotReplacePackageAndRelease);
     }
 
     @Override
@@ -576,5 +584,10 @@ public class ProjectHandler implements ProjectService.Iface {
     @Override
     public List<ReleaseLink> getReleaseLinksOfProjectNetWorkByIndexPath(String projectId, List<String> indexPath, User user) throws SW360Exception {
         return handler.getReleaseLinksOfProjectNetWorkByIndexPath(indexPath, projectId, user);
+    }
+
+    @Override
+    public List<ReleaseNode> getLinkedReleasesInDependencyNetworkOfProject(String projectId, User sw360User) throws SW360Exception {
+        return handler.getLinkedReleasesInDependencyNetworkOfProject(projectId, sw360User);
     }
 }

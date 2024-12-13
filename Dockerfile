@@ -10,11 +10,10 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 
-ARG TOMCAT_VERSION=11-jre21-temurin-noble
-
 #--------------------------------------------------------------------------------------------------
 # Thrift
-FROM ubuntu:noble AS sw360thriftbuild
+# Ubuntu Noble image
+FROM ubuntu@sha256:80dd3c3b9c6cecb9f1667e9290b3bc61b78c2678c02cbdae5f0fea92cc6734ab AS sw360thriftbuild
 
 ARG BASEDIR="/build"
 ARG DESTDIR="/"
@@ -47,7 +46,8 @@ COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
 #--------------------------------------------------------------------------------------------------
 # SW360 Build Test image
 
-FROM maven:3-eclipse-temurin-21 AS sw360test
+# 3-eclipse-temurin-21
+FROM maven@sha256:85d505fc45ba12ca042b3f4a27eb47a657d186111c4df0a9b15cc5d9359f9266 AS sw360test
 
 COPY --from=localthrift /usr/local/bin/thrift /usr/bin
 
@@ -59,7 +59,8 @@ SHELL ["/bin/bash", "-c"]
 # So when decide to use as development, only this last stage
 # is triggered by buildkit images
 
-FROM maven:3-eclipse-temurin-21 AS sw360build
+# 3-eclipse-temurin-21
+FROM maven@sha256:85d505fc45ba12ca042b3f4a27eb47a657d186111c4df0a9b15cc5d9359f9266 AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -84,11 +85,12 @@ RUN chmod a+x /usr/local/bin/setup_maven_proxy \
 
 COPY --from=localthrift /usr/local/bin/thrift /usr/bin
 
+WORKDIR /build/sw360
+
 RUN --mount=type=bind,target=/build/sw360,rw \
     --mount=type=cache,target=/root/.m2 \
     --mount=type=secret,id=couchdb \
-    cd /build/sw360 \
-    && set -a \
+    set -a \
     && source /run/secrets/couchdb \
     && envsubst < scripts/docker-config/couchdb.properties.template | tee scripts/docker-config/etc_sw360/couchdb.properties \
     && set +a \
@@ -120,7 +122,9 @@ COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 
 #--------------------------------------------------------------------------------------------------
 # Runtime image
-FROM tomcat:$TOMCAT_VERSION AS sw360
+
+# 11-jre21-temurin-noble
+FROM tomcat@sha256:7ebc6c3b1e704a3150d7a6919d24411d58df37e5893702a87f74d63129125646 AS sw360
 
 ARG TOMCAT_DIR=/usr/local/tomcat
 

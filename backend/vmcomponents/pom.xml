@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.eclipse.sw360</groupId>
         <artifactId>backend</artifactId>
-        <version>18.99.1</version>
+        <version>19.0.0</version>
     </parent>
 
     <artifactId>backend-vmcomponents</artifactId>
@@ -44,9 +44,10 @@
             <artifactId>json-simple</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.tomakehurst</groupId>
+            <groupId>org.wiremock</groupId>
             <artifactId>wiremock</artifactId>
-            <version>3.0.1</version>
+            <version>${wiremock.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

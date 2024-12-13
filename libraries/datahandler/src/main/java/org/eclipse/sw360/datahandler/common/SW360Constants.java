@@ -117,6 +117,8 @@ public class SW360Constants {
     public static final String DATA_HANDLER_POM_FILE_PATH;
     public static final UserGroup PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE;
     public static final boolean IS_PACKAGE_PORTLET_ENABLED;
+    public static final Integer VCS_REDIRECTION_LIMIT;
+    public static final Integer VCS_REDIRECTION_TIMEOUT_LIMIT;
     public static final String TOOL_NAME;
     public static final String TOOL_VENDOR;
     public static final UserGroup SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE;
@@ -127,6 +129,13 @@ public class SW360Constants {
     public static final String PREFERRED_CLEARING_DATE_LIMIT;
     public static final Boolean MAIL_REQUEST_FOR_PROJECT_REPORT;
     public static final Boolean MAIL_REQUEST_FOR_COMPONENT_REPORT;
+
+    public static final String COMPONENTS = "components";
+    public static final String PROJECTS = "projects";
+    public static final String LICENSES = "licenses";
+    public static final String REPORTS_URL = "/reports";
+    public static final String PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO = "projectReleaseSpreadSheetWithEcc";
+    public static final String CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     /**
      * Hashmap containing the name field for each type.
@@ -226,6 +235,8 @@ public class SW360Constants {
         DATA_HANDLER_POM_FILE_PATH = props.getProperty("datahandler.pom.file.path", "/META-INF/maven/org.eclipse.sw360/datahandler/pom.xml");
         PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE = UserGroup.valueOf(props.getProperty("package.portlet.write.access.usergroup", UserGroup.USER.name()));
         IS_PACKAGE_PORTLET_ENABLED = Boolean.parseBoolean(props.getProperty("package.portlet.enabled", "true"));
+        VCS_REDIRECTION_LIMIT = Integer.parseInt(props.getProperty("vcs.redirection.limit","5"));
+        VCS_REDIRECTION_TIMEOUT_LIMIT = Integer.parseInt(props.getProperty("vcs.redirection.timeout.limit","5000"));
         TOOL_NAME = props.getProperty("sw360.tool.name", "SW360");
         TOOL_VENDOR = props.getProperty("sw360.tool.vendor", "Eclipse Foundation");
         SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE = UserGroup.valueOf(props.getProperty("sbom.import.export.access.usergroup", UserGroup.USER.name()));

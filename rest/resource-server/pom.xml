@@ -18,7 +18,7 @@
     <parent>
         <artifactId>rest</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>18.99.1</version>
+        <version>19.0.0</version>
     </parent>
 
     <artifactId>resource-server</artifactId>
@@ -193,7 +193,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>${springdoc-openapi-webmvc.version}</version>
+            <version>${springdoc-openapi-stater-common.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>

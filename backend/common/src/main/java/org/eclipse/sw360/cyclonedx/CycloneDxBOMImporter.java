@@ -12,7 +12,10 @@ package org.eclipse.sw360.cyclonedx;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.function.Predicate;
@@ -104,14 +107,27 @@ public class CycloneDxBOMImporter {
     private static final String INVALID_PACKAGE = "invalidPkg";
     private static final String PROJECT_ID = "projectId";
     private static final String PROJECT_NAME = "projectName";
+    private static final String REDIRECTED_VCS = "redirectedVCS";
     private static final boolean IS_PACKAGE_PORTLET_ENABLED = SW360Constants.IS_PACKAGE_PORTLET_ENABLED;
     private static final Predicate<ExternalReference.Type> typeFilter = type -> ExternalReference.Type.VCS.equals(type);
+
+    private Set<String> redirectedUrls = new HashSet<>();
 
     private final ProjectDatabaseHandler projectDatabaseHandler;
     private final ComponentDatabaseHandler componentDatabaseHandler;
     private final PackageDatabaseHandler packageDatabaseHandler;
     private final User user;
     private final AttachmentConnector attachmentConnector;
+
+    // Map of supported hosts and base URL formats
+    private static final Map<String, String> VCS_HOSTS = Map.of(
+            "github.com", "https://github.com/%s/%s",
+            "gitlab.com", "https://gitlab.com/%s/%s",
+            "bitbucket.org", "https://bitbucket.org/%s/%s",
+            "cs.opensource.google", "https://cs.opensource.google/%s/%s",
+            "go.googlesource.com", "https://go.googlesource.com/%s",
+            "pypi.org", "https://pypi.org/project/%s"
+    );
 
     public CycloneDxBOMImporter(ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler,
             PackageDatabaseHandler packageDatabaseHandler, AttachmentConnector attachmentConnector, User user) {
@@ -136,15 +152,16 @@ public class CycloneDxBOMImporter {
                         .filter(Objects::nonNull)
                         .filter(ref -> ExternalReference.Type.VCS.equals(ref.getType()))
                         .map(ExternalReference::getUrl)
-                        .map(url -> sanitizeVCS(url))
+                        .map(url -> sanitizeVCS(url.toLowerCase()))
                         .filter(url -> CommonUtils.isValidUrl(url))
+                        .map(url -> getFinalURL(url))
                         .map(url -> new AbstractMap.SimpleEntry<>(url, comp)))
                 .collect(Collectors.groupingBy(e -> e.getKey(),
                         Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
     }
 
     @SuppressWarnings("unchecked")
-    public RequestSummary importFromBOM(InputStream inputStream, AttachmentContent attachmentContent, String projectId, User user) {
+    public RequestSummary importFromBOM(InputStream inputStream, AttachmentContent attachmentContent, String projectId, User user, boolean doNotReplacePackageAndRelease) {
         RequestSummary requestSummary = new RequestSummary();
         Map<String, String> messageMap = new HashMap<>();
         requestSummary.setRequestStatus(RequestStatus.FAILURE);
@@ -182,15 +199,14 @@ public class CycloneDxBOMImporter {
 
             if (!IS_PACKAGE_PORTLET_ENABLED) {
                 vcsToComponentMap.put("", components);
-                requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent);
+                requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent, doNotReplacePackageAndRelease);
             } else {
                 vcsToComponentMap = getVcsToComponentMap(components);
                 if (componentsCount == vcsCount) {
 
-                    requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent);
+                    requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent, doNotReplacePackageAndRelease);
                 } else if (componentsCount > vcsCount) {
-
-                    requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent);
+                    requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent, doNotReplacePackageAndRelease);
 
                     if (requestSummary.requestStatus.equals(RequestStatus.SUCCESS)) {
 
@@ -278,6 +294,7 @@ public class CycloneDxBOMImporter {
                         // all components does not have VCS, so return & show appropriate error in UI
                         messageMap.put(INVALID_COMPONENT, String.join(JOINER, componentsWithoutVcs));
                         messageMap.put(INVALID_PACKAGE, String.join(JOINER, invalidPackages));
+                        messageMap.put(REDIRECTED_VCS, String.join(JOINER, this.redirectedUrls));
                         messageMap.put(DUPLICATE_PACKAGE, String.join(JOINER, duplicatePackages));
                         messageMap.put(SW360Constants.MESSAGE,
                                 String.format("VCS information is missing for <b>%s</b> / <b>%s</b> Components!",
@@ -355,7 +372,7 @@ public class CycloneDxBOMImporter {
     }
 
     public RequestSummary importSbomAsProject(org.cyclonedx.model.Component compMetadata,
-            Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap, String projectId, AttachmentContent attachmentContent)
+            Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap, String projectId, AttachmentContent attachmentContent, boolean doNotReplacePackageAndRelease)
                     throws SW360Exception {
         final RequestSummary summary = new RequestSummary();
         summary.setRequestStatus(RequestStatus.FAILURE);
@@ -408,7 +425,7 @@ public class CycloneDxBOMImporter {
         }
 
         if (IS_PACKAGE_PORTLET_ENABLED) {
-            messageMap = importAllComponentsAsPackages(vcsToComponentMap, project);
+            messageMap = importAllComponentsAsPackages(vcsToComponentMap, project, doNotReplacePackageAndRelease);
         } else {
             messageMap = importAllComponentsAsReleases(vcsToComponentMap, project);
         }
@@ -493,11 +510,14 @@ public class CycloneDxBOMImporter {
 
                 // update components specific fields
                 comp = componentDatabaseHandler.getComponent(compAddSummary.getId(), user);
-                if (AddDocumentRequestStatus.SUCCESS.equals(compAddSummary.getRequestStatus()) && (null != bomComp.getType() && null == comp.getCdxComponentType())) {
+                if (null != bomComp.getType() && null == comp.getCdxComponentType()) {
                     comp.setCdxComponentType(getCdxComponentType(bomComp.getType()));
                 }
-                if (AddDocumentRequestStatus.SUCCESS.equals(compAddSummary.getRequestStatus()) && (CommonUtils.isNullEmptyOrWhitespace(comp.getDescription()) && CommonUtils.isNotNullEmptyOrWhitespace(bomComp.getDescription()))) {
-                    comp.setDescription(bomComp.getDescription().trim());
+                StringBuilder description = new StringBuilder();
+                if (CommonUtils.isNullEmptyOrWhitespace(comp.getDescription()) && CommonUtils.isNotNullEmptyOrWhitespace(bomComp.getDescription())) {
+                    description.append(bomComp.getDescription().trim());
+                } else if (CommonUtils.isNotNullEmptyOrWhitespace(bomComp.getDescription())) {
+                    description.append(" || ").append(bomComp.getDescription().trim());
                 }
                 if (CommonUtils.isNotEmpty(comp.getMainLicenseIds())) {
                     comp.getMainLicenseIds().addAll(licenses);
@@ -513,7 +533,7 @@ public class CycloneDxBOMImporter {
                         comp.setWiki(CommonUtils.nullToEmptyString(extRef.getUrl()));
                     }
                 }
-
+                comp.setDescription(description.toString());
                 RequestStatus updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
                 if (RequestStatus.SUCCESS.equals(updateStatus)) {
                     log.info("updating component successfull: " + comp.getName());
@@ -538,8 +558,7 @@ public class CycloneDxBOMImporter {
         return messageMap;
     }
 
-    private Map<String, String> importAllComponentsAsPackages(Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap, Project project) {
-
+    private Map<String, String> importAllComponentsAsPackages(Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap, Project project, boolean doNotReplacePackageAndRelease) throws SW360Exception {
         final var countMap = new HashMap<String, Integer>();
         final Set<String> duplicateComponents = new HashSet<>();
         final Set<String> duplicateReleases = new HashSet<>();
@@ -547,9 +566,16 @@ public class CycloneDxBOMImporter {
         final Set<String> invalidReleases = new HashSet<>();
         final Set<String> invalidPackages = new HashSet<>();
         final Map<String, ProjectReleaseRelationship> releaseRelationMap = CommonUtils.isNullOrEmptyMap(project.getReleaseIdToUsage()) ? new HashMap<>() : project.getReleaseIdToUsage();
+        final Set<String> projectPkgIds = CommonUtils.isNullOrEmptyCollection(project.getPackageIds()) ? new HashSet<>() : project.getPackageIds();
         countMap.put(REL_CREATION_COUNT_KEY, 0); countMap.put(REL_REUSE_COUNT_KEY, 0);
         countMap.put(PKG_CREATION_COUNT_KEY, 0); countMap.put(PKG_REUSE_COUNT_KEY, 0);
         int relCreationCount = 0, relReuseCount = 0, pkgCreationCount = 0, pkgReuseCount = 0;
+
+        if (!doNotReplacePackageAndRelease) {
+            releaseRelationMap.clear();
+            projectPkgIds.clear();
+            log.info("Cleared existing releases and packages for project: " + project.getName());
+        }
 
         for (Map.Entry<String, List<org.cyclonedx.model.Component>> entry : vcsToComponentMap.entrySet()) {
             Component comp = createComponent(entry.getKey());
@@ -557,6 +583,7 @@ public class CycloneDxBOMImporter {
 
             Release release = new Release();
             String relName = "";
+            StringBuilder description = new StringBuilder();
             AddDocumentRequestSummary compAddSummary;
             try {
                 Component dupCompByName = componentDatabaseHandler.getComponentByName(comp.getName());
@@ -612,11 +639,13 @@ public class CycloneDxBOMImporter {
 
                     // update components specific fields
                     comp = componentDatabaseHandler.getComponent(compAddSummary.getId(), user);
-                    if (AddDocumentRequestStatus.SUCCESS.equals(compAddSummary.getRequestStatus()) && (null != bomComp.getType() && null == comp.getCdxComponentType())) {
+                    if (null != bomComp.getType() && null == comp.getCdxComponentType()) {
                         comp.setCdxComponentType(getCdxComponentType(bomComp.getType()));
                     }
-                    if (AddDocumentRequestStatus.SUCCESS.equals(compAddSummary.getRequestStatus()) && (CommonUtils.isNullEmptyOrWhitespace(comp.getDescription()) && CommonUtils.isNotNullEmptyOrWhitespace(bomComp.getDescription()))) {
-                        comp.setDescription(bomComp.getDescription().trim());
+                    if (CommonUtils.isNullEmptyOrWhitespace(comp.getDescription()) && CommonUtils.isNotNullEmptyOrWhitespace(bomComp.getDescription())) {
+                        description.append(bomComp.getDescription().trim());
+                    } else if (CommonUtils.isNotNullEmptyOrWhitespace(bomComp.getDescription())) {
+                        description.append(" || ").append(bomComp.getDescription().trim());
                     }
                     if (CommonUtils.isNotEmpty(comp.getMainLicenseIds())) {
                         comp.getMainLicenseIds().addAll(licenses);
@@ -635,6 +664,7 @@ public class CycloneDxBOMImporter {
                         }
                     }
 
+                    comp.setDescription(description.toString());
                     RequestStatus updateStatus = componentDatabaseHandler.updateComponent(comp, user, true);
                     if (RequestStatus.SUCCESS.equals(updateStatus)) {
                         log.info("updating component successfull: " + comp.getName());
@@ -693,6 +723,7 @@ public class CycloneDxBOMImporter {
         messageMap.put(DUPLICATE_RELEASE, String.join(JOINER, duplicateReleases));
         messageMap.put(DUPLICATE_PACKAGE, String.join(JOINER, duplicatePackages));
         messageMap.put(INVALID_RELEASE, String.join(JOINER, invalidReleases));
+        messageMap.put(REDIRECTED_VCS, String.join(JOINER, this.redirectedUrls));
         messageMap.put(INVALID_PACKAGE, String.join(JOINER, invalidPackages));
         messageMap.put(PROJECT_ID, project.getId());
         messageMap.put(PROJECT_NAME, SW360Utils.getVersionedName(project.getName(), project.getVersion()));
@@ -986,21 +1017,80 @@ public class CycloneDxBOMImporter {
      * Sanitize different repository URLS based on their defined schema
      */
     public String sanitizeVCS(String vcs) {
-        // GitHub repository URL Format: https://github.com/supplier/name
-        if (vcs.toLowerCase().contains("github.com")) {
-            URI uri = URI.create(vcs);
-            String[] urlParts = uri.getPath().split("/");
-            if (urlParts.length >= 3) {
-                String firstSegment = urlParts[1];
-                String secondSegment = urlParts[2].replaceAll("\\.git.*", "").replaceAll("#.*", "");
-                vcs = "https://github.com/" + firstSegment + "/" + secondSegment;
-                return vcs;
-            } else {
-                log.error("Invalid GitHub repository URL: " + vcs);
+        for (String host : VCS_HOSTS.keySet()) {
+            if (vcs.contains(host)) {
+                return sanitizeVCSByHost(vcs, host);
             }
         }
-        // Other formats yet to be defined
-        return vcs;
+        return vcs; // Return unchanged if no known host is found
+    }
+
+    private String sanitizeVCSByHost(String vcs, String host) {
+        vcs = "https://" + vcs.substring(vcs.indexOf(host)).trim();
+
+        try {
+            URI uri = URI.create(vcs);
+            String[] urlParts = uri.getPath().split("/");
+            String formattedUrl = formatVCSUrl(host, urlParts);
+
+            if (formattedUrl == null) {
+                log.error("Invalid {} repository URL: {}", host, vcs);
+                return vcs;
+            }
+            return formattedUrl.endsWith("/") ? formattedUrl.substring(0, formattedUrl.length() - 1) : formattedUrl;
+
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid URL format: {}", vcs, e);
+            return vcs;
+        }
+    }
+
+    private String formatVCSUrl(String host, String[] urlParts) {
+        String formattedUrl = null;
+
+        switch (host) {
+            case "github.com":
+            case "bitbucket.org":
+                if (urlParts.length >= 3) {
+                    formattedUrl = String.format(VCS_HOSTS.get(host),
+                            urlParts[1], urlParts[2].replaceAll("\\.git.*|#.*", ""));
+                }
+                break;
+
+            case "gitlab.com":
+                if (urlParts.length >= 2) {
+                    // Join everything after the main host to get the full nested path
+                    String repoPath = String.join("/", Arrays.copyOfRange(urlParts, 1, urlParts.length));
+
+                    // Remove everything from the first occurrence of .git or #
+                    repoPath = repoPath.replaceAll("\\.git.*|#.*", "");
+
+                    formattedUrl = String.format(VCS_HOSTS.get(host), repoPath);
+                }
+                break;
+
+            case "cs.opensource.google":
+                if (urlParts.length >= 3) {
+                    String thirdSegment = urlParts.length > 3 && !urlParts[3].isEmpty() && !urlParts[3].equals("+")
+                            ? urlParts[3] : "";
+                    formattedUrl = String.format(VCS_HOSTS.get(host), urlParts[1], urlParts[2], thirdSegment);
+                }
+                break;
+
+            case "go.googlesource.com":
+                if (urlParts.length >= 2) {
+                    formattedUrl = String.format(VCS_HOSTS.get(host), urlParts[1]);
+                }
+                break;
+
+            case "pypi.org":
+                if (urlParts.length >= 3) {
+                    formattedUrl = String.format(VCS_HOSTS.get(host), urlParts[2].replaceAll("\\.git.*|#.*", ""));
+                }
+                break;
+        }
+
+        return formattedUrl;
     }
 
     public static boolean containsComp(Map<String, List<org.cyclonedx.model.Component>> map, org.cyclonedx.model.Component element) {
@@ -1010,5 +1100,62 @@ public class CycloneDxBOMImporter {
             }
         }
         return false;
+    }
+
+    public String getFinalURL(String urlString) {
+        URL url;
+        try {
+            url = new URL(urlString);
+        } catch (MalformedURLException e) {
+            log.error("Invalid URL format: {}", e.getMessage());
+            return urlString;
+        }
+
+        int redirectCount = 0;
+
+        while (redirectCount < SW360Constants.VCS_REDIRECTION_LIMIT) {
+            try {
+                HttpURLConnection connection = openConnection(url);
+                int status = connection.getResponseCode();
+
+                if (status == HttpURLConnection.HTTP_MOVED_PERM || status == 308) {
+                    String newUrl = connection.getHeaderField("Location");
+                    connection.disconnect();
+
+                    // Resolve relative URLs
+                    url = new URL(url, newUrl);
+
+                    if (!"https".equalsIgnoreCase(url.getProtocol())) {
+                        log.error("Insecure redirection to non-HTTPS URL: {}", url);
+                        return urlString;
+                    }
+
+                    redirectCount++;
+                    this.redirectedUrls.add(urlString);
+                } else {
+                    connection.disconnect();
+                    break;
+                }
+            } catch (IOException e) {
+                log.error("Error during redirection handling: {}", e.getMessage());
+                return urlString;
+            }
+        }
+
+        if (redirectCount == 0 || redirectCount == SW360Constants.VCS_REDIRECTION_LIMIT) {
+            if (redirectCount == SW360Constants.VCS_REDIRECTION_LIMIT) {
+                log.error("Exceeded maximum redirect limit. Returning original URL.");
+            }
+            return urlString;
+        }
+        return sanitizeVCS(url.toString());
+    }
+
+    private static HttpURLConnection openConnection(URL url) throws IOException{
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setInstanceFollowRedirects(false);
+        connection.setConnectTimeout(SW360Constants.VCS_REDIRECTION_TIMEOUT_LIMIT);
+        connection.setReadTimeout(SW360Constants.VCS_REDIRECTION_TIMEOUT_LIMIT);
+        return connection;
     }
 }

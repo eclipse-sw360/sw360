@@ -44,14 +44,14 @@ public class Sw360DatabaseSanitationService {
 
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
-    
-    public Map<String, Object> duplicateIdentifiers(User sw360User) throws TException, SW360Exception {
+
+    public Map<String, Map<String, List<String>>> duplicateIdentifiers(User sw360User) throws TException, SW360Exception {
         try {
             if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
                 throw new SW360Exception("Access Denied").setErrorCode(403);
             }
 
-            Map<String, Object> responseMap = new HashMap<>();
+            Map<String, Map<String, List<String>>> responseMap = new HashMap<>();
             ComponentService.Iface componentClient = getThriftComponentClient();
             ProjectService.Iface projectClient = getThriftProjectClient();
             Map<String, List<String>> duplicateComponents = componentClient.getDuplicateComponents();
@@ -75,14 +75,14 @@ public class Sw360DatabaseSanitationService {
             if (sw360Exp.getErrorCode() == 403) {
                 throw new AccessDeniedException("User has not admin access");
             } else if (sw360Exp.getErrorCode() == 204) {
-                throw new SW360Exception(sw360Exp.getMessage()).setErrorCode(204);
+                throw sw360Exp;
             } else {
                 log.error("No duplicate ids found: {}", sw360Exp.getMessage());
             }
             throw sw360Exp;
         }
     }
-    
+
     public ComponentService.Iface getThriftComponentClient() throws TTransportException {
         THttpClient thriftClient = new THttpClient(thriftServerUrl + "/components/thrift");
         TProtocol protocol = new TCompactProtocol(thriftClient);

@@ -95,7 +95,31 @@ public class ProjectDatabaseHandlerTest {
                         .put("r1", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
                         .put("r2", new ProjectReleaseRelationship(ReleaseRelationship.CONTAINED, MainlineState.MAINLINE))
                         .build())
-                .setLinkedProjects(ImmutableMap.<String, ProjectProjectRelationship>builder().put("P5", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)).build());
+                .setLinkedProjects(ImmutableMap.<String, ProjectProjectRelationship>builder().put("P5", new ProjectProjectRelationship(ProjectRelationship.CONTAINED)).build())
+                .setReleaseRelationNetwork(
+                     """
+                         [
+                             {
+                                  "comment": "",
+                                  "releaseLink":[],
+                                  "createBy":"admin@sw360.org",
+                                  "createOn":"2022-08-15",
+                                  "mainlineState":"MAINLINE",
+                                  "releaseId":"r1",
+                                  "releaseRelationship":"CONTAINED"
+                             },
+                             {
+                                  "comment": "",
+                                  "releaseLink":[],
+                                  "createBy":"admin@sw360.org",
+                                  "createOn":"2022-08-15",
+                                  "mainlineState":"MAINLINE",
+                                  "releaseId":"r2",
+                                  "releaseRelationship":"CONTAINED"
+                             }
+                         ],
+                     """
+                );
         projects.add(p4);
         projects.add(new Project().setId("P5").setName("Project5").setBusinessUnit("AB CD EF").setCreatedBy("user1").setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS));
 

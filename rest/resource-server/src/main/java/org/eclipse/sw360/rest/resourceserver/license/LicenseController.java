@@ -15,7 +15,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.Explode;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -107,6 +113,11 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "List obligations of license.",
+            description = "List all obligations of a license.",
+            tags = {"Licenses"}
+    )
     @RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligationsByLicenseId(
             @PathVariable("id") String id) throws TException {
@@ -120,6 +131,11 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
+    @Operation(
+            summary = "List all of the service's licenseTypes.",
+            description = "List all of the service's licenseTypes.",
+            tags = {"Licenses"}
+    )
     @RequestMapping(value = LICENSE_TYPES_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<LicenseType>>> getLicenseTypes() throws TException {
         List<LicenseType> sw360LicenseTypes = licenseService.getLicenseTypes();
@@ -192,15 +208,39 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
-    @RequestMapping(value = LICENSES_URL+ "/{id}", method = RequestMethod.PATCH)
+    @Operation(
+            summary = "Update a license.",
+            description = "Update a service's license.",
+            tags = {"Licenses"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "License updated successfully."),
+            @ApiResponse(
+                    responseCode = "202", description = "Request sent for moderation.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Moderation request is created\"}"
+                                    ))
+                    }
+            ),
+            @ApiResponse(responseCode = "405",
+                    description = "Reject license update due to: an already checked license is not allowed" +
+                            " to become unchecked again")
+    })
+    @RequestMapping(value = LICENSES_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<License>> updateLicense(
+            @Parameter(description = "The id of the license.")
             @PathVariable("id") String id,
-            @RequestBody Map<String, Object> reqBodyMap) throws TException {
+            @Parameter(description = "Updated license body.", schema = @Schema(implementation = License.class))
+            @RequestBody Map<String, Object> reqBodyMap
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         License licenseUpdate = licenseService.getLicenseById(id);
         License licenseRequestBody = restControllerHelper.convertLicenseFromRequest(reqBodyMap, licenseUpdate);
         if (licenseUpdate.isChecked() && !licenseRequestBody.isChecked()) {
-            return new ResponseEntity("Reject license update due to: an already checked license is not allowed to become unchecked again", HttpStatus.METHOD_NOT_ALLOWED);
+            return new ResponseEntity("Reject license update due to: an already checked license is not allowed to" +
+                    " become unchecked again", HttpStatus.METHOD_NOT_ALLOWED);
         }
         licenseUpdate = restControllerHelper.mapLicenseRequestToLicense(licenseRequestBody, licenseUpdate);
         RequestStatus requestStatus = licenseService.updateLicense(licenseUpdate, sw360User);
@@ -212,10 +252,37 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     }
 
     @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Update whitelist for license's obligations.",
+            description = "Update whitelist for license's obligations.",
+            tags = {"Licenses"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "License updated successfully."),
+            @ApiResponse(
+                    responseCode = "202", description = "Request sent for moderation.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Moderation request is created\"}"
+                                    ))
+                    }
+            ),
+            @ApiResponse(responseCode = "500", description = "Update Whitelist to Obligation Fail!")
+    })
     @RequestMapping(value = LICENSES_URL+ "/{id}/whitelist", method = RequestMethod.PATCH)
     public ResponseEntity<EntityModel<License>> updateWhitelist(
+            @Parameter(description = "ID of the license.")
             @PathVariable("id") String licenseId,
-            @RequestBody Map<String, Boolean> reqBodyMaps) throws TException {
+            @Parameter(description = "Obligations to whitelist as key and true/false as value",
+                    schema = @Schema(example = """
+                            {
+                              "ob001": true,
+                              "ob002": true
+                            }""")
+            )
+            @RequestBody Map<String, Boolean> reqBodyMaps
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         License license = licenseService.getLicenseById(licenseId);
         Set<String> obligationIdsByLicense = new HashSet<>();
@@ -244,7 +311,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             halResource = createHalLicense(licenseUpdate);
             return new ResponseEntity<>(halResource, HttpStatus.OK);
         } else {
-            return new ResponseEntity("Update Whitelist to Obligation Fail!",HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity("Update Whitelist to Obligation Fail!", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -253,12 +320,25 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Link a set of obligations to a license.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Obligations linked to license."),
+            @ApiResponse(
+                    responseCode = "400", description = "Obligation ids which failed to linked with license.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Obligation ids: ob001 are not linked to license\"}"
+                                    ))
+                    }
+            )
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.POST)
     public ResponseEntity linkObligation(
             @Parameter(description = "The id of the license.")
             @PathVariable("id") String id,
-            @Parameter(description = "The ids of the obligations to be linked.")
+            @Parameter(description = "The ids of the obligations to be linked.",
+                    example = "[\"ob001\",\"ob002\"]")
             @RequestBody Set<String> obligationIds
     ) throws TException {
         updateLicenseObligations(obligationIds, id, false);
@@ -270,6 +350,18 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Unlink a set of obligations from a license.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Obligations unlinked from license."),
+            @ApiResponse(
+                    responseCode = "400", description = "Obligation ids which failed to unlinked from license.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Obligation ids: ob001 are not linked to license\"}"
+                                    ))
+                    }
+            )
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.PATCH)
     public ResponseEntity unlinkObligation(
@@ -410,13 +502,26 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             description = "Create license type.",
             tags = {"Licenses"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "License Type created successfully."),
+            @ApiResponse(
+                    responseCode = "400", description = "Bad request if license type is empty or user is not admin.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Unable to create License Type. User is not admin\"}"
+                                    ))
+                    }
+            )
+    })
     @RequestMapping(value = LICENSES_URL + "/addLicenseType", method = RequestMethod.POST)
     public ResponseEntity<RequestStatus> createLicenseType(
             @Parameter(description = "The license type name.")
             @RequestParam(value = "licenseType", required = true) String licenseType,
-            HttpServletRequest request) throws TException {
+            HttpServletRequest request
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestStatus requestStatus=licenseService.addLicenseType(sw360User, licenseType, request);
+        RequestStatus requestStatus = licenseService.addLicenseType(sw360User, licenseType, request);
         HttpStatus status = HttpStatus.OK;
         return new ResponseEntity<>(requestStatus, status);
     }

@@ -167,7 +167,7 @@ public class RemoteAttachmentDownloaderTest {
         }
     }
 
-    private AttachmentContent saveRemoteAttachment(String remoteUrl) {
+    private AttachmentContent saveRemoteAttachment(String remoteUrl) throws SW360Exception {
         AttachmentContent attachmentContent = new AttachmentContent()
                 .setFilename("testfile")
                 .setContentType("text")

@@ -89,6 +89,14 @@ enum ClearingRequestType {
     HIGH = 1
 }
 
+enum ClearingRequestSize{
+    VERY_SMALL = 0,
+    SMALL = 1,
+    MEDIUM = 2,
+    LARGE = 3,
+    VERY_LARGE = 4
+}
+
 enum Visibility {
     PRIVATE = 0,
     ME_AND_MODERATORS = 1,

@@ -16,7 +16,7 @@
     <parent>
         <artifactId>backend</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>18.99.1</version>
+        <version>19.0.0</version>
     </parent>
 
     <artifactId>backend-users</artifactId>
@@ -32,6 +32,11 @@
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>backend-common</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+            <version>${spring-security.version}</version>
         </dependency>
     </dependencies>
 </project>

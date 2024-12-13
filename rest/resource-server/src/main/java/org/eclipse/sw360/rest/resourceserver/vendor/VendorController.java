@@ -11,6 +11,10 @@ package org.eclipse.sw360.rest.resourceserver.vendor;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +55,6 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -87,7 +90,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
         }
 
         CollectionModel<EntityModel<Vendor>> resources;
-        if (vendors.size() == 0) {
+        if (vendors.isEmpty()) {
             resources = restControllerHelper.emptyPageResource(Vendor.class, paginationResult);
         } else {
             resources = restControllerHelper.generatePagesResource(paginationResult, vendorResources);
@@ -121,8 +124,8 @@ public class VendorController implements RepresentationModelProcessor<Repository
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleases(
             @Parameter(description = "The id of the vendor to get.")
             @PathVariable("id") String id
-    ) throws TException{
-        try{
+    ) throws TException {
+        try {
             Set<Release> releases = vendorService.getAllReleaseList(id);
             List<EntityModel<Release>> resources = new ArrayList<>();
             releases.forEach(rel -> {
@@ -135,6 +138,29 @@ public class VendorController implements RepresentationModelProcessor<Repository
             return new ResponseEntity<>(relResources, status);
         } catch (TException e) {
             throw new TException(e.getMessage());
+        }
+    }
+
+    @Operation(
+            summary = "Delete a vendor.",
+            description = "Delete vendor by id.",
+            tags = {"Vendor"}
+    )
+    @RequestMapping(value = VENDORS_URL + "/{id}", method = RequestMethod.DELETE)
+    public ResponseEntity<?> deleteVendor(
+            @Parameter(description = "The id of the vendor to be deleted.")
+            @PathVariable("id") String id
+    ) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Vendor sw360Vendor = vendorService.getVendorById(id);
+        if (sw360Vendor == null) {
+            return new ResponseEntity<>("Vendor with id " + id + " not found.", HttpStatus.NOT_FOUND);
+        }
+        RequestStatus requestStatus = vendorService.deleteVendorByid(id, sw360User);
+        if (requestStatus == RequestStatus.SUCCESS) {
+            return new ResponseEntity<>("Vendor with full name " + sw360Vendor.getFullname() + " deleted successfully.", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Vendor with full name " + sw360Vendor.getFullname() + " cannot be deleted.", HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -164,6 +190,32 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "Update a vendor.",
             tags = {"Vendor"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vendor updated successfully.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Vendor updated successfully.\"}"
+                                    ))
+                    }),
+            @ApiResponse(
+                    responseCode = "400", description = "Vendor body is empty.",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"Value cannot be null\"}"
+                                    ))
+                    }),
+            @ApiResponse(
+                    responseCode = "409", description = "A Vendor with same fullname already exists!",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\"message\": \"A Vendor with same fullname 'ABC_XYZ' already exists!\"}"
+                                    ))
+                    }
+            )
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = VENDORS_URL + "/{id}", method = RequestMethod.PATCH)
     public ResponseEntity<?> updateVendor(
@@ -201,6 +253,12 @@ public class VendorController implements RepresentationModelProcessor<Repository
             description = "Export all vendors as Excel file.",
             tags = {"Vendor"}
     )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vendor spreadsheet.",
+                    content = {
+                            @Content(mediaType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    })
+    })
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = VENDORS_URL + "/exportVendorDetails")
     public ResponseEntity<?> exportVendor(HttpServletResponse response) throws TException {

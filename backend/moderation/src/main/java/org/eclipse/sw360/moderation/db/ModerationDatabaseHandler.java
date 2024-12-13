@@ -30,6 +30,7 @@ import org.eclipse.sw360.datahandler.db.spdx.packageinfo.SpdxPackageInfoDatabase
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestEmailTemplate;
 import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
+import org.eclipse.sw360.datahandler.thrift.ClearingRequestSize;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
@@ -181,7 +182,7 @@ public class ModerationDatabaseHandler {
         return requests;
     }
 
-    public String createClearingRequest(ClearingRequest request, User user) {
+    public String createClearingRequest(ClearingRequest request, User user) throws SW360Exception {
         request.setTimestamp(System.currentTimeMillis());
         long id = 1;
         synchronized (ModerationDatabaseHandler.class) {
@@ -320,6 +321,15 @@ public class ModerationDatabaseHandler {
             log.error("Failed to update CR-ID: %s with error: %s", crId, e.getMessage());
         }
     }
+    public void updateClearingRequestForChangeInClearingSize(String crId, ClearingRequestSize size) {
+        try{
+            ClearingRequest clearingRequest = clearingRequestRepository.get(crId);
+            clearingRequest.setClearingSize(size);
+            clearingRequestRepository.update(clearingRequest);
+        } catch (Exception e) {
+            log.error("Failed to update CR-ID: %s with error: %s", crId, e.getMessage());
+        }
+    }
 
     public RequestStatus addCommentToClearingRequest(String id, Comment comment, User user) {
         try {
@@ -441,7 +451,12 @@ public class ModerationDatabaseHandler {
         if(component.isSetComponentType()) {
             request.setComponentType(component.getComponentType());
         }
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to update request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -476,7 +491,12 @@ public class ModerationDatabaseHandler {
         } catch (SW360Exception e) {
             log.error("Could not retrieve parent component type of release with ID=" + release.getId());
         }
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to update request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -551,7 +571,12 @@ public class ModerationDatabaseHandler {
         // Fill the request
         ModerationRequestGenerator generator = new ProjectModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, project, dbproject);
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to create request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -617,7 +642,12 @@ public class ModerationDatabaseHandler {
         // Fill the request
         ModerationRequestGenerator generator = new LicenseModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, license, dblicense);
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to create request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -633,7 +663,11 @@ public class ModerationDatabaseHandler {
         // Set the object
         request.setUser(user);
 
-        addOrUpdate(request, user);
+         try {
+             addOrUpdate(request, user);
+         } catch (SW360Exception e) {
+             log.error("Unable to create request.", e);
+         }
     }
 
     private Set<String> getSPDXDocumentModerators(String department, SPDXDocument dbSpdx) {
@@ -685,7 +719,12 @@ public class ModerationDatabaseHandler {
         // Fill the request
         ModerationRequestGenerator generator = new SpdxDocumentModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, spdx, dbSpdx);
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to create request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -706,7 +745,12 @@ public class ModerationDatabaseHandler {
         // Fill the request
         ModerationRequestGenerator generator = new SpdxDocumentCreationInfoModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, documentCreationInfo, dbDocumentCreationInfo);
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to create request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -727,7 +771,12 @@ public class ModerationDatabaseHandler {
         // Fill the request
         ModerationRequestGenerator generator = new SpdxPackageInfoModerationRequestGenerator();
         request = generator.setAdditionsAndDeletions(request, packageInfo, dbPackageInfo);
-        addOrUpdate(request, user);
+        try {
+            addOrUpdate(request, user);
+        } catch (SW360Exception e) {
+            log.error("Unable to create request.", e);
+            return RequestStatus.FAILURE;
+        }
         return RequestStatus.SENT_TO_MODERATOR;
     }
 
@@ -846,10 +895,10 @@ public class ModerationDatabaseHandler {
         return sw360users;
     }
 
-    public void addOrUpdate(ModerationRequest request, User user) {
+    public void addOrUpdate(ModerationRequest request, User user) throws SW360Exception {
         addOrUpdate(request, user.getEmail());
     }
-    public void addOrUpdate(ModerationRequest request, String userEmail) {
+    public void addOrUpdate(ModerationRequest request, String userEmail) throws SW360Exception {
         if (request.isSetId()) {
             repository.update(request);
             sendMailNotificationsForUpdatedRequest(request, userEmail);

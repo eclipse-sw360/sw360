@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.thrift.ConfigFor;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -42,7 +43,7 @@ public class FossologyRestConfig {
     private boolean outdated;
 
     @Autowired
-    public FossologyRestConfig(ConfigContainerRepository repository) {
+    public FossologyRestConfig(ConfigContainerRepository repository) throws SW360Exception {
         this.repository = repository;
         // eager loading (or initial insert)
         get();
@@ -67,7 +68,12 @@ public class FossologyRestConfig {
     }
 
     private String getFirstValue(String key) {
-        return get().getConfigKeyToValues().getOrDefault(key, new HashSet<>()).stream().findFirst().orElse(null);
+        try {
+            return get().getConfigKeyToValues().getOrDefault(key, new HashSet<>()).stream().findFirst().orElse(null);
+        } catch (SW360Exception e) {
+            log.error(e);
+            return null;
+        }
     }
 
     public ConfigContainer update(ConfigContainer newConfig) {
@@ -97,7 +103,13 @@ public class FossologyRestConfig {
             throw new IllegalStateException("The new FOSSology REST configuration does not contain a valid folder id.");
         }
 
-        ConfigContainer current = get();
+        ConfigContainer current;
+        try {
+            current = get();
+        } catch (SW360Exception e) {
+            log.error(e);
+            throw new IllegalStateException("Unable to get container config.");
+        }
         current.setConfigKeyToValues(newConfig.getConfigKeyToValues());
 
         repository.update(current);
@@ -108,7 +120,7 @@ public class FossologyRestConfig {
         return current;
     }
 
-    public ConfigContainer get() {
+    public ConfigContainer get() throws SW360Exception {
         if (config == null || outdated) {
             try {
                 config = repository.getByConfigFor(ConfigFor.FOSSOLOGY_REST);

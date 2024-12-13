@@ -10,21 +10,16 @@
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <version>23.0.4</version>
     <artifactId>event-listener</artifactId>
     <packaging>jar</packaging>
 
     <parent>
         <artifactId>keycloak</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>23.0.4</version>
+        <version>19.0.0</version>
     </parent>
 
     <properties>
-        <version.compiler.maven.plugin>3.5.1</version.compiler.maven.plugin>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <keycloak.provider.version>25.0.4</keycloak.provider.version>
         <artifact.deploy.dir>${listener.deploy.dir}</artifact.deploy.dir>
     </properties>
 
@@ -32,29 +27,24 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
-            <version>${keycloak.provider.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
-            <version>${keycloak.provider.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi-private</artifactId>
-            <version>${keycloak.provider.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>commonIO</artifactId>
-            <version>18.99.1</version>
+            <version>19.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>datahandler</artifactId>
-            <version>18.99.1</version>
+            <version>19.0.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.thrift</groupId>
@@ -82,7 +72,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>3.0.0-M7</version>
+                    <version>3.5.2</version>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -15,7 +15,7 @@
 	<parent>
 		<artifactId>libraries</artifactId>
 		<groupId>org.eclipse.sw360</groupId>
-		<version>18.99.1</version>
+		<version>19.0.0</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
@@ -30,11 +30,6 @@
 	<build>
 		<finalName>org.eclipse.sw360.importers-${project.version}</finalName>
 		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>${maven-source-plugin.version}</version>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>

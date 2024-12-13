@@ -66,14 +66,20 @@ public class ResourceServerConfiguration {
     @Bean
     @Order(1)
     public SecurityFilterChain securityFilterChainRS1(HttpSecurity http) throws Exception {
-        return http.authorizeRequests(auth -> auth.anyRequest().authenticated()).oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter).jwkSetUri(issuerUri))).httpBasic(Customizer.withDefaults()).csrf(csrf -> csrf.disable()).build();
+        SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
+        return http.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter)
+                        .jwkSetUri(issuerUri)))
+                .httpBasic(Customizer.withDefaults())
+                .exceptionHandling(x -> x.authenticationEntryPoint(saep))
+                .csrf(csrf -> csrf.disable()).build();
     }
 
     @Bean
     @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
-        return http.addFilterBefore(filter, BasicAuthenticationFilter.class).authorizeRequests(auth -> {
+        return http.addFilterBefore(filter, BasicAuthenticationFilter.class).authorizeHttpRequests(auth -> {
             auth.requestMatchers(HttpMethod.GET, "/health").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/info").hasAuthority("WRITE");
             auth.requestMatchers(HttpMethod.GET, "/api").permitAll();

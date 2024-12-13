@@ -106,6 +106,160 @@ public class Sw360ScheduleService {
     }
 
     public RequestStatus triggerCveSearch(User sw360User) throws TException {
-        return new ThriftClients().makeCvesearchClient().update();
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                ThriftClients thriftClients = new ThriftClients();
+                return thriftClients.makeCvesearchClient().update();
+            } else {
+                throw new AccessDeniedException("User does not have admin access");
+            }
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 403) {
+                throw new AccessDeniedException("User does not have admin access", sw360Exp);
+            } else {
+                throw sw360Exp;
+            }
+        } catch (TException e) {
+            log.error("Error occurred while triggering CVE search: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error occurred while triggering CVE search: " + e.getMessage());
+            throw new TException("Unexpected error", e);
+        }
+    }
+
+    public RequestSummary svmSync(User sw360User) throws TException {
+        String serviceName = ThriftClients.SVMSYNC_SERVICE;
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                RequestSummary requestSummary = new ThriftClients().makeScheduleClient().scheduleService(serviceName);
+                return requestSummary;
+            } else {
+                throw new AccessDeniedException("User is not admin");
+            }
+        } catch (TException e) {
+            log.error("Error occurred while scheduling service: " + serviceName, e);
+            throw e;
+        }
+    }
+
+    public RequestStatus cancelSvmSync(User sw360User) throws TException {
+        String serviceName = ThriftClients.SVMSYNC_SERVICE;
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                RequestStatus requestStatus = new ThriftClients().makeScheduleClient().unscheduleService(serviceName, sw360User);
+                return requestStatus;
+            } else {
+                throw new AccessDeniedException("User is not admin");
+            }
+        } catch (TException e) {
+            log.error("Error occurred while scheduling service: " + serviceName, e);
+            throw e;
+        }
+    }
+
+    public RequestSummary scheduleSvmReverseMatch(User sw360User) throws TException {
+        String serviceName = ThriftClients.SVMMATCH_SERVICE;
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                RequestSummary requestSummary = new ThriftClients().makeScheduleClient().scheduleService(serviceName);
+                return requestSummary;
+            } else {
+                throw new AccessDeniedException("User is not admin");
+            }
+        } catch (TException e) {
+            log.error("Error occurred while scheduling service: " + serviceName, e);
+            throw e;
+        }
+    }
+
+    public RequestStatus cancelSvmReverseMatch(User sw360User) throws TException {
+        String serviceName = ThriftClients.SVMMATCH_SERVICE;
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                RequestStatus requestStatus = new ThriftClients().makeScheduleClient().unscheduleService(serviceName, sw360User);
+                return requestStatus;
+            } else {
+                throw new AccessDeniedException("User is not admin");
+            }
+        } catch (TException e) {
+            log.error("Error occurred while scheduling service: " + serviceName, e);
+            throw e;
+        }
+    }
+
+    public RequestSummary svmReleaseTrackingFeedback(User sw360User) throws TException {
+        String serviceName = ThriftClients.SVM_TRACKING_FEEDBACK_SERVICE;
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                RequestSummary requestSummary = new ThriftClients().makeScheduleClient().scheduleService(serviceName);;
+                return requestSummary;
+            } else {
+                throw new AccessDeniedException("User is not admin");
+            }
+        } catch (TException e) {
+            log.error("Error occurred while scheduling service: " + serviceName, e);
+            throw e;
+        }
+    }
+
+    public RequestSummary svmMonitoringListUpdate(User sw360User) throws TException {
+        String serviceName = ThriftClients.SVM_LIST_UPDATE_SERVICE;
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                RequestSummary requestSummary = new ThriftClients().makeScheduleClient().scheduleService(serviceName);
+                return requestSummary;
+            } else {
+                throw new AccessDeniedException("User is not admin");
+            }
+        } catch (TException e) {
+            log.error("Error occurred while scheduling service: " + serviceName, e);
+            throw e;
+        }
+    }
+
+    public RequestStatus cancelSvmMonitoringListUpdate(User sw360User) throws TException {
+        String serviceName = ThriftClients.SVM_LIST_UPDATE_SERVICE;
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                RequestStatus requestStatus = new ThriftClients().makeScheduleClient().unscheduleService(serviceName, sw360User);
+                return requestStatus;
+            } else {
+                throw new AccessDeniedException("User is not admin");
+            }
+        } catch (TException e) {
+            log.error("Error occurred while scheduling service: " + serviceName, e);
+            throw e;
+        }
+    }
+
+    public RequestSummary triggeSrcUpload(User sw360User) throws TException {
+        String serviceName = ThriftClients.SRC_UPLOAD_SERVICE;
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                RequestSummary requestSummary = new ThriftClients().makeScheduleClient().scheduleService(serviceName);
+                return requestSummary;
+            } else {
+                throw new AccessDeniedException("User is not admin");
+            }
+        } catch (TException e) {
+            log.error("Error occurred while scheduling service: " + serviceName, e);
+            throw e;
+        }
+    }
+
+    public RequestStatus unscheduleSrcUpload(User sw360User) throws TException {
+        String serviceName = ThriftClients.SRC_UPLOAD_SERVICE;
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                RequestStatus requestStatus = new ThriftClients().makeScheduleClient().unscheduleService(serviceName, sw360User);
+                return requestStatus;
+            } else {
+                throw new AccessDeniedException("User is not admin");
+            }
+        } catch (TException e) {
+            log.error("Error occurred while scheduling service: " + serviceName, e);
+            throw e;
+        }
     }
 }

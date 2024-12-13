@@ -7,10 +7,10 @@ package org.eclipse.sw360.rest.resourceserver.ecc;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.apache.thrift.TException;
@@ -41,14 +41,14 @@ import lombok.RequiredArgsConstructor;
 @SecurityRequirement(name = "tokenAuth")
 @SecurityRequirement(name = "basic")
 public class EccController implements RepresentationModelProcessor<RepositoryLinksResource> {
-    
+
     private static final String TYPE_ECC = "ecc";
 
     public static final String ECC_URL = "/ecc";
-    
+
     @NonNull
     private final RestControllerHelper restControllerHelper;
-    
+
     @NonNull
     private final Sw360ReleaseService releaseService;
 
@@ -57,14 +57,20 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
         resource.add(linkTo(EccController.class).slash("api/ecc").withRel(TYPE_ECC));
         return resource;
     }
-    
+
+    @Operation(
+            summary = "List ECC details.",
+            description = "List all of the service's ECC.",
+            tags = {"ECC"}
+    )
     @GetMapping(value = ECC_URL)
-    public ResponseEntity<CollectionModel<?>> getEccDetails(HttpServletRequest request, Pageable pageable)
-            throws TException, URISyntaxException {
+    public ResponseEntity<CollectionModel<EntityModel<Release>>> getEccDetails(
+            HttpServletRequest request,
+            Pageable pageable
+    ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
-        List<Release> releases = new ArrayList<>();
         try {
-            releases = releaseService.getReleasesForUser(user);
+            List<Release> releases = releaseService.getReleasesForUser(user);
             PaginationResult<Release> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                     releases, TYPE_ECC);
             final List<EntityModel<Release>> releaseResources = new ArrayList<>();
