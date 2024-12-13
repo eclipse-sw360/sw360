@@ -2557,7 +2557,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Get license obligations data from license database.",
-            tags = {"Project"}
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations", method = RequestMethod.GET)
 	public ResponseEntity<?> getLicObligations(Pageable pageable,
@@ -2647,7 +2647,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Get license obligation data of project tab.",
-            tags = {"Project"}
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligations", method = RequestMethod.GET)
 	public ResponseEntity<HalResource> getLicenseObligations(Pageable pageable,
@@ -2686,7 +2686,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Get obligation data of project tab.",
-            tags = {"Project"}
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/obligation", method = RequestMethod.GET)
     public ResponseEntity<HalResource> getObligations(Pageable pageable,
@@ -3203,7 +3203,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Get linked releases information in project's dependency network.",
-            tags = {"Project"}
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/network/{id}/linkedReleases", method = RequestMethod.GET)
     public ResponseEntity<?> getLinkedReleasesInNetwork(
@@ -3219,7 +3219,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Get linked releases information of linked projects.",
-            tags = {"Project"}
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/subProjects/releases", method = RequestMethod.GET)
     public ResponseEntity<?> getLinkedReleasesOfLinkedProjects(
@@ -3236,7 +3236,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Compare dependency network with default network (relationships between releases).",
-            tags = {"Project"}
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/network/compareDefaultNetwork", method = RequestMethod.POST)
     public ResponseEntity<?> compareDependencyNetworkWithDefaultNetwork(
