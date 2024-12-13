@@ -9,18 +9,22 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.apache.commons.io.IOUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
+import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
@@ -37,21 +41,17 @@ import lombok.RequiredArgsConstructor;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jakarta.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang.StringUtils;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
@@ -67,26 +67,18 @@ import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import com.google.common.base.Strings;
 
 import lombok.NonNull;
-import java.io.IOException;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.IOUtils;
-
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
-import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
-
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 
 
 @Service
@@ -108,6 +100,7 @@ public class SW360ReportService {
     @NonNull
     private final Sw360LicenseInfoService licenseInfoService;
 
+    private static final Logger log = LogManager.getLogger(SW360ReportService.class);
     ThriftClients thriftClients = new ThriftClients();
     ProjectService.Iface projectclient = thriftClients.makeProjectClient();
     ComponentService.Iface componentclient = thriftClients.makeComponentClient();
@@ -307,10 +300,8 @@ public class SW360ReportService {
                 })));
     }
 
-    public String getGenericLicInfoFileName(HttpServletRequest request, User sw360User) throws TException {
-        final String variant = request.getParameter("variant");
-        final Project sw360Project = projectService.getProjectForUserById(request.getParameter("projectId"), sw360User);
-        final String generatorClassName = request.getParameter("generatorClassName");
+    public String getGenericLicInfoFileName(User sw360User, String projectId, String generatorClassName, String variant) throws TException {
+        final Project sw360Project = projectService.getProjectForUserById(projectId, sw360User);
         final String timestamp = SW360Utils.getCreatedOnTime().replaceAll("\\s", "_").replace(":", "_");
         final OutputFormatInfo outputFormatInfo = licenseInfoService
                 .getOutputFormatInfoForGeneratorClass(generatorClassName);
@@ -330,60 +321,22 @@ public class SW360ReportService {
         return licenseInfoParsingResult.stream().map(LicenseInfoParsingResult::getLicenseInfo)
                 .flatMap(streamLicenseNameWithTexts).filter(filteredLicense).collect(Collectors.toSet());
     }
-    
+
     public ByteBuffer getLicenseResourceBundleBuffer() throws TException {
         return licenseClient.getLicenseReportDataStream();
     }
 
-    public ByteBuffer downloadSourceCodeBundle(String projectId, HttpServletRequest request, User sw360User)
+    public ByteBuffer downloadSourceCodeBundle(String projectId, User sw360User, boolean withSubProject)
             throws IOException, TException {
         if (projectId == null || !validateProject(projectId, sw360User)) {
             throw new TException("No project record found for the project Id : " + projectId);
         }
-        Map<String, Set<String>> selectedReleaseAndAttachmentIds = getSelectedReleaseAndAttachmentIdsFromRequest(
-                request, false);
-        Set<String> selectedAttachmentIds = new HashSet<>();
-        selectedReleaseAndAttachmentIds.forEach((key, value) -> selectedAttachmentIds.addAll(value));
         Project project = projectclient.getProjectById(projectId, sw360User);
-        saveSourcePackageAttachmentUsages(project, sw360User, selectedReleaseAndAttachmentIds);
         List<AttachmentContent> attachments = new ArrayList<>();
-        for (String id : selectedAttachmentIds) {
+        for (String id : getAttachmentIdFromAttachmentUsages(project, sw360User, withSubProject)) {
             attachments.add(attachmentClient.getAttachmentContent(id));
         }
-        return serveAttachmentBundle(attachments, request, project, sw360User);
-    }
-
-    public static Map<String, Set<String>> getSelectedReleaseAndAttachmentIdsFromRequest(HttpServletRequest request,
-            boolean withPath) {
-        Map<String, Set<String>> releaseIdToAttachmentIds = new HashMap<>();
-        String[] checkboxes = request.getParameterValues("licenseInfoAttachmentSelected");
-        if (checkboxes == null) {
-            return ImmutableMap.of();
-        }
-        Arrays.stream(checkboxes).forEach(s -> {
-            String[] split = s.split(":");
-            if (split.length >= 2) {
-                String attachmentId = split[split.length - 1];
-                String releaseIdMaybeWithPath;
-                if (withPath) {
-                    releaseIdMaybeWithPath = Arrays.stream(Arrays.copyOf(split, split.length - 1))
-                            .collect(Collectors.joining(":"));
-                } else {
-                    releaseIdMaybeWithPath = split[split.length - 2];
-                }
-                releaseIdToAttachmentIds.putIfAbsent(releaseIdMaybeWithPath, new HashSet<>()).add(attachmentId);
-            }
-        });
-        return releaseIdToAttachmentIds;
-    }
-
-    private void saveSourcePackageAttachmentUsages(Project project, User user,
-            Map<String, Set<String>> selectedReleaseAndAttachmentIds) throws TException {
-            Function<String, UsageData> usageDataGenerator = attachmentContentId -> UsageData
-                    .sourcePackage(new SourcePackageUsage());
-            List<AttachmentUsage> attachmentUsages = makeAttachmentUsages(project, selectedReleaseAndAttachmentIds,
-                    usageDataGenerator);
-            replaceAttachmentUsages(project, user, attachmentUsages, UsageData.sourcePackage(new SourcePackageUsage()));
+        return serveAttachmentBundle(attachments, project, sw360User);
     }
 
     public String getSourceCodeBundleName(String projectId, User sw360User) throws TException {
@@ -392,25 +345,20 @@ public class SW360ReportService {
         return "SourceCodeBundle-" + project.getName() + "-" + timestamp + ".zip";
     }
 
-    private ByteBuffer serveAttachmentBundle(List<AttachmentContent> attachments, HttpServletRequest request,
-             Project project, User sw360User) throws IOException, TException {
+    private ByteBuffer serveAttachmentBundle(List<AttachmentContent> attachments,
+                                             Project project, User sw360User) throws IOException, TException {
         final Duration timeout = Duration.durationOf(30, TimeUnit.SECONDS);
         final AttachmentStreamConnector attachmentStreamConnector = new AttachmentStreamConnector(timeout);
-        return getAttachmentBundleByteBuffer(attachmentStreamConnector, attachments, request, project, sw360User);
+        return getAttachmentBundleByteBuffer(attachmentStreamConnector, attachments, project, sw360User);
     }
 
     private ByteBuffer getAttachmentBundleByteBuffer(AttachmentStreamConnector attachmentStreamConnector,
-            List<AttachmentContent> attachments, HttpServletRequest request, Project project, User sw360User)
+            List<AttachmentContent> attachments, Project project, User sw360User)
             throws TException, IOException {
-        String isAllAttachment = request.getParameter("isAllAttachmentSelected");
         InputStream stream = null;
         Optional<Object> context = getContextFromRequest(project);
         if (context.isPresent()) {
-            if (StringUtils.isNotEmpty(isAllAttachment) && isAllAttachment.equalsIgnoreCase("true")) {
-                stream = getStreamToServeBundle(attachmentStreamConnector, attachments, sw360User, context);
-            } else {
-                stream = getStreamToServeAFile(attachmentStreamConnector, attachments, sw360User, context);
-            }
+            stream = getStreamToServeAFile(attachmentStreamConnector, attachments, sw360User, context);
         }
         return ByteBuffer.wrap(IOUtils.toByteArray(stream));
     }
@@ -419,43 +367,42 @@ public class SW360ReportService {
         return Optional.ofNullable(project);
     }
 
-    private void replaceAttachmentUsages(Project project, User user, List<AttachmentUsage> attachmentUsages,
-            UsageData defaultEmptyUsageData) throws TException {
-        if (PermissionUtils.makePermission(project, user).isActionAllowed(RequestedAction.WRITE)) {
-            AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
-            if (attachmentUsages.isEmpty()) {
-                attachmentClient.deleteAttachmentUsagesByUsageDataType(Source.projectId(project.getId()),
-                        defaultEmptyUsageData);
-            } else {
-                attachmentClient.replaceAttachmentUsages(Source.projectId(project.getId()), attachmentUsages);
-            }
-        } else {
-            throw new TException(
-                    "LicenseInfo usage is not stored since the user has no write permissions for this project.");
+    public List<String> getAttachmentIdFromAttachmentUsages(Project sw360Project, User sw360User, boolean withSubProject) {
+        final Set<String> attachmentIds = new HashSet<>();
+        final Set<Project> projects = new HashSet<>(List.of(sw360Project));
+        if (withSubProject) {
+            final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsAsFlatList(sw360Project, true, thriftClients, log, sw360User);
+            projects.addAll(linkedProjects.stream().map(link -> wrapTException(() -> projectService.getProjectForUserById(link.getId(), sw360User))).toList());
         }
-    }
-
-    public static List<AttachmentUsage> makeAttachmentUsages(Project project,
-            Map<String, Set<String>> selectedReleaseAndAttachmentIds, Function<String, UsageData> usageDataGenerator) {
-        List<AttachmentUsage> attachmentUsages = Lists.newArrayList();
-        for (String releaseId : selectedReleaseAndAttachmentIds.keySet()) {
-            for (String attachmentContentId : selectedReleaseAndAttachmentIds.get(releaseId)) {
-                AttachmentUsage usage = new AttachmentUsage();
-                usage.setUsedBy(Source.projectId(project.getId()));
-                usage.setOwner(Source.releaseId(releaseId));
-                usage.setAttachmentContentId(attachmentContentId);
-                UsageData usageData = usageDataGenerator.apply(attachmentContentId);
-                usage.setUsageData(usageData);
-                attachmentUsages.add(usage);
+        for (Project project : projects) {
+            try {
+                List<AttachmentUsage> attachmentSourceUsages = attachmentClient.getUsedAttachments(Source.projectId(project.getId()),
+                        UsageData.sourcePackage(new SourcePackageUsage()));
+                List<String> currentProjAttachments = attachmentSourceUsages.stream().map(AttachmentUsage::getAttachmentContentId).toList();
+                if (! currentProjAttachments.isEmpty()) {
+                    attachmentIds.addAll(currentProjAttachments);
+                    continue;
+                }
+                Map<String, ProjectReleaseRelationship> releaseUsage = project.getReleaseIdToUsage();
+                try {
+                    List<Release> releases = componentclient.getFullReleasesById(releaseUsage.keySet(), sw360User);
+                    releases.forEach(release -> {
+                        Set<Attachment> attachments = release.getAttachments();
+                        if (attachments != null) {
+                            attachments.forEach(attachment -> {
+                                if (attachment.getAttachmentType() == AttachmentType.SOURCE || attachment.getAttachmentType() == AttachmentType.SOURCE_SELF) {
+                                    attachmentIds.add(attachment.getAttachmentContentId());
+                                }
+                            });
+                        }
+                    });
+                } catch (TException ignored) {
+                }
+            } catch (TException ignored) {
             }
         }
-        return attachmentUsages;
-    }
 
-    private InputStream getStreamToServeBundle(AttachmentStreamConnector attachmentStreamConnector,
-            List<AttachmentContent> attachments, User sw360User, Optional<Object> context)
-            throws IOException, TException {
-        return attachmentStreamConnector.getAttachmentBundleStream(new HashSet<>(attachments), sw360User, context);
+        return attachmentIds.stream().toList();
     }
 
     private InputStream getStreamToServeAFile(AttachmentStreamConnector attachmentStreamConnector,

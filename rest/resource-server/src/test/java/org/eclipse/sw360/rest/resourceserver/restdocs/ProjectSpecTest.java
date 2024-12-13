@@ -588,7 +588,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getProjectForUserById(eq(project6.getId()), any())).willReturn(project6);
         given(this.projectServiceMock.getProjectForUserById(eq(project7.getId()), any())).willReturn(project7);
         given(this.projectServiceMock.getProjectForUserById(eq(project8.getId()), any())).willReturn(project8);
-        given(this.sw360ReportServiceMock.downloadSourceCodeBundle(any(), any(), any())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.downloadSourceCodeBundle(any(), any(), anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getLicenseInfoBuffer(any(), any(), any(), any(), any(), any(), anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getSourceCodeBundleName(any(), any())).willReturn("SourceCodeBundle-ProjectName");
         given(this.projectServiceMock.getLicenseInfoAttachmentUsage(eq(project8.getId()))).willReturn(licenseInfoUsages);
@@ -2166,7 +2166,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("externalIds").description("The external Ids of the project")
                                 )));
     }
-    
+
     @Test
     public void should_document_get_download_license_info_without_release_version() throws Exception {
         this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/licenseinfo?generatorClassName=XhtmlGenerator&variant=DISCLOSURE&excludeReleaseVersion=true")
@@ -2469,7 +2469,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         mockMvc.perform(get("/api/reports").
                 header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .queryParam("withlinkedreleases", "true")
-                .queryParam("mimetype", "xlsx")
                 .queryParam("module", "projects")
                 .queryParam("excludeReleaseVersion", "false")
                 .accept(MediaTypes.HAL_JSON))
@@ -2477,7 +2476,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .andDo(this.documentationHandler.document(
                         queryParameters(
                                 parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
-                                parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
                                 parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
                                 parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
                                         + "Possible values are `<true|false>`")
@@ -2490,7 +2488,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         mockMvc.perform(get("/api/reports")
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .queryParam("withlinkedreleases", "true")
-                        .queryParam("mimetype", "xlsx")
                         .queryParam("module", "projects")
                         .queryParam("projectId", project.getId())
                         .queryParam("excludeReleaseVersion", "false")
@@ -2499,7 +2496,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .andDo(this.documentationHandler.document(
                         queryParameters(
                                 parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
-                                parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
                                 parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
                                 parameterWithName("projectId").description("Id of a project"),
                                 parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
@@ -3042,11 +3038,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     public void should_document_get_resource_source_bundle() throws Exception {
         mockMvc.perform(get("/api/reports").header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .param("module", "licenseResourceBundle").param("projectId", project.getId())
-                .param("isAllAttachmentSelected", "true").accept(MediaTypes.HAL_JSON)).andExpect(status().isOk())
+                .param("withSubProject", "true").accept(MediaTypes.HAL_JSON)).andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(queryParameters(
                         parameterWithName("projectId").description("Project id"),
-                        parameterWithName("isAllAttachmentSelected").description(
-                                "All attachment selected to download source code bundle. Possible values are `<true|false>`"),
+                        parameterWithName("withSubProject").description(
+                                "Use subprojects as well to download source code bundle. Possible values are `<true|false>`"),
                         parameterWithName("module").description(
                                 "module represent the type oa document. Possible values are `<licenseResourceBundle>`"))));
     }
