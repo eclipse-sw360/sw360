@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 
+import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -256,7 +257,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Vendor spreadsheet.",
                     content = {
-                            @Content(mediaType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                            @Content(mediaType = CONTENT_TYPE_OPENXML_SPREADSHEET)
                     })
     })
     @PreAuthorize("hasAuthority('WRITE')")
