@@ -83,7 +83,11 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "mimetype", required = false, defaultValue = "xlsx") String mimeType,
             @Parameter(description = "Project id.")
             @RequestParam(value = "projectId", required = false) String projectId,
-            @Parameter(description = "Module name.", schema = @Schema(allowableValues = {SW360Constants.PROJECTS, SW360Constants.COMPONENTS, SW360Constants.LICENSES, LICENSES_RESOURCE_BUNDLE, SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO}))
+            @Parameter(description = "Module name.", schema = @Schema(allowableValues = {
+                    SW360Constants.PROJECTS, SW360Constants.COMPONENTS, SW360Constants.LICENSES,
+                    LICENSE_INFO, LICENSES_RESOURCE_BUNDLE, SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO,
+                    EXPORT_CREATE_PROJ_CLEARING_REPORT
+            }))
             @RequestParam(value = "module", required = true) String module,
             @Parameter(description = "Exclude release version from the license info file")
             @RequestParam(value = "excludeReleaseVersion", required = false, defaultValue = "false") boolean excludeReleaseVersion,
