@@ -43,7 +43,7 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
         given(this.restHealthIndicatorMock.health()).willReturn(spring_health);
 
 
-        mockMvc.perform(get("/health")
+        mockMvc.perform(get("/api/health")
                     .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
@@ -72,7 +72,7 @@ public class HealthSpecTest extends TestRestDocsSpecBase{
                 .build();
         given(this.restHealthIndicatorMock.health()).willReturn(spring_health_down);
 
-        mockMvc.perform(get("/health")
+        mockMvc.perform(get("/api/health")
                     .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().is2xxSuccessful())
                 .andDo(this.documentationHandler.document(

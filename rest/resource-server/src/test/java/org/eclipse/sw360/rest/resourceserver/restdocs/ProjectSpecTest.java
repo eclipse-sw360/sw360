@@ -589,6 +589,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getProjectForUserById(eq(project7.getId()), any())).willReturn(project7);
         given(this.projectServiceMock.getProjectForUserById(eq(project8.getId()), any())).willReturn(project8);
         given(this.sw360ReportServiceMock.downloadSourceCodeBundle(any(), any(), any())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.getLicenseInfoBuffer(any(), any(), any(), any(), any(), any(), anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getSourceCodeBundleName(any(), any())).willReturn("SourceCodeBundle-ProjectName");
         given(this.projectServiceMock.getLicenseInfoAttachmentUsage(eq(project8.getId()))).willReturn(licenseInfoUsages);
         given(this.projectServiceMock.getObligationData(eq(project8.getLinkedObligationId()), any())).willReturn(obligationLists);
@@ -2499,6 +2500,27 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("projectId").description("Id of a project"),
                                 parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
                                         + "Possible values are `<true|false>`")
+                        )));
+    }
+
+    @Test
+    public void should_document_get_export_project_create_clearing_request() throws Exception{
+        mockMvc.perform(get("/api/reports")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .param("module", "exportCreateProjectClearingReport")
+                        .param("projectId", project.getId())
+                        .param("generatorClassName", "DocxGenerator")
+                        .param("variant", "REPORT")
+                        .param("externalIds", "portal-id,main-project-id")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("projectId").description("Id for the project."),
+                                parameterWithName("generatorClassName").description("Projects download format. Possible values are `<DocxGenerator>`"),
+                                parameterWithName("variant").description("The possible values for variants are `<REPORT>`"),
+                                parameterWithName("externalIds").description("The external Ids of the project"),
+                                parameterWithName("module").description("module possible values are `<exportCreateProjectClearingReport>`")
                         )));
     }
 

@@ -51,6 +51,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
@@ -111,6 +114,15 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -432,6 +444,21 @@ public class RestControllerHelper<T> {
         for (ReleaseLink releaseLink : releaseLinkInogreAttachments) {
             addEmbeddedReleaseLink(halResource, releaseLink);
         }
+    }
+
+    public void addEmbeddedSpdxDocument(HalResource halResource, SPDXDocument spdxDocument) {
+        HalResource<SPDXDocument> halRelease = new HalResource<>(spdxDocument);
+        halResource.addEmbeddedResource("sw360:spdxDocument", halRelease);
+    }
+
+    public void addEmbeddedDocumentCreationInformation(HalResource halResource, DocumentCreationInformation documentCreationInformation) {
+        HalResource<DocumentCreationInformation> halRelease = new HalResource<>(documentCreationInformation);
+        halResource.addEmbeddedResource("sw360:documentCreationInformation", halRelease);
+    }
+
+    public void addEmbeddedPackageInformation(HalResource halResource, PackageInformation packageInformation) {
+        HalResource<PackageInformation> halRelease = new HalResource<>(packageInformation);
+        halResource.addEmbeddedResource("sw360:packageInformation", halRelease);
     }
 
     public void addEmbeddedPackages(

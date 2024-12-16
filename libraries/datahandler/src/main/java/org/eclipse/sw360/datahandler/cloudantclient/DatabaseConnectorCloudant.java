@@ -666,23 +666,33 @@ public class DatabaseConnectorCloudant {
         Type t = new TypeToken<Map<String, Object>>() {}.getType();
         Map<String, Object> map = gson.fromJson(gson.toJson(document), t);
         if (map.containsKey("id")) {
-            doc.setId((String) map.get("id"));
+            if (!((String) map.get("id")).isEmpty()) {
+                doc.setId((String) map.get("id"));
+            }
             map.remove("id");
         }
         if (map.containsKey("_id")) {
-            doc.setId((String) map.get("_id"));
+            if (!((String) map.get("_id")).isEmpty()) {
+                doc.setId((String) map.get("_id"));
+            }
             map.remove("_id");
         }
         if (map.containsKey("rev")) {
-            doc.setRev((String) map.get("rev"));
+            if (!((String) map.get("rev")).isEmpty()) {
+                doc.setRev((String) map.get("rev"));
+            }
             map.remove("rev");
         }
         if (map.containsKey("revision")) {
-            doc.setRev((String) map.get("revision"));
+            if (!((String) map.get("revision")).isEmpty()) {
+                doc.setRev((String) map.get("revision"));
+            }
             map.remove("revision");
         }
         if (map.containsKey("_rev")) {
-            doc.setRev((String) map.get("_rev"));
+            if (!((String) map.get("_rev")).isEmpty()) {
+                doc.setRev((String) map.get("_rev"));
+            }
             map.remove("_rev");
         }
         doc.setProperties(map);
