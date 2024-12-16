@@ -905,8 +905,13 @@ public class RestControllerHelper<T> {
         embeddedComponent.setMainLicenseIds(component.getMainLicenseIds());
         embeddedComponent.setVcs(component.getVcs());
         if (CommonUtils.isNotNullEmptyOrWhitespace(component.getDefaultVendorId())) {
-            Vendor defaultVendor = vendorService.getVendorById(component.getDefaultVendorId());
-            embeddedComponent.setDefaultVendor(defaultVendor);
+            try {
+                Vendor defaultVendor = vendorService.getVendorById(component.getDefaultVendorId());
+                embeddedComponent.setDefaultVendor(defaultVendor);
+            } catch (RuntimeException e) {
+                LOGGER.error("Failed to retrieve default vendor '{}' from SW360 database.",
+                        component.getDefaultVendorId(), e);
+            }
         }
         embeddedComponent.setType(null);
         return embeddedComponent;
