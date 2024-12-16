@@ -245,6 +245,9 @@ public class DatabaseConnectorCloudant {
      * @see DatabaseConnectorCloudant::getDocumentWithPost()
      */
     public Document getDocument(@NotNull String id) throws SW360Exception {
+        if (id.isEmpty()) {
+            throw new SW360Exception("Document id cannot be empty");
+        }
         if (id.contains("+")) {
             return getDocumentWithPost(id);
         }
