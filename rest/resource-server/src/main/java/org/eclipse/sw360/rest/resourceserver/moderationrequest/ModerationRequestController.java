@@ -625,7 +625,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
     @Operation(
             summary = "Delete moderation request.",
             description = "Delete delete moderation request of the service.",
-            tags = {"ModerationRequest"}
+            tags = {"Moderation Requests"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = MODERATION_REQUEST_URL + "/delete", method = RequestMethod.DELETE)
