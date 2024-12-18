@@ -23,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
@@ -368,7 +367,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         if (!userService.isTokenNameExisted(sw360User, tokenName)) {
-            return new ResponseEntity<>("Token not found: " + StringEscapeUtils.escapeHtml(tokenName), HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("Token not found", HttpStatus.NOT_FOUND);
         }
 
         sw360User.getRestApiTokens().removeIf(t -> t.getName().equals(tokenName));
