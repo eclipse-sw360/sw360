@@ -134,6 +134,10 @@ public class ThriftUtils {
 
 
     public static <T extends TBase<T, F>, F extends TFieldIdEnum> void copyFields(T src, T dest, Iterable<F> fields) {
+        if (src == null || dest == null) {
+            // nothing to do
+            return;
+        }
         for (F field : fields) {
             copyField(src, dest, field);
         }
