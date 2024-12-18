@@ -785,7 +785,7 @@ public class DatabaseConnectorCloudant {
      * @return New selector
      */
     public static @NotNull Map<String, Object> elemMatch(String field, String value) {
-        return Collections.singletonMap("$elemMatch",
-                eq(field, value));
+        return Collections.singletonMap(field,
+                eq("$elemMatch", value));
     }
 }
