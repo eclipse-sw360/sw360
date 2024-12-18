@@ -245,6 +245,9 @@ public class DatabaseConnectorCloudant {
      * @see DatabaseConnectorCloudant::getDocumentWithPost()
      */
     public Document getDocument(@NotNull String id) throws SW360Exception {
+        if (id.isEmpty()) {
+            throw new SW360Exception("Document id cannot be empty");
+        }
         if (id.contains("+")) {
             return getDocumentWithPost(id);
         }
@@ -782,7 +785,7 @@ public class DatabaseConnectorCloudant {
      * @return New selector
      */
     public static @NotNull Map<String, Object> elemMatch(String field, String value) {
-        return Collections.singletonMap("$elemMatch",
-                eq(field, value));
+        return Collections.singletonMap(field,
+                eq("$elemMatch", value));
     }
 }

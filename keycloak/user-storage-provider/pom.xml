@@ -13,7 +13,7 @@
     <parent>
         <artifactId>keycloak</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>19.0.0</version>
+        <version>19.1.0</version>
     </parent>
 
     <properties>
@@ -42,7 +42,7 @@
             <artifactId>graphene-webdriver</artifactId>
             <version>${arquillian-graphene.version}</version>
             <type>pom</type>
-            <scope>test</scope>    
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
@@ -60,12 +60,12 @@
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>commonIO</artifactId>
-            <version>19.0.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>datahandler</artifactId>
-            <version>19.0.0</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

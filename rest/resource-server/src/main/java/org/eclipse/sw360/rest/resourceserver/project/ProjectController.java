@@ -67,6 +67,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -90,6 +91,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
@@ -125,6 +127,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -1573,21 +1576,26 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "Updated values", schema = @Schema(implementation = Project.class))
             @RequestBody Map<String, Object> reqBodyMap
     ) throws TException {
-        User user = restControllerHelper.getSw360UserFromAuthentication();
-        Project sw360Project = projectService.getProjectForUserById(id, user);
-        Project updateProject = convertToProject(reqBodyMap);
-        updateProject.unsetReleaseRelationNetwork();
-        sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
-        if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP && updateProject.getReleaseIdToUsage() != null) {
-            sw360Project.unsetReleaseRelationNetwork();
-            projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
-        }
-        RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
-        HalResource<Project> userHalResource = createHalProject(sw360Project, user);
-        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
-        }
-        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+            User user = restControllerHelper.getSw360UserFromAuthentication();
+            Project sw360Project = projectService.getProjectForUserById(id, user);
+            boolean editPermitted = PermissionUtils.checkEditablePermission(sw360Project.getClearingState().name(),user,reqBodyMap, sw360Project);
+            if (!editPermitted) {
+                log.error("No write permission for project");
+                throw new AccessDeniedException("No write permission for project");
+            }
+            Project updateProject = convertToProject(reqBodyMap);
+            updateProject.unsetReleaseRelationNetwork();
+            sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
+            if (SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP && updateProject.getReleaseIdToUsage() != null) {
+                sw360Project.unsetReleaseRelationNetwork();
+                projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
+            }
+            RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
+            HalResource<Project> userHalResource = createHalProject(sw360Project, user);
+            if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
+                return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+            }
+            return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
     @Operation(
@@ -1598,29 +1606,107 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     public ResponseEntity<HalResource> addAttachmentToProject(
             @Parameter(description = "Project ID.")
             @PathVariable("projectId") String projectId,
-            @Parameter(description = "File to attach")
-            @RequestPart("file") MultipartFile file,
-            @Parameter(description = "Attachment description")
-            @RequestPart("attachment") Attachment newAttachment
-    ) throws TException {
+            @Parameter(description = "Files to attach")
+            @RequestParam("file") MultipartFile[] files,
+            @Parameter(description = "Attachments descriptions")
+            @RequestParam("attachments") String attachmentsJson,
+            HttpServletRequest request,
+            HttpServletResponse response
+
+    ) throws TException, IOException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project project = projectService.getProjectForUserById(projectId, sw360User);
-        Attachment attachment = null;
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<Map<String, Object>> attachmentsList;
         try {
-            attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
-        } catch (IOException e) {
-            log.error("failed to upload attachment", e);
-            throw new RuntimeException("failed to upload attachment", e);
+            attachmentsList = objectMapper.readValue(attachmentsJson, new TypeReference<List<Map<String, Object>>>() {
+            });
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse attachments JSON", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
 
-        project.addToAttachments(attachment);
-        RequestStatus updateProjectStatus = projectService.updateProject(project, sw360User);
-        HttpStatus status = HttpStatus.OK;
-        HalResource<Project> halResource = createHalProject(project, sw360User);
-        if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        Set<String> uploadedFilenames = new HashSet<>();
+        List<Attachment> uploadedAttachments = new ArrayList<>();
+
+        for (int i = 0; i < files.length; i++) {
+            MultipartFile file = files[i];
+            String filename = file.getOriginalFilename();
+
+            if (uploadedFilenames.contains(filename)) {
+                log.error("Duplicate file detected during upload: {}", filename);
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+            }
+            uploadedFilenames.add(filename);
+
+            try {
+                Map<String, Object> attachmentMap = attachmentsList.get(i);
+                Attachment attachment = new Attachment();
+                attachment.setFilename(filename);
+                attachment.setAttachmentContentId((String) attachmentMap.get("attachmentContentId"));
+                attachment.setCreatedComment((String) attachmentMap.get("createdComment"));
+                setAttachmentTypeAndCheckStatus(attachment, attachmentMap);
+
+                attachment = attachmentService.uploadAttachment(file, attachment, sw360User);
+                uploadedAttachments.add(attachment);
+                project.addToAttachments(attachment);
+            } catch (Exception e) {
+                log.error("Failed to upload attachment: {}", filename, e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            }
         }
-        return new ResponseEntity<>(halResource, status);
+
+        Set<String> missingAttachments = projectService.verifyIfAttachmentsExist(projectId, sw360User, project);
+        if (!missingAttachments.isEmpty()) {
+            log.warn("Missing attachments detected: {}", missingAttachments);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+        }
+
+        try {
+            RequestStatus updateStatus = projectService.updateProjectForAttachment(project, sw360User, request, null,
+                    projectId);
+
+            if (updateStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
+                log.error("Duplicate attachment detected while updating project: {}", projectId);
+
+                Map<String, String> errorMessage = new HashMap<>();
+                errorMessage.put("message", "Duplicate attachment detected while updating project.");
+                errorMessage.put("projectId", projectId);
+
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(new HalResource<>(errorMessage));
+            }
+
+            HalResource<Project> halResource = createHalProject(project, sw360User);
+            if (updateStatus == RequestStatus.SENT_TO_MODERATOR) {
+                return ResponseEntity.status(HttpStatus.ACCEPTED).body(halResource);
+            }
+            return ResponseEntity.ok(halResource);
+
+        } catch (Exception e) {
+            log.error("Error updating project attachments", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    private void setAttachmentTypeAndCheckStatus(Attachment attachment, Map<String, Object> attachmentMap) throws SW360Exception {
+        String attachmentTypeStr = (String) attachmentMap.get("attachmentType");
+        String checkStatusStr = (String) attachmentMap.get("checkStatus");
+
+        if (attachmentTypeStr != null && !attachmentTypeStr.isEmpty()) {
+            try {
+                attachment.setAttachmentType(AttachmentType.valueOf(attachmentTypeStr));
+            } catch (IllegalArgumentException e) {
+                throw new SW360Exception("Invalid attachmentType: " + attachmentTypeStr);
+            }
+        }
+        if (checkStatusStr != null && !checkStatusStr.isEmpty()) {
+            try {
+                attachment.setCheckStatus(CheckStatus.valueOf(checkStatusStr));
+            } catch (IllegalArgumentException e) {
+                throw new SW360Exception("Invalid checkStatus: " + checkStatusStr);
+            }
+        }
     }
 
     @Operation(
@@ -2557,7 +2643,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Get license obligations data from license database.",
-            tags = {"Project"}
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations", method = RequestMethod.GET)
 	public ResponseEntity<?> getLicObligations(Pageable pageable,
@@ -2647,7 +2733,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Get license obligation data of project tab.",
-            tags = {"Project"}
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligations", method = RequestMethod.GET)
 	public ResponseEntity<HalResource> getLicenseObligations(Pageable pageable,
@@ -2686,7 +2772,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Get obligation data of project tab.",
-            tags = {"Project"}
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/obligation", method = RequestMethod.GET)
     public ResponseEntity<HalResource> getObligations(Pageable pageable,
@@ -3203,7 +3289,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Get linked releases information in project's dependency network.",
-            tags = {"Project"}
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/network/{id}/linkedReleases", method = RequestMethod.GET)
     public ResponseEntity<?> getLinkedReleasesInNetwork(
@@ -3219,7 +3305,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Get linked releases information of linked projects.",
-            tags = {"Project"}
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/subProjects/releases", method = RequestMethod.GET)
     public ResponseEntity<?> getLinkedReleasesOfLinkedProjects(
@@ -3236,7 +3322,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             description = "Compare dependency network with default network (relationships between releases).",
-            tags = {"Project"}
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/network/compareDefaultNetwork", method = RequestMethod.POST)
     public ResponseEntity<?> compareDependencyNetworkWithDefaultNetwork(

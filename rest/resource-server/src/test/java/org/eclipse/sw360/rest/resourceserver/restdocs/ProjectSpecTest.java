@@ -588,7 +588,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getProjectForUserById(eq(project6.getId()), any())).willReturn(project6);
         given(this.projectServiceMock.getProjectForUserById(eq(project7.getId()), any())).willReturn(project7);
         given(this.projectServiceMock.getProjectForUserById(eq(project8.getId()), any())).willReturn(project8);
-        given(this.sw360ReportServiceMock.downloadSourceCodeBundle(any(), any(), any())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.downloadSourceCodeBundle(any(), any(), anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getLicenseInfoBuffer(any(), any(), any(), any(), any(), any(), anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getSourceCodeBundleName(any(), any())).willReturn("SourceCodeBundle-ProjectName");
         given(this.projectServiceMock.getLicenseInfoAttachmentUsage(eq(project8.getId()))).willReturn(licenseInfoUsages);
@@ -621,6 +621,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.deleteProject(eq(project.getId()), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.updateProjectReleaseRelationship(any(), any(), any())).willReturn(projectReleaseRelationshipResponseBody);
         given(this.projectServiceMock.getClearingInfo(eq(project), any())).willReturn(project);
+        given(this.projectServiceMock.updateProjectForAttachment(eq(project7), any(), any(), any(), eq(projectName))).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.getCyclicLinkedProjectPath(eq(project7), any())).willReturn("");
         given(this.projectServiceMock.updateProject(eq(project7), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.convertToEmbeddedWithExternalIds(eq(project))).willReturn(
@@ -1958,6 +1959,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_update_project() throws Exception {
+        project.setClearingState(ProjectClearingState.OPEN);
         Project updateProject = new Project();
         updateProject.setName("updated project");
         updateProject.setDescription("Project description updated");
@@ -1965,7 +1967,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         updateProject.setState(ProjectState.PHASE_OUT);
         updateProject.setPhaseOutSince("2020-06-24");
         this.mockMvc
-                .perform(patch("/api/projects/376576").contentType(MediaTypes.HAL_JSON)
+                .perform(patch("/api/projects/"+project.getId()).contentType(MediaTypes.HAL_JSON)
                         .content(this.objectMapper.writeValueAsString(updateProject))
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)).accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
@@ -2041,6 +2043,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         subsectionWithPath("externalUrls").description("A place to store additional data used by external URLs"),
                         fieldWithPath("considerReleasesFromExternalList").description("Consider list of releases from existing external list"),
                         fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
+                        fieldWithPath("clearingState").description("The clearingState of the project"),
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
                         subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                         subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
@@ -2081,8 +2084,9 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_upload_attachment_to_project() throws Exception {
-        testAttachmentUpload("/api/projects/", project.getId());
+        testAttachmentUploadProject("/api/projects/", project.getId());
     }
+
 
     @Test
     public void should_document_link_releases() throws Exception {
@@ -2162,7 +2166,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("externalIds").description("The external Ids of the project")
                                 )));
     }
-    
+
     @Test
     public void should_document_get_download_license_info_without_release_version() throws Exception {
         this.mockMvc.perform(get("/api/projects/" + project.getId()+ "/licenseinfo?generatorClassName=XhtmlGenerator&variant=DISCLOSURE&excludeReleaseVersion=true")
@@ -2465,7 +2469,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         mockMvc.perform(get("/api/reports").
                 header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .queryParam("withlinkedreleases", "true")
-                .queryParam("mimetype", "xlsx")
                 .queryParam("module", "projects")
                 .queryParam("excludeReleaseVersion", "false")
                 .accept(MediaTypes.HAL_JSON))
@@ -2473,7 +2476,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .andDo(this.documentationHandler.document(
                         queryParameters(
                                 parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
-                                parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
                                 parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
                                 parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
                                         + "Possible values are `<true|false>`")
@@ -2486,7 +2488,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         mockMvc.perform(get("/api/reports")
                         .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                         .queryParam("withlinkedreleases", "true")
-                        .queryParam("mimetype", "xlsx")
                         .queryParam("module", "projects")
                         .queryParam("projectId", project.getId())
                         .queryParam("excludeReleaseVersion", "false")
@@ -2495,7 +2496,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                 .andDo(this.documentationHandler.document(
                         queryParameters(
                                 parameterWithName("withlinkedreleases").description("Projects with linked releases. Possible values are `<true|false>`"),
-                                parameterWithName("mimetype").description("Projects download format. Possible values are `<xls|xlsx>`"),
                                 parameterWithName("module").description("module represent the project or component. Possible values are `<components|projects>`"),
                                 parameterWithName("projectId").description("Id of a project"),
                                 parameterWithName("excludeReleaseVersion").description("Exclude version of the components from the generated license info file. "
@@ -3038,11 +3038,11 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     public void should_document_get_resource_source_bundle() throws Exception {
         mockMvc.perform(get("/api/reports").header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .param("module", "licenseResourceBundle").param("projectId", project.getId())
-                .param("isAllAttachmentSelected", "true").accept(MediaTypes.HAL_JSON)).andExpect(status().isOk())
+                .param("withSubProject", "true").accept(MediaTypes.HAL_JSON)).andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(queryParameters(
                         parameterWithName("projectId").description("Project id"),
-                        parameterWithName("isAllAttachmentSelected").description(
-                                "All attachment selected to download source code bundle. Possible values are `<true|false>`"),
+                        parameterWithName("withSubProject").description(
+                                "Use subprojects as well to download source code bundle. Possible values are `<true|false>`"),
                         parameterWithName("module").description(
                                 "module represent the type oa document. Possible values are `<licenseResourceBundle>`"))));
     }
