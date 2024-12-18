@@ -133,7 +133,7 @@
     <json.version>20240303</json.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>4.13.2</junit.version>
-    <log4j2.version>2.24.2</log4j2.version>
+    <log4j2.version>2.24.3</log4j2.version>
     <maven-javadoc.version>3.11.2</maven-javadoc.version>
     <mockito.version>5.14.2</mockito.version>
     <okhttp.version>4.10.0</okhttp.version>
