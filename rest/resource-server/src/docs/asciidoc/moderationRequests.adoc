@@ -146,3 +146,20 @@ include::{snippets}/should_document_get_moderationrequests_submission/curl-reque
 
 ===== Example response
 include::{snippets}/should_document_get_moderationrequests_submission/http-response.adoc[]
+
+[[resources-moderationRequest-validate]]
+==== Validate User And Message Moderation Requests
+
+A `POST` will validate the user and will check the comment message is present or not.
+
+===== Request parameter
+include::{snippets}/should_document_check_user_message_moderationrequests/query-parameters.adoc[]
+
+===== Response structure
+include::{snippets}/should_document_check_user_message_moderationrequests/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_check_user_message_moderationrequests/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_check_user_message_moderationrequests/http-response.adoc[]
