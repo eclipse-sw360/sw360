@@ -122,6 +122,26 @@ include::{snippets}/should_document_get_components_by_name/http-response.adoc[]
 include::{snippets}/should_document_get_components_by_name/links.adoc[]
 
 
+[[resources-components-list-by-type-and-createdon]]
+==== Filtering with more fields
+
+A `GET` request to fetch filtered list of service components.
+
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
+===== Response structure
+include::{snippets}/should_document_get_components_by_type_and_created_on/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_components_by_type_and_created_on/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_components_by_type_and_created_on/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_components_by_type_and_created_on/links.adoc[]
+
+
 [[resources-components-list-by-type]]
 ==== Listing by type
 

@@ -12,6 +12,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.component;
 
+import com.google.common.collect.Sets;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -1163,9 +1164,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                         && !fieldValue.toString().equalsIgnoreCase(filterSet.iterator().next())) {
                     return false;
                 } else if (fieldValue instanceof Set) {
-                    Set<String> fieldValueSet = (Set<String>) fieldValue;
-                    fieldValueSet.retainAll(filterSet);
-                    if (fieldValueSet.isEmpty()) {
+                    if (Sets.intersection(filterSet, (Set<String>) fieldValue).isEmpty()) {
                         return false;
                     }
                 }

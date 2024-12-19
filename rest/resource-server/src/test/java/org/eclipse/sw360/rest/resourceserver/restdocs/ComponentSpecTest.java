@@ -912,6 +912,47 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     }
 
     @Test
+    public void should_document_get_components_by_type_and_created_on() throws Exception {
+        mockMvc.perform(get("/api/components")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("componentType", angularComponent.getComponentType().toString())
+                        .queryParam("createdOn", angularComponent.getCreatedOn())
+                        .queryParam("categories", "javascript, sql")
+                        .queryParam("luceneSearch", "false")
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
+                        .queryParam("sort", "name,desc")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("componentType").description("Filter for type"),
+                                parameterWithName("createdOn").description("Filter for component creation date"),
+                                parameterWithName("categories").description("Filter for categories"),
+                                parameterWithName("luceneSearch").description("Filter with exact match or lucene match."),
+                                parameterWithName("page").description("Page of components"),
+                                parameterWithName("page_entries").description("Amount of components per page"),
+                                parameterWithName("sort").description("Defines order of the components")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:components.[]name").description("The name of the component"),
+                                subsectionWithPath("_embedded.sw360:components.[]componentType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:components").description("An array of <<resources-components, Components resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of components per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing components"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
+
+    @Test
     public void should_document_update_component() throws Exception {
         ComponentDTO updateComponent = new ComponentDTO();
         AttachmentDTO attachmentDTO = new AttachmentDTO("1231231255", "spring-mvc-4.3.4.RELEASE.jar");
