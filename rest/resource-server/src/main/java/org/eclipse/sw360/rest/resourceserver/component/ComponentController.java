@@ -37,6 +37,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentDTO;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -71,7 +72,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -87,13 +87,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -141,13 +139,31 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             Pageable pageable,
             @Parameter(description = "Name of the component to filter")
             @RequestParam(value = "name", required = false) String name,
-            @Parameter(description = "Type of the component to filter")
+            @Parameter(description = "Categories of the component to filter, as a comma separated list.")
+            @RequestParam(value = "categories", required = false) String categories,
+            @Parameter(description = "Type of the component to filter",
+                    schema = @Schema(implementation = ComponentType.class))
             @RequestParam(value = "type", required = false) String componentType,
+            @Parameter(description = "Component languages to filter, as a comma separated list.")
+            @RequestParam(value = "languages", required = false) String languages,
+            @Parameter(description = "Software Platforms to filter, as a comma separated list.")
+            @RequestParam(value = "softwarePlatforms", required = false) String softwarePlatforms,
+            @Parameter(description = "Operating Systems to filter, as a comma separated list.")
+            @RequestParam(value = "operatingSystems", required = false) String operatingSystems,
+            @Parameter(description = "Vendors to filter, as a comma separated list.")
+            @RequestParam(value = "vendors", required = false) String vendors,
+            @Parameter(description = "Main Licenses to filter, as a comma separated list.")
+            @RequestParam(value = "mainLicenses", required = false) String mainLicenses,
+            @Parameter(description = "Created by user to filter (email).")
+            @RequestParam(value = "createdBy", required = false) String createdBy,
+            @Parameter(description = "Date component was created on (YYYY-MM-DD).",
+                    schema = @Schema(type = "string", format = "date"))
+            @RequestParam(value = "createdOn", required = false) String createdOn,
             @Parameter(description = "Properties which should be present for each component in the result")
             @RequestParam(value = "fields", required = false) List<String> fields,
             @Parameter(description = "Flag to get components with all details.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
-            @Parameter(description = "lucenesearch parameter to filter the components.")
+            @Parameter(description = "Use lucenesearch to filter the components.")
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
@@ -158,12 +174,9 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         String queryString = request.getQueryString();
         Map<String, String> params = restControllerHelper.parseQueryString(queryString);
 
-        Map<String, Set<String>> filterMap = new HashMap<>();
         if (luceneSearch) {
-            if (CommonUtils.isNotNullEmptyOrWhitespace(componentType)) {
-                Set<String> values = CommonUtils.splitToSet(componentType);
-                filterMap.put(Component._Fields.COMPONENT_TYPE.getFieldName(), values);
-            }
+            Map<String, Set<String>> filterMap = getFilterMap(categories, componentType, languages, softwarePlatforms,
+                    operatingSystems, vendors, mainLicenses, createdBy, createdOn);
             if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
                 Set<String> values = CommonUtils.splitToSet(name);
                 values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
@@ -177,19 +190,24 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             } else {
                 allComponents.addAll(componentService.getComponentsForUser(sw360User));
             }
+            Map<String, Set<String>> restrictions = getFilterMap(categories, componentType, languages,
+                    softwarePlatforms, operatingSystems, vendors, mainLicenses, createdBy, createdOn);
+            if (!restrictions.isEmpty()) {
+                allComponents = new ArrayList<>(allComponents.stream()
+                        .filter(filterComponentMap(restrictions)).toList());
+            }
         }
 
         PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(request, pageable,
                 allComponents, SW360Constants.TYPE_COMPONENT);
 
-        CollectionModel resources = getFilteredComponentResources(componentType, fields, allDetails, luceneSearch,
-                sw360User, paginationResult);
+        CollectionModel resources = getFilteredComponentResources(fields, allDetails, sw360User, paginationResult);
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
-    private CollectionModel getFilteredComponentResources(String componentType, List<String> fields, boolean allDetails,
-            boolean luceneSearch, User sw360User, PaginationResult<Component> paginationResult)
-            throws URISyntaxException {
+    private CollectionModel getFilteredComponentResources(
+            List<String> fields, boolean allDetails, User sw360User, PaginationResult<Component> paginationResult
+    ) throws URISyntaxException {
         List<EntityModel<Component>> componentResources = new ArrayList<>();
         Consumer<Component> consumer = c -> {
             EntityModel<Component> embeddedComponentResource = null;
@@ -209,14 +227,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             componentResources.add(embeddedComponentResource);
         };
 
-        if (luceneSearch) {
-            paginationResult.getResources().stream().forEach(consumer);
-        } else {
-            paginationResult.getResources().stream()
-                    .filter(component -> componentType == null
-                            || (component.isSetComponentType() && componentType.equals(component.componentType.name())))
-                    .forEach(consumer);
-        }
+        paginationResult.getResources().forEach(consumer);
 
         CollectionModel resources;
         if (componentResources.isEmpty()) {
@@ -1091,5 +1102,75 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         RequestStatus requestStatus = componentService.splitComponents(srcComponent, targetComponent, sw360User);
 
         return new ResponseEntity<>(requestStatus, HttpStatus.OK);
+    }
+
+    /**
+     * Create a map of filters with the field name in the key and expected value in the value (as set).
+     * @return Filter map from the user's request.
+     */
+    private @NonNull Map<String, Set<String>> getFilterMap(
+            String categories, String componentType, String languages, String softwarePlatforms,
+            String operatingSystems, String vendors, String mainLicenses, String createdBy, String createdOn
+    ) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(categories)) {
+            filterMap.put(Component._Fields.CATEGORIES.getFieldName(), CommonUtils.splitToSet(categories));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(componentType)) {
+            filterMap.put(Component._Fields.COMPONENT_TYPE.getFieldName(), CommonUtils.splitToSet(componentType));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(languages)) {
+            filterMap.put(Component._Fields.LANGUAGES.getFieldName(), CommonUtils.splitToSet(languages));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(softwarePlatforms)) {
+            filterMap.put(Component._Fields.SOFTWARE_PLATFORMS.getFieldName(), CommonUtils.splitToSet(softwarePlatforms));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(operatingSystems)) {
+            filterMap.put(Component._Fields.OPERATING_SYSTEMS.getFieldName(), CommonUtils.splitToSet(operatingSystems));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(vendors)) {
+            filterMap.put(Component._Fields.VENDOR_NAMES.getFieldName(), CommonUtils.splitToSet(vendors));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(mainLicenses)) {
+            filterMap.put(Component._Fields.MAIN_LICENSE_IDS.getFieldName(), CommonUtils.splitToSet(mainLicenses));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(createdBy)) {
+            filterMap.put(Component._Fields.CREATED_BY.getFieldName(), CommonUtils.splitToSet(createdBy));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(createdOn)) {
+            filterMap.put(Component._Fields.CREATED_ON.getFieldName(), CommonUtils.splitToSet(createdOn));
+        }
+        return filterMap;
+    }
+
+    /**
+     * Create a filter predicate to remove all components which do not satisfy the restriction set.
+     * @param restrictions Restrictions set to filter components on
+     * @return Filter predicate for stream.
+     */
+    private static @NonNull Predicate<Component> filterComponentMap(Map<String, Set<String>> restrictions) {
+        return component -> {
+            for (Map.Entry<String, Set<String>> restriction : restrictions.entrySet()) {
+                final Set<String> filterSet = restriction.getValue();
+                Component._Fields field = Component._Fields.findByName(restriction.getKey());
+                Object fieldValue = component.getFieldValue(field);
+                if (fieldValue == null) {
+                    return false;
+                }
+                if (field == Component._Fields.COMPONENT_TYPE && !filterSet.contains(component.componentType.name())) {
+                    return false;
+                } else if ((field == Component._Fields.CREATED_BY || field == Component._Fields.CREATED_ON)
+                        && !fieldValue.toString().equalsIgnoreCase(filterSet.iterator().next())) {
+                    return false;
+                } else if (fieldValue instanceof Set) {
+                    Set<String> fieldValueSet = (Set<String>) fieldValue;
+                    fieldValueSet.retainAll(filterSet);
+                    if (fieldValueSet.isEmpty()) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        };
     }
 }
