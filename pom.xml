@@ -123,7 +123,7 @@
     <jakarta.activation-api.version>2.0.1</jakarta.activation-api.version>
     <jakarta.mail-api.version>2.0.1</jakarta.mail-api.version>
     <jaxen.version>2.0.0</jaxen.version>
-    <jboss-logging.version>3.5.0.Final</jboss-logging.version>
+    <jboss-logging.version>3.6.1.Final</jboss-logging.version>
     <jcip-annotations.version>1.0</jcip-annotations.version>
     <jcraft.version>0.1.55</jcraft.version>
     <jetbrains-annotations.version>26.0.1</jetbrains-annotations.version>
