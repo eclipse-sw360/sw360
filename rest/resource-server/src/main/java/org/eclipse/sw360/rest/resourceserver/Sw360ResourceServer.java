@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.common.PropertyUtils;
 import org.eclipse.sw360.rest.common.Sw360CORSFilter;
+import org.eclipse.sw360.rest.common.Sw360XssFilter;
 import org.eclipse.sw360.rest.resourceserver.core.OpenAPIPaginationHelper;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.security.apiToken.ApiTokenAuthenticationFilter;
@@ -50,7 +51,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import java.util.*;
 
 @SpringBootApplication
-@Import(Sw360CORSFilter.class)
+@Import({Sw360CORSFilter.class, Sw360XssFilter.class})
 public class Sw360ResourceServer extends SpringBootServletInitializer {
 
     public static final String REST_BASE_PATH = "/api";
