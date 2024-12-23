@@ -69,11 +69,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
-import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
-import org.eclipse.sw360.datahandler.thrift.components.Release;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStateSummary;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
-import org.eclipse.sw360.datahandler.thrift.components.ReleaseNode;
+import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoFile;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
@@ -81,15 +77,7 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
-import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
-import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
-import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
+import org.eclipse.sw360.datahandler.thrift.projects.*;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -259,6 +247,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "tag", required = false) String tag,
             @Parameter(description = "Flag to get projects with all details.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            @Parameter(description = "The version of the project")
+            @RequestParam(value = "version", required = false) String version,
+            @Parameter(description = "The projectResponsible of the project")
+            @RequestParam(value = "projectResponsible", required = false) String projectResponsible,
+            @Parameter(description = "The state of the project")
+            @RequestParam(value = "state", required = false) ProjectState projectState,
+            @Parameter(description = "The clearingStatus of the project")
+            @RequestParam(value = "clearingStatus", required = false) ProjectClearingState projectClearingState,
+            @Parameter(description = "The additionalData of the project")
+            @RequestParam(value = "additionalData", required = false) String additionalData,
             @Parameter(description = "List project by lucene search")
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
@@ -269,23 +267,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         boolean isSearchByType = CommonUtils.isNotNullEmptyOrWhitespace(projectType);
         boolean isSearchByGroup = CommonUtils.isNotNullEmptyOrWhitespace(group);
         boolean isNoFilter = false;
+        boolean isAllProjectAdded=false;
         String queryString = request.getQueryString();
         Map<String, String> params = restControllerHelper.parseQueryString(queryString);
         List<Project> sw360Projects = new ArrayList<>();
-        Map<String, Set<String>> filterMap = new HashMap<>();
         if (luceneSearch) {
-            if (CommonUtils.isNotNullEmptyOrWhitespace(projectType)) {
-                Set<String> values = CommonUtils.splitToSet(projectType);
-                filterMap.put(Project._Fields.PROJECT_TYPE.getFieldName(), values);
-            }
-            if (CommonUtils.isNotNullEmptyOrWhitespace(group)) {
-                Set<String> values = CommonUtils.splitToSet(group);
-                filterMap.put(Project._Fields.BUSINESS_UNIT.getFieldName(), values);
-            }
-            if (CommonUtils.isNotNullEmptyOrWhitespace(tag)) {
-                Set<String> values = CommonUtils.splitToSet(tag);
-                filterMap.put(Project._Fields.TAG.getFieldName(), values);
-            }
+            Map<String, Set<String>> filterMap = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
+                    additionalData);
 
             if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
                 Set<String> values = CommonUtils.splitToSet(name);
@@ -298,24 +286,56 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         } else {
             if (isSearchByName) {
                 sw360Projects.addAll(projectService.searchProjectByName(params.get("name"), sw360User));
-            } else if (isSearchByGroup) {
-                sw360Projects.addAll(projectService.searchProjectByGroup(group, sw360User));
-            } else if (isSearchByTag) {
-                sw360Projects.addAll(projectService.searchProjectByTag(params.get("tag"), sw360User));
-            } else if (isSearchByType) {
-                sw360Projects.addAll(projectService.searchProjectByType(projectType, sw360User));
             } else {
-                sw360Projects.addAll(projectService.getProjectsForUser(sw360User, pageable));
+                isAllProjectAdded=true;
+                sw360Projects.addAll(projectService.getProjectsSummaryForUserWithoutPagination(sw360User));
+            }
+            Map<String, Set<String>> restrictions = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
+                    additionalData);
+            if (!restrictions.isEmpty()) {
+                sw360Projects = new ArrayList<>(sw360Projects.stream()
+                        .filter(filterProjectMap(restrictions)).toList());
+            }else if(isAllProjectAdded){
                 isNoFilter = true;
             }
         }
-        return getProjectResponse(pageable, projectType, group, tag, allDetails, luceneSearch, request, sw360User,
+        return getProjectResponse(pageable, allDetails, luceneSearch, request, sw360User,
                 mapOfProjects, isSearchByName, sw360Projects, isNoFilter);
+    }
+
+    private Map<String, Set<String>> getFilterMap(String tag, String projectType, String group, String version, String projectResponsible,
+                                                  ProjectState projectState, ProjectClearingState projectClearingState, String additionalData) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(tag)) {
+            filterMap.put(Project._Fields.TAG.getFieldName(), CommonUtils.splitToSet(tag));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(projectType)) {
+            filterMap.put(Project._Fields.PROJECT_TYPE.getFieldName(), CommonUtils.splitToSet(projectType));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(group)) {
+            filterMap.put(Project._Fields.BUSINESS_UNIT.getFieldName(), CommonUtils.splitToSet(group));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(version)) {
+            filterMap.put(Project._Fields.VERSION.getFieldName(), CommonUtils.splitToSet(version));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(projectResponsible)) {
+            filterMap.put(Project._Fields.PROJECT_RESPONSIBLE.getFieldName(), CommonUtils.splitToSet(projectResponsible));
+        }
+        if (projectState!=null && CommonUtils.isNotNullEmptyOrWhitespace(projectState.name())) {
+            filterMap.put(Project._Fields.STATE.getFieldName(), CommonUtils.splitToSet(projectState.name()));
+        }
+        if (projectClearingState!=null && CommonUtils.isNotNullEmptyOrWhitespace(projectClearingState.name())) {
+            filterMap.put(Project._Fields.CLEARING_STATE.getFieldName(), CommonUtils.splitToSet(projectClearingState.name()));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(additionalData)) {
+            filterMap.put(Project._Fields.ADDITIONAL_DATA.getFieldName(), CommonUtils.splitToSet(additionalData));
+        }
+        return filterMap;
     }
 
     @NotNull
     private ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectResponse(Pageable pageable,
-                                                                                     String projectType, String group, String tag, boolean allDetails, boolean luceneSearch,
+                                                                                     boolean allDetails, boolean luceneSearch,
                                                                                      HttpServletRequest request, User sw360User, Map<String, Project> mapOfProjects, boolean isSearchByName,
                                                                                      List<Project> sw360Projects, boolean isNoFilter) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException, TException {
         sw360Projects.stream().forEach(prj -> mapOfProjects.put(prj.getId(), prj));
@@ -347,11 +367,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (luceneSearch) {
             paginationResult.getResources().stream().forEach(consumer);
         } else {
-            paginationResult.getResources().stream()
-                    .filter(project -> projectType == null || projectType.equals(project.projectType.name()))
-                    .filter(project -> group == null || group.isEmpty() || group.equals(project.getBusinessUnit()))
-                    .filter(project -> tag == null || tag.isEmpty() || tag.equals(project.getTag())).forEach(consumer);
+            paginationResult.getResources().stream().forEach(consumer);
         }
+
         CollectionModel resources;
         if (projectResources.size() == 0) {
             resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
@@ -415,7 +433,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         List<Project> sw360Projects = projectService.getMyProjects(sw360User, userRoles);
         sw360Projects = projectService.getWithFilledClearingStatus(sw360Projects, clearingState);
 
-        return getProjectResponse(pageable, null, null, null, allDetails, true, request, sw360User,
+        return getProjectResponse(pageable, allDetails, true, request, sw360User,
                 mapOfProjects, true, sw360Projects, false);
     }
 
@@ -3395,5 +3413,49 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 .buildAndExpand(createdProject.getId()).toUri();
 
         return ResponseEntity.created(location).body(projectDTOHalResource);
+    }
+
+    /**
+     * Create a filter predicate to remove all projects which do not satisfy the restriction set.
+     * @param restrictions Restrictions set to filter projects on
+     * @return Filter predicate for stream.
+     */
+    private static @NonNull Predicate<Project> filterProjectMap(Map<String, Set<String>> restrictions) {
+        return project -> {
+            for (Map.Entry<String, Set<String>> restriction : restrictions.entrySet()) {
+                final Set<String> filterSet = restriction.getValue();
+                Project._Fields field = Project._Fields.findByName(restriction.getKey());
+                Object fieldValue = project.getFieldValue(field);
+                if (fieldValue == null) {
+                    return false;
+                }
+                if (field == Project._Fields.PROJECT_TYPE && !filterSet.contains(project.projectType.name())) {
+                    return false;
+                } else if (field == Project._Fields.VERSION && !filterSet.contains(project.version)) {
+                    return false;
+                } else if (field == Project._Fields.PROJECT_RESPONSIBLE && !filterSet.contains(project.projectResponsible)) {
+                    return false;
+                } else if (field == Project._Fields.STATE && !filterSet.contains(project.state.name())) {
+                    return false;
+                } else if (field == Project._Fields.CLEARING_STATE && !filterSet.contains(project.clearingState.name())) {
+                    return false;
+                } else if ((field == Project._Fields.CREATED_BY || field == Project._Fields.CREATED_ON)
+                        && !fieldValue.toString().equalsIgnoreCase(filterSet.iterator().next())) {
+                    return false;
+                } else if (fieldValue instanceof Set) {
+                    if (Sets.intersection(filterSet, (Set<String>) fieldValue).isEmpty()) {
+                        return false;
+                    }
+                } else if (fieldValue instanceof Map<?,?>) {
+                    Map<?, ?> fieldValueMap = (Map<?, ?>) fieldValue;
+                    boolean hasIntersection = fieldValueMap.keySet().stream()
+                            .anyMatch(filterSet::contains);
+                    if (!hasIntersection) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        };
     }
 }
