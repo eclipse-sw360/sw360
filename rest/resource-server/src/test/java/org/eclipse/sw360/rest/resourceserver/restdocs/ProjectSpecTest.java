@@ -3200,4 +3200,45 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("projectId").description("Id of a project"))
                         ));
     }
+
+    @Test
+    public void should_document_get_projects_by_advance_search() throws Exception {
+        mockMvc.perform(get("/api/projects")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("projectType", project.getProjectType().toString())
+                        .queryParam("createdOn", project.getCreatedOn())
+                        .queryParam("version", project.getVersion())
+                        .queryParam("luceneSearch", "false")
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
+                        .queryParam("sort", "name,desc")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("projectType").description("Filter for type"),
+                                parameterWithName("createdOn").description("Filter for project creation date"),
+                                parameterWithName("version").description("Filter for version"),
+                                parameterWithName("luceneSearch").description("Filter with exact match or lucene match."),
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects per page"),
+                                parameterWithName("sort").description("Defines order of the projects")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:projects.[]name").description("The name of the component"),
+                                subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing projects"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
+                        )));
+    }
 }
