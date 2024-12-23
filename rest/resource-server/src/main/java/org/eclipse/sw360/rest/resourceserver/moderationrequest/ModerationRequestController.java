@@ -24,10 +24,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
-import org.bouncycastle.util.test.TestFailedException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
@@ -54,7 +52,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
@@ -494,21 +491,21 @@ public class ModerationRequestController implements RepresentationModelProcessor
         )
         @ApiResponses(value = {
             @ApiResponse(
-                responseCode = "200", description = "Moderation request validated successfully.",
+                responseCode = "200", description = "Moderation request not required.",
                 content = {
                     @Content(mediaType = "application/json",
                         examples = @ExampleObject(
-                            value = "{\"message\": \"Moderation request validated successfully.\"}"
+                            value = "{\"message\": \"User can write to the entity. MR is not required.\"}"
                         ))
                 }
             ),
             @ApiResponse(
                     responseCode = "202",
-                    description = "Accepted - Moderation request is pending review.",
+                    description = "Moderation request will be required.",
                     content = {
                         @Content(mediaType = "application/json",
                             examples = @ExampleObject(
-                                value = "{\"message\": \"Moderation request is pending review.\"}"
+                                value = "{\"message\": \"User allowed to perform write on entity. MR is required.\"}"
                             ))
                     }
                 ),
@@ -551,12 +548,12 @@ public class ModerationRequestController implements RepresentationModelProcessor
         })
     @RequestMapping(value = MODERATION_REQUEST_URL + "/validate", method = RequestMethod.POST)
     public ResponseEntity<String> validateModerationRequest(
-            @Parameter(description = "Project id.")
+            @Parameter(description = "Entity type", example = "PROJECT",
+                    schema = @Schema(allowableValues = {"PROJECT", "COMPONENT", "RELEASE"}))
             @RequestParam String entityType,
-            @Parameter(description = "Entity type", example = "Pass entity type like PROJECT/COMPONENT/RELEASE")
-            @RequestParam String entityId,
-            HttpServletRequest request) throws TException{
-
+            @Parameter(description = "Entity id.")
+            @RequestParam String entityId
+    ) {
         try {
             User user = restControllerHelper.getSw360UserFromAuthentication();
             Object entity = getEntityByTypeAndId(entityType, entityId, user);
@@ -567,7 +564,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
             boolean isWriteActionAllowed = restControllerHelper.isWriteActionAllowed(entity, user);
             if (!isWriteActionAllowed) {
                 return ResponseEntity.status(HttpStatus.ACCEPTED).body(
-                        "User allowed to perform write on entity.MR is required.");
+                        "User allowed to perform write on entity. MR is required.");
             }
             return ResponseEntity.ok("User can write to the entity. MR is not required.");
         } catch (SW360Exception ex) {
@@ -598,8 +595,6 @@ public class ModerationRequestController implements RepresentationModelProcessor
             }
         } catch (TTransportException e) {
             throw new RuntimeException("Unable to connect to the service. Please check the server status.", e);
-        } catch (TException e) {
-            throw e;
         }
     }
 }
