@@ -51,6 +51,7 @@ public class ProjectTest extends TestIntegrationBase {
         projectList.add(project);
 
         given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
+        given(this.projectServiceMock.getProjectsSummaryForUserWithoutPagination(any())).willReturn(projectList.stream().toList());
 
         User user = new User();
         user.setId("123456789");

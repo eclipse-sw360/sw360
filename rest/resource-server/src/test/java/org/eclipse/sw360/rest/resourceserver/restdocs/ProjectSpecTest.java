@@ -582,6 +582,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.sw360ReportServiceMock.getProjectReleaseSpreadSheetWithEcc(any(),any())).willReturn(ByteBuffer.allocate(10000));
         given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
+        given(this.projectServiceMock.getProjectsSummaryForUserWithoutPagination(any())).willReturn(projectList.stream().toList());
         given(this.projectServiceMock.getProjectForUserById(eq(project2.getId()), any())).willReturn(project2);
         given(this.projectServiceMock.getProjectForUserById(eq(project4.getId()), any())).willReturn(project4);
         given(this.projectServiceMock.getProjectForUserById(eq(project5.getId()), any())).willReturn(project5);
@@ -1035,13 +1036,13 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]clearingRequestId").description("Clearing Request id associated with project."),
                                 subsectionWithPath("_embedded.sw360:projects.[]_links").description("Self <<resources-index-links,Links>> to Project resource"),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.createdBy").description("The user who created this project"),
-                                subsectionWithPath("_embedded.sw360:projects.[]_embedded.clearingTeam").description("The clearingTeam of the project").optional(),
+                                subsectionWithPath("_embedded.sw360:projects.[]_embedded.clearingTeam").type(JsonFieldType.STRING).description("The clearingTeam of the project").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.homepage").description("The homepage url of the project").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.wiki").description("The wiki url of the project").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]licenseInfoHeaderText").description("The licenseInfoHeaderText text of the project"),
                                 subsectionWithPath("_embedded.sw360:projects.[]externalUrls").description("A place to store additional data used by external tools").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:moderators").description("An array of all project moderators with email").optional(),
-                                subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:contributors").description("An array of all project contributors with email").optional(),
+                                subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:contributors").type(JsonFieldType.ARRAY).description("An array of all project contributors with email").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:attachments").description("An array of all project attachments").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]vendor").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
@@ -3199,5 +3200,46 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("module").description("module represent the project or component. Possible values are `<projectReleaseSpreadSheetWithEcc>`"),
                                 parameterWithName("projectId").description("Id of a project"))
                         ));
+    }
+
+    @Test
+    public void should_document_get_projects_by_advance_search() throws Exception {
+        mockMvc.perform(get("/api/projects")
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .queryParam("projectType", project.getProjectType().toString())
+                        .queryParam("createdOn", project.getCreatedOn())
+                        .queryParam("version", project.getVersion())
+                        .queryParam("luceneSearch", "false")
+                        .queryParam("page", "0")
+                        .queryParam("page_entries", "5")
+                        .queryParam("sort", "name,desc")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("projectType").description("Filter for type"),
+                                parameterWithName("createdOn").description("Filter for project creation date"),
+                                parameterWithName("version").description("Filter for version"),
+                                parameterWithName("luceneSearch").description("Filter with exact match or lucene match."),
+                                parameterWithName("page").description("Page of projects"),
+                                parameterWithName("page_entries").description("Amount of projects per page"),
+                                parameterWithName("sort").description("Defines order of the projects")
+                        ),
+                        links(
+                                linkWithRel("curies").description("Curies are used for online documentation"),
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("last").description("Link to last page")
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded.sw360:projects.[]name").description("The name of the component"),
+                                subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The component type, possible values are: " + Arrays.asList(ComponentType.values())),
+                                subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                fieldWithPath("page").description("Additional paging information"),
+                                fieldWithPath("page.size").description("Number of projects per page"),
+                                fieldWithPath("page.totalElements").description("Total number of all existing projects"),
+                                fieldWithPath("page.totalPages").description("Total number of pages"),
+                                fieldWithPath("page.number").description("Number of the current page")
+                        )));
     }
 }

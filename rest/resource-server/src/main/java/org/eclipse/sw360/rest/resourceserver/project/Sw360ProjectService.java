@@ -147,6 +147,11 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return new HashSet<>(pageDtToProjects.entrySet().iterator().next().getValue());
     }
 
+    public List<Project> getProjectsSummaryForUserWithoutPagination(User sw360User) throws TException {
+        ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
+        return sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
+    }
+
     public Project getProjectForUserById(String projectId, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         try {

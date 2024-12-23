@@ -1233,3 +1233,22 @@ include::{snippets}/should_document_get_export_project_create_clearing_request/c
 
 ===== Example response
 include::{snippets}/should_document_get_export_project_create_clearing_request/http-response.adoc[]
+
+[[resources-projects-list-by-search]]
+==== Filtering with more fields
+
+A `GET` request to fetch filtered list of projects.
+
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_advance_search/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_advance_search/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_advance_search/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_advance_search/links.adoc[]
