@@ -2736,13 +2736,16 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligations", method = RequestMethod.GET)
-	public ResponseEntity<HalResource> getLicenseObligations(Pageable pageable,
-            @Parameter(description = "Project ID.") @PathVariable("id") String id)
+	public ResponseEntity<Object> getLicenseObligations(Pageable pageable,
+            @Parameter(description = "Project ID.") @PathVariable("id") String id,
+            @Parameter(description = "If true, returns the license obligation data in release view. "
+                    + "Otherwise, returns it in project view.")
+            @RequestParam(value = "view", defaultValue = "false") boolean releaseView)
             throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
         final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
-        List<Release> releases = new ArrayList<>();;
+        List<Release> releases = new ArrayList<>();
         ObligationList obligation = new ObligationList();
         Map<String, ObligationStatusInfo> obligationStatusMap = Maps.newHashMap();
         List<String> releaseIds = new ArrayList<>(sw360Project.getReleaseIdToUsage().keySet());
@@ -2757,17 +2760,36 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             obligationStatusMap = CommonUtils.nullToEmptyMap(obligation.getLinkedObligationStatus());
             releaseIdToAcceptedCLI.putAll(SW360Utils.getReleaseIdtoAcceptedCLIMappings(obligationStatusMap));
         }
+        if (releaseView) {
+            final List<LicenseInfoParsingResult> licenseInfoWithObligations = new ArrayList<>();
+            List<LicenseInfoParsingResult> processedLicenses = projectService.processLicenseInfoWithObligations(
+                    licenseInfoWithObligations, releaseIdToAcceptedCLI, releases, sw360User);
+            for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
+                ObligationStatusInfo statusInfo = entry.getValue();
+                Set<Release> limitedSet = releaseService
+                        .getReleasesForUserByIds(statusInfo.getReleaseIdToAcceptedCLI().keySet());
+                statusInfo.setReleases(limitedSet);
+            }
 
-        obligationStatusMap = projectService.setLicenseInfoWithObligations(obligationStatusMap, releaseIdToAcceptedCLI, releases, sw360User);
-        for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
-            ObligationStatusInfo statusInfo = entry.getValue();
-            Set<Release> limitedSet = releaseService.getReleasesForUserByIds(statusInfo.getReleaseIdToAcceptedCLI().keySet());
-            statusInfo.setReleases(limitedSet);
+            // Include obligation status in the response
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("processedLicenses", processedLicenses);
+            responseBody.put("obligationStatusMap", obligationStatusMap);
+            return new ResponseEntity<>(responseBody, HttpStatus.OK);
+        } else {
+            obligationStatusMap = projectService.setLicenseInfoWithObligations(obligationStatusMap,
+                    releaseIdToAcceptedCLI, releases, sw360User);
+            for (Map.Entry<String, ObligationStatusInfo> entry : obligationStatusMap.entrySet()) {
+                ObligationStatusInfo statusInfo = entry.getValue();
+                Set<Release> limitedSet = releaseService
+                        .getReleasesForUserByIds(statusInfo.getReleaseIdToAcceptedCLI().keySet());
+                statusInfo.setReleases(limitedSet);
+            }
+
+            Map<String, Object> responseBody = createPaginationMetadata(pageable, obligationStatusMap);
+            HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
+            return new ResponseEntity<>(halObligation, HttpStatus.OK);
         }
-
-        Map<String, Object> responseBody = createPaginationMetadata(pageable, obligationStatusMap);
-        HalResource<Map<String, Object>> halObligation = new HalResource<>(responseBody);
-        return new ResponseEntity<>(halObligation, HttpStatus.OK);
     }
 
     @Operation(
