@@ -1660,6 +1660,7 @@ public class RestControllerHelper<T> {
         return clearingRequestService.getClearingRequestById(clearingRequest.getId(), sw360User);
     }
     
+
     public boolean isWriteActionAllowed(Object object, User user) {
         return makePermission(object, user).isActionAllowed(RequestedAction.WRITE);
     }
