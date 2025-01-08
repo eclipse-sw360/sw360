@@ -31,6 +31,7 @@ import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.DepartmentConfigDTO;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -95,8 +96,10 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
-    public User getUser(String id) {
-        return db.getUser(id);
+    public User getUser(String id) throws SW360Exception {
+        User user = db.getUser(id);
+        assertNotNull(user);
+        return user;
     }
 
     @Override
@@ -336,5 +339,10 @@ public class UserHandler implements UserService.Iface {
     @Override
     public List<User> searchUsersGroup(UserGroup userGroup) throws TException {
         return db.getAllUsersGroup(userGroup);
+    }
+
+    @Override
+    public Set<String> getUserSecondaryDepartments() throws TException {
+        return db.getUserSecondaryDepartments();
     }
 }

@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -45,7 +46,7 @@ public class UserTest extends TestIntegrationBase {
     private int port;
 
     @Before
-    public void before() {
+    public void before() throws TException {
         List<User> userList = new ArrayList<>();
 
         User user = new User();

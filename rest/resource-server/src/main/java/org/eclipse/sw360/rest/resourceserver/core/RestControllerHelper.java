@@ -738,6 +738,16 @@ public class RestControllerHelper<T> {
         return userToUpdate;
     }
 
+    public User updateUser(User userToUpdate, User requestBodyUser) {
+        for (User._Fields field:User._Fields.values()) {
+            Object fieldValue = requestBodyUser.getFieldValue(field);
+            if (fieldValue != null) {
+                userToUpdate.setFieldValue(field, fieldValue);
+            }
+        }
+        return userToUpdate;
+    }
+
     public Component convertToComponent(ComponentDTO componentDTO) {
         Component component = new Component();
 
@@ -1048,6 +1058,7 @@ public class RestControllerHelper<T> {
         embeddedUser.setDepartment(user.getDepartment());
         embeddedUser.setUserGroup(user.getUserGroup());
         embeddedUser.setSecondaryDepartmentsAndRoles(user.getSecondaryDepartmentsAndRoles());
+        embeddedUser.setDeactivated(user.isDeactivated());
         embeddedUser.setType(null);
         return embeddedUser;
     }

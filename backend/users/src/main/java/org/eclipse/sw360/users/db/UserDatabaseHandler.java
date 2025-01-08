@@ -468,4 +468,8 @@ public class UserDatabaseHandler {
         }
         return userGroups;
     }
+
+    public Set<String> getUserSecondaryDepartments() {
+        return repository.getUserSecondaryDepartments();
+    }
 }

@@ -16,13 +16,10 @@ import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -414,5 +411,42 @@ public class UserSpecTest extends TestRestDocsSpecBase {
                 .header("Authorization",
                 TestHelper.generateAuthHeader(testUserId, testUserPassword)))
         .andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_document_get_all_departments() throws Exception {
+        mockMvc.perform(get("/api/users/departments")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .header("Authorization",
+                                TestHelper.generateAuthHeader(testUserId, testUserPassword)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_document_update_existing_user() throws Exception {
+        Map<String, String> updateInfo = new HashMap<>();
+        updateInfo.put("department", "DEPARTMENT");
+        mockMvc.perform(patch("/api/users/" + user.getId())
+                        .header("Authorization",
+                                TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(updateInfo))
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath("email").description("The user's email"),
+                                fieldWithPath("userGroup").description("The user group, possible values are: " + Arrays.asList(UserGroup.values())),
+                                fieldWithPath("fullName").description("The users's full name"),
+                                fieldWithPath("givenName").description("The user's given name"),
+                                fieldWithPath("lastName").description("The user's last name"),
+                                fieldWithPath("department").description("The user's company department"),
+                                fieldWithPath("deactivated").description("Is user deactivated"),
+                                subsectionWithPath("secondaryDepartmentsAndRoles").description("The user's secondary departments and roles"),
+                                fieldWithPath("formerEmailAddresses").description("The user's former email addresses"),
+                                fieldWithPath("wantsMailNotification").description("Does user want to be notified via mail?"),
+                                subsectionWithPath("notificationPreferences").description("User's notification preferences"),
+                                subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                        )));
     }
 }

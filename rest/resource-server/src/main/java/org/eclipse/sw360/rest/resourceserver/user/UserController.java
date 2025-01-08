@@ -8,6 +8,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.user;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -35,6 +36,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -45,6 +47,7 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -208,7 +211,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             tags = {"Users"})
     @RequestMapping(value = USERS_URL + "/byid/{id:.+}", method = RequestMethod.GET)
     public ResponseEntity<EntityModel<User>> getUser(@Parameter(
-            description = "The id of the user to be retrieved.") @PathVariable("id") String id) {
+            description = "The id of the user to be retrieved.") @PathVariable("id") String id) throws TException {
         User sw360User = userService.getUser(id);
         HalResource<User> halResource = createHalUser(sw360User);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
@@ -383,5 +386,46 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
         userGroupMap.put("primaryGrpList", primaryGrpList);
         userGroupMap.put("secondaryGrpList", secondaryGrpList);
         return new ResponseEntity<>(userGroupMap, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Update an existing user.", description = "Update an existing user",
+            tags = {"Users"})
+    @PatchMapping(value = USERS_URL + "/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public ResponseEntity<EntityModel<User>> patchUser(
+            @Parameter(description = "The user data to be updated.", schema = @Schema(implementation = User.class)) @RequestBody @NotNull User user,
+            @Parameter(description = "Id of updated user") @PathVariable String id
+    ) throws TException {
+        if (user.getPassword() != null && user.getPassword().isEmpty()) {
+            user.unsetPassword();
+        }
+        if (user.getPassword() != null) {
+            String encodedPassword = passwordEncoder.encode(user.getPassword());
+            user.setPassword(encodedPassword);
+        }
+
+        User userToUpdate = userService.getUser(id);
+        userToUpdate = this.restControllerHelper.updateUser(userToUpdate, user);
+
+        userService.updateUser(userToUpdate);
+        HalResource<User> halResource = createHalUser(userToUpdate);
+
+        return new ResponseEntity<>(halResource, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Get existing departments.", description = "Get existing departments from all users",
+            tags = {"Users"})
+    @GetMapping(value = USERS_URL + "/departments")
+    public ResponseEntity<?> getExistingDepartments(
+            @Parameter(description = "Type of department (primary, secondary)") @RequestParam(value = "type", required = false) String type
+    ) {
+        if (!CommonUtils.isNotNullEmptyOrWhitespace(type)) {
+            return new ResponseEntity<>(userService.getAvailableDepartments(), HttpStatus.OK);
+        }
+        return switch (type.toLowerCase()) {
+            case "primary" -> new ResponseEntity<>(userService.getExistingPrimaryDepartments(), HttpStatus.OK);
+            case "secondary" -> new ResponseEntity<>(userService.getExistingSecondaryDepartments(), HttpStatus.OK);
+            default -> new ResponseEntity<>("Type must be: primary or secondary", HttpStatus.BAD_REQUEST);
+        };
     }
 }
