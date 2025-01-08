@@ -42,6 +42,12 @@
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.owasp.encoder</groupId>
+            <artifactId>encoder</artifactId>
+            <version>${org.owasp.encoder.version}</version>
+        </dependency>
+
     </dependencies>
     <build>
         <finalName>rest-common</finalName>
