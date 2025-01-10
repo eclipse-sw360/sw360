@@ -46,6 +46,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.getSortedMap;
@@ -157,6 +159,14 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     public RequestStatus updateComponent(Component component, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         RequestStatus requestStatus;
+        if (CommonUtils.isNotNullEmptyOrWhitespace(component.getVcs())) {
+	        String urlRegex = "^(https?://)[a-zA-Z0-9+&@#/%?=~_|!:,.;-]*[a-zA-Z0-9+&@#/%=~_|]$";
+	        Pattern urlPattern = Pattern.compile(urlRegex);
+	        Matcher matcher = urlPattern.matcher(component.getVcs());
+	        boolean isValidUrl=matcher.matches();
+	        if(!isValidUrl)
+	        	throw new RuntimeException("sw360 component with name '" + component.getName() + " cannot be updated as vcs url is invalid");
+        }
         if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
             requestStatus = sw360ComponentClient.updateComponentWithForceFlag(component, sw360User, true);
         } else {
