@@ -118,3 +118,17 @@ include::{snippets}/should_document_get_export_vendor/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_get_export_vendor/http-response.adoc[]
+
+[[resources-vendor-merge]]
+==== Merge vendors
+
+A `PATCH` request will merge the source vendor with the target vendor.
+
+===== Request structure
+include::{snippets}/should_document_merge_vendor/request-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_merge_vendor/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_merge_vendor/http-response.adoc[]
