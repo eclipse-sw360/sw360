@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.common.WrappedException.WrappedTException;
+import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
@@ -60,6 +61,7 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
@@ -74,6 +76,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.Link;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -1590,5 +1593,117 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
     public List<ReleaseLink> serveLinkedReleasesInDependencyNetworkByIndexPath(String projectId, List<String> indexPath, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         return sw360ProjectClient.getReleaseLinksOfProjectNetWorkByIndexPath(projectId, indexPath, sw360User);
+    }
+
+    public RequestStatus addLicenseToLinkedReleases(String projectId, User sw360User)
+            throws TTransportException, TException {
+        if (PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, sw360User)) {
+            throw new AccessDeniedException("Adding license info to releases is disabled for the current users.");
+        }
+
+        try {
+            ProjectService.Iface projectClient = getThriftProjectClient();
+            LicenseInfoService.Iface licenseInfoClient = new ThriftClients().makeLicenseInfoClient();
+            ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
+
+            Project project = projectClient.getProjectById(projectId, sw360User);
+            if (project == null) {
+                log.error("Requested Project Not Found: " + projectId);
+                throw new ResourceNotFoundException("Project not available");
+            }
+
+            Set<String> releaseIds = CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage());
+            List<Release> releasesToUpdate = new ArrayList<>();
+
+            for (String releaseId : releaseIds) {
+                Release release = componentClient.getReleaseById(releaseId, sw360User);
+                if (release == null) {
+                    log.error("Release with ID " + releaseId + " not found.");
+                    continue;
+                }
+
+                Set<String> originalMainLicenses = release.getMainLicenseIds() == null ? new HashSet<>() : new HashSet<>(release.getMainLicenseIds());
+                Set<String> originalOtherLicenses = release.getOtherLicenseIds() == null ? new HashSet<>() : new HashSet<>(release.getOtherLicenseIds());
+
+                List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
+                if (approvedCliAttachments.isEmpty()) {
+                    approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
+                }
+
+                boolean updated = false;
+                if (!approvedCliAttachments.isEmpty()) {
+                    updated = processSingleAttachment(approvedCliAttachments.get(0), release, licenseInfoClient, sw360User);
+                }
+
+                if (!updated && (!originalMainLicenses.equals(release.getMainLicenseIds()) || !originalOtherLicenses.equals(release.getOtherLicenseIds()))) {
+                    updated = true;
+                }
+
+                if (updated) {
+                    releasesToUpdate.add(release);
+                }
+            }
+
+            for (Release release : releasesToUpdate) {
+                log.info("Updating release: {}", release.getId());
+                componentClient.updateRelease(release, sw360User);
+            }
+
+            return RequestStatus.SUCCESS;
+
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("Requested Project Not Found");
+            } else if (sw360Exp.getErrorCode() == 403) {
+                throw new AccessDeniedException("Project or its linked releases are restricted and not accessible.");
+            }
+            throw new RuntimeException("SW360 API error: " + sw360Exp.getMessage(), sw360Exp);
+        } catch (Exception e) {
+            throw new RuntimeException("Error processing linked releases for project: " + projectId, e);
+        }
+    }
+
+    private boolean processSingleAttachment(Attachment attachment, Release release,
+            LicenseInfoService.Iface licenseInfoClient, User sw360User) throws TTransportException, TException {
+
+        String attachmentName = attachment.getFilename();
+        Set<String> mainLicenses = new HashSet<>();
+        Set<String> otherLicenses = new HashSet<>();
+
+        List<LicenseInfoParsingResult> licenseInfoResults = licenseInfoClient.getLicenseInfoForAttachment(release,
+                attachment.getAttachmentContentId(), true, sw360User);
+
+        if (attachmentName.endsWith(SW360Constants.RDF_FILE_EXTENSION)) {
+            licenseInfoResults.forEach(result -> {
+                if (result.getLicenseInfo() != null) {
+                    mainLicenses.addAll(result.getLicenseInfo().getConcludedLicenseIds());
+                    otherLicenses.addAll(result.getLicenseInfo().getLicenseNamesWithTexts().stream()
+                            .map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet()));
+                }
+            });
+            otherLicenses.removeAll(mainLicenses);
+        } else if (attachmentName.endsWith(SW360Constants.XML_FILE_EXTENSION)) {
+            licenseInfoResults.forEach(result -> {
+                if (result.getLicenseInfo() != null) {
+                    result.getLicenseInfo().getLicenseNamesWithTexts().forEach(license -> {
+                        if (SW360Constants.LICENSE_TYPE_GLOBAL.equals(license.getType())) {
+                            mainLicenses.add(license.getLicenseName());
+                        } else {
+                            otherLicenses.add(license.getLicenseName());
+                        }
+                    });
+                }
+            });
+        }
+
+        boolean isUpdated = !mainLicenses.equals(release.getMainLicenseIds()) || !otherLicenses.equals(release.getOtherLicenseIds());
+        if (isUpdated) {
+            log.debug("Updating licenses for release: {}", release.getId());
+            release.setMainLicenseIds(mainLicenses);
+            release.setOtherLicenseIds(otherLicenses);
+        } else {
+            log.debug("No changes detected for release: {}", release.getId());
+        }
+        return isUpdated;
     }
 }
