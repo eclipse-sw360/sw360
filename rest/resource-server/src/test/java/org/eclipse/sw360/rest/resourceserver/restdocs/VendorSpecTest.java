@@ -10,6 +10,7 @@
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -36,11 +37,10 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.subsecti
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
-import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class VendorSpecTest extends TestRestDocsSpecBase {
@@ -58,7 +58,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
     private Vendor vendor3;
 
     @Before
-    public void before() throws TException{
+    public void before() throws TException, ResourceClassNotFoundException {
         vendor = new Vendor();
         vendor.setId("876876776");
         vendor.setFullname("Google Inc.");
@@ -99,6 +99,7 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
 
         given(this.vendorServiceMock.getAllReleaseList(eq(vendor.getId()))).willReturn(releases);
         given(this.vendorServiceMock.getVendors()).willReturn(vendorList);
+        given(this.vendorServiceMock.mergeVendors(eq(vendor.getId()),eq(vendor2.getId()), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vendorServiceMock.vendorUpdate(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.vendorServiceMock.getVendorById(eq(vendor.getId()))).willReturn(vendor);
         given(this.vendorServiceMock.deleteVendorByid(any(), any())).willReturn(RequestStatus.SUCCESS);
@@ -234,5 +235,28 @@ public class VendorSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document());
+    }
+
+    @Test
+    public void should_document_merge_vendor() throws Exception{
+        mockMvc.perform(patch("/api/vendors/mergeVendors")
+                        .contentType(MediaTypes.HAL_JSON)
+                        .content(this.objectMapper.writeValueAsString(vendor))
+                        .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                        .param("mergeTargetId", "87654321")
+                        .param("mergeSourceId", "17653524")
+                        .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        queryParameters(
+                                parameterWithName("mergeSourceId").description("Id of a source vendor to merge"),
+                                parameterWithName("mergeTargetId").description("Id of a target vendor to merge")
+                        ),
+                        requestFields(
+                                fieldWithPath("fullName").description("The full name of the vendor"),
+                                fieldWithPath("shortName").description("The short name of the vendor"),
+                                fieldWithPath("url").description("The vendor's home page URL"),
+                                fieldWithPath("type").description("The type of document")
+                        )));
     }
 }

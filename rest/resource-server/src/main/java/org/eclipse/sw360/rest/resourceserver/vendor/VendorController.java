@@ -274,6 +274,56 @@ public class VendorController implements RepresentationModelProcessor<Repository
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Merge two vendors.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Merge successful.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            examples = @ExampleObject(
+                                                    value = "{\"message\": \"Merge successful.\"}"
+                                            ))
+                            }),
+                    @ApiResponse(responseCode = "400", description = "Vendor used as source or target has an open MR..",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            examples = @ExampleObject(
+                                                    value = "{\"message\": \"Vendor used as source or target has an open MR.\"}"
+                                            ))
+                            }),
+                    @ApiResponse(responseCode = "500", description = "Internal server error while merging the vendors.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            examples = @ExampleObject(
+                                                    value = "{\"message\": \"Internal server error while merging the vendors.\"}"
+                                            ))
+                            }),
+                    @ApiResponse(responseCode = "403", description = "Access denied.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            examples = @ExampleObject(
+                                                    value = "{\"message\": \"Access denied.\"}"
+                                            ))
+                            })
+            },
+            tags = {"Vendor"}
+    )
+    @RequestMapping(value = VENDORS_URL + "/mergeVendors", method = RequestMethod.PATCH)
+    public ResponseEntity<RequestStatus> mergeVendors(
+            @Parameter(description = "The id of the merge target vendor.")
+            @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
+            @Parameter(description = "The id of the merge source vendor.")
+            @RequestParam(value = "mergeSourceId", required = true) String mergeSourceId,
+            @Parameter(description = "The merge selection.")
+            @RequestBody Vendor mergeSelection
+    ) throws TException, ResourceClassNotFoundException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        // perform the real merge, update merge target and delete merge sources
+        RequestStatus requestStatus = vendorService.mergeVendors(mergeTargetId, mergeSourceId, mergeSelection, sw360User);
+        return new ResponseEntity<>(requestStatus, HttpStatus.OK);
+    }
+
     private void copyDataStreamToResponse(HttpServletResponse response, ByteBuffer buffer) throws IOException {
         FileCopyUtils.copy(buffer.array(), response.getOutputStream());
     }
