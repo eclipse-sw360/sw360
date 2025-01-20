@@ -643,7 +643,6 @@ public class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties(value = {
-                "id",
                 "revision",
                 "type",
                 "licenseIdsSize",

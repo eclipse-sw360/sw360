@@ -236,6 +236,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("last").description("Link to last page")
                         ),
                         responseFields(
+                                fieldWithPath("_embedded.sw360:packages.[]id").description("The id of the package"),
                                 fieldWithPath("_embedded.sw360:packages.[]name").description("The name of the package"),
                                 fieldWithPath("_embedded.sw360:packages.[]version").description("The version of the package"),
                                 fieldWithPath("_embedded.sw360:packages.[]packageType").description("The package type, possible values are: " + Arrays.asList(CycloneDxComponentType.values())),
@@ -270,6 +271,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                                 linkWithRel("self").description("The <<resources-packages,Packages resource>>")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The id of the package"),
                                 fieldWithPath("name").description("The name of the package"),
                                 fieldWithPath("version").description("The version of the package"),
                                 fieldWithPath("packageType").description("The package type, possible values are: " + Arrays.asList(CycloneDxComponentType.values())),
@@ -403,6 +405,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("description").description("Description of the package")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The id of the package"),
                                 fieldWithPath("name").description("The name of the package"),
                                 fieldWithPath("version").description("The version of the package"),
                                 fieldWithPath("packageType").description("The package type, possible values are: " + Arrays.asList(CycloneDxComponentType.values())),
@@ -437,6 +440,7 @@ public class PackageSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("description").description("Description of the package")
                         ),
                         responseFields(
+                                fieldWithPath("id").description("The id of the package"),
                                 fieldWithPath("name").description("The name of the package"),
                                 fieldWithPath("version").description("The version of the package"),
                                 fieldWithPath("packageType").description("The package type, possible values are: " + Arrays.asList(CycloneDxComponentType.values())),
