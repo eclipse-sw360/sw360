@@ -201,4 +201,12 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isAccepted());
     }
 
+    @Test
+    public void schedule_source_upload() throws Exception {
+        mockMvc.perform(post("/api/schedule/scheduleSourceUploadForReleaseComponents")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isAccepted());
+    }
+
 }

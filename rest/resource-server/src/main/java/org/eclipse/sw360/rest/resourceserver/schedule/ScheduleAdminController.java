@@ -360,4 +360,23 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestStatus, status);
     }
+
+    @Operation(
+            summary = "Schedule the source upload for release components.",
+            description = "Schedules the source upload process for release components.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "202", description = "Status in the response body.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "SUCCESS")))
+    })
+    @PostMapping(SCHEDULE_URL + "/scheduleSourceUploadForReleaseComponents")
+    public ResponseEntity<?> scheduleSourceUploadForReleaseComponents()throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        RequestStatus requestStatus = scheduleService.triggerSourceUploadForReleaseComponents(sw360User);
+        HttpStatus status = HttpStatus.ACCEPTED;
+        return new ResponseEntity<>(requestStatus, status);
+    }
 }
