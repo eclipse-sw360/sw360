@@ -2451,6 +2451,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("state").description("The project active status, possible values are: " + Arrays.asList(ProjectState.values())),
                                 fieldWithPath("phaseOutSince").description("The project phase-out date"),
                                 fieldWithPath("clearingRequestId").description("Clearing Request id associated with project."),
+                                fieldWithPath("licenseInfoHeaderText").description("LicenseInfoHeaderText associated with project."),
                                 subsectionWithPath("externalUrls").description("A place to store additional data used by external URLs"),
                                 subsectionWithPath("_embedded.createdBy").description("The user who created this project"),
                                 subsectionWithPath("_embedded.projectResponsible").description("The project responsible displayed").type(JsonFieldType.OBJECT).optional(),
