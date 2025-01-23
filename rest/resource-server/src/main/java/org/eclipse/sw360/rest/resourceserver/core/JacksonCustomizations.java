@@ -323,7 +323,6 @@ public class JacksonCustomizations {
                 "packageIdsSize",
                 "setPackageIds",
                 "packageIdsIterator",
-                "packageIds",
                 "setReleaseRelationNetwork",
                 "releaseRelationNetwork",
                 "projectTypeIsSet",

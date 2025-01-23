@@ -258,6 +258,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setCreatedOn("2016-12-15");
         project.setCreatedBy("admin@sw360.org");
         project.setModerators(new HashSet<>(Arrays.asList("admin@sw360.org", "jane@sw360.org")));
+        project.setPackageIds(new HashSet<>(Arrays.asList("123456", "54844")));
         project.setBusinessUnit("sw360 AR");
         project.setExternalIds(Collections.singletonMap("mainline-id-project", "515432"));
         project.setOwnerAccountingUnit("4822");
@@ -319,6 +320,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project2.setProjectType(ProjectType.PRODUCT);
         project2.setDescription("Orange Web provides a suite of components for documentation.");
         project.setDomain("Hardware");
+        project2.setPackageIds(new HashSet<>(Arrays.asList("123456", "54844")));
         project2.setCreatedOn("2016-12-17");
         project2.setCreatedBy("john@sw360.org");
         project2.setBusinessUnit("sw360 EX DF");
@@ -376,6 +378,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         linkedProjects2.put("123456", new ProjectProjectRelationship(ProjectRelationship.CONTAINED).setEnableSvm(true));
         project4.setLinkedProjects(linkedProjects2);
         project4.setSecurityResponsibles(new HashSet<>(Arrays.asList("securityresponsible1@sw360.org", "securityresponsible2@sw360.org")));
+        project4.setPackageIds(new HashSet<>(Arrays.asList("123456", "54844")));
 
         Project project5 = new Project();
         project5.setId("123456");
@@ -876,6 +879,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:projects.[]name").description("The name of the project"),
                                 subsectionWithPath("_embedded.sw360:projects.[]version").description("The project version"),
+                                //subsectionWithPath("_embedded.sw360:projects.[]packageIds").description("List of package IDs associated with the project"),
                                 subsectionWithPath("_embedded.sw360:projects.[]projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
                                 subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
@@ -1045,6 +1049,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:projects.[]_embedded.sw360:attachments").description("An array of all project attachments").optional(),
                                 subsectionWithPath("_embedded.sw360:projects.[]vendor").description("An array of all component vendors with full name and link to their <<resources-vendor-get,Vendor resource>>"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources"),
+                                subsectionWithPath("_embedded.sw360:projects[].packageIds").description("List of package IDs associated with each project."),
                                 fieldWithPath("page").description("Additional paging information"),
                                 fieldWithPath("page.size").description("Number of projects per page"),
                                 fieldWithPath("page.totalElements").description("Total number of all existing projects"),
@@ -1067,6 +1072,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("id").description("The id of the project"),
                                 fieldWithPath("name").description("The name of the project"),
                                 fieldWithPath("version").description("The project version"),
+                                fieldWithPath("packageIds").description("List of package IDs associated with the project."),
                                 fieldWithPath("createdOn").description("The date the project was created"),
                                 fieldWithPath("description").description("The project description"),
                                 fieldWithPath("projectType").description("The project type, possible values are: " + Arrays.asList(ProjectType.values())),
@@ -1651,6 +1657,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
                                 subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]intReleaseId").description("The release id"),
+                               // subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageIds").description("The list of package IDs linked to the vulnerability."),
                                 subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]comment").description("Any message to add while updating project vulnerabilities"),
                                 subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]projectAction").description("The action of vulnerability"),
                                 subsectionWithPath("_embedded.sw360:vulnerabilityDTOes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
@@ -2044,6 +2051,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("considerReleasesFromExternalList").description("Consider list of releases from existing external list"),
                         fieldWithPath("enableVulnerabilitiesDisplay").description("Displaying vulnerabilities flag."),
                         fieldWithPath("clearingState").description("The clearingState of the project"),
+                        subsectionWithPath("packageIds").description("List of package IDs associated with the project"),
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of moderators"),
                         subsectionWithPath("_embedded.sw360:projects").description("An array of <<resources-projects, Projects resources>>"),
                         subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>"),
