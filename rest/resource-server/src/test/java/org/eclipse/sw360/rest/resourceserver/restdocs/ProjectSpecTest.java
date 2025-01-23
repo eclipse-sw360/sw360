@@ -276,6 +276,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         project.setSpecialRisks3rdParty("Lorem Ipsum");
         project.setLicenseInfoHeaderText("Lorem Ipsum");
         project.setDeliveryChannels("Lorem Ipsum");
+        project.setPackageIds(new HashSet<>(Arrays.asList("pkg-001", "pkg-002", "pkg-003")));
         project.setVendor(new Vendor());
         project.setRemarksAdditionalRequirements("Lorem Ipsum");
         ReleaseClearingStateSummary clearingCount = new ReleaseClearingStateSummary();
@@ -3249,5 +3250,36 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.totalPages").description("Total number of pages"),
                                 fieldWithPath("page.number").description("Number of the current page")
                         )));
+    }
+
+    @Test
+    public void should_document_get_package_by_project_id() throws Exception {
+        Set<String> licenseIds = new HashSet<>();
+        licenseIds.add("MIT");
+        licenseIds.add("GPL");
+
+        Package packages = new Package("angular-sanitize", "1.8.2", "pkg:npm/angular-sanitize@1.8.2",
+                CycloneDxComponentType.FRAMEWORK)
+                .setId("122357345")
+                .setCreatedBy("admin@sw360.org")
+                .setCreatedOn("2023-01-02")
+                .setVcs("git+https://github.com/angular/angular.js.git")
+                .setHomepageUrl("http://angularjs.org")
+                .setLicenseIds(licenseIds)
+                .setReleaseId("12345678")
+                .setPackageManager(PackageManager.NPM)
+                .setDescription("Sanitizes an html string by stripping all potentially dangerous tokens.");
+
+        given(this.packageServiceMock.getPackageForUserById(eq(packages.getId()))).willReturn(packages);
+
+        Project sw360Project = new Project();
+        sw360Project.setId(project.getId());
+        sw360Project.setPackageIds(new HashSet<>(Collections.singleton("122357345")));
+
+        given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(sw360Project);
+
+        mockMvc.perform(get("/api/projects/" + project.getId() + "/packages")
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON)).andExpect(status().isOk());
     }
 }
