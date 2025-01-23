@@ -78,6 +78,16 @@ import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatInfo;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.projects.*;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationList;
+import org.eclipse.sw360.datahandler.thrift.projects.ObligationStatusInfo;
+import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectClearingState;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectLink;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
+import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
@@ -98,6 +108,7 @@ import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
+import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
 import org.jetbrains.annotations.NotNull;
@@ -225,6 +236,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @NonNull
     private final Sw360ModerationRequestService moderationRequestService;
+
+    @NonNull
+    private final Sw360VendorService vendorService;
 
     @NonNull
     private final com.fasterxml.jackson.databind.Module sw360Module;
@@ -482,6 +496,58 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
         HalResource<Project> userHalResource = createHalProject(sw360Project, sw360User);
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
+
+    @Operation(
+            description = "Get a package with project id.",
+            tags = {"Projects"}
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/packages", method = RequestMethod.GET)
+    public ResponseEntity<List<HalResource<Project>>> getPackagesByProjectId(
+            @Parameter(description = "Project ID", example = "376576")
+            @PathVariable("id") String id) throws TException {
+
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        List<HalResource<Package>> halPackages = new ArrayList<>();
+        if (sw360Project.getPackageIdsSize() > 0) {
+            for (String packageId : sw360Project.getPackageIds()) {
+                Package sw360Package = packageService.getPackageForUserById(packageId);
+                HalResource<Package> halPackage = createHalPackage(sw360Package, sw360User);
+                halPackages.add(halPackage);
+            }
+        }
+        return new ResponseEntity(halPackages, HttpStatus.OK);
+    }
+
+    private HalResource<Package> createHalPackage(Package sw360Package, User sw360User) throws TException {
+        HalResource<Package> halPackage = new HalResource<>(sw360Package);
+        User packageCreator = restControllerHelper.getUserByEmail(sw360Package.getCreatedBy());
+        String linkedRelease = sw360Package.getReleaseId();
+
+        restControllerHelper.addEmbeddedUser(halPackage, packageCreator, "createdBy");
+        if (CommonUtils.isNotNullEmptyOrWhitespace(linkedRelease)) {
+            Release release = releaseService.getReleaseForUserById(linkedRelease, sw360User);
+
+            if (release != null) {
+                restControllerHelper.addEmbeddedSingleRelease(halPackage, release);
+            } else {
+                log.warn("Release not found for ID: {}", linkedRelease);
+            }
+        }
+        if (sw360Package.getModifiedBy() != null) {
+            restControllerHelper.addEmbeddedModifiedBy(halPackage, sw360User, "modifiedBy");
+        }
+        if (sw360Package.getVendorId() != null) {
+            Vendor vendor = vendorService.getVendorById(sw360Package.getVendorId());
+            if (vendor != null) {
+                Vendor vendorHalResource = restControllerHelper.convertToEmbeddedVendor(vendor);
+                halPackage.addEmbeddedResource("sw360:vendors", vendorHalResource);
+            } else {
+                log.warn("Vendor not found for ID: {}", sw360Package.getVendorId());
+            }
+        }
+        return halPackage;
     }
 
     @Operation(

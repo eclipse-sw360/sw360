@@ -1252,3 +1252,17 @@ include::{snippets}/should_document_get_projects_by_advance_search/http-response
 
 ===== Links
 include::{snippets}/should_document_get_projects_by_advance_search/links.adoc[]
+
+[[resources-package-get-by-project]]
+==== Get Package by ProjectId
+
+A GET request is used to retrieve a package using a given projectId.
+
+===== Request parameter
+include::{snippets}/should_document_get_package_by_project_id/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_package_by_project_id-id/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_package_by_project_id-id/http-response.adoc[]
