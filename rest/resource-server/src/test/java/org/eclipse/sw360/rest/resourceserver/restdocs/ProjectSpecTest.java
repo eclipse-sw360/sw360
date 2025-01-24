@@ -73,6 +73,8 @@ import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.hamcrest.Matchers;
+import org.jose4j.json.internal.json_simple.JSONArray;
+import org.jose4j.json.internal.json_simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -3200,4 +3202,19 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("projectId").description("Id of a project"))
                         ));
     }
+
+    @Test
+    public void should_add_license_to_linked_releases() throws Exception {
+        String projectId = "1234567";
+        JSONObject jsonResult = new JSONObject();
+        jsonResult.put("message", "Licenses linked successfully");
+        jsonResult.put("linkedReleases", new JSONArray(List.of("345678", "987654")));
+        when(projectServiceMock.addLicenseToLinkedReleases(eq(projectId), any(User.class))).thenReturn(jsonResult);
+
+        MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + projectId + "/addLinkedRelesesLicenses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
+        this.mockMvc.perform(requestBuilder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
+    }
+
 }

@@ -113,6 +113,7 @@ import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
 import org.jetbrains.annotations.NotNull;
+import org.jose4j.json.internal.json_simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.data.domain.Pageable;
@@ -131,6 +132,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -3417,5 +3419,57 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 .buildAndExpand(createdProject.getId()).toUri();
 
         return ResponseEntity.created(location).body(projectDTOHalResource);
+    }
+
+    @Operation(
+            summary = "Add licenses to linked releases of a project.",
+            description = "This API adds license information to linked releases of a project by processing the approved CLI attachments for each release. It categorizes releases based on the number of CLI attachments (single, multiple, or none) and updates their main and other licenses accordingly.",
+            tags = {"Project"},
+                    parameters = {
+                            @Parameter(
+                                name = "projectId",
+                                description = "The ID of the project whose linked releases need license updates.",
+                                required = true,
+                                example = "12345",
+                                schema = @Schema(type = "string")
+                            )
+                        },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "License information successfully added to linked releases.",
+                            content = @Content(
+                                mediaType = "application/hal+json",
+                                schema = @Schema(type = "object", implementation = JSONObject.class),
+                                examples = @ExampleObject(
+                                    value = "{\n  \"one\": [\"Release1\", \"Release2\"],\n  \"mul\": [\"Release3\"]\n}"
+                                )
+                            )
+                        ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error occurred while processing license information for linked releases.",
+                            content = @Content(
+                                mediaType = "application/json",
+                                examples = @ExampleObject(
+                                    value = "{\n  \"error\": \"Error adding license info to linked releases.\"\n}"
+                                )
+                            )
+                        )
+          }
+    )
+    @PostMapping(value = PROJECTS_URL + "/{id}/addLinkedRelesesLicenses")
+    public ResponseEntity<?> addLicenseToLinkedReleases(
+            @Parameter(description = "Project ID", example = "376576")
+            @PathVariable("id") String projectId
+    ) throws TTransportException, TException {
+        try {
+            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+            JSONObject result = projectService.addLicenseToLinkedReleases(projectId, sw360User);
+            return ResponseEntity.ok(result.toString());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error adding license info to linked releases: " + e.getMessage());
+        }
     }
 }
