@@ -2979,7 +2979,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360Project.unsetReleaseIdToUsage();
         sw360Project.unsetProjectResponsible();
         sw360Project.unsetSecurityResponsibles();
-        sw360Project.unsetLicenseInfoHeaderText();
 
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
