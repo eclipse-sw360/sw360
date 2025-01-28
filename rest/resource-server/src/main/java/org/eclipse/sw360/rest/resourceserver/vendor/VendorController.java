@@ -274,6 +274,27 @@ public class VendorController implements RepresentationModelProcessor<Repository
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Merge two vendors.",
+            description = "Merge source vendor into target vendor.",
+            tags = {"Vendor"}
+    )
+    @RequestMapping(value = VENDORS_URL + "/mergeVendors", method = RequestMethod.PATCH)
+    public ResponseEntity<RequestStatus> mergeVendors(
+            @Parameter(description = "The id of the merge target vendor.")
+            @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
+            @Parameter(description = "The id of the merge source vendor.")
+            @RequestParam(value = "mergeSourceId", required = true) String mergeSourceId,
+            @Parameter(description = "The merge selection.")
+            @RequestBody Vendor mergeSelection
+    ) throws TException, ResourceClassNotFoundException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        // perform the real merge, update merge target and delete merge sources
+        RequestStatus requestStatus = vendorService.mergeVendors(mergeTargetId, mergeSourceId, mergeSelection, sw360User);
+        return new ResponseEntity<>(requestStatus, HttpStatus.OK);
+    }
+
     private void copyDataStreamToResponse(HttpServletResponse response, ByteBuffer buffer) throws IOException {
         FileCopyUtils.copy(buffer.array(), response.getOutputStream());
     }
