@@ -128,6 +128,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
+import org.eclipse.sw360.datahandler.thrift.attachments.LicenseInfoUsage;
+import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -136,20 +138,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.InvalidPropertiesFormatException;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -1895,6 +1885,24 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 	}
 
+    public Map<String, Integer> countMap(Collection<AttachmentType> attachmentTypes, UsageData filter, Project project, User sw360User, String id) throws TException {
+        boolean projectWithSubProjects = !project.getLinkedProjects().isEmpty();
+        List<ProjectLink> mappedProjectLinks =
+                (!SW360Constants.ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP)
+                        ? projectService.createLinkedProjects(project,
+                        projectService.filterAndSortAttachments(attachmentTypes), true, sw360User)
+                        : projectService.createLinkedProjectsWithAllReleases(project,
+                        projectService.filterAndSortAttachments(attachmentTypes), true, sw360User);
+
+        if (!projectWithSubProjects) {
+            mappedProjectLinks = mappedProjectLinks.stream()
+                    .filter(projectLink -> projectLink.getId().equals(id)).collect(Collectors.toList());
+        }
+
+        Map<String, Integer> countMap = projectService.storeAttachmentUsageCount(mappedProjectLinks, filter);
+        return countMap;
+    }
+
     @Operation(
             description = "Get all attachmentUsages of the projects.",
             tags = {"Projects"}
@@ -1962,12 +1970,27 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
         }
 
-        List<Map<String, Object>> releaseObjMap = getReleaseObjectMapper(releaseList);
+        Collection<AttachmentType> attachmentTypes;
+        UsageData type;
+        List<Map<String, Object>> releaseObjMap = new ArrayList<>();
+        if ("withCliAttachment".equalsIgnoreCase(filter)) {
+            attachmentTypes = SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES;
+            type = UsageData.licenseInfo(new LicenseInfoUsage(Sets.newHashSet()));
+            Map<String, Integer> count = countMap(attachmentTypes, type, sw360Project, sw360User, id);
+            releaseObjMap = getReleaseObjectMapper(releaseList, count);
+        } else if ("withSourceAttachment".equalsIgnoreCase(filter)) {
+            attachmentTypes = SW360Constants.SOURCE_CODE_ATTACHMENT_TYPES;
+            type = UsageData.sourcePackage(new SourcePackageUsage());
+            Map<String, Integer> count = countMap(attachmentTypes, type, sw360Project, sw360User, id);
+            releaseObjMap = getReleaseObjectMapper(releaseList, count);
+        } else {
+            releaseObjMap = getReleaseObjectMapper(releaseList, null);
+        }
         HalResource userHalResource = attachmentUsageReleases(sw360Project, releaseObjMap, listOfAttachmentUsages);
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
 
-	private List<Map<String, Object>> getReleaseObjectMapper(List<EntityModel<Release>> releaseList) {
+	private List<Map<String, Object>> getReleaseObjectMapper(List<EntityModel<Release>> releaseList, Map<String, Integer> count) {
 		ObjectMapper oMapper = new ObjectMapper();
 		List<Map<String, Object>> modifiedList = new ArrayList<>();
 		for (EntityModel<Release> rel : releaseList) {
@@ -2006,6 +2029,15 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                                 map.put("checkedTeam", att.get("checkedTeam"));
                                 map.put("checkedComment", att.get("checkedComment"));
                                 map.put("checkedOn", att.get("checkedOn"));
+                                if (count != null) {
+                                    Integer attachmentCount = 0;
+                                    String releaseId = relMap.get("id").toString();
+                                    String attachmentId = releaseId + "_" + att.get("attachmentContentId");
+                                    if (count.containsKey(attachmentId)) {
+                                        attachmentCount = count.get(attachmentId);
+                                    }
+                                    map.put("attachmentUsageCount",attachmentCount);
+                                }
                                 attList.add(map);
                             }
                             valueToKeep.put(entry.getKey(), attList);
@@ -2078,7 +2110,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
                     releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
                     List<Attachment> cliAttachments = sw360Release.getAttachments().stream()
-                        .filter(attachment -> attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_XML)
+                        .filter(attachment -> attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_XML || attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_COMBINED)
                         .collect(Collectors.toList());
                     Set<Attachment> cliAttachmentsSet = new HashSet<>(cliAttachments);
                     sw360Release.setAttachments(cliAttachmentsSet);
