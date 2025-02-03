@@ -11,6 +11,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.release;
 
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -22,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -48,14 +50,8 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
-import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.Source;
-import org.eclipse.sw360.datahandler.thrift.VerificationState;
-import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
-import org.eclipse.sw360.datahandler.thrift.RestrictedResource;
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
@@ -699,7 +695,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Release sw360Release = releaseService.getReleaseForUserById(id, sw360User);
-        final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getAttachmentResourcesFromList(sw360Release.getAttachments());
+        final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getAttachmentResourcesFromList(sw360User, sw360Release.getAttachments(), Source.releaseId(id));
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
@@ -1731,7 +1727,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(sw360Module);
 
-        Set<Attachment> attachments = getAttachmentsFromRequest(reqBodyMap.get("attachments"), mapper);
+        Set<Attachment> attachments = attachmentService.getAttachmentsFromRequest(reqBodyMap.get("attachments"), mapper);
         if (null != reqBodyMap.get("attachments")) {
             reqBodyMap.remove("attachments");
         }
@@ -1750,23 +1746,5 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         });
 
         return release;
-    }
-
-    private Set<Attachment> getAttachmentsFromRequest(Object attachmentData, ObjectMapper mapper) {
-        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        if (null == attachmentData) {
-            return null;
-        }
-        Set<AttachmentDTO> attachmentDTOs = mapper.convertValue(attachmentData,
-                mapper.getTypeFactory().constructCollectionType(Set.class, AttachmentDTO.class));
-        return attachmentDTOs.stream()
-                .map(attachmentDTO -> {
-                    boolean isAttachmentExist = attachmentService.isAttachmentExist(attachmentDTO.getAttachmentContentId());
-                    if (!isAttachmentExist) {
-                        throw new ResourceNotFoundException("Attachment " + attachmentDTO.getAttachmentContentId() + " not found.");
-                    }
-                    return restControllerHelper.convertToAttachment(attachmentDTO, sw360User);
-                })
-                .collect(Collectors.toSet());
     }
 }

@@ -856,6 +856,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.vulnerabilityMockService.updateProjectVulnerabilityRating(any(), any())).willReturn(RequestStatus.SUCCESS);
         given(this.projectServiceMock.getReleasesFromProjectIds(any(), anyBoolean(), any(), any())).willReturn(Set.of(rel));
         given(this.projectServiceMock.getLinkedReleasesOfSubProjects(any(), any())).willReturn(List.of(release, release2));
+        given(this.attachmentServiceMock.getAttachmentResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(attachmentResources));
     }
 
     @Test
@@ -1779,6 +1780,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("checkStatus").description("The checkStatus of Attachment. Possible Values are: "+Arrays.asList(CheckStatus.values())),
                         fieldWithPath("checkedComment").description("The checked Comment of Attachment")),
                 responseFields(
+                        fieldWithPath("attachmentContentId").description("The attachment content id"),
                         fieldWithPath("filename").description("The attachment filename"),
                         fieldWithPath("sha1").description("The attachment sha1 value"),
                         fieldWithPath("attachmentType").description("The type of attachment. Possible Values are: "+Arrays.asList(AttachmentType.values())),

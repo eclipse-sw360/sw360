@@ -286,6 +286,8 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         } else if (requestStatus == RequestStatus.NAMINGERROR) {
             throw new HttpMessageNotReadableException(
                     "Release name and version field cannot be empty or contain only whitespace character");
+        } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
+            throw new RuntimeException("Multiple attachments with same name or content cannot be present in attachment list.");
         } else if (requestStatus != RequestStatus.SUCCESS && requestStatus != RequestStatus.SENT_TO_MODERATOR) {
             throw new RuntimeException(
                     "sw360 release with name '" + SW360Utils.printName(release) + " cannot be updated.");

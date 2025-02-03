@@ -35,7 +35,6 @@ import org.eclipse.sw360.datahandler.thrift.RestrictedResource;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.VerificationStateInfo;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentDTO;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
@@ -95,6 +94,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -387,15 +387,10 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
-        sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponentDto);
-        Set<AttachmentDTO> attachmentDTOS = updateComponentDto.getAttachmentDTOs();
-        if (!CommonUtils.isNullOrEmptyCollection(attachmentDTOS)) {
-            Set<Attachment> attachments = new HashSet<>();
-            for (AttachmentDTO attachmentDTO: attachmentDTOS) {
-                attachments.add(restControllerHelper.convertToAttachment(attachmentDTO, user));
-            }
-            sw360Component.setAttachments(attachments);
+        if (updateComponentDto.getAttachments() != null) {
+            updateComponentDto.getAttachments().forEach(attachment -> wrapSW360Exception(() -> this.attachmentService.fillCheckedAttachmentData(attachment, user)));
         }
+        sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponentDto);
         RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, user);
         HalResource<Component> userHalResource = createHalComponent(sw360Component, user);
         if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
@@ -482,13 +477,13 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             tags = {"Components"}
     )
     @RequestMapping(value = COMPONENTS_URL + "/{id}/attachments", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<AttachmentDTO>>> getComponentAttachments(
+    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> getComponentAttachments(
             @Parameter(description = "The id of the component.")
             @PathVariable("id") String id
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
-        final CollectionModel<EntityModel<AttachmentDTO>> resources = attachmentService.getAttachmentDTOResourcesFromList(sw360User, sw360Component.getAttachments(), Source.releaseId(sw360Component.getId()));
+        final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getAttachmentResourcesFromList(sw360User, sw360Component.getAttachments(), Source.componentId(id));
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 

@@ -12,6 +12,7 @@
 
 package org.eclipse.sw360.rest.resourceserver.attachment;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import lombok.NonNull;
@@ -31,6 +32,7 @@ import org.eclipse.sw360.datahandler.common.DatabaseSettings;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftUtils;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
@@ -60,6 +62,8 @@ import java.util.zip.ZipOutputStream;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -98,11 +102,7 @@ public class Sw360AttachmentService {
 
     public List<AttachmentUsage> getAttachmentUseById(String id) throws TException {
         AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
-        List<AttachmentUsage> attachments = attachmentClient.getUsedAttachmentsById(id);
-        if (attachments.isEmpty()) {
-            throw new ResourceNotFoundException("Attachment not found.");
-        }
-        return attachments;
+        return attachmentClient.getUsedAttachmentsById(id);
     }
 
     public List<AttachmentInfo> getAttachmentsBySha1(String sha1) throws TException {
@@ -297,10 +297,12 @@ public class Sw360AttachmentService {
         }
     }
 
-    public CollectionModel<EntityModel<Attachment>> getAttachmentResourcesFromList(Set<Attachment> attachmentList) {
+    public CollectionModel<EntityModel<Attachment>> getAttachmentResourcesFromList(User user, Set<Attachment> attachments, Source owner) throws TTransportException {
+        Set<Attachment> attachmentsWithUsages = getAttachmentsWithUsages(user, attachments, owner);
+
         final List<EntityModel<Attachment>> attachmentResources = new ArrayList<>();
-        if (CommonUtils.isNotEmpty(attachmentList)) {
-            for (final Attachment attachment : attachmentList) {
+        if (CommonUtils.isNotEmpty(attachmentsWithUsages)) {
+            for (final Attachment attachment : attachmentsWithUsages) {
                 final EntityModel<Attachment> attachmentResource = EntityModel.of(attachment);
                 attachmentResources.add(attachmentResource);
             }
@@ -314,19 +316,6 @@ public class Sw360AttachmentService {
             for (final Attachment attachment : attachmentList) {
                 final Attachment embeddedAttachment = restControllerHelper.convertToEmbeddedAttachment(attachment);
                 final EntityModel<Attachment> attachmentResource = EntityModel.of(embeddedAttachment);
-                attachmentResources.add(attachmentResource);
-            }
-        }
-        return CollectionModel.of(attachmentResources);
-    }
-
-    public CollectionModel<EntityModel<AttachmentDTO>> getAttachmentDTOResourcesFromList(User user, Set<Attachment> attachments, Source owner) throws TTransportException {
-        Map<Attachment,UsageAttachment> attachmentUsageAttachmentMap = getAttachmentUsages(user, attachments, owner);
-        Set<AttachmentDTO> attachmentDTOs = getAttachmentDTOs(attachments, attachmentUsageAttachmentMap);
-        final List<EntityModel<AttachmentDTO>> attachmentResources = new ArrayList<>();
-        if (CommonUtils.isNotEmpty(attachmentDTOs)) {
-            for (final AttachmentDTO attachment : attachmentDTOs) {
-                final EntityModel<AttachmentDTO> attachmentResource = EntityModel.of(attachment);
                 attachmentResources.add(attachmentResource);
             }
         }
@@ -428,13 +417,27 @@ public class Sw360AttachmentService {
         return file;
     }
 
-    public Map<Attachment, UsageAttachment> getAttachmentUsages(User user, Set<Attachment> attachments, Source owner) throws TTransportException {
+    private Set<Attachment> getAttachmentsWithUsages(User user, Set<Attachment> attachments, Source owner) throws TTransportException {
         Set<Attachment> atts = CommonUtils.nullToEmptySet(attachments);
         Set<String> attachmentContentIds = atts.stream().map(Attachment::getAttachmentContentId).collect(Collectors.toSet());
         Map<String, Long> restrictedProjectsCountsByContentId = getRestrictedProjectsCountsByContentId(attachmentContentIds, user, owner);
-        Map<Attachment, UsageAttachment> attachmentUsageMap = getAttachmentUsageMap(restrictedProjectsCountsByContentId, user);
 
-        return attachmentUsageMap;
+        for (Attachment attachment : atts) {
+            try {
+                List<AttachmentUsage> attachmentUsages = getAttachmentUseById(attachment.getAttachmentContentId());
+                long numberProjectByAttachmentUsages = distinctProjectIdsFromAttachmentUsages(attachmentUsages).count();
+                Set<ProjectUsage> projectUsages = getProjectAttachmentUsages(attachmentUsages, user);
+
+                ProjectAttachmentUsage usage = new ProjectAttachmentUsage();
+                usage.setVisible(numberProjectByAttachmentUsages);
+                usage.setRestricted(restrictedProjectsCountsByContentId.getOrDefault(attachment.getAttachmentContentId(), 0L));
+                usage.setProjectUsages(projectUsages);
+                attachment.setProjectAttachmentUsage(usage);
+            } catch (TException e) {
+                log.error(e.getMessage());
+            }
+        }
+        return atts;
     }
 
     private Map<String, Long> getRestrictedProjectsCountsByContentId(Set<String> attachmentContentIds, User user, Source owner) throws TTransportException {
@@ -452,30 +455,6 @@ public class Sw360AttachmentService {
             log.error("Cannot load restricted projects counts by contentId", e);
         }
         return restrictedProjectsCountsByContentId;
-    }
-
-    private Map<Attachment, UsageAttachment> getAttachmentUsageMap(Map<String, Long> restrictedProjectsCountsByContentId, User user) {
-        Map<Attachment, UsageAttachment> attachmentUsageMap = new HashMap<>();
-
-        restrictedProjectsCountsByContentId.entrySet().stream().forEach(stringLongEntry -> {
-            try {
-                List<AttachmentUsage> attachmentUsages = getAttachmentUseById(stringLongEntry.getKey());
-
-                Attachment attachment = getAttachmentForId(stringLongEntry.getKey());
-                Set<ProjectUsage> projectUsages = getProjectAttachmentUsages(attachmentUsages, user);
-                long numberProjectByAttachmentUsages = distinctProjectIdsFromAttachmentUsages(attachmentUsages).count();
-
-                UsageAttachment usage =  new UsageAttachment();
-                usage.setVisible(numberProjectByAttachmentUsages);
-                usage.setRestricted(stringLongEntry.getValue());
-                usage.setProjectUsages(projectUsages);
-
-                attachmentUsageMap.put(attachment,usage);
-            } catch (TException e) {
-                log.error("Cannot load map attachment usages", e);
-            }
-        });
-        return attachmentUsageMap;
     }
 
     private  Set<ProjectUsage> getProjectAttachmentUsages(List<AttachmentUsage> attachmentUsages, User user) {
@@ -540,35 +519,54 @@ public class Sw360AttachmentService {
                 ));
     }
 
-    public Attachment getAttachmentForId(String id) throws TException {
+    private AttachmentContent getAttachmentContentForId(String id) throws TException {
         AttachmentService.Iface attachmentClient = getThriftAttachmentClient();
-        List<Attachment> attachments = attachmentClient.getAttachmentsByIds(Collections.singleton(id));
-        if (attachments.isEmpty()) {
-            throw new ResourceNotFoundException("Attachment not found.");
-        }
-        return attachments.get(0);
+        return attachmentClient.getAttachmentContentById(id);
     }
 
-    public Set<AttachmentDTO> getAttachmentDTOs(Set<Attachment> attachments, Map<Attachment,UsageAttachment> attachmentUsages ) {
-        Set<AttachmentDTO> attachmentDTOS = new HashSet<>();
-        attachmentUsages.entrySet().stream().forEach(attachmentUsageEntry -> {
-            attachments.remove(attachmentUsageEntry.getKey());
-            AttachmentDTO attachmentDTO = restControllerHelper.convertAttachmentToAttachmentDTO(attachmentUsageEntry.getKey(),attachmentUsageEntry.getValue());
-            attachmentDTOS.add(attachmentDTO);
-        });
-        attachments.forEach(attachment -> {
-            AttachmentDTO attachmentDTO = restControllerHelper.convertAttachmentToAttachmentDTO(attachment,new UsageAttachment());
-            attachmentDTOS.add(attachmentDTO);
-        });
-        return attachmentDTOS;
-    }
-
-    public boolean isAttachmentExist(String id) {
+    public boolean isAttachmentContentExist(String id) {
         try {
-            Attachment attachment = getAttachmentForId(id);
-            return attachment != null;
+            AttachmentContent attachmentContent = getAttachmentContentForId(id);
+            return attachmentContent != null;
         } catch (ResourceNotFoundException | TException notFoundException) {
+            log.error(notFoundException.getMessage());
             return false;
+        }
+    }
+
+    public Set<Attachment> getAttachmentsFromRequest(Object attachmentData, ObjectMapper mapper) {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        if (null == attachmentData) {
+            return null;
+        }
+        Set<Attachment> attachments = mapper.convertValue(attachmentData,
+                mapper.getTypeFactory().constructCollectionType(LinkedHashSet.class, Attachment.class));
+        return attachments.stream()
+                .map(attachment -> wrapSW360Exception(() -> {
+                    boolean isAttachmentExist = isAttachmentContentExist(attachment.getAttachmentContentId());
+                    if (!isAttachmentExist) {
+                        throw new ResourceNotFoundException("Attachment " + attachment.getAttachmentContentId() + " not found.");
+                    }
+                    fillCheckedAttachmentData(attachment, sw360User);
+                    return attachment;
+                }))
+                .collect(Collectors.toSet());
+    }
+
+    public void fillCheckedAttachmentData(Attachment attachment, User user) throws SW360Exception {
+        assertNotNull(attachment);
+        if (attachment.getCheckStatus() == null) {
+            attachment.setCheckStatus(CheckStatus.NOTCHECKED);
+        }
+        if (!CheckStatus.NOTCHECKED.equals(attachment.getCheckStatus())) {
+            attachment.setCheckedBy(attachment.getCheckedBy() != null ? attachment.getCheckedBy() : user.getEmail());
+            attachment.setCheckedTeam(attachment.getCheckedTeam() != null ? attachment.getCheckedTeam() : user.getDepartment());
+            attachment.setCheckedOn(attachment.getCheckedOn() != null ? attachment.getCheckedOn() : SW360Utils.getCreatedOn());
+        } else {
+            attachment.unsetCheckedBy();
+            attachment.unsetCheckedTeam();
+            attachment.setCheckedComment("");
+            attachment.unsetCheckedOn();
         }
     }
 }
