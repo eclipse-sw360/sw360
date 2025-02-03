@@ -1563,7 +1563,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getResourcesFromList(sw360Project.getAttachments());
+        final CollectionModel<EntityModel<Attachment>> resources = attachmentService.getAttachmentResourcesFromList(sw360User, sw360Project.getAttachments(), Source.projectId(id));
         return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 
@@ -1675,6 +1675,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
             }
             RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
+            if (updateProjectStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
+                throw new RuntimeException("Duplicate attachment detected while updating project.");
+            }
             HalResource<Project> userHalResource = createHalProject(sw360Project, user);
             if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
                 return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
@@ -2446,6 +2449,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         projectService.syncReleaseRelationNetworkAndReleaseIdToUsage(sw360Project, user);
 
         RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, user);
+        if (updateProjectStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
+            throw new RuntimeException("Duplicate attachment detected while updating project.");
+        }
         if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
             return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
         }
@@ -2652,7 +2658,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 }
             });
         }
-        return mapper.convertValue(requestBody, Project.class);
+        Project projectFromRequest = mapper.convertValue(requestBody, Project.class);
+        Set<Attachment> attachments = attachmentService.getAttachmentsFromRequest(requestBody.get(Project._Fields.ATTACHMENTS.getFieldName()), mapper);
+        projectFromRequest.setAttachments(attachments);
+        return projectFromRequest;
     }
 
     public static TSerializer getJsonSerializer() {

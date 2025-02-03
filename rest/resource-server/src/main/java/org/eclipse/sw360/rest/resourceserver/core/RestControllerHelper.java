@@ -35,9 +35,8 @@ import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageAttachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.ProjectAttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
@@ -103,6 +102,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -762,6 +764,7 @@ public class RestControllerHelper<T> {
         component.setMailinglist(componentDTO.getMailinglist());
         component.setWiki(componentDTO.getWiki());
         component.setBlog(componentDTO.getBlog());
+        component.setAttachments(componentDTO.getAttachments());
 
         return component;
     }
@@ -1108,50 +1111,6 @@ public class RestControllerHelper<T> {
         attachment.setCheckedOn(null);
         attachment.setCheckedTeam(null);
         attachment.setCheckedComment(null);
-        return attachment;
-    }
-
-    public AttachmentDTO convertAttachmentToAttachmentDTO(Attachment attachment, UsageAttachment usage) {
-        AttachmentDTO attachmentDTO = new AttachmentDTO();
-        attachmentDTO.setAttachmentContentId(attachment.getAttachmentContentId());
-        attachmentDTO.setFilename(attachment.getFilename());
-        attachmentDTO.setSha1(attachment.getSha1());
-        attachmentDTO.setAttachmentType(attachment.getAttachmentType());
-        attachmentDTO.setCreatedBy(attachment.getCreatedBy());
-        attachmentDTO.setCreatedTeam(attachment.getCreatedTeam());
-        attachmentDTO.setCreatedComment(attachment.getCreatedComment());
-        attachmentDTO.setCreatedOn(attachment.getCreatedOn());
-        attachmentDTO.setCheckedBy(attachment.getCheckedBy());
-        attachmentDTO.setCheckedTeam(attachment.getCheckedTeam());
-        attachmentDTO.setCheckedComment(attachment.getCheckedComment());
-        attachmentDTO.setCheckedOn(attachment.getCheckedOn());
-        attachmentDTO.setCheckStatus(attachment.getCheckStatus());
-        attachmentDTO.setSuperAttachmentId(attachment.getSuperAttachmentId());
-        attachmentDTO.setSuperAttachmentFilename(attachment.getSuperAttachmentFilename());
-        attachmentDTO.setUsageAttachment(usage);
-
-        return attachmentDTO;
-    }
-
-    public Attachment convertToAttachment(AttachmentDTO attachmentDTO, User user) {
-        Attachment attachment = new Attachment();
-        attachment.setAttachmentContentId(attachmentDTO.getAttachmentContentId());
-        attachment.setFilename(attachmentDTO.getFilename());
-        attachment.setSha1(attachmentDTO.getSha1());
-        attachment.setAttachmentType(attachmentDTO.getAttachmentType());
-        attachment.setCreatedBy(attachmentDTO.getCreatedBy());
-        attachment.setCreatedTeam(attachmentDTO.getCreatedTeam());
-        attachment.setCreatedComment(attachmentDTO.getCreatedComment());
-        attachment.setCreatedOn(attachmentDTO.getCreatedOn());
-        if (CheckStatus.NOTCHECKED != attachmentDTO.getCheckStatus()) {
-            attachment.setCheckedComment(attachmentDTO.getCheckedComment());
-            attachment.setCheckedBy(user.getEmail());
-            attachment.setCheckedTeam(user.getDepartment());
-            attachment.setCheckedOn(SW360Utils.getCreatedOn());
-        }
-        attachment.setCheckStatus(attachmentDTO.getCheckStatus());
-        attachment.setSuperAttachmentId(attachmentDTO.getSuperAttachmentId());
-        attachment.setSuperAttachmentFilename(attachmentDTO.getSuperAttachmentFilename());
         return attachment;
     }
 

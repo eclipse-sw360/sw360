@@ -71,35 +71,11 @@ struct Attachment {
     20: optional set<string> uploadHistory, // just for importing data by now
     21: optional CheckStatus checkStatus; // simple status of checks
     22: optional string superAttachmentId,
-    23: optional string superAttachmentFilename
-}
-
-struct AttachmentDTO {
-    // WILL NOT BE SAVED IN DB, only for api
-    // General information
-    1: required string attachmentContentId,
-    5: required string filename,
-    6: optional string sha1,
-
-    10: optional AttachmentType attachmentType,
-
-    11: optional string createdBy,
-    12: optional string createdTeam,
-    13: optional string createdComment,
-    14: optional string createdOn,
-    15: optional string checkedBy,
-    16: optional string checkedTeam,
-    17: optional string checkedComment,
-    18: optional string checkedOn,
-
-    20: optional set<string> uploadHistory,
-    21: optional CheckStatus checkStatus;
-    22: optional string superAttachmentId,
     23: optional string superAttachmentFilename,
-    24: optional UsageAttachment usageAttachment;
+    24: optional ProjectAttachmentUsage projectAttachmentUsage, // for view data only, will not be saved in DB
 }
 
-struct UsageAttachment {
+struct ProjectAttachmentUsage {
     // WILL NOT BE SAVED IN DB, only for api
     // General information
     1: optional string id,
@@ -361,4 +337,6 @@ service AttachmentService {
      * calls deleteAttachmentAndDirectory for identifying the file and delete
      */
     RequestStatus deleteOldAttachmentFromFileSystem();
+
+    AttachmentContent getAttachmentContentById(1: string attachmentContentId);
 }

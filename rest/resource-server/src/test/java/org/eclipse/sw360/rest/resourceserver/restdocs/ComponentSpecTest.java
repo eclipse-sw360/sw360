@@ -231,28 +231,28 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
         componentList.add(angularTargetComponent);
         componentListByName.add(angularComponent);
 
-        AttachmentDTO attachmentDTO = new AttachmentDTO();
-        attachmentDTO.setAttachmentContentId("");
-        attachmentDTO.setFilename(attachment.getFilename());
-        attachmentDTO.setSha1(attachment.getSha1());
-        attachmentDTO.setAttachmentType(AttachmentType.BINARY_SELF);
-        attachmentDTO.setCreatedBy("admin@sw360.org");
-        attachmentDTO.setCreatedTeam("Clearing Team 1");
-        attachmentDTO.setCreatedComment("please check asap");
-        attachmentDTO.setCreatedOn("2016-12-18");
-        attachmentDTO.setCheckedTeam("Clearing Team 2");
-        attachmentDTO.setCheckedComment("everything looks good");
-        attachmentDTO.setCheckedOn("2016-12-18");
-        attachmentDTO.setCheckStatus(CheckStatus.ACCEPTED);
+        Attachment attachmentWithUsage = new Attachment();
+        attachmentWithUsage.setAttachmentContentId("");
+        attachmentWithUsage.setFilename(attachment.getFilename());
+        attachmentWithUsage.setSha1(attachment.getSha1());
+        attachmentWithUsage.setAttachmentType(AttachmentType.BINARY_SELF);
+        attachmentWithUsage.setCreatedBy("admin@sw360.org");
+        attachmentWithUsage.setCreatedTeam("Clearing Team 1");
+        attachmentWithUsage.setCreatedComment("please check asap");
+        attachmentWithUsage.setCreatedOn("2016-12-18");
+        attachmentWithUsage.setCheckedTeam("Clearing Team 2");
+        attachmentWithUsage.setCheckedComment("everything looks good");
+        attachmentWithUsage.setCheckedOn("2016-12-18");
+        attachmentWithUsage.setCheckStatus(CheckStatus.ACCEPTED);
 
-        UsageAttachment usageAttachment = new UsageAttachment();
+        ProjectAttachmentUsage usageAttachment = new ProjectAttachmentUsage();
         usageAttachment.setVisible(0);
         usageAttachment.setRestricted(0);
 
-        attachmentDTO.setUsageAttachment(usageAttachment);
-        List<EntityModel<AttachmentDTO>> atEntityModels = new ArrayList<>();
-        atEntityModels.add(EntityModel.of(attachmentDTO));
-        given(this.attachmentServiceMock.getAttachmentDTOResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(atEntityModels));
+        attachmentWithUsage.setProjectAttachmentUsage(usageAttachment);
+        List<EntityModel<Attachment>> atEntityModels = new ArrayList<>();
+        atEntityModels.add(EntityModel.of(attachmentWithUsage));
+        given(this.attachmentServiceMock.getAttachmentResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(atEntityModels));
 
         Component springComponent = new Component();
         Map<String, String> springComponentExternalIds = new HashMap<>();
@@ -636,6 +636,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.wantsMailNotification").description("Does user want to be notified via mail?").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy.deactivated").description("The user is activated or deactivated").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.createdBy._links").description("Self <<resources-index-links,Links>> to Component resource").optional(),
+                                subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]attachmentContentId").description("Attachment content id").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]filename").description("Attached file name").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]sha1").description("The attachment sha1 value").optional(),
                                 subsectionWithPath("_embedded.sw360:components.[]_embedded.sw360:attachments.[]_links").description("Self <<resources-index-links,Links>> to Component resource").optional(),
@@ -955,11 +956,11 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
     @Test
     public void should_document_update_component() throws Exception {
         ComponentDTO updateComponent = new ComponentDTO();
-        AttachmentDTO attachmentDTO = new AttachmentDTO("1231231255", "spring-mvc-4.3.4.RELEASE.jar");
-        Set<AttachmentDTO> attachmentDTOS = new HashSet<>();
-        attachmentDTOS.add(attachmentDTO);
+        Attachment attachment = new Attachment("1231231255", "spring-mvc-4.3.4.RELEASE.jar");
+        Set<Attachment> attachments = new HashSet<>();
+        attachments.add(attachment);
         updateComponent.setName("Updated Component");
-        updateComponent.setAttachmentDTOs(attachmentDTOS);
+        updateComponent.setAttachments(attachments);
 
         mockMvc.perform(patch("/api/components/17653524")
                 .contentType(MediaTypes.HAL_JSON)
@@ -1088,20 +1089,19 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                 .andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(
                         responseFields(
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes").description("An array of <<resources-attachment, Attachments resources>>"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]attachmentContentId").description("The attachment attachmentContentId"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]filename").description("The attachment filename"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]sha1").description("The attachment sha1"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]attachmentType").description("The attachment attachmentType"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdBy").description("The attachment createdBy"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdTeam").description("The attachment createdTeam"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdComment").description("The attachment createdComment"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]createdOn").description("The attachment createdOn"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]checkedComment").description("The attachment checkedComment"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]checkStatus").description("The attachment checkStatus"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment").description("The usages in project"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment.visible").description("The visible usages in project"),
-                                subsectionWithPath("_embedded.sw360:attachmentDTOes.[]usageAttachment.restricted").description("The restricted usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachments").description("An array of <<resources-attachment, Attachments resources>>"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]filename").description("The attachment filename"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]sha1").description("The attachment sha1"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]attachmentType").description("The attachment attachmentType"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]createdBy").description("The attachment createdBy"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]createdTeam").description("The attachment createdTeam"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]createdComment").description("The attachment createdComment"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]createdOn").description("The attachment createdOn"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]checkedComment").description("The attachment checkedComment"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]checkStatus").description("The attachment checkStatus"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]projectAttachmentUsage").description("The usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]projectAttachmentUsage.visible").description("The visible usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]projectAttachmentUsage.restricted").description("The restricted usages in project"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -1124,6 +1124,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("checkStatus").description("The checkStatus of Attachment. Possible Values are: "+Arrays.asList(CheckStatus.values())),
                         fieldWithPath("checkedComment").description("The checked Comment of Attachment")),
                 responseFields(
+                        fieldWithPath("attachmentContentId").description("The attachment content id"),
                         fieldWithPath("filename").description("The attachment filename"),
                         fieldWithPath("sha1").description("The attachment sha1 value"),
                         fieldWithPath("attachmentType").description("The type of attachment. Possible Values are: "+Arrays.asList(AttachmentType.values())),

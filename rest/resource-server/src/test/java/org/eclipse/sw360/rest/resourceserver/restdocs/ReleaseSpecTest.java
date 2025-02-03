@@ -106,6 +106,7 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.util.LinkedMultiValueMap;
@@ -199,8 +200,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.filterAttachmentsToRemove(any(), any(), any())).willReturn(Collections.singleton(attachment));
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
         given(this.sw360VendorService.getVendorById(any())).willReturn(new Vendor("TV", "Test Vendor", "http://testvendor.com"));
-        given(this.attachmentServiceMock.isAttachmentExist(eq("1231231254"))).willReturn(true);
-        given(this.attachmentServiceMock.getAttachmentResourcesFromList(any())).willReturn(CollectionModel.of(attachmentResources));
+        given(this.attachmentServiceMock.isAttachmentContentExist(eq("1231231254"))).willReturn(true);
+        given(this.attachmentServiceMock.getAttachmentResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(attachmentResources));
 
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("mainline-id-component", new HashSet<>(Arrays.asList("1432", "4876")));
@@ -404,35 +405,28 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         attachment3.setAttachmentType(AttachmentType.SOURCE);
         release3.setAttachments(ImmutableSet.of(attachment3));
 
-        AttachmentDTO attachmentDTO = new AttachmentDTO();
-        attachmentDTO.setAttachmentContentId(attachment3.getAttachmentContentId());
-        attachmentDTO.setFilename(attachment3.getFilename());
-        attachmentDTO.setSha1(attachment3.getSha1());
-        attachmentDTO.setAttachmentType(attachment3.getAttachmentType());
-        attachmentDTO.setCreatedBy(attachment3.getCreatedBy());
-        attachmentDTO.setCreatedTeam(attachment3.getCreatedTeam());
-        attachmentDTO.setCreatedComment(attachment3.getCreatedComment());
-        attachmentDTO.setCreatedOn(attachment3.getCreatedOn());
-        attachmentDTO.setCheckedBy(attachment3.getCheckedBy());
-        attachmentDTO.setCheckedTeam(attachment3.getCheckedTeam());
-        attachmentDTO.setCheckedComment(attachment3.getCheckedComment());
-        attachmentDTO.setCheckedOn(attachment3.getCheckedOn());
-        attachmentDTO.setCheckStatus(attachment3.getCheckStatus());
+        Attachment attachmentWithUsage = new Attachment();
+        attachmentWithUsage.setAttachmentContentId("");
+        attachmentWithUsage.setFilename(attachment.getFilename());
+        attachmentWithUsage.setSha1(attachment.getSha1());
+        attachmentWithUsage.setAttachmentType(AttachmentType.BINARY_SELF);
+        attachmentWithUsage.setCreatedBy("admin@sw360.org");
+        attachmentWithUsage.setCreatedTeam("Clearing Team 1");
+        attachmentWithUsage.setCreatedComment("please check asap");
+        attachmentWithUsage.setCreatedOn("2016-12-18");
+        attachmentWithUsage.setCheckedTeam("Clearing Team 2");
+        attachmentWithUsage.setCheckedComment("everything looks good");
+        attachmentWithUsage.setCheckedOn("2016-12-18");
+        attachmentWithUsage.setCheckStatus(CheckStatus.ACCEPTED);
 
-        UsageAttachment usageAttachment = new UsageAttachment();
-        usageAttachment.setVisible(1);
+        ProjectAttachmentUsage usageAttachment = new ProjectAttachmentUsage();
+        usageAttachment.setVisible(0);
         usageAttachment.setRestricted(0);
 
-        ProjectUsage projectUsage = new ProjectUsage();
-        projectUsage.setProjectId("376576");
-        projectUsage.setProjectName("Emerald Web");
-
-        usageAttachment.setProjectUsages(new HashSet<>(Arrays.asList(projectUsage)));
-
-        attachmentDTO.setUsageAttachment(usageAttachment);
-        List<EntityModel<AttachmentDTO>> atEntityModels = new ArrayList<>();
-        atEntityModels.add(EntityModel.of(attachmentDTO));
-        given(this.attachmentServiceMock.getAttachmentDTOResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(atEntityModels));
+        attachmentWithUsage.setProjectAttachmentUsage(usageAttachment);
+        List<EntityModel<Attachment>> atEntityModels = new ArrayList<>();
+        atEntityModels.add(EntityModel.of(attachmentWithUsage));
+        given(this.attachmentServiceMock.getAttachmentResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(atEntityModels));
 
         Set<Project> projectList = new HashSet<>();
         project = new Project();
@@ -1162,6 +1156,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:attachments.[]createdOn").description("The attachment createdon value"),
                                 subsectionWithPath("_embedded.sw360:attachments.[]checkedComment").description("The attachment checkedComment value"),
                                 subsectionWithPath("_embedded.sw360:attachments.[]checkStatus").description("The attachment checkStatus value"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]projectAttachmentUsage").description("The usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]projectAttachmentUsage.visible").description("The visible usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]projectAttachmentUsage.restricted").description("The restricted usages in project"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -1183,6 +1180,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("checkStatus").description("The checkStatus of Attachment. Possible Values are: "+Arrays.asList(CheckStatus.values())),
                         fieldWithPath("checkedComment").description("The checked Comment of Attachment")),
                 responseFields(
+                        fieldWithPath("attachmentContentId").description("The attachment content id"),
                         fieldWithPath("filename").description("The attachment filename"),
                         fieldWithPath("sha1").description("The attachment sha1 value"),
                         fieldWithPath("attachmentType").description("The type of attachment. Possible Values are: "+Arrays.asList(AttachmentType.values())),
@@ -1422,7 +1420,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("operatingSystems").description("The OS on which the release operates"),
                         fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
-                        subsectionWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                        subsectionWithPath("_embedded.sw360:attachments").type(JsonFieldType.ARRAY).description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>").optional(),
                         subsectionWithPath("_embedded.sw360:otherLicenses").description("An array of all other release's licenses and link to their <<resources-license-get,License resource>>"),
                         subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                 )

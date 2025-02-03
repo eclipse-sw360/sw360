@@ -24,9 +24,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
+import org.eclipse.sw360.datahandler.thrift.attachments.ProjectAttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.ProjectUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageAttachment;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
@@ -111,8 +110,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(ReleaseLink.class, Sw360Module.ReleaseLinkMixin.class);
             setMixInAnnotation(ClearingReport.class, Sw360Module.ClearingReportMixin.class);
             setMixInAnnotation(Attachment.class, Sw360Module.AttachmentMixin.class);
-            setMixInAnnotation(AttachmentDTO.class, Sw360Module.AttachmentDTOMixin.class);
-            setMixInAnnotation(UsageAttachment.class, Sw360Module.UsageAttachmentMixin.class);
+            setMixInAnnotation(ProjectAttachmentUsage.class, Sw360Module.ProjectAttachmentUsageMixin.class);
             setMixInAnnotation(ProjectUsage.class, Sw360Module.ProjectUsageMixin.class);
             setMixInAnnotation(Vendor.class, Sw360Module.VendorMixin.class);
             setMixInAnnotation(License.class, Sw360Module.LicenseMixin.class);
@@ -165,8 +163,7 @@ public class JacksonCustomizations {
                     .replaceWithClass(ReleaseLink.class, ReleaseLinkMixin.class)
                     .replaceWithClass(ClearingReport.class, ClearingReportMixin.class)
                     .replaceWithClass(Attachment.class, AttachmentMixin.class)
-                    .replaceWithClass(AttachmentDTO.class, AttachmentDTOMixin.class)
-                    .replaceWithClass(UsageAttachment.class, UsageAttachmentMixin.class)
+                    .replaceWithClass(ProjectAttachmentUsage.class, ProjectAttachmentUsageMixin.class)
                     .replaceWithClass(ProjectUsage.class, ProjectUsageMixin.class)
                     .replaceWithClass(Vendor.class, VendorMixin.class)
                     .replaceWithClass(License.class, LicenseMixin.class)
@@ -698,7 +695,6 @@ public class JacksonCustomizations {
                 "id",
                 "type",
                 "revision",
-                "attachments",
                 "createdBy",
                 "releases",
                 "wikipedia",
@@ -1271,7 +1267,6 @@ public class JacksonCustomizations {
         }
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
-                "attachmentContentId",
                 "setAttachmentContentId",
                 "setAttachmentType",
                 "setCreatedComment",
@@ -1306,34 +1301,10 @@ public class JacksonCustomizations {
                 "uploadHistoryIsSet",
                 "checkStatusIsSet",
                 "superAttachmentIdIsSet",
-                "superAttachmentFilenameIsSet"
+                "superAttachmentFilenameIsSet",
+                "setProjectAttachmentUsage"
         })
         static abstract class AttachmentMixin extends Attachment {
-        }
-
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        @JsonIgnoreProperties({
-                "setAttachmentContentId",
-                "setFilename",
-                "setSha1",
-                "setAttachmentType",
-                "setCreatedBy",
-                "setCreatedTeam",
-                "setCreatedComment",
-                "setCreatedOn",
-                "setCheckedBy",
-                "setCheckedTeam",
-                "setCheckedComment",
-                "setCheckedOn",
-                "uploadHistorySize",
-                "uploadHistoryIterator",
-                "setUploadHistory",
-                "setCheckStatus",
-                "setSuperAttachmentId",
-                "setSuperAttachmentFilename",
-                "setUsageAttachment"
-        })
-        static abstract class AttachmentDTOMixin extends AttachmentDTO {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -1353,7 +1324,7 @@ public class JacksonCustomizations {
                 "projectUsagesIterator",
                 "setProjectUsages",
         })
-        static abstract class UsageAttachmentMixin extends UsageAttachment {
+        static abstract class ProjectAttachmentUsageMixin extends ProjectAttachmentUsage {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
