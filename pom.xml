@@ -130,7 +130,7 @@
     <jetty.version>10.0.15</jetty.version>
     <jgiven.version>2.0.1</jgiven.version>
     <jose4j.version>0.9.6</jose4j.version>
-    <json.version>20240303</json.version>
+    <json.version>20250107</json.version>
     <joda-time.version>2.13.0</joda-time.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>4.13.2</junit.version>
