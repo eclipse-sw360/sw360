@@ -1543,4 +1543,101 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         return sw360ProjectClient.getReleaseLinksOfProjectNetWorkByIndexPath(projectId, indexPath, sw360User);
     }
+
+    public RequestStatus addLicenseToLinkedReleases(String projectId, User sw360User)
+            throws TTransportException, TException {
+        ThriftClients thriftClients = new ThriftClients();
+        ProjectService.Iface projectClient = getThriftProjectClient();
+        LicenseInfoService.Iface licenseInfoClient = thriftClients.makeLicenseInfoClient();
+        ComponentService.Iface componentClient = thriftClients.makeComponentClient();
+        JSONObject jsonResult = new JSONObject();
+
+        try {
+            Project project = projectClient.getProjectById(projectId, sw360User);
+            if (project == null) {
+                throw new IllegalArgumentException("Project with ID " + projectId + " not found.");
+            }
+
+            Set<String> releaseIds = CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage());
+            List<Release> releasesWithSingleCLI = new ArrayList<>();
+            List<Release> releasesWithMultipleCLI = new ArrayList<>();
+            boolean isModerationRequired = false;
+
+            for (String releaseId : releaseIds) {
+                Release release = componentClient.getReleaseById(releaseId, sw360User);
+                if (release == null) {
+                    throw new IllegalArgumentException("Release with ID " + releaseId + " not found.");
+                }
+
+                List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
+                if (approvedCliAttachments.isEmpty()) {
+                    approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
+                }
+
+                if (approvedCliAttachments.size() == 1) {
+                    processSingleAttachment(approvedCliAttachments.get(0), release, licenseInfoClient, sw360User);
+                    releasesWithSingleCLI.add(release);
+                } else {
+                    if (approvedCliAttachments.size() > 1) {
+                        releasesWithMultipleCLI.add(release);
+                    }
+                    jsonResult.put(SW360Constants.STATUS, SW360Constants.FAILURE);
+                    isModerationRequired = true;
+                }
+
+                componentClient.updateRelease(release, sw360User);
+            }
+
+            jsonResult.put("releasesWithSingleCLI", releasesWithSingleCLI);
+            jsonResult.put("releasesWithMultipleCLI", releasesWithMultipleCLI);
+
+            if (isModerationRequired) {
+                return RequestStatus.SENT_TO_MODERATOR;
+            }
+
+            return RequestStatus.SUCCESS;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error processing linked releases for project: " + projectId, e);
+        }
+    }
+
+
+    private void processSingleAttachment(Attachment attachment, Release release,
+            LicenseInfoService.Iface licenseInfoClient, User sw360User) throws TTransportException, TException {
+        String attachmentName = attachment.getFilename();
+
+        Set<String> mainLicenses = new HashSet<>();
+        Set<String> otherLicenses = new HashSet<>();
+
+        List<LicenseInfoParsingResult> licenseInfoResults = licenseInfoClient.getLicenseInfoForAttachment(release,
+                attachment.getAttachmentContentId(), true, sw360User);
+
+        if (attachmentName.endsWith(SW360Constants.RDF_FILE_EXTENSION)) {
+            licenseInfoResults.forEach(result -> {
+                if (result.getLicenseInfo() != null) {
+                    mainLicenses.addAll(result.getLicenseInfo().getConcludedLicenseIds());
+                    otherLicenses.addAll(result.getLicenseInfo().getLicenseNamesWithTexts().stream()
+                            .map(LicenseNameWithText::getLicenseName).collect(Collectors.toSet()));
+                }
+            });
+            otherLicenses.removeAll(mainLicenses);
+        } else if (attachmentName.endsWith(SW360Constants.XML_FILE_EXTENSION)) {
+            licenseInfoResults.forEach(result -> {
+                if (result.getLicenseInfo() != null) {
+                    result.getLicenseInfo().getLicenseNamesWithTexts().forEach(license -> {
+                        if (SW360Constants.LICENSE_TYPE_GLOBAL.equals(license.getType())) {
+                            mainLicenses.add(license.getLicenseName());
+                        } else {
+                            otherLicenses.add(license.getLicenseName());
+                        }
+                    });
+                }
+            });
+        }
+
+        release.setMainLicenseIds(mainLicenses);
+        release.setOtherLicenseIds(otherLicenses);
+    }
+
 }
