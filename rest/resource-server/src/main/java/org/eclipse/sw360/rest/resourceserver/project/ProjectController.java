@@ -3033,6 +3033,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        if(sw360Project.getLicenseInfoHeaderText().isEmpty()){
+            sw360Project.setLicenseInfoHeaderText(projectService.getLicenseInfoHeaderText());
+        }
         Map<String, String> sortedExternalURLs = CommonUtils.getSortedMap(sw360Project.getExternalUrls(), true);
         sw360Project.setExternalUrls(sortedExternalURLs);
         sw360Project.setReleaseIdToUsage(null);
@@ -3045,7 +3048,6 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360Project.unsetReleaseIdToUsage();
         sw360Project.unsetProjectResponsible();
         sw360Project.unsetSecurityResponsibles();
-        sw360Project.unsetLicenseInfoHeaderText();
 
         return new ResponseEntity<>(userHalResource, HttpStatus.OK);
     }
