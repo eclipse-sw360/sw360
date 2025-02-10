@@ -47,7 +47,7 @@ COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
 # SW360 Build Test image
 
 # 3-eclipse-temurin-21
-FROM maven@sha256:a330654d1807c449d65b69371d37a27632eaa1cbd86088c94f1881a0cc862871 AS sw360test
+FROM maven@sha256:70591cb7a67e12414b16603c6e89d95625e802667f2a0932d5362c459f362fff AS sw360test
 
 COPY --from=localthrift /usr/local/bin/thrift /usr/bin
 
@@ -60,7 +60,7 @@ SHELL ["/bin/bash", "-c"]
 # is triggered by buildkit images
 
 # 3-eclipse-temurin-21
-FROM maven@sha256:a330654d1807c449d65b69371d37a27632eaa1cbd86088c94f1881a0cc862871 AS sw360build
+FROM maven@sha256:70591cb7a67e12414b16603c6e89d95625e802667f2a0932d5362c459f362fff AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
