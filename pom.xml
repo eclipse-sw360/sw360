@@ -156,7 +156,7 @@
     <springframework.version>6.2.2</springframework.version>
     <thrift.version>0.20.0</thrift.version>
     <tika.version>1.28.5</tika.version>
-    <wiremock.version>3.10.0</wiremock.version>
+    <wiremock.version>3.11.0</wiremock.version>
     <version.hibernate.javax.persistence>1.0.0.Final</version.hibernate.javax.persistence>
     <arquillian-graphene.version>2.5.4</arquillian-graphene.version>
     <version.jee.jaxb.api>2.3.1</version.jee.jaxb.api>
