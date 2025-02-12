@@ -35,7 +35,7 @@ public class ReadFileDepartmentConfig {
         String pathFile = file.getPath();
         String[] parts = pathFile.split("/");
         for (int i = 0; i < parts.length; i++) {
-            if (!parts[i+1].contains("liferay"))
+            if (!parts[i+1].contains("tomcat"))
                 path.append(parts[i+1]).append("/");
             else {
                 path.append(parts[i+1]).append("/");
@@ -75,9 +75,9 @@ public class ReadFileDepartmentConfig {
     }
 
     public void writePathFolderConfig(String pathFolder) {
-        DepartmentConfigDTO configDTO = readFileJson();
         BufferedWriter writer = null;
         try {
+            DepartmentConfigDTO configDTO = readFileJson();
             writer = Files.newBufferedWriter(Paths.get(getPathConfig()));
             Map<String, Object> config = new HashMap<>();
             Map<String, Object> map = new HashMap<>();
