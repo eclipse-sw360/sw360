@@ -405,6 +405,7 @@ struct ComponentDTO {
     51: optional string mailinglist,
     52: optional string wiki,
     53: optional string blog,
+    56: optional string vcs,
 }
 
 struct ReleaseLink{
