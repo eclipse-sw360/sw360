@@ -208,6 +208,16 @@ public class UserHandler implements UserService.Iface {
     }
 
     @Override
+    public RequestSummary importDepartmentData(DepartmentConfigDTO configDTO) throws TException {
+        RequestSummary requestSummary = new RequestSummary();
+        if (!configDTO.getPathFolder().isEmpty()) {
+            requestSummary = db.importDepartmentFileToDB(configDTO);
+        }
+        return requestSummary;
+    }
+
+
+    @Override
     public RequestStatus importDepartmentSchedule() {
         DepartmentConfigDTO configDTO = readFileDepartmentConfig.readFileJson();
         db.importFileToDB(configDTO.getPathFolder());

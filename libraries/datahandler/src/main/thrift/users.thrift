@@ -181,6 +181,7 @@ service UserService {
     set<string> getUserEmails();
 
     RequestSummary importFileToDB();
+    RequestSummary importDepartmentData(1: DepartmentConfigDTO configDTO);
 
     RequestStatus importDepartmentSchedule();
 

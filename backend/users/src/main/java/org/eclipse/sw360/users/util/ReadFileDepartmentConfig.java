@@ -34,7 +34,7 @@ public class ReadFileDepartmentConfig {
         File file = File.createTempFile("check", "text");
         String pathFile = file.getPath();
         String[] parts = pathFile.split("/");
-        for (int i = 0; i < parts.length; i++) {
+        for (int i = 0; i < parts.length-1; i++) {
             if (!parts[i+1].contains("liferay"))
                 path.append(parts[i+1]).append("/");
             else {
@@ -75,9 +75,9 @@ public class ReadFileDepartmentConfig {
     }
 
     public void writePathFolderConfig(String pathFolder) {
-        DepartmentConfigDTO configDTO = readFileJson();
         BufferedWriter writer = null;
         try {
+            DepartmentConfigDTO configDTO = readFileJson();
             writer = Files.newBufferedWriter(Paths.get(getPathConfig()));
             Map<String, Object> config = new HashMap<>();
             Map<String, Object> map = new HashMap<>();
