@@ -959,6 +959,48 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                         .collect(Collectors.toList())));
     }
 
+    public Map<String, Integer> storeAttachmentUsageCount(List<ProjectLink> mappedProjectLinks, UsageData filter) throws TException {
+        try {
+            ThriftClients thriftClients = new ThriftClients();
+            AttachmentService.Iface attachmentClient = thriftClients.makeAttachmentClient();
+            Map<Source, Set<String>> containedAttachments = extractContainedAttachments(mappedProjectLinks);
+            Map<Map<Source, String>, Integer> attachmentUsages = attachmentClient.getAttachmentUsageCount(containedAttachments,
+                    filter);
+            Map<String, Integer> countMap = attachmentUsages.entrySet().stream().collect(Collectors.toMap(entry -> {
+                Entry<Source, String> key = entry.getKey().entrySet().iterator().next();
+                return key.getKey().getFieldValue() + "_" + key.getValue();
+            }, Entry::getValue));
+            return countMap;
+        } catch (TException e) {
+            log.error(e.getMessage());
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Walks through a list of project links and extracts all release attachments
+     * with their owner. The returned map is a mapping from a release to its
+     * attachment content ids.
+     *
+     * @param projectLinks
+     *            list of project links to walk through
+     *
+     * @return map of releases and their attachment content ids
+     */
+    public static Map<Source, Set<String>> extractContainedAttachments(Collection<ProjectLink> projectLinks) {
+        Map<Source, Set<String>> attachments = Maps.newHashMap();
+
+        for (ProjectLink projectLink : projectLinks) {
+            for (ReleaseLink releaseLink : projectLink.linkedReleases) {
+                Set<String> attachmentIds = attachments.getOrDefault(Source.releaseId(releaseLink.getId()), Sets.newHashSet());
+                attachmentIds.addAll(releaseLink.getAttachments().stream().map(a -> a.getAttachmentContentId()).collect(Collectors.toList()));
+                attachments.put(Source.releaseId(releaseLink.getId()), attachmentIds);
+            }
+        }
+
+        return attachments;
+    }
+
     public Function<ProjectLink, ProjectLink> filterAndSortAllAttachments(Collection<AttachmentType> attachmentTypes) {
         Predicate<Attachment> filter = att -> attachmentTypes.contains(att.getAttachmentType());
         return createProjectLinkMapper(rl -> {
@@ -997,6 +1039,12 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             boolean deep, User user) {
         final Collection<ProjectLink> linkedProjects = SW360Utils
                 .flattenProjectLinkTree(SW360Utils.getLinkedProjects(project, deep, new ThriftClients(), log, user));
+        return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
+    }
+
+    protected List<ProjectLink> createLinkedProjectsWithAllReleases(Project project,
+                                                                    Function<ProjectLink, ProjectLink> projectLinkMapper, boolean deep, User user) {
+        final Collection<ProjectLink> linkedProjects = SW360Utils.getLinkedProjectsWithAllReleasesAsFlatList(project, deep, new ThriftClients(), log, user);
         return linkedProjects.stream().map(projectLinkMapper).collect(Collectors.toList());
     }
 
