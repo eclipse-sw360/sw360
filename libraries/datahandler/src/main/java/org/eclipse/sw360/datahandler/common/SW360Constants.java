@@ -134,6 +134,7 @@ public class SW360Constants {
     public static final String PROJECTS = "projects";
     public static final String LICENSES = "licenses";
     public static final String PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO = "projectReleaseSpreadSheetWithEcc";
+    public static final String IMPORT_DEPARTMENT_MANUALLY = "importdepartmentmanually";
 
     /**
      * Hashmap containing the name field for each type.

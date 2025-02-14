@@ -1,0 +1,49 @@
+//
+// Copyright Siemens AG, 2024. Part of the SW360 Portal Project.
+//
+// This program and the accompanying materials are made
+// available under the terms of the Eclipse Public License 2.0
+// which is available at https://www.eclipse.org/legal/epl-2.0/
+//
+// SPDX-License-Identifier: EPL-2.0
+// SPDX-FileCopyrightText: 2024, Siemens AG. Part of the SW360 Portal Project.
+// SPDX-FileContributor: Nikesh kumar <kumar.nikesh@siemens.com>
+//
+
+[[resources-department]]
+=== Department
+
+The department resource is used to upload a department and its members.
+
+[[manually-active]]
+==== Manually Activating Department Import
+
+A `GET` request is used to import department data.
+
+===== Example Request
+include::{snippets}/should_document_import_department_manually/curl-request.adoc[]
+
+===== Example Response
+include::{snippets}/should_document_import_department_manually/http-response.adoc[]
+
+[[schedule-department]]
+==== Import Schedule Department.
+
+A `POST` request is used to import schedule department.
+
+===== Example Request
+include::{snippets}/should_document_import_schedule_department/curl-request.adoc[]
+
+===== Example Response
+include::{snippets}/should_document_import_schedule_department/http-response.adoc[]
+
+[[cancel-department]]
+==== Cancel Schedule Department.
+
+A `POST` request is used to cancel import schedule department.
+
+===== Example Request
+include::{snippets}/should_document_cancel_import_schedule_department/curl-request.adoc[]
+
+===== Example Response
+include::{snippets}/should_document_cancel_import_schedule_department/http-response.adoc[]
