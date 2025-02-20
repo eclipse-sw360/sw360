@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestStatus;
 import org.eclipse.sw360.datahandler.thrift.AddDocumentRequestSummary;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
@@ -27,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.nio.ByteBuffer;
@@ -185,5 +187,21 @@ public class Sw360VendorService {
         ComponentService.Iface componentsClient = getThriftComponentClient();
         Set<Release> releases = componentsClient.getReleasesByVendorId(vendorId);
         return releases;
+    }
+
+    public RequestStatus mergeVendors(String vendorTargetId, String vendorSourceId, Vendor vendorSelection, User user) throws TException, ResourceClassNotFoundException {
+        VendorService.Iface sw360VendorClient = getThriftVendorClient();
+        RequestStatus requestStatus;
+        requestStatus =  sw360VendorClient.mergeVendors(vendorTargetId, vendorSourceId, vendorSelection, user);
+
+        if (requestStatus == RequestStatus.IN_USE) {
+            throw new HttpMessageNotReadableException("Vendor used as source or target has an open MR");
+        } else if (requestStatus == RequestStatus.FAILURE) {
+            throw new ResourceClassNotFoundException("Internal server error while merging the vendors");
+        } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        return requestStatus;
     }
 }
