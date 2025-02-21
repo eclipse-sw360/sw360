@@ -66,7 +66,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
     private final RestControllerHelper restControllerHelper;
 
     @Operation(
-            summary = "Get all obligations.",
+            summary = "Get all obligations.This method can be used for duplicate the obligation.",
             description = "List all of the service's obligations.",
             tags = {"Obligations"}
     )
@@ -120,7 +120,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
     }
 
     @Operation(
-            summary = "Create an obligation.",
+            summary = "Create an obligation.This method can be used for duplicate the obligation.",
             description = "Create an obligation.",
             tags = {"Obligations"}
     )
