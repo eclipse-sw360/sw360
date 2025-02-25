@@ -16,11 +16,12 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
+import java.util.Set;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -39,12 +40,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.google.common.base.Strings;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -73,12 +71,15 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             description = "Manually active the service.",
             tags = {"Department"}
     )
-    @RequestMapping(value = DEPARTMENT_URL + "/manuallyActive", method = RequestMethod.POST)
-    public ResponseEntity<RequestSummary> importDepartmentManually()
-            throws TException {
+    @RequestMapping(value = DEPARTMENT_URL + "/manuallyactive", method = RequestMethod.POST)
+    public ResponseEntity<RequestSummary> importDepartmentManually() {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        return processAction(sw360User);
+    }
+
+    private ResponseEntity<RequestSummary> processAction(User sw360User) {
         try {
-            User user = restControllerHelper.getSw360UserFromAuthentication();
-            RequestSummary requestSummary = departmentService.importDepartmentManually(user);
+            RequestSummary requestSummary = departmentService.importDepartmentManually(sw360User);
             return ResponseEntity.ok(requestSummary);
         } catch (TException e) {
             log.error("Error importing department", e);
@@ -154,5 +155,61 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error updating path: " + e.getMessage());
         }
+    }
+
+    @Operation(
+            summary = "Get information about importing the department.",
+            description = "Get information about importing the department (import path folder, interval, last run time, next run time, and whether the scheduler is started or not)",
+            tags = {"Departments"}
+    )
+    @RequestMapping(value = DEPARTMENT_URL + "/importInformation", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, Object>> getImportInformation() throws TException {
+        final User user = restControllerHelper.getSw360UserFromAuthentication();
+        return new ResponseEntity<>(departmentService.getImportInformation(user), HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Get log file list.",
+            description = "Get log file list",
+            tags = {"Departments"}
+    )
+    @RequestMapping(value = DEPARTMENT_URL + "/logFiles", method = RequestMethod.GET)
+    public ResponseEntity<Set<String>> getLogFileList() throws TException {
+        return new ResponseEntity<>(departmentService.getLogFileList(), HttpStatus.OK);
+    }
+
+    @Operation(
+            summary = "Get log file content by date.",
+            description = "Get log file content by date",
+            tags = {"Departments"}
+    )
+    @RequestMapping(value = DEPARTMENT_URL + "/logFileContent", method = RequestMethod.GET)
+    public ResponseEntity<List<String>> getLogFileContentByDate(
+            @RequestParam(value = "date") String date
+    ) throws TException {
+        return new ResponseEntity<>(departmentService.getLogFileContentByDate(date), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Fetch a list of members' emails from each department.",
+            description = "Fetch a list of members' emails from each department.", tags = {"Users"})
+    @RequestMapping(value = DEPARTMENT_URL + "/members", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, List<String>>> getMembersEmailsOfSecondaryDepartments(
+            @Parameter(description = "departmentName") @RequestParam(value = "departmentName", required = false) String departmentName
+    ) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(departmentName)) {
+            return new ResponseEntity<>(departmentService.getMemberEmailsBySecondaryDepartmentName(departmentName), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(departmentService.getSecondaryDepartmentMembers(), HttpStatus.OK);
+    }
+
+    @Operation(summary = "Update members of a secondary department.",
+            description = "Update members of a secondary department.", tags = {"Users"})
+    @RequestMapping(value = DEPARTMENT_URL + "/members", method = RequestMethod.PATCH)
+    public ResponseEntity<Map<String, List<String>>> updateMembersOfSecondaryDepartment(
+            @Parameter(description = "Department name") @RequestParam(value = "departmentName", required = false) String departmentName,
+            @Parameter(description = "New email list of members in department") @RequestBody List<String> emailsList
+    ) throws TException {
+        departmentService.updateMembersInDepartment(departmentName, emailsList);
+        return new ResponseEntity<>(departmentService.getMemberEmailsBySecondaryDepartmentName(departmentName), HttpStatus.OK);
     }
 }
