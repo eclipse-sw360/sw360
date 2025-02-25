@@ -7,6 +7,7 @@ package org.eclipse.sw360.rest.resourceserver.report;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.XML_FILE_EXTENSION;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.IOException;
@@ -35,6 +36,7 @@ import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -84,7 +86,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @Parameter(description = "Module name.", schema = @Schema(allowableValues = {
                     SW360Constants.PROJECTS, SW360Constants.COMPONENTS, SW360Constants.LICENSES,
                     LICENSE_INFO, LICENSES_RESOURCE_BUNDLE, SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO,
-                    EXPORT_CREATE_PROJ_CLEARING_REPORT
+                    EXPORT_CREATE_PROJ_CLEARING_REPORT,SW360Constants.SBOM
             }))
             @RequestParam(value = "module", required = true) String module,
             @Parameter(description = "Exclude release version from the license info file")
@@ -101,6 +103,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "externalIds", required = false, defaultValue = "") String externalIds,
             @Parameter(description = "Generate report for only current project or with Sub projects. Can be supplied with modules [" + LICENSE_INFO + ", " + EXPORT_CREATE_PROJ_CLEARING_REPORT + "]")
             @RequestParam(value = "withSubProject", required = false, defaultValue = "false") boolean withSubProject,
+            @Parameter(description = "Type of SBOM file extention")
+            @RequestParam(value = "bomType", required = false) String bomType,
             HttpServletRequest request,
             HttpServletResponse response
     ) throws TException {
@@ -139,10 +143,18 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                     exportProjectCreateClearingRequest(response, sw360User, module, projectId, excludeReleaseVersion,
                             generatorClassName, variant, template, externalIds);
                     break;
+                case SW360Constants.SBOM:
+                    exportSBOM(response, sw360User, module, projectId,generatorClassName,
+                            bomType,withSubProject);
+                    break;
                 default:
                     break;
             }
-        } catch (Exception e) {
+        }
+        catch (AccessDeniedException e) {
+            throw  e;
+        }
+        catch (Exception e) {
             throw new TException(e.getMessage());
         }
     }
@@ -370,5 +382,33 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         String uri = request.getRequestURI();
         String ctx = request.getContextPath();
         return url.substring(0, url.length() - uri.length() + ctx.length()) + "/";
+    }
+    
+
+    private void exportSBOM(
+            HttpServletResponse response, User sw360User, String module, String projectId,
+            String generatorClassName, String bomType, boolean withSubProject
+    ) throws TException {
+        try {
+            String buff = sw360ReportService.getProjectSBOMBuffer(sw360User, projectId, bomType, withSubProject);
+            response.setContentType(SW360Constants.CONTENT_TYPE_JSON);
+            String fileName = sw360ReportService.getSBOMFileName(sw360User, projectId, module, bomType);
+            if (null == buff) {
+                throw new TException("No data available for the user " + sw360User.getEmail());
+            }
+            if (SW360Constants.XML_FILE_EXTENSION.equalsIgnoreCase(bomType)) {
+                response.setContentType(SW360Constants.CONTENT_TYPE_XML);
+            }
+            response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", fileName));
+            copyDataStreamToResponse(response, ByteBuffer.wrap(buff.getBytes()));
+        }
+        catch (AccessDeniedException e) {
+            log.error(e);
+            throw e;
+        }
+        catch (Exception e) {
+            log.error(e);
+            throw new TException(e.getMessage());
+        }
     }
 }
