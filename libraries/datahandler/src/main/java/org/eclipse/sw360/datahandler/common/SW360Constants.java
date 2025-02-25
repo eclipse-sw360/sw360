@@ -138,6 +138,11 @@ public class SW360Constants {
     public static final String ADD_LIST_EMAIL = "listEmail";
     public static final String DEPARTMENT_KEY = "departmentKey";
     public static final String DELETE_LIST_EMAIL = "deleteEmail";
+    public static final String IMPORT_DEPARTMENT_LAST_RUNNING_TIME = "lastRunningTime";
+    public static final String IMPORT_DEPARTMENT_NEXT_RUNNING_TIME = "nextRunningTime";
+    public static final String IMPORT_DEPARTMENT_FOLDER_PATH = "folderPath";
+    public static final String IMPORT_DEPARTMENT_INTERVAL = "interval";
+    public static final String IMPORT_DEPARTMENT_IS_SCHEDULED = "isSchedulerStarted";
 
     /**
      * Hashmap containing the name field for each type.

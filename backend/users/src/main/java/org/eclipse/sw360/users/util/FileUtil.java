@@ -12,6 +12,7 @@ package org.eclipse.sw360.users.util;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.users.UserHandler;
 
 import java.io.BufferedWriter;
@@ -86,13 +87,14 @@ public class FileUtil {
         return chosenFile;
     }
 
-    public static List<String> readFileLog(String filePath) {
+    public static List<String> readFileLog(String filePath) throws SW360Exception {
         List<String> contentLog = new ArrayList<>();
         Path path = Paths.get(filePath);
         try {
             contentLog = Files.readAllLines(path);
         } catch (IOException e) {
             log.error("Read file log failed!" ,e.getMessage());
+            throw new SW360Exception("Read file log failed!");
         }
         return contentLog;
     }
@@ -127,7 +129,8 @@ public class FileUtil {
                         } catch (IOException ex) {
                             return false;
                         }
-                    }).map(Path::toString)
+                    }).map(Path::getFileName)
+                    .map(Path::toString)
                     .collect(Collectors.toSet());
         }
 
