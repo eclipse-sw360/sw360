@@ -34,7 +34,11 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 
 import lombok.RequiredArgsConstructor;
 
@@ -436,5 +440,46 @@ public class SW360ReportService {
             throw new TException(e.getMessage());
         }
         return ByteBuffer.wrap(IOUtils.toByteArray(exporter.makeExcelExport(releases)));
+    }
+
+    public String getProjectSBOMBuffer(User user, String projectId, String bomType, boolean withSubProject) throws TException {
+        String bomString = "";
+            if (CommonUtils.isNotNullEmptyOrWhitespace(projectId)) {
+                if (CommonUtils.isNullEmptyOrWhitespace(bomType)) {
+                    throw new SW360Exception("Bom type cannot be empty");
+                }
+                RequestSummary summary = projectclient.exportCycloneDxSbom(projectId, bomType, withSubProject, user);
+                RequestStatus status = summary.getRequestStatus();
+                if (RequestStatus.FAILED_SANITY_CHECK.equals(status)) {
+                    bomString = status.name();
+                    throw new SW360Exception(bomString);
+                } else if (RequestStatus.ACCESS_DENIED.equals(status)) {
+                    bomString = status.name() + ", only user with role " + SW360Constants.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE + " can access.";
+                    throw new AccessDeniedException(bomString);
+                } else if (RequestStatus.FAILURE.equals(status)) {
+                    bomString = status.name() + "-" + summary.getMessage() ;
+                    throw new SW360Exception(bomString);
+                } else {
+                    bomString = summary.getMessage();
+                }
+            }
+            else{
+                throw new SW360Exception("Project Id cannot be empty");
+            }
+        return bomString;
+    }
+
+    public String getSBOMFileName(User user, String projectId, String module, String bomType) throws TException {
+        String documentName = "";
+        if(projectId != null && !projectId.equalsIgnoreCase("null")) {
+            Project project = projectclient.getProjectById(projectId, user);
+            documentName = String.format("project_%s(%s)_%s.xml", project.getName(), project.getVersion(),
+                    SW360Utils.getCreatedOnTime(), "_SBOM");
+            if(SW360Constants.JSON_FILE_EXTENSION.equalsIgnoreCase(bomType)){
+                documentName = String.format("project_%s(%s)_%s.json", project.getName(), project.getVersion(),
+                        SW360Utils.getCreatedOnTime(), "_SBOM");
+            }
+        }
+        return documentName;
     }
 }
