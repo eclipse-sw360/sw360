@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -78,10 +79,17 @@ public class VendorController implements RepresentationModelProcessor<Repository
     )
     @RequestMapping(value = VENDORS_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Vendor>>> getVendors(
+            @Parameter(description = "Search text")
+            @RequestParam(value = "searchText", required = false) String searchText,
             Pageable pageable,
             HttpServletRequest request
             ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
-        List<Vendor> vendors = vendorService.getVendors();
+        List<Vendor> vendors = null;
+        if (!isNullOrEmpty(searchText)) {
+            vendors = vendorService.searchVendors(searchText);
+        } else {
+            vendors = vendorService.getVendors();
+        }
 
         PaginationResult<Vendor> paginationResult = restControllerHelper.createPaginationResult(request, pageable, vendors, SW360Constants.TYPE_VENDOR);
         List<EntityModel<Vendor>> vendorResources = new ArrayList<>();
