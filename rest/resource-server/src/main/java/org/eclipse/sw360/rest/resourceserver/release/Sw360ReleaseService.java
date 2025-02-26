@@ -12,6 +12,9 @@
 
 package org.eclipse.sw360.rest.resourceserver.release;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,11 +51,14 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReferen
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.eclipse.sw360.rest.resourceserver.packages.SW360PackageService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,8 +98,24 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     private RestControllerHelper rch;
 
     @NonNull
+    private RestControllerHelper restControllerHelper;
+
+    @NonNull
+    private SW360PackageService packageService;
+
+    @NonNull
+    private final com.fasterxml.jackson.databind.Module sw360Module;
+
+    @NonNull
+    private Sw360AttachmentService attachmentService;
+
+    @NonNull
     private final Sw360ProjectService projectService;
     private final Sw360LicenseService licenseService;
+
+    private static final ImmutableMap<Release._Fields, String[]> mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames = ImmutableMap.<Release._Fields, String[]>builder()
+            .put(Release._Fields.SOURCE_CODE_DOWNLOADURL, new String[] { "downloadurl", "sourceCodeDownloadurl" })
+            .build();
 
     private static FossologyService.Iface fossologyClient;
     private static final String RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
@@ -1359,5 +1381,68 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public void unsubscribeRelease(User user, String releaseId) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         sw360ComponentClient.unsubscribeRelease(releaseId, user);
+    }
+
+    public HalResource<Release> createHalReleaseResource(Release release, boolean verbose) throws TException {
+        HalResource<Release> halRelease = new HalResource<>(release);
+        Link componentLink = linkTo(ReleaseController.class)
+                .slash("api" + ComponentController.COMPONENTS_URL + "/" + release.getComponentId()).withRel("component");
+        halRelease.add(componentLink);
+        release.setComponentId(null);
+        if (verbose) {
+            if (release.getModerators() != null) {
+                Set<String> moderators = release.getModerators();
+                restControllerHelper.addEmbeddedModerators(halRelease, moderators);
+                release.setModerators(null);
+            }
+            if (release.getAttachments() != null) {
+                Set<Attachment> attachments = release.getAttachments();
+                restControllerHelper.addEmbeddedAttachments(halRelease, attachments);
+                release.setAttachments(null);
+            }
+            if (release.getVendor() != null) {
+                Vendor vendor = release.getVendor();
+                HalResource<Vendor> vendorHalResource = restControllerHelper.addEmbeddedVendor(vendor);
+                halRelease.addEmbeddedResource("sw360:vendors", vendorHalResource);
+                release.setVendor(null);
+            }
+            if (release.getMainLicenseIds() != null) {
+                restControllerHelper.addEmbeddedLicenses(halRelease, release.getMainLicenseIds());
+            }
+            if (release.getOtherLicenseIds() != null) {
+                restControllerHelper.addEmbeddedOtherLicenses(halRelease, release.getOtherLicenseIds());
+            }
+            Set<String> packageIds = release.getPackageIds();
+
+            if (packageIds != null) {
+                restControllerHelper.addEmbeddedPackages(halRelease, packageIds, packageService);
+                release.setPackageIds(null);
+            }
+        }
+        return halRelease;
+    }
+
+    public Release setBackwardCompatibleFieldsInRelease(Map<String, Object> reqBodyMap) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.registerModule(sw360Module);
+        Set<Attachment> attachments = attachmentService.getAttachmentsFromRequest(reqBodyMap.get("attachments"), mapper);
+        if (null != reqBodyMap.get("attachments")) {
+            reqBodyMap.remove("attachments");
+        }
+        Release release = mapper.convertValue(reqBodyMap, Release.class);
+        if (null != attachments) {
+            release.setAttachments(attachments);
+        }
+
+        mapOfBackwardCompatible_Field_OldFieldNames_NewFieldNames.entrySet().stream().forEach(entry -> {
+            Release._Fields field = entry.getKey();
+            String oldFieldName = entry.getValue()[0];
+            String newFieldName = entry.getValue()[1];
+            if (!reqBodyMap.containsKey(newFieldName) && reqBodyMap.containsKey(oldFieldName)) {
+                release.setFieldValue(field, CommonUtils.nullToEmptyString(reqBodyMap.get(oldFieldName)));
+            }
+        });
+        return release;
     }
 }
