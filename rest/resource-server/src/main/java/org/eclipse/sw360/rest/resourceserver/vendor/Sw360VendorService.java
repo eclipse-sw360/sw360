@@ -49,6 +49,15 @@ public class Sw360VendorService {
         }
     }
 
+    public List<Vendor> searchVendors(String searchText) {
+        try {
+            VendorService.Iface sw360VendorClient = getThriftVendorClient();
+            return sw360VendorClient.searchVendors(searchText);
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public Vendor getVendorById(String vendorId) {
         try {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
