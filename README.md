@@ -7,6 +7,8 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/eclipse/sw360)](https://github.com/eclipse/sw360/releases/latest)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9485/badge)](https://www.bestpractices.dev/projects/9485)
 
+![image](https://github.com/user-attachments/assets/eee57a3c-834f-44fa-b1e7-6c1978efbe5b)
+
 ### SW360 Portal
 
 A software component catalogue application.
