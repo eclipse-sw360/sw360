@@ -11,7 +11,7 @@
 
 A software component catalogue application.
 
-SW360 is a Backend server with a REST API to maintain your projects / products and the software components within.
+[SW360](https://eclipse.dev/sw360/) is a Backend server with a REST API to maintain your projects / products and the software components within.
 
 It can manage SPDX files for maintaining the license conditions and maintain
 license information.
