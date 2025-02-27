@@ -221,6 +221,70 @@ public class UserDatabaseHandler {
         return requestSummary;
     }
 
+    public RequestSummary importDepartmentFileToDB(DepartmentConfigDTO configDTO)  {
+        String pathFolder = configDTO.getPathFolder();
+        departmentDuplicate = new ArrayList<>();
+        emailDoNotExist = new ArrayList<>();
+        List<String> listFileSuccess = new ArrayList<>();
+        List<String> listFileFail = new ArrayList<>();
+        RequestSummary requestSummary = new RequestSummary().setTotalAffectedElements(0).setMessage("");
+        String pathFolderLog = configDTO.getPathFolderLog();
+        Map<String, List<String>> mapArrayList = new HashMap<>();
+        if (IMPORT_DEPARTMENT_STATUS) {
+            return requestSummary.setRequestStatus(RequestStatus.PROCESSING);
+        }
+        IMPORT_DEPARTMENT_STATUS = true;
+        Calendar calendar = Calendar.getInstance(Locale.getDefault());
+        String lastRunningTime = dateFormat.format(calendar.getTime());
+        readFileDepartmentConfig.writeLastRunningTimeConfig(lastRunningTime);
+        try {
+            FileUtil.writeLogToFile(TITLE, "START IMPORT DEPARTMENT", "", pathFolderLog);
+            Set<String> files = FileUtil.listPathFiles(pathFolder);
+            for (String file : files) {
+                String extension = FilenameUtils.getExtension(file);
+                if (extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xls")) {
+                    mapArrayList = readFileExcel(file);
+                } else if (extension.equalsIgnoreCase("csv")) {
+                    mapArrayList = readFileCsv(file);
+                }
+                Map<String, User> mapEmail = validateListEmailExistDB(mapArrayList);
+                String fileName = FilenameUtils.getName(file);
+                if (departmentDuplicate.isEmpty() && emailDoNotExist.isEmpty()) {
+                    mapArrayList.forEach((k, v) -> v.forEach(email -> updateDepartmentToUser(mapEmail.get(email), k)));
+                    String joined = mapArrayList.keySet().stream().sorted().collect(Collectors.joining(", "));
+                    listFileSuccess.add(fileName);
+                    FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] - FILE NAME: [" + fileName + "]", SUCCESS, pathFolderLog);
+                } else {
+                    if (!departmentDuplicate.isEmpty()) {
+                        String joined = departmentDuplicate.stream().sorted().collect(Collectors.joining(", "));
+                        FileUtil.writeLogToFile(TITLE, "DEPARTMENT [" + joined + "] IS DUPLICATE - FILE NAME: [" + fileName + "]", FAIL, pathFolderLog);
+                        departmentDuplicate = new ArrayList<>();
+                    }
+                    if (!emailDoNotExist.isEmpty()) {
+                        String joined = emailDoNotExist.stream().sorted().collect(Collectors.joining(", "));
+                        FileUtil.writeLogToFile(TITLE, "USER [" + joined + "] DOES NOT EXIST - FILE NAME: [" + fileName + "]", FAIL, pathFolderLog);
+                        emailDoNotExist = new ArrayList<>();
+                    }
+                    listFileFail.add(fileName);
+                }
+            }
+            IMPORT_DEPARTMENT_STATUS = false;
+            requestSummary.setTotalAffectedElements(listFileSuccess.size());
+            requestSummary.setTotalElements(listFileSuccess.size() + listFileFail.size());
+            requestSummary.setRequestStatus(RequestStatus.SUCCESS);
+        } catch (IOException e) {
+            IMPORT_DEPARTMENT_STATUS = false;
+            String msg = "Failed to import department";
+            requestSummary.setMessage(msg);
+            requestSummary.setRequestStatus(RequestStatus.FAILURE);
+            FileUtil.writeLogToFile(TITLE, "FILE ERROR: " + e.getMessage(), "", pathFolderLog);
+        }
+        FileUtil.writeLogToFile(TITLE, "[ FILE SUCCESS: " + listFileSuccess.size() + " - " + "FILE FAIL: " + listFileFail.size() + " - " + "TOTAL FILE: " + (listFileSuccess.size() + listFileFail.size()) + " ]", "Complete The File Import", pathFolderLog);
+        FileUtil.writeLogToFile(TITLE, "END IMPORT DEPARTMENT", "", pathFolderLog);
+
+        return requestSummary;
+    }
+
     public Map<String, List<String>> readFileCsv(String filePath) {
         Map<String, List<String>> listMap = new HashMap<>();
         List<String> emailCsv = new ArrayList<>();

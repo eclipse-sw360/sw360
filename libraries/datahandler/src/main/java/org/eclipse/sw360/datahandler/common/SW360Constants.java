@@ -134,6 +134,10 @@ public class SW360Constants {
     public static final String PROJECTS = "projects";
     public static final String LICENSES = "licenses";
     public static final String PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO = "projectReleaseSpreadSheetWithEcc";
+    public static final String IMPORT_DEPARTMENT_MANUALLY = "importdepartmentmanually";
+    public static final String ADD_LIST_EMAIL = "listEmail";
+    public static final String DEPARTMENT_KEY = "departmentKey";
+    public static final String DELETE_LIST_EMAIL = "deleteEmail";
 
     /**
      * Hashmap containing the name field for each type.
