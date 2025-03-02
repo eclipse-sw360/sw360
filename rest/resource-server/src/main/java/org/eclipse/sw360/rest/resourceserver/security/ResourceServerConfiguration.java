@@ -34,6 +34,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 
 @Profile("!SECURITY_MOCK")
 @Configuration
@@ -60,7 +61,9 @@ public class ResourceServerConfiguration {
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers("/", "/*/*.html", "/*/*.css", "/*/*.js", "/*.js", "/*.json", "/*/*.json", "/*/*.png", "/*/*.gif", "/*/*.ico", "/*/*.woff/*", "/*/*.ttf", "/*/*.html", "/*/*/*.html", "/*/*.yaml", "/v3/api-docs/**");
+        return (web) -> web.ignoring().requestMatchers("/", "/*/*.html", "/*/*.css", "/*/*.js", "/*.js", "/*.json",
+                "/*/*.json", "/*/*.png", "/*/*.gif", "/*/*.ico", "/*/*.woff/*", "/*/*.ttf", "/*/*.html", "/*/*/*.html",
+                "/*/*.yaml", "/v3/api-docs/**", "/api/health", "/api/info");
     }
 
     @Bean
@@ -72,6 +75,8 @@ public class ResourceServerConfiguration {
                         .jwkSetUri(issuerUri)))
                 .httpBasic(Customizer.withDefaults())
                 .exceptionHandling(x -> x.authenticationEntryPoint(saep))
+                .headers(headers -> headers.xssProtection(xXssConfig -> xXssConfig.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                        .contentSecurityPolicy(cps -> cps.policyDirectives("script-src 'self'")))
                 .csrf(csrf -> csrf.disable()).build();
     }
 
@@ -80,8 +85,8 @@ public class ResourceServerConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
         return http.addFilterBefore(filter, BasicAuthenticationFilter.class).authorizeHttpRequests(auth -> {
-            auth.requestMatchers(HttpMethod.GET, "/health").permitAll();
-            auth.requestMatchers(HttpMethod.GET, "/info").hasAuthority("WRITE");
+            auth.requestMatchers(HttpMethod.GET, "/api/health").permitAll();
+            auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority("WRITE");
             auth.requestMatchers(HttpMethod.GET, "/api").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/api/reports/download").permitAll();
             auth.requestMatchers(HttpMethod.GET, "/api/**").hasAuthority("READ");

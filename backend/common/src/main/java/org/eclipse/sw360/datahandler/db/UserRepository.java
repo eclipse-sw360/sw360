@@ -177,6 +177,10 @@ public class UserRepository extends SummaryAwareRepository<User> {
         return getResultBasedOnQuery("userDepartments");
     }
 
+    public Set<String> getUserSecondaryDepartments() {
+        return getResultBasedOnQuery("userSecondaryDepartments");
+    }
+
     public Set<String> getUserEmails() {
         return getResultBasedOnQuery("userEmails");
     }

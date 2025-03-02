@@ -4,6 +4,209 @@ This is the changelog file of the sw360 project. It starts with the first releas
 
 https://github.com/sw360/sw360portal/releases
 
+## sw360-19.1.0
+This minor release includes numerous features, corrections, and improvements
+across the SW360 project since the 19.0.0 release.
+
+Highlight of the changes includes:
+* Various vulnerabilities and security fixes.
+* Multiple new REST API endpoints.
+* Improvements on SBOM and CDX import.
+
+### Credits
+
+The following GitHub users have contributed to the source code since the last
+release (in alphabetical order):
+
+```
+> Afsah Syeda <afsah.syeda@siemens-healthineers.com>
+> Akshit Joshi <akshit.joshi@siemens-healthineers.com>
+> Arun Azhakesan <arun.azhakesan@siemens-healthineers.com>
+> dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+> duonglq-tsdv <duong1.lequy@toshiba.co.jp>
+> Gaurav Mishra <mishra.gaurav@siemens.com>
+> Helio Chissini de Castro <heliocastro@gmail.com>
+> hoangnt2 <hoang2.nguyenthai@toshiba.co.jp>
+> Keerthi B L <keerthi.bl@siemens.com>
+> nikesh kumar <kumar.nikesh@siemens.com>
+> Rudra Chopra <prabhuchopra@gmail.com>
+> Sameed <sameed.ahmad@siemens-healthineers.com>
+> Smruti Prakash Sahoo <smruti.sahoo@siemens.com>
+> StepSecurity Bot <bot@stepsecurity.io>
+> tuannn2 <tuan2.nguyennhu@toshiba.co.jp>
+```
+
+Please note that also many other persons usually contribute to the project with
+reviews, testing, documentations, conversations or presentations.
+
+### Features
+* `2133694fa` feat(rest) : Export Project Create Clearing Request
+* `36df4a611` feat(spdx): Add API for feature SPDX Document tab
+* `719165516` feat(rest): endpoint to get license info header text.
+* `c64470ff8` feat(rest): Add documentation for new clearing size parameter.
+* `e02307383` feat(rest) : Rest end point for project ECC Export Spreadsheet
+* `9cd8646c1` feat(Component): Add new endpoint that allows user to subscribe and unsubscribe to a component
+* `a3edc6cee` feat(Release): Add new endpoint for release subscription
+* `8d6315f31` feat(FossologyTrigger): stop repetitive entries of attachment.
+* `3a48426c9` feat(ImportCDX):Handle redirection of VCS URLs in SBOM
+* `be8d94046` feat(rest): Create new api's in schedule tab.
+* `f41b8927d` feat(importCDX): Add functionality to configure release creation when importing SBOM to an existing project
+* `ddec17e5d` feat(rest): Add size parameter to clearing request.
+* `be032e39c` feat(importCDX): enhance CDX importer to sanitize VCS URLs for non-GitHub domains
+* `646c4e1bb` feat(Project): Create new endpoint that allow to duplicate project with network
+* `68c1fb737` feat(Release): Add new endpoint to check cyclic links between releases
+* `9b32525a3` feat(Project): Add new endpoint that allow to compare project network with default network
+* `108ba6700` feat(Project): Add new endpoint to fetch linked releases of linked projects
+* `067f9135b` feat(Release): Add new endpoint that allow to get linked releases of release
+* `466a8c6d7` feat(Project): Create new endpoint that allow to get linked releases in dependency network of a project
+* `75e3bc899` feat(rest): Add endpoint to handle updation of clearing requests.
+* `7bcedef6a` feat(rest): endpoint to remove orphaned obligations from project.
+* `fa17c2fed` feat(rest): delete a vendor by id.
+* `453eff793` feat: Add default user/pwd to couchdb connection
+* `e81031333` feat: Add default admin user if database is empty
+* `f98db4ff4` feat(rest): Add pagination to get clearing requests endpoint and fix 403 forbidden error
+* `33012fdc2` feat(REST):fetch releases that are in NEW_CLEARING state and have a SRC/SRS attachment using parameter isNewClearingWithSourceAvailable
+* `2621657cd` feat: Add logging to identify releases with corrupted attachments during license generation
+* `73d0576c7` feat(rest): endpoint to get list of obligations depending upon obligation level.
+* `24b71c5e6` feat: Update README.md with openssf scorecard badge
+
+### Corrections
+* `802013389` fix(openapi)!: add health endpoint to openapi
+* `b39c71b5b` fix(Cloudant): Fix Cloudant document creation error by setting id and rev to null instead of empty string during Java object conversion
+* `da677a677` Revert "fix(importCDX): Resolved unnecessary update of component fields"
+* `8f9859955` fix(docs): fix OpenAPI docs
+* `8164a1f48` fix(rest): Fixed the reference to wrong db for oauthclients
+* `4918ecd85` fix(test): Remove unused invalid entries
+* `7c4b647e9` fix(test): Remove unused invalid entries
+* `ac410370c` fix: Enable back client library
+* `c41cdedfc` fix: Ignore SECURITY.md on license check
+* `ffd83c62f` fix(Project): Add missing properties in network response
+* `849284e3b` fix(Project): Unset unnecessory data before store network into database
+* `87bdf001e` fix(test): enable unauthorized request test
+* `519496118` fix(Project): Fix vulnerability: Information exposure through an error message
+* `48eb7437e` fix(User): Fix XSS vulnerability due to a user-provided value
+* `89e67b7e9` fix(Rest): component attachment deletion while updating externalIds
+* `c35e05fbd` fix: Create sw360oauthclients database
+* `9cfb2c16d` fix(rest): Enhance the acceptRequest method to see the proposed changes in project/component/release pages.
+* `342145702` fix: Restore target for Dockerfile
+* `e18227af9` fix: Remove spotless dead code
+* `ec6d2bc18` fix: Adjust pinned dependencies on Dockerfile
+* `73e682053` fix: Update POI code to modern version
+* `a2734ca50` fix(StepSecurity): Apply security best practices
+
+### Infrastructure
+* `8a0793ed5` chore(deps): bump org.apache.maven.plugins:maven-gpg-plugin
+* `06426f8bb` chore(deps): bump keycloak.version from 26.0.6 to 26.0.7
+* `385a8bc74` chore(deps): bump tomcat from `7ebc6c3` to `935ff51`
+* `d24a5c32a` chore(deps): bump github/codeql-action from 3.27.6 to 3.27.9
+* `e38177ad1` chore(deps-dev): bump com.tngtech.jgiven:jgiven-junit
+* `7277d0815` chore(deps): bump org.apache.maven.plugins:maven-javadoc-plugin
+* `e424549f5` chore(deps): update wiremock to 3.10.0
+* `e35110da8` chore(deps): use updated wiremock
+* `c5cbf16f4` chore(deps): bump org.apache.httpcomponents.client5:httpclient5
+* `d59b81243` chore(deps): bump actions/cache from 4.1.2 to 4.2.0
+* `e15aa510c` chore(deps): bump maven from `9ae8f00` to `85d505f`
+* `97c483c04` chore(deps): bump net.minidev:json-smart from 2.4.10 to 2.5.1
+* `862a08e73` chore(deps): bump maven from `f401172` to `9ae8f00`
+* `e0bec4851` chore(deps): bump commons-io:commons-io from 2.17.0 to 2.18.0
+* `668953ad0` chore(deps): bump org.mockito:mockito-core from 2.28.2 to 5.14.2
+* `684e0703c` chore(deps): bump maven from `5a44dff` to `f401172`
+* `b80aaa302` chore(deps): bump tomcat from `2ade2b0` to `7ebc6c3`
+* `39bb1e985` chore(deps): bump ubuntu from `35b7fc7` to `80dd3c3`
+* `f24cbc910` chore(deps): bump github/codeql-action from 3.27.5 to 3.27.6
+* `0db57d021` chore(deps): bump ubuntu from `278628f` to `35b7fc7`
+* `db32f3bb8` chore: Remove cache from java-setup action
+* `03dda4438` chore(deps): bump org.codehaus.mojo:versions-maven-plugin
+* `2a4c3c3a6` chore(deps): bump org.apache.maven.plugins:maven-assembly-plugin
+* `92f05513f` chore(deps): bump org.apache.maven.plugins:maven-resources-plugin
+* `1c3aefe32` chore(deps): bump jackson.version from 2.18.1 to 2.18.2
+* `6d5b60f67` chore(deps): bump org.springframework.security:spring-security-oauth2-authorization-server
+* `360f63268` chore(deps): bump docker/build-push-action from 6.9.0 to 6.10.0
+* `75b9565a2` chore(deps): bump org.apache.maven.plugins:maven-dependency-plugin
+* `8589b49b9` chore(deps-dev): bump com.github.tomakehurst:wiremock-jre8
+* `b4362b73d` chore(deps): bump org.apache.commons:commons-lang3 from 3.12.0 to 3.17.0
+* `c0f95baab` chore(deps): Fix Maven warning for deprecation values
+* `067a3025e` chore(deps): bump org.apache.commons:commons-csv from 1.10.0 to 1.12.0
+* `41da93540` chore(deps): Move versions to supperpom
+* `2dfa4afdb` chore(deps): bump org.keycloak:keycloak-core from 26.0.5 to 26.0.6
+* `90c1a4724` chore(deps): bump log4j2.version from 2.24.1 to 2.24.2
+* `a2beaa41e` chore(deps-dev): bump net.bytebuddy:byte-buddy from 1.10.18 to 1.15.10
+* `cca5c12a9` chore(deps-dev): bump org.ow2.asm:asm-commons from 7.1 to 9.7.1
+* `ec4e041f6` chore(deps): bump springframework.version from 6.1.14 to 6.2.0
+* `bb9225664` chore(deps): bump org.apache.maven.plugins:maven-enforcer-plugin
+* `c4b75cf53` chore(deps): bump com.google.guava:guava from 32.0.0-jre to 33.3.1-jre
+* `c3c75c7df` chore(deps): bump spring-security.version from 6.3.3 to 6.4.1
+* `bca5bc337` chore(deps): bump github/codeql-action from 3.27.4 to 3.27.5
+* `df9bf4801` chore(deps): bump actions/dependency-review-action from 4.4.0 to 4.5.0
+* `eaf13a8d6` chore(deps): bump docker/metadata-action from 5.5.1 to 5.6.1
+* `9bf808d70` chore(deps): bump org.apache.maven.plugins:maven-failsafe-plugin
+* `a11f1830f` chore(deps): Update apache.commons-compress
+* `3658d3970` chore(deps): bump org.apache.commons:commons-text from 1.10.0 to 1.12.0
+* `6cd1da38b` chore(deps): bump com.tngtech.jgiven:jgiven-maven-plugin
+* `36398cfbb` Update security.md file
+* `ce6aa331c` Create SECURITY.md
+* `a2a88dc79` chore(deps): bump step-security/harden-runner from 2.10.1 to 2.10.2
+* `12bd1bf81` chore(deps): bump org.projectlombok:lombok from 1.18.34 to 1.18.36
+* `4d336c6ad` chore(deps): bump jackson.version from 2.17.1 to 2.18.1
+* `cce753580` chore(deps-dev): bump nl.jqno.equalsverifier:equalsverifier
+* `6098b6723` chore(deps): bump com.github.package-url:packageurl-java
+* `40ec24f69` chore(deps): bump tomcat from `a09d4c1` to `2ade2b0`
+* `965ac8dc2` chore(deps): bump ubuntu from `99c3519` to `278628f`
+* `49c3e574f` chore(deps): bump maven from `440a97a` to `5a44dff`
+* `a91c6249c` chore(deps): bump httpcore5.version from 5.2.5 to 5.3.1
+* `f2b202b7a` chore(docs): update the KeyCloak doc for 26.0.5
+* `8f9492422` chore(deps): bump keycloak.version from 25.0.6 to 26.0.5
+* `6239843ef` chore(deps): Adjust Maven dependency declarations
+* `9fa14d2e3` chore: Remove pre-commit checkstyle in favour of maven solution
+* `3f7153601` chore: Remove mave source plugin duplcation
+* `3608ef514` chore(deps): bump jakarta.servlet:jakarta.servlet-api
+* `1f7225b07` chore(deps): bump github/codeql-action from 3.27.3 to 3.27.4
+* `952a11afd` chore(deps): bump com.ibm.cloud:cloudant from 0.9.1 to 0.9.3
+* `dbf82f199` chore(deps): bump com.jcraft:jsch from 0.1.54 to 0.1.55
+* `c972c7fc3` chore(deps): bump github/codeql-action from 3.27.1 to 3.27.3
+* `6985820ec` chore: Update oudated migration Docker
+* `ed71926a6` chore(deps): bump org.codehaus.mojo:build-helper-maven-plugin
+* `1d148bf15` chore(deps): bump org.apache.maven.plugins:maven-scm-plugin
+* `c72a1e2bb` chore(deps): bump tomcat from `7e26fc3` to `a09d4c1`
+* `78bd70065` chore(deps): bump org.dom4j:dom4j from 2.1.3 to 2.1.4
+* `dcfdc9e41` chore(deps): bump org.apache.maven.plugins:maven-jar-plugin
+* `cc2f51ab2` chore(deps): bump com.google.guava:failureaccess from 1.0.1 to 1.0.2
+* `a5ce63316` chore(deps): bump github/codeql-action from 3.27.0 to 3.27.1
+* `01b30091c` chore(rest): reformat ModerationRequestService
+* `56ab42369` chore(deps): bump com.google.code.gson:gson from 2.10.1 to 2.11.0
+* `f2b110dd0` chore(deps): bump org.apache.maven.plugins:maven-source-plugin
+* `29fdca6fb` chore(deps): bump org.apache.maven.plugins:maven-surefire-plugin
+* `4d34c09d2` chore(deps): bump commons-io:commons-io from 2.16.1 to 2.17.0
+* `a4be46a19` chore: update OpenAPI docs for ProjectController
+* `7478bd81a` chore: fix OpenAPI docs for VendorController
+* `e892e5ed4` chore: fix OpenAPI docs for DatabaseSanitationController
+* `b330354f4` chore: fix OpenAPI docs for EccController
+* `671f39337` chore: fix OpenAPI docs for UserController
+* `f88c820b9` chore: fix openapi docs for LicenseController
+* `d5068fdee` chore: fix swagger docs of ScheduleAdminController
+* `4a88eba4c` chore(deps): bump tomcat from `e19f9ca` to `7e26fc3`
+* `e84e66b03` chore(deps): bump org.springframework.security:spring-security-oauth2-authorization-server
+* `038e12a64` chore(deps): bump org.jetbrains:annotations from 26.0.0 to 26.0.1
+* `d026717e0` chore(deps): bump log4j2.version from 2.19.0 to 2.24.1
+* `0bbf1392f` chore(deps): bump org.sonatype.plugins:nexus-staging-maven-plugin
+* `c41a3d0dd` chore: Remove unused dead code
+* `c120a4cef` chore(deps): bump org.glassfish.jaxb:jaxb-runtime from 2.3.9 to 4.0.5
+* `34ab188c0` chore(deps): bump version.keycloak from 25.0.4 to 26.0.5
+* `4bd5a97fd` chore(deps): bump poi.version from 4.1.2 to 5.3.0
+* `bb84e6eb0` chore(deps): bump docker/build-push-action from 5.4.0 to 6.9.0
+* `5901e9bac` chore(deps): bump ossf/scorecard-action from 2.3.3 to 2.4.0
+* `b3de287b9` chore: Update pre-commit with latest versions
+* `d4c57b195` chore: Extend gitignore
+* `047bff839` chore(deps): bump org.json:json from 20231013 to 20240303
+* `06a65cdc1` chore: Remove duplicate entries for vscode workspace
+* `75971bd42` chore(scorecard): Update permissions on workflows
+* `416c9a4e7` chore: Remove dead code from actions
+* `0be1b1889` chore: No need validate for any of .github files
+* `1f3193529` chore: Remove unmaintained and disabled workflow
+* `f95b3b5da` chore(scorecard): Remove broad permissions allowance.
+* `0f7167b7d` chore(deps): Update json
+* `0ea6cfb3e` chore(scorecard): Create initial codeql.yml setup
+
 ## sw360-19.0.0-M1
 This tag covers many corrections, bug fixes and features after the 18.1 release.
 Version 19.0.0 is also the first release without the Front-end integrated, but
@@ -1568,8 +1771,8 @@ Many thanks to the colleagues at Toshiba for providing this big feature to the c
 
 ### Features
 
-* `8bd91be` feat: SW360 support multi-language update after review                                                  
-* `994ad5c` feat: SW360 support multi-language                                                  
+* `8bd91be` feat: SW360 support multi-language update after review
+* `994ad5c` feat: SW360 support multi-language
 
 ### Corrections
 
@@ -1805,7 +2008,7 @@ This release is the first release using the Liferay Portal 7.2 CE GA1 release. T
 * `da1f0b8` fix(search): make search logic consistent
 * `1d830ee` fix(project): fix compare if no version is set
 * `0c2a341` fix(Components): Fix naming component error (name's component contain...
-* `c7f03c8` fix(rest): fix broken logic in updateProject  
+* `c7f03c8` fix(rest): fix broken logic in updateProject
 * `be90070` fix(rest): auth server is broken due to LifeRay api change
 
 ## sw360-4.0.1-M1

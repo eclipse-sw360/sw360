@@ -35,9 +35,8 @@ import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageAttachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.ProjectAttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
@@ -51,6 +50,10 @@ import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
@@ -100,6 +103,10 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
+import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
+import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
+
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -111,6 +118,15 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -434,6 +450,21 @@ public class RestControllerHelper<T> {
         }
     }
 
+    public void addEmbeddedSpdxDocument(HalResource halResource, SPDXDocument spdxDocument) {
+        HalResource<SPDXDocument> halRelease = new HalResource<>(spdxDocument);
+        halResource.addEmbeddedResource("sw360:spdxDocument", halRelease);
+    }
+
+    public void addEmbeddedDocumentCreationInformation(HalResource halResource, DocumentCreationInformation documentCreationInformation) {
+        HalResource<DocumentCreationInformation> halRelease = new HalResource<>(documentCreationInformation);
+        halResource.addEmbeddedResource("sw360:documentCreationInformation", halRelease);
+    }
+
+    public void addEmbeddedPackageInformation(HalResource halResource, PackageInformation packageInformation) {
+        HalResource<PackageInformation> halRelease = new HalResource<>(packageInformation);
+        halResource.addEmbeddedResource("sw360:packageInformation", halRelease);
+    }
+
     public void addEmbeddedPackages(
             HalResource<Package> halResource,
             Set<String> packages,
@@ -469,6 +500,8 @@ public class RestControllerHelper<T> {
         embeddedRelease.setName(release.getName());
         embeddedRelease.setVersion(release.getVersion());
         embeddedRelease.setAttachments(release.getAttachments());
+        embeddedRelease.setComponentType(release.getComponentType());
+        embeddedRelease.setClearingState(release.getClearingState());
         embeddedRelease.setType(null);
         return embeddedRelease;
     }
@@ -707,6 +740,16 @@ public class RestControllerHelper<T> {
         return userToUpdate;
     }
 
+    public User updateUser(User userToUpdate, User requestBodyUser) {
+        for (User._Fields field:User._Fields.values()) {
+            Object fieldValue = requestBodyUser.getFieldValue(field);
+            if (fieldValue != null) {
+                userToUpdate.setFieldValue(field, fieldValue);
+            }
+        }
+        return userToUpdate;
+    }
+
     public Component convertToComponent(ComponentDTO componentDTO) {
         Component component = new Component();
 
@@ -731,6 +774,7 @@ public class RestControllerHelper<T> {
         component.setMailinglist(componentDTO.getMailinglist());
         component.setWiki(componentDTO.getWiki());
         component.setBlog(componentDTO.getBlog());
+        component.setAttachments(componentDTO.getAttachments());
 
         return component;
     }
@@ -878,8 +922,13 @@ public class RestControllerHelper<T> {
         embeddedComponent.setMainLicenseIds(component.getMainLicenseIds());
         embeddedComponent.setVcs(component.getVcs());
         if (CommonUtils.isNotNullEmptyOrWhitespace(component.getDefaultVendorId())) {
-            Vendor defaultVendor = vendorService.getVendorById(component.getDefaultVendorId());
-            embeddedComponent.setDefaultVendor(defaultVendor);
+            try {
+                Vendor defaultVendor = vendorService.getVendorById(component.getDefaultVendorId());
+                embeddedComponent.setDefaultVendor(defaultVendor);
+            } catch (RuntimeException e) {
+                LOGGER.error("Failed to retrieve default vendor '{}' from SW360 database.",
+                        component.getDefaultVendorId(), e);
+            }
         }
         embeddedComponent.setType(null);
         return embeddedComponent;
@@ -1012,6 +1061,7 @@ public class RestControllerHelper<T> {
         embeddedUser.setDepartment(user.getDepartment());
         embeddedUser.setUserGroup(user.getUserGroup());
         embeddedUser.setSecondaryDepartmentsAndRoles(user.getSecondaryDepartmentsAndRoles());
+        embeddedUser.setDeactivated(user.isDeactivated());
         embeddedUser.setType(null);
         return embeddedUser;
     }
@@ -1066,58 +1116,12 @@ public class RestControllerHelper<T> {
 
     public Attachment convertToEmbeddedAttachment(Attachment attachment) {
         attachment.setCreatedTeam(null);
-        attachment.setCreatedComment(null);
         attachment.setCreatedOn(null);
         attachment.setCreatedBy(null);
         attachment.setCheckedBy(null);
         attachment.setCheckedOn(null);
         attachment.setCheckedTeam(null);
         attachment.setCheckedComment(null);
-        attachment.setCheckStatus(null);
-        return attachment;
-    }
-
-    public AttachmentDTO convertAttachmentToAttachmentDTO(Attachment attachment, UsageAttachment usage) {
-        AttachmentDTO attachmentDTO = new AttachmentDTO();
-        attachmentDTO.setAttachmentContentId(attachment.getAttachmentContentId());
-        attachmentDTO.setFilename(attachment.getFilename());
-        attachmentDTO.setSha1(attachment.getSha1());
-        attachmentDTO.setAttachmentType(attachment.getAttachmentType());
-        attachmentDTO.setCreatedBy(attachment.getCreatedBy());
-        attachmentDTO.setCreatedTeam(attachment.getCreatedTeam());
-        attachmentDTO.setCreatedComment(attachment.getCreatedComment());
-        attachmentDTO.setCreatedOn(attachment.getCreatedOn());
-        attachmentDTO.setCheckedBy(attachment.getCheckedBy());
-        attachmentDTO.setCheckedTeam(attachment.getCheckedTeam());
-        attachmentDTO.setCheckedComment(attachment.getCheckedComment());
-        attachmentDTO.setCheckedOn(attachment.getCheckedOn());
-        attachmentDTO.setCheckStatus(attachment.getCheckStatus());
-        attachmentDTO.setSuperAttachmentId(attachment.getSuperAttachmentId());
-        attachmentDTO.setSuperAttachmentFilename(attachment.getSuperAttachmentFilename());
-        attachmentDTO.setUsageAttachment(usage);
-
-        return attachmentDTO;
-    }
-
-    public Attachment convertToAttachment(AttachmentDTO attachmentDTO, User user) {
-        Attachment attachment = new Attachment();
-        attachment.setAttachmentContentId(attachmentDTO.getAttachmentContentId());
-        attachment.setFilename(attachmentDTO.getFilename());
-        attachment.setSha1(attachmentDTO.getSha1());
-        attachment.setAttachmentType(attachmentDTO.getAttachmentType());
-        attachment.setCreatedBy(attachmentDTO.getCreatedBy());
-        attachment.setCreatedTeam(attachmentDTO.getCreatedTeam());
-        attachment.setCreatedComment(attachmentDTO.getCreatedComment());
-        attachment.setCreatedOn(attachmentDTO.getCreatedOn());
-        if (CheckStatus.NOTCHECKED != attachmentDTO.getCheckStatus()) {
-            attachment.setCheckedComment(attachmentDTO.getCheckedComment());
-            attachment.setCheckedBy(user.getEmail());
-            attachment.setCheckedTeam(user.getDepartment());
-            attachment.setCheckedOn(SW360Utils.getCreatedOn());
-        }
-        attachment.setCheckStatus(attachmentDTO.getCheckStatus());
-        attachment.setSuperAttachmentId(attachmentDTO.getSuperAttachmentId());
-        attachment.setSuperAttachmentFilename(attachmentDTO.getSuperAttachmentFilename());
         return attachment;
     }
 
@@ -1654,5 +1658,9 @@ public class RestControllerHelper<T> {
             }
         }
         return clearingRequestService.getClearingRequestById(clearingRequest.getId(), sw360User);
+    }
+    
+    public boolean isWriteActionAllowed(Object object, User user) {
+        return makePermission(object, user).isActionAllowed(RequestedAction.WRITE);
     }
 }

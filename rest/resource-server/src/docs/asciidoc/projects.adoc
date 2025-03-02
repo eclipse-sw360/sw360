@@ -1219,3 +1219,50 @@ include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/cur
 ===== Example response
 include::{snippets}/should_document_get_project_release_with_ecc_spreadsheet/http-response.adoc[]
 
+
+[[resources-project-get-download-project-clearing-report]]
+==== Export Create Project Clearing Report
+
+A `GET` request is used to export Create Project Clearing Report.
+
+===== Request parameter
+include::{snippets}/should_document_get_export_project_create_clearing_request/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_export_project_create_clearing_request/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_export_project_create_clearing_request/http-response.adoc[]
+
+[[resources-projects-list-by-search]]
+==== Filtering with more fields
+
+A `GET` request to fetch filtered list of projects.
+
+Note : send query parameter's value in encoded format. (Reference: `https://datatracker.ietf.org/doc/html/rfc3986`)
+
+===== Response structure
+include::{snippets}/should_document_get_projects_by_advance_search/response-fields.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_projects_by_advance_search/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_projects_by_advance_search/http-response.adoc[]
+
+===== Links
+include::{snippets}/should_document_get_projects_by_advance_search/links.adoc[]
+
+[[resources-package-get-by-project]]
+==== Get Package by ProjectId
+
+A GET request is used to retrieve a package using a given projectId.
+
+===== Request parameter
+include::{snippets}/should_document_get_package_by_project_id/request-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_package_by_project_id-id/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_package_by_project_id-id/http-response.adoc[]

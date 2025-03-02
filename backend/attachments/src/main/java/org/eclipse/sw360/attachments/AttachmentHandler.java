@@ -252,4 +252,11 @@ public class AttachmentHandler implements AttachmentService.Iface {
     public RequestStatus deleteOldAttachmentFromFileSystem() throws TException {
         return handler.deleteOldAttachmentFromFileSystem();
     }
+
+    @Override
+    public AttachmentContent getAttachmentContentById(String attachmentContentId) throws TException {
+        assertNotEmpty(attachmentContentId);
+        assertNotNull(attachmentContentId);
+        return handler.getAttachmentContentById(attachmentContentId);
+    }
 }

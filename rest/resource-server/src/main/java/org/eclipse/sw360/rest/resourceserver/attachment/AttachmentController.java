@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
@@ -127,7 +126,7 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
             tags = {"Attachments"}
     )
     @RequestMapping(value = ATTACHMENTS_URL , method = RequestMethod.POST, consumes = {MediaType.MULTIPART_MIXED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<List<AttachmentDTO>> createAttachment(
+    public ResponseEntity<CollectionModel<EntityModel<Attachment>>> createAttachment(
             @Parameter(description = "List of files to attach",
                     schema = @Schema(
                             type = "string",
@@ -141,12 +140,13 @@ public class AttachmentController implements RepresentationModelProcessor<Reposi
             throw new RuntimeException("You must select at least one file for uploading");
         }
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        List<AttachmentDTO> attachmentDTOs = new ArrayList<>();
+        List<EntityModel<Attachment>> attachments = new ArrayList<>();
         for (MultipartFile file: files) {
-            AttachmentDTO attachmentDTO = restControllerHelper.convertAttachmentToAttachmentDTO(attachmentService.addAttachment(file, sw360User),null);
-            attachmentDTOs.add(attachmentDTO);
+            Attachment attachment = attachmentService.addAttachment(file, sw360User);
+            attachments.add(EntityModel.of(attachment));
         }
-        return new ResponseEntity<>(attachmentDTOs, HttpStatus.OK);
+        CollectionModel<EntityModel<Attachment>> attachmentsResponse = CollectionModel.of(attachments);
+        return new ResponseEntity<>(attachmentsResponse, HttpStatus.OK);
     }
 
     private HalResource<Attachment> createHalAttachment(AttachmentInfo attachmentInfo, User sw360User) throws TException {

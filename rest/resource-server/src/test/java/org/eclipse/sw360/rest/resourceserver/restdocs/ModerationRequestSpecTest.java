@@ -13,6 +13,7 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
 import org.eclipse.sw360.datahandler.thrift.PaginationData;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.ECCStatus;
@@ -29,6 +30,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.ModerationPatch;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.Sw360ModerationRequestService;
+import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
@@ -40,6 +42,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,18 +53,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
+import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.subsectionWithPath;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.queryParameters;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -80,6 +86,13 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
 
     @MockBean
     private Sw360ModerationRequestService moderationRequestServiceMock;
+
+    @MockBean
+    private Sw360ProjectService projectServiceMock;
+
+    @MockBean
+    private Project project;
+    private ModerationRequest moderationRequest;
 
     @Before
     public void before() throws TException, IOException {
@@ -126,7 +139,7 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         project2Deletions.setProjectType(ProjectType.CUSTOMER);
         project2Deletions.setVisbility(Visibility.BUISNESSUNIT_AND_MODERATORS);
 
-        ModerationRequest moderationRequest = new ModerationRequest();
+        moderationRequest = new ModerationRequest();
         moderationRequest.setId("MR-101");
         moderationRequest.setTimestamp(System.currentTimeMillis() / 1000L - 172800);
         moderationRequest.setDocumentId("R-101");
@@ -190,6 +203,7 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
         user.setId("123456789");
         user.setEmail(testUserId);
         user.setFullname("John Doe");
+        user.setDepartment("xyz");
 
         given(this.releaseServiceMock.getReleaseForUserById(eq(moderationRequest.getDocumentId()), any())).willReturn(releaseAdditions);
         given(this.userServiceMock.getUserByEmail(moderationRequest.getRequestingUser())).willReturn(new User("test.admin@sw360.org", "DEPT").setId("12345"));
@@ -312,6 +326,7 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                         ),
                         responseFields(
                                 fieldWithPath("id").description("The id of the moderation request."),
+                                fieldWithPath("type").description("The type of the moderation request."),
                                 fieldWithPath("timestamp").description("Timestamp (in unix epoch) when the request was created."),
                                 fieldWithPath("timestampOfDecision").description("Timestamp (in unix epoch) when the decision on the request was made."),
                                 fieldWithPath("documentId").description("The ID of the document for which the moderation request was made."),
@@ -320,22 +335,22 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("moderators.[]").description("List of users who are marked as moderators for the request."),
                                 fieldWithPath("documentName").description("Name of the document for which the request was created."),
                                 fieldWithPath("moderationState").description("The state of the moderation request. Possible values are: " + Arrays.asList(ModerationState.values())),
-                                fieldWithPath("reviewer").description("User who is currently assigned as the reviewer of the request."),
+                                fieldWithPath("reviewer").description("User who is currently assigned as the reviewer of the request.").optional().type(JsonFieldType.OBJECT),
                                 fieldWithPath("requestDocumentDelete").description(""),
                                 fieldWithPath("requestingUserDepartment").description("The Business Unit / Group of the Project, for which clearing request is created."),
                                 fieldWithPath("componentType").description("Type of the component for which the moderation request is created. Possible values are: " + Arrays.asList(ComponentType.values())),
                                 fieldWithPath("commentRequestingUser").description("The comment from requesting user."),
-                                fieldWithPath("commentDecisionModerator").description("The comment from decision making user."),
+                                fieldWithPath("commentDecisionModerator").description("The comment from decision making user.").optional().type(JsonFieldType.OBJECT),
                                 subsectionWithPath("componentAdditions").description("Information which user wants to add for the component (if `documentType` is `COMPONENT`).").optional().type(JsonFieldType.VARIES),
                                 subsectionWithPath("releaseAdditions").description("Information which user wants to add for the release (if `documentType` is `RELEASE`).").optional().type(JsonFieldType.OBJECT),
                                 subsectionWithPath("projectAdditions").description("Information which user wants to add for the project (if `documentType` is `PROJECT`).").optional().type(JsonFieldType.OBJECT),
                                 subsectionWithPath("licenseAdditions").description("Information which user wants to add for the license (if `documentType` is `LICENSE`).").optional().type(JsonFieldType.OBJECT),
-                                fieldWithPath("user").description(""),
+                                fieldWithPath("user").description("").optional().type(JsonFieldType.OBJECT),
                                 subsectionWithPath("componentDeletions").description("Information which user wants to remove for the component (if `documentType` is `COMPONENT`).").optional().type(JsonFieldType.OBJECT),
                                 subsectionWithPath("releaseDeletions").description("Information which user wants to remove for the release (if `documentType` is `RELEASE`).").optional().type(JsonFieldType.OBJECT),
                                 subsectionWithPath("projectDeletions").description("Information which user wants to remove for the project (if `documentType` is `PROJECT`).").optional().type(JsonFieldType.OBJECT),
                                 subsectionWithPath("licenseDeletions").description("Information which user wants to remove for the license (if `documentType` is `LICENSE`).").optional().type(JsonFieldType.OBJECT),
-                                fieldWithPath("moderatorsSize").description("Number of users in moderators list."),
+                                fieldWithPath("moderatorsSize").description("Number of users in moderators list.").optional().type(JsonFieldType.OBJECT),
                                 subsectionWithPath("_embedded.requestingUser").description("<<resources-users, User>> who created the ModerationRequest."),
                                 subsectionWithPath("_embedded.sw360:project").description("<<resources-projects, Project>> for which the ModerationRequest was created (if `documentType` is `PROJECT`).").optional().type(JsonFieldType.OBJECT),
                                 subsectionWithPath("_embedded.sw360:releases").description("<<resources-releases, Release>> for which the ModerationRequest was created (if `documentType` is `RELEASE`).").optional().type(JsonFieldType.ARRAY),
@@ -481,5 +496,54 @@ public class ModerationRequestSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("page.number").description("Number of the current page"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
+    }
+    
+    @Test
+    public void should_document_check_user_message_moderationrequests() throws Exception {
+        project = new Project();
+        project.setId("98745");
+        project.setName("Test Project");
+        project.setProjectType(ProjectType.PRODUCT);
+        project.setVersion("1");
+        project.setCreatedOn("2021-04-27");
+        project.setCreatedBy("admin@sw360.org");
+        given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);
+
+       this.mockMvc.perform(post("/api/moderationrequest/validate")
+                .param("entityType", "PROJECT")
+                .param("entityId", project.getId())
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                .accept(MediaTypes.HAL_JSON))
+            .andExpect(status().isOk())
+            .andReturn();
+    }
+
+    @Test
+    public void should_document_delete_moderationrequests() throws Exception {
+        String accessToken = TestHelper.generateAuthHeader(testUserId, testUserPassword);
+        ModerationRequest mr3 = new ModerationRequest();
+        mr3.setId("MR-20443");
+        mr3.setRevision("1");
+        mr3.setTimestamp(System.currentTimeMillis() / 1000L - 172800);
+        mr3.setTimestampOfDecision(System.currentTimeMillis() / 1000L - 155000);
+        mr3.setDocumentId("P-102");
+        mr3.setDocumentType(DocumentType.PROJECT);
+        mr3.setRequestingUser("test.admin@sw360.org");
+        mr3.setDocumentName("Project 2");
+        mr3.setModerationState(ModerationState.REJECTED);
+        mr3.setReviewer("admin@sw360.org");
+        mr3.setRequestingUserDepartment("DEPT");
+        mr3.setComponentType(ComponentType.OSS);
+        mr3.setCommentRequestingUser("Update project version");
+
+        given(this.moderationRequestServiceMock.deleteModerationRequestInfo(any(), any(), any()))
+                .willReturn(RequestStatus.SUCCESS);
+
+        mockMvc.perform(delete("/api/moderationrequest/delete")
+                .content("[\"" + mr3.getId() + "\"]")
+                .header("Authorization", accessToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.HAL_JSON))
+                .andExpect(status().isOk());
     }
 }

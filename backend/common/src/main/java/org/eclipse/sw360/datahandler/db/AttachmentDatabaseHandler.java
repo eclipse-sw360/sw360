@@ -276,4 +276,8 @@ public class AttachmentDatabaseHandler {
     public RequestStatus deleteOldAttachmentFromFileSystem() throws TException {
         return DatabaseHandlerUtil.deleteOldAttachmentFromFileSystem();
     }
+
+    public AttachmentContent getAttachmentContentById(String attachmentContentId) {
+        return attachmentContentRepository.get(attachmentContentId);
+    }
 }

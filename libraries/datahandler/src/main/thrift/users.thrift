@@ -16,6 +16,7 @@ typedef sw360.AddDocumentRequestSummary AddDocumentRequestSummary
 typedef sw360.RequestStatus RequestStatus
 typedef sw360.RequestSummary RequestSummary
 typedef sw360.PaginationData PaginationData
+typedef sw360.SW360Exception SW360Exception
 
 enum UserGroup {
     USER = 0,
@@ -98,7 +99,7 @@ service UserService {
     /**
      * returns SW360-user with given id
      **/
-    User getUser(1:string id);
+    User getUser(1:string id) throws (1: SW360Exception exp);
 
     /**
      * returns SW360-user with given email
@@ -210,4 +211,5 @@ service UserService {
 
     set<string> getAllEmailsByDepartmentKey(1: string departmentName)
 
+    set<string> getUserSecondaryDepartments()
 }

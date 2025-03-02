@@ -20,7 +20,7 @@ Identifier Name & Identifier Value
 #end
 
 #end
-Open Source Software Contained in this Product/Device:
+Open Source Software and/or other third-party software contained in this Product:
 ======================================================
 #foreach($releaseName in $licenseInfoResults.keySet()) #set($errorResults=[])
 * $releaseName #foreach($errorResult in $licenseInfoErrorResults.get($releaseName))

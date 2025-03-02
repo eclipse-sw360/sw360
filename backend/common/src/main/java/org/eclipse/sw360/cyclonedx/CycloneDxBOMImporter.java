@@ -816,6 +816,10 @@ public class CycloneDxBOMImporter {
     }
 
     private Project createProject(org.cyclonedx.model.Component compMetadata) {
+        if (compMetadata == null) {
+            log.error("Component metadata is null. Unable to create project.");
+            throw new IllegalArgumentException("Unable to create project due to incorrect metadata");
+        }
         return new Project(CommonUtils.nullToEmptyString(compMetadata.getName()).trim())
                 .setVersion(CommonUtils.nullToEmptyString(compMetadata.getVersion()).trim())
                 .setDescription(CommonUtils.nullToEmptyString(compMetadata.getDescription()).trim()).setType(ThriftEnumUtils.enumToString(ProjectType.PRODUCT))

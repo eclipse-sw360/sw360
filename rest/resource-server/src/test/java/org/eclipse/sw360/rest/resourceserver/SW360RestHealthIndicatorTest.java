@@ -71,7 +71,7 @@ public class SW360RestHealthIndicatorTest {
      */
     private ResponseEntity<Map> getMapResponseEntityForHealthEndpointRequest(String endpoint) {
         return this.testRestTemplate.getForEntity(
-                "http://localhost:" + this.port + endpoint, Map.class);
+                "http://localhost:" + this.port + Sw360ResourceServer.REST_BASE_PATH + endpoint, Map.class);
     }
 
     @Test

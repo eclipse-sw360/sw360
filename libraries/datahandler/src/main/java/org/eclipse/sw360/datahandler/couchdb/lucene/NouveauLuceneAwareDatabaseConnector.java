@@ -317,8 +317,14 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         return "[" + dateToNouveauDouble(dates[0]) + RANGE_TO + dateToNouveauDouble(dates[1]) + "]";
     }
 
+    /**
+     * Parse dates from String in (yyyy-MM-dd) format to Nouveau format (yyyyMMdd) which is used as a double in queries.
+     * @param date Date to convert
+     * @return Parsed date for Nouveau
+     * @throws ParseException If input date cannot be parsed
+     * @see #dateToNouveauFormat(Date)
+     */
     public static @NotNull String dateToNouveauDouble(String date) throws ParseException {
-        SimpleDateFormat outputFormatter = new SimpleDateFormat("yyyyMMdd");
         SimpleDateFormat inputFormatterDate = new SimpleDateFormat("yyyy-MM-dd");
         Date parsedDate;
         try {
@@ -328,6 +334,17 @@ public class NouveauLuceneAwareDatabaseConnector extends LuceneAwareCouchDbConne
         } catch (Exception e) {
             throw new ParseException("Date format not recognized", 0);
         }
-        return outputFormatter.format(parsedDate.getTime());
+        return dateToNouveauFormat(parsedDate);
+    }
+
+    /**
+     * Convert a java.util.Date object to Nouveau format (yyyyMMdd) which is used as a double in queries.
+     * @param date Date to convert
+     * @return Parsed date for Nouveau
+     * @see #dateToNouveauDouble(String)
+     */
+    public static @NotNull String dateToNouveauFormat(Date date) {
+        SimpleDateFormat outputFormatter = new SimpleDateFormat("yyyyMMdd");
+        return outputFormatter.format(date.getTime());
     }
 }

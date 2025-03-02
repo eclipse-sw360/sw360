@@ -16,7 +16,7 @@
     <parent>
         <artifactId>sw360</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>19.0.0</version>
+        <version>19.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -105,7 +105,7 @@
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
-            <version>1.3.4</version>
+            <version>1.3.5</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>

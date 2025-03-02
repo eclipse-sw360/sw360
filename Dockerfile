@@ -13,7 +13,7 @@
 #--------------------------------------------------------------------------------------------------
 # Thrift
 # Ubuntu Noble image
-FROM ubuntu@sha256:80dd3c3b9c6cecb9f1667e9290b3bc61b78c2678c02cbdae5f0fea92cc6734ab AS sw360thriftbuild
+FROM ubuntu@sha256:72297848456d5d37d1262630108ab308d3e9ec7ed1c3286a32fe09856619a782 AS sw360thriftbuild
 
 ARG BASEDIR="/build"
 ARG DESTDIR="/"
@@ -47,7 +47,7 @@ COPY --from=sw360thriftbuild /usr/local/bin/thrift /usr/local/bin/thrift
 # SW360 Build Test image
 
 # 3-eclipse-temurin-21
-FROM maven@sha256:85d505fc45ba12ca042b3f4a27eb47a657d186111c4df0a9b15cc5d9359f9266 AS sw360test
+FROM maven@sha256:70591cb7a67e12414b16603c6e89d95625e802667f2a0932d5362c459f362fff AS sw360test
 
 COPY --from=localthrift /usr/local/bin/thrift /usr/bin
 
@@ -60,7 +60,7 @@ SHELL ["/bin/bash", "-c"]
 # is triggered by buildkit images
 
 # 3-eclipse-temurin-21
-FROM maven@sha256:85d505fc45ba12ca042b3f4a27eb47a657d186111c4df0a9b15cc5d9359f9266 AS sw360build
+FROM maven@sha256:70591cb7a67e12414b16603c6e89d95625e802667f2a0932d5362c459f362fff AS sw360build
 
 ARG COUCHDB_HOST=localhost
 
@@ -124,7 +124,7 @@ COPY --from=sw360build /sw360_tomcat_webapps /sw360_tomcat_webapps
 # Runtime image
 
 # 11-jre21-temurin-noble
-FROM tomcat@sha256:7ebc6c3b1e704a3150d7a6919d24411d58df37e5893702a87f74d63129125646 AS sw360
+FROM tomcat@sha256:46e15fe7d4656cbfdabda58ea67a5ab22a0be706821fcf8b96d0a5a583b2cd47 AS sw360
 
 ARG TOMCAT_DIR=/usr/local/tomcat
 

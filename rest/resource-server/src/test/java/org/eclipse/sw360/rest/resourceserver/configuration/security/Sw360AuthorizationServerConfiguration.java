@@ -40,8 +40,8 @@ public class Sw360AuthorizationServerConfiguration {
 		SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
 		httpSecurity.authorizeHttpRequests(
 				authz -> authz
-				         .requestMatchers(HttpMethod.GET, "/health").permitAll()
-						.requestMatchers(HttpMethod.GET, "/info").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/info").permitAll()
 						.anyRequest().authenticated()
 		).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults())
 				.exceptionHandling(x -> x.authenticationEntryPoint(saep));

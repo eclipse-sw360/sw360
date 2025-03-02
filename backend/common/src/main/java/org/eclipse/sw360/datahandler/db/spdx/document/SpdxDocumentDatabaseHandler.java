@@ -12,9 +12,19 @@ package org.eclipse.sw360.datahandler.db.spdx.document;
 
 import com.ibm.cloud.cloudant.v1.Cloudant;
 
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.*;
+import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformationService;
+import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
+import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.*;
@@ -33,8 +43,10 @@ import org.apache.logging.log4j.LogManager;
 
 import java.net.MalformedURLException;
 import java.util.*;
+
 import com.google.common.collect.Lists;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
@@ -143,6 +155,19 @@ public class SpdxDocumentDatabaseHandler {
         prepareSPDXDocument(spdx);
         SPDXDocument actual = SPDXDocumentRepository.get(spdx.getId());
         assertNotNull(actual, "Could not find SPDX Document to update!");
+        if(spdx.getSnippets().size() < actual.getSnippets().size()) {
+            updateSnippets(spdx);
+        }
+        if(spdx.getAnnotations().size() < actual.getAnnotations().size()) {
+            updateAnnotations(spdx);
+        }
+        if(spdx.getRelationships().size() < actual.getRelationships().size()) {
+            updateRelationships(spdx);
+        }
+        if(spdx.getOtherLicensingInformationDetecteds().size() < actual.getOtherLicensingInformationDetecteds().size()) {
+            updateOtherLicensingInformationDetecteds(spdx);
+        }
+
         if (!makePermission(spdx, user).isActionAllowed(RequestedAction.WRITE)) {
             if (isChanged(actual, spdx)) {
                 return moderator.updateSPDXDocument(spdx, user);
@@ -153,6 +178,42 @@ public class SpdxDocumentDatabaseHandler {
         SPDXDocumentRepository.update(spdx);
         dbHandlerUtil.addChangeLogs(spdx, actual, user.getEmail(), Operation.UPDATE, null, Lists.newArrayList(), null, null);
         return RequestStatus.SUCCESS;
+    }
+
+    public void updateOtherLicensingInformationDetecteds(SPDXDocument request) {
+        List<OtherLicensingInformationDetected> otherLicensingInformationDetecteds = new ArrayList<>(request.getOtherLicensingInformationDetecteds());
+        otherLicensingInformationDetecteds.sort(Comparator.comparingInt(OtherLicensingInformationDetected::getIndex));
+        for (int i = 0; i < otherLicensingInformationDetecteds.size() ; i++) {
+            otherLicensingInformationDetecteds.get(i).setIndex(i);
+        }
+        request.setOtherLicensingInformationDetecteds(new HashSet<>(otherLicensingInformationDetecteds));
+    }
+
+    public void updateRelationships(SPDXDocument request) {
+        List<RelationshipsBetweenSPDXElements> relationshipsBetweenSPDXElements = new ArrayList<>(request.getRelationships());
+        relationshipsBetweenSPDXElements.sort(Comparator.comparingInt(RelationshipsBetweenSPDXElements::getIndex));
+        for (int i = 0; i<relationshipsBetweenSPDXElements.size() ; i++) {
+            relationshipsBetweenSPDXElements.get(i).setIndex(i);
+        }
+        request.setRelationships(new HashSet<>(relationshipsBetweenSPDXElements));
+    }
+
+    public void updateAnnotations(SPDXDocument request) {
+        List<Annotations> annotations = new ArrayList<>(request.getAnnotations());
+        annotations.sort(Comparator.comparingInt(Annotations::getIndex));
+        for (int i = 0; i<annotations.size() ; i++) {
+            annotations.get(i).setIndex(i);
+        }
+        request.setAnnotations(new HashSet<>(annotations));
+    }
+
+    public void updateSnippets(SPDXDocument request) {
+        List<SnippetInformation> snippetInformations = new ArrayList<>(request.getSnippets());
+        snippetInformations.sort(Comparator.comparingInt(SnippetInformation::getIndex));
+        for (int i = 0; i<snippetInformations.size() ; i++) {
+            snippetInformations.get(i).setIndex(i);
+        }
+        request.setSnippets(new HashSet<>(snippetInformations));
     }
 
     public RequestStatus updateSPDXDocumentFromModerationRequest(SPDXDocument spdxAdditions, SPDXDocument spdxDeletions, User user) throws SW360Exception {
@@ -207,8 +268,8 @@ public class SpdxDocumentDatabaseHandler {
 
     private boolean isChanged(SPDXDocument actual, SPDXDocument update) {
         for (SPDXDocument._Fields field : SPDXDocument._Fields.values()) {
-            if (update.getFieldValue(field) == null && actual.getFieldValue(field) == null) {
-                continue;
+            if (null == actual.getFieldValue(field) && null == update.getFieldValue(field)) {
+                return false;
             } else if (update.getFieldValue(field) != null && actual.getFieldValue(field) == null){
                 return true;
             } else if (update.getFieldValue(field) == null && actual.getFieldValue(field) != null){
@@ -218,6 +279,63 @@ public class SpdxDocumentDatabaseHandler {
             }
         }
         return false;
+    }
+
+    public static void updateSPDX(User user, Release release) throws TException {
+        String spdxDocumentId = "";
+        String releaseId = release.getId();
+        Set<String> moderators;
+        if (CommonUtils.isNullOrEmptyCollection(release.getModerators())) {
+            moderators = new HashSet<>();
+        } else {
+            moderators = release.getModerators();
+        }
+
+        // Add SPDXDocument
+        SPDXDocument spdx = SW360Utils.generateSpdxDocument();
+        spdx.setModerators(moderators);
+        SPDXDocumentService.Iface spdxClient = new ThriftClients().makeSPDXClient();
+        if (isNullOrEmpty(spdx.getReleaseId()) && !isNullOrEmpty(releaseId)) {
+            spdx.setReleaseId(releaseId);
+        }
+        if (isNullOrEmpty(spdx.getId())) {
+            spdx.unsetId();
+            spdx.unsetRevision();
+            spdxDocumentId = spdxClient.addSPDXDocument(spdx, user).getId();
+        } else {
+            spdxClient.updateSPDXDocument(spdx, user);
+            spdxDocumentId = spdx.getId();
+        }
+
+        // Add DocumentCreationInformation
+        DocumentCreationInformation document = SW360Utils.generateDocumentCreationInformation();
+        document.setModerators(moderators);
+        DocumentCreationInformationService.Iface documentClient = new ThriftClients().makeSPDXDocumentInfoClient();
+        if (isNullOrEmpty(document.getSpdxDocumentId())) {
+            document.setSpdxDocumentId(spdxDocumentId);
+        }
+        if (isNullOrEmpty(document.getId())) {
+            document.unsetId();
+            document.unsetRevision();
+            documentClient.addDocumentCreationInformation(document, user);
+        } else {
+            documentClient.updateDocumentCreationInformation(document, user);
+        }
+
+        // Add PackageInformation
+        PackageInformation packageInfo = SW360Utils.generatePackageInformation();
+        packageInfo.setModerators(moderators);
+        PackageInformationService.Iface packageClient = new ThriftClients().makeSPDXPackageInfoClient();
+        if (isNullOrEmpty(packageInfo.getSpdxDocumentId())) {
+            packageInfo.setSpdxDocumentId(spdxDocumentId);
+        }
+        if (isNullOrEmpty(packageInfo.getId())) {
+            packageInfo.unsetId();
+            packageInfo.unsetRevision();
+            packageClient.addPackageInformation(packageInfo, user);
+        } else {
+            packageClient.updatePackageInformation(packageInfo, user);
+        }
     }
 
 }

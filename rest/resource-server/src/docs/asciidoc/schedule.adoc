@@ -189,3 +189,14 @@ include::{snippets}/should_document_cancel_monitoring_cancel_svm_list/curl-reque
 
 ===== Example response
 include::{snippets}/should_document_cancel_monitoring_cancel_svm_list/http-response.adoc[]
+
+[[schedule-source-upload]]
+==== Schedule Source Upload Service
+
+A `POST` request will schedule the source upload process for release components.
+
+===== Example Request
+include::{snippets}/schedule_source_upload/curl-request.adoc[]
+
+===== Example Response
+include::{snippets}/schedule_source_upload/http-response.adoc[]

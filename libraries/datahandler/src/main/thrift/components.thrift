@@ -374,7 +374,7 @@ struct ComponentDTO {
     6: optional string description,
 
     // Additional informations
-    10: optional set<AttachmentDTO> attachmentDTOs,
+    10: optional set<Attachment> attachments,
     11: optional string createdOn, // Creation date YYYY-MM-dd
     12: optional ComponentType componentType,
 

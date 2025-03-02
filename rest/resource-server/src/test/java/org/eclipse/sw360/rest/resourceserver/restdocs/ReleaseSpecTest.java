@@ -42,6 +42,7 @@ import java.util.UUID;
 import com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
 import org.eclipse.sw360.datahandler.thrift.components.COTSDetails;
@@ -65,6 +66,19 @@ import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
+import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.CheckSum;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Creator;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.ExternalDocumentReferences;
+import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
+import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
@@ -92,6 +106,7 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.mockmvc.RestDocumentationResultHandler;
+import org.springframework.restdocs.payload.JsonFieldType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.util.LinkedMultiValueMap;
@@ -130,7 +145,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
     @MockBean
     private Sw360LicenseInfoService licenseInfoMockService;
 
-    private Release release, release3, releaseTest, release5;
+    private Release release, release3, releaseTest, release5, releaseSpdx;
     private Attachment attachment;
     Component component;
     private Project project;
@@ -185,8 +200,8 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         given(this.attachmentServiceMock.filterAttachmentsToRemove(any(), any(), any())).willReturn(Collections.singleton(attachment));
         given(this.attachmentServiceMock.updateAttachment(any(), any(), any(), any())).willReturn(att2);
         given(this.sw360VendorService.getVendorById(any())).willReturn(new Vendor("TV", "Test Vendor", "http://testvendor.com"));
-        given(this.attachmentServiceMock.isAttachmentExist(eq("1231231254"))).willReturn(true);
-        given(this.attachmentServiceMock.getAttachmentResourcesFromList(any())).willReturn(CollectionModel.of(attachmentResources));
+        given(this.attachmentServiceMock.isAttachmentContentExist(eq("1231231254"))).willReturn(true);
+        given(this.attachmentServiceMock.getAttachmentResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(attachmentResources));
 
         Map<String, Set<String>> externalIds = new HashMap<>();
         externalIds.put("mainline-id-component", new HashSet<>(Arrays.asList("1432", "4876")));
@@ -390,35 +405,28 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         attachment3.setAttachmentType(AttachmentType.SOURCE);
         release3.setAttachments(ImmutableSet.of(attachment3));
 
-        AttachmentDTO attachmentDTO = new AttachmentDTO();
-        attachmentDTO.setAttachmentContentId(attachment3.getAttachmentContentId());
-        attachmentDTO.setFilename(attachment3.getFilename());
-        attachmentDTO.setSha1(attachment3.getSha1());
-        attachmentDTO.setAttachmentType(attachment3.getAttachmentType());
-        attachmentDTO.setCreatedBy(attachment3.getCreatedBy());
-        attachmentDTO.setCreatedTeam(attachment3.getCreatedTeam());
-        attachmentDTO.setCreatedComment(attachment3.getCreatedComment());
-        attachmentDTO.setCreatedOn(attachment3.getCreatedOn());
-        attachmentDTO.setCheckedBy(attachment3.getCheckedBy());
-        attachmentDTO.setCheckedTeam(attachment3.getCheckedTeam());
-        attachmentDTO.setCheckedComment(attachment3.getCheckedComment());
-        attachmentDTO.setCheckedOn(attachment3.getCheckedOn());
-        attachmentDTO.setCheckStatus(attachment3.getCheckStatus());
+        Attachment attachmentWithUsage = new Attachment();
+        attachmentWithUsage.setAttachmentContentId("");
+        attachmentWithUsage.setFilename(attachment.getFilename());
+        attachmentWithUsage.setSha1(attachment.getSha1());
+        attachmentWithUsage.setAttachmentType(AttachmentType.BINARY_SELF);
+        attachmentWithUsage.setCreatedBy("admin@sw360.org");
+        attachmentWithUsage.setCreatedTeam("Clearing Team 1");
+        attachmentWithUsage.setCreatedComment("please check asap");
+        attachmentWithUsage.setCreatedOn("2016-12-18");
+        attachmentWithUsage.setCheckedTeam("Clearing Team 2");
+        attachmentWithUsage.setCheckedComment("everything looks good");
+        attachmentWithUsage.setCheckedOn("2016-12-18");
+        attachmentWithUsage.setCheckStatus(CheckStatus.ACCEPTED);
 
-        UsageAttachment usageAttachment = new UsageAttachment();
-        usageAttachment.setVisible(1);
+        ProjectAttachmentUsage usageAttachment = new ProjectAttachmentUsage();
+        usageAttachment.setVisible(0);
         usageAttachment.setRestricted(0);
 
-        ProjectUsage projectUsage = new ProjectUsage();
-        projectUsage.setProjectId("376576");
-        projectUsage.setProjectName("Emerald Web");
-
-        usageAttachment.setProjectUsages(new HashSet<>(Arrays.asList(projectUsage)));
-
-        attachmentDTO.setUsageAttachment(usageAttachment);
-        List<EntityModel<AttachmentDTO>> atEntityModels = new ArrayList<>();
-        atEntityModels.add(EntityModel.of(attachmentDTO));
-        given(this.attachmentServiceMock.getAttachmentDTOResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(atEntityModels));
+        attachmentWithUsage.setProjectAttachmentUsage(usageAttachment);
+        List<EntityModel<Attachment>> atEntityModels = new ArrayList<>();
+        atEntityModels.add(EntityModel.of(attachmentWithUsage));
+        given(this.attachmentServiceMock.getAttachmentResourcesFromList(any(), any(), any())).willReturn(CollectionModel.of(atEntityModels));
 
         Set<Project> projectList = new HashSet<>();
         project = new Project();
@@ -598,6 +606,74 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
         releaseTest.setId("12121212");
         releaseTest.setName("Test Load SPDX");
         releaseTest.setVersion("1.0");
+
+        SPDXDocument spdxDocument = new SPDXDocument();
+        spdxDocument.setSpdxFileInfoIds(new HashSet<>());
+        spdxDocument.setId("1111");
+        // snippetInformations
+        SnippetInformation snippetInformation = new SnippetInformation();
+        snippetInformation.setSPDXID("SPDXRef-Snippet-11").setSnippetRanges(new HashSet<>(
+                        Arrays.asList(new SnippetRange()
+                                .setRangeType("BYTE")
+                                .setEndPointer("11")
+                                .setRangeType("11")
+                                .setReference("11")
+                                .setIndex(0))))
+                .setSnippetFromFile("SPDXRef-11")
+                .setLicenseConcluded("11")
+                .setLicenseInfoInSnippets(new HashSet<>(Arrays.asList("11")))
+                .setLicenseComments("11")
+                .setCopyrightText("11")
+                .setComment("11")
+                .setName("11")
+                .setSnippetAttributionText("11")
+                .setIndex(0);
+        Set<SnippetInformation> snippetInformations = new HashSet<>(Arrays.asList(snippetInformation));
+
+        spdxDocument.setSnippets(snippetInformations);
+        //relationships
+        RelationshipsBetweenSPDXElements relationshipsBetweenSPDXElement = new RelationshipsBetweenSPDXElements();
+        relationshipsBetweenSPDXElement.setIndex(0)
+                .setRelationshipComment("11")
+                .setRelationshipType("11")
+                .setSpdxElementId("11")
+                .setRelatedSpdxElement("11");
+
+        Set<RelationshipsBetweenSPDXElements> relationshipsBetweenSPDXElements = new HashSet<>(Arrays.asList(relationshipsBetweenSPDXElement));
+
+        spdxDocument.setRelationships(relationshipsBetweenSPDXElements);
+
+        // Annotations
+        Annotations annotation = new Annotations().setAnnotator("Organization: 11")
+                .setAnnotationDate("2023-11-14T07:31:11Z")
+                .setAnnotationType("11")
+                .setAnnotationComment("11")
+                .setSpdxIdRef("11")
+                .setIndex(0);
+        Set<Annotations> annotations = new HashSet<>(Arrays.asList(annotation));
+        spdxDocument.setAnnotations(annotations);
+
+        // OtherLicensingInformationDetected
+        OtherLicensingInformationDetected otherLicensingInformationDetected = new OtherLicensingInformationDetected()
+                .setLicenseId("LicenseRef-11")
+                .setExtractedText("11")
+                .setLicenseName("11")
+                .setLicenseCrossRefs(new HashSet<>(Arrays.asList("11")))
+                .setLicenseComment("11")
+                .setIndex(0);
+
+        Set<OtherLicensingInformationDetected> otherLicensingInformationDetecteds = new HashSet<>(Arrays.asList(otherLicensingInformationDetected));
+        spdxDocument.setOtherLicensingInformationDetecteds(otherLicensingInformationDetecteds);
+        given(releaseServiceMock.getSPDXDocumentById(any(), any())).willReturn(spdxDocument);
+        releaseSpdx = new Release();
+        releaseSpdx.setSpdxId(spdxDocument.getId());
+        releaseSpdx.setId("12121212");
+        releaseSpdx.setName("Test Load SPDX");
+        releaseSpdx.setVersion("1.0");
+        given(this.releaseServiceMock.getReleaseForUserById(eq(releaseSpdx.getId()), any())).willReturn(releaseSpdx);
+        given(this.releaseServiceMock.updateSPDXDocument(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.releaseServiceMock.updateDocumentCreationInformation(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
+        given(this.releaseServiceMock.updatePackageInformation(any(), any(), any())).willReturn(RequestStatus.SUCCESS);
     }
 
     @Test
@@ -788,6 +864,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("version").description("The version of the release"),
                                 fieldWithPath("createdBy").description("Email of the release creator"),
                                 fieldWithPath("cpeid").description("CpeId of the release"),
+                                fieldWithPath("mainLicenseIds").description("An array of all main licenses"),
                                 fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
                                 fieldWithPath("releaseDate").description("The date of this release"),
                                 fieldWithPath("createdOn").description("The creation date of the internal sw360 release"),
@@ -883,6 +960,184 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 .andDo(documentReleaseProperties());
     }
 
+    public SPDXDocument mockDataSPDXDocument() {
+        //SPDXDocument
+        SPDXDocument spdxDocument = new SPDXDocument();
+        spdxDocument.setSpdxFileInfoIds(new HashSet<>());
+        // snippetInformations
+        SnippetInformation snippetInformation = new SnippetInformation()
+                .setSPDXID("SPDXRef-Snippet-11")
+                .setSnippetRanges(new HashSet<>(
+                        Arrays.asList(new SnippetRange()
+                                .setRangeType("BYTE")
+                                .setStartPointer("11")
+                                .setEndPointer("11")
+                                .setRangeType("11")
+                                .setReference("11")
+                                .setIndex(0))))
+                .setSnippetFromFile("SPDXRef-11")
+                .setLicenseConcluded("11")
+                .setLicenseInfoInSnippets(new HashSet<>(Arrays.asList("11")))
+                .setLicenseComments("11")
+                .setCopyrightText("11")
+                .setComment("11")
+                .setName("11")
+                .setSnippetAttributionText("11")
+                .setIndex(0);
+        Set<SnippetInformation> snippetInformations = new HashSet<>(Arrays.asList(snippetInformation));
+
+        spdxDocument.setSnippets(snippetInformations);
+        //relationships
+        RelationshipsBetweenSPDXElements relationshipsBetweenSPDXElement = new RelationshipsBetweenSPDXElements()
+                .setRelationshipComment("11")
+                .setRelationshipType("11")
+                .setSpdxElementId("11")
+                .setRelatedSpdxElement("11")
+                .setIndex(0);
+
+        Set<RelationshipsBetweenSPDXElements> relationshipsBetweenSPDXElements = new HashSet<>(Arrays.asList(relationshipsBetweenSPDXElement));
+
+        spdxDocument.setRelationships(relationshipsBetweenSPDXElements);
+
+        // Annotations
+        Annotations annotation = new Annotations().setAnnotator("Organization: 11")
+                .setAnnotationDate("2023-11-14T07:31:11Z")
+                .setAnnotationType("11")
+                .setAnnotationComment("11")
+                .setSpdxIdRef("11")
+                .setIndex(0);
+        Set<Annotations> annotations = new HashSet<>(Arrays.asList(annotation));
+        spdxDocument.setAnnotations(annotations);
+
+        // OtherLicensingInformationDetected
+        OtherLicensingInformationDetected otherLicensingInformationDetected = new OtherLicensingInformationDetected()
+                .setLicenseId("LicenseRef-11")
+                .setExtractedText("11")
+                .setLicenseName("11")
+                .setLicenseCrossRefs(new HashSet<>(Arrays.asList("11")))
+                .setLicenseComment("11")
+                .setIndex(0);
+
+        Set<OtherLicensingInformationDetected> otherLicensingInformationDetecteds = new HashSet<>(Arrays.asList(otherLicensingInformationDetected));
+
+        spdxDocument.setOtherLicensingInformationDetecteds(otherLicensingInformationDetecteds);
+
+        DocumentState documentState = new DocumentState()
+                .setIsOriginalDocument(true)
+                .setModerationState(null);
+
+        spdxDocument.setDocumentState(documentState).setModerators(new HashSet<>());
+        return spdxDocument;
+    }
+
+    public DocumentCreationInformation mockDataDocumentCreationInformation() {
+        return new DocumentCreationInformation()
+                .setSpdxVersion("SPDX-3333")
+                .setDataLicense("11")
+                .setSPDXID("SPDXRef-1111")
+                .setName("11")
+                .setDocumentNamespace("11")
+                .setExternalDocumentRefs(new HashSet<>(Arrays.asList(new ExternalDocumentReferences()
+                        .setExternalDocumentId("11")
+                        .setSpdxDocument("11")
+                        .setIndex(0)
+                        .setChecksum(new CheckSum()
+                                .setChecksumValue("11")
+                                .setAlgorithm("11")
+                                .setIndex(0)))))
+                .setLicenseListVersion("11")
+                .setCreator(new HashSet<>(Arrays.asList(new Creator()
+                        .setType("Person")
+                        .setValue("Test Admin (admin@sw360.org)")
+                        .setIndex(0))))
+                .setCreated("2023-11-27T07:25:40Z")
+                .setCreatorComment("11")
+                .setDocumentComment("11")
+                .setCreatedBy("admin@sw360.org")
+                .setModerators(new HashSet<>());
+    }
+
+    public PackageInformation mockDataPackageInformation() {
+        return new PackageInformation()
+                .setName("11")
+                .setSPDXID("SPDXRef-Package-11")
+                .setVersionInfo("11")
+                .setPackageFileName("11")
+                .setSupplier("Organization: 11")
+                .setOriginator("Organization: 11")
+                .setDownloadLocation("11")
+                .setFilesAnalyzed(true)
+                .setPackageVerificationCode(new PackageVerificationCode().setExcludedFiles(new HashSet<>(Arrays.asList("11"))).setValue("11"))
+                .setRelationships(new HashSet<>(Arrays.asList(new RelationshipsBetweenSPDXElements()
+                        .setSpdxElementId("11").setRelationshipType("11").setRelatedSpdxElement("11")
+                        .setRelationshipComment("11").setIndex(0))))
+                .setChecksums(new HashSet<>(Arrays.asList(new CheckSum().setAlgorithm("11").setChecksumValue("1111").setIndex(0))))
+                .setHomepage("11")
+                .setSourceInfo("11")
+                .setLicenseConcluded("11")
+                .setLicenseInfoFromFiles(new HashSet<>(Arrays.asList("11")))
+                .setLicenseDeclared("11")
+                .setLicenseComments("11")
+                .setCopyrightText("11")
+                .setSummary("11")
+                .setDescription("11")
+                .setPackageComment("11")
+                .setExternalRefs(new HashSet<>(Arrays.asList(new ExternalReference().setReferenceCategory("SECURITY")
+                        .setReferenceLocator("11").setReferenceType("cpe22Type").setComment("11").setIndex(0))))
+                .setAttributionText(new HashSet<>(Arrays.asList("11")))
+                .setAnnotations(new HashSet<>()).setPrimaryPackagePurpose("11")
+                .setReleaseDate("2023-11-10T07:30:39Z")
+                .setBuiltDate("2023-11-09T07:29:43Z")
+                .setValidUntilDate("2023-11-22T07:30:47Z")
+                .setModerators(new HashSet<>())
+                .setIndex(0);
+    }
+
+    @Test
+    public void should_document_update_spdx() throws Exception {
+        SPDXDocument spdxDocument = mockDataSPDXDocument();
+        DocumentCreationInformation documentCreationInformation = mockDataDocumentCreationInformation();
+        PackageInformation packageInformation = mockDataPackageInformation();
+
+        Map<String, Object> updateSPDX = new HashMap<>();
+        updateSPDX.put("spdxDocument", spdxDocument);
+        updateSPDX.put("documentCreationInformation", documentCreationInformation);
+        updateSPDX.put("packageInformation", packageInformation);
+
+        if (!SW360Constants.SPDX_DOCUMENT_ENABLED) {
+            this.mockMvc
+                    .perform(patch("/api/releases/" + releaseSpdx.getId() + "/spdx")
+                            .contentType(MediaTypes.HAL_JSON)
+                            .content(this.objectMapper.writeValueAsString(updateSPDX))
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isInternalServerError());
+        } else {
+            mockMvc.perform(patch("/api/releases/" + releaseSpdx.getId() + "/spdx")
+                            .contentType(MediaTypes.HAL_JSON)
+                            .content(this.objectMapper.writeValueAsString(updateSPDX))
+                            .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
+                            .accept(MediaTypes.HAL_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(this.documentationHandler.document(
+                            links(
+                                    linkWithRel("self").description("The <<resources-releases,Releases resource>>"),
+                                    linkWithRel("sw360:component").description("The link to the corresponding component"),
+                                    linkWithRel("curies").description("The curies for documentation")
+                            ),
+                            responseFields(
+                                    fieldWithPath("id").description("The id of the release, optional"),
+                                    fieldWithPath("name").description("The name of the release, optional"),
+                                    fieldWithPath("version").description("The version of the release"),
+                                    fieldWithPath("spdxId").description("The spdxId of the release"),
+                                    subsectionWithPath("_embedded.sw360:spdxDocument").description("SPDXDocument information of release"),
+                                    subsectionWithPath("_embedded.sw360:documentCreationInformation").description("DocumentCreationInformation  of release"),
+                                    subsectionWithPath("_embedded.sw360:packageInformation").description("PackageInformation of release"),
+                                    subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
+                            )));
+        }
+    }
+
     @Test
     public void should_document_get_release_attachment_info() throws Exception {
         mockMvc.perform(get("/api/releases/" + release.getId() + "/attachments")
@@ -901,6 +1156,9 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 subsectionWithPath("_embedded.sw360:attachments.[]createdOn").description("The attachment createdon value"),
                                 subsectionWithPath("_embedded.sw360:attachments.[]checkedComment").description("The attachment checkedComment value"),
                                 subsectionWithPath("_embedded.sw360:attachments.[]checkStatus").description("The attachment checkStatus value"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]projectAttachmentUsage").description("The usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]projectAttachmentUsage.visible").description("The visible usages in project"),
+                                subsectionWithPath("_embedded.sw360:attachments.[]projectAttachmentUsage.restricted").description("The restricted usages in project"),
                                 subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                         )));
     }
@@ -922,6 +1180,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("checkStatus").description("The checkStatus of Attachment. Possible Values are: "+Arrays.asList(CheckStatus.values())),
                         fieldWithPath("checkedComment").description("The checked Comment of Attachment")),
                 responseFields(
+                        fieldWithPath("attachmentContentId").description("The attachment content id"),
                         fieldWithPath("filename").description("The attachment filename"),
                         fieldWithPath("sha1").description("The attachment sha1 value"),
                         fieldWithPath("attachmentType").description("The type of attachment. Possible Values are: "+Arrays.asList(AttachmentType.values())),
@@ -1140,6 +1399,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("version").description("The version of the release"),
                         fieldWithPath("createdBy").description("Email of the release creator"),
                         fieldWithPath("cpeid").description("CpeId of the release"),
+                        fieldWithPath("mainLicenseIds").description("An array of all main licenses"),
                         fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
                         fieldWithPath("releaseDate").description("The date of this release"),
                         fieldWithPath("componentType").description("The componentType of the release, possible values are " + Arrays.asList(ComponentType.values())),
@@ -1160,7 +1420,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                         fieldWithPath("operatingSystems").description("The OS on which the release operates"),
                         fieldWithPath("softwarePlatforms").description("The software platforms of the component"),
                         subsectionWithPath("_embedded.sw360:moderators").description("An array of all release moderators with email and link to their <<resources-user-get,User resource>>"),
-                        subsectionWithPath("_embedded.sw360:attachments").description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>"),
+                        subsectionWithPath("_embedded.sw360:attachments").type(JsonFieldType.ARRAY).description("An array of all release attachments and link to their <<resources-attachment-get,Attachment resource>>").optional(),
                         subsectionWithPath("_embedded.sw360:otherLicenses").description("An array of all other release's licenses and link to their <<resources-license-get,License resource>>"),
                         subsectionWithPath("_links").description("<<resources-index-links,Links>> to other resources")
                 )
@@ -1277,6 +1537,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("version").description("The version of the release"),
                                 fieldWithPath("createdBy").description("Email of the release creator"),
                                 fieldWithPath("cpeid").description("CpeId of the release"),
+                                fieldWithPath("mainLicenseIds").description("An array of all main licenses"),
                                 fieldWithPath("id").description("Id of the release"),
                                 fieldWithPath("clearingState").description("The clearing of the release, possible values are " + Arrays.asList(ClearingState.values())),
                                 fieldWithPath("releaseDate").description("The date of this release"),

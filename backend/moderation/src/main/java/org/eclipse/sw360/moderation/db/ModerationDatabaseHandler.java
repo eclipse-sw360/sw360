@@ -175,10 +175,9 @@ public class ModerationDatabaseHandler {
     }
 
     public List<ModerationRequest> getRequestByDocumentId(String documentId) {
-        List<ModerationRequest> requests = CommonUtils.nullToEmptyList(repository.getRequestsByDocumentId(documentId));
-
-        Collections.sort(requests, CommonUtils.compareByTimeStampDescending());
-
+        List<ModerationRequest> requests = new ArrayList<>(CommonUtils.nullToEmptyList(
+                repository.getRequestsByDocumentId(documentId)));
+        requests.sort(CommonUtils.compareByTimeStampDescending());
         return requests;
     }
 

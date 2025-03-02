@@ -262,4 +262,19 @@ public class Sw360ScheduleService {
             throw e;
         }
     }
+
+    public RequestStatus triggerSourceUploadForReleaseComponents(User sw360User) throws TException {
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                RequestStatus requestStatus = new ThriftClients().makeComponentClient()
+                        .uploadSourceCodeAttachmentToReleases();
+                return requestStatus;
+            } else {
+                throw new AccessDeniedException("User is not admin");
+            }
+        } catch (TException e) {
+            log.error("Error occurred while scheduling service: " + e);
+            throw e;
+        }
+    }
 }

@@ -28,8 +28,16 @@ public class ProjectModerationRequestGenerator extends ModerationRequestGenerato
         updateDocument = updateProject;
         actualDocument = actualProject;
 
-        documentAdditions = new Project();
-        documentDeletions = new Project();
+        if (request.getProjectAdditions()!=null) {
+            documentAdditions = request.getProjectAdditions();
+        } else {
+            documentAdditions = new Project();
+        }
+        if (request.getProjectDeletions()!=null) {
+            documentDeletions = request.getProjectDeletions();
+        } else {
+            documentDeletions = new Project();
+        }
         //required fields:
         documentAdditions.setName(updateProject.getName());
         documentAdditions.setId(actualProject.getId());

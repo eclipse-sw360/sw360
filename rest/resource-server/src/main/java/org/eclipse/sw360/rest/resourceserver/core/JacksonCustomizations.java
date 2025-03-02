@@ -24,9 +24,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentDTO;
+import org.eclipse.sw360.datahandler.thrift.attachments.ProjectAttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.ProjectUsage;
-import org.eclipse.sw360.datahandler.thrift.attachments.UsageAttachment;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangeLogs;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ChangedFields;
 import org.eclipse.sw360.datahandler.thrift.changelogs.ReferenceDocData;
@@ -46,6 +45,19 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.search.SearchResult;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
+import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.CheckSum;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.Creator;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.ExternalDocumentReferences;
+import org.eclipse.sw360.datahandler.thrift.spdx.otherlicensinginformationdetected.OtherLicensingInformationDetected;
+import org.eclipse.sw360.datahandler.thrift.spdx.relationshipsbetweenspdxelements.RelationshipsBetweenSPDXElements;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.snippetinformation.SnippetRange;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReference;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerificationCode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
@@ -82,11 +94,23 @@ public class JacksonCustomizations {
             setMixInAnnotation(ComponentDTO.class, Sw360Module.ComponentDTOMixin.class);
             setMixInAnnotation(Package.class, Sw360Module.PackageMixin.class);
             setMixInAnnotation(Release.class, Sw360Module.ReleaseMixin.class);
+            setMixInAnnotation(SPDXDocument.class, Sw360Module.SPDXDocumentMixin.class);
+            setMixInAnnotation(DocumentCreationInformation.class, Sw360Module.DocumentCreationInformationMixin.class);
+            setMixInAnnotation(PackageInformation.class, Sw360Module.PackageInformationMixin.class);
+            setMixInAnnotation(CheckSum.class, Sw360Module.CheckSumMixin.class);
+            setMixInAnnotation(ExternalDocumentReferences.class, Sw360Module.ExternalDocumentReferencesMixin.class);
+            setMixInAnnotation(Creator.class, Sw360Module.CreatorMixin.class);
+            setMixInAnnotation(PackageVerificationCode.class, Sw360Module.PackageVerificationCodeMixin.class);
+            setMixInAnnotation(ExternalReference.class, Sw360Module.ExternalReferenceMixin.class);
+            setMixInAnnotation(SnippetRange.class, Sw360Module.SnippetRangeMixin.class);
+            setMixInAnnotation(Annotations.class, Sw360Module.AnnotationsMixin.class);
+            setMixInAnnotation(RelationshipsBetweenSPDXElements.class, Sw360Module.RelationshipsBetweenSPDXElementsMixin.class);
+            setMixInAnnotation(SnippetInformation.class, Sw360Module.SnippetInformationMixin.class);
+            setMixInAnnotation(OtherLicensingInformationDetected.class, Sw360Module.OtherLicensingInformationDetectedMixin.class);
             setMixInAnnotation(ReleaseLink.class, Sw360Module.ReleaseLinkMixin.class);
             setMixInAnnotation(ClearingReport.class, Sw360Module.ClearingReportMixin.class);
             setMixInAnnotation(Attachment.class, Sw360Module.AttachmentMixin.class);
-            setMixInAnnotation(AttachmentDTO.class, Sw360Module.AttachmentDTOMixin.class);
-            setMixInAnnotation(UsageAttachment.class, Sw360Module.UsageAttachmentMixin.class);
+            setMixInAnnotation(ProjectAttachmentUsage.class, Sw360Module.ProjectAttachmentUsageMixin.class);
             setMixInAnnotation(ProjectUsage.class, Sw360Module.ProjectUsageMixin.class);
             setMixInAnnotation(Vendor.class, Sw360Module.VendorMixin.class);
             setMixInAnnotation(License.class, Sw360Module.LicenseMixin.class);
@@ -139,8 +163,7 @@ public class JacksonCustomizations {
                     .replaceWithClass(ReleaseLink.class, ReleaseLinkMixin.class)
                     .replaceWithClass(ClearingReport.class, ClearingReportMixin.class)
                     .replaceWithClass(Attachment.class, AttachmentMixin.class)
-                    .replaceWithClass(AttachmentDTO.class, AttachmentDTOMixin.class)
-                    .replaceWithClass(UsageAttachment.class, UsageAttachmentMixin.class)
+                    .replaceWithClass(ProjectAttachmentUsage.class, ProjectAttachmentUsageMixin.class)
                     .replaceWithClass(ProjectUsage.class, ProjectUsageMixin.class)
                     .replaceWithClass(Vendor.class, VendorMixin.class)
                     .replaceWithClass(License.class, LicenseMixin.class)
@@ -180,7 +203,20 @@ public class JacksonCustomizations {
                     .replaceWithClass(ReleaseNode.class, ReleaseNodeMixin.class)
                     .replaceWithClass(RestrictedResource.class, RestrictedResourceMixin.class)
                     .replaceWithClass(RestApiToken.class, Sw360Module.RestApiTokenMixin.class)
-                    .replaceWithClass(ProjectLink.class, ProjectLinkMixin.class);
+                    .replaceWithClass(ProjectLink.class, ProjectLinkMixin.class)
+                    .replaceWithClass(SPDXDocument.class, Sw360Module.SPDXDocumentMixin.class)
+                    .replaceWithClass(DocumentCreationInformation.class, Sw360Module.DocumentCreationInformationMixin.class)
+                    .replaceWithClass(PackageInformation.class, Sw360Module.PackageInformationMixin.class)
+                    .replaceWithClass(CheckSum.class, Sw360Module.CheckSumMixin.class)
+                    .replaceWithClass(ExternalDocumentReferences.class, Sw360Module.ExternalDocumentReferencesMixin.class)
+                    .replaceWithClass(Creator.class, Sw360Module.CreatorMixin.class)
+                    .replaceWithClass(PackageVerificationCode.class, Sw360Module.PackageVerificationCodeMixin.class)
+                    .replaceWithClass(ExternalReference.class, Sw360Module.ExternalReferenceMixin.class)
+                    .replaceWithClass(SnippetRange.class, Sw360Module.SnippetRangeMixin.class)
+                    .replaceWithClass(Annotations.class, Sw360Module.AnnotationsMixin.class)
+                    .replaceWithClass(RelationshipsBetweenSPDXElements.class, Sw360Module.RelationshipsBetweenSPDXElementsMixin.class)
+                    .replaceWithClass(SnippetInformation.class, Sw360Module.SnippetInformationMixin.class)
+                    .replaceWithClass(OtherLicensingInformationDetected.class, Sw360Module.OtherLicensingInformationDetectedMixin.class);
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -284,7 +320,6 @@ public class JacksonCustomizations {
                 "packageIdsSize",
                 "setPackageIds",
                 "packageIdsIterator",
-                "packageIds",
                 "setReleaseRelationNetwork",
                 "releaseRelationNetwork",
                 "projectTypeIsSet",
@@ -604,7 +639,6 @@ public class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties(value = {
-                "id",
                 "revision",
                 "type",
                 "licenseIdsSize",
@@ -661,7 +695,6 @@ public class JacksonCustomizations {
                 "id",
                 "type",
                 "revision",
-                "attachments",
                 "createdBy",
                 "releases",
                 "wikipedia",
@@ -917,6 +950,261 @@ public class JacksonCustomizations {
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
+                "revision",
+                "permissions",
+                "setType",
+                "setId",
+                "setRevision",
+                "setCreatedBy",
+                "moderatorsIterator",
+                "setModerators",
+                "setDocumentState",
+                "setPermissions",
+                "setReleaseId",
+                "setSpdxDocumentCreationInfoId",
+                "setSpdxPackageInfoIds",
+                "spdxFileInfoIdsIterator",
+                "setSpdxFileInfoIds",
+                "setSnippets",
+                "relationshipsIterator",
+                "setRelationships",
+                "annotationsIterator",
+                "setAnnotations",
+                "snippetsIterator",
+                "spdxPackageInfoIdsIterator",
+                "otherLicensingInformationDetectedsIterator",
+                "setOtherLicensingInformationDetecteds",
+                "moderatorsSize",
+                "permissionsSize",
+                "spdxPackageInfoIdsSize",
+                "spdxFileInfoIdsSize",
+                "snippetsSize",
+                "relationshipsSize",
+                "annotationsSize",
+                "otherLicensingInformationDetectedsSize"
+        })
+        static abstract class SPDXDocumentMixin extends SPDXDocument {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "revision",
+                "permissions",
+                "setType",
+                "setId",
+                "setName",
+                "setRevision",
+                "setCreatedBy",
+                "moderatorsIterator",
+                "setModerators",
+                "setDocumentState",
+                "setPermissions",
+                "setSpdxDocumentId",
+                "setSpdxVersion",
+                "setDataLicense",
+                "setSPDXID",
+                "setDocumentNamespace",
+                "externalDocumentRefsIterator",
+                "setExternalDocumentRefs",
+                "setLicenseListVersion",
+                "creatorIterator",
+                "setCreator",
+                "setCreated",
+                "setCreatorComment",
+                "setDocumentComment",
+                "moderatorsSize",
+                "permissionsSize",
+                "externalDocumentRefsSize",
+                "creatorSize",
+                "spdxid"
+        })
+        static abstract class DocumentCreationInformationMixin extends DocumentCreationInformation {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "revision",
+                "permissions",
+                "index",
+                "setType",
+                "setId",
+                "setName",
+                "setRevision",
+                "setDescription",
+                "setCreatedBy",
+                "moderatorsIterator",
+                "setModerators",
+                "setReleaseDate",
+                "setHomepage",
+                "setDocumentState",
+                "setPermissions",
+                "relationshipsIterator",
+                "setRelationships",
+                "annotationsIterator",
+                "setAnnotations",
+                "setSpdxDocumentId",
+                "setSPDXID",
+                "setVersionInfo",
+                "setPackageFileName",
+                "setSupplier",
+                "setOriginator",
+                "setDownloadLocation",
+                "setFilesAnalyzed",
+                "setPackageVerificationCode",
+                "checksumsSize",
+                "checksumsIterator",
+                "setChecksums",
+                "setSourceInfo",
+                "setLicenseConcluded",
+                "licenseInfoFromFilesIterator",
+                "setLicenseInfoFromFiles",
+                "setLicenseDeclared",
+                "setLicenseComments",
+                "setCopyrightText",
+                "setSummary",
+                "setPackageComment",
+                "externalRefsSize",
+                "externalRefsIterator",
+                "setExternalRefs",
+                "setAttributionText",
+                "setPrimaryPackagePurpose",
+                "setBuiltDate",
+                "setValidUntilDate",
+                "setIndex",
+                "attributionTextIterator",
+                "moderatorsSize",
+                "permissionsSize",
+                "relationshipsSize",
+                "annotationsSize",
+                "licenseInfoFromFilesSize",
+                "attributionTextSize",
+                "spdxid"
+        })
+        static abstract class PackageInformationMixin extends PackageInformation {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setAlgorithm",
+                "setChecksumValue",
+                "setIndex"
+        })
+        public static abstract class CheckSumMixin extends CheckSum {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setAnnotator",
+                "setAnnotationDate",
+                "setAnnotationType",
+                "setSpdxIdRef",
+                "setAnnotationComment",
+                "setIndex"
+        })
+        public static abstract class AnnotationsMixin extends Annotations {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setExternalDocumentId",
+                "setChecksum",
+                "setSpdxDocument",
+                "setIndex"
+        })
+        public static abstract class ExternalDocumentReferencesMixin extends ExternalDocumentReferences {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setType",
+                "setValue",
+                "setIndex"
+        })
+        public static abstract class CreatorMixin extends Creator {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setLicenseId",
+                "setExtractedText",
+                "setLicenseName",
+                "setLicenseCrossRefs",
+                "licenseCrossRefsSize",
+                "licenseCrossRefsIterator",
+                "setLicenseComment",
+                "setIndex"
+        })
+        public static abstract class OtherLicensingInformationDetectedMixin extends OtherLicensingInformationDetected {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setExcludedFiles",
+                "excludedFilesSize",
+                "excludedFilesIterator",
+                "setIndex",
+                "setValue"
+        })
+        public static abstract class PackageVerificationCodeMixin extends PackageVerificationCode {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setReferenceCategory",
+                "setReferenceLocator",
+                "setReferenceType",
+                "setComment",
+                "setIndex"
+        })
+        public static abstract class ExternalReferenceMixin extends ExternalReference {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setSpdxElementId",
+                "setRelationshipType",
+                "setRelatedSpdxElement",
+                "setRelationshipComment",
+                "setIndex"
+        })
+        public static abstract class RelationshipsBetweenSPDXElementsMixin extends RelationshipsBetweenSPDXElements {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setSPDXID",
+                "setSnippetFromFile",
+                "setSnippetRanges",
+                "snippetRangesSize",
+                "snippetRangesIterator",
+                "setLicenseConcluded",
+                "setLicenseInfoInSnippets",
+                "licenseInfoInSnippetsSize",
+                "licenseInfoInSnippetsIterator",
+                "setLicenseComments",
+                "setCopyrightText",
+                "setComment",
+                "setName",
+                "setSnippetAttributionText",
+                "setIndex",
+                "spdxid"
+        })
+        public static abstract class SnippetInformationMixin extends SnippetInformation {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
+                "setRangeType",
+                "setStartPointer",
+                "setEndPointer",
+                "setReference",
+                "setIndex"
+        })
+        public static abstract class SnippetRangeMixin extends SnippetRange {
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties({
                 "nodeId",
                 "layer",
                 "parentNodeId",
@@ -979,7 +1267,6 @@ public class JacksonCustomizations {
         }
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonIgnoreProperties({
-                "attachmentContentId",
                 "setAttachmentContentId",
                 "setAttachmentType",
                 "setCreatedComment",
@@ -1014,34 +1301,10 @@ public class JacksonCustomizations {
                 "uploadHistoryIsSet",
                 "checkStatusIsSet",
                 "superAttachmentIdIsSet",
-                "superAttachmentFilenameIsSet"
+                "superAttachmentFilenameIsSet",
+                "setProjectAttachmentUsage"
         })
         static abstract class AttachmentMixin extends Attachment {
-        }
-
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        @JsonIgnoreProperties({
-                "setAttachmentContentId",
-                "setFilename",
-                "setSha1",
-                "setAttachmentType",
-                "setCreatedBy",
-                "setCreatedTeam",
-                "setCreatedComment",
-                "setCreatedOn",
-                "setCheckedBy",
-                "setCheckedTeam",
-                "setCheckedComment",
-                "setCheckedOn",
-                "uploadHistorySize",
-                "uploadHistoryIterator",
-                "setUploadHistory",
-                "setCheckStatus",
-                "setSuperAttachmentId",
-                "setSuperAttachmentFilename",
-                "setUsageAttachment"
-        })
-        static abstract class AttachmentDTOMixin extends AttachmentDTO {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -1061,7 +1324,7 @@ public class JacksonCustomizations {
                 "projectUsagesIterator",
                 "setProjectUsages",
         })
-        static abstract class UsageAttachmentMixin extends UsageAttachment {
+        static abstract class ProjectAttachmentUsageMixin extends ProjectAttachmentUsage {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

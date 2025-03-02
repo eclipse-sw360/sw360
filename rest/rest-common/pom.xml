@@ -15,7 +15,7 @@
     <parent>
         <artifactId>rest</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>19.0.0</version>
+        <version>19.1.0</version>
     </parent>
 
     <artifactId>rest-common</artifactId>
@@ -42,6 +42,12 @@
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.owasp.encoder</groupId>
+            <artifactId>encoder</artifactId>
+            <version>${org.owasp.encoder.version}</version>
+        </dependency>
+
     </dependencies>
     <build>
         <finalName>rest-common</finalName>

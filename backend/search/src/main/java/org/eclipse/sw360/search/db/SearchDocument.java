@@ -10,7 +10,7 @@
 package org.eclipse.sw360.search.db;
 
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.HashMap;

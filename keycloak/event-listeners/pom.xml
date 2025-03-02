@@ -16,7 +16,7 @@
     <parent>
         <artifactId>keycloak</artifactId>
         <groupId>org.eclipse.sw360</groupId>
-        <version>19.0.0</version>
+        <version>19.1.0</version>
     </parent>
 
     <properties>
@@ -39,12 +39,12 @@
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>commonIO</artifactId>
-            <version>19.0.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.sw360</groupId>
             <artifactId>datahandler</artifactId>
-            <version>19.0.0</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.thrift</groupId>
@@ -56,7 +56,7 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-            <version>3.5.0.Final</version>
+            <version>3.6.1.Final</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

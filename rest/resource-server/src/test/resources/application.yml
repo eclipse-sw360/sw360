@@ -1,21 +1,9 @@
 #SPDX-FileCopyrightText: © 2024 Siemens AG
 #SPDX-License-Identifier: EPL-2.0
 
-spring:
-  profiles:
-    active: SECURITY_MOCK
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:8080/authorization/oauth2/jwks
-          jwk-set-uri: http://localhost:8080/authorization/oauth2/jwks
-  application:
-    name: resource
+server:
   servlet:
-    multipart:
-      max-file-size: 500MB
-      max-request-size: 600MB
+    context-path: /
 
 management:
   endpoints:
@@ -23,6 +11,9 @@ management:
       base-path: /
       exposure:
         include: health,info
+      path-mapping:
+        health: /api/health
+        info: /api/info
   endpoint:
     health:
       show-details: always
@@ -31,9 +22,27 @@ management:
       enabled: true
   security:
     enabled: true
-server:
+  health:
+    diskspace:
+      enabled: true    # Disable to hide sensitive system information
+    ping:
+      enabled: true
+
+spring:
+  profiles:
+    active: SECURITY_MOCK
+  application:
+    name: resource
   servlet:
-    context-path: /
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 600MB
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/authorization/oauth2/jwks
+          jwk-set-uri: http://localhost:8080/authorization/oauth2/jwks
 
 #logging:
 #  level:
