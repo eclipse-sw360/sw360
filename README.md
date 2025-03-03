@@ -1,3 +1,8 @@
+
+<img width="1280" alt="homeImage" src="https://github.com/user-attachments/assets/3c2e6712-97a7-4637-80b5-915cdd3af1e8" />
+<br></br>
+
+
 [![Eclipse Public License 2.0](https://img.shields.io/badge/license-EPL--2.0-green.svg "Eclipse Public License 2.0")](LICENSE)
 [![SW360 Build and Test](https://github.com/eclipse-sw360/sw360/workflows/SW360%20Build%20and%20Test/badge.svg)](https://github.com/eclipse-sw360/sw360/actions?query=workflow:"SW360+Build+and+Test")
 [![Slack Channel](https://img.shields.io/badge/slack-sw360chat-blue.svg?longCache=true&logo=slack)](https://join.slack.com/t/sw360chat/shared_invite/enQtNzg5NDQxMTQyNjA5LThiMjBlNTRmOWI0ZjJhYjc0OTk3ODM4MjBmOGRhMWRmN2QzOGVmMzQwYzAzN2JkMmVkZTI1ZjRhNmJlNTY4ZGI)
@@ -13,8 +18,7 @@ A software component catalogue application.
 
 SW360 is a Backend server with a REST API to maintain your projects / products and the software components within.
 
-It can manage SPDX files for maintaining the license conditions and maintain
-license information.
+It can manage SPDX files for maintaining the license conditions and maintain license information.
 
 ### Introduction
 

@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -78,10 +79,17 @@ public class VendorController implements RepresentationModelProcessor<Repository
     )
     @RequestMapping(value = VENDORS_URL, method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Vendor>>> getVendors(
+            @Parameter(description = "Search text")
+            @RequestParam(value = "searchText", required = false) String searchText,
             Pageable pageable,
             HttpServletRequest request
             ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
-        List<Vendor> vendors = vendorService.getVendors();
+        List<Vendor> vendors = null;
+        if (!isNullOrEmpty(searchText)) {
+            vendors = vendorService.searchVendors(searchText);
+        } else {
+            vendors = vendorService.getVendors();
+        }
 
         PaginationResult<Vendor> paginationResult = restControllerHelper.createPaginationResult(request, pageable, vendors, SW360Constants.TYPE_VENDOR);
         List<EntityModel<Vendor>> vendorResources = new ArrayList<>();
@@ -272,6 +280,56 @@ public class VendorController implements RepresentationModelProcessor<Repository
             throw new TException(e.getMessage());
         }
         return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Merge two vendors.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Merge successful.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            examples = @ExampleObject(
+                                                    value = "{\"message\": \"Merge successful.\"}"
+                                            ))
+                            }),
+                    @ApiResponse(responseCode = "400", description = "Vendor used as source or target has an open MR..",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            examples = @ExampleObject(
+                                                    value = "{\"message\": \"Vendor used as source or target has an open MR.\"}"
+                                            ))
+                            }),
+                    @ApiResponse(responseCode = "500", description = "Internal server error while merging the vendors.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            examples = @ExampleObject(
+                                                    value = "{\"message\": \"Internal server error while merging the vendors.\"}"
+                                            ))
+                            }),
+                    @ApiResponse(responseCode = "403", description = "Access denied.",
+                            content = {
+                                    @Content(mediaType = "application/json",
+                                            examples = @ExampleObject(
+                                                    value = "{\"message\": \"Access denied.\"}"
+                                            ))
+                            })
+            },
+            tags = {"Vendor"}
+    )
+    @RequestMapping(value = VENDORS_URL + "/mergeVendors", method = RequestMethod.PATCH)
+    public ResponseEntity<RequestStatus> mergeVendors(
+            @Parameter(description = "The id of the merge target vendor.")
+            @RequestParam(value = "mergeTargetId", required = true) String mergeTargetId,
+            @Parameter(description = "The id of the merge source vendor.")
+            @RequestParam(value = "mergeSourceId", required = true) String mergeSourceId,
+            @Parameter(description = "The merge selection.")
+            @RequestBody Vendor mergeSelection
+    ) throws TException, ResourceClassNotFoundException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        // perform the real merge, update merge target and delete merge sources
+        RequestStatus requestStatus = vendorService.mergeVendors(mergeTargetId, mergeSourceId, mergeSelection, sw360User);
+        return new ResponseEntity<>(requestStatus, HttpStatus.OK);
     }
 
     private void copyDataStreamToResponse(HttpServletResponse response, ByteBuffer buffer) throws IOException {
