@@ -15,10 +15,6 @@ name: SW360 Build and Test
 on:
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "**.md"
-      - ".github/workflows/docker_deploy.yml"
-      - ".github/workflows/scorecard.yml"
   workflow_dispatch:
 
 env:

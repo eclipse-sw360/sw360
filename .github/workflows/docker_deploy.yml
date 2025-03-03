@@ -51,10 +51,10 @@ jobs:
       - name: Checkout main repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
-          java-version: "17"
+          java-version: "21"
           cache: "maven"
           distribution: "temurin"
 
@@ -82,7 +82,7 @@ jobs:
           cat .versions >> $GITHUB_ENV
 
       - name: Build thrift image
-        uses: heliocastro/docker-build-control@944a0451eadb63cf4f45a8ca66dba07118740faf # v5.1
+        uses: heliocastro/docker-build-control@923d1cff454145d261107495786218d712fb4799 # v6.0
         with:
           name: thrift
           target: localthrift
@@ -121,6 +121,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           invalidate-cache: ${{ inputs.invalidate-cache }}
           debug: ${{ inputs.debug }}
+          platforms: "linux/amd64,linux/arm64"
           build-args: |
             THRIFT_VERSION=${{ env.THRIFT_VERSION }}
             SW360_VERSION=${{ env.SHORT_SHA }}
