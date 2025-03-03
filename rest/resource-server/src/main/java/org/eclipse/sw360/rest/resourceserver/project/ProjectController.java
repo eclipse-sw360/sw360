@@ -167,6 +167,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.wrapThriftOptionalReplacement;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
@@ -1497,7 +1500,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             if (!selectedReleaseAndAttachmentIds.containsKey(releaseLinkId)) {
                 selectedReleaseAndAttachmentIds.put(releaseLinkId, new HashMap<>());
             }
-            final List<Attachment> attachments = releaseLink.getAttachments();
+            final List<Attachment> attachments = nullToEmptyList(releaseLink.getAttachments());
             Release release = componentService.getReleaseById(releaseLinkId, sw360User);
             for (final Attachment attachment : attachments) {
                 String attachemntContentId = attachment.getAttachmentContentId();
@@ -1582,7 +1585,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        Set<Attachment> attachments = sw360Project.getAttachments();
+        Set<Attachment> attachments = nullToEmptySet(sw360Project.getAttachments());
         Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId, sw360User);
         RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, sw360User);
         if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
@@ -1631,7 +1634,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         final Project project = projectService.getProjectForUserById(projectId, sw360User);
         final String filename = "Clearing-Reports-" + project.getName() + ".zip";
 
-        final Set<Attachment> attachments = project.getAttachments();
+        final Set<Attachment> attachments = nullToEmptySet(project.getAttachments());
         final Set<AttachmentContent> clearingAttachments = new HashSet<>();
         for (final Attachment attachment : attachments) {
             if (attachment.getAttachmentType().equals(AttachmentType.CLEARING_REPORT)) {
@@ -2100,9 +2103,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
                     final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
                     releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-                    List<Attachment> sourceAttachments = sw360Release.getAttachments().stream()
-                        .filter(attachment -> attachment.getAttachmentType() == AttachmentType.SOURCE || attachment.getAttachmentType() == AttachmentType.SOURCE_SELF)
-                        .collect(Collectors.toList());
+                    List<Attachment> sourceAttachments = nullToEmptySet(sw360Release.getAttachments()).stream()
+                        .filter(attachment ->
+                                attachment.getAttachmentType() == AttachmentType.SOURCE ||
+                                        attachment.getAttachmentType() == AttachmentType.SOURCE_SELF)
+                        .toList();
                     Set<Attachment> sourceAttachmentsSet = new HashSet<>(sourceAttachments);
                     sw360Release.setAttachments(sourceAttachmentsSet);
                     return sourceAttachmentsSet.isEmpty() ? null : sw360Release;
@@ -2114,9 +2119,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
                     final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
                     releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-                    List<Attachment> withoutSourceAttachments = sw360Release.getAttachments().stream()
-                        .filter(attachment -> attachment.getAttachmentType() != AttachmentType.SOURCE && attachment.getAttachmentType() != AttachmentType.SOURCE_SELF)
-                        .collect(Collectors.toList());
+                    List<Attachment> withoutSourceAttachments = nullToEmptySet(sw360Release.getAttachments()).stream()
+                        .filter(attachment ->
+                                attachment.getAttachmentType() != AttachmentType.SOURCE &&
+                                        attachment.getAttachmentType() != AttachmentType.SOURCE_SELF)
+                        .toList();
                     Set<Attachment> withoutSourceAttachmentsSet = new HashSet<>(withoutSourceAttachments);
                     sw360Release.setAttachments(withoutSourceAttachmentsSet);
                     return withoutSourceAttachmentsSet.isEmpty() ? null : sw360Release;
@@ -2128,7 +2135,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
                     final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
                     releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-                    return sw360Release.getAttachments().isEmpty() ? sw360Release : null;
+                    return nullToEmptySet(sw360Release.getAttachments()).isEmpty() ? sw360Release : null;
                 }))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
@@ -2137,7 +2144,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
                     final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
                     releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-                    return sw360Release.getAttachments().isEmpty() ? null : sw360Release;
+                    return nullToEmptySet(sw360Release.getAttachments()).isEmpty() ? null : sw360Release;
                 }))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
@@ -2146,9 +2153,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 releasesSrc = releaseIds.stream().map(relId -> wrapTException(() -> {
                     final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
                     releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-                    List<Attachment> cliAttachments = sw360Release.getAttachments().stream()
+                    List<Attachment> cliAttachments = nullToEmptySet(sw360Release.getAttachments()).stream()
                         .filter(attachment -> attachment.getAttachmentType() == AttachmentType.COMPONENT_LICENSE_INFO_XML)
-                        .collect(Collectors.toList());
+                        .toList();
                     Set<Attachment> cliAttachmentsSet = new HashSet<>(cliAttachments);
                     sw360Release.setAttachments(cliAttachmentsSet);
                     return cliAttachmentsSet.isEmpty() ? null : sw360Release;
@@ -3042,7 +3049,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        if(sw360Project.getLicenseInfoHeaderText().isEmpty()){
+        if (isNullEmptyOrWhitespace(sw360Project.getLicenseInfoHeaderText())) {
             sw360Project.setLicenseInfoHeaderText(projectService.getLicenseInfoHeaderText());
         }
         Map<String, String> sortedExternalURLs = CommonUtils.getSortedMap(sw360Project.getExternalUrls(), true);
