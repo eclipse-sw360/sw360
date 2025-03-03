@@ -157,6 +157,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.wrapThriftOptionalReplacement;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
@@ -3166,7 +3167,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
-        if(sw360Project.getLicenseInfoHeaderText().isEmpty()){
+        if (isNullEmptyOrWhitespace(sw360Project.getLicenseInfoHeaderText())) {
             sw360Project.setLicenseInfoHeaderText(projectService.getLicenseInfoHeaderText());
         }
         Map<String, String> sortedExternalURLs = CommonUtils.getSortedMap(sw360Project.getExternalUrls(), true);
