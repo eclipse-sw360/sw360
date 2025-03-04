@@ -582,7 +582,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.importSPDX(any(),any())).willReturn(requestSummaryForSPDX);
         given(this.projectServiceMock.importCycloneDX(any(),any(),any(),anyBoolean())).willReturn(requestSummaryForCycloneDX);
         given(this.sw360ReportServiceMock.getDocumentName(any(), any(), any())).willReturn(projectName);
-        given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.getProjectBuffer(any(),anyBoolean(),any(),anyBoolean())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getProjectReleaseSpreadSheetWithEcc(any(),any())).willReturn(ByteBuffer.allocate(10000));
         given(this.projectServiceMock.getProjectsForUser(any(), any())).willReturn(projectList);
         given(this.projectServiceMock.getProjectForUserById(eq(project.getId()), any())).willReturn(project);

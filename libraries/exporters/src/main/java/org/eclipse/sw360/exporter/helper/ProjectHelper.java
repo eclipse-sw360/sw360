@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.exporter.utils.SubTable;
@@ -25,20 +26,26 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyMap;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.fieldValueAsString;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.putProjectNamesInMap;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.putAccessibleReleaseNamesInMap;
 import static org.eclipse.sw360.exporter.ProjectExporter.HEADERS;
 import static org.eclipse.sw360.exporter.ProjectExporter.HEADERS_EXTENDED_BY_RELEASES;
+import static org.eclipse.sw360.exporter.ProjectExporter.HEADERS_EXTENDED_BY_PACKAGES;
 import static org.eclipse.sw360.exporter.ProjectExporter.PROJECT_RENDERED_FIELDS;
+import static org.eclipse.sw360.exporter.helper.PackageHelper.RELEASES_LINKED_TO_PACKAGES;
 
 public class ProjectHelper implements ExporterHelper<Project> {
 
     private static final String RELEASE_NOT_AVAILABLE = "Release not available";
+    private static final String PACKAGE_NOT_AVAILABLE = "Package not available";
     private final ProjectService.Iface projectClient;
     private final User user;
     private boolean extendedByReleases;
+    private boolean extendedByPackages;
     private ReleaseHelper releaseHelper;
+    private PackageHelper packageHelper;
     private Map<String, Project> preloadedLinkedProjects;
 
     public ProjectHelper(ProjectService.Iface projectClient, User user, boolean extendedByReleases, ReleaseHelper releaseHelper) {
@@ -48,6 +55,15 @@ public class ProjectHelper implements ExporterHelper<Project> {
         this.releaseHelper = releaseHelper;
     }
 
+    public ProjectHelper(ProjectService.Iface projectClient, User user, boolean extendedByPackages, PackageHelper packageHelper, ReleaseHelper releaseHelper) {
+        this.projectClient = projectClient;
+        this.user = user;
+        this.extendedByPackages = extendedByPackages;
+        this.packageHelper = packageHelper;
+        this.releaseHelper = releaseHelper;
+    }
+
+
     @Override
     public int getColumns() {
         return getHeaders().size();
@@ -55,11 +71,13 @@ public class ProjectHelper implements ExporterHelper<Project> {
 
     @Override
     public List<String> getHeaders() {
+        if(extendedByPackages) return HEADERS_EXTENDED_BY_PACKAGES;
         return extendedByReleases ? HEADERS_EXTENDED_BY_RELEASES : HEADERS;
     }
 
     @Override
     public SubTable makeRows(Project project) throws SW360Exception {
+        if(extendedByPackages) return makeRowsWithPackages(project);
         return extendedByReleases ? makeRowsWithReleases(project) : makeRowForProjectOnly(project);
     }
 
@@ -92,6 +110,42 @@ public class ProjectHelper implements ExporterHelper<Project> {
                 projectRowWithEmptyReleaseFields.add("");
             }
             table.addRow(projectRowWithEmptyReleaseFields);
+        }
+        return table;
+    }
+
+    private SubTable makeRowsWithPackages(Project project) throws SW360Exception{
+        List<Package> packages = getPackages(project);
+        SubTable table = new SubTable();
+        Set<String> packageIdsNotAvailableInDB = Sets.difference(nullToEmptySet(project.getPackageIds()), packages.stream().map(Package::getId).collect(Collectors.toSet()));
+        if(packages.size() > 0){
+            for(Package pack : packages){
+                List<String> currentRow = makeRowForProject(project);
+                currentRow.addAll(packageHelper.makeCustomRowsForProjectExport(pack).getRow(0));
+                table.addRow(currentRow);
+            }
+
+            addReleaseInformation(project, table);
+
+            for(String packageId : packageIdsNotAvailableInDB){
+                List<String> projRowWithNotAvailablePackageFields = makeRowForProject(project);
+                for(int i = 0; i < packageHelper.getColumns(); i++){
+                    if(i == 0){
+                        projRowWithNotAvailablePackageFields.add(packageId);
+                        continue;
+                    }
+                    projRowWithNotAvailablePackageFields.add(PACKAGE_NOT_AVAILABLE);
+                }
+                table.addRow(projRowWithNotAvailablePackageFields);
+            }
+        } else {
+            List<String> projectRowWithEmptyPackageFields = makeRowForProject(project);
+            for(int i = 0; i < packageHelper.getColumnsProjExport(); i++){
+                projectRowWithEmptyPackageFields.add("");
+            }
+            table.addRow(projectRowWithEmptyPackageFields);
+
+            addReleaseInformation(project, table);
         }
         return table;
     }
@@ -148,6 +202,14 @@ public class ProjectHelper implements ExporterHelper<Project> {
         return releaseHelper.getReleases(ids);
     }
 
+    public List<Package> getPackages(Project project) throws SW360Exception {
+        return getPackages(project.getPackageIds());
+    }
+    public List<Package> getPackages(Set<String> ids) throws SW360Exception {
+        return packageHelper.getPackages(ids);
+    }
+
+
     public List<Project> getProjects(Set<String> ids, User user) throws SW360Exception {
         if (preloadedLinkedProjects != null) {
             return getPreloadedProjects(ids);
@@ -167,5 +229,20 @@ public class ProjectHelper implements ExporterHelper<Project> {
 
     public void setPreloadedLinkedProjects(Map<String, Project> preloadedLinkedProjects) {
         this.preloadedLinkedProjects = preloadedLinkedProjects;
+    }
+
+    private void addReleaseInformation(Project project, SubTable table) throws SW360Exception {
+        List<Release> leftoverReleases = getReleases(project).stream()
+                .filter(release -> !RELEASES_LINKED_TO_PACKAGES.contains(release.getId()))
+                .toList();
+
+        for(Release release : leftoverReleases) {
+            List<String> projRow = makeRowForProject(project);
+            for(int i = 0; i < 5; i++) {
+                projRow.add("");
+            }
+            projRow.addAll(releaseHelper.makeCustomRowsForProjectExport(release).getRow(0));
+            table.addRow(projRow);
+        }
     }
 }
