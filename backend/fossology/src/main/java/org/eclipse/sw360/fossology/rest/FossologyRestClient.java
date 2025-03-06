@@ -168,10 +168,12 @@ public class FossologyRestClient {
 
         FossologyResponse response = null;
         try {
+            log.debug("Attempting to upload file {} to Fossology at {}", filename, baseUrl + "uploads");
             response = restTemplate.postForObject(baseUrl + "uploads", requestEntity, FossologyResponse.class);
-            log.debug(filename + "uploaded: " + response.getCode() + " - " + response.getMessage() + " - " + response.getType());
+            log.debug(filename + " uploaded: " + response.getCode() + " - " + response.getMessage() + " - " + response.getType());
         } catch (RestClientException e) {
-            log.error("Error while trying to upload file {}.", e, filename);
+            log.error("Error while uploading file '{}' to Fossology. HTTP request failed: {}", filename, e.getMessage());
+            log.debug("Detailed upload error:", e);
             return -1;
         }
 
@@ -180,8 +182,11 @@ public class FossologyRestClient {
             try {
                 return Integer.valueOf(response.getMessage());
             } catch (NumberFormatException e) {
-                log.error("Fossology REST returned non integer uploadId: {}", e, response.getMessage());
+                log.error("Fossology REST returned non-integer uploadId: '{}'. Error: {}", response.getMessage(), e.getMessage());
+                log.debug("Full number format exception:", e);
             }
+        } else {
+            log.error("Fossology upload failed with status code {} and message: {}", response.getCode(), response.getMessage());
         }
 
         return -1;
@@ -208,7 +213,7 @@ public class FossologyRestClient {
         }
 
         if (uploadId < 0) {
-            log.error("Invalid arguments, uploadId must not be less thann 0!");
+            log.error("Invalid arguments, uploadId must not be less than 0!");
             return -1;
         }
 
@@ -247,14 +252,22 @@ public class FossologyRestClient {
 
         FossologyResponse response;
         try {
+            log.debug("Starting scan job for uploadId {} at {}", uploadId, baseUrl + "jobs");
             response = restTemplate.postForObject(baseUrl + "jobs", new HttpEntity<>(requestBody, headers),
                     FossologyResponse.class);
         } catch (RestClientException e) {
-            log.error("Error while trying to start scanning of upload {}.", e, uploadId);
+            log.error("Error while starting scanning job for upload {} in Fossology: {}", uploadId, e.getMessage());
+            log.debug("Detailed scanning error:", e);
             return -1;
         }
 
-        return HttpStatus.valueOf(response.getCode()).is2xxSuccessful() ? Integer.valueOf(response.getMessage()) : -1;
+        if (HttpStatus.valueOf(response.getCode()).is2xxSuccessful()) {
+            log.debug("Successfully started scan job for uploadId {}, received jobId {}", uploadId, response.getMessage());
+            return Integer.valueOf(response.getMessage());
+        } else {
+            log.error("Failed to start scan job for uploadId {}. Status: {}, Message: {}", uploadId, response.getCode(), response.getMessage());
+            return -1;
+        }
     }
 
     /**
@@ -275,7 +288,7 @@ public class FossologyRestClient {
         }
 
         if (jobId < 0) {
-            log.error("Invalid arguments, jobId must not be less thann 0!");
+            log.error("Invalid arguments, jobId must not be less than 0!");
             return responseMap;
         }
 
@@ -284,22 +297,38 @@ public class FossologyRestClient {
 
         ResponseEntity<JsonNode> response;
         try {
+            log.debug("Checking scan status for jobId {} at {}", jobId, baseUrl + "jobs/" + jobId);
             response = restTemplate.exchange(baseUrl + "jobs/" + jobId, HttpMethod.GET, new HttpEntity<>(headers),
                     JsonNode.class);
         } catch (RestClientException e) {
-            log.error("Error while trying to query status of scanning process with job id {}.", e, jobId);
+            log.error("Error while querying scan status for job id {}: {}", jobId, e.getMessage());
+            log.debug("Detailed scan status error:", e);
             return responseMap;
         }
 
-        String status = response.getBody().findValuesAsText("status").get(0);
-        int eta = response.getBody().get("eta").intValue();
-        responseMap.put("eta", eta+"");
-        responseMap.put("status", status);
+        JsonNode body = response.getBody();
+        if (body == null) {
+            log.error("Received empty response body when checking scan status for job id {}", jobId);
+            return responseMap;
+        }
+
+        try {
+            String status = body.findValuesAsText("status").get(0);
+            int eta = body.get("eta").intValue();
+            responseMap.put("eta", eta+"");
+            responseMap.put("status", status);
+            log.debug("Scan status for jobId {}: Status={}, ETA={}", jobId, status, eta);
+        } catch (Exception e) {
+            log.error("Error parsing scan status response for job id {}: {}", jobId, e.getMessage());
+            log.debug("Response body was: {}", body);
+            log.debug("Detailed parse error:", e);
+        }
+
         return responseMap;
     }
 
     /**
-     * Triggers a report generatoin of a former upload whose uploadId must be given.
+     * Triggers a report generation of a former upload whose uploadId must be given.
      * The report will have the format
      * {@link FossologyRestClient#PARAMETER_VALUE_REPORT_FORMAT_SPDX2}. Be aware
      * that the report can be generated even though a scan of the upload did not
@@ -319,7 +348,7 @@ public class FossologyRestClient {
         }
 
         if (uploadId < 0) {
-            log.error("Invalid arguments, uploadId must not be less thann 0!");
+            log.error("Invalid arguments, uploadId must not be less than 0!");
             return -1;
         }
 
@@ -330,17 +359,34 @@ public class FossologyRestClient {
 
         FossologyResponse response;
         try {
+            log.debug("Starting report generation for uploadId {} at {}", uploadId, baseUrl + "report");
             ResponseEntity<FossologyResponse> responseEntity = restTemplate.exchange(baseUrl + "report", HttpMethod.GET,
                     new HttpEntity<>(headers), FossologyResponse.class);
             response = responseEntity.getBody();
+            if (response == null) {
+                log.error("Received null response body when starting report generation for uploadId {}", uploadId);
+                return -1;
+            }
         } catch (RestClientException e) {
-            log.error("Error while trying to start report generation of upload {}.", e, uploadId);
+            log.error("Error while starting report generation for upload {}: {}", uploadId, e.getMessage());
+            log.debug("Detailed report generation error:", e);
             return -1;
         }
 
-        return HttpStatus.valueOf(response.getCode()).is2xxSuccessful()
-                ? Integer.valueOf(response.getMessage().substring(response.getMessage().lastIndexOf("/") + 1))
-                : -1;
+        if (HttpStatus.valueOf(response.getCode()).is2xxSuccessful()) {
+            String reportId = response.getMessage().substring(response.getMessage().lastIndexOf("/") + 1);
+            log.debug("Successfully started report generation for uploadId {}, received reportId {}", uploadId, reportId);
+            try {
+                return Integer.valueOf(reportId);
+            } catch (NumberFormatException e) {
+                log.error("Failed to parse reportId '{}' as integer: {}", reportId, e.getMessage());
+                return -1;
+            }
+        } else {
+            log.error("Failed to start report generation for uploadId {}. Status: {}, Message: {}",
+                    uploadId, response.getCode(), response.getMessage());
+            return -1;
+        }
     }
 
     /**
@@ -365,7 +411,7 @@ public class FossologyRestClient {
         }
 
         if (reportId < 0) {
-            log.error("Invalid arguments, reportId must not be less thann 0!");
+            log.error("Invalid arguments, reportId must not be less than 0!");
             return null;
         }
 
@@ -373,16 +419,38 @@ public class FossologyRestClient {
         headers.set("Authorization", "Bearer " + token);
 
         try {
+            log.debug("Downloading report for reportId {} from {}", reportId, baseUrl + "report/" + reportId);
             ResponseEntity<Resource> responseEntity = restTemplate.exchange(baseUrl + "report/" + reportId,
                     HttpMethod.GET, new HttpEntity<>(headers), Resource.class);
 
-            return responseEntity.getBody().getInputStream();
-        } catch (RestClientException | IOException e) {
+            if (responseEntity.getStatusCode().is2xxSuccessful()) {
+                Resource reportResource = responseEntity.getBody();
+                if (reportResource == null) {
+                    log.error("Received null resource when downloading report for reportId {}", reportId);
+                    return null;
+                }
+                log.debug("Successfully downloaded report for reportId {}", reportId);
+                return reportResource.getInputStream();
+            } else {
+                log.error("Failed to download report for reportId {}. HTTP status: {}",
+                        reportId, responseEntity.getStatusCodeValue());
+                return null;
+            }
+        } catch (RestClientException e) {
             // we could distinguish further since fossology would send a 503 with
             // Retry-After header in seconds if the report isn't ready yet. But since our
             // workflow is currently completely pull based there would not be a huge
             // advantage to use this and it would just complicate things right now.
-            log.error("Error while trying to download report with id {}.", e, reportId);
+            if (e.getMessage().contains("503")) {
+                log.info("Report for reportId {} is not ready yet (Status 503). Will retry later.", reportId);
+            } else {
+                log.error("Error while downloading report for reportId {}: {}", reportId, e.getMessage());
+                log.debug("Detailed report download error:", e);
+            }
+            return null;
+        } catch (IOException e) {
+            log.error("I/O error when processing downloaded report for reportId {}: {}", reportId, e.getMessage());
+            log.debug("Detailed I/O error:", e);
             return null;
         }
     }
@@ -404,7 +472,7 @@ public class FossologyRestClient {
         }
 
         if (uploadId < 0) {
-            log.error("Invalid arguments, uploadId must not be less thann 0!");
+            log.error("Invalid arguments, uploadId must not be less than 0!");
             return responseMap;
         }
 
@@ -412,24 +480,43 @@ public class FossologyRestClient {
         headers.set("Authorization", "Bearer " + token);
         JsonNode response;
         try {
+            log.debug("Checking unpack status for uploadId {} at {}", uploadId, baseUrl + "jobs?upload=" + uploadId);
             JsonNode[] responseArr = restTemplate.exchange(baseUrl + "jobs?upload=" + uploadId, HttpMethod.GET,
                     new HttpEntity<>(headers), JsonNode[].class).getBody();
+
+            if (responseArr == null || responseArr.length == 0) {
+                log.error("Received empty response when checking unpack status for uploadId {}", uploadId);
+                return responseMap;
+            }
+
             String uploadIdStr = "" + uploadId;
             List<JsonNode> uploadStatus = Arrays.stream(responseArr)
-                    .filter(node -> uploadIdStr.equals(node.findValuesAsText("uploadId").get(0)))
+                    .filter(node -> {
+                        List<String> uploadIds = node.findValuesAsText("uploadId");
+                        return !uploadIds.isEmpty() && uploadIdStr.equals(uploadIds.get(0));
+                    })
                     .collect(Collectors.toList());
+
             if (!uploadStatus.isEmpty()) {
                 response = uploadStatus.get(0);
-            } else
-                return responseMap;
+
+                String status = response.findValuesAsText("status").get(0);
+                responseMap.put("status", status);
+                log.debug("Unpack status for uploadId {}: {}", uploadId, status);
+            } else {
+                log.warn("No status information found for uploadId {} in Fossology response", uploadId);
+            }
+
+            return responseMap;
         } catch (RestClientException e) {
-            log.error("Error: {} while trying to query status of scanning process with jobId: {}.", e, uploadId);
+            log.error("Error while checking unpack status for uploadId {}: {}", uploadId, e.getMessage());
+            log.debug("Detailed unpack status error:", e);
+            return responseMap;
+        } catch (Exception e) {
+            log.error("Unexpected error while processing unpack status for uploadId {}: {}", uploadId, e.getMessage());
+            log.debug("Detailed error:", e);
             return responseMap;
         }
-
-        String status = response.findValuesAsText("status").get(0);
-        responseMap.put("status", status);
-        return responseMap;
     }
 
     public int getFolderId(String uploadId) {
@@ -445,16 +532,29 @@ public class FossologyRestClient {
         headers.set("Authorization", "Bearer " + token);
 
         try {
+            log.debug("Getting folder details for uploadId {} from {}", uploadId, baseUrl + "uploads/" + uploadId);
             ResponseEntity<JsonNode> response = restTemplate.exchange(baseUrl + "uploads/" + uploadId,
                     HttpMethod.GET, new HttpEntity<>(headers), JsonNode.class);
+
             JsonNode responseBody = response.getBody();
-            if (!responseBody.has("folderid")) {
+            if (responseBody == null) {
+                log.error("Received null response body when getting folder details for uploadId {}", uploadId);
                 return -1;
             }
+
+            if (!responseBody.has("folderid")) {
+                log.error("Response for uploadId {} does not contain 'folderid' field", uploadId);
+                log.debug("Response body was: {}", responseBody);
+                return -1;
+            }
+
             JsonNode folderId = responseBody.get("folderid");
-            return folderId.asInt();
+            int result = folderId.asInt();
+            log.debug("Found folderId {} for uploadId {}", result, uploadId);
+            return result;
         } catch (RestClientException e) {
-            log.error("Error while getting the folder details for upload id.", e, uploadId);
+            log.error("Error while getting folder details for uploadId {}: {}", uploadId, e.getMessage());
+            log.debug("Detailed error:", e);
             return -1;
         }
     }
@@ -482,14 +582,22 @@ public class FossologyRestClient {
         HttpEntity<List<Map<String, String>>> requestEntity = new HttpEntity<>(body, headers);
 
         try {
+            log.debug("Searching for file with SHA1 {} in Fossology at {}", shaValue, baseUrl + "filesearch");
             ResponseEntity<JsonNode> response = restTemplate.exchange(baseUrl + "filesearch",
                     HttpMethod.POST, requestEntity, JsonNode.class);
-            JsonNode responseBody = response.getBody();
-            JsonNode firstElement = responseBody.get(0);
 
-            if (!firstElement.has("uploads")) {
+            JsonNode responseBody = response.getBody();
+            if (responseBody == null || !responseBody.isArray() || responseBody.size() == 0) {
+                log.error("Invalid or empty response when searching for file with SHA1 {}", shaValue);
                 return -1;
             }
+
+            JsonNode firstElement = responseBody.get(0);
+            if (!firstElement.has("uploads")) {
+                log.warn("File with SHA1 {} not found in Fossology", shaValue);
+                return -1;
+            }
+
             JsonNode uploads = firstElement.get("uploads");
             List<String> uploadIdList = new ArrayList<>();
             if (uploads != null && uploads.isArray()) {
@@ -497,18 +605,36 @@ public class FossologyRestClient {
                     uploadIdList.add(upload.asText());
                 }
                 uploadIdList.sort(Collections.reverseOrder());
+                log.debug("Found {} upload(s) for file with SHA1 {}", uploadIdList.size(), shaValue);
+            } else {
+                log.warn("No uploads found for file with SHA1 {}", shaValue);
+                return -1;
             }
 
             for (String uploadId : uploadIdList) {
                 int id = getFolderId(uploadId);
                 if (id != -1 && id == Integer.parseInt(folderId)) {
                     lastUploadedValue = Integer.parseInt(uploadId);
+                    log.debug("Found existing upload (id={}) in target folder for file {}", lastUploadedValue, fileName);
                     break;
                 }
             }
+
+            if (lastUploadedValue == -1) {
+                log.info("No existing upload found in target folder for file {} with SHA1 {}", fileName, shaValue);
+            }
+
             return lastUploadedValue;
         } catch (RestClientException e) {
-            log.error("Error while uploading file .", e, fileName);
+            log.error("Error while searching for file {} with SHA1 {}: {}", fileName, shaValue, e.getMessage());
+            log.debug("Detailed search error:", e);
+            return -1;
+        } catch (NumberFormatException e) {
+            log.error("Error parsing folder ID or upload ID: {}", e.getMessage());
+            return -1;
+        } catch (Exception e) {
+            log.error("Unexpected error while searching for file {}: {}", fileName, e.getMessage());
+            log.debug("Detailed error:", e);
             return -1;
         }
     }
