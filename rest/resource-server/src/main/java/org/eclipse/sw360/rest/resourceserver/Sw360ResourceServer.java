@@ -137,11 +137,6 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     }
 
     @Bean
-    public ApiTokenAuthenticationFilter authFilterBean() {
-        return new ApiTokenAuthenticationFilter();
-    }
-
-    @Bean
     public RepositoryRestConfigurer repositoryRestConfigurer() {
         return new RepositoryRestConfigurer() {
             @Override
