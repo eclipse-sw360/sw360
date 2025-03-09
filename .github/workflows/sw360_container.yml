@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Copyright Helio Chissini de Castro 2022.
+# Copyright Helio Chissini de Castro 2022-2025
 # Copyright Cariad SE 2024
 # Part of the SW360 Project.
 #
@@ -17,13 +17,6 @@ on:
   schedule:
     - cron: "0 0 * * *" # Midnight
   workflow_dispatch:
-    inputs:
-      invalidate-cache:
-        description: "Build all images disregarding exists same version"
-        required: false
-      debug:
-        description: "Debug docker build"
-        required: false
   push:
     tags:
       - "sw360-*"
@@ -61,68 +54,11 @@ jobs:
       - name: Get revision from pom.xml
         id: pom_version
         run: |
-          echo "SW360_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> "$GITHUB_ENV"
-
-  binary_image:
-    name: SW360 Binary
-    needs: [sw360_version]
-    runs-on: ubuntu-24.04
-    permissions:
-      packages: write
-
-    env:
-      SW360_VERSION: ${{ needs.sw360_version.outputs.sw360_version }}
-
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
-        with:
-          egress-policy: audit
-
-      - name: Checkout main repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-
-      - name: Login to GitHub container registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Docker build
-        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
-
-      - name: Extract components metadata (tags, labels)
-        id: meta
-        uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96 # v5.6.1
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/thrift
-          tags: |
-            type=schedule,pattern={{date 'YYYYMMDD'}}
-            type=schedule,pattern=snapshot
-            type=semver,pattern={{ env.SW360_VERSION }}
-            type=raw,value=${{ env.SW360_VERSION }}
-            type=ref,event=tag
-          labels: sw360,thrift
-
-      - name: Build image
-        uses: docker/build-push-action@ca877d9245402d1537745e0e356eab47c3520991 # v6.13.0
-        with:
-          context: .
-          push: false
-          load: true
-          tags: |
-            ${{ steps.meta.outputs.tags }}
-          labels: |
-            ${{ steps.meta.outputs.labels }}
-          provenance: mode=max
-          sbom: true
-          secret-files: |
-            "couchdb=./config/couchdb/default_secrets"
+          echo "SW360_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> "$GITHUB_OUTPUT"
 
   sw360_image:
     name: SW360 Runtime image
-    needs: [sw360_version, binary_image]
+    needs: [sw360_version]
     runs-on: ubuntu-24.04
     permissions:
       packages: write
@@ -152,7 +88,7 @@ jobs:
         uses: docker/setup-buildx-action@f7ce87c1d6bead3e36075b2ce75da1f6cc28aaca # v3.9.0
 
       - name: Extract components metadata (tags, labels) runtime image
-        id: meta_runtime
+        id: meta
         uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96 # v5.6.1
         with:
           images: |
@@ -160,6 +96,7 @@ jobs:
           tags: |
             type=schedule,pattern={{date 'YYYYMMDD'}}
             type=schedule,pattern=nightly
+            type=semver,pattern={{version}}
             type=raw,value=${{ env.SW360_VERSION }}
             type=sha,enable=true,prefix=sha-,format=short
             type=ref,event=tag
@@ -170,9 +107,10 @@ jobs:
           context: .
           target: sw360
           push: true
-          tags: ${{ steps.meta_runtime.outputs.tags }}
-          labels: ${{ steps.meta_runtime.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           provenance: mode=max
           sbom: true
-          build-contexts: |
-            binaries=docker-image://${{ env.REGISTRY }}/${{ github.repository }}/binaries:${{ env.SW360_VERSION }}
+          secret-files: |
+            "couchdb=./config/couchdb/default_secrets"

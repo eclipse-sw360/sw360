@@ -2,7 +2,7 @@
 
 # -----------------------------------------------------------------------------
 # Copyright BMW CarIT GmbH 2021
-# Copyright Helio Chissini de Castro 2022-2023
+# Copyright Helio Chissini de Castro 2022-2025
 #
 # This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0
