@@ -29,7 +29,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Validate the --cvesearch-host value is a URL
-if [ ! -z "$cvesearch_host" ]; then
+if [ -n "$cvesearch_host" ]; then
     if [[ $cvesearch_host =~ ^https?:// ]]; then
         sed -i "s@cvesearch.host=.*@cvesearch.host=$cvesearch_host@g"\
         ./backend/src/src-cvesearch/src/main/resources/cvesearch.properties
@@ -40,16 +40,16 @@ fi
 
 set -- "${other_args[@]}"  # restore other arguments
 
-
 set -e -o pipefail
-
-# Source the version
-# shellcheck disable=SC1091
-. .versions
 
 DOCKER_IMAGE_ROOT="${DOCKER_IMAGE_ROOT:-ghcr.io/eclipse-sw360}"
 SECRETS=${SECRETS:-"$PWD/config/couchdb/default_secrets"}
-export DOCKER_PLATFORM DOCKER_IMAGE_ROOT GIT_REVISION SECRETS
+VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+GIT_REV=$(git rev-parse --short=8 HEAD)
+SW360_VERSION="$VERSION-$GIT_REV"
+export DOCKER_PLATFORM DOCKER_IMAGE_ROOT GIT_REVISION SECRETS SW360_VERSION
+
+echo "Building docker image for SW360 ${SW360_VERSION}"
 
 # ---------------------------
 # image_build function
@@ -75,14 +75,8 @@ image_build() {
     "$@" .
 }
 
-image_build localthrift sw360/thrift "$THRIFT_VERSION" --build-arg THRIFT_VERSION="$THRIFT_VERSION" "$@"
-
-image_build sw360test sw360/test "$SW360_VERSION" "$@" \
---build-context "localthrift=docker-image://${DOCKER_IMAGE_ROOT}/sw360/thrift:$THRIFT_VERSION" "$@"
-
-image_build binaries sw360/binaries "$SW360_VERSION" --build-arg MAVEN_VERSION="$MAVEN_VERSION" \
---secret id=couchdb,src="$SECRETS" \
---build-context "localthrift=docker-image://${DOCKER_IMAGE_ROOT}/sw360/thrift:$THRIFT_VERSION" "$@"
+image_build binaries sw360/binaries "$SW360_VERSION" \
+--secret id=couchdb,src="$SECRETS"
 
 image_build sw360 sw360 "$SW360_VERSION" \
 --build-context "binaries=docker-image://${DOCKER_IMAGE_ROOT}/sw360/binaries:latest" "$@"

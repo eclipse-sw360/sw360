@@ -40,6 +40,7 @@ done <<< "$(git ls-files \
     | grep -v 'id_rsa' \
     | grep -v '.versions' \
     | grep -v '.github/*' \
+    | grep -v 'third-party/thrift/*' \
     | grep -v 'scripts/lint/checkstyle.xml' \
     | grep -v 'scripts/lint/google_checks.xml' \
     | grep -v 'sw360.code-workspace' \

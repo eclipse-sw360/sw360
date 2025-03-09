@@ -1,0 +1,91 @@
+# -----------------------------------------------------------------------------
+# Copyright Helio Chissini de Castro 2022.
+# Copyright Cariad SE 2024
+# Part of the SW360 Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+# -----------------------------------------------------------------------------
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "third-party/thrift/Dockerfile"
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  THRIFT_VERSION: "0.20.0" # Will be override but post step. Kept it here for minimal version
+
+jobs:
+  thrift_image:
+    name: SW360 Thrift Container
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout main repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Login to GitHub container registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
+
+      - name: Set up Docker build
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
+
+      - name: Get assigned Thrift version
+        shell: bash
+        run: |
+          THRIFT_VERSION="$(cat third-party/thrift/version)"
+          echo "THRIFT_VERSION=$THRIFT_VERSION" >> $GITHUB_ENV
+          echo "Thrift is set to version $THRIFT_VERSION"
+
+      - name: Extract components metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96 # v5.6.1
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/thrift
+          tags: |
+            type=schedule,pattern={{date 'YYYYMMDD'}}
+            type=schedule,pattern=snapshot
+            type=semver,pattern={{version}}
+            type=raw,value=${{ env.THRIFT_VERSION }}
+            type=ref,event=tag
+          labels: sw360,thrift
+
+      - name: Build image
+        uses: docker/build-push-action@ca877d9245402d1537745e0e356eab47c3520991 # v6.13.0
+        with:
+          context: .
+          platforms: "linux/amd64,linux/arm64"
+          push: true
+          load: false
+          file: third-party/thrift/Dockerfile
+          build-args: |
+            THRIFT_VERSION=${{ env.THRIFT_VERSION }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
