@@ -20,6 +20,7 @@ on:
 env:
   COUCHDB_USER: sw360
   COUCHDB_PASSWORD: sw360fossie
+  THRIFT_VERSION: "0.20.0"
 
 permissions:
   contents: read
@@ -42,10 +43,6 @@ jobs:
         run: |
           chmod +x .github/testForLicenseHeaders.sh
           bash .github/testForLicenseHeaders.sh
-
-      - name: Set environment variables
-        run: |
-          cat .versions >> $GITHUB_ENV
 
       - name: Setup CouchDB
         run: scripts/startCouchdbForTests.sh
@@ -79,8 +76,8 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq build-essential libevent-dev libtool flex bison pkg-config libssl-dev git cmake
-          chmod +x scripts/install-thrift.sh
-          DESTDIR=${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }} scripts/install-thrift.sh
+          chmod +x third-party/thrift/install-thrift.sh
+          DESTDIR=${{ github.workspace }}/dist/thrift-${{ env.THRIFT_VERSION }} third-party/thrift/install-thrift.sh
 
       - name: Build SW360
         run: |
