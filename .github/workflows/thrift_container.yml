@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Copyright Helio Chissini de Castro 2022.
+# Copyright Helio Chissini de Castro 2022-2025
 # Copyright Cariad SE 2024
 # Part of the SW360 Project.
 #
@@ -10,6 +10,8 @@
 # SPDX-License-Identifier: EPL-2.0
 #
 # -----------------------------------------------------------------------------
+
+name: SW360 Thrift Resource Container
 
 on:
   workflow_dispatch:
@@ -26,7 +28,7 @@ env:
 
 jobs:
   thrift_image:
-    name: SW360 Thrift Container
+    name: Thrift Container
     runs-on: ubuntu-24.04
     permissions:
       packages: write

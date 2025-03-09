@@ -1,5 +1,6 @@
 ﻿# -----------------------------------------------------------------------------
 # Copyright Siemens AG, 2021.
+# Copyright Helio Chissini de Castro 2022-2025
 # Part of the SW360 Portal Project.
 #
 # This program and the accompanying materials are made
@@ -14,7 +15,14 @@ name: SW360 Build and Test
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
+    paths-ignore:
+      - third-party/**
+      - Dockerfile
+      - docker_build.sh
+      - .github/sw360_container.yml
+      - .github/thrift_container.yml
   workflow_dispatch:
 
 env:
