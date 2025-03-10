@@ -150,6 +150,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(RestrictedResource.class, Sw360Module.RestrictedResourceMixin.class);
             setMixInAnnotation(RestApiToken.class, Sw360Module.RestApiTokenMixin.class);
             setMixInAnnotation(ProjectLink.class, Sw360Module.ProjectLinkMixin.class);
+            setMixInAnnotation(BulkOperationNode.class, Sw360Module.BulkOperationNodeMixin.class);
 
             // Make spring doc aware of the mixin(s)
             SpringDocUtils.getConfig()
@@ -204,6 +205,7 @@ public class JacksonCustomizations {
                     .replaceWithClass(RestrictedResource.class, RestrictedResourceMixin.class)
                     .replaceWithClass(RestApiToken.class, Sw360Module.RestApiTokenMixin.class)
                     .replaceWithClass(ProjectLink.class, ProjectLinkMixin.class)
+                    .replaceWithClass(BulkOperationNode.class, BulkOperationNodeMixin.class)
                     .replaceWithClass(SPDXDocument.class, Sw360Module.SPDXDocumentMixin.class)
                     .replaceWithClass(DocumentCreationInformation.class, Sw360Module.DocumentCreationInformationMixin.class)
                     .replaceWithClass(PackageInformation.class, Sw360Module.PackageInformationMixin.class)
@@ -2606,5 +2608,22 @@ public class JacksonCustomizations {
                 "setTreeLevel",
         })
         abstract static class ProjectLinkMixin extends ProjectLink {}
+
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties(value = {
+                "setId",
+                "setName",
+                "setVersion",
+                "setType",
+                "setParentId",
+                "setChildList",
+                "childListSize",
+                "childListIterator",
+                "setState",
+                "setAdditionalData",
+                "additionalDataSize"
+        })
+        static abstract class BulkOperationNodeMixin extends BulkOperationNode {
+        }
     }
 }

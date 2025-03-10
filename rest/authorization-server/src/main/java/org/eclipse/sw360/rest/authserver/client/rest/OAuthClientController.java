@@ -127,7 +127,7 @@ public class OAuthClientController {
     private void updateClientEntityFromResource(OAuthClientEntity clientEntity, OAuthClientResource clientResource) {
         // updateable properties (clientId and clientSecret cannot be changed)
         clientEntity.setDescription(clientResource.getDescription());
-        clientEntity.setAuthoritiesAsStrings(clientResource.getAuthorities());
+        clientEntity.setAuthorities(clientResource.getAuthorities());
         clientEntity.setScope(clientResource.getScope());
         clientEntity.setAccessTokenValiditySeconds(clientResource.getAccessTokenValidity());
         clientEntity.setRefreshTokenValiditySeconds(clientResource.getRefreshTokenValidity());

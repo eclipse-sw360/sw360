@@ -64,6 +64,7 @@ import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.DocumentCreationInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
+import org.eclipse.sw360.datahandler.thrift.components.BulkOperationNode;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelation;
@@ -1747,4 +1748,24 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
         return release;
     }
+    
+    @PreAuthorize("hasAuthority('WRITE')")
+    @Operation(
+            summary = "Bulk delete releases.",
+            description = "Bulk delete existing releases.",
+            tags = {"Releases"}
+    )
+    @DeleteMapping(value = RELEASES_URL + "/{id}/bulkDelete")
+    public ResponseEntity<BulkOperationNode> bulkDeleteReleases(
+            @Parameter(description = "The release id to be bulk-deleted.")
+            @PathVariable("id") String id,
+            @Parameter(description = "isPreview flag for bulk deletion.")
+            @RequestParam(value = "isPreview", defaultValue="false", required = false) boolean isPreview
+    ) throws TException {
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        BulkOperationNode result = releaseService.deleteBulkRelease(id, user, isPreview);
+
+        return new ResponseEntity<BulkOperationNode>(result, HttpStatus.OK);
+    }
+
 }

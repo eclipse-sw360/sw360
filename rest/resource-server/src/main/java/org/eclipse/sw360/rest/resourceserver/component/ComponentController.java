@@ -41,6 +41,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
@@ -95,6 +96,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
+import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -108,6 +110,8 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     private static final Logger log = LogManager.getLogger(ComponentController.class);
     private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST = ImmutableMap.<String, String>builder()
             .put("message", "Moderation request is created").build();
+    private static final ImmutableMap<String, String> RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT = ImmutableMap.<String, String>builder()
+            .put("message", "Unauthorized user or empty commit message passed.").build();
 
     @NonNull
     private final Sw360ComponentService componentService;
@@ -383,12 +387,20 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @Parameter(description = "The id of the component to be updated.")
             @PathVariable("id") String id,
             @Parameter(description = "The component with updated fields.")
-            @RequestBody ComponentDTO updateComponentDto
+            @RequestBody ComponentDTO updateComponentDto,
+            @Parameter(description = "Comment message.")
+            @RequestParam(value = "comment", required = false) String comment
     ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component sw360Component = componentService.getComponentForUserById(id, user);
+        user.setCommentMadeDuringModerationRequest(comment);
+        if (!restControllerHelper.isWriteActionAllowed(sw360Component, user)
+                && (comment == null || comment.isBlank())) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.BAD_REQUEST);
+        }
         if (updateComponentDto.getAttachments() != null) {
-            updateComponentDto.getAttachments().forEach(attachment -> wrapSW360Exception(() -> this.attachmentService.fillCheckedAttachmentData(attachment, user)));
+            updateComponentDto.getAttachments().forEach(attachment -> wrapSW360Exception(
+                    () -> this.attachmentService.fillCheckedAttachmentData(attachment, user)));
         }
         sw360Component = this.restControllerHelper.updateComponent(sw360Component, updateComponentDto);
         RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, user);
@@ -516,18 +528,27 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @Parameter(description = "The id of the attachment.")
             @PathVariable("attachmentId") String attachmentId,
             @Parameter(description = "The attachment info to be updated.")
-            @RequestBody Attachment attachmentData
+            @RequestBody Attachment attachmentData,
+            @Parameter(description = "Comment message.")
+            @RequestParam(value = "comment", required = false) String comment
+
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component sw360Component = componentService.getComponentForUserById(id, sw360User);
         Set<Attachment> attachments = sw360Component.getAttachments();
-        Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId, sw360User);
+        sw360User.setCommentMadeDuringModerationRequest(comment);
+        Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId,
+                sw360User);
         RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, sw360User);
-        if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+        if (!restControllerHelper.isWriteActionAllowed(sw360Component, sw360User) && comment == null) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.BAD_REQUEST);
+        } else {
+            if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
+                return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
+            }
+            EntityModel<Attachment> attachmentResource = EntityModel.of(updatedAttachment);
+            return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
         }
-        EntityModel<Attachment> attachmentResource = EntityModel.of(updatedAttachment);
-        return new ResponseEntity<>(attachmentResource, HttpStatus.OK);
     }
 
     @Operation(
@@ -563,10 +584,16 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @Parameter(description = "The file to be uploaded.")
             @RequestPart("file") MultipartFile file,
             @Parameter(description = "The attachment info to be created.")
-            @RequestPart("attachment") Attachment newAttachment
+            @RequestPart("attachment") Attachment newAttachment,
+            @Parameter(description = "Comment message.")
+            @RequestParam(value = "comment", required = false) String comment
     ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Component component = componentService.getComponentForUserById(componentId, sw360User);
+        sw360User.setCommentMadeDuringModerationRequest(comment);
+        if (!restControllerHelper.isWriteActionAllowed(component, sw360User) && comment == null) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.BAD_REQUEST);
+        }
         Attachment attachment = null;
         try {
             attachment = attachmentService.uploadAttachment(file, newAttachment, sw360User);
@@ -641,10 +668,15 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
     @DeleteMapping(COMPONENTS_URL + "/{componentId}/attachments/{attachmentIds}")
     public ResponseEntity<HalResource<Component>> deleteAttachmentsFromComponent(
             @PathVariable("componentId") String componentId,
-            @PathVariable("attachmentIds") List<String> attachmentIds) throws TException {
+            @PathVariable("attachmentIds") List<String> attachmentIds,
+            @Parameter(description = "Comment message.")
+            @RequestParam(value = "comment", required = false) String comment) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component component = componentService.getComponentForUserById(componentId, user);
-
+        user.setCommentMadeDuringModerationRequest(comment);
+        if (!restControllerHelper.isWriteActionAllowed(component, user) && comment == null) {
+            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.BAD_REQUEST);
+        }
         Set<Attachment> attachmentsToDelete = attachmentService.filterAttachmentsToRemove(Source.componentId(componentId),
                 component.getAttachments(), attachmentIds);
         if (attachmentsToDelete.isEmpty()) {

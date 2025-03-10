@@ -1,0 +1,116 @@
+# -----------------------------------------------------------------------------
+# Copyright Helio Chissini de Castro 2022-2025
+# Copyright Cariad SE 2024
+# Part of the SW360 Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+# -----------------------------------------------------------------------------
+
+name: SW360 Container
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Midnight
+  workflow_dispatch:
+  push:
+    tags:
+      - "sw360-*"
+    paths-ignore:
+      - "**.md"
+
+env:
+  REGISTRY: ghcr.io
+
+permissions:
+  contents: read
+
+jobs:
+  sw360_version:
+    name: SW360 Version
+    runs-on: ubuntu-24.04
+    outputs:
+      sw360_version: ${{ steps.pom_version.outputs.SW360_VERSION }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout main repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: "21"
+          cache: "maven"
+          distribution: "temurin"
+
+      - name: Get revision from pom.xml
+        id: pom_version
+        run: |
+          echo "SW360_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> "$GITHUB_OUTPUT"
+
+  sw360_image:
+    name: SW360 Runtime image
+    needs: [sw360_version]
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    env:
+      SW360_VERSION: ${{ needs.sw360_version.outputs.sw360_version }}
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout main repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Extract components metadata (tags, labels) runtime image
+        id: meta
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ github.repository }}
+          tags: |
+            type=schedule,pattern={{date 'YYYYMMDD'}}
+            type=schedule,pattern=nightly
+            type=semver,pattern={{version}}
+            type=raw,value=${{ env.SW360_VERSION }}
+            type=sha,enable=true,prefix=sha-,format=short
+            type=ref,event=tag
+
+      - name: Assembly image
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: .
+          target: sw360
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+          secret-files: |
+            "couchdb=./config/couchdb/default_secrets"

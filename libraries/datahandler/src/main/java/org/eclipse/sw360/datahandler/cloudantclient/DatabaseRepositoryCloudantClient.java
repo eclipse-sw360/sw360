@@ -9,6 +9,8 @@
  */
 package org.eclipse.sw360.datahandler.cloudantclient;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
@@ -370,6 +372,15 @@ public class DatabaseRepositoryCloudantClient<T> {
             TFieldIdEnum id = tbase.fieldForId(1);
             String docId = (String) tbase.getFieldValue(id);
             return connector.deleteById(docId);
+        } else if (doc.getClass().getSimpleName().equals("OAuthClientEntity")) {
+            Class<?> clazz = doc.getClass();
+            try {
+                Method getIdMethod = clazz.getMethod("getId");
+                String id = (String) getIdMethod.invoke(doc);
+                return connector.deleteById(id);
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                log.error(e.getMessage());
+            }
         }
         return connector.remove(doc);
     }

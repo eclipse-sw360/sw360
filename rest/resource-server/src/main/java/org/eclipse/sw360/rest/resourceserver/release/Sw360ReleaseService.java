@@ -821,6 +821,11 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
         return deleteStatus;
     }
+    
+    public BulkOperationNode deleteBulkRelease(String releaseId,  User sw360User, boolean isPreview) throws TException {
+        ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
+        return sw360ComponentClient.deleteBulkRelease(releaseId, sw360User, isPreview);
+    }
 
     public Set<Project> getProjectsByRelease(String releaseId, User sw360User) throws TException {
         return projectService.getProjectsByRelease(releaseId, sw360User);
