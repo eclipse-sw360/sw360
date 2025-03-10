@@ -53,6 +53,10 @@ enum ProjectState {
     ACTIVE = 0,
     PHASE_OUT = 1,
     UNKNOWN = 2,
+    SVM_ONLY = 3,
+    PRIVATE = 4,
+    UNDER_DEVELOPMENT = 5,
+    RELEASED = 6
 }
 
 enum ProjectType {
