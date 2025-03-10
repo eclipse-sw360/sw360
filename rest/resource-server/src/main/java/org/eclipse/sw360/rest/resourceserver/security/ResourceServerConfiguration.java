@@ -22,10 +22,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -36,16 +36,18 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 
+import java.util.List;
+
 @Profile("!SECURITY_MOCK")
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class ResourceServerConfiguration {
 
-    private final Logger log = LogManager.getLogger(this.getClass());
-
     @Autowired
-    private ApiTokenAuthenticationFilter filter;
+    SimpleAuthenticationEntryPoint saep;
+
+    private final Logger log = LogManager.getLogger(this.getClass());
 
     @Autowired
     Sw360JWTAccessTokenConverter sw360JWTAccessTokenConverter;
@@ -67,12 +69,25 @@ public class ResourceServerConfiguration {
     }
 
     @Bean
-    @Order(1)
-    public SecurityFilterChain securityFilterChainRS1(HttpSecurity http) throws Exception {
-        SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
-        return http.authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter)
-                        .jwkSetUri(issuerUri)))
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+        ApiTokenAuthenticationFilter apiTokenAuthenticationFilter = new ApiTokenAuthenticationFilter(authenticationManager, saep);
+        return http
+                .addFilterBefore(apiTokenAuthenticationFilter, BasicAuthenticationFilter.class)
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
+                        jwt.jwtAuthenticationConverter(sw360JWTAccessTokenConverter)
+                                .jwkSetUri(issuerUri)).authenticationEntryPoint(saep))
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HttpMethod.GET, "/api/health").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority("WRITE");
+                    auth.requestMatchers(HttpMethod.GET, "/api").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/reports/download").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/**").hasAuthority("READ");
+                    auth.requestMatchers(HttpMethod.POST, "/api/**").hasAuthority("WRITE");
+                    auth.requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority("WRITE");
+                    auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE");
+                    auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE");
+                    auth.requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll();
+                })
                 .httpBasic(Customizer.withDefaults())
                 .exceptionHandling(x -> x.authenticationEntryPoint(saep))
                 .headers(headers -> headers.xssProtection(xXssConfig -> xXssConfig.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
@@ -80,28 +95,10 @@ public class ResourceServerConfiguration {
                 .csrf(csrf -> csrf.disable()).build();
     }
 
+
     @Bean
-    @Order(2)
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        SimpleAuthenticationEntryPoint saep = new SimpleAuthenticationEntryPoint();
-        return http.addFilterBefore(filter, BasicAuthenticationFilter.class).authorizeHttpRequests(auth -> {
-            auth.requestMatchers(HttpMethod.GET, "/api/health").permitAll();
-            auth.requestMatchers(HttpMethod.GET, "/api/info").hasAuthority("WRITE");
-            auth.requestMatchers(HttpMethod.GET, "/api").permitAll();
-            auth.requestMatchers(HttpMethod.GET, "/api/reports/download").permitAll();
-            auth.requestMatchers(HttpMethod.GET, "/api/**").hasAuthority("READ");
-            auth.requestMatchers(HttpMethod.POST, "/api/**").hasAuthority("WRITE");
-            auth.requestMatchers(HttpMethod.PUT, "/api/**").hasAuthority("WRITE");
-            auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE");
-            auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE");
-            auth.requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll();
-        }).csrf(csrf -> csrf.disable()).exceptionHandling(x -> x.authenticationEntryPoint(saep)).httpBasic(Customizer.withDefaults()).build();
-
-    }
-
-    @Autowired
-    public void authenticationManagerBuilder(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
-        authenticationManagerBuilder.authenticationProvider(authProvider).authenticationProvider(sw360UserAuthenticationProvider);
+    AuthenticationManager authenticationManager() throws Exception {
+        return new ProviderManager(List.of(authProvider, sw360UserAuthenticationProvider));
     }
 
     @Bean
