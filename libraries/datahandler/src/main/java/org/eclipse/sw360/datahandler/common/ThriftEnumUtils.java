@@ -249,7 +249,11 @@ public class ThriftEnumUtils {
     private static final ImmutableMap<ProjectState, String> MAP_PROJECT_STATE_STRING = ImmutableMap.of(
             ProjectState.ACTIVE, "Active" ,
             ProjectState.PHASE_OUT, "Phase out" ,
-            ProjectState.UNKNOWN, "Unknown");
+            ProjectState.UNKNOWN, "Unknown",
+            ProjectState.SVM_ONLY, "SVM Only",
+            ProjectState.PRIVATE, "Private",
+            ProjectState.UNDER_DEVELOPMENT, "Under Development",
+            ProjectState.RELEASED, "Released");
 
     private static final ImmutableMap<ProjectClearingState, String> MAP_PROJECT_CLEARING_STATE_STRING = ImmutableMap.of(
             ProjectClearingState.OPEN, "Open",
