@@ -146,7 +146,7 @@
     <plexus-utils.version>4.0.2</plexus-utils.version>
     <poi.version>5.4.0</poi.version>
     <project-lombok.version>1.18.36</project-lombok.version>
-    <slf4j.version>2.0.16</slf4j.version>
+    <slf4j.version>2.0.17</slf4j.version>
     <spotless.version>2.29.0</spotless.version>
     <spring-boot.version>3.3.3</spring-boot.version>
     <spring-restdocs.version>3.0.1</spring-restdocs.version>
