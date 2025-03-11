@@ -1,6 +1,6 @@
 /*
- * Copyright COPYRIGHT HOLDER, 2017.
- * Copyright NEXT COPYRIGHT HOLDER, 2017.
+ * Copyright Ankush1oo8, 2025.
+ * Copyright NEXT Ankush1oo8, 2025.
  * Part of the SW360 Portal Project.
  *
  * SPDX-License-Identifier: EPL-2.0
