@@ -167,7 +167,7 @@ public class SW360SPDXDocumentService {
 
     public String addSPDX(Release release, User user) throws TException {
         String spdxId = addSPDXDocument(release, user);
-        if (CommonUtils.isNotNullEmptyOrWhitespace(spdxId)) {
+        if (CommonUtils.isNullEmptyOrWhitespace(spdxId)) {
             throw new HttpMessageNotReadableException("Add SPDXDocument Failed!");
         }
         addDocumentCreationInformation(spdxId, release.getModerators(), user);
