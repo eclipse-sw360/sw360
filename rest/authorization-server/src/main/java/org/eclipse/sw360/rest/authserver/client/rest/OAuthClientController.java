@@ -100,6 +100,7 @@ public class OAuthClientController {
             if (StringUtils.isEmpty(clientEntity.getId())) {
                 clientEntity.setId(UUID.randomUUID().toString());
             }
+            
             clientEntity.setClientId(clientEntity.getId());
             clientEntity.setClientSecret(passwordEncoder.encode(UUID.randomUUID().toString()));
         }
