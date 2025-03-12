@@ -96,6 +96,10 @@ public class OAuthClientController {
                         HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
+            // Ensure the entity has a non-empty id; if not, generate one.
+            if (StringUtils.isEmpty(clientEntity.getId())) {
+                clientEntity.setId(UUID.randomUUID().toString());
+            }
             clientEntity.setClientId(clientEntity.getId());
             clientEntity.setClientSecret(passwordEncoder.encode(UUID.randomUUID().toString()));
         }
