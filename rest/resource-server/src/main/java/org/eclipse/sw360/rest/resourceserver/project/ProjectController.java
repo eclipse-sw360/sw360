@@ -3731,14 +3731,10 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @RequestMapping(value = PROJECTS_URL + "/{id}/addLinkedRelesesLicenses", method = RequestMethod.POST)
     public ResponseEntity<String> addLicenseToLinkedReleases(
             @Parameter(description = "Project ID", example = "376576")
-            @PathVariable("id") String projectId) throws TException, TTransportException, ResourceClassNotFoundException {
+            @PathVariable("id") String projectId
+    ) throws TException, ResourceClassNotFoundException {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-            Project project = projectService.getProjectForUserById(projectId, sw360User);
-
-            if (project == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Project not found.");
-            }
 
             RequestStatus requestStatus = projectService.addLicenseToLinkedReleases(projectId, sw360User);
 
