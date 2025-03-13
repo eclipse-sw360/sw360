@@ -46,7 +46,13 @@ public class VersionComparator implements Comparator<String> {
     }
 
     private int handleNonNumeric(String part) {
-        // Assign a lower priority to non-numeric parts
-        return part.matches("\\d+") ? Integer.parseInt(part) : -1;
+    // Extract leading numeric portion if available
+    String numericPrefix = part.replaceAll("^(\\d+).*", "$1");
+    
+    try {
+        return Integer.parseInt(numericPrefix);
+    } catch (NumberFormatException e) {
+        return -1; // Assign a lower priority for fully non-numeric parts
     }
+  }
 }
