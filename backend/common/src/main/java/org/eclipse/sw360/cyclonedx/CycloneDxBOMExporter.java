@@ -136,10 +136,10 @@ public class CycloneDxBOMExporter {
             bom.setMetadata(metadata);
 
             if (SW360Constants.JSON_FILE_EXTENSION.equalsIgnoreCase(bomType)) {
-                BomJsonGenerator jsonBom = new BomJsonGenerator(bom, Version.VERSION_14);
+                BomJsonGenerator jsonBom = new BomJsonGenerator(bom, Version.VERSION_16);
                 summary.setMessage(jsonBom.toJsonString());
             } else {
-                BomXmlGenerator xmlBom = new BomXmlGenerator(bom, Version.VERSION_14);
+                BomXmlGenerator xmlBom = new BomXmlGenerator(bom, Version.VERSION_16);
                 summary.setMessage(xmlBom.toXmlString());
             }
             return summary;

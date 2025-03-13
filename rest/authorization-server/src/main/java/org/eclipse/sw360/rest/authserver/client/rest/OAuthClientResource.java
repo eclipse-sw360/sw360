@@ -50,7 +50,7 @@ public class OAuthClientResource {
         this.description = clientEntity.getDescription();
         this.clientId = clientEntity.getClientId();
         this.clientSecret = clientEntity.getClientSecret();
-        this.authorities = clientEntity.getAuthoritiesAsStrings();
+        this.authorities = clientEntity.getAuthorities();
         this.scope = clientEntity.getScope();
         this.accessTokenValidity = clientEntity.getAccessTokenValiditySeconds();
         this.refreshTokenValidity = clientEntity.getRefreshTokenValiditySeconds();
