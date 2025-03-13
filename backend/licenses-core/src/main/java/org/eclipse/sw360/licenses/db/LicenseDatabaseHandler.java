@@ -1284,4 +1284,12 @@ public class LicenseDatabaseHandler {
         }
         return obligationText.replaceFirst("\n","");
     }
+
+    public List<License> searchByShortName(String searchText) {
+        return licenseRepository.searchByShortName(searchText);
+    }
+
+    public List<License> searchByName(String searchText) {
+        return licenseRepository.searchByName(searchText);
+    }
 }

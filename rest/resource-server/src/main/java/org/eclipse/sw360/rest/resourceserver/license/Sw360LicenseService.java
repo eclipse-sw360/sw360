@@ -319,4 +319,23 @@ public class Sw360LicenseService {
          }
          return RequestStatus.SUCCESS;
      }
+
+    public List<License> quickSearch(String query) {
+        List<License> licenseSetResult = new ArrayList<>();
+        try {
+            LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+            List<License> fullNameResults = sw360LicenseClient.searchByName(query);
+            List<License> shortNameResults = sw360LicenseClient.searchByShortName(query);
+            Map<String, License> uniqueResults = new LinkedHashMap<>();
+            shortNameResults.forEach(license ->
+                    uniqueResults.put(license.getId(), license)
+            );
+            fullNameResults.forEach(license ->
+                    uniqueResults.put(license.getId(), license)
+            );
+            return new ArrayList<>(uniqueResults.values());
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

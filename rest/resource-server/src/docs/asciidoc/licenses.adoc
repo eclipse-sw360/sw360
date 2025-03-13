@@ -270,3 +270,17 @@ include::{snippets}/should_document_get_license_report/curl-request.adoc[]
 
 ===== Example response
 include::{snippets}/should_document_get_license_report/http-response.adoc[]
+
+[[resources-licenses-quick-filter]]
+==== Filter licenses
+
+A `GET` request help to filter the licenses.
+
+===== Request parameter
+include::{snippets}/should_document_get_licenses_on_quick_filter/query-parameters.adoc[]
+
+===== Example request
+include::{snippets}/should_document_get_licenses_on_quick_filter/curl-request.adoc[]
+
+===== Example response
+include::{snippets}/should_document_get_licenses_on_quick_filter/http-response.adoc[]

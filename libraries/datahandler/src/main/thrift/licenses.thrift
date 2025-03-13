@@ -371,4 +371,14 @@ service LicenseService {
      * convert Text to Node in obligation
      **/
     string convertTextToNode(1:Obligation Obligation, 2: User user);
+
+    /**
+    * global search function to list license elements which match the text argument by short name
+    */
+    list<License>  searchByShortName(1: string text);
+
+    /**
+    * global search function to list license elements which match the text argument by name
+    */
+    list<License>  searchByName(1: string text);
 }

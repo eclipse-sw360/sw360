@@ -94,8 +94,16 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             tags = {"Licenses"}
     )
     @RequestMapping(value = LICENSES_URL, method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel> getLicenses(Pageable pageable, HttpServletRequest request) throws TException, ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
-        List<License> sw360Licenses = licenseService.getLicenses();
+    public ResponseEntity<CollectionModel> getLicenses(Pageable pageable, HttpServletRequest request,
+                                                       @Parameter(description = "The search parameter of the license.")
+                                                       @RequestParam(value = "search", required = false) String searchElem
+    ) throws TException, ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
+        List<License> sw360Licenses = null;
+        if (searchElem != null) {
+            sw360Licenses  = licenseService.quickSearch(searchElem);
+        }else {
+            sw360Licenses = licenseService.getLicenses();
+        }
         PaginationResult<License> paginationResult = restControllerHelper.createPaginationResult(request, pageable, sw360Licenses, SW360Constants.TYPE_LICENSE);
         List<EntityModel<License>> licenseResources = new ArrayList<>();
         paginationResult.getResources().stream()
