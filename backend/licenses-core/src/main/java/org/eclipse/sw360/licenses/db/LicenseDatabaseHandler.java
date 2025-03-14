@@ -149,7 +149,7 @@ public class LicenseDatabaseHandler {
     public List<License> getLicenseSummaryForExport() {
         return licenseRepository.getLicenseSummaryForExport();
     }
-    
+
     ////////////////////////////
     // GET INDIVIDUAL OBJECTS //
     ////////////////////////////
@@ -307,6 +307,8 @@ public class LicenseDatabaseHandler {
             return null;
         }
         Obligation oldObligation = getObligationsById(oblig.getId());
+        // Setting the revision to avoid the document update conflict exception
+        oblig.setRevision(oldObligation.getRevision());
         prepareTodo(oblig);
         obligRepository.update(oblig);
         oblig.setNode(null);
@@ -556,7 +558,7 @@ public class LicenseDatabaseHandler {
                 dbHandlerUtil.addChangeLogs(resultLicenseForChangelogs, oldLicenseForChangelogs, user.getEmail(),
                         Operation.UPDATE, null,
                         Lists.newArrayList(), null, null);
-                
+
                 LicenseObligationList oldObligationList = new LicenseObligationList();
                 if (!resultLicense.getObligationDatabaseIds().equals(oldObligationDatabaseIds) && CommonUtils.isNotNullEmptyOrWhitespace(resultLicense.getObligationListId())) {
                     resultObligationList.setId(resultLicense.getObligationListId());
