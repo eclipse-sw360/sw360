@@ -1051,7 +1051,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         CollectionModel resources;
         if (releaseResources.size() == 0) {
-            resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
+            resources = restControllerHelper.emptyPageResource(Release.class, paginationResult);
         } else {
             resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
         }
