@@ -52,6 +52,8 @@ import com.github.packageurl.PackageURL;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
+
 /**
  * CycloneDX BOM export implementation.
  * Supports both XML and JSON format of CycloneDX SBOM
@@ -95,7 +97,7 @@ public class CycloneDxBOMExporter {
                 linkedPackageIds.addAll(idsMap.get(SW360Constants.PACKAGE_IDS));
             }
 
-            if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+            if (SW360Utils.readConfig(IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, false)) {
                 List<Release> releaseList = componentDatabaseHandler.getAccessibleReleaseSummary(user);
                 Set<String> releaseListIds = releaseList.stream().map(Release::getId).collect(Collectors.toSet());
                 linkedReleaseIds = CollectionUtils.intersection(releaseListIds, linkedReleaseIds).stream().collect(Collectors.toSet());

@@ -60,6 +60,7 @@ import java.util.stream.Stream;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNotNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
 
 public class SpdxBOMImporter {
     private static final Logger log = LogManager.getLogger(SpdxBOMImporter.class);
@@ -205,6 +206,7 @@ public class SpdxBOMImporter {
         } catch (InvalidSPDXAnalysisException | NullPointerException e) {
             log.error("Can not open file to SpdxDocument " +e);
         }
+
         return requestSummary;
     }
 
@@ -751,7 +753,7 @@ public class SpdxBOMImporter {
                         spdxPackages.add(spdxPackageCheck);
                 }
                 importAsReleaseFromSpdxDocument(spdxPackages,attachmentContent,spdxDocument);
-                if (SW360Constants.SPDX_DOCUMENT_ENABLED) {
+                if (SW360Utils.readConfig(SPDX_DOCUMENT_ENABLED, false)) {
                     try {
                         importSpdxDocument(response.getId(), spdxDocument, spdxPackage);
                     } catch (MalformedURLException e) {
@@ -799,7 +801,7 @@ public class SpdxBOMImporter {
                         release.setAttachments(Collections.singleton(attachment));
                     }
                     final SpdxBOMImporterSink.Response response = sink.addRelease(release);
-                    if (SW360Constants.SPDX_DOCUMENT_ENABLED) {
+                    if (SW360Utils.readConfig(SPDX_DOCUMENT_ENABLED, false)) {
                         try {
                             importSpdxDocument(response.getId(), spdxDocument, spdxElement);
                         } catch (MalformedURLException e) {
@@ -931,7 +933,6 @@ public class SpdxBOMImporter {
                     return projectReleaseRelationship;
                 }));
     }
-
 
     private Optional<SpdxBOMImporterSink.Response> importAsProject(SpdxElement spdxElement, AttachmentContent attachmentContent, User user) throws SW360Exception, InvalidSPDXAnalysisException {
         if (spdxElement instanceof SpdxPackage) {

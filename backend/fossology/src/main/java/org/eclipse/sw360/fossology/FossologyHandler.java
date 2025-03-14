@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD;
+
 /**
  * Implementation of the Thrift service. Offers a very simple interface where
  * clients can only trigger the {@link #process(String, User)} method for a
@@ -164,7 +166,7 @@ public class FossologyHandler implements FossologyService.Iface {
             handleUploadStep(componentClient, release, user, fossologyProcess, sourceAttachment, uploadDescription);
         } else if (FossologyUtils.FOSSOLOGY_STEP_NAME_SCAN.equals(furthestStep.getStepName())) {
             handleScanStep(componentClient, release, user, fossologyProcess);
-        } else if(!BackendUtils.DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
+        } else if(!SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false) && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
             handleReportStep(componentClient, release, user, fossologyProcess);
         } else if(reportStep && FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT.equals(furthestStep.getStepName())) {
             handleReportStep(componentClient, release, user, fossologyProcess);
@@ -406,7 +408,7 @@ public class FossologyHandler implements FossologyService.Iface {
             break;
         case DONE:
             // start report
-            if(!BackendUtils.DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD) {
+            if(!SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false)) {
                 fossologyProcess.addToProcessSteps(createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT));
                 handleReportStep(componentClient, release, user, fossologyProcess);
             }
@@ -514,7 +516,7 @@ public class FossologyHandler implements FossologyService.Iface {
             if (extToolProcess.getProcessSteps().size() > 2) {
                 extToolProcess.getProcessSteps().get(extToolProcess.getProcessSteps().size() - 1)
                         .setStepStatus(ExternalToolProcessStatus.NEW);
-            } else if (extToolProcess.getProcessSteps().size() == 2 && BackendUtils.DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD) {
+            } else if (extToolProcess.getProcessSteps().size() == 2 && SW360Utils.readConfig(DISABLE_CLEARING_FOSSOLOGY_REPORT_DOWNLOAD, false)) {
                 extToolProcess.addToProcessSteps(createFossologyProcessStep(user, FossologyUtils.FOSSOLOGY_STEP_NAME_REPORT));
                 reportStep = true;
             } else {

@@ -15,6 +15,7 @@ import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.BulkDeleteUtil;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
@@ -50,6 +51,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_BULK_RELEASE_DELETING_ENABLED;
 import static org.junit.Assert.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -1437,7 +1439,7 @@ public class BulkDeleteUtilTest {
     }
     
     private boolean isFeatureEnable() {
-        if (!BackendUtils.IS_BULK_RELEASE_DELETING_ENABLED) {
+        if (!SW360Utils.readConfig(IS_BULK_RELEASE_DELETING_ENABLED, false)) {
             return false;
         }
         if (!PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED) {
