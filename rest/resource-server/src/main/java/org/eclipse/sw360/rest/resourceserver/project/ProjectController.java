@@ -3678,8 +3678,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     }
                 } else if (fieldValue instanceof Map<?,?>) {
                     Map<?, ?> fieldValueMap = (Map<?, ?>) fieldValue;
-                    boolean hasIntersection = fieldValueMap.keySet().stream()
-                            .anyMatch(filterSet::contains);
+                    boolean hasIntersection = false;
+                    if(field == Project._Fields.ADDITIONAL_DATA){
+                        hasIntersection = fieldValueMap.values().stream()
+                                .anyMatch(filterSet::contains);
+                    }else{
+                        hasIntersection = fieldValueMap.keySet().stream()
+                                .anyMatch(filterSet::contains);
+                    }
                     if (!hasIntersection) {
                         return false;
                     }
