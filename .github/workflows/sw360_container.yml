@@ -17,6 +17,10 @@ on:
   schedule:
     - cron: "0 0 * * *" # Midnight
   workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/sw360_container.yml
+      - .github/workflows/thrift_container.yml
   push:
     branches:
       - main
@@ -99,6 +103,7 @@ jobs:
             type=semver,pattern={{version}}
             type=sha,enable=true,prefix=sha-,format=short
             type=ref,event=tag
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
           labels: org.opencontainers.image.licenses=EPL-2.0
 
       - name: Assembly image
