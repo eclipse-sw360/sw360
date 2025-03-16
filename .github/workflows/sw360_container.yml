@@ -100,6 +100,7 @@ jobs:
             type=raw,value=${{ env.SW360_VERSION }}
             type=sha,enable=true,prefix=sha-,format=short
             type=ref,event=tag
+          labels: org.opencontainers.image.licenses=EPL-2.0
 
       - name: Assembly image
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
