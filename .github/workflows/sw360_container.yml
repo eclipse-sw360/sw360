@@ -18,8 +18,8 @@ on:
     - cron: "0 0 * * *" # Midnight
   workflow_dispatch:
   push:
-    tags:
-      - "sw360-*"
+    branches:
+      - main
     paths-ignore:
       - "**.md"
 
@@ -97,7 +97,6 @@ jobs:
             type=schedule,pattern={{date 'YYYYMMDD'}}
             type=schedule,pattern=nightly
             type=semver,pattern={{version}}
-            type=raw,value=${{ env.SW360_VERSION }}
             type=sha,enable=true,prefix=sha-,format=short
             type=ref,event=tag
           labels: org.opencontainers.image.licenses=EPL-2.0
