@@ -13,7 +13,9 @@ package org.eclipse.sw360.rest.resourceserver.schedule;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import org.apache.thrift.TException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -24,9 +26,7 @@ import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -36,6 +36,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.server.ResponseStatusException;
+
+
+import java.util.Map;
 
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -378,5 +382,59 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         RequestStatus requestStatus = scheduleService.triggerSourceUploadForReleaseComponents(sw360User);
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestStatus, status);
+    }
+
+    @Operation(
+            summary = "Check the status of a scheduled service.",
+            description = "Checks whether a specific service is scheduled for execution.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Service status returned successfully.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Map.class,
+                                    example = "{\"serviceName\": \"exampleService\", \"isScheduled\": true}"))),
+            @ApiResponse(responseCode = "400", description = "Bad request due to missing or invalid service name.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = String.class,
+                                    example = "Service name is required"))),
+    })
+    @RequestMapping(value = SCHEDULE_URL + "/status", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, Object>> checkServiceStatus(
+            @Parameter(description = "Name of the service")
+            @RequestParam(value = "serviceName", required = true) String serviceName
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+        if (CommonUtils.isNullEmptyOrWhitespace(serviceName)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Service name is required");
+        }
+
+        RequestStatus requestStatus = scheduleService.isServiceScheduled(serviceName, sw360User);
+
+        Map<String, Object> response = Map.of(
+                "serviceName", serviceName,
+                "isScheduled", requestStatus == RequestStatus.SUCCESS
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Check if any service is scheduled.",
+            description = "Returns whether any service is currently scheduled for execution.",
+            tags = {"Admin"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Returns true if a service is scheduled, otherwise false.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Boolean.class,
+                                    example = "true")))
+    })
+    @RequestMapping(value = SCHEDULE_URL + "/isAnyServiceScheduled", method = RequestMethod.GET)
+    public ResponseEntity<Boolean> isAnyServiceScheduled() throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        boolean isAnyServiceScheduled = scheduleService.isAnyServiceScheduled(sw360User) == RequestStatus.SUCCESS;
+        return ResponseEntity.ok(isAnyServiceScheduled);
     }
 }

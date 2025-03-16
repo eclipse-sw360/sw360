@@ -22,7 +22,6 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -274,6 +273,42 @@ public class Sw360ScheduleService {
             }
         } catch (TException e) {
             log.error("Error occurred while scheduling service: " + e);
+            throw e;
+        }
+    }
+
+    public RequestStatus isServiceScheduled(String serviceName, User sw360User) throws TException {
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                boolean requestStatusWithBoolean = new ThriftClients()
+                        .makeScheduleClient()
+                        .isServiceScheduled(serviceName, sw360User)
+                        .isAnswerPositive();
+
+                return requestStatusWithBoolean ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
+            } else {
+                throw new AccessDeniedException("User is not admin");
+            }
+        } catch (TException e) {
+            log.error("Error occurred while fetching the status of service '{}':", serviceName, e);
+            throw e;
+        }
+    }
+
+    public RequestStatus isAnyServiceScheduled(User sw360User) throws TException {
+        try {
+            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+                boolean requestStatusWithBoolean = new ThriftClients()
+                        .makeScheduleClient()
+                        .isAnyServiceScheduled(sw360User)
+                        .isAnswerPositive();
+
+                return requestStatusWithBoolean ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
+            } else {
+                throw new AccessDeniedException("User is not admin");
+            }
+        } catch (TException e) {
+            log.error("Error occurred while fetching the status of services", e);
             throw e;
         }
     }
