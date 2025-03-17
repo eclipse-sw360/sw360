@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
@@ -23,6 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.nio.charset.StandardCharsets;
@@ -153,6 +155,13 @@ public class TestHelper {
         attachments.add(attachment2);
 
         return attachments;
+    }
+
+    public static AttachmentContent getDummyAttachmentContent() {
+        AttachmentContent content = new AttachmentContent();
+        content.setContentType(MediaType.APPLICATION_PDF_VALUE);
+        content.setFilename("dummy.txt");
+        return content;
     }
 
     public static List<AttachmentInfo> getDummyAttachmentInfoListForTest() {
