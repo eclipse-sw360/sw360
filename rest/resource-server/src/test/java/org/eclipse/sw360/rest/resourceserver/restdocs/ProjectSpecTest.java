@@ -73,6 +73,8 @@ import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.hamcrest.Matchers;
+import org.jose4j.json.internal.json_simple.JSONArray;
+import org.jose4j.json.internal.json_simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1660,7 +1662,6 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
                         responseFields(
                                 subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]projectRelevance").description("The relevance of project of the vulnerability, possible values are: " + Arrays.asList(VulnerabilityRatingForProject.values())),
                                 subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]intReleaseId").description("The release id"),
-                               // subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]packageIds").description("The list of package IDs linked to the vulnerability."),
                                 subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]comment").description("Any message to add while updating project vulnerabilities"),
                                 subsectionWithPath("_embedded.sw360:vulnerabilityDTOes.[]projectAction").description("The action of vulnerability"),
                                 subsectionWithPath("_embedded.sw360:vulnerabilityDTOes").description("An array of <<resources-vulnerabilities, Vulnerability resources>>"),
@@ -3284,5 +3285,16 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         mockMvc.perform(get("/api/projects/" + project.getId() + "/packages")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .accept(MediaTypes.HAL_JSON)).andExpect(status().isOk());
+    }
+
+    @Test
+    public void should_add_license_to_linked_releases() throws Exception {
+        String projectId = "1234567";
+        when(projectServiceMock.addLicenseToLinkedReleases(eq(projectId), any(User.class))).thenReturn(RequestStatus.SUCCESS);
+
+        MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + projectId + "/addLinkedRelesesLicenses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
+        this.mockMvc.perform(requestBuilder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
     }
 }
