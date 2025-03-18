@@ -17,13 +17,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -40,6 +40,7 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -198,28 +199,24 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
             @PathVariable("id") String id,
             @Parameter(description = "The obligation details to be updated.")
             @RequestBody Obligation obligation
-    ) {
-        try {
-            if (CommonUtils.isNullEmptyOrWhitespace(obligation.getTitle())
-                    || CommonUtils.isNullEmptyOrWhitespace(obligation.getText())
-            ) {
-                log.error("Obligation title or text is empty");
-                return new ResponseEntity<>("Obligation title or text is empty", HttpStatus.BAD_REQUEST);
-            }
+    ) throws SW360Exception {
+        if (CommonUtils.isNullEmptyOrWhitespace(obligation.getTitle())
+                || CommonUtils.isNullEmptyOrWhitespace(obligation.getText())
+        ) {
+            log.error("Obligation title or text is empty");
+            throw new HttpMessageNotReadableException("Obligation title or text is empty");
+        }
 
-            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-            checkIfObligationExists(id);
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        checkIfObligationExists(id);
+        try {
             obligation.setId(id); // Ensure the id is set to the existing obligation's id
             Obligation updatedObligation = obligationService.updateObligation(obligation, sw360User);
             log.debug("Obligation  {} updated successfully", updatedObligation);
             return new ResponseEntity<>("Obligation with id " + updatedObligation.getId() + " has been updated successfully", HttpStatus.OK);
-        } catch (ResourceNotFoundException e) {
-            return new ResponseEntity<>("Obligation not found", HttpStatus.NOT_FOUND);
-
         } catch (Exception e) {
             log.error("Error updating obligation with id {}", id, e);
-            String rootCauseMessage = ExceptionUtils.getRootCauseMessage(e);
-            return new ResponseEntity<>("Internal server error: " + rootCauseMessage, HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new SW360Exception("Unable to process the request");
         }
     }
 
