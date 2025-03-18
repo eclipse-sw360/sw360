@@ -99,7 +99,7 @@ public class HalResource<T> extends EntityModel<T> {
     }
 
     @JsonProperty("_embedded")
-    public Map<String, Object> getEmbeddedRecources() {
+    public Map<String, Object> getEmbeddedResources() {
         return embeddedMap;
     }
 }

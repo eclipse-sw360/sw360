@@ -115,7 +115,7 @@ public class SearchController implements RepresentationModelProcessor<Repository
 
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
-        resource.add(linkTo(SearchController.class).slash("api" + SEARCH_URL).withRel("searchs"));
+        resource.add(linkTo(SearchController.class).slash("api" + SEARCH_URL).withRel("searches"));
         return resource;
     }
 
