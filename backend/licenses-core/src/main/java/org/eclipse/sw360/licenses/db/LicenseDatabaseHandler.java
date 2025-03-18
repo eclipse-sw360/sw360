@@ -309,6 +309,9 @@ public class LicenseDatabaseHandler {
         Obligation oldObligation = getObligationsById(oblig.getId());
         // Setting the revision to avoid the document update conflict exception
         oblig.setRevision(oldObligation.getRevision());
+        if (! oblig.isSetObligationLevel() || oblig.getObligationLevel() == null) {
+            oblig.setObligationLevel(oldObligation.getObligationLevel());
+        }
         prepareTodo(oblig);
         obligRepository.update(oblig);
         oblig.setNode(null);

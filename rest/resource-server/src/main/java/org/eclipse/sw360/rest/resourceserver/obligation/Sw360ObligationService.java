@@ -83,19 +83,17 @@ public class Sw360ObligationService {
     }
 
     public Obligation updateObligation(Obligation obligation, User sw360User) {
-        try {
-            if (CommonUtils.isNullEmptyOrWhitespace(obligation.getTitle())
-                    || CommonUtils.isNullEmptyOrWhitespace(obligation.getText())) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(obligation.getTitle())
+                || CommonUtils.isNotNullEmptyOrWhitespace(obligation.getText())) {
+            try {
                 LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
                 sw360LicenseClient.updateObligation(obligation, sw360User);
-
                 return obligation;
-
-            } else {
-                throw new HttpMessageNotReadableException("Obligation Title, Text are required. Obligation Title, Text cannot contain only space character.");
+            } catch (TException e) {
+                throw new RuntimeException("Error updating obligation", e);
             }
-        } catch (TException e) {
-            throw new RuntimeException("Error updating obligation", e);
+        } else {
+            throw new HttpMessageNotReadableException("Obligation Title, Text are required. Obligation Title, Text cannot contain only space character.");
         }
     }
 
