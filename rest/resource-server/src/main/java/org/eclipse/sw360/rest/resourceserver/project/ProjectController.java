@@ -271,13 +271,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "additionalData", required = false) String additionalData,
             @Parameter(description = "List project by lucene search")
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
-            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+            HttpServletRequest request
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<String, Project> mapOfProjects = new HashMap<>();
         boolean isSearchByName = name != null && !name.isEmpty();
-        boolean isSearchByTag = CommonUtils.isNotNullEmptyOrWhitespace(tag);
-        boolean isSearchByType = CommonUtils.isNotNullEmptyOrWhitespace(projectType);
-        boolean isSearchByGroup = CommonUtils.isNotNullEmptyOrWhitespace(group);
         boolean isNoFilter = false;
         boolean isAllProjectAdded=false;
         String queryString = request.getQueryString();
@@ -346,10 +344,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @NotNull
-    private ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectResponse(Pageable pageable,
-                                                                                     boolean allDetails, boolean luceneSearch,
-                                                                                     HttpServletRequest request, User sw360User, Map<String, Project> mapOfProjects, boolean isSearchByName,
-                                                                                     List<Project> sw360Projects, boolean isNoFilter) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException, TException {
+    private ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectResponse(
+            Pageable pageable, boolean allDetails, boolean luceneSearch,
+            HttpServletRequest request, User sw360User, Map<String, Project> mapOfProjects,
+            boolean isSearchByName, List<Project> sw360Projects, boolean isNoFilter
+    ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException, TException {
         sw360Projects.stream().forEach(prj -> mapOfProjects.put(prj.getId(), prj));
         PaginationResult<Project> paginationResult;
         if (isNoFilter) {
@@ -422,7 +421,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "stateInProgress", required = false, defaultValue = "true") boolean stateInProgress,
             @Parameter(description = "Flag to get projects with all details.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
-            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+            HttpServletRequest request
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<String, Project> mapOfProjects = new HashMap<>();
 
@@ -2847,9 +2847,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseClearingCount", method = RequestMethod.GET)
-    public void getlicenseClearingCount(HttpServletResponse response ,
+    public void getlicenseClearingCount(
+            HttpServletResponse response ,
     		@Parameter(description = "Project ID", example = "376521")
-            @PathVariable("id") String id) throws TException {
+            @PathVariable("id") String id
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
@@ -2872,9 +2874,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations", method = RequestMethod.GET)
-	public ResponseEntity<?> getLicObligations(Pageable pageable,
-            @Parameter(description = "Project ID.") @PathVariable("id") String id)
-            throws TException {
+	public ResponseEntity<?> getLicObligations(
+            Pageable pageable,
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
    	    final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
    	    if (CommonUtils.isNullOrEmptyMap(sw360Project.getReleaseIdToUsage())) {
@@ -2962,12 +2966,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligations", method = RequestMethod.GET)
-	public ResponseEntity<Object> getLicenseObligations(Pageable pageable,
-            @Parameter(description = "Project ID.") @PathVariable("id") String id,
+	public ResponseEntity<Object> getLicenseObligations(
+            Pageable pageable,
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id,
             @Parameter(description = "If true, returns the license obligation data in release view. "
                     + "Otherwise, returns it in project view.")
-            @RequestParam(value = "view", defaultValue = "false") boolean releaseView)
-            throws TException {
+            @RequestParam(value = "view", defaultValue = "false") boolean releaseView
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
         final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
@@ -3023,12 +3029,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/obligation", method = RequestMethod.GET)
-    public ResponseEntity<HalResource> getObligations(Pageable pageable,
-                                                             @Parameter(description = "Project ID.") @PathVariable("id") String id,
-                                                             @Parameter(description = "Obligation Level",
-                                                                        schema = @Schema(allowableValues = {"license", "project", "organization", "component"}))
-                                                             @RequestParam(value = "obligationLevel", required = true) String oblLevel)
-            throws TException {
+    public ResponseEntity<HalResource> getObligations(
+            Pageable pageable,
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id,
+            @Parameter(description = "Obligation Level",
+                    schema = @Schema(allowableValues = {"license", "project", "organization", "component"}))
+            @RequestParam(value = "obligationLevel", required = true) String oblLevel
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
         final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
@@ -3734,7 +3742,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                         )
           }
     )
-    @RequestMapping(value = PROJECTS_URL + "/{id}/addLinkedRelesesLicenses", method = RequestMethod.POST)
+    @RequestMapping(value = PROJECTS_URL + "/{id}/addLinkedReleasesLicenses", method = RequestMethod.POST)
     public ResponseEntity<String> addLicenseToLinkedReleases(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String projectId

@@ -3292,7 +3292,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         String projectId = "1234567";
         when(projectServiceMock.addLicenseToLinkedReleases(eq(projectId), any(User.class))).thenReturn(RequestStatus.SUCCESS);
 
-        MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + projectId + "/addLinkedRelesesLicenses")
+        MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + projectId + "/addLinkedReleasesLicenses")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
         this.mockMvc.perform(requestBuilder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
