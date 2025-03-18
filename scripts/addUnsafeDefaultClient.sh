@@ -67,13 +67,10 @@ createDefaultApp() {
        "true"
    ],
    "resource_ids": [
-    "sw360-REST-API"
-  ],
-  "redirect_uri": [
-    "https://oauth.pstmn.io/v1/callback"
-  ],
-   "resource_ids": [
        "sw360-REST-API"
+   ],
+   "redirect_uri": [
+       "https://oauth.pstmn.io/v1/callback"
    ]
 }
 EOF
@@ -93,7 +90,7 @@ getDefaultUserRev() {
 
 # Function to create the default user
 createDefaultUser() {
-  echo 'Default USer'
+  echo 'Default User'
   curl --silent \
            --output /dev/null \
            -X PUT "$DEFAULT_USER_URL" \
@@ -104,9 +101,9 @@ createDefaultUser() {
     "email": "admin@sw360.org",
     "userGroup": "ADMIN",
     "department": "DEPARTMENT",
-    "fullName": "Admin Test",
-    "givenName": "Admin",
-    "lastName": "Test",
+    "fullname": "Admin Test",
+    "givenname": "Admin",
+    "lastname": "Test",
     "password":"\$2a\$10\$KcGk3lFG1JkS05sCt1TtaeLy11Xy8HNUkn7JvD2Nsqikhdqn8dLaq"
 }
 EOF

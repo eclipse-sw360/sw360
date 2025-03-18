@@ -10,17 +10,21 @@
 
 package org.eclipse.sw360.rest.resourceserver.security.apiToken;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +39,14 @@ public class ApiTokenAuthenticationFilter implements Filter {
     private static final String AUTHENTICATION_TOKEN_PARAMETER = "authorization";
     private static final String OIDC_AUTHENTICATION_TOKEN_PARAMETER = "oidcauthorization";
 
+    private final AuthenticationManager authenticationManager;
+    private final AuthenticationEntryPoint authenticationEntryPoint;
+
+    public ApiTokenAuthenticationFilter(AuthenticationManager authenticationManager, AuthenticationEntryPoint authenticationEntryPoint) {
+        this.authenticationManager = authenticationManager;
+        this.authenticationEntryPoint = authenticationEntryPoint;
+    }
+
     @Override
     public void init(FilterConfig filterConfig) {
     }
@@ -46,26 +58,32 @@ public class ApiTokenAuthenticationFilter implements Filter {
         if (context.getAuthentication() != null && context.getAuthentication().isAuthenticated()) {
             log.trace("Already authenticated");
         } else {
-            Map<String, String> headers = Collections.list(((HttpServletRequest) request).getHeaderNames()).stream()
-                    .collect(Collectors.toMap(h -> h, ((HttpServletRequest) request)::getHeader));
-            if (!headers.isEmpty() && headers.containsKey(AUTHENTICATION_TOKEN_PARAMETER)) {
-                String authorization = headers.get(AUTHENTICATION_TOKEN_PARAMETER);
-                String[] token = authorization.trim().split("\\s+");
-                if (token.length == 2 && token[0].equalsIgnoreCase("token")) {
-                    Authentication auth = new ApiTokenAuthentication(token[1]);
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                } else if(token.length == 2 && token[0].equalsIgnoreCase("Bearer")) {
-                    Authentication auth = new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS);
-                    SecurityContextHolder.getContext().setAuthentication(auth);
+            try {
+                Map<String, String> headers = Collections.list(((HttpServletRequest) request).getHeaderNames()).stream()
+                        .collect(Collectors.toMap(h -> h, ((HttpServletRequest) request)::getHeader));
+                if (!headers.isEmpty() && headers.containsKey(AUTHENTICATION_TOKEN_PARAMETER)) {
+                    String authorization = headers.get(AUTHENTICATION_TOKEN_PARAMETER);
+                    String[] token = authorization.trim().split("\\s+");
+                    if (token.length == 2 && token[0].equalsIgnoreCase("token")) {
+                        Authentication auth = authenticationManager.authenticate(new ApiTokenAuthentication(token[1]));
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    } else if (token.length == 2 && token[0].equalsIgnoreCase("Bearer")) {
+                        Authentication auth = authenticationManager.authenticate(new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS));
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    }
+                } else if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED && !headers.isEmpty()
+                        && headers.containsKey(OIDC_AUTHENTICATION_TOKEN_PARAMETER)) {
+                    String authorization = headers.get(OIDC_AUTHENTICATION_TOKEN_PARAMETER);
+                    String[] token = authorization.trim().split("\\s+");
+                    if (token.length == 2 && token[0].equalsIgnoreCase("Bearer")) {
+                        Authentication auth = authenticationManager.authenticate(new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS));
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    }
                 }
-            } else if (Sw360ResourceServer.IS_JWKS_VALIDATION_ENABLED && !headers.isEmpty()
-                    && headers.containsKey(OIDC_AUTHENTICATION_TOKEN_PARAMETER)) {
-                String authorization = headers.get(OIDC_AUTHENTICATION_TOKEN_PARAMETER);
-                String[] token = authorization.trim().split("\\s+");
-                if (token.length == 2 && token[0].equalsIgnoreCase("Bearer")) {
-                    Authentication auth = new ApiTokenAuthentication(token[1]).setType(AuthType.JWKS);
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                }
+            } catch (AuthenticationException e) {
+                log.error("Authentication failed: {}", e.getMessage());
+                SecurityContextHolder.clearContext();
+                authenticationEntryPoint.commence((HttpServletRequest) request, (HttpServletResponse) response, e);
             }
         }
 

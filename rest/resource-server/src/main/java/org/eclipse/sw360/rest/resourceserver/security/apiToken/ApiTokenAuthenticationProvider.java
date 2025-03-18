@@ -103,7 +103,7 @@ public class ApiTokenAuthenticationProvider implements AuthenticationProvider {
                     log.trace("Valid token authentication for user: " + sw360User.getEmail());
                     return authenticatedApiUser(sw360User, tokenFromAuthentication, restApiToken.get());
                 } else {
-                    throw new CredentialsExpiredException("Your entered API token is expired.");
+                    throw new AuthenticationServiceException("Your entered API token is expired.");
                 }
             } else {
                 log.trace("Could not load API token form user " + sw360User.getEmail());

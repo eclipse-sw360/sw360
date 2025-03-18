@@ -112,6 +112,7 @@ import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
 import org.jetbrains.annotations.NotNull;
+import org.jose4j.json.internal.json_simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.data.domain.Pageable;
@@ -130,6 +131,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -269,13 +271,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "additionalData", required = false) String additionalData,
             @Parameter(description = "List project by lucene search")
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
-            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+            HttpServletRequest request
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<String, Project> mapOfProjects = new HashMap<>();
         boolean isSearchByName = name != null && !name.isEmpty();
-        boolean isSearchByTag = CommonUtils.isNotNullEmptyOrWhitespace(tag);
-        boolean isSearchByType = CommonUtils.isNotNullEmptyOrWhitespace(projectType);
-        boolean isSearchByGroup = CommonUtils.isNotNullEmptyOrWhitespace(group);
         boolean isNoFilter = false;
         boolean isAllProjectAdded=false;
         String queryString = request.getQueryString();
@@ -344,10 +344,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     }
 
     @NotNull
-    private ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectResponse(Pageable pageable,
-                                                                                     boolean allDetails, boolean luceneSearch,
-                                                                                     HttpServletRequest request, User sw360User, Map<String, Project> mapOfProjects, boolean isSearchByName,
-                                                                                     List<Project> sw360Projects, boolean isNoFilter) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException, TException {
+    private ResponseEntity<CollectionModel<EntityModel<Project>>> getProjectResponse(
+            Pageable pageable, boolean allDetails, boolean luceneSearch,
+            HttpServletRequest request, User sw360User, Map<String, Project> mapOfProjects,
+            boolean isSearchByName, List<Project> sw360Projects, boolean isNoFilter
+    ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException, TException {
         sw360Projects.stream().forEach(prj -> mapOfProjects.put(prj.getId(), prj));
         PaginationResult<Project> paginationResult;
         if (isNoFilter) {
@@ -420,7 +421,8 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "stateInProgress", required = false, defaultValue = "true") boolean stateInProgress,
             @Parameter(description = "Flag to get projects with all details.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
-            HttpServletRequest request) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+            HttpServletRequest request
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<String, Project> mapOfProjects = new HashMap<>();
 
@@ -1049,7 +1051,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         CollectionModel resources;
         if (releaseResources.size() == 0) {
-            resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
+            resources = restControllerHelper.emptyPageResource(Release.class, paginationResult);
         } else {
             resources = restControllerHelper.generatePagesResource(paginationResult, releaseResources);
         }
@@ -2845,9 +2847,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseClearingCount", method = RequestMethod.GET)
-    public void getlicenseClearingCount(HttpServletResponse response ,
+    public void getlicenseClearingCount(
+            HttpServletResponse response ,
     		@Parameter(description = "Project ID", example = "376521")
-            @PathVariable("id") String id) throws TException {
+            @PathVariable("id") String id
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
@@ -2870,9 +2874,11 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseDbObligations", method = RequestMethod.GET)
-	public ResponseEntity<?> getLicObligations(Pageable pageable,
-            @Parameter(description = "Project ID.") @PathVariable("id") String id)
-            throws TException {
+	public ResponseEntity<?> getLicObligations(
+            Pageable pageable,
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
    	    final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
    	    if (CommonUtils.isNullOrEmptyMap(sw360Project.getReleaseIdToUsage())) {
@@ -2960,12 +2966,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseObligations", method = RequestMethod.GET)
-	public ResponseEntity<Object> getLicenseObligations(Pageable pageable,
-            @Parameter(description = "Project ID.") @PathVariable("id") String id,
+	public ResponseEntity<Object> getLicenseObligations(
+            Pageable pageable,
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id,
             @Parameter(description = "If true, returns the license obligation data in release view. "
                     + "Otherwise, returns it in project view.")
-            @RequestParam(value = "view", defaultValue = "false") boolean releaseView)
-            throws TException {
+            @RequestParam(value = "view", defaultValue = "false") boolean releaseView
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
         final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
@@ -3021,12 +3029,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/obligation", method = RequestMethod.GET)
-    public ResponseEntity<HalResource> getObligations(Pageable pageable,
-                                                             @Parameter(description = "Project ID.") @PathVariable("id") String id,
-                                                             @Parameter(description = "Obligation Level",
-                                                                        schema = @Schema(allowableValues = {"license", "project", "organization", "component"}))
-                                                             @RequestParam(value = "obligationLevel", required = true) String oblLevel)
-            throws TException {
+    public ResponseEntity<HalResource> getObligations(
+            Pageable pageable,
+            @Parameter(description = "Project ID.")
+            @PathVariable("id") String id,
+            @Parameter(description = "Obligation Level",
+                    schema = @Schema(allowableValues = {"license", "project", "organization", "component"}))
+            @RequestParam(value = "obligationLevel", required = true) String oblLevel
+    ) throws TException {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
         final Map<String, String> releaseIdToAcceptedCLI = Maps.newHashMap();
@@ -3678,8 +3688,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                     }
                 } else if (fieldValue instanceof Map<?,?>) {
                     Map<?, ?> fieldValueMap = (Map<?, ?>) fieldValue;
-                    boolean hasIntersection = fieldValueMap.keySet().stream()
-                            .anyMatch(filterSet::contains);
+                    boolean hasIntersection = false;
+                    if(field == Project._Fields.ADDITIONAL_DATA){
+                        hasIntersection = fieldValueMap.values().stream()
+                                .anyMatch(filterSet::contains);
+                    }else{
+                        hasIntersection = fieldValueMap.keySet().stream()
+                                .anyMatch(filterSet::contains);
+                    }
                     if (!hasIntersection) {
                         return false;
                     }
@@ -3687,5 +3703,64 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             }
             return true;
         };
+    }
+
+    @Operation(
+            summary = "Add licenses to linked releases of a project.",
+            description = "This API adds license information to linked releases of a project by processing the approved CLI attachments for each release. It categorizes releases based on the number of CLI attachments (single, multiple, or none) and updates their main and other licenses accordingly.",
+            tags = {"Project"},
+                    parameters = {
+                            @Parameter(
+                                name = "projectId",
+                                description = "The ID of the project whose linked releases need license updates.",
+                                required = true,
+                                example = "12345",
+                                schema = @Schema(type = "string")
+                            )
+                        },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "License information successfully added to linked releases.",
+                            content = @Content(
+                            mediaType = "application/hal+json",
+                            schema = @Schema(type = "object", implementation = JSONObject.class),
+                            examples = @ExampleObject(
+                                     value = "{\"message\": \"License information successfully added to linked releases.\" }"
+                            )
+                        )
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error occurred while processing license information for linked releases.",
+                            content = @Content(
+                                mediaType = "application/json",
+                                examples = @ExampleObject(
+                                    value = "{\n  \"error\": \"Error adding license info to linked releases.\"\n}"
+                                )
+                            )
+                        )
+          }
+    )
+    @RequestMapping(value = PROJECTS_URL + "/{id}/addLinkedReleasesLicenses", method = RequestMethod.POST)
+    public ResponseEntity<String> addLicenseToLinkedReleases(
+            @Parameter(description = "Project ID", example = "376576")
+            @PathVariable("id") String projectId
+    ) throws TException, ResourceClassNotFoundException {
+        try {
+            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+
+            RequestStatus requestStatus = projectService.addLicenseToLinkedReleases(projectId, sw360User);
+
+            if (requestStatus == RequestStatus.SUCCESS) {
+                return ResponseEntity.ok("License information successfully added to linked releases.");
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add license information to linked releases.");
+            }
+        } catch (ResourceNotFoundException e) {
+            throw new ResourceClassNotFoundException(e.getMessage());
+        } catch (SW360Exception sw360Exp) {
+            throw new RuntimeException(sw360Exp.getWhy());
+        }
     }
 }

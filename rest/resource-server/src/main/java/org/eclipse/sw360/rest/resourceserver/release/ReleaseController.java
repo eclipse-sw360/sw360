@@ -1632,8 +1632,8 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     }
 
     @Operation(
-            summary = "Handle release subcription for requesting user.",
-            description = "Handle release subcription for requesting user.",
+            summary = "Handle release subscription for requesting user.",
+            description = "Handle release subscription for requesting user.",
             tags = {"Releases"}
     )
     @PreAuthorize("hasAuthority('WRITE')")
@@ -1748,7 +1748,6 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
 
         return release;
     }
-    
     @PreAuthorize("hasAuthority('WRITE')")
     @Operation(
             summary = "Bulk delete releases.",
