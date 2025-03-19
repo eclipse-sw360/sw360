@@ -15,8 +15,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.util.Map;
 
-import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
+import io.swagger.v3.oas.annotations.Operation;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,10 +31,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import io.swagger.v3.oas.annotations.Parameter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.RestController;
 
+@RestController
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class FossologyAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
@@ -52,8 +53,13 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
         return resource;
     }
 
+    @Operation(
+            summary = "Save the FOSSology service configuration.",
+            description = "Save the FOSSology service configuration.",
+            tags = {"Admin"}
+    )
     @PostMapping(value = FOSSOLOGY_URL + "/saveConfig", consumes  = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<?> saveConfigration(@RequestBody Map<String, String> request) throws TException {
+    public ResponseEntity<?> saveConfigration(@RequestBody Map<String, String> request) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             String url = request.get("url");
@@ -61,18 +67,23 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             String token = request.get("token");
             sw360FossologyAdminServices.saveConfig(sw360User, url, folderId, token);
         } catch (Exception e) {
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
         return ResponseEntity.ok(Series.SUCCESSFUL);
     }
 
+    @Operation(
+            summary = "Check the FOSSology server connection.",
+            description = "Make a test call and check the FOSSology server connection.",
+            tags = {"Admin"}
+    )
     @RequestMapping(value = FOSSOLOGY_URL + "/reServerConnection", method = RequestMethod.GET)
-    public ResponseEntity<?> checkServerConnection()throws TException {
+    public ResponseEntity<?> checkServerConnection() throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             sw360FossologyAdminServices.serverConnection(sw360User);
         } catch (Exception e) {
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
         return ResponseEntity.ok(Series.SUCCESSFUL);
 

@@ -15,7 +15,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.Explode;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -34,6 +33,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
@@ -120,7 +120,8 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
     )
     @RequestMapping(value = LICENSES_URL + "/{id}/obligations", method = RequestMethod.GET)
     public ResponseEntity<CollectionModel<EntityModel<Obligation>>> getObligationsByLicenseId(
-            @PathVariable("id") String id) throws TException {
+            @PathVariable("id") String id
+    ) throws TException {
         List<Obligation> obligations = licenseService.getObligationsByLicenseId(id);
         List<EntityModel<Obligation>> obligationResources = new ArrayList<>();
         obligations.forEach(o -> {
@@ -311,7 +312,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             halResource = createHalLicense(licenseUpdate);
             return new ResponseEntity<>(halResource, HttpStatus.OK);
         } else {
-            return new ResponseEntity("Update Whitelist to Obligation Fail!", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new SW360Exception("Update Whitelist to Obligation Fail!");
         }
     }
 
@@ -470,13 +471,13 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "overwriteIfExternalIdMatches", required = false) boolean overwriteIfExternalIdMatches,
             @Parameter(description = "Overwrite if id matches even without external id match.")
             @RequestParam(value = "overwriteIfIdMatchesEvenWithoutExternalIdMatch", required = false) boolean overwriteIfIdMatchesEvenWithoutExternalIdMatch
-    ) throws TException {
+    ) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             licenseService.uploadLicense(sw360User, file, overwriteIfExternalIdMatches,
                     overwriteIfIdMatchesEvenWithoutExternalIdMatch);
         } catch (Exception e) {
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
 	    }
        return ResponseEntity.ok(Series.SUCCESSFUL);
      }

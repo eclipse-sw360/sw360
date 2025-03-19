@@ -48,7 +48,7 @@ public class Sw360DatabaseSanitationService {
     public Map<String, Map<String, List<String>>> duplicateIdentifiers(User sw360User) throws TException, SW360Exception {
         try {
             if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-                throw new SW360Exception("Access Denied").setErrorCode(403);
+                throw new AccessDeniedException("Access Denied");
             }
 
             Map<String, Map<String, List<String>>> responseMap = new HashMap<>();

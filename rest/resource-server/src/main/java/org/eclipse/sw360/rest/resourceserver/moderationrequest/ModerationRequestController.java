@@ -26,8 +26,6 @@ import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.ModerationState;
@@ -63,7 +61,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
@@ -75,7 +73,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 
 import java.net.URISyntaxException;
 import java.util.*;
@@ -143,8 +140,9 @@ public class ModerationRequestController implements RepresentationModelProcessor
     )
     @RequestMapping(value = MODERATION_REQUEST_URL + "/{id}", method = RequestMethod.GET)
     public ResponseEntity<HalResource<Map<String, Object>>> getModerationRequestById(
-            @Parameter(description = "The id of the moderation request to be retrieved.") @PathVariable String id)
-            throws TException {
+            @Parameter(description = "The id of the moderation request to be retrieved.")
+            @PathVariable String id
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         ModerationRequest moderationRequest = filterModerationRequestNoDuplicates(
                 sw360ModerationRequestService.getModerationRequestById(id));
@@ -189,8 +187,8 @@ public class ModerationRequestController implements RepresentationModelProcessor
         stateOptions.add("open");
         stateOptions.add("closed");
         if (!stateOptions.contains(state)) {
-            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
-                    String.format("Invalid ModerationRequest state '%s', possible values are: %s", state, stateOptions));
+            throw new HttpMessageNotReadableException(String.format(
+                    "Invalid ModerationRequest state '%s', possible values are: %s", state, stateOptions));
         }
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -201,7 +199,8 @@ public class ModerationRequestController implements RepresentationModelProcessor
     }
 
     private @NotNull HalResource<Map<String, Object>> createHalModerationRequestWithAllDetails(
-            Map<String, Object> modObjectMapper, User sw360User) throws TException {
+            Map<String, Object> modObjectMapper, User sw360User
+    ) throws TException {
         HalResource<Map<String, Object>> halModerationRequest = new HalResource<>(modObjectMapper);
         User requestingUser = restControllerHelper.getUserByEmail(modObjectMapper.get(REQUESTING_USER).toString());
         restControllerHelper.addEmbeddedUser(halModerationRequest, requestingUser, REQUESTING_USER);
@@ -288,7 +287,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
                 moderationStatus = sw360ModerationRequestService.postponeRequest(moderationRequest, patch.getComment());
                 break;
             default:
-                throw new HttpClientErrorException(HttpStatus.BAD_REQUEST,
+                throw new HttpMessageNotReadableException(
                         "Action should be `" +
                                 Arrays.asList(ModerationPatch.ModerationAction.values()) +
                                 "`, '" + patch.getAction() + "' received.");
@@ -578,13 +577,12 @@ public class ModerationRequestController implements RepresentationModelProcessor
             @RequestParam String entityType,
             @Parameter(description = "Entity id.")
             @RequestParam String entityId
-    ) {
+    ) throws SW360Exception {
         try {
             User user = restControllerHelper.getSw360UserFromAuthentication();
             Object entity = getEntityByTypeAndId(entityType, entityId, user);
             if (entity == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Entity not found for the given ID: " + entityId);
+                throw new ResourceNotFoundException("Entity not found for the given ID: " + entityId);
             }
             boolean isWriteActionAllowed = restControllerHelper.isWriteActionAllowed(entity, user);
             if (!isWriteActionAllowed) {
@@ -593,13 +591,11 @@ public class ModerationRequestController implements RepresentationModelProcessor
             }
             return ResponseEntity.ok("User can write to the entity. MR is not required.");
         } catch (SW360Exception ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Entity not found for the given ID: " + entityId);
+            throw new ResourceNotFoundException("Entity not found for the given ID: " + entityId);
         } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Invalid entity type provided: " + ex.getMessage());
+            throw new HttpMessageNotReadableException("Invalid entity type provided: " + ex.getMessage());
         } catch (TException ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred while processing the request: " + ex.getMessage());
+            throw new SW360Exception("An error occurred while processing the request: " + ex.getMessage());
         }
     }
 
@@ -630,9 +626,9 @@ public class ModerationRequestController implements RepresentationModelProcessor
     @PreAuthorize("hasAuthority('WRITE')")
     @RequestMapping(value = MODERATION_REQUEST_URL + "/delete", method = RequestMethod.DELETE)
     public ResponseEntity<?> deleteModerationRequest(
-            HttpServletRequest request,
             @Parameter(description = "List of moderation request IDs to delete")
-            @RequestBody List<String> ids) throws TException {
+            @RequestBody List<String> ids
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<RequestStatus> requestStatusList = new ArrayList<>();
         List<String> incorrectIds = new ArrayList<>();

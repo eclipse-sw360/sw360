@@ -341,7 +341,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
     @PostMapping(SCHEDULE_URL + "/srcUpload")
     public ResponseEntity<?> srcUpload()throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-        RequestSummary requestSummary = scheduleService.triggeSrcUpload(sw360User);
+        RequestSummary requestSummary = scheduleService.triggerSrcUpload(sw360User);
         HttpStatus status = HttpStatus.ACCEPTED;
         return new ResponseEntity<>(requestSummary, status);
     }

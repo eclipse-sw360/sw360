@@ -115,7 +115,7 @@ public class Sw360UserService {
         }
     }
 
-    public User addUser(User user) throws TException{
+    public User addUser(User user) {
         try {
             UserService.Iface sw360UserClient = getThriftUserClient();
             user.setUserGroup(UserGroup.USER);
@@ -129,8 +129,6 @@ public class Sw360UserService {
             } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
                 throw new HttpMessageNotReadableException(documentRequestSummary.getMessage());
             }
-        } catch (SW360Exception sw360Exp) {
-            throw new HttpMessageNotReadableException(sw360Exp.getMessage());
         } catch (TException e) {
             throw new HttpMessageNotReadableException(e.getMessage());
         }
@@ -153,7 +151,7 @@ public class Sw360UserService {
         return sw360UserClient.refineSearch(null, filterMap);
     }
 
-    public List<User> searchUserByName(String givenname) throws TException {
+    public List<User> searchUserByName(String givenname) {
         try {
             UserService.Iface sw360UserClient = getThriftUserClient();
             return sw360UserClient.searchUsers(givenname);
@@ -162,7 +160,7 @@ public class Sw360UserService {
         }
     }
 
-    public List<User> searchUserByLastName(String lastname) throws TException {
+    public List<User> searchUserByLastName(String lastname) {
         try {
             UserService.Iface sw360UserClient = getThriftUserClient();
             return sw360UserClient.searchUsers(lastname);
@@ -171,7 +169,7 @@ public class Sw360UserService {
         }
     }
 
-    public List<User> searchUserByDepartment(String department) throws TException {
+    public List<User> searchUserByDepartment(String department) {
         try {
             UserService.Iface sw360UserClient = getThriftUserClient();
             return sw360UserClient.searchDepartmentUsers(department);
@@ -180,7 +178,7 @@ public class Sw360UserService {
         }
     }
 
-    public List<User> searchUserByUserGroup(UserGroup usergroup) throws TException {
+    public List<User> searchUserByUserGroup(UserGroup usergroup) {
         try {
             UserService.Iface sw360UserClient = getThriftUserClient();
             return sw360UserClient.searchUsersGroup(usergroup);

@@ -31,6 +31,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -110,7 +111,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "bomType", required = false) String bomType,
             HttpServletRequest request,
             HttpServletResponse response
-    ) throws TException {
+    ) throws SW360Exception {
         if (GENERATOR_MODULES.contains(module) && (isNullOrEmpty(generatorClassName) || isNullOrEmpty(variant))) {
             throw new HttpMessageNotReadableException("Error : GeneratorClassName and Variant is required for module " + module);
         }
@@ -158,7 +159,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             throw  e;
         }
         catch (Exception e) {
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 
@@ -166,7 +167,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             boolean withLinkedReleases, HttpServletResponse response, User sw360User, String module, String projectId,
             boolean excludeReleaseVersion, String baseUrl, String generatorClassName, String variant, String template,
             String externalIds
-    ) throws TException {
+    ) throws SW360Exception {
         try {
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_PROJECT_REPORT, false)) {
                 sw360ReportService.getUploadedProjectPath(sw360User, withLinkedReleases, baseUrl, projectId);
@@ -179,7 +180,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             }
         } catch (Exception e) {
             log.error(e);
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 
@@ -187,7 +188,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             boolean withLinkedReleases, HttpServletResponse response, User sw360User, String module,
             boolean excludeReleaseVersion, String baseUrl, String generatorClassName, String variant, String template,
             String externalIds
-    ) throws TException {
+    ) throws SW360Exception {
         try {
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_COMPONENT_REPORT, false)) {
                 sw360ReportService.getUploadedComponentPath(sw360User, withLinkedReleases, baseUrl);
@@ -200,20 +201,20 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             }
         } catch (Exception e) {
             log.error(e);
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 
     private void getLicensesReports(
             HttpServletResponse response, User sw360User, String module, boolean excludeReleaseVersion,
             String generatorClassName, String variant, String template, String externalIds
-    ) throws TException {
+    ) throws SW360Exception {
         try {
             downloadExcelReport(false, response, sw360User, module, null, excludeReleaseVersion,
                     defaultByteBufferVal, generatorClassName, variant, template, externalIds);
         } catch (Exception e) {
             log.error(e);
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 
@@ -221,14 +222,14 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             HttpServletResponse response, User sw360User, String module, String projectId,
             boolean excludeReleaseVersion, String generatorClassName, String variant, String template,
             String externalIds, boolean withSubProject
-    ) throws TException {
+    ) throws SW360Exception {
         // TODO: use `withSubProject` while generating LicenseInfo report.
         try {
             downloadExcelReport(false, response, sw360User, module, projectId, excludeReleaseVersion,
                     defaultByteBufferVal, generatorClassName, variant, template, externalIds);
         } catch (Exception e) {
             log.error(e);
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 
@@ -236,12 +237,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             HttpServletResponse response, User sw360User, String module, String projectId,
             boolean excludeReleaseVersion, String generatorClassName, String variant, String template,
             String externalIds
-    ) throws TException {
+    ) throws SW360Exception {
         try {
             downloadExcelReport(false, response, sw360User, module, projectId, excludeReleaseVersion,
                     defaultByteBufferVal, generatorClassName, variant, template, externalIds);
         } catch (Exception e) {
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 
@@ -249,13 +250,13 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             HttpServletResponse response, User sw360User, String module, String projectId,
             boolean excludeReleaseVersion, String generatorClassName, String variant, String template,
             String externalIds
-    ) throws TException {
+    ) throws SW360Exception {
         try {
             downloadExcelReport(false, response, sw360User, module, projectId, excludeReleaseVersion,
                     defaultByteBufferVal, generatorClassName, variant, template, externalIds);
         } catch (Exception e) {
             log.error(e);
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 
@@ -263,7 +264,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             boolean withLinkedReleases, HttpServletResponse response, User user, String module, String projectId,
             boolean excludeReleaseVersion, ByteBuffer buffer, String generatorClassName, String variant,
             String template, String externalIds
-    ) throws TException {
+    ) throws SW360Exception {
         try {
             ByteBuffer buff = null;
             String fileName = sw360ReportService.getDocumentName(user, null, module);
@@ -307,20 +308,20 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             copyDataStreamToResponse(response, buff);
         } catch (Exception e) {
             log.error(e);
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 
     private void getLicenseResourceBundleReports(
             String projectId, HttpServletResponse response, User sw360User, String module, String generatorClassName,
             String variant, String template, String externalIds, boolean excludeReleaseVersion, boolean withSubProject
-    ) throws TException {
+    ) throws SW360Exception {
         try {
             ByteBuffer buffer = sw360ReportService.downloadSourceCodeBundle(projectId, sw360User, withSubProject);
             downloadExcelReport(false, response, sw360User, module, projectId, excludeReleaseVersion,
                     buffer, generatorClassName, variant, template, externalIds);
         } catch (Exception e) {
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 
@@ -349,7 +350,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "token", required = true) String token,
             @Parameter(description = "Extended by releases.")
             @RequestParam(value = "extendedByReleases", required = false, defaultValue = "false") boolean extendedByReleases
-    ) throws TException {
+    ) throws SW360Exception {
         final User user = restControllerHelper.getUserByEmail(request.getParameter("user"));
         try {
             ByteBuffer buffer = null;
@@ -376,7 +377,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", fileName));
             copyDataStreamToResponse(response, buffer);
         } catch (Exception e) {
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 

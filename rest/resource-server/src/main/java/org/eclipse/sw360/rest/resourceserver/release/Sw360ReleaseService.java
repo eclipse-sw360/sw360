@@ -184,7 +184,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         } catch (TException e) {
             throw new HttpMessageNotReadableException("No Components found");
         }
-        
+
         for (Release release : releases) {
             String componentId = release.getComponentId();
             if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
@@ -198,7 +198,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
         return releases;
     }
-    
+
     public List<Release> getReleaseSubscriptions(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.getSubscribedReleases(sw360User);
@@ -817,7 +817,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
         return deleteStatus;
     }
-    
+
     public BulkOperationNode deleteBulkRelease(String releaseId,  User sw360User, boolean isPreview) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.deleteBulkRelease(releaseId, sw360User, isPreview);
