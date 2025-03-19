@@ -9,8 +9,8 @@
  */
 package org.eclipse.sw360.rest.resourceserver.packages;
 
- import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE;
- import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -34,17 +34,18 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
- import org.eclipse.sw360.datahandler.common.SW360Utils;
- import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.users.User;
- import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
- import org.eclipse.sw360.rest.resourceserver.core.HalResource;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
 import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
@@ -59,6 +60,8 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -150,9 +153,9 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         RequestStatus updatePackageStatus = packageService.updatePackage(sw360Package, user);
         HalResource<Package> halPackage = createHalPackage(sw360Package, user);
         if (updatePackageStatus == RequestStatus.ACCESS_DENIED) {
-            return new ResponseEntity<String>("Edit action is not allowed for the user. " +
+            throw new AccessDeniedException("Edit action is not allowed for the user. " +
                     "Minimum role required for editing is: " +
-                    SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER), HttpStatus.FORBIDDEN);
+                    SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER));
         }
         return new ResponseEntity<>(halPackage, HttpStatus.OK);
     }
@@ -176,10 +179,10 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         } else if(requestStatus == RequestStatus.IN_USE) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
-            return new ResponseEntity<String>("Delete action is not allowed for the user. Minimum role required for deleting is: "
-                    + SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER), HttpStatus.FORBIDDEN);
+            throw new AccessDeniedException("Delete action is not allowed for the user. Minimum role required for deleting is: "
+                    + SW360Utils.readConfig(PACKAGE_PORTLET_WRITE_ACCESS_USER_ROLE, UserGroup.USER));
         } else {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new SW360Exception();
         }
     }
 
@@ -245,8 +248,8 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             packageManager = packageManager.toUpperCase();
 
             if (!EnumUtils.isValidEnum(PackageManager.class, packageManager)) {
-               return new ResponseEntity<String>("Invalid package manager type. Possible values are "
-                        +Arrays.asList(PackageManager.values()), HttpStatus.BAD_REQUEST);
+                throw new HttpMessageNotReadableException("Invalid package manager type. Possible values are "
+                        + Arrays.asList(PackageManager.values()));
             }
             sw360Packages.addAll(packageService.searchByPackageManager(packageManager));
         } else if (isSearchByVersion) {
@@ -291,9 +294,10 @@ public class PackageController implements RepresentationModelProcessor<Repositor
     }
 
     @NotNull
-    private ResponseEntity<CollectionModel<EntityModel<Package>>> getPackageResponse(String version, String purl, String packageManager, Pageable pageable,
-            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages)
-            throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException, TException {
+    private ResponseEntity<CollectionModel<EntityModel<Package>>> getPackageResponse(
+            String version, String purl, String packageManager, Pageable pageable,
+            boolean allDetails, HttpServletRequest request, User sw360User, List<Package> sw360Packages
+    ) throws ResourceClassNotFoundException, PaginationParameterException, URISyntaxException {
         Map<String, Package> mapOfPackages = new HashMap<>();
 
         sw360Packages.stream().forEach(pkg -> mapOfPackages.put(pkg.getId(), pkg));

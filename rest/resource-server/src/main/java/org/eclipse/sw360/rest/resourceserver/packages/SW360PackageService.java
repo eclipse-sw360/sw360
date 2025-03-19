@@ -98,15 +98,15 @@ public class SW360PackageService {
     }
 
     public Package getPackageForUserById(String id) throws TException {
-            PackageService.Iface sw360PackageClient = getThriftPackageClient();
-            try {
-                return sw360PackageClient.getPackageById(id);
-            } catch (SW360Exception sw360Exp) {
-                if (sw360Exp.getErrorCode() == 404) {
-                    throw new ResourceNotFoundException("Package does not exist! id=" + id);
-                } else {
-                    throw sw360Exp;
-                }
+        PackageService.Iface sw360PackageClient = getThriftPackageClient();
+        try {
+            return sw360PackageClient.getPackageById(id);
+        } catch (SW360Exception sw360Exp) {
+            if (sw360Exp.getErrorCode() == 404) {
+                throw new ResourceNotFoundException("Package does not exist! id=" + id);
+            } else {
+                throw sw360Exp;
+            }
         }
     }
 

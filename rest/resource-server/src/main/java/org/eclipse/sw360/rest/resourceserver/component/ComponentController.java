@@ -62,6 +62,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -72,6 +73,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -541,7 +543,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                 sw360User);
         RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, sw360User);
         if (!restControllerHelper.isWriteActionAllowed(sw360Component, sw360User) && comment == null) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.BAD_REQUEST);
+            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         } else {
             if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
                 return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
@@ -592,7 +594,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         final Component component = componentService.getComponentForUserById(componentId, sw360User);
         sw360User.setCommentMadeDuringModerationRequest(comment);
         if (!restControllerHelper.isWriteActionAllowed(component, sw360User) && comment == null) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.BAD_REQUEST);
+            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
         Attachment attachment = null;
         try {
@@ -670,12 +672,13 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @PathVariable("componentId") String componentId,
             @PathVariable("attachmentIds") List<String> attachmentIds,
             @Parameter(description = "Comment message.")
-            @RequestParam(value = "comment", required = false) String comment) throws TException {
+            @RequestParam(value = "comment", required = false) String comment
+    ) throws TException {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Component component = componentService.getComponentForUserById(componentId, user);
         user.setCommentMadeDuringModerationRequest(comment);
         if (!restControllerHelper.isWriteActionAllowed(component, user) && comment == null) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.BAD_REQUEST);
+            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
         Set<Attachment> attachmentsToDelete = attachmentService.filterAttachmentsToRemove(Source.componentId(componentId),
                 component.getAttachments(), attachmentIds);
@@ -845,7 +848,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             }
         }
         if (requestStatus == RequestStatus.ACCESS_DENIED){
-            throw new HttpMessageNotReadableException("User not allowed!");
+            throw new AccessDeniedException("User not allowed!");
         }
 
         final List<EntityModel<VulnerabilityDTO>> vulnerabilityResources = getVulnerabilityResources(releaseIdsWithExternalIdsFromRequest);
@@ -993,7 +996,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         }
         String releaseId = requestSummary.getMessage();
         if (!(requestSummary.getRequestStatus() == RequestStatus.SUCCESS && CommonUtils.isNotNullEmptyOrWhitespace(releaseId))) {
-            return new ResponseEntity<>("Invalid SBOM file", HttpStatus.BAD_REQUEST);
+            throw new HttpMessageNotReadableException("Invalid SBOM file");
         }
         Release release = componentService.getReleaseById(requestSummary.getMessage(),sw360User);
         Component component = componentService.getComponentForUserById(release.getComponentId(),sw360User);
@@ -1046,11 +1049,10 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             throw new RuntimeException("failed to upload attachment", e);
         }
         ImportBomRequestPreparation importBomRequestPreparationResponse = handleImportBomRequestPreparation(importBomRequestPreparation);
-        HttpStatus status = importBomRequestPreparationResponse != null ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
-        return new ResponseEntity<>(importBomRequestPreparationResponse, status);
+        return new ResponseEntity<>(importBomRequestPreparationResponse, HttpStatus.OK);
     }
 
-    private ImportBomRequestPreparation handleImportBomRequestPreparation(ImportBomRequestPreparation importBomRequestPreparation) {
+    private @NotNull ImportBomRequestPreparation handleImportBomRequestPreparation(ImportBomRequestPreparation importBomRequestPreparation) {
         ImportBomRequestPreparation importBomRequestPreparationResponse = new ImportBomRequestPreparation();
         if (importBomRequestPreparation.isComponentDuplicate && importBomRequestPreparation.isReleaseDuplicate) {
             importBomRequestPreparationResponse.setMessage("The Component and Release existed !");

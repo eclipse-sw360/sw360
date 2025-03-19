@@ -23,6 +23,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
@@ -52,9 +53,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import jakarta.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
@@ -167,7 +167,7 @@ public class SW360ReportService {
     public void getUploadedProjectPath(User user, boolean withLinkedReleases, String base, String projectId)
             throws TException {
         if (projectId!=null && !validateProject(projectId, user)) {
-            throw new TException("No project record found for the project Id : " + projectId);
+            throw new SW360Exception("No project record found for the project Id : " + projectId);
         }
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
