@@ -11,7 +11,6 @@ package org.eclipse.sw360.rest.resourceserver.clearingrequest;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -43,6 +42,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -60,10 +60,11 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -105,9 +106,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestById(
             Pageable pageable,
             @Parameter(description = "id of the clearing request")
-            @PathVariable("id") String docId,
-            HttpServletRequest request
-    ) throws TException, URISyntaxException {
+            @PathVariable("id") String docId
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestById(docId, sw360User);
         HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User, true);
@@ -124,9 +124,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     public ResponseEntity<EntityModel<ClearingRequest>> getClearingRequestByProjectId(
             Pageable pageable,
             @Parameter(description = "id of the project")
-            @PathVariable("id") String projectId,
-            HttpServletRequest request
-    ) throws TException, URISyntaxException {
+            @PathVariable("id") String projectId
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestByProjectId(projectId, sw360User);
         HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User, true);
@@ -134,7 +133,9 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
         return new ResponseEntity<>(halClearingRequest, status);
     }
 
-    private HalResource<ClearingRequest> createHalClearingRequestWithAllDetails(ClearingRequest clearingRequest, User sw360User, boolean isSingleRequest) throws TException {
+    private HalResource<ClearingRequest> createHalClearingRequestWithAllDetails(
+            ClearingRequest clearingRequest, User sw360User, boolean isSingleRequest
+    ) {
         HalResource<ClearingRequest> halClearingRequest = new HalResource<>(clearingRequest);
         if (StringUtils.hasText(clearingRequest.projectId)) {
             try{
@@ -178,8 +179,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             )
             @RequestParam(value = "state", required = false) String state,
             HttpServletRequest request
-    ) throws TException {
-
+    ) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             List<ClearingRequest> clearingRequestList = new ArrayList<>();
@@ -188,7 +188,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
                 try {
                     crState = ClearingRequestState.valueOf(state.toUpperCase());
                 } catch (IllegalArgumentException exp) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.format("Invalid ClearingRequest state '%s', possible values are: %s", state, Arrays.asList(ClearingRequestState.values())));
+                    throw new HttpMessageNotReadableException(
+                            String.format("Invalid ClearingRequest state '%s', possible values are: %s", state, Arrays.asList(ClearingRequestState.values())));
                 }
             }
             clearingRequestList.addAll(sw360ClearingRequestService.getMyClearingRequests(sw360User, crState));
@@ -210,7 +211,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             return new ResponseEntity<>(resources, status);
 
         } catch (Exception e) {
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 
@@ -230,7 +231,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
     public ResponseEntity<CollectionModel<?>> getCommentsByClearingRequestId(
             @PathVariable("id") String crId,
             HttpServletRequest request,
-            Pageable pageable) throws TException, URISyntaxException {
+            Pageable pageable
+    ) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             ClearingRequest clearingRequest = sw360ClearingRequestService.getClearingRequestById(crId, sw360User);
@@ -253,7 +255,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
             return new ResponseEntity<>(resources, status);
         } catch (Exception e) {
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 
@@ -270,9 +272,8 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             @Parameter(description = "Comment to be added to the clearing request",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = Comment.class)))
-            @RequestBody Comment comment,
-            HttpServletRequest request
-    ) {
+            @RequestBody Comment comment
+    ) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             ClearingRequest existingClearingRequest = sw360ClearingRequestService.getClearingRequestById(crId, sw360User);
@@ -289,12 +290,12 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             }
             CollectionModel<EntityModel<Comment>> resources = CollectionModel.of(commentList);
             return new ResponseEntity<>(resources, HttpStatus.OK);
-        }catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Clearing request not found.");
-        }catch (TException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while processing the request.");
+        } catch (IllegalArgumentException e) {
+            throw new HttpMessageNotReadableException(e.getMessage());
+        } catch (ResourceNotFoundException e) {
+            throw new ResourceNotFoundException("Clearing request not found.");
+        } catch (TException e) {
+            throw new SW360Exception("An error occurred while processing the request.");
         }
     }
 
@@ -318,15 +319,14 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             tags = {"ClearingRequest"}
     )
     @RequestMapping(value = CLEARING_REQUEST_URL + "/{id}", method = RequestMethod.PATCH)
-    public ResponseEntity<?> patchClearingRequest(
+    public ResponseEntity<HalResource<ClearingRequest>> patchClearingRequest(
             @Parameter(description = "id of the clearing request")
             @PathVariable("id") String id,
             @Parameter(description = "The updated fields of clearing request.",
                     schema = @Schema(implementation = ClearingRequest.class))
             @RequestBody Map<String, Object> reqBodyMap,
             HttpServletRequest request
-    ) throws TException {
-
+    ) {
         try{
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
@@ -344,7 +344,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             if(CommonUtils.isNotNullEmptyOrWhitespace(updatedClearingRequest.getRequestingUser()) && PermissionUtils.isAdmin(sw360User)){
                 User updatedRequestingUser = restControllerHelper.getUserByEmailOrNull(updatedClearingRequest.getRequestingUser());
                 if (updatedRequestingUser == null) {
-                    return new ResponseEntity<String>("Requesting user is not a valid", HttpStatus.BAD_REQUEST);
+                    throw new HttpMessageNotReadableException("Requesting user is not a valid");
                 }else{
                     updatedClearingRequest.setRequestingUser(updatedRequestingUser.getEmail());
                 }
@@ -352,22 +352,22 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
 
             if (CommonUtils.isNotNullEmptyOrWhitespace(updatedClearingRequest.getRequestedClearingDate())) {
                 if (!clearingRequest.getRequestingUser().equals(sw360User.getEmail())) {
-                    return new ResponseEntity<String>("Requested Clearing Date can only be updated by the requesting user", HttpStatus.FORBIDDEN);
+                    throw new AccessDeniedException("Requested Clearing Date can only be updated by the requesting user");
                 }
                 if (!SW360Utils.isValidDate(clearingRequest.getRequestedClearingDate(), updatedClearingRequest.getRequestedClearingDate(), DateTimeFormatter.ISO_LOCAL_DATE)) {
-                    return new ResponseEntity<String>("Invalid clearing date requested", HttpStatus.BAD_REQUEST);
+                    throw new HttpMessageNotReadableException("Invalid clearing date requested");
                 }
             }
 
             if ((updatedClearingRequest.getClearingType() != null || updatedClearingRequest.getPriority() != null ) &&
                     !(PermissionUtils.isClearingAdmin(sw360User) || PermissionUtils.isAdmin(sw360User))) {
-                return new ResponseEntity<String>("Update not allowed for field ClearingType, Priority with user role", HttpStatus.FORBIDDEN);
+                throw new AccessDeniedException("Update not allowed for field ClearingType, Priority with user role");
             }
 
             if (updatedClearingRequest.getClearingTeam() != null) {
                 User updatedClearingTeam = restControllerHelper.getUserByEmailOrNull(updatedClearingRequest.getClearingTeam());
                 if (updatedClearingTeam == null) {
-                    return new ResponseEntity<String>("ClearingTeam is not a valid user", HttpStatus.BAD_REQUEST);
+                    throw new HttpMessageNotReadableException("ClearingTeam is not a valid user");
                 }
             }
 
@@ -375,10 +375,10 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
                 if (PermissionUtils.isClearingAdmin(sw360User) || PermissionUtils.isAdmin(sw360User)) {
                     String currentAgreedClearingDate = CommonUtils.isNotNullEmptyOrWhitespace(clearingRequest.getAgreedClearingDate()) ? clearingRequest.getAgreedClearingDate() : "1980-01-01";
                     if (!SW360Utils.isValidDate(currentAgreedClearingDate, updatedClearingRequest.getAgreedClearingDate(), DateTimeFormatter.ISO_LOCAL_DATE)) {
-                        return new ResponseEntity<String>("Invalid agreed clearing date requested", HttpStatus.BAD_REQUEST);
+                        throw new HttpMessageNotReadableException("Invalid agreed clearing date requested");
                     }
                 } else {
-                    return new ResponseEntity<String>("Update not allowed for field Agreed Clearing Date with user role", HttpStatus.FORBIDDEN);
+                    throw new AccessDeniedException("Update not allowed for field Agreed Clearing Date with user role");
                 }
             }
 
@@ -389,12 +389,12 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
             HalResource<ClearingRequest> halClearingRequest = createHalClearingRequestWithAllDetails(clearingRequest, sw360User, true);
 
             if (updateCRStatus == RequestStatus.ACCESS_DENIED) {
-                return new ResponseEntity<String>("Edit action is not allowed for this user role", HttpStatus.FORBIDDEN);
+                throw new AccessDeniedException("Edit action is not allowed for this user role");
             }
 
             return new ResponseEntity<>(halClearingRequest, HttpStatus.OK);
-        }catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            throw new HttpMessageNotReadableException(e.getMessage());
         }
     }
 

@@ -15,6 +15,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonInstantSerializer;
 import org.apache.thrift.TException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -24,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -56,6 +58,11 @@ public class RestExceptionHandler {
         return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorMessage> handleRuntimeException(RuntimeException e) {
+        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorMessage> handleRequestMethodNotSupported(HttpRequestMethodNotSupportedException e) {
         return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.METHOD_NOT_ALLOWED), HttpStatus.METHOD_NOT_ALLOWED);
@@ -79,6 +86,16 @@ public class RestExceptionHandler {
     @ExceptionHandler({OptimisticLockingFailureException.class, DataIntegrityViolationException.class})
     public ResponseEntity<ErrorMessage> handleConflict(Exception e) {
         return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.CONFLICT), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler({AuthenticationException.class})
+    public ResponseEntity<ErrorMessage> handleInvalidApiToken(AuthenticationException e) {
+        return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.UNAUTHORIZED), HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler({SW360Exception.class})
+    public ResponseEntity<ErrorMessage> handleSw360Exception(SW360Exception e) {
+        return new ResponseEntity<>(new ErrorMessage(new Exception(e.getWhy()), HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Data

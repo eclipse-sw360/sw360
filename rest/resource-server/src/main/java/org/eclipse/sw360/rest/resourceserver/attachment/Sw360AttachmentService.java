@@ -340,18 +340,18 @@ public class Sw360AttachmentService {
         throw new ResourceNotFoundException("Requested Attachment Not Found");
     }
 
-    private AttachmentConnector getConnector() throws TException {
+    private AttachmentConnector getConnector() throws SW360Exception {
         if (attachmentConnector == null) makeConnector();
         return attachmentConnector;
     }
 
-    private synchronized void makeConnector() throws TException {
+    private synchronized void makeConnector() throws SW360Exception {
         if (attachmentConnector == null) {
             try {
                 attachmentConnector = new AttachmentConnector(DatabaseSettings.getConfiguredClient(), DatabaseSettings.COUCH_DB_ATTACHMENTS, downloadTimeout);
             } catch (MalformedURLException e) {
                 log.error("Invalid database address received...", e);
-                throw new TException(e);
+                throw new SW360Exception(e.getMessage());
             }
         }
     }
