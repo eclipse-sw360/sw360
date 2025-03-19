@@ -11,6 +11,7 @@ package org.eclipse.sw360.rest.resourceserver.obligation;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
@@ -21,9 +22,10 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
+import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
@@ -32,15 +34,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
-import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -170,6 +173,61 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
         return new ResponseEntity<>(results, HttpStatus.MULTI_STATUS);
     }
 
+    /**
+     * Edit an existing obligation by id.
+     *
+     * @param id         The id of the obligation to be edited.
+     * @param obligation The obligation details to be updated.
+     * @return ResponseEntity with a message indicating the result of the operation.
+     */
+    @Operation(
+            summary = "Edit an existing obligation.",
+            description = "Edit an existing obligation by id.",
+            tags = {"Obligations"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully edited the obligation."),
+                    @ApiResponse(responseCode = "400", description = "Bad request when obligation title or text is empty."),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized access."),
+                    @ApiResponse(responseCode = "404", description = "Obligation not found."),
+                    @ApiResponse(responseCode = "500", description = "Internal server error.")
+            }
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @PatchMapping(value = OBLIGATION_URL + "/{id}")
+    public ResponseEntity<String> editObligation(
+            @Parameter(description = "The id of the obligation to be edited.")
+            @PathVariable("id") String id,
+            @Parameter(description = "The obligation details to be updated.")
+            @RequestBody Obligation obligation
+    ) throws SW360Exception {
+        if (CommonUtils.isNullEmptyOrWhitespace(obligation.getTitle())
+                || CommonUtils.isNullEmptyOrWhitespace(obligation.getText())
+        ) {
+            log.error("Obligation title or text is empty");
+            throw new HttpMessageNotReadableException("Obligation title or text is empty");
+        }
+
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        checkIfObligationExists(id);
+        try {
+            obligation.setId(id); // Ensure the id is set to the existing obligation's id
+            Obligation updatedObligation = obligationService.updateObligation(obligation, sw360User);
+            log.debug("Obligation  {} updated successfully", updatedObligation);
+            return new ResponseEntity<>("Obligation with id " + updatedObligation.getId() + " has been updated successfully", HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Error updating obligation with id {}", id, e);
+            throw new SW360Exception("Unable to process the request");
+        }
+    }
+
+    private void checkIfObligationExists(String id) throws ResourceNotFoundException {
+        try {
+            obligationService.getObligationById(id);
+        } catch (Exception e) {
+            log.error("Error getting obligation with id {}", id, e);
+            throw new ResourceNotFoundException("Obligation not found");
+        }
+    }
     @Override
     public RepositoryLinksResource process(RepositoryLinksResource resource) {
         resource.add(linkTo(ObligationController.class).slash("api" + OBLIGATION_URL).withRel("obligations"));
