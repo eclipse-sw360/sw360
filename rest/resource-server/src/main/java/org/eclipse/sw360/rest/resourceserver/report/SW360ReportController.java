@@ -7,6 +7,7 @@ package org.eclipse.sw360.rest.resourceserver.report;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.CONTENT_TYPE_OPENXML_SPREADSHEET;
+import static org.eclipse.sw360.datahandler.common.SW360Constants.JSON_FILE_EXTENSION;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.XML_FILE_EXTENSION;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -103,7 +104,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "externalIds", required = false, defaultValue = "") String externalIds,
             @Parameter(description = "Generate report for only current project or with Sub projects. Can be supplied with modules [" + LICENSE_INFO + ", " + EXPORT_CREATE_PROJ_CLEARING_REPORT + "]")
             @RequestParam(value = "withSubProject", required = false, defaultValue = "false") boolean withSubProject,
-            @Parameter(description = "Type of SBOM file extention")
+            @Parameter(description = "Type of SBOM file", schema = @Schema(allowableValues = {XML_FILE_EXTENSION, JSON_FILE_EXTENSION}))
             @RequestParam(value = "bomType", required = false) String bomType,
             HttpServletRequest request,
             HttpServletResponse response
@@ -383,7 +384,6 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         String ctx = request.getContextPath();
         return url.substring(0, url.length() - uri.length() + ctx.length()) + "/";
     }
-    
 
     private void exportSBOM(
             HttpServletResponse response, User sw360User, String module, String projectId,
