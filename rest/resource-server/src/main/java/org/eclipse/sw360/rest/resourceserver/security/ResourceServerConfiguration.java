@@ -29,7 +29,6 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -62,13 +61,6 @@ public class ResourceServerConfiguration {
     String issuerUri;
 
     @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers("/", "/*/*.html", "/*/*.css", "/*/*.js", "/*.js", "/*.json",
-                "/*/*.json", "/*/*.png", "/*/*.gif", "/*/*.ico", "/*/*.woff/*", "/*/*.ttf", "/*/*.html", "/*/*/*.html",
-                "/*/*.yaml", "/v3/api-docs/**", "/api/health", "/api/info");
-    }
-
-    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
         ApiTokenAuthenticationFilter apiTokenAuthenticationFilter = new ApiTokenAuthenticationFilter(authenticationManager, saep);
         return http
@@ -87,6 +79,9 @@ public class ResourceServerConfiguration {
                     auth.requestMatchers(HttpMethod.DELETE, "/api/**").hasAuthority("WRITE");
                     auth.requestMatchers(HttpMethod.PATCH, "/api/**").hasAuthority("WRITE");
                     auth.requestMatchers(HttpMethod.GET, "/v3/api-docs/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/docs/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/mkdocs/**").permitAll();
                 })
                 .httpBasic(Customizer.withDefaults())
                 .exceptionHandling(x -> x.authenticationEntryPoint(saep))
@@ -97,7 +92,7 @@ public class ResourceServerConfiguration {
 
 
     @Bean
-    AuthenticationManager authenticationManager() throws Exception {
+    AuthenticationManager authenticationManager() {
         return new ProviderManager(List.of(authProvider, sw360UserAuthenticationProvider));
     }
 
