@@ -111,55 +111,46 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "bomType", required = false) String bomType,
             HttpServletRequest request,
             HttpServletResponse response
-    ) throws SW360Exception {
+    ) throws TException {
         if (GENERATOR_MODULES.contains(module) && (isNullOrEmpty(generatorClassName) || isNullOrEmpty(variant))) {
             throw new BadRequestClientException("Error : GeneratorClassName and Variant is required for module " + module);
         }
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         String baseUrl = getBaseUrl(request);
-        try {
-            switch (module) {
-                case SW360Constants.PROJECTS:
-                    getProjectReports(withLinkedReleases, response, sw360User, module, projectId,
-                            excludeReleaseVersion, baseUrl, generatorClassName, variant, template, externalIds);
-                    break;
-                case SW360Constants.COMPONENTS:
-                    getComponentsReports(withLinkedReleases, response, sw360User, module, excludeReleaseVersion,
-                            baseUrl, generatorClassName, variant, template, externalIds);
-                    break;
-                case SW360Constants.LICENSES:
-                    getLicensesReports(response, sw360User, module, excludeReleaseVersion, generatorClassName, variant,
-                            template, externalIds);
-                    break;
-                case LICENSE_INFO:
-                    getLicensesInfoReports(response, sw360User, module, projectId, excludeReleaseVersion,
-                            generatorClassName, variant, template, externalIds, withSubProject);
-                    break;
-                case LICENSES_RESOURCE_BUNDLE:
-                    getLicenseResourceBundleReports(projectId, response, sw360User, module, generatorClassName, variant,
-                            template, externalIds, excludeReleaseVersion, withSubProject);
-                    break;
-                case SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO:
-                    getProjectReleaseWithEccSpreadSheet(response, sw360User, module, projectId, excludeReleaseVersion,
-                            generatorClassName, variant, template, externalIds);
-                    break;
-                case EXPORT_CREATE_PROJ_CLEARING_REPORT:
-                    exportProjectCreateClearingRequest(response, sw360User, module, projectId, excludeReleaseVersion,
-                            generatorClassName, variant, template, externalIds);
-                    break;
-                case SW360Constants.SBOM:
-                    exportSBOM(response, sw360User, module, projectId,generatorClassName,
-                            bomType,withSubProject);
-                    break;
-                default:
-                    break;
-            }
-        }
-        catch (AccessDeniedException e) {
-            throw  e;
-        }
-        catch (Exception e) {
-            throw new SW360Exception(e.getMessage());
+        switch (module) {
+            case SW360Constants.PROJECTS:
+                getProjectReports(withLinkedReleases, response, sw360User, module, projectId,
+                        excludeReleaseVersion, baseUrl, generatorClassName, variant, template, externalIds);
+                break;
+            case SW360Constants.COMPONENTS:
+                getComponentsReports(withLinkedReleases, response, sw360User, module, excludeReleaseVersion,
+                        baseUrl, generatorClassName, variant, template, externalIds);
+                break;
+            case SW360Constants.LICENSES:
+                getLicensesReports(response, sw360User, module, excludeReleaseVersion, generatorClassName, variant,
+                        template, externalIds);
+                break;
+            case LICENSE_INFO:
+                getLicensesInfoReports(response, sw360User, module, projectId, excludeReleaseVersion,
+                        generatorClassName, variant, template, externalIds, withSubProject);
+                break;
+            case LICENSES_RESOURCE_BUNDLE:
+                getLicenseResourceBundleReports(projectId, response, sw360User, module, generatorClassName, variant,
+                        template, externalIds, excludeReleaseVersion, withSubProject);
+                break;
+            case SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO:
+                getProjectReleaseWithEccSpreadSheet(response, sw360User, module, projectId, excludeReleaseVersion,
+                        generatorClassName, variant, template, externalIds);
+                break;
+            case EXPORT_CREATE_PROJ_CLEARING_REPORT:
+                exportProjectCreateClearingRequest(response, sw360User, module, projectId, excludeReleaseVersion,
+                        generatorClassName, variant, template, externalIds);
+                break;
+            case SW360Constants.SBOM:
+                exportSBOM(response, sw360User, module, projectId, bomType, withSubProject);
+                break;
+            default:
+                break;
         }
     }
 
@@ -390,14 +381,14 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
 
     private void exportSBOM(
             HttpServletResponse response, User sw360User, String module, String projectId,
-            String generatorClassName, String bomType, boolean withSubProject
+            String bomType, boolean withSubProject
     ) throws TException {
         try {
             String buff = sw360ReportService.getProjectSBOMBuffer(sw360User, projectId, bomType, withSubProject);
             response.setContentType(SW360Constants.CONTENT_TYPE_JSON);
             String fileName = sw360ReportService.getSBOMFileName(sw360User, projectId, module, bomType);
             if (null == buff) {
-                throw new TException("No data available for the user " + sw360User.getEmail());
+                throw new SW360Exception("No data available for the user " + sw360User.getEmail());
             }
             if (SW360Constants.XML_FILE_EXTENSION.equalsIgnoreCase(bomType)) {
                 response.setContentType(SW360Constants.CONTENT_TYPE_XML);
@@ -408,10 +399,9 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         catch (AccessDeniedException e) {
             log.error(e);
             throw e;
-        }
-        catch (Exception e) {
+        } catch (IOException e) {
             log.error(e);
-            throw new TException(e.getMessage());
+            throw new SW360Exception("Unable to generate SBOM report.");
         }
     }
 }

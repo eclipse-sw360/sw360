@@ -3707,7 +3707,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
     @Operation(
             summary = "Add licenses to linked releases of a project.",
             description = "This API adds license information to linked releases of a project by processing the approved CLI attachments for each release. It categorizes releases based on the number of CLI attachments (single, multiple, or none) and updates their main and other licenses accordingly.",
-            tags = {"Project"},
+            tags = {"Projects"},
                     parameters = {
                             @Parameter(
                                 name = "projectId",
