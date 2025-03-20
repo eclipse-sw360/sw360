@@ -30,10 +30,10 @@ import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -127,10 +127,10 @@ public class Sw360UserService {
                 throw new DataIntegrityViolationException("sw360 user with name '" + user.getEmail()
                         + "' already exists, having database identifier " + documentRequestSummary.getId());
             } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-                throw new HttpMessageNotReadableException(documentRequestSummary.getMessage());
+                throw new BadRequestClientException(documentRequestSummary.getMessage());
             }
         } catch (TException e) {
-            throw new HttpMessageNotReadableException(e.getMessage());
+            throw new BadRequestClientException(e.getMessage());
         }
         return null;
     }

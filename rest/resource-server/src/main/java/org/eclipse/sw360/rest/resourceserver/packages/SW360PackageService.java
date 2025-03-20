@@ -28,12 +28,12 @@ import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
 import lombok.NonNull;
@@ -61,9 +61,9 @@ public class SW360PackageService {
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 package with same name and version '" + pkg.getName() + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+            throw new BadRequestClientException("Dependent document Id/ids not valid.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException("Package name field cannot be empty or contain only whitespace character");
+            throw new BadRequestClientException("Package name field cannot be empty or contain only whitespace character");
         }
         return null;
     }
@@ -76,11 +76,11 @@ public class SW360PackageService {
         requestStatus = sw360PackageClient.updatePackage(pkg, sw360User);
 
         if (requestStatus == RequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Invalid Purl or linked release id.");
+            throw new BadRequestClientException("Invalid Purl or linked release id.");
         } else if (requestStatus == RequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 package with same name and version '" + pkg.getName() + "' already exists.");
         } else if (requestStatus == RequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException("Package name and version field cannot be empty or contain only whitespace character");
+            throw new BadRequestClientException("Package name and version field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.FAILURE) {
             throw new RuntimeException("sw360 Package with id '" + pkg.getId() + " cannot be updated.");
         }

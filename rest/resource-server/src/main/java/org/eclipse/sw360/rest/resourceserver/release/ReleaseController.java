@@ -72,6 +72,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -92,7 +93,6 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -625,7 +625,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             throw new SW360Exception("Feature SPDXDocument disable");
         }
         if (CommonUtils.isNullEmptyOrWhitespace(releaseId)) {
-            throw new HttpMessageNotReadableException("Release id not found");
+            throw new BadRequestClientException("Release id not found");
         }
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release release = releaseService.getReleaseForUserById(releaseId, user);
@@ -639,7 +639,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 : releaseService.getSPDXDocumentById(spdxId, user);
         spdxId = spdxDocumentActual.getId();
         if (CommonUtils.isNullEmptyOrWhitespace(spdxId)) {
-            throw new HttpMessageNotReadableException("Update SPDXDocument Failed!");
+            throw new BadRequestClientException("Update SPDXDocument Failed!");
         }
         HalResource<Release> halRelease = createHalReleaseResource(release, false);
 

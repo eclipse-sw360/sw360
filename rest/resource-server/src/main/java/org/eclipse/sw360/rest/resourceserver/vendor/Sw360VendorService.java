@@ -24,10 +24,10 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -85,7 +85,7 @@ public class Sw360VendorService {
             VendorService.Iface sw360VendorClient = getThriftVendorClient();
             if (CommonUtils.isNullEmptyOrWhitespace(vendor.getFullname()) || CommonUtils.isNullEmptyOrWhitespace(vendor.getShortname())
                     || CommonUtils.isNullEmptyOrWhitespace(vendor.getUrl())) {
-                throw new HttpMessageNotReadableException("A Vendor cannot have null or empty 'Full Name' or 'Short Name' or 'URL'!");
+                throw new BadRequestClientException("A Vendor cannot have null or empty 'Full Name' or 'Short Name' or 'URL'!");
             }
             AddDocumentRequestSummary summary = sw360VendorClient.addVendor(vendor);
             if (AddDocumentRequestStatus.SUCCESS.equals(summary.getRequestStatus())) {
@@ -94,7 +94,7 @@ public class Sw360VendorService {
             } else if (AddDocumentRequestStatus.DUPLICATE.equals(summary.getRequestStatus())) {
                 throw new DataIntegrityViolationException("A Vendor with same full name '" + vendor.getFullname() + "' and URL already exists!");
             } else if (AddDocumentRequestStatus.FAILURE.equals(summary.getRequestStatus())) {
-                throw new HttpMessageNotReadableException(summary.getMessage());
+                throw new BadRequestClientException(summary.getMessage());
             }
             return null;
         } catch (TException e) {
@@ -204,7 +204,7 @@ public class Sw360VendorService {
         requestStatus =  sw360VendorClient.mergeVendors(vendorTargetId, vendorSourceId, vendorSelection, user);
 
         if (requestStatus == RequestStatus.IN_USE) {
-            throw new HttpMessageNotReadableException("Vendor used as source or target has an open MR");
+            throw new BadRequestClientException("Vendor used as source or target has an open MR");
         } else if (requestStatus == RequestStatus.FAILURE) {
             throw new ResourceClassNotFoundException("Internal server error while merging the vendors");
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {

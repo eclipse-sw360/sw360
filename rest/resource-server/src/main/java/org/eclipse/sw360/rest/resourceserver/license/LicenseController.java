@@ -38,6 +38,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseType;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +52,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatus.Series;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
@@ -297,7 +297,7 @@ public class LicenseController implements RepresentationModelProcessor<Repositor
         Set<String> commonExtIds = Sets.intersection(obligationIdsByLicense, obligationIds);
         Set<String> diffIds = Sets.difference(obligationIdsByLicense, obligationIds);
         if (commonExtIds.size() != obligationIds.size()) {
-            throw new HttpMessageNotReadableException("Obligation Ids not in license!" + license.getShortname());
+            throw new BadRequestClientException("Obligation Ids not in license!" + license.getShortname());
         }
 
         Set<String> obligationIdTrue = licenseService.getIdObligationsContainWhitelist(sw360User, licenseId, diffIds);
