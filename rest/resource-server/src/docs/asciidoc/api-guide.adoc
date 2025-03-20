@@ -114,7 +114,7 @@ that describes the problem. The error object has the following structure:
 include::{snippets}/should_document_error_internal_error/response-fields.adoc[]
 
 For example, a request that attempts to get a non-existent project will produce a
-`500 Internal Server Error` response:
+`404 Not Found Error` response:
 
 include::{snippets}/should_document_error_internal_error/http-response.adoc[]
 

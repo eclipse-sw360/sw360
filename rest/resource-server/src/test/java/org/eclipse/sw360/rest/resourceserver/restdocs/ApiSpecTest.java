@@ -10,13 +10,13 @@
 
 package org.eclipse.sw360.rest.resourceserver.restdocs;
 
-import org.apache.thrift.TException;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders;
@@ -133,10 +133,10 @@ public class ApiSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_error_internal_error() throws Exception {
-        given(this.projectServiceMock.getProjectForUserById(anyString(), any())).willThrow(new RuntimeException(new TException("Internal error processing getProjectById")));
+        given(this.projectServiceMock.getProjectForUserById(anyString(), any())).willThrow(new ResourceNotFoundException("Requested Project Not Found"));
         this.mockMvc.perform(RestDocumentationRequestBuilders.get("/api/projects/12321")
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword)))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isNotFound())
                 .andDo(this.documentationHandler.document(
                         responseFields(
                                 fieldWithPath("timestamp").description("The timestamp when the error occurred"),
