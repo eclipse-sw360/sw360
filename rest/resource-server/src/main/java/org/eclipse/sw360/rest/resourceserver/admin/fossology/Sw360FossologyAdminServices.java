@@ -26,9 +26,10 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -60,12 +61,12 @@ public class Sw360FossologyAdminServices {
             if (client != null && fossologyConfig != null) {
                 client.setFossologyConfig(fossologyConfig);
             } else {
-                throw new HttpMessageNotReadableException("fossologyConfig value is null.");
+                throw new BadRequestClientException("fossologyConfig value is null.");
             }
             setKeyValuePair(configKeyToValues, key, url, folderId, token);
             fossologyConfig.setConfigKeyToValues(configKeyToValues);
         } else {
-            throw new HttpMessageNotReadableException("Unable to save the details. User is not admin");
+            throw new BadRequestClientException("Unable to save the details. User is not admin");
         }
     }
 
@@ -94,13 +95,12 @@ public class Sw360FossologyAdminServices {
         map.computeIfAbsent(key, k -> new HashSet<>()).addAll(Set.of(url, folderId, token));
     }
 
-    public void serverConnection(User sw360User) throws TException{
+    public void serverConnection(User sw360User) {
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             serveCheckConnection();
         } else {
-            throw new HttpMessageNotReadableException("User is not admin");
+            throw new AccessDeniedException("User is not admin");
         }
-
     }
 
     private void serveCheckConnection() {

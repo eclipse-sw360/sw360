@@ -35,9 +35,9 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -147,9 +147,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 component with name '" + component.getName() + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+            throw new BadRequestClientException("Dependent document Id/ids not valid.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException("Component name field cannot be empty or contain only whitespace character");
+            throw new BadRequestClientException("Component name field cannot be empty or contain only whitespace character");
         }
         return null;
     }
@@ -163,9 +163,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
             requestStatus = sw360ComponentClient.updateComponent(component, sw360User);
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+            throw new BadRequestClientException("Dependent document Id/ids not valid.");
         } else if (requestStatus == RequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException("Component name field cannot be empty or contain only whitespace character");
+            throw new BadRequestClientException("Component name field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
             throw new RuntimeException("Multiple attachments with same name or content cannot be present in attachment list.");
         } else if (requestStatus != RequestStatus.SUCCESS && requestStatus != RequestStatus.SENT_TO_MODERATOR) {
@@ -264,7 +264,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.getMyComponents(sw360User);
     }
-    
+
     public List<VulnerabilityDTO> getVulnerabilitiesByComponent(String componentId, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         List<String> releaseIds = sw360ComponentClient.getReleaseIdsFromComponentId(componentId, sw360User);
@@ -296,9 +296,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         requestStatus =  sw360ComponentClient.mergeComponents(componentTargetId, componentSourceId, componentSelection, user);
 
         if (requestStatus == RequestStatus.IN_USE) {
-            throw new HttpMessageNotReadableException("Component already in use.");
+            throw new BadRequestClientException("Component already in use.");
         } else if (requestStatus == RequestStatus.FAILURE) {
-            throw new HttpMessageNotReadableException("Cannot merge these components");
+            throw new BadRequestClientException("Cannot merge these components");
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
             throw new RuntimeException("Access denied");
         }
@@ -312,9 +312,9 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         requestStatus = sw360ComponentClient.splitComponent(srcComponent, targetComponent, sw360User);
 
         if (requestStatus == RequestStatus.IN_USE) {
-            throw new HttpMessageNotReadableException("Component already in use.");
+            throw new BadRequestClientException("Component already in use.");
         } else if (requestStatus == RequestStatus.FAILURE) {
-            throw new HttpMessageNotReadableException("Cannot split these components");
+            throw new BadRequestClientException("Cannot split these components");
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
             throw new RuntimeException("Access denied...!");
         }

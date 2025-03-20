@@ -49,6 +49,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformat
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
@@ -57,7 +58,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 
@@ -161,14 +161,14 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public Release setComponentDependentFieldsInRelease(Release releaseById, User sw360User) {
         String componentId = releaseById.getComponentId();
         if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
-            throw new HttpMessageNotReadableException("ComponentId must be present");
+            throw new BadRequestClientException("ComponentId must be present");
         }
         Component componentById = null;
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
             componentById = sw360ComponentClient.getComponentById(componentId, sw360User);
         } catch (TException e) {
-            throw new HttpMessageNotReadableException("No Component found with Id - " + componentId);
+            throw new BadRequestClientException("No Component found with Id - " + componentId);
         }
         releaseById.setComponentType(componentById.getComponentType());
         return releaseById;
@@ -182,16 +182,16 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             List<Component> components = sw360ComponentClient.getComponentSummary(sw360User);
             componentIdMap = components.stream().collect(Collectors.toMap(Component::getId, c -> c));
         } catch (TException e) {
-            throw new HttpMessageNotReadableException("No Components found");
+            throw new BadRequestClientException("No Components found");
         }
 
         for (Release release : releases) {
             String componentId = release.getComponentId();
             if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
-                throw new HttpMessageNotReadableException("ComponentId must be present");
+                throw new BadRequestClientException("ComponentId must be present");
             }
             if (!componentIdMap.containsKey(componentId)) {
-            	throw new HttpMessageNotReadableException("No Component found with Id - " + componentId);
+            	throw new BadRequestClientException("No Component found with Id - " + componentId);
             }
             Component component = componentIdMap.get(componentId);
             release.setComponentType(component.getComponentType());
@@ -243,10 +243,10 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 release with name '" + SW360Utils.printName(release) + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+            throw new BadRequestClientException("Dependent document Id/ids not valid.");
         }
         else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Release name and version field cannot be empty or contain only whitespace character");
         }
         return null;
@@ -255,14 +255,14 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public void setComponentNameAsReleaseName(Release release, User sw360User) {
         String componentId = release.getComponentId();
         if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
-            throw new HttpMessageNotReadableException("ComponentId must be present");
+            throw new BadRequestClientException("ComponentId must be present");
         }
         Component componentById = null;
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
             componentById = sw360ComponentClient.getComponentById(componentId, sw360User);
         } catch (TException e) {
-            throw new HttpMessageNotReadableException("No Component found with Id - " + componentId);
+            throw new BadRequestClientException("No Component found with Id - " + componentId);
         }
         release.setName(componentById.getName());
     }
@@ -278,9 +278,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             requestStatus = sw360ComponentClient.updateRelease(release, sw360User);
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+            throw new BadRequestClientException("Dependent document Id/ids not valid.");
         } else if (requestStatus == RequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Release name and version field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
             throw new RuntimeException("Multiple attachments with same name or content cannot be present in attachment list.");
@@ -954,7 +954,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Set<Attachment> attachments = release.getAttachments();
 
         if (attachments == null || attachments.isEmpty()) {
-            throw new HttpMessageNotReadableException(String.format(RELEASE_ATTACHMENT_ERRORMSG, 0));
+            throw new BadRequestClientException(String.format(RELEASE_ATTACHMENT_ERRORMSG, 0));
         }
 
         List<Attachment> listOfSources = attachments.parallelStream()
@@ -963,7 +963,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         int noOfSrcAttached = listOfSources.size();
 
         if (noOfSrcAttached != 1) {
-            throw new HttpMessageNotReadableException(String.format(RELEASE_ATTACHMENT_ERRORMSG, noOfSrcAttached));
+            throw new BadRequestClientException(String.format(RELEASE_ATTACHMENT_ERRORMSG, noOfSrcAttached));
         }
 
         return listOfSources.get(0).getAttachmentContentId();

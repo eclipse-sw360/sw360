@@ -35,8 +35,6 @@ import org.eclipse.sw360.datahandler.thrift.Quadratic;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
-import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
-import org.eclipse.sw360.datahandler.thrift.attachments.ProjectAttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
@@ -69,7 +67,6 @@ import org.eclipse.sw360.rest.resourceserver.obligation.Sw360ObligationService;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProject;
 import org.jetbrains.annotations.NotNull;
 import org.eclipse.sw360.rest.resourceserver.project.EmbeddedProjectDTO;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
 import org.eclipse.sw360.rest.resourceserver.obligation.ObligationController;
@@ -103,8 +100,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
-import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -821,7 +816,7 @@ public class RestControllerHelper<T> {
             }
         }
         if (!licenseIncorrect.isEmpty()) {
-            throw new HttpMessageNotReadableException("License with ids " + licenseIncorrect + " does not exist in SW360 database.");
+            throw new BadRequestClientException("License with ids " + licenseIncorrect + " does not exist in SW360 database.");
         }
     }
 
@@ -853,7 +848,7 @@ public class RestControllerHelper<T> {
             }
         }
         if (!obligationIncorrect.isEmpty()) {
-            throw new HttpMessageNotReadableException("Obligation with ids " + obligationIncorrect + " does not exist in SW360 database.");
+            throw new BadRequestClientException("Obligation with ids " + obligationIncorrect + " does not exist in SW360 database.");
         }
     }
 
@@ -1353,7 +1348,7 @@ public class RestControllerHelper<T> {
             }
         } catch (SW360Exception sw360Exp) {
             if (sw360Exp.getErrorCode() == 404) {
-                throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+                throw new BadRequestClientException("Dependent document Id/ids not valid.", sw360Exp);
             } else if (sw360Exp.getErrorCode() == 403) {
                 if (element instanceof Project) {
                     throw new AccessDeniedException(
@@ -1365,9 +1360,9 @@ public class RestControllerHelper<T> {
         }
         if (!isNullEmptyOrWhitespace(cyclicLinkedElementPath)) {
             if (element instanceof Project) {
-                throw new HttpMessageNotReadableException("Cyclic linked Project : " + cyclicLinkedElementPath);
+                throw new BadRequestClientException("Cyclic linked Project : " + cyclicLinkedElementPath);
             } else if (element instanceof Release) {
-                throw new HttpMessageNotReadableException("Cyclic linked Release : " + cyclicLinkedElementPath);
+                throw new BadRequestClientException("Cyclic linked Release : " + cyclicLinkedElementPath);
             }
         }
     }
@@ -1660,7 +1655,6 @@ public class RestControllerHelper<T> {
         }
         return clearingRequestService.getClearingRequestById(clearingRequest.getId(), sw360User);
     }
-    
 
     public boolean isWriteActionAllowed(Object object, User user) {
         return makePermission(object, user).isActionAllowed(RequestedAction.WRITE);

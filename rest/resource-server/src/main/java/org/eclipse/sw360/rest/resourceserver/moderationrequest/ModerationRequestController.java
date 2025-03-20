@@ -43,6 +43,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxdocument.SPDXDocument;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
@@ -61,7 +62,6 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
@@ -187,7 +187,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
         stateOptions.add("open");
         stateOptions.add("closed");
         if (!stateOptions.contains(state)) {
-            throw new HttpMessageNotReadableException(String.format(
+            throw new BadRequestClientException(String.format(
                     "Invalid ModerationRequest state '%s', possible values are: %s", state, stateOptions));
         }
 
@@ -287,7 +287,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
                 moderationStatus = sw360ModerationRequestService.postponeRequest(moderationRequest, patch.getComment());
                 break;
             default:
-                throw new HttpMessageNotReadableException(
+                throw new BadRequestClientException(
                         "Action should be `" +
                                 Arrays.asList(ModerationPatch.ModerationAction.values()) +
                                 "`, '" + patch.getAction() + "' received.");
@@ -593,7 +593,7 @@ public class ModerationRequestController implements RepresentationModelProcessor
         } catch (SW360Exception ex) {
             throw new ResourceNotFoundException("Entity not found for the given ID: " + entityId);
         } catch (IllegalArgumentException ex) {
-            throw new HttpMessageNotReadableException("Invalid entity type provided: " + ex.getMessage());
+            throw new BadRequestClientException("Invalid entity type provided: " + ex.getMessage());
         } catch (TException ex) {
             throw new SW360Exception("An error occurred while processing the request: " + ex.getMessage());
         }

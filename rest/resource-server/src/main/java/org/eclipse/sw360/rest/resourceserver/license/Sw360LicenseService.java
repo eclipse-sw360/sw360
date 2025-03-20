@@ -10,7 +10,6 @@
 
 package org.eclipse.sw360.rest.resourceserver.license;
 
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import com.google.common.collect.ImmutableSet;
@@ -23,7 +22,6 @@ import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
@@ -35,13 +33,11 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.exporter.LicsExporter;
 import org.eclipse.sw360.exporter.utils.ZipTools;
-import org.eclipse.sw360.exporter.utils.ZipTools;
 import org.eclipse.sw360.importer.LicsImporter;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.http.HttpRequest;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 import java.io.ByteArrayInputStream;
@@ -91,7 +87,7 @@ public class Sw360LicenseService {
         RequestStatus deleteLicenseStatus = sw360LicenseClient.deleteLicense(licenseId, user);
 
         if (deleteLicenseStatus == RequestStatus.IN_USE) {
-            throw new HttpMessageNotReadableException("Unable to delete license. License is in Use");
+            throw new BadRequestClientException("Unable to delete license. License is in Use");
         } else if (deleteLicenseStatus == RequestStatus.FAILURE) {
             throw new RuntimeException("Unable to delete License");
         }
@@ -102,7 +98,7 @@ public class Sw360LicenseService {
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, user)) {
             RequestSummary deleteLicenseStatus = sw360LicenseClient.deleteAllLicenseInformation(user);
         } else {
-            throw new HttpMessageNotReadableException("Unable to delete license. User is not admin");
+            throw new BadRequestClientException("Unable to delete license. User is not admin");
         }
     }
 
@@ -189,13 +185,13 @@ public class Sw360LicenseService {
 
     public void checkObligationIds(Set<String> obligationIds) throws TException {
         if (obligationIds.isEmpty()) {
-            throw new HttpMessageNotReadableException("Cannot update because no obliagtion id input");
+            throw new BadRequestClientException("Cannot update because no obliagtion id input");
         }
         LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
         ArrayList<String> obligationIdsIncorrect = new ArrayList<>();
         for (String obligationId : obligationIds) {
             if (isNullEmptyOrWhitespace(obligationId)) {
-                throw new HttpMessageNotReadableException("Obligation id cannot be empty");
+                throw new BadRequestClientException("Obligation id cannot be empty");
             }
             try {
                 sw360LicenseClient.getObligationsById(obligationId);
@@ -204,7 +200,7 @@ public class Sw360LicenseService {
             }
         }
         if (!obligationIdsIncorrect.isEmpty()) {
-            throw new HttpMessageNotReadableException("Obligation ids " + obligationIdsIncorrect + " incorrect");
+            throw new BadRequestClientException("Obligation ids " + obligationIdsIncorrect + " incorrect");
         }
     }
 
@@ -218,7 +214,7 @@ public class Sw360LicenseService {
             }
         }
         if (!obligationsLevelIncorrect.isEmpty()) {
-            throw new HttpMessageNotReadableException("Obligation with ids: " + obligationsLevelIncorrect + " level is not License Obligation");
+            throw new BadRequestClientException("Obligation with ids: " + obligationsLevelIncorrect + " level is not License Obligation");
         }
     }
 
@@ -232,13 +228,13 @@ public class Sw360LicenseService {
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             RequestSummary allSPDXLicenseStatus = sw360LicenseClient.importAllSpdxLicenses(sw360User);
         } else {
-            throw new HttpMessageNotReadableException("Unable to import All Spdx license. User is not admin");
+            throw new BadRequestClientException("Unable to import All Spdx license. User is not admin");
         }
     }
-    
+
     public void getDownloadLicenseArchive(User sw360User ,HttpServletRequest request,HttpServletResponse response) throws TException,IOException{
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-            throw new HttpMessageNotReadableException("Unable to download archive license. User is not admin");
+            throw new BadRequestClientException("Unable to download archive license. User is not admin");
         }
         try {
             LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
@@ -274,7 +270,7 @@ public class Sw360LicenseService {
         final HashMap<String, InputStream> inputMap = new HashMap<>();
 
         if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-            throw new HttpMessageNotReadableException("Unable to upload license file. User is not admin");
+            throw new BadRequestClientException("Unable to upload license file. User is not admin");
         }
         try {
             InputStream inputStream = file.getInputStream();
@@ -296,7 +292,7 @@ public class Sw360LicenseService {
             RequestSummary osdlLicenseStatus = sw360LicenseClient.importAllOSADLLicenses(sw360User);
             return osdlLicenseStatus;
         } else {
-            throw new HttpMessageNotReadableException("Unable to import All Spdx license. User is not admin");
+            throw new BadRequestClientException("Unable to import All Spdx license. User is not admin");
         }
     }
 
@@ -306,13 +302,13 @@ public class Sw360LicenseService {
              lType.setLicenseType(licenseType);
         }
         else {
-              throw new HttpMessageNotReadableException("license type is empty");
+              throw new BadRequestClientException("license type is empty");
         }
         try {
             if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
                 RequestStatus status = sw360LicenseClient.addLicenseType(lType, sw360User);
             } else {
-                throw new HttpMessageNotReadableException("Unable to create License Type. User is not admin");
+                throw new BadRequestClientException("Unable to create License Type. User is not admin");
             }
          } catch ( Exception e) {
                  throw new TException(e.getMessage());

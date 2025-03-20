@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -158,7 +159,8 @@ public class SW360ConfigurationsController implements RepresentationModelProcess
                 return new ResponseEntity<>("Configurations are being updated by another administrator, please try again later", HttpStatus.CONFLICT);
             }
         } catch (InvalidPropertiesFormatException invalidPropertiesFormatException) {
-            return new ResponseEntity<>(invalidPropertiesFormatException.getMessage(), HttpStatus.BAD_REQUEST);
+            throw new BadRequestClientException(invalidPropertiesFormatException.getMessage(),
+                    invalidPropertiesFormatException);
         }
         return ResponseEntity.ok("Configurations are updated successfully");
     }

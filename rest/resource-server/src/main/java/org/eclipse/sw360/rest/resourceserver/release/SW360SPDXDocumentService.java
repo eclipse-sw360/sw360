@@ -33,8 +33,8 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReferen
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -56,21 +56,21 @@ public class SW360SPDXDocumentService {
                                                       Set<String> moderators) {
         if(CommonUtils.isNotEmpty(spdxDocumentRequest.getSnippets())) {
             if(!checkIndexSnippetInformations(spdxDocumentRequest.getSnippets())) {
-                throw new HttpMessageNotReadableException("Index of SnippetInformations invalid!");
+                throw new BadRequestClientException("Index of SnippetInformations invalid!");
             }
             if(!checkIndexSnippetRanges(spdxDocumentRequest.getSnippets())) {
-                throw new HttpMessageNotReadableException("Index of SnippetRanges invalid!");
+                throw new BadRequestClientException("Index of SnippetRanges invalid!");
             }
         }
         if(CommonUtils.isNotEmpty(spdxDocumentRequest.getRelationships()) && !checkIndexRelationships(spdxDocumentRequest.getRelationships())) {
-            throw new HttpMessageNotReadableException("Index of Relationships SPDXDocument invalid!");
+            throw new BadRequestClientException("Index of Relationships SPDXDocument invalid!");
         }
         if(CommonUtils.isNotEmpty(spdxDocumentRequest.getAnnotations()) && !checkIndexAnnotations(spdxDocumentRequest.getAnnotations())) {
-            throw new HttpMessageNotReadableException("Index of Annotations SPDXDocument invalid!");
+            throw new BadRequestClientException("Index of Annotations SPDXDocument invalid!");
         }
         if(CommonUtils.isNotEmpty(spdxDocumentRequest.getOtherLicensingInformationDetecteds())
                 && !checkIndexOtherLicensingInformationDetected(spdxDocumentRequest.getOtherLicensingInformationDetecteds())) {
-            throw new HttpMessageNotReadableException("Index of OtherLicensingInformationDetecteds invalid!");
+            throw new BadRequestClientException("Index of OtherLicensingInformationDetecteds invalid!");
         }
 
         return spdxDocumentRequest.setModerators(moderators)
@@ -85,11 +85,11 @@ public class SW360SPDXDocumentService {
                                                                                     Set<String> moderators) {
         if(CommonUtils.isNotEmpty(documentCreationInformation.getExternalDocumentRefs()) &&
                 !checkIndexExternalDocumentReferences(documentCreationInformation.getExternalDocumentRefs())) {
-            throw new HttpMessageNotReadableException("Index of xternalDocumentReferences invalid!");
+            throw new BadRequestClientException("Index of xternalDocumentReferences invalid!");
         }
         if(CommonUtils.isNotEmpty(documentCreationInformation.getCreator()) &&
                 !checkIndexCreator(documentCreationInformation.getCreator())) {
-            throw new HttpMessageNotReadableException("Index of Creators invalid!");
+            throw new BadRequestClientException("Index of Creators invalid!");
         }
         return documentCreationInformation.setModerators(moderators)
                 .setId(spdxDocumentActual.getSpdxDocumentCreationInfoId());
@@ -99,27 +99,27 @@ public class SW360SPDXDocumentService {
                                                                   SPDXDocument spdxDocumentActual,
                                                                   Set<String> moderators) {
         if(packageInformation.getIndex() != 0) {
-            throw new HttpMessageNotReadableException("Index of PackageInformation invalid!");
+            throw new BadRequestClientException("Index of PackageInformation invalid!");
         }
 
         if(CommonUtils.isNotEmpty(packageInformation.getExternalRefs()) &&
                 !checkIndexExternalReference(packageInformation.getExternalRefs())) {
-            throw new HttpMessageNotReadableException("Index of ExternalReference invalid!");
+            throw new BadRequestClientException("Index of ExternalReference invalid!");
         }
 
         if(CommonUtils.isNotEmpty(packageInformation.getAnnotations()) &&
                 !checkIndexAnnotations(packageInformation.getAnnotations())) {
-            throw new HttpMessageNotReadableException("Index of Annotations PackageInformation invalid!");
+            throw new BadRequestClientException("Index of Annotations PackageInformation invalid!");
         }
 
         if(CommonUtils.isNotEmpty(packageInformation.getRelationships()) &&
                 !checkIndexRelationships(packageInformation.getRelationships())) {
-            throw new HttpMessageNotReadableException("Index of Relationships PackageInformation invalid!");
+            throw new BadRequestClientException("Index of Relationships PackageInformation invalid!");
         }
 
         if(CommonUtils.isNotEmpty(packageInformation.getChecksums()) &&
                 !checkIndexChecksums(packageInformation.getChecksums())) {
-            throw new HttpMessageNotReadableException("Index of Checksums PackageInformation invalid!");
+            throw new BadRequestClientException("Index of Checksums PackageInformation invalid!");
         }
 
         packageInformation.setModerators(moderators);
@@ -168,7 +168,7 @@ public class SW360SPDXDocumentService {
     public String addSPDX(Release release, User user) throws TException {
         String spdxId = addSPDXDocument(release, user);
         if (CommonUtils.isNullEmptyOrWhitespace(spdxId)) {
-            throw new HttpMessageNotReadableException("Add SPDXDocument Failed!");
+            throw new BadRequestClientException("Add SPDXDocument Failed!");
         }
         addDocumentCreationInformation(spdxId, release.getModerators(), user);
         addPackageInformation(spdxId, release.getModerators(), user);

@@ -53,8 +53,8 @@ public class RestExceptionHandler {
         return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.NOT_FOUND), HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorMessage> handleMessageNotReadableException(HttpMessageNotReadableException e) {
+    @ExceptionHandler({HttpMessageNotReadableException.class, BadRequestClientException.class})
+    public ResponseEntity<ErrorMessage> handleMessageNotReadableException(RuntimeException e) {
         return new ResponseEntity<>(new ErrorMessage(e, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
     }
 

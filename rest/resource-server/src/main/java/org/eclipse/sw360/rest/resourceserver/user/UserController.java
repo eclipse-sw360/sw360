@@ -33,6 +33,7 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +47,6 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -222,7 +222,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             @RequestBody User user
     ) {
         if (CommonUtils.isNullEmptyOrWhitespace(user.getPassword())) {
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Password can not be null or empty or whitespace!");
         }
         String encodedPassword = passwordEncoder.encode(user.getPassword());

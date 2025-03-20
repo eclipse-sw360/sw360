@@ -34,12 +34,12 @@ import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -113,7 +113,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             HttpServletResponse response
     ) throws SW360Exception {
         if (GENERATOR_MODULES.contains(module) && (isNullOrEmpty(generatorClassName) || isNullOrEmpty(variant))) {
-            throw new HttpMessageNotReadableException("Error : GeneratorClassName and Variant is required for module " + module);
+            throw new BadRequestClientException("Error : GeneratorClassName and Variant is required for module " + module);
         }
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         String baseUrl = getBaseUrl(request);
