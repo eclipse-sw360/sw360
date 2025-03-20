@@ -53,9 +53,9 @@ public class Sw360UserService {
     private static final Logger log = LogManager.getLogger(Sw360UserService.class);
     @Value("${sw360.thrift-server-url:http://localhost:8080}")
     private String thriftServerUrl;
-    private static final String AUTHORITIES_READ = "READ";
-    private static final String AUTHORITIES_WRITE = "WRITE";
-    private static final String EXPIRATION_DATE_PROPERTY = "expirationDate";
+    public static final String AUTHORITIES_READ = "READ";
+    public static final String AUTHORITIES_WRITE = "WRITE";
+    public static final String EXPIRATION_DATE_PROPERTY = "expirationDate";
 
     public List<User> getAllUsers() {
         try {
@@ -193,10 +193,10 @@ public class Sw360UserService {
 
         if (!requestBody.containsKey(EXPIRATION_DATE_PROPERTY)
                 || CommonUtils.isNullEmptyOrWhitespace(requestBody.get(EXPIRATION_DATE_PROPERTY).toString())) {
-            throw new IllegalArgumentException("expirationDate is a required field.");
+            throw new IllegalArgumentException(EXPIRATION_DATE_PROPERTY + " is a required field.");
         }
         if (!(requestBody.get(EXPIRATION_DATE_PROPERTY) instanceof String)) {
-            throw new IllegalArgumentException("expirationDate must be a string.");
+            throw new IllegalArgumentException(EXPIRATION_DATE_PROPERTY + " must be a string.");
         }
 
         RestApiToken restApiToken = mapper.convertValue(requestBody, RestApiToken.class);

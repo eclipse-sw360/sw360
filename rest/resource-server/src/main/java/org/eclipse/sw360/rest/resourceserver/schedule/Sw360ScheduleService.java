@@ -149,17 +149,14 @@ public class Sw360ScheduleService {
     }
 
     public RequestStatus isServiceScheduled(String serviceName, User sw360User) throws TException {
+        throwIfNotAdmin(sw360User);
         try {
-            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-                boolean requestStatusWithBoolean = new ThriftClients()
-                        .makeScheduleClient()
-                        .isServiceScheduled(serviceName, sw360User)
-                        .isAnswerPositive();
+            boolean requestStatusWithBoolean = new ThriftClients()
+                    .makeScheduleClient()
+                    .isServiceScheduled(serviceName, sw360User)
+                    .isAnswerPositive();
 
-                return requestStatusWithBoolean ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
-            } else {
-                throw new AccessDeniedException("User is not admin");
-            }
+            return requestStatusWithBoolean ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
         } catch (TException e) {
             log.error("Error occurred while fetching the status of service '{}':", serviceName, e);
             throw e;
@@ -167,17 +164,14 @@ public class Sw360ScheduleService {
     }
 
     public RequestStatus isAnyServiceScheduled(User sw360User) throws TException {
+        throwIfNotAdmin(sw360User);
         try {
-            if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
-                boolean requestStatusWithBoolean = new ThriftClients()
-                        .makeScheduleClient()
-                        .isAnyServiceScheduled(sw360User)
-                        .isAnswerPositive();
+            boolean requestStatusWithBoolean = new ThriftClients()
+                    .makeScheduleClient()
+                    .isAnyServiceScheduled(sw360User)
+                    .isAnswerPositive();
 
-                return requestStatusWithBoolean ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
-            } else {
-                throw new AccessDeniedException("User is not admin");
-            }
+            return requestStatusWithBoolean ? RequestStatus.SUCCESS : RequestStatus.FAILURE;
         } catch (TException e) {
             log.error("Error occurred while fetching the status of services", e);
             throw e;

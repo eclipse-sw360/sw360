@@ -69,7 +69,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
 
     @Operation(
             description = "Manually active the service.",
-            tags = {"Department"}
+            tags = {"Departments"}
     )
     @RequestMapping(value = DEPARTMENT_URL + "/manuallyactive", method = RequestMethod.POST)
     public ResponseEntity<RequestSummary> importDepartmentManually() throws SW360Exception {
@@ -89,7 +89,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
 
     @Operation(
             description = "Schedule import.",
-            tags = {"Department"}
+            tags = {"Departments"}
     )
     @RequestMapping(value = DEPARTMENT_URL + "/scheduleImport", method = RequestMethod.POST)
     public ResponseEntity<Map<String, String>> scheduleImportDepartment() throws SW360Exception {
@@ -119,7 +119,7 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
 
     @Operation(summary = "Unschedule Department Import",
             description = "Cancels the scheduled import task for the department.",
-            tags = {"Department"})
+            tags = {"Departments"})
     @RequestMapping(value = DEPARTMENT_URL + "/unscheduleImport", method = RequestMethod.POST)
     public ResponseEntity<Map<String, String>> unScheduleImportDepartment() throws SW360Exception {
 
@@ -138,8 +138,11 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
         }
     }
 
-    @Operation(summary = "Update Folder Path Configuration",
-            description = "Updates the department folder path configuration.")
+    @Operation(
+            summary = "Update Folder Path Configuration",
+            description = "Updates the department folder path configuration.",
+            tags = {"Departments"}
+    )
     @RequestMapping(value = DEPARTMENT_URL + "/writePathFolder", method = RequestMethod.POST)
     public ResponseEntity<String> updatePath(
             @Parameter(description = "The path of the folder")

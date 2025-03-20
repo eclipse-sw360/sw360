@@ -69,6 +69,9 @@ import java.util.Collections;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_HASH_SALT;
+import static org.eclipse.sw360.rest.resourceserver.user.Sw360UserService.AUTHORITIES_READ;
+import static org.eclipse.sw360.rest.resourceserver.user.Sw360UserService.AUTHORITIES_WRITE;
+import static org.eclipse.sw360.rest.resourceserver.user.Sw360UserService.EXPIRATION_DATE_PROPERTY;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -311,8 +314,18 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             tags = {"Users"})
     @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.POST)
     public ResponseEntity<String> createUserRestApiToken(
-            @Parameter(description = "Token request", schema = @Schema(
-                    implementation = RestApiToken.class))
+            @Parameter(description = "Token request",
+                    schema = @Schema(
+                            type = "object",
+                            example = "{\n" +
+                              "  \"name\": \"my-new-token\",\n" +
+                              "  \"" + EXPIRATION_DATE_PROPERTY + "\": \"2025-12-31\",\n" +
+                              "  \"authorities\": [\n" +
+                              "  \"" + AUTHORITIES_READ + "\",\n" +
+                              "  \"" + AUTHORITIES_WRITE + "\"\n" +
+                              "  ]\n}",
+                            requiredProperties = {"name", "authorities", EXPIRATION_DATE_PROPERTY}
+                    ))
             @RequestBody Map<String, Object> requestBody
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
