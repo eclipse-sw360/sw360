@@ -19,6 +19,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
@@ -407,7 +408,7 @@ public class ScheduleAdminController implements RepresentationModelProcessor<Rep
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         if (CommonUtils.isNullEmptyOrWhitespace(serviceName)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Service name is required");
+            throw new BadRequestClientException("Service name is required");
         }
 
         RequestStatus requestStatus = scheduleService.isServiceScheduled(serviceName, sw360User);
