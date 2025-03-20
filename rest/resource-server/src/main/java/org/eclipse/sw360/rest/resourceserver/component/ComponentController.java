@@ -41,7 +41,6 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
@@ -49,6 +48,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerability
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ReleaseVulnerabilityRelationDTO;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -72,7 +72,6 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -98,7 +97,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
-import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -398,7 +396,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         user.setCommentMadeDuringModerationRequest(comment);
         if (!restControllerHelper.isWriteActionAllowed(sw360Component, user)
                 && (comment == null || comment.isBlank())) {
-            return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.BAD_REQUEST);
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
         if (updateComponentDto.getAttachments() != null) {
             updateComponentDto.getAttachments().forEach(attachment -> wrapSW360Exception(
@@ -455,7 +453,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
         User user = restControllerHelper.getSw360UserFromAuthentication();
         if(component.getComponentType() == null) {
-            throw new HttpMessageNotReadableException("Required field componentType is not present");
+            throw new BadRequestClientException("Required field componentType is not present");
         }
 
         if (component.getVendorNames() != null) {
@@ -543,7 +541,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
                 sw360User);
         RequestStatus updateComponentStatus = componentService.updateComponent(sw360Component, sw360User);
         if (!restControllerHelper.isWriteActionAllowed(sw360Component, sw360User) && comment == null) {
-            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         } else {
             if (updateComponentStatus == RequestStatus.SENT_TO_MODERATOR) {
                 return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST, HttpStatus.ACCEPTED);
@@ -594,7 +592,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         final Component component = componentService.getComponentForUserById(componentId, sw360User);
         sw360User.setCommentMadeDuringModerationRequest(comment);
         if (!restControllerHelper.isWriteActionAllowed(component, sw360User) && comment == null) {
-            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
         Attachment attachment = null;
         try {
@@ -678,7 +676,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         Component component = componentService.getComponentForUserById(componentId, user);
         user.setCommentMadeDuringModerationRequest(comment);
         if (!restControllerHelper.isWriteActionAllowed(component, user) && comment == null) {
-            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
         Set<Attachment> attachmentsToDelete = attachmentService.filterAttachmentsToRemove(Source.componentId(componentId),
                 component.getAttachments(), attachmentIds);
@@ -830,7 +828,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         Map<String, List<VulnerabilityDTO>> releaseVulnerabilityRelations = new HashMap<>();
         getReleaseIdsWithExternalIdsFromRequest(releaseIdsWithExternalIdsFromRequest, releaseVulnerabilityRelations, releaseIdsWithVulnerabilityDTOsActual, releaseVulnerabilityRelationDTOsFromRequest);
         if (validateReleaseVulnerabilityRelationDTO(releaseIdsWithExternalIdsFromRequest, vulnerabilityState)) {
-            throw new HttpMessageNotReadableException("ReleaseVulnerabilityRelationDTO is not valid");
+            throw new BadRequestClientException("ReleaseVulnerabilityRelationDTO is not valid");
         }
 
         RequestStatus requestStatus = null;
@@ -859,10 +857,10 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
 
     private void checkRequireReleaseVulnerabilityRelation(VulnerabilityState vulnerabilityState) {
         if(CommonUtils.isNullOrEmptyCollection(vulnerabilityState.getReleaseVulnerabilityRelationDTOs())) {
-            throw new HttpMessageNotReadableException("Required field ReleaseVulnerabilityRelation is not present");
+            throw new BadRequestClientException("Required field ReleaseVulnerabilityRelation is not present");
         }
         if(vulnerabilityState.getVerificationState() == null) {
-            throw new HttpMessageNotReadableException("Required field verificationState is not present");
+            throw new BadRequestClientException("Required field verificationState is not present");
         }
     }
 
@@ -996,7 +994,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         }
         String releaseId = requestSummary.getMessage();
         if (!(requestSummary.getRequestStatus() == RequestStatus.SUCCESS && CommonUtils.isNotNullEmptyOrWhitespace(releaseId))) {
-            throw new HttpMessageNotReadableException("Invalid SBOM file");
+            throw new BadRequestClientException("Invalid SBOM file");
         }
         Release release = componentService.getReleaseById(requestSummary.getMessage(),sw360User);
         Component component = componentService.getComponentForUserById(release.getComponentId(),sw360User);

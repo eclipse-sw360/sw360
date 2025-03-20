@@ -96,6 +96,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilitySummary
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityRatingForProject;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.license.Sw360LicenseService;
@@ -125,7 +126,6 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -740,7 +740,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestBody Map<String, Object> reqBodyMap
     ) throws TException {
         if (!reqBodyMap.containsKey("name") && !reqBodyMap.containsKey("version")) {
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Field name or version should be present in request body to create duplicate of a project");
         }
         User user = restControllerHelper.getSw360UserFromAuthentication();
@@ -792,7 +792,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Project updateProject = projectService.getProjectForUserById(id, user);
         user.setCommentMadeDuringModerationRequest(comment);
         if (!restControllerHelper.isWriteActionAllowed(updateProject, user) && comment == null) {
-            return new ResponseEntity<>(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.BAD_REQUEST);
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
         RequestStatus linkReleasesStatus = addOrPatchReleasesToProject(id, releasesInRequestBody, false);
         if (linkReleasesStatus == RequestStatus.SENT_TO_MODERATOR) {
@@ -845,7 +845,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
                 sw360User.setCommentMadeDuringModerationRequest(comment);
                 if (!restControllerHelper.isWriteActionAllowed(proj, sw360User) && comment == null) {
-                    return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.BAD_REQUEST);
+                    throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
                 } else {
                     linkedProject.put(id, new ProjectProjectRelationship(ProjectRelationship.CONTAINED)
                             .setEnableSvm(sourceProj.isEnableSvm()));
@@ -925,7 +925,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 		final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 		Project project = projectService.getProjectForUserById(id, sw360User);
 		if (!restControllerHelper.isWriteActionAllowed(project, sw360User) && comment == null) {
-            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
 		} else {
 		    sw360User.setCommentMadeDuringModerationRequest(comment);
 			RequestStatus patchReleasesStatus = addOrPatchReleasesToProject(id, releaseURIs, true);
@@ -964,7 +964,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 		Project project = projectService.getProjectForUserById(id, sw360User);
 		sw360User.setCommentMadeDuringModerationRequest(comment);
 		if (!restControllerHelper.isWriteActionAllowed(project, sw360User) && comment == null) {
-			return new ResponseEntity(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT, HttpStatus.BAD_REQUEST);
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
 		} else {
 			RequestStatus linkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, true);
 			if (linkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
@@ -1002,7 +1002,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 		Project project = projectService.getProjectForUserById(id, sw360User);
 		sw360User.setCommentMadeDuringModerationRequest(comment);
 		if (!restControllerHelper.isWriteActionAllowed(project, sw360User) && comment == null) {
-            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
 		} else {
 			RequestStatus patchPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false);
 			if (patchPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
@@ -1340,7 +1340,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Set<String> commonExtIds = Sets.intersection(actualExternalId, externalIdsFromRequestDto);
 
         if (CommonUtils.isNullOrEmptyCollection(commonExtIds) || commonExtIds.size() != externalIdsFromRequestDto.size()) {
-            throw new HttpMessageNotReadableException("External ID is not valid");
+            throw new BadRequestClientException("External ID is not valid");
         }
 
         Set<String> actualReleaseIds = actualVDto.stream().map(VulnerabilityDTO::getIntReleaseId).collect(Collectors.toSet());
@@ -1348,13 +1348,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Set<String> commonRelIds = Sets.intersection(actualReleaseIds, releaseIdsFromRequestDto);
 
         if(CommonUtils.isNullOrEmptyCollection(commonRelIds) || commonRelIds.size() != releaseIdsFromRequestDto.size()) {
-            throw new HttpMessageNotReadableException("Release ID is not valid");
+            throw new BadRequestClientException("Release ID is not valid");
         }
 
         Optional<ProjectVulnerabilityRating> projectVulnerabilityRatings = wrapThriftOptionalReplacement(vulnerabilityService.getProjectVulnerabilityRatingByProjectId(id, sw360User));
         ProjectVulnerabilityRating link = updateProjectVulnerabilityRatingFromRequest(projectVulnerabilityRatings, vulnDTOs, id, sw360User);
         if (!restControllerHelper.isWriteActionAllowed(project, sw360User) && comment == null) {
-            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
 
         sw360User.setCommentMadeDuringModerationRequest(comment);
@@ -1399,7 +1399,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         ProjectReleaseRelationship updatedProjectReleaseRelationship = projectService
                 .updateProjectReleaseRelationship(releaseIdToUsage, requestBodyProjectReleaseRelationship, releaseId);
         if (!restControllerHelper.isWriteActionAllowed(sw360Project, sw360User) && comment == null) {
-            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
         sw360User.setCommentMadeDuringModerationRequest(comment);
         RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, sw360User);
@@ -1655,7 +1655,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         sw360User.setCommentMadeDuringModerationRequest(comment);
         Attachment updatedAttachment = attachmentService.updateAttachment(attachments, attachmentData, attachmentId, sw360User);
         if (!restControllerHelper.isWriteActionAllowed(sw360Project, sw360User) && comment == null) {
-            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
         RequestStatus updateProjectStatus = projectService.updateProject(sw360Project, sw360User);
         if (updateProjectStatus == RequestStatus.SENT_TO_MODERATOR) {
@@ -1745,7 +1745,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         String comment = (String) reqBodyMap.get("comment");
         user.setCommentMadeDuringModerationRequest(comment);
         if (!restControllerHelper.isWriteActionAllowed(sw360Project, user) && comment == null) {
-            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         } else {
             sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap,
                     mapOfProjectFieldsToRequestBody);
@@ -1792,7 +1792,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             });
         } catch (JsonProcessingException e) {
             log.error("Failed to parse attachments JSON", e);
-            throw new HttpMessageNotReadableException("Failed to parse attachments JSON");
+            throw new BadRequestClientException("Failed to parse attachments JSON");
         }
 
         Set<String> uploadedFilenames = new HashSet<>();
@@ -1833,7 +1833,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
         try {
             if (!restControllerHelper.isWriteActionAllowed(project, sw360User) && comment == null) {
-                throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+                throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
             }
             sw360User.setCommentMadeDuringModerationRequest(comment);
             RequestStatus updateStatus = projectService.updateProjectForAttachment(project, sw360User, request, null,
@@ -2348,7 +2348,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         Map<String, String> messageMap = new HashMap<>();
 
         if (!(type.equalsIgnoreCase("SPDX") || type.equalsIgnoreCase("CycloneDX"))) {
-            throw new HttpMessageNotReadableException("Invalid SBOM file type. Only SPDX(.rdf/.xml) and CycloneDX(.json/.xml) files are supported.");
+            throw new BadRequestClientException("Invalid SBOM file type. Only SPDX(.rdf/.xml) and CycloneDX(.json/.xml) files are supported.");
         }
 
         try {
@@ -2362,14 +2362,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             requestSummary = projectService.importSPDX(sw360User, attachment.getAttachmentContentId());
 
             if (!(requestSummary.getRequestStatus() == RequestStatus.SUCCESS)) {
-                throw new HttpMessageNotReadableException(requestSummary.getMessage());
+                throw new BadRequestClientException(requestSummary.getMessage());
             }
             projectId = requestSummary.getMessage();
         } else {
             requestSummary = projectService.importCycloneDX(sw360User, attachment.getAttachmentContentId(), "", true);
 
             if (requestSummary.getRequestStatus() == RequestStatus.FAILURE) {
-                throw new HttpMessageNotReadableException(requestSummary.getMessage());
+                throw new BadRequestClientException(requestSummary.getMessage());
             }
             else if (requestSummary.getRequestStatus() == RequestStatus.ACCESS_DENIED) {
                 throw new BadCredentialsException("You do not have sufficient permissions.");
@@ -2440,7 +2440,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         requestSummary = projectService.importCycloneDX(sw360User, attachment.getAttachmentContentId(), id, doNotReplacePackageAndRelease);
 
         if (requestSummary.getRequestStatus() == RequestStatus.FAILURE) {
-            throw new HttpMessageNotReadableException(requestSummary.getMessage());
+            throw new BadRequestClientException(requestSummary.getMessage());
         }else if(requestSummary.getRequestStatus() == RequestStatus.ACCESS_DENIED){
             throw new BadCredentialsException("You do not have sufficient permissions.");
         }
@@ -2453,7 +2453,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             throw new DataIntegrityViolationException("A project with same name and version already exists. The projectId is: "
                     + projectId);
         }else if (requestSummary.getRequestStatus() == RequestStatus.FAILED_SANITY_CHECK){
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Project name or version present in SBOM metadata tag is not same as the current SW360 project!");
         }
 
@@ -2522,7 +2522,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             addOrPatchDependencyNetworkToProject(project, reqBodyMap, ProjectOperation.CREATE);
         } catch (JsonProcessingException e) {
             log.error(e.getMessage());
-            throw new HttpMessageNotReadableException("Invalid dependency network format");
+            throw new BadRequestClientException("Invalid dependency network format");
         } catch (SW360Exception sw360Exception) {
             log.error(sw360Exception);
             throw sw360Exception;
@@ -2566,14 +2566,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             addOrPatchDependencyNetworkToProject(updateProject, reqBodyMap, ProjectOperation.UPDATE);
         } catch (JsonProcessingException e) {
             log.error(e.getMessage());
-            throw new HttpMessageNotReadableException("Invalid dependency network format");
+            throw new BadRequestClientException("Invalid dependency network format");
         } catch (SW360Exception sw360Exception) {
             log.error(sw360Exception);
             throw sw360Exception;
         }
         String comment = (String) reqBodyMap.get("comment");
         if (!restControllerHelper.isWriteActionAllowed(updateProject, user) && comment == null) {
-            throw new HttpMessageNotReadableException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
+            throw new BadRequestClientException(RESPONSE_BODY_FOR_MODERATION_REQUEST_WITH_COMMIT.toString());
         }
         user.setCommentMadeDuringModerationRequest(comment);
         sw360Project = this.restControllerHelper.updateProject(sw360Project, updateProject, reqBodyMap, mapOfProjectFieldsToRequestBody);
@@ -2702,7 +2702,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 releaseIdToUsage.put(releaseId, actualProjectReleaseRelationship);
             }
         } else {
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Request body should be List of valid release id or map of release id to usage");
         }
         project.setReleaseIdToUsage(releaseIdToUsage);
@@ -3505,7 +3505,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         if (clearingRequest.getClearingType() == null) {
-            throw new HttpMessageNotReadableException("clearingType is a mandatory field. Possible values are "
+            throw new BadRequestClientException("clearingType is a mandatory field. Possible values are "
                      + Arrays.asList(ClearingRequestType.values()));
          }
 
@@ -3515,13 +3515,13 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         dateLimit = (ClearingRequestPriority.CRITICAL.equals(clearingRequest.getPriority()) && criticalCount < 2) ? 0 : (dateLimit < 1) ? 7 : dateLimit;
         if (!SW360Utils.isValidDate(clearingRequest.getRequestedClearingDate(), DateTimeFormatter.ISO_LOCAL_DATE, Long.valueOf(dateLimit))) {
             log.warn("Invalid requested clearing date: " + clearingRequest.getRequestedClearingDate() + " is entered, by user: "+ user.getEmail());
-            throw new HttpMessageNotReadableException("Invalid clearing date requested");
+            throw new BadRequestClientException("Invalid clearing date requested");
         }
 
         if (clearingRequest.getClearingTeam() != null) {
             User clearingTeam = restControllerHelper.getUserByEmailOrNull(clearingRequest.getClearingTeam());
             if (clearingTeam == null) {
-                throw new HttpMessageNotReadableException("clearingTeam is not a valid user");
+                throw new BadRequestClientException("clearingTeam is not a valid user");
             }
         }
         String baseURL = restControllerHelper.getBaseUrl(request);
@@ -3530,7 +3530,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         if (addDocumentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException(addDocumentRequestSummary.getMessage());
         } else if (addDocumentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.FAILURE) {
-            throw new HttpMessageNotReadableException(addDocumentRequestSummary.getMessage());
+            throw new BadRequestClientException(addDocumentRequestSummary.getMessage());
         }
         clearingRequest.setId(addDocumentRequestSummary.getId());
 
@@ -3614,7 +3614,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         }
 
         if (!reqBodyMap.containsKey("name") && !reqBodyMap.containsKey("version")) {
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Field name or version should be present in request body to create duplicate of a project");
         }
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -3630,7 +3630,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                 addOrPatchDependencyNetworkToProject(duplicatedProject, reqBodyMap, ProjectOperation.CREATE);
             } catch (JsonProcessingException | NoSuchElementException e) {
                 log.error(e.getMessage(), e);
-                throw new HttpMessageNotReadableException(e.getMessage());
+                throw new BadRequestClientException(e.getMessage());
             }
         }
 

@@ -45,6 +45,7 @@ import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.Sw360ReleaseService;
@@ -60,7 +61,6 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -248,7 +248,7 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             packageManager = packageManager.toUpperCase();
 
             if (!EnumUtils.isValidEnum(PackageManager.class, packageManager)) {
-                throw new HttpMessageNotReadableException("Invalid package manager type. Possible values are "
+                throw new BadRequestClientException("Invalid package manager type. Possible values are "
                         + Arrays.asList(PackageManager.values()));
             }
             sw360Packages.addAll(packageService.searchByPackageManager(packageManager));

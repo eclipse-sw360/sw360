@@ -24,6 +24,7 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +36,6 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.*;
@@ -172,7 +172,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
         if (requestStatus == RequestStatus.SUCCESS) {
             return new ResponseEntity<>("Vendor with full name " + sw360Vendor.getFullname() + " deleted successfully.", HttpStatus.OK);
         } else {
-            throw new HttpMessageNotReadableException("Vendor with full name " + sw360Vendor.getFullname() + " cannot be deleted.");
+            throw new BadRequestClientException("Vendor with full name " + sw360Vendor.getFullname() + " cannot be deleted.");
         }
     }
 
@@ -238,7 +238,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
     ) {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         if (vendor.getFullname() == null && vendor.getShortname() == null && vendor.getUrl() == null) {
-            throw new HttpMessageNotReadableException("Vendor cannot be null");
+            throw new BadRequestClientException("Vendor cannot be null");
         }
         RequestStatus status = vendorService.vendorUpdate(vendor, sw360User, id);
         if (RequestStatus.SUCCESS.equals(status)) {
