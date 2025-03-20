@@ -268,7 +268,7 @@ public class ReleaseTest extends TestIntegrationBase {
                         HttpMethod.DELETE,
                         new HttpEntity<>(null, getHeaders(port)),
                         String.class);
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         then(releaseServiceMock)
                 .should(never())
                 .updateRelease(any(), any());
