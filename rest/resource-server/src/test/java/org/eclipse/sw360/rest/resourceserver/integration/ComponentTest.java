@@ -17,6 +17,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
+import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
@@ -29,13 +30,19 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.*;
 
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -60,9 +67,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.*;
 
 @RunWith(SpringRunner.class)
 public class ComponentTest extends TestIntegrationBase {
@@ -112,6 +117,71 @@ public class ComponentTest extends TestIntegrationBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         TestHelper.checkResponse(response.getBody(), "components", 1);
+    }
+
+    @Test
+    public void should_download_attachment_form_component() throws Exception {
+        String componentId  = "abc";
+        String attachmentId = "def";
+
+        AttachmentContent attachmentContent = TestHelper.getDummyAttachmentContent();
+
+        given(this.componentServiceMock.getComponentForUserById(eq(componentId), any()))
+                .willReturn(component);
+        given(this.attachmentServiceMock.getAttachmentContent(attachmentId))
+                .willReturn(attachmentContent);
+
+        InputStream mockInputStream = mock(InputStream.class);
+        given(this.attachmentServiceMock.getStreamToAttachments(any(), any(), any()))
+                .willReturn(mockInputStream);
+
+        doCallRealMethod().when(attachmentServiceMock)
+                .downloadAttachmentWithContext(any(), any(), any(), any());
+
+        HttpHeaders headers = getHeaders(port);
+        headers.add("Accept", "application/octet-stream");
+
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/components/" + componentId + "/attachments/" + attachmentId,
+                HttpMethod.GET,
+                new HttpEntity<>(null, headers),
+                String.class
+        );
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("application/pdf", response.getHeaders().getContentType().toString());
+        assertEquals("attachment; filename=\"dummy.txt\"", response.getHeaders().get("Content-Disposition").get(0));
+    }
+
+    @Test
+    public void should_add_attachment_to_component() throws Exception{
+        String componentId = "abc";
+
+        given(componentServiceMock.getComponentForUserById(eq(componentId), any())).willReturn(component);
+        given(attachmentServiceMock.uploadAttachment(any(), any(), any())).willReturn(TestHelper.getDummyAttachmentsListForTest().getFirst())
+        ;
+        given(componentServiceMock.updateComponent(any(), any())).willReturn(RequestStatus.SUCCESS);
+        Resource fileResource = new ByteArrayResource("Dummy file content".getBytes(StandardCharsets.UTF_8)) {
+            @Override
+            public String getFilename() {
+                return "test.txt";
+            }
+        };
+
+        Attachment attachment = TestHelper.getDummyAttachmentsListForTest().getFirst();
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", fileResource);
+        body.add("attachment", attachment);
+        HttpHeaders headers = getHeaders(port);
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        ResponseEntity<String> response = new TestRestTemplate().exchange(
+                "http://localhost:" + port + "/api/components/" + componentId + "/attachments" ,
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                String.class);
+
+        System.out.println("Response is" + response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
     }
 
     @Test
