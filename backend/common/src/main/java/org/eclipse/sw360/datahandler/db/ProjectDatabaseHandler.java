@@ -2116,7 +2116,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
         return repository.searchByType(type, user);
     }
 
-	public ByteBuffer getReportDataStream(User user, boolean extendedByReleases, String projectId) throws TException {
+	public ByteBuffer getReportDataStream(User user, boolean extendedByReleases, String projectId, boolean extendedByPackages) throws TException {
 	    List<Project> projectList = null;
         try {
             if (!isNullOrEmpty(projectId)) {
@@ -2124,7 +2124,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }else {
                 projectList =  getAccessibleProjectsSummary(user);
             }
-            ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
+            ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases, extendedByPackages);
             InputStream stream = exporter.makeExcelExport(projectList);
             return ByteBuffer.wrap(IOUtils.toByteArray(stream));
           }catch (IOException e) {
@@ -2132,14 +2132,14 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
        }
      }
 
-    private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases) throws SW360Exception {
+    private ProjectExporter getProjectExporterObject(List<Project> documents, User user, boolean extendedByReleases, boolean extendedByPackages) throws SW360Exception {
     	ThriftClients thriftClients = new ThriftClients();
-    	return new ProjectExporter(thriftClients.makeComponentClient(),
+        return extendedByPackages ? new ProjectExporter(thriftClients.makeComponentClient(), thriftClients.makePackageClient(), thriftClients.makeProjectClient(), user, documents, true) : new ProjectExporter(thriftClients.makeComponentClient(),
                 thriftClients.makeProjectClient(), user, documents, extendedByReleases);
     }
 
     public String getReportInEmail(User user,
-			boolean extendedByReleases, String projectId) throws TException {
+			boolean extendedByReleases, String projectId, boolean extendedByPackages) throws TException {
         List<Project> projectList = null;
         try {
             if (!isNullOrEmpty(projectId)) {
@@ -2147,7 +2147,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }else {
                 projectList = getAccessibleProjectsSummary(user);
             }
-            ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases);
+            ProjectExporter exporter = getProjectExporterObject(projectList, user, extendedByReleases, extendedByPackages);
             return exporter.makeExcelExportForProject(projectList, user);
           }catch (IOException | TException e) {
              throw new SW360Exception(e.getMessage());
