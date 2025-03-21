@@ -514,6 +514,8 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 limitedRelease.setId(rel.getId());
                 limitedRelease.setName(rel.getName());
                 limitedRelease.setVersion(rel.getVersion());
+                limitedRelease.setRevision(rel.getRevision());
+                limitedRelease.setComponentId(rel.getComponentId());
                 limitedSet.add(limitedRelease);
             }
             try {
@@ -605,41 +607,47 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public RequestStatus addLinkedObligations(Project project, User user,
             Map<String, ObligationStatusInfo> licenseObligation) {
+        ThriftClients thriftClients = new ThriftClients();
+        ProjectService.Iface client = thriftClients.makeProjectClient();
+        final boolean isObligationPresent = CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId());
+        final String email = user.getEmail();
+        final String createdOn = SW360Utils.getCreatedOn();
+        final ObligationList obligation;
         try {
-            ThriftClients thriftClients = new ThriftClients();
-            ProjectService.Iface client = thriftClients.makeProjectClient();
-            final boolean isObligationPresent = CommonUtils.isNotNullEmptyOrWhitespace(project.getLinkedObligationId());
-            final String email = user.getEmail();
-            final String createdOn = SW360Utils.getCreatedOn();
-            final ObligationList obligation = isObligationPresent
+            obligation = isObligationPresent
                     ? client.getLinkedObligations(project.getLinkedObligationId(), user)
                     : new ObligationList().setProjectId(project.getId());
+        } catch (TException exception) {
+            log.error("Failed to get linked obligations for project: {}", project.getId(), exception);
+            return RequestStatus.FAILURE;
+        }
 
-            Map<String, ObligationStatusInfo> obligationStatusInfo = isObligationPresent
-                    && obligation.getLinkedObligationStatusSize() > 0 ? obligation.getLinkedObligationStatus()
-                            : Maps.newHashMap();
+        Map<String, ObligationStatusInfo> obligationStatusInfo = isObligationPresent
+                && obligation.getLinkedObligationStatusSize() > 0 ? obligation.getLinkedObligationStatus()
+                        : Maps.newHashMap();
 
-            for (Map.Entry<String, ObligationStatusInfo> entry : licenseObligation.entrySet()) {
-                ObligationStatusInfo newOsi = entry.getValue();
-                ObligationStatusInfo currentOsi = obligationStatusInfo.get(entry.getKey());
-                if (newOsi.isSetModifiedOn()) {
-                    newOsi.setModifiedBy(email);
-                    newOsi.setModifiedOn(createdOn);
-                    obligationStatusInfo.put(entry.getKey(), newOsi);
-                } else if (null != currentOsi) {
-                    if (newOsi.getReleaseIdToAcceptedCLISize() > 0)
-                        currentOsi.setReleaseIdToAcceptedCLI(newOsi.getReleaseIdToAcceptedCLI());
-                    obligationStatusInfo.put(entry.getKey(), currentOsi);
-                }
-
-                obligationStatusInfo.computeIfAbsent(entry.getKey(), e -> newOsi);
+        for (Map.Entry<String, ObligationStatusInfo> entry : licenseObligation.entrySet()) {
+            ObligationStatusInfo newOsi = entry.getValue();
+            ObligationStatusInfo currentOsi = obligationStatusInfo.get(entry.getKey());
+            if (newOsi.isSetModifiedOn()) {
+                newOsi.setModifiedBy(email);
+                newOsi.setModifiedOn(createdOn);
+                obligationStatusInfo.put(entry.getKey(), newOsi);
+            } else if (null != currentOsi) {
+                if (newOsi.getReleaseIdToAcceptedCLISize() > 0)
+                    currentOsi.setReleaseIdToAcceptedCLI(newOsi.getReleaseIdToAcceptedCLI());
+                obligationStatusInfo.put(entry.getKey(), currentOsi);
             }
-            obligation.unsetLinkedObligationStatus();
-            obligation.setLinkedObligationStatus(obligationStatusInfo);
+
+            obligationStatusInfo.putIfAbsent(entry.getKey(), newOsi);
+        }
+        obligation.unsetLinkedObligationStatus();
+        obligation.setLinkedObligationStatus(obligationStatusInfo);
+        try {
             return isObligationPresent ? client.updateLinkedObligations(obligation, user)
                     : client.addLinkedObligations(obligation, user);
         } catch (TException exception) {
-            log.error("Failed to add/update obligation for project: " + project.getId(), exception);
+            log.error("Failed to add/update obligation for project: {}", project.getId(), exception);
         }
         return RequestStatus.FAILURE;
     }
