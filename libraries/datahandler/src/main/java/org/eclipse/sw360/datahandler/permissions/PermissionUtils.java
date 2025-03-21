@@ -49,14 +49,14 @@ public class PermissionUtils {
     }
 
     public static final Set<String> CLOSED_PROJECT_EDITABLE_PARAMS = Set.of(
-            "enableSvm",
-            "enableVulnerabilitiesDisplay",
-            "projectManager",
-            "projectOwner",
-            "securityResponsibles",
-            "externalIds",
-            "state",
-            "phaseOutSince"
+        "enableSvm",
+        "enableVulnerabilitiesDisplay",
+        "projectManager",
+        "projectOwner",
+        "securityResponsibles",
+        "externalIds",
+        "state",
+        "phaseOutSince"
     );
 
     public static boolean isNormalUser(User user) {
@@ -107,6 +107,15 @@ public class PermissionUtils {
         return roles.contains(UserGroup.SECURITY_ADMIN);
     }
 
+    // New methods for SECURITY_USER role
+    public static boolean isSecurityUser(User user) {
+        return isInGroup(user, UserGroup.SECURITY_USER);
+    }
+
+    public static boolean isSecurityUserBySecondaryRoles(Set<UserGroup> roles) {
+        return roles.contains(UserGroup.SECURITY_USER);
+    }
+
     private static boolean isInGroup(User user, UserGroup userGroup) {
         return user != null && user.isSetUserGroup() && user.getUserGroup() == userGroup;
     }
@@ -118,7 +127,8 @@ public class PermissionUtils {
     public static boolean isUserAtLeast(UserGroup group, User user) {
         switch (group) {
             case USER:
-                return isNormalUser(user) || isAdmin(user) || isClearingAdmin(user) || isEccAdmin(user) || isSecurityAdmin(user);
+                return isNormalUser(user) || isAdmin(user) || isClearingAdmin(user) || isEccAdmin(user) ||
+                    isSecurityAdmin(user) || isSecurityUser(user);
             case CLEARING_ADMIN:
                 return isClearingAdmin(user) || isAdmin(user);
             case CLEARING_EXPERT:
@@ -127,6 +137,8 @@ public class PermissionUtils {
                 return isEccAdmin(user) || isAdmin(user);
             case SECURITY_ADMIN:
                 return isSecurityAdmin(user) || isAdmin(user);
+            case SECURITY_USER:
+                return isSecurityUser(user) || isSecurityAdmin(user) || isAdmin(user);
             case SW360_ADMIN:
                 return isAdmin(user);
             case ADMIN:
@@ -140,7 +152,8 @@ public class PermissionUtils {
         switch (role) {
             case USER:
                 return isNormalUserBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles) ||
-                        isClearingAdminBySecondaryRoles(secondaryRoles) || isEccAdminBySecondaryRoles(secondaryRoles) || isSecurityAdminBySecondaryRoles(secondaryRoles);
+                    isClearingAdminBySecondaryRoles(secondaryRoles) || isEccAdminBySecondaryRoles(secondaryRoles) ||
+                    isSecurityAdminBySecondaryRoles(secondaryRoles) || isSecurityUserBySecondaryRoles(secondaryRoles);
             case CLEARING_ADMIN:
                 return isClearingAdminBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles);
             case CLEARING_EXPERT:
@@ -149,6 +162,9 @@ public class PermissionUtils {
                 return isEccAdminBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles);
             case SECURITY_ADMIN:
                 return isSecurityAdminBySecondaryRoles(secondaryRoles) || isAdminBySecondaryRoles(secondaryRoles);
+            case SECURITY_USER:
+                return isSecurityUserBySecondaryRoles(secondaryRoles) || isSecurityAdminBySecondaryRoles(secondaryRoles) ||
+                    isAdminBySecondaryRoles(secondaryRoles);
             case SW360_ADMIN:
                 return isAdminBySecondaryRoles(secondaryRoles);
             case ADMIN:
@@ -190,7 +206,7 @@ public class PermissionUtils {
             return true;
         } else {
             if ((reqBodyMap.containsKey("attachments") || reqBodyMap.containsKey("obligationsText")
-                    || reqBodyMap.containsKey("linkedObligationId")) && !PermissionUtils.isAdmin(user)) {
+                || reqBodyMap.containsKey("linkedObligationId")) && !PermissionUtils.isAdmin(user)) {
                 return false;
             }
             String createdBy = sw360Project.getCreatedBy();
@@ -199,14 +215,14 @@ public class PermissionUtils {
             Set<String> projContributors = sw360Project.getContributors();
             String leadArchitect = sw360Project.getLeadArchitect();
             Optional<String> match = CLOSED_PROJECT_EDITABLE_PARAMS.stream()
-                    .filter(reqBodyMap::containsKey)
-                    .findAny();
+                .filter(reqBodyMap::containsKey)
+                .findAny();
             if (match.isPresent() && (PermissionUtils.isAdmin(user)
-                    || PermissionUtils.isClearingAdmin(user)
-                    || user.getUserGroup().name().equalsIgnoreCase(UserGroup.CLEARING_EXPERT.name())
-                    || PermissionUtils.isClearingExpert(user)) || user.getEmail().equals(createdBy)
-                    || user.getEmail().equals(projectResponsible) || user.getEmail().equals(leadArchitect)
-                    || projModerators.contains(user.getEmail()) || projContributors.contains(user.getEmail())) {
+                || PermissionUtils.isClearingAdmin(user)
+                || user.getUserGroup().name().equalsIgnoreCase(UserGroup.CLEARING_EXPERT.name())
+                || PermissionUtils.isClearingExpert(user)) || user.getEmail().equals(createdBy)
+                || user.getEmail().equals(projectResponsible) || user.getEmail().equals(leadArchitect)
+                || projModerators.contains(user.getEmail()) || projContributors.contains(user.getEmail())) {
                 return true;
             }
         }
