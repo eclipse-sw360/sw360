@@ -90,7 +90,7 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import org.eclipse.sw360.exporter.ProjectExporter;
 import java.nio.ByteBuffer;
-
+import org.eclipse.sw360.common.utils.VersionComparator;
 /**
  * Class for accessing the CouchDB database
  *
@@ -991,7 +991,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
             projectLinkOptional.ifPresent(out::add);
         }
-        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion,new VersionComparator()));
         return out;
     }
 
@@ -2444,7 +2444,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
             }
             projectLinkOptional.ifPresent(out::add);
         }
-        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion, new VersionComparator()));
         return out;
     }
 
@@ -2473,7 +2473,7 @@ public class ProjectDatabaseHandler extends AttachmentAwareDatabaseHandler {
                     parentNodeId, visitedIds, maxDepth, user, true, WITH_ALL_RELEASES);
             projectLinkOptional.ifPresent(out::add);
         }
-        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion));
+        out.sort(Comparator.comparing(ProjectLink::getName).thenComparing(ProjectLink::getVersion,new VersionComparator()));
         return out;
     }
 
