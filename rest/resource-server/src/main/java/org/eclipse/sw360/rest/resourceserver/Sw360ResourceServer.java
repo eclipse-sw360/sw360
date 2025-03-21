@@ -81,6 +81,8 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
     private static final String SW360_PROPERTIES_FILE_PATH = "/sw360.properties";
     private static final String VERSION_INFO_PROPERTIES_FILE = "/restInfo.properties";
     private static final String VERSION_INFO_KEY = "sw360RestVersion";
+    private static final String BUILD_VERSION_KEY = "sw360BuildVersion";
+    private static final String COMMIT_COUNT_KEY = "sw360CommitCount";
     private static final String CURIE_NAMESPACE = "sw360";
     private static final String APPLICATION_ID = "rest";
 
@@ -173,11 +175,7 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
         Server server = new Server();
         server.setUrl(SERVER_PATH_URL + APPLICATION_NAME + REST_BASE_PATH);
         server.setDescription("Current instance.");
-        Object restVersion = versionInfo.get(VERSION_INFO_KEY);
-        String restVersionString = "1.0.0";
-        if (restVersion != null) {
-            restVersionString = restVersion.toString();
-        }
+        String restVersionString = getRestVersion();
         return new OpenAPI()
                 .components(new Components()
                         .addSecuritySchemes("tokenAuth",
@@ -204,5 +202,28 @@ public class Sw360ResourceServer extends SpringBootServletInitializer {
                                                 ))
                                 ))
                 ));
+    }
+
+    /**
+     * Generate version string for REST using git build information.
+     * <ol>
+     *   <li>Check if the build version and commit count exists in properties.</li>
+     *   <li>If the property does not exist, return 1.0.0 as default version.</li>
+     *   <li>Replace the patch version of build version with commit count.</li>
+     *   <li>Return the updated version string.</li>
+     * </ol>
+     * @return Version string for OpenAPI docs.
+     */
+    private String getRestVersion() {
+        Object buildVersion = versionInfo.get(BUILD_VERSION_KEY);
+        Object commitCount = versionInfo.get(COMMIT_COUNT_KEY);
+        String restVersionString = "1.0.0";
+        if (buildVersion != null && commitCount != null) {
+            String[] versionParts = buildVersion.toString().split("\\.");
+            if (versionParts.length == 3) {
+                restVersionString = versionParts[0] + "." + versionParts[1] + "." + commitCount;
+            }
+        }
+        return restVersionString;
     }
 }

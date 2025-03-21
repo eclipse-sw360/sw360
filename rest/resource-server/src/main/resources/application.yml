@@ -56,6 +56,7 @@ spring:
 #logging:
 #  level:
 #    org.springframework.web: DEBUG
+#    org.eclipse.sw360: debug
 
 
 jwt:
@@ -81,14 +82,19 @@ blacklist:
 springdoc:
   api-docs:
     enabled: true
+    path: /v3/api-docs
     security:
       oauth2:
         enabled: true
+    version: openapi_3_1
   swagger-ui:
     enabled: true
+    path: /index.html
     security:
       oauth2:
         enabled: true
   default-consumes-media-type: application/json
   default-produces-media-type: application/hal+json
   paths-to-exclude: /api/**
+  show-actuator: true
+  show-oauth2-endpoints: true
