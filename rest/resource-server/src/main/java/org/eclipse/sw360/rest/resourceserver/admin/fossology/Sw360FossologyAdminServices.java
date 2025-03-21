@@ -23,15 +23,13 @@ import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -47,26 +45,8 @@ public class Sw360FossologyAdminServices {
 
     private static FossologyService.Iface fossologyClient;
     public static Sw360FossologyAdminServices instance;
-    private boolean fossologyConnectionEnabled;
 
     String key;
-
-    public RequestStatus checkFossologyConnection() throws TException {
-
-        RequestStatus checkConnection = null;
-        try {
-            checkConnection = new ThriftClients().makeFossologyClient().checkConnection();
-        } catch (SW360Exception exp) {
-            if (exp.getErrorCode() == 404) {
-                throw new ResourceNotFoundException(exp.getWhy());
-            } else {
-                throw new RuntimeException(exp.getWhy());
-            }
-        }
-        fossologyConnectionEnabled = checkConnection.equals(RequestStatus.SUCCESS);
-        return checkConnection;
-
-    }
 
     public void saveConfig(User sw360User, String url, String folderId, String token) throws TException {
         FossologyService.Iface client = getThriftFossologyClient();
@@ -81,12 +61,12 @@ public class Sw360FossologyAdminServices {
             if (client != null && fossologyConfig != null) {
                 client.setFossologyConfig(fossologyConfig);
             } else {
-                throw new HttpMessageNotReadableException("fossologyConfig value is null.");
+                throw new BadRequestClientException("fossologyConfig value is null.");
             }
             setKeyValuePair(configKeyToValues, key, url, folderId, token);
             fossologyConfig.setConfigKeyToValues(configKeyToValues);
         } else {
-            throw new HttpMessageNotReadableException("Unable to save the details. User is not admin");
+            throw new BadRequestClientException("Unable to save the details. User is not admin");
         }
     }
 
@@ -115,19 +95,18 @@ public class Sw360FossologyAdminServices {
         map.computeIfAbsent(key, k -> new HashSet<>()).addAll(Set.of(url, folderId, token));
     }
 
-    public void serverConnection(User sw360User) throws TException{
+    public void serverConnection(User sw360User) {
         if (PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
             serveCheckConnection();
         } else {
-            throw new HttpMessageNotReadableException("User is not admin");
+            throw new AccessDeniedException("User is not admin");
         }
-
     }
 
-    private void serveCheckConnection() throws TException{
-        FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
-        RequestStatus checkConnection = null;
+    private void serveCheckConnection() {
+        RequestStatus checkConnection;
         try {
+            FossologyService.Iface sw360FossologyClient = getThriftFossologyClient();
             checkConnection = sw360FossologyClient.checkConnection();
         } catch (TException exp) {
             throw new RuntimeException("Connection to Fossology server Failed.");
@@ -137,5 +116,4 @@ public class Sw360FossologyAdminServices {
             throw new RuntimeException("Connection to Fossology server Failed.");
         }
     }
-
 }

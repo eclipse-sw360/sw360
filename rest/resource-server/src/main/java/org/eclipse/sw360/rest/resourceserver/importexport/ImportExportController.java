@@ -17,35 +17,28 @@ import java.io.IOException;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.rest.resourceserver.project.ProjectController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import org.springframework.http.HttpStatus.Series;
 import org.springframework.http.MediaType;
-import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -88,13 +81,13 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadComponentTemplate")
-    public void downloadComponentTemplate(HttpServletResponse response) {
+    public void downloadComponentTemplate(HttpServletResponse response) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             importExportService.getDownloadCsvComponentTemplate(sw360User, response);
         } catch (IOException e) {
             LOGGER.error("Error downloading component template: {}", e.getMessage(), e);
-            handleException(response, e);
+            throw new SW360Exception("Error downloading component template: " + e.getMessage());
         }
     }
 
@@ -108,13 +101,13 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadAttachmentSample")
-    public void downloadAttachmentSample(HttpServletResponse response) {
+    public void downloadAttachmentSample(HttpServletResponse response) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             importExportService.getDownloadAttachmentTemplate(sw360User, response);
         } catch (IOException e) {
             LOGGER.error("Error downloading attachment sample: {}", e.getMessage(), e);
-            handleException(response, e);
+            throw new SW360Exception("Error downloading attachment sample: " + e.getMessage());
         }
     }
 
@@ -128,13 +121,13 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadAttachmentInfo")
-    public void downloadAttachmentInfo(HttpServletResponse response) throws TTransportException{
+    public void downloadAttachmentInfo(HttpServletResponse response) throws TTransportException, SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             importExportService.getDownloadAttachmentInfo(sw360User, response);
         } catch (IOException e) {
             LOGGER.error("Error downloading attachment info: {}", e.getMessage(), e);
-            handleException(response, e);
+            throw new SW360Exception("Error downloading attachment info: " + e.getMessage());
         }
     }
 
@@ -148,13 +141,13 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadReleaseSample")
-    public void downloadReleaseSample(HttpServletResponse response) {
+    public void downloadReleaseSample(HttpServletResponse response) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             importExportService.getDownloadReleaseSample(sw360User, response);
         } catch (TException | IOException e) {
             LOGGER.error("Error downloading release sample: {}", e.getMessage(), e);
-            handleException(response, e);
+            throw new SW360Exception("Error downloading release sample: " + e.getMessage());
         }
     }
 
@@ -168,13 +161,13 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadReleaseLink")
-    public void downloadReleaseLink(HttpServletResponse response) {
+    public void downloadReleaseLink(HttpServletResponse response) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             importExportService.getDownloadReleaseLink(sw360User, response);
         } catch (TException | IOException e) {
             LOGGER.error("Error downloading release link: {}", e.getMessage(), e);
-            handleException(response, e);
+            throw new SW360Exception("Error downloading release link: " + e.getMessage());
         }
     }
 
@@ -188,29 +181,14 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
     )
     @PreAuthorize("hasAuthority('WRITE')")
     @GetMapping(value = IMPORTEXPORT_URL + "/downloadComponent")
-    public void downloadComponent(HttpServletResponse response) {
+    public void downloadComponent(HttpServletResponse response) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             importExportService.getComponentDetailedExport(sw360User, response);
         } catch (TException | IOException e) {
             LOGGER.error("Error downloading component: {}", e.getMessage(), e);
-            handleException(response, e);
+            throw new SW360Exception("Error downloading component: " + e.getMessage());
         }
-    }
-
-    private void handleException(HttpServletResponse response, Exception e) {
-        try {
-            response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage());
-        } catch (IOException ioException) {
-            LOGGER.error("Error sending error response: {}", ioException.getMessage(), ioException);
-        }
-    }
-
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<String> handleGlobalException(Exception e) {
-        LOGGER.error("Unhandled exception: {}", e.getMessage(), e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
     }
 
     @Operation(
@@ -218,15 +196,17 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
             description = "Upload a component CSV file to the system.",
             tags = {"ImportExport"},
             parameters = {
-                @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true, description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data.")
+                    @Parameter(name = "Content-Type", in = ParameterIn.HEADER, required = true, description = "The content type of the request. Supported values: multipart/mixed or multipart/form-data.")
             }
-        )
+    )
     @RequestMapping(value = IMPORTEXPORT_URL + "/uploadComponent", method = RequestMethod.POST, consumes = {
             MediaType.MULTIPART_MIXED_VALUE,
             MediaType.MULTIPART_FORM_DATA_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity<RequestSummary> uploadComponentCsv(
-            @Parameter(description = "The component csv file to be uploaded.") @RequestParam("componentFile") MultipartFile file,
-            HttpServletRequest request, HttpServletResponse response) throws TException, IOException, ServletException {
+            @Parameter(description = "The component csv file to be uploaded.")
+            @RequestParam("componentFile") MultipartFile file,
+            HttpServletRequest request, HttpServletResponse response
+    ) throws TException, IOException, ServletException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = importExportService.uploadComponent(sw360User, file, request, response);
@@ -245,8 +225,10 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
             MediaType.MULTIPART_MIXED_VALUE,
             MediaType.MULTIPART_FORM_DATA_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity<RequestSummary> uploadReleaseCsv(
-            @Parameter(description = "The release csv file to be uploaded.") @RequestParam("releaseFile") MultipartFile file,
-            HttpServletRequest request, HttpServletResponse response) throws TException, IOException, ServletException {
+            @Parameter(description = "The release csv file to be uploaded.")
+            @RequestParam("releaseFile") MultipartFile file,
+            HttpServletRequest request
+    ) throws TException, IOException, ServletException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = importExportService.uploadReleaseLink(sw360User, file, request);
@@ -265,8 +247,10 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
             MediaType.MULTIPART_MIXED_VALUE,
             MediaType.MULTIPART_FORM_DATA_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
     public ResponseEntity<RequestSummary> uploadComponentAttachment(
-            @Parameter(description = "The component attachment csv file to be uploaded.") @RequestParam("attachmentFile") MultipartFile file,
-            HttpServletRequest request, HttpServletResponse response) throws TException, IOException, ServletException {
+            @Parameter(description = "The component attachment csv file to be uploaded.")
+            @RequestParam("attachmentFile") MultipartFile file,
+            HttpServletRequest request
+    ) throws TException, IOException, ServletException {
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RequestSummary requestSummary = importExportService.uploadComponentAttachment(sw360User, file, request);

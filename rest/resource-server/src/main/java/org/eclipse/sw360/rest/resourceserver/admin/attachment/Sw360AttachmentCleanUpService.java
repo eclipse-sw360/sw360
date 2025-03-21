@@ -13,14 +13,11 @@ package org.eclipse.sw360.rest.resourceserver.admin.attachment;
 import java.util.Set;
 
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentService;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,13 +36,13 @@ public class Sw360AttachmentCleanUpService {
 
     ComponentService.Iface componentClient;
     AttachmentService.Iface attachmentClient;
-	
-    private ComponentService.Iface getThriftComponentClient() throws TTransportException {
+
+    private ComponentService.Iface getThriftComponentClient() {
         ComponentService.Iface componentClient = new ThriftClients().makeComponentClient();
         return componentClient;
     }
-	
-    private AttachmentService.Iface getThriftAttachmentClient() throws TTransportException {
+
+    private AttachmentService.Iface getThriftAttachmentClient() {
         AttachmentService.Iface attachmentClient = new ThriftClients().makeAttachmentClient();
         return attachmentClient;
     }
@@ -56,5 +53,4 @@ public class Sw360AttachmentCleanUpService {
         final Set<String> usedAttachmentIds = componentClient.getUsedAttachmentContentIds();
         return attachmentClient.vacuumAttachmentDB(sw360User, usedAttachmentIds);
     }
-
 }
