@@ -47,7 +47,6 @@ import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
 import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -89,7 +88,6 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectDTO;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.ProjectVulnerabilityRating;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityCheckStatus;
@@ -112,7 +110,6 @@ import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
 import org.jetbrains.annotations.NotNull;
-import org.jose4j.json.internal.json_simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.data.domain.Pageable;
@@ -131,12 +128,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -164,7 +159,6 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.wrapThriftOptionalReplacement;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
-import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -3707,60 +3701,25 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Add licenses to linked releases of a project.",
-            description = "This API adds license information to linked releases of a project by processing the approved CLI attachments for each release. It categorizes releases based on the number of CLI attachments (single, multiple, or none) and updates their main and other licenses accordingly.",
-            tags = {"Project"},
-                    parameters = {
-                            @Parameter(
-                                name = "projectId",
-                                description = "The ID of the project whose linked releases need license updates.",
-                                required = true,
-                                example = "12345",
-                                schema = @Schema(type = "string")
-                            )
-                        },
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "License information successfully added to linked releases.",
-                            content = @Content(
-                            mediaType = "application/hal+json",
-                            schema = @Schema(type = "object", implementation = JSONObject.class),
-                            examples = @ExampleObject(
-                                     value = "{\"message\": \"License information successfully added to linked releases.\" }"
-                            )
-                        )
-                    ),
-                    @ApiResponse(
-                            responseCode = "500",
-                            description = "Error occurred while processing license information for linked releases.",
-                            content = @Content(
-                                mediaType = "application/json",
-                                examples = @ExampleObject(
-                                    value = "{\n  \"error\": \"Error adding license info to linked releases.\"\n}"
-                                )
-                            )
-                        )
-          }
+            description = "This API adds license information to linked releases of a project by processing the approved" +
+                    " CLI attachments for each release. It categorizes releases based on the number of CLI attachments" +
+                    " (single, multiple, or none) and updates their main and other licenses accordingly.",
+            tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/addLinkedReleasesLicenses", method = RequestMethod.POST)
-    public ResponseEntity<String> addLicenseToLinkedReleases(
+    public ResponseEntity<CollectionModel<HalResource<Release>>> addLicenseToLinkedReleases(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String projectId
-    ) throws TException, ResourceClassNotFoundException {
-        try {
-            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+    ) throws TException {
+        User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
-            RequestStatus requestStatus = projectService.addLicenseToLinkedReleases(projectId, sw360User);
+        List<Release> updatedReleases = projectService.addLicenseToLinkedReleases(projectId, sw360User);
 
-            if (requestStatus == RequestStatus.SUCCESS) {
-                return ResponseEntity.ok("License information successfully added to linked releases.");
-            } else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add license information to linked releases.");
-            }
-        } catch (ResourceNotFoundException e) {
-            throw new ResourceClassNotFoundException(e.getMessage());
-        } catch (SW360Exception sw360Exp) {
-            throw new RuntimeException(sw360Exp.getWhy());
-        }
+        List<HalResource<Release>> halReleases = updatedReleases.stream().map(sw360Release ->
+                wrapTException(() -> {
+                    final Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release);
+                    return new HalResource<>(embeddedRelease);
+                })).toList();
+        return new ResponseEntity<>(CollectionModel.of(halReleases), HttpStatus.OK);
     }
 }
