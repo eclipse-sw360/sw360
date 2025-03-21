@@ -111,7 +111,6 @@ import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
 import org.jetbrains.annotations.NotNull;
-import org.jose4j.json.internal.json_simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -3706,7 +3705,9 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Add licenses to linked releases of a project.",
-            description = "This API adds license information to linked releases of a project by processing the approved CLI attachments for each release. It categorizes releases based on the number of CLI attachments (single, multiple, or none) and updates their main and other licenses accordingly.",
+            description = "This API adds license information to linked releases of a project by processing the approved" +
+                    " CLI attachments for each release. It categorizes releases based on the number of CLI attachments" +
+                    " (single, multiple, or none) and updates their main and other licenses accordingly.",
             tags = {"Projects"},
                     parameters = {
                             @Parameter(
@@ -3723,7 +3724,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                             description = "License information successfully added to linked releases.",
                             content = @Content(
                             mediaType = "application/hal+json",
-                            schema = @Schema(type = "object", implementation = JSONObject.class),
+                            schema = @Schema(type = "object", implementation = Map.class),
                             examples = @ExampleObject(
                                      value = "{\"message\": \"License information successfully added to linked releases.\" }"
                             )
@@ -3738,22 +3739,23 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
                                     value = "{\n  \"error\": \"Error adding license info to linked releases.\"\n}"
                                 )
                             )
-                        )
+                    )
           }
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/addLinkedReleasesLicenses", method = RequestMethod.POST)
-    public ResponseEntity<String> addLicenseToLinkedReleases(
+    public ResponseEntity<CollectionModel<HalResource<Release>>> addLicenseToLinkedReleases(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String projectId
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
-        RequestStatus requestStatus = projectService.addLicenseToLinkedReleases(projectId, sw360User);
+        List<Release> updatedReleases = projectService.addLicenseToLinkedReleases(projectId, sw360User);
 
-        if (requestStatus == RequestStatus.SUCCESS) {
-            return ResponseEntity.ok("License information successfully added to linked releases.");
-        } else {
-            throw new SW360Exception("Failed to add license information to linked releases.");
-        }
+        List<HalResource<Release>> halReleases = updatedReleases.stream().map(sw360Release ->
+                wrapTException(() -> {
+                    final Release embeddedRelease = restControllerHelper.convertToEmbeddedRelease(sw360Release);
+                    return new HalResource<>(embeddedRelease);
+                })).toList();
+        return new ResponseEntity<>(CollectionModel.of(halReleases), HttpStatus.OK);
     }
 }
