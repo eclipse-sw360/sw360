@@ -3,13 +3,14 @@
   ~ Copyright Siemens AG, 2013-2017, 2019, 2020. Part of the SW360 Portal Project.
   ~ Copyright Bosch.IO GmbH 2020.
   ~ Copyright Cariad SE, 2025. Part of the SW360 Portal Project.
-  ~  Copyright Helio Chissini de Castro 2022-2025
+  ~ Copyright Helio Chissini de Castro 2022-2025
   ~
   ~ This program and the accompanying materials are made
   ~ available under the terms of the Eclipse Public License 2.0
   ~ which is available at https://www.eclipse.org/legal/epl-2.0/
   ~
-  ~ SPDX-License-Identifier: EPL-2.0 -->
+  ~ SPDX-License-Identifier: EPL-2.0
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -62,9 +63,7 @@
     <backend.deploy.dir>${base.deploy.dir}/webapps</backend.deploy.dir>
     <rest.deploy.dir>${base.deploy.dir}/webapps</rest.deploy.dir>
     <jars.deploy.dir/>
-    <!-- Prevent copy of jar files to tomcat/webapps. Used by Docker build -->
     <listener.deploy.dir/>
-    <!-- Build version properties -->
     <java_source.version>21</java_source.version>
     <java_target.version>21</java_target.version>
     <java_release.version>21</java_release.version>
@@ -72,7 +71,6 @@
     <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <!-- Plugin version properties -->
     <build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
     <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
     <maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
@@ -87,15 +85,12 @@
     <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
     <maven-war-plugin.version>3.4.0</maven-war-plugin.version>
     <versions-maven-plugin.version>2.18.0</versions-maven-plugin.version>
-    <!-- JSON Libraries used in the project -->
     <gson.version>2.12.1</gson.version>
     <json.version>20241224</json.version>
     <json-path.version>2.9.0</json-path.version>
     <json-smart.version>2.5.2</json-smart.version>
     <json-simple.version>4.0.1</json-simple.version>
     <jackson.version>2.18.3</jackson.version>
-
-    <!-- Dependencies version properties -->
     <assertj.version>3.27.3</assertj.version>
     <byte-buddy.version>1.15.11</byte-buddy.version>
     <cloudantsdk.version>0.10.2</cloudantsdk.version>
@@ -301,7 +296,6 @@
           </exclusion>
         </exclusions>
       </dependency>
-      <!-- API, java.xml.bind module: java 11 compatibility -->
       <dependency>
         <groupId>jakarta.xml.bind</groupId>
         <artifactId>jakarta.xml.bind-api</artifactId>
@@ -585,8 +579,8 @@
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-utils</artifactId>
         <version>${plexus-utils.version}</version>
-    </dependency>
-<dependency>
+      </dependency>
+      <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
         <version>${project-lombok.version}</version>
@@ -633,9 +627,18 @@
         <groupId>joda-time</groupId>
         <artifactId>joda-time</artifactId>
         <version>${joda-time.version}</version>
-    </dependency>
+      </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <!-- Added SLF4J dependency for SW360ServiceContextListener -->
+  <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+  </dependencies>
+
   <build>
     <pluginManagement>
       <plugins>
@@ -777,15 +780,9 @@
               <rules>
                 <requireProperty>
                   <property>base.deploy.dir</property>
-                  <message>
-                                        You must set at least the property
-                                        'base.deploy.dir'!
-                  </message>
+                  <message>You must set at least the property 'base.deploy.dir'!</message>
                   <regex>^.+$</regex>
-                  <regexMessage>
-                                        You must set at least the property
-                                        'base.deploy.dir'!
-                  </regexMessage>
+                  <regexMessage>You must set at least the property 'base.deploy.dir'!</regexMessage>
                 </requireProperty>
                 <requireJavaVersion>
                   <version>[21,23)</version>
@@ -831,9 +828,6 @@
                         <destFileName>${project.build.finalName}.${project.packaging}</destFileName>
                       </artifactItem>
                     </artifactItems>
-                    <!-- This property is set by the submodules themself, depending wether they are backend, frontend or
-                    library modules. All other submodule leave this property blank causing the dependency plugin to copy
-                    the artifact inside the target folder. -->
                     <outputDirectory>${artifact.deploy.dir}</outputDirectory>
                   </configuration>
                 </execution>
