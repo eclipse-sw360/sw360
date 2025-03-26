@@ -1360,4 +1360,15 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         sw360ComponentClient.unsubscribeRelease(releaseId, user);
     }
+
+    /**
+     * Checks the status of a Fossology report generation process
+     * 
+     * @param reportId the ID of the report to check
+     * @return a map containing status information about the report
+     */
+    public Map<String, String> checkFossologyReportStatus(int reportId) throws TException {
+        FossologyService.Iface fossologyClient = getThriftFossologyClient();
+        return fossologyClient.checkReportGenerationStatus(reportId);
+    }
 }
