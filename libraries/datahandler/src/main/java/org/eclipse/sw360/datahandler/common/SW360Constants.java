@@ -138,6 +138,8 @@ public class SW360Constants {
     public static final String ADD_LIST_EMAIL = "listEmail";
     public static final String DEPARTMENT_KEY = "departmentKey";
     public static final String DELETE_LIST_EMAIL = "deleteEmail";
+    public static final String SBOM = "sbom";
+
 
     /**
      * Hashmap containing the name field for each type.
@@ -162,6 +164,8 @@ public class SW360Constants {
             AttachmentType.COMPONENT_LICENSE_INFO_COMBINED, AttachmentType.INITIAL_SCAN_REPORT);
     public static final Collection<AttachmentType> SOURCE_CODE_ATTACHMENT_TYPES = Arrays.asList(AttachmentType.SOURCE, AttachmentType.SOURCE_SELF);
     public static final String CONTENT_TYPE_OPENXML_SPREADSHEET = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    public static final String CONTENT_TYPE_XML = "application/xml";
+    public static final String CONTENT_TYPE_JSON = "application/json";
 
     public static final String NOTIFICATION_CLASS_RELEASE = "release";
     public static final String NOTIFICATION_CLASS_MODERATION_REQUEST = "moderation";

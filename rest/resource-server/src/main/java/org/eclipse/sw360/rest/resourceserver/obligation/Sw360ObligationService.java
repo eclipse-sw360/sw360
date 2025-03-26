@@ -17,14 +17,15 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
+import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
@@ -80,4 +81,20 @@ public class Sw360ObligationService {
         TProtocol protocol = new TCompactProtocol(thriftClient);
         return new LicenseService.Client(protocol);
     }
+
+    public Obligation updateObligation(Obligation obligation, User sw360User) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(obligation.getTitle())
+                || CommonUtils.isNotNullEmptyOrWhitespace(obligation.getText())) {
+            try {
+                LicenseService.Iface sw360LicenseClient = getThriftLicenseClient();
+                sw360LicenseClient.updateObligation(obligation, sw360User);
+                return obligation;
+            } catch (TException e) {
+                throw new RuntimeException("Error updating obligation", e);
+            }
+        } else {
+            throw new HttpMessageNotReadableException("Obligation Title, Text are required. Obligation Title, Text cannot contain only space character.");
+        }
+    }
+
 }
