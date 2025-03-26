@@ -44,10 +44,10 @@ public class ThriftValidate {
 
     private ThriftValidate() {
         // Utility class with only static functions
-    
     }
 
     /**
+
      * Prepares an Obligation object for database insertion.
      *
      * @param oblig The Obligation to prepare
