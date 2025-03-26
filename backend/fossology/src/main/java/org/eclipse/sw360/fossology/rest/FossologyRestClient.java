@@ -512,4 +512,72 @@ public class FossologyRestClient {
             return -1;
         }
     }
+
+    /**
+     * Checks the status of a report generation process, identified by the given
+     * reportId.
+     *
+     * @param reportId the id of the report whose status should be queried.
+     * @return a Map containing status information about the report generation
+     */
+    public Map<String, String> checkReportGenerationStatus(int reportId) {
+        String baseUrl = restConfig.getBaseUrlWithSlash();
+        String token = restConfig.getAccessToken();
+        Map<String, String> responseMap = new HashMap<>();
+
+        if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
+            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+            return responseMap;
+        }
+
+        if (reportId < 0) {
+            log.error("Invalid arguments, reportId must not be less than 0!");
+            return responseMap;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + token);
+
+        try {
+            log.debug("Checking report generation status for reportId {} at {}", reportId, baseUrl + "report/" + reportId);
+            ResponseEntity<JsonNode> responseEntity = restTemplate.exchange(
+                    baseUrl + "report/" + reportId,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    JsonNode.class);
+
+            JsonNode body = responseEntity.getBody();
+            if (body == null) {
+                log.error("Received empty response body when checking report status for reportId {}", reportId);
+                return responseMap;
+            }
+
+            // Extract status information from the response
+            if (body.has("status")) {
+                String status = body.get("status").asText();
+                responseMap.put("status", status);
+                log.debug("Report generation status for reportId {}: {}", reportId, status);
+            }
+
+            // Add any other relevant fields from the response
+            if (body.has("message")) {
+                responseMap.put("message", body.get("message").asText());
+            }
+
+            return responseMap;
+        } catch (RestClientException e) {
+            if (e.getMessage().contains("503")) {
+                log.info("Report for reportId {} is not ready yet (Status 503). Will retry later.", reportId);
+                responseMap.put("status", "IN_PROGRESS");
+            } else {
+                log.error("Error while checking report generation status for reportId {}: {}", reportId, e.getMessage());
+                log.debug("Detailed report status error:", e);
+            }
+            return responseMap;
+        } catch (Exception e) {
+            log.error("Unexpected error while processing report status for reportId {}: {}", e.getMessage());
+            log.debug("Detailed error:", e);
+            return responseMap;
+        }
+    }
 }

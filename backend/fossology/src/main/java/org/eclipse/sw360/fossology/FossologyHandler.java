@@ -538,6 +538,17 @@ public class FossologyHandler implements FossologyService.Iface {
         return fossologyRestClient.checkScanStatus(scanJobId);
     }
 
+    /**
+     * Checks the status of a report generation process.
+     *
+     * @param reportId the id of the report to check status for
+     * @return the Map object containing status details
+     */
+    @Override
+    public Map<String, String> checkReportGenerationStatus(int reportId) throws TException {
+        return fossologyRestClient.checkReportGenerationStatus(reportId);
+    }
+
     private int scanStatusCode(Map<String, String> responseMap) {
         if (responseMap == null || responseMap.isEmpty())
             return -1;
