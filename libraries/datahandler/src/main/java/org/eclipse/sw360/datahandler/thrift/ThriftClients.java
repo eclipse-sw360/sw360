@@ -133,7 +133,7 @@ public class ThriftClients {
      * Creates a Thrift Compact Protocol object linked to the given address
      */
     private static TProtocol makeProtocol(String url, String service) {
-        THttpClient thriftClient = null;
+        THttpClient thriftClient ;
         final String destinationAddress = url + service;
         final TConfiguration thriftConfigure = TConfiguration.custom().setMaxMessageSize(THRIFT_MAX_MESSAGE_SIZE)
                 .setMaxFrameSize(THRIFT_MAX_FRAME_SIZE).build();
@@ -152,10 +152,21 @@ public class ThriftClients {
             thriftClient.setReadTimeout(THRIFT_READ_TIMEOUT);
         } catch (TTransportException e) {
             log.error("cannot connect to backend on " + destinationAddress, e);
+            throw new ThriftConnectionException("Unable to connect to " + destinationAddress,e);
         } catch (MalformedURLException e) {
             log.error("cannot connect via http proxy (REASON:MalformedURLException) to thrift backend", e);
+            throw new ThriftConnectionException("Invalid proxy URL: " + BACKEND_PROXY_URL , e );
         }
         return new TCompactProtocol(thriftClient);
+    }
+
+    /**
+     * Custom Exception for Thrift connection
+     */
+    public static class ThriftConnectionException extends RuntimeException{
+            public ThriftConnectionException(String message , Throwable cause) {
+                super(message,cause);
+            }
     }
 
     public AttachmentService.Iface makeAttachmentClient() {
