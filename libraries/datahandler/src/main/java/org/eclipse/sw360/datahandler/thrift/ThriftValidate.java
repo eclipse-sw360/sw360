@@ -1,16 +1,4 @@
-/*
- * Copyright Siemens AG, 2014-2018. Part of the SW360 Portal Project.
- *
- * This program and the accompanying materials are made
- * available under the terms of the Eclipse Public License 2.0
- * which is available at https://www.eclipse.org/legal/epl-2.0/
- *
- * SPDX-License-Identifier: EPL-2.0
- */
 package org.eclipse.sw360.datahandler.thrift;
-
-import com.google.common.base.Function;
-import com.google.common.collect.FluentIterable;
 
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.components.*;
@@ -28,18 +16,17 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformat
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-import static com.google.common.base.Predicates.notNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.*;
 import static org.eclipse.sw360.datahandler.common.SW360Constants.*;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.newDefaultEccInformation;
 
 /**
  * Utility class to validate the data before inserting it in the database.
- * In particular, in ensure the that the type is set correctly on the object (for easier parsing)
- *
- * @author cedric.bodet@tngtech.com
+ * It ensures that the type is set correctly on the object (for easier parsing).
  */
 public class ThriftValidate {
 
@@ -49,49 +36,66 @@ public class ThriftValidate {
         // Utility class with only static functions
     }
 
+    /**
+     * Prepares an Obligation object for database insertion.
+     *
+     * @param oblig The Obligation to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareTodo(Obligation oblig) throws SW360Exception {
-        // Check required fields
-        assertNotNull(oblig);
-        assertNotEmpty(oblig.getText());
-        assertNotNull(oblig.getTitle());
-        assertNotNull(oblig.getObligationLevel());
+        assertNotNull(oblig, "Obligation cannot be null");
+        assertNotEmpty(oblig.getText(), "Obligation text cannot be empty");
+        assertNotNull(oblig.getTitle(), "Obligation title cannot be null");
+        assertNotNull(oblig.getObligationLevel(), "Obligation level cannot be null");
 
-        if (oblig.whitelist == null) {
-            oblig.setWhitelist(Collections.emptySet());
-        }
-
-        // Check type
+        oblig.setWhitelist(oblig.isSetWhitelist() ? oblig.getWhitelist() : Collections.emptySet());
         oblig.setType(TYPE_OBLIGATION);
     }
 
+    /**
+     * Prepares a LicenseType object for database insertion.
+     *
+     * @param licenseType The LicenseType to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareLicenseType(LicenseType licenseType) throws SW360Exception {
-        // Check required fields
-        assertNotNull(licenseType);
-        assertNotEmpty(licenseType.getLicenseType());
-
-        // Check type
+        assertNotNull(licenseType, "LicenseType cannot be null");
+        assertNotEmpty(licenseType.getLicenseType(), "LicenseType cannot be empty");
         licenseType.setType(TYPE_LICENSETYPE);
     }
 
+    /**
+     * Prepares an ObligationElement object for database insertion.
+     *
+     * @param obligationElement The ObligationElement to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareObligationElement(ObligationElement obligationElement) throws SW360Exception {
-        // Check required fields
-        assertNotNull(obligationElement);
-        // Check type
+        assertNotNull(obligationElement, "ObligationElement cannot be null");
         obligationElement.setType(TYPE_OBLIGATIONELEMENT);
     }
 
+    /**
+     * Prepares an ObligationNode object for database insertion.
+     *
+     * @param obligationNode The ObligationNode to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareObligationNode(ObligationNode obligationNode) throws SW360Exception {
-        // Check required fields
-        assertNotNull(obligationNode);
-        // Check type
+        assertNotNull(obligationNode, "ObligationNode cannot be null");
         obligationNode.setType(TYPE_OBLIGATIONNODE);
     }
 
+    /**
+     * Prepares a License object for database insertion.
+     *
+     * @param license The License to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareLicense(License license) throws SW360Exception {
-        // Check required fields
-        assertNotNull(license);
-        assertNotEmpty(license.getId());
-        assertNotEmpty(license.getFullname());
+        assertNotNull(license, "License cannot be null");
+        assertNotEmpty(license.getId(), "License ID cannot be empty");
+        assertNotEmpty(license.getFullname(), "License full name cannot be empty");
 
         if (license.isSetLicenseType() && !license.isSetLicenseTypeDatabaseId()) {
             license.setLicenseTypeDatabaseId(license.getLicenseType().getId());
@@ -99,203 +103,269 @@ public class ThriftValidate {
         license.unsetLicenseType();
 
         if (license.isSetObligations() && license.isSetObligationDatabaseIds()) {
-            for (Obligation oblig : license.getObligations()) {
-                license.addToObligationDatabaseIds(oblig.getId());
-            }
+            license.getObligations().forEach(oblig -> license.addToObligationDatabaseIds(oblig.getId()));
         }
         license.unsetObligations();
 
-        // Check type
         license.setType(TYPE_LICENSE);
-
-        // Unset optionals
         license.unsetPermissions();
     }
 
-
+    /**
+     * Prepares a User object for database insertion.
+     *
+     * @param user The User to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareUser(User user) throws SW360Exception {
-        // Check required fields
-        assertNotEmpty(user.getEmail());
-        // Set type
+        assertNotEmpty(user.getEmail(), "User email cannot be empty");
         user.setType(TYPE_USER);
-        // guarantee that `CommentMadeDuringModerationRequest` is never stored in the database as this is intended to be a transient field
         user.unsetCommentMadeDuringModerationRequest();
     }
 
+    /**
+     * Prepares a Vendor object for database insertion.
+     *
+     * @param vendor The Vendor to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareVendor(Vendor vendor) throws SW360Exception {
-        // Check required fields
-        assertNotEmpty(vendor.getShortname(), "vendor short name cannot be empty!");
-        assertNotEmpty(vendor.getFullname(), "vendor full name cannot be empty!");
+        assertNotEmpty(vendor.getShortname(), "Vendor short name cannot be empty");
+        assertNotEmpty(vendor.getFullname(), "Vendor full name cannot be empty");
         assertValidUrl(vendor.getUrl());
-
-        // Check type
         vendor.setType(TYPE_VENDOR);
     }
 
+    /**
+     * Prepares a Component object for database insertion.
+     *
+     * @param component The Component to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareComponent(Component component) throws SW360Exception {
-        // Check required fields
-        assertNotEmpty(component.getName());
-
-        // Check type
+        assertNotEmpty(component.getName(), "Component name cannot be empty");
         component.setType(TYPE_COMPONENT);
-
-        // Unset optionals
         component.unsetPermissions();
-
-        // Unset fields that do not make sense
         component.unsetReleases();
         component.unsetDefaultVendor();
-        // we might want to have a logic someday that the defaultVendorId will be set
-        // from defaultVendor if the latter one is set and the former one not - but
-        // until now the thought is that clients need to make sure that the
-        // defaultVendorId is set and that the component contains the vendor itself is
-        // just convenience
     }
 
+    /**
+     * Prepares a list of Component objects for database insertion.
+     *
+     * @param components The Collection of Components to prepare
+     * @return List of prepared Components
+     * @throws SW360Exception if validation fails
+     */
     public static List<Component> prepareComponents(Collection<Component> components) throws SW360Exception {
+        if (components == null) {
+            return Collections.emptyList();
+        }
 
-        return FluentIterable.from(components).transform(new Function<Component, Component>() {
-            @Override
-            public Component apply(Component input) {
-                try {
-                    prepareComponent(input);
-                } catch (SW360Exception e) {
-                    return null;
-                }
-                return input;
-            }
-        }).filter(notNull()).toList();
-
+        return components.stream()
+                .map(component -> {
+                    try {
+                        prepareComponent(component);
+                        return component;
+                    } catch (SW360Exception e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
+    /**
+     * Prepares a Package object for database insertion.
+     *
+     * @param pkg The Package to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void preparePackage(Package pkg) throws SW360Exception {
-        // Check required fields
-        assertNotEmpty(pkg.getName());
-        assertNotEmpty(pkg.getVersion());
-        assertNotEmpty(pkg.getPurl());
-        assertNotEmpty(pkg.getPackageManager().name());
-        assertNotEmpty(pkg.getPackageType().name());
+        assertNotNull(pkg, "Package cannot be null");
+        assertNotEmpty(pkg.getName(), "Package name cannot be empty");
+        assertNotEmpty(pkg.getVersion(), "Package version cannot be empty");
+        assertNotEmpty(pkg.getPurl(), "Package PURL cannot be empty");
+        assertNotNull(pkg.getPackageManager(), "Package manager cannot be null");
+        assertNotEmpty(pkg.getPackageManager().name(), "Package manager name cannot be empty");
+        assertNotNull(pkg.getPackageType(), "Package type cannot be null");
+        assertNotEmpty(pkg.getPackageType().name(), "Package type name cannot be empty");
         pkg.unsetRelease();
-
-        // Check type
         pkg.setType(TYPE_PACKAGE);
     }
 
+    /**
+     * Prepares a Release object for database insertion.
+     *
+     * @param release The Release to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareRelease(Release release) throws SW360Exception {
-        // Check required fields
-        assertNotEmpty(release.getName());
-        assertNotEmpty(release.getVersion());
-        assertNotEmpty(release.getComponentId());
+        assertNotEmpty(release.getName(), "Release name cannot be empty");
+        assertNotEmpty(release.getVersion(), "Release version cannot be empty");
+        assertNotEmpty(release.getComponentId(), "Release component ID cannot be empty");
 
-        // Check type
         release.setType(TYPE_RELEASE);
 
-        // Save vendor ID, not object
         if (release.isSetVendor()) {
-            release.vendorId = release.vendor.id;
+            release.setVendorId(release.getVendor().getId());
         }
 
         ensureEccInformationIsSet(release);
 
-        // Unset optionals
         release.unsetPermissions();
         release.unsetVendor();
         release.unsetCreatorDepartment();
     }
 
+    /**
+     * Ensures that ECC information is set for a Release.
+     *
+     * @param release The Release to update
+     * @return The updated Release
+     */
     public static Release ensureEccInformationIsSet(Release release) {
-        EccInformation eccInformation = release.isSetEccInformation() ? release.getEccInformation() : newDefaultEccInformation();
-        if (!eccInformation.isSetEccStatus()){
+        EccInformation eccInformation = release.isSetEccInformation()
+                ? release.getEccInformation()
+                : newDefaultEccInformation();
+
+        if (!eccInformation.isSetEccStatus()) {
             eccInformation.setEccStatus(ECCStatus.OPEN);
         }
+
         release.setEccInformation(eccInformation);
         return release;
     }
 
-    public static List<Release> prepareReleases(Collection<Release> components) throws SW360Exception {
-
-        return FluentIterable.from(components).transform(new Function<Release, Release>() {
-            @Override
-            public Release apply(Release input) {
-                try {
-                    prepareRelease(input);
-                } catch (SW360Exception e) {
-                    return null;
-                }
-                return input;
-            }
-        }).filter(notNull()).toList();
-
-    }
-
-    public static void validateAttachment(AttachmentContent attachment) throws SW360Exception {
-        assertNotNull(attachment);
-        if (attachment.isOnlyRemote()) {
-            String remoteUrl = attachment.getRemoteUrl();
-            assertValidUrl(remoteUrl);
+    /**
+     * Prepares a list of Release objects for database insertion.
+     *
+     * @param releases The Collection of Releases to prepare
+     * @return List of prepared Releases
+     * @throws SW360Exception if validation fails
+     */
+    public static List<Release> prepareReleases(Collection<Release> releases) throws SW360Exception {
+        if (releases == null) {
+            return Collections.emptyList();
         }
 
+        return releases.stream()
+                .map(release -> {
+                    try {
+                        prepareRelease(release);
+                        return release;
+                    } catch (SW360Exception e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Validates an AttachmentContent object.
+     *
+     * @param attachment The AttachmentContent to validate
+     * @throws SW360Exception if validation fails
+     */
+    public static void validateAttachment(AttachmentContent attachment) throws SW360Exception {
+        assertNotNull(attachment, "Attachment cannot be null");
+        if (attachment.isOnlyRemote()) {
+            assertValidUrl(attachment.getRemoteUrl());
+        }
         attachment.setType(TYPE_ATTACHMENT);
     }
 
+    /**
+     * Validates a new License object.
+     *
+     * @param license The License to validate
+     * @throws SW360Exception if validation fails
+     */
     public static void validateNewLicense(License license) throws SW360Exception {
         assertId(license.getShortname());
-        assertTrue(LICENSE_ID_PATTERN.matcher(license.getShortname()).matches());
+        assertTrue(LICENSE_ID_PATTERN.matcher(license.getShortname()).matches(), "License ID must match the pattern");
         if (license.isSetId()) {
             validateLicenseIdMatch(license);
         }
     }
 
+    /**
+     * Validates an existing License object.
+     *
+     * @param license The License to validate
+     * @throws SW360Exception if validation fails
+     */
     public static void validateExistingLicense(License license) throws SW360Exception {
         validateLicenseIdMatch(license);
     }
 
     private static void validateLicenseIdMatch(License license) throws SW360Exception {
-        String message = "license short name must be equal to license id";
-        assertEquals(license.getId(), license.getShortname(), message);
+        assertEquals(license.getId(), license.getShortname(), "License short name must be equal to license ID");
     }
 
+    /**
+     * Prepares a Project object for database insertion.
+     *
+     * @param project The Project to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareProject(Project project) throws SW360Exception {
-        assertNotEmpty(project.getName());
+        assertNotEmpty(project.getName(), "Project name cannot be empty");
         project.setType(TYPE_PROJECT);
         if (!project.isSetClearingState()) {
             project.setClearingState(ProjectClearingState.OPEN);
         }
-
-        // Unset temporary fields
         project.unsetPermissions();
         project.unsetReleaseClearingStateSummary();
     }
 
+    /**
+     * Prepares a ProjectObligation object for database insertion.
+     *
+     * @param obligation The ObligationList to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareProjectObligation(ObligationList obligation) throws SW360Exception {
         assertId(obligation.getProjectId());
-        assertNotNull(obligation.getLinkedObligationStatus());
-        assertNotEmpty(obligation.getLinkedObligationStatus().keySet(), "linked obligtions cannot be empty");
+        assertNotNull(obligation.getLinkedObligationStatus(), "Linked obligation status cannot be null");
+        assertNotEmpty(obligation.getLinkedObligationStatus().keySet(), "Linked obligations cannot be empty");
         obligation.setType(TYPE_PROJECT_OBLIGATION);
     }
 
+    /**
+     * Prepares an SPDXDocument object for database insertion.
+     *
+     * @param spdx The SPDXDocument to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareSPDXDocument(SPDXDocument spdx) throws SW360Exception {
-        // Check required fields
-
-        // Check type
+        assertNotNull(spdx, "SPDX Document cannot be null");
         spdx.setType(TYPE_SPDX_DOCUMENT);
-        // Unset temporary fields
         spdx.unsetPermissions();
     }
 
+    /**
+     * Prepares a DocumentCreationInformation object for database insertion.
+     *
+     * @param documentCreationInfo The DocumentCreationInformation to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo) throws SW360Exception {
-        // Check required fields
-
-        // Check type
+        assertNotNull(documentCreationInfo, "Document Creation Information cannot be null");
         documentCreationInfo.setType(TYPE_SPDX_DOCUMENT_CREATION_INFO);
-        // Unset temporary fields
         documentCreationInfo.unsetPermissions();
-}
+    }
 
+    /**
+     * Prepares a PackageInformation object for database insertion.
+     *
+     * @param packageInfo The PackageInformation to prepare
+     * @throws SW360Exception if validation fails
+     */
     public static void prepareSpdxPackageInfo(PackageInformation packageInfo) throws SW360Exception {
-        // Check type
+        assertNotNull(packageInfo, "Package Information cannot be null");
         packageInfo.setType(TYPE_SPDX_PACKAGE_INFO);
-        // Unset temporary fields
         packageInfo.unsetPermissions();
     }
 }
