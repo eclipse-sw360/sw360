@@ -44,6 +44,7 @@ public class ThriftValidate {
 
     private ThriftValidate() {
         // Utility class with only static functions
+    
     }
 
     /**
