@@ -67,4 +67,9 @@ service FossologyService {
      * Check scan status for a scan job Id.
      **/
     map<string, string> checkScanStatus(i32 scanJobId);
+
+    /**
+     * Check report generation status for a report Id.
+     **/
+    map<string, string> checkReportGenerationStatus(i32 reportId);
 }
