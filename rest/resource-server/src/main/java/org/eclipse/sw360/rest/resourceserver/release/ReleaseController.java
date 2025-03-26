@@ -876,6 +876,23 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         } else {
             responseMap.put("status", RequestStatus.FAILURE);
         }
+        
+        // Add detailed report status if report step exists
+        if (fossologyProcess != null && fossologyProcess.getProcessSteps().size() >= 3) {
+            ExternalToolProcessStep reportStep = fossologyProcess.getProcessSteps().get(2);
+            if (reportStep.getProcessStepIdInTool() != null && !reportStep.getProcessStepIdInTool().isEmpty()) {
+                try {
+                    int reportId = Integer.parseInt(reportStep.getProcessStepIdInTool());
+                    if (reportId > 0) {
+                        Map<String, String> reportStatus = releaseService.checkFossologyReportStatus(reportId);
+                        responseMap.put("reportStatus", reportStatus);
+                    }
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid report ID format in process step: {}", reportStep.getProcessStepIdInTool());
+                }
+            }
+        }
+        
         responseMap.put("fossologyProcessInfo", fossologyProcess);
         return new ResponseEntity<>(responseMap, HttpStatus.OK);
     }
