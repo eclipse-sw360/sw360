@@ -49,7 +49,7 @@ import org.eclipse.sw360.datahandler.thrift.users.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.packageurl.MalformedPackageURLException;
 import com.github.packageurl.PackageURL;
-import com.google.common.base.Strings; // Added import for Strings.isNullOrEmpty
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -137,10 +137,10 @@ public class CycloneDxBOMExporter {
             bom.setMetadata(metadata);
 
             if (SW360Constants.JSON_FILE_EXTENSION.equalsIgnoreCase(bomType)) {
-                BomJsonGenerator jsonBom = new BomJsonGenerator(bom, Version.VERSION_14);
+                BomJsonGenerator jsonBom = new BomJsonGenerator(bom, Version.VERSION_16);
                 summary.setMessage(jsonBom.toJsonString());
             } else {
-                BomXmlGenerator xmlBom = new BomXmlGenerator(bom, Version.VERSION_14);
+                BomXmlGenerator xmlBom = new BomXmlGenerator(bom, Version.VERSION_16);
                 summary.setMessage(xmlBom.toXmlString());
             }
             return summary;
@@ -314,7 +314,7 @@ public class CycloneDxBOMExporter {
     }
 
     private boolean isValidSpdxLicenseId(String licenseId) {
-        if (Strings.isNullOrEmpty(licenseId)) { // Fixed: Use Strings.isNullOrEmpty instead of CommonUtils.isNullOrEmpty
+        if (Strings.isNullOrEmpty(licenseId)) {
             return false;
         }
         // Simplified validation: SPDX IDs typically don't contain spaces or special characters
