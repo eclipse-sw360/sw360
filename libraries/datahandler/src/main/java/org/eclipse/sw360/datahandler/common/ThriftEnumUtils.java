@@ -57,6 +57,7 @@ public class ThriftEnumUtils {
             .put(ComponentType.SERVICE, "Service")
             .put(ComponentType.FREESOFTWARE, "Freeware")
             .put(ComponentType.CODE_SNIPPET, "Code Snippet")
+            .put(ComponentType.COTS_TRUSTED_SUPPLIER, "COTS-Trusted Supplier")
             .build();
 
     private static final ImmutableMap<ObligationLevel, String> MAP_OBLIGATION_LEVEL_STRING = ImmutableMap.<ObligationLevel, String>builder()
