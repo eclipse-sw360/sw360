@@ -33,7 +33,7 @@ management:
     enabled: true
   health:
     diskspace:
-      enabled: true    # Disable to hide sensitive system information
+      enabled: false   # Disable to hide sensitive system information
     ping:
       enabled: true
 
