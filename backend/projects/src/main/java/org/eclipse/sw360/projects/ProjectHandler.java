@@ -304,6 +304,14 @@ public class ProjectHandler implements ProjectService.Iface {
         assertIdUnset(project.getId());
         assertUser(user);
 
+        // Prevent duplicate external IDs
+        if (project.isSetExternalIds()) {
+            Set<Project> existingProjects = searchByExternalIds(project.getExternalIds(), user);
+            if (!existingProjects.isEmpty()) {
+                return new AddDocumentRequestSummary().setRequestStatus(RequestStatus.DUPLICATE);
+            }
+        }
+
         return handler.addProject(project, user);
     }
 
