@@ -1269,6 +1269,7 @@ public class ReleaseSpecTest extends TestRestDocsSpecBase {
                 TestHelper.generateAuthHeader(testUserId, testUserPassword))).andExpect(status().isOk())
                 .andDo(this.documentationHandler.document(responseFields(
                         fieldWithPath("status").description("The status of triggered FOSSology, possible values are: " + Arrays.asList(RequestStatus.SUCCESS, RequestStatus.FAILURE, RequestStatus.PROCESSING)),
+                        fieldWithPath("reportStatus").description("Status information about the FOSSology report if available").optional(),
                         fieldWithPath("fossologyProcessInfo")
                                 .description("The information about triggered FOSSology process."),
                         fieldWithPath("fossologyProcessInfo.externalTool")
