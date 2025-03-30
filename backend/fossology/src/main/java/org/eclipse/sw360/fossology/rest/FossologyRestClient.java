@@ -526,7 +526,7 @@ public class FossologyRestClient {
         Map<String, String> responseMap = new HashMap<>();
 
         if (StringUtils.isEmpty(baseUrl) || StringUtils.isEmpty(token)) {
-            log.error("Configuration is missing values! Url: <{}>, Token: <{}>", baseUrl, token);
+            log.error("Configuration is missing values!");
             return responseMap;
         }
 
