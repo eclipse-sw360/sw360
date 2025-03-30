@@ -333,6 +333,60 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
         HttpStatus status = finalResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(finalResources, status);
     }
+    
+    @Operation(
+        summary = "Filter components by type, relation, and state.",
+        description = "Filter components using criteria like component type, relation to projects/releases, and lifecycle state.",
+        tags = {"Components"}
+    )
+    @GetMapping(value = COMPONENTS_URL + "/filter")
+    public ResponseEntity<CollectionModel<EntityModel<Component>>> filterComponents(
+        @Parameter(description = "Type of component (OSS, INTERNAL, etc.)", schema = @Schema(implementation = ComponentType.class))
+        @RequestParam(value = "type", required = false) ComponentType type,
+        
+        @Parameter(description = "Relation to projects/releases (USED_BY, CONTAINING, etc.)")
+        @RequestParam(value = "relation", required = false) String relation,
+        
+        @Parameter(description = "Lifecycle state (ACTIVE, ARCHIVED, etc.)")
+        @RequestParam(value = "state", required = false) String state,
+        
+        Pageable pageable,
+        HttpServletRequest request
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+        
+        User user = restControllerHelper.getSw360UserFromAuthentication();
+        Map<String, Set<String>> filterMap = new HashMap<>();
+    
+        // Add standard filters
+        if (type != null) {
+            filterMap.put(Component._Fields.COMPONENT_TYPE.getFieldName(), Set.of(type.name()));
+        }
+        if (!CommonUtils.isNullOrEmpty(state)) {
+            filterMap.put(Component._Fields.LIFECYCLE_STATE.getFieldName(), Set.of(state));
+        }
+    
+        // Handle relation filter
+        if (!CommonUtils.isNullOrEmpty(relation)) {
+            switch (relation.toUpperCase()) {
+                case "USED_BY":
+                    filterMap.put("releaseRelation", Set.of("USED"));
+                    break;
+                case "CONTAINING":
+                    filterMap.put("releaseRelation", Set.of("CONTAINS"));
+                    break;
+                default:
+                    throw new HttpMessageNotReadableException("Invalid relation type: " + relation);
+            }
+        }
+    
+        List<Component> filteredComponents = componentService.refineSearch(filterMap, user);
+        PaginationResult<Component> paginationResult = restControllerHelper.createPaginationResult(
+            request, pageable, filteredComponents, SW360Constants.TYPE_COMPONENT
+        );
+    
+        CollectionModel resources = getFilteredComponentResources(null, false, user, paginationResult);
+        return new ResponseEntity<>(resources, HttpStatus.OK);
+    }
 
     @Operation(
             summary = "Toggle user subscription to a component",
