@@ -296,6 +296,7 @@ enum ComponentType {
     INNER_SOURCE = 4, //internal software with source open for customers within own company
     SERVICE = 5,
     CODE_SNIPPET = 6,
+    COTS_TRUSTED_SUPPLIER = 7,
 }
 
 struct Component {
