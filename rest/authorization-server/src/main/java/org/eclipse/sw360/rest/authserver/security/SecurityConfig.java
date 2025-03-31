@@ -71,7 +71,7 @@ public class SecurityConfig {
                 .requestMatchers("/client-management/**").hasAuthority("ADMIN")
                 .anyRequest().authenticated()
         ).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults());
-        return httpSecurity.csrf(csrf -> csrf.disable()).build();
+        return httpSecurity.build();
     }
 
     @Bean

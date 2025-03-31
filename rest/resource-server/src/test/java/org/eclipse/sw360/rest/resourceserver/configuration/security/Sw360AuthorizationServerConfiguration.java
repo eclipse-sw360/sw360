@@ -45,7 +45,7 @@ public class Sw360AuthorizationServerConfiguration {
 						.anyRequest().authenticated()
 		).httpBasic(Customizer.withDefaults()).formLogin(Customizer.withDefaults())
 				.exceptionHandling(x -> x.authenticationEntryPoint(saep));
-		return httpSecurity.csrf(csrf -> csrf.disable()).build();
+		return httpSecurity.build();
 	}
 
 	@Autowired
