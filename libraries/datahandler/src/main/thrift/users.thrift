@@ -185,11 +185,9 @@ service UserService {
 
     RequestStatus importDepartmentSchedule();
 
-    map<string, list<User>> getAllUserByDepartment();
+    map<string, list<string>> getSecondaryDepartmentMemberEmails();
 
     set<string> getListFileLog();
-
-    map<string, list<string>> getAllContentFileLog();
 
     string getLastModifiedFileName();
 
@@ -201,15 +199,13 @@ service UserService {
 
     list<User> getAllUserByEmails(1: list<string> emails)
 
-    string convertUsersByDepartmentToJson(1: string department)
-
-    string convertEmailsOtherDepartmentToJson(1: string department)
-
     void updateDepartmentToListUser(1: list<User> users, 2: string department)
 
-    void deleteDepartmentByListUser(1: list<User> users,2: string department)
+    void deleteSecondaryDepartmentFromListUser(1: list<User> users,2: string department)
 
-    set<string> getAllEmailsByDepartmentKey(1: string departmentName)
+    set<string> getMemberEmailsBySecondaryDepartmentName(1: string departmentName)
+
+    list<string> getLogFileContentByName(1: string fileName) throws (1: SW360Exception exp);
 
     set<string> getUserSecondaryDepartments()
 }
