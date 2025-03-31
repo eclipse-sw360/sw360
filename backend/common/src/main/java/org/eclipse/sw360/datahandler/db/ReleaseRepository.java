@@ -360,4 +360,69 @@ public class ReleaseRepository extends SummaryAwareRepository<Release> {
         result.put(pageData, releases);
         return result;
     }
+
+    /**
+     * Searches for releases matching multiple criteria with optional pagination.
+     * Returns releases that match all non-null criteria (AND logic).
+     *
+     * @param name Optional release name filter (case insensitive substring match).
+     * @param version Optional version filter (case insensitive substring match).
+     * @param vendorId Optional vendor ID for exact matching.
+     * @param createdAfter Optional date filter for creation date.
+     * @param componentId Optional component ID for exact matching.
+     * @param user User for permission filtering.
+     * @param pageData Optional pagination data.
+     * @return Map containing pagination data and matching releases.
+     */
+    public Map<PaginationData, List<Release>> searchReleasesByMultipleCriteria(
+            String name,
+            String version,
+            String vendorId,
+            Date createdAfter,
+            String componentId,
+            User user,
+            PaginationData pageData) {
+
+        Set<String> releaseIds = new HashSet<>();
+
+        // Filter by name
+        if (!isNullOrEmpty(name)) {
+            releaseIds.addAll(queryForIds("releaseByName", name.toLowerCase()));
+        }
+
+        // Filter by version
+        if (!isNullOrEmpty(version)) {
+            releaseIds.retainAll(queryForIds("releaseByVersion", version.toLowerCase()));
+        }
+
+        // Filter by vendor ID
+        if (!isNullOrEmpty(vendorId)) {
+            releaseIds.retainAll(queryForIds("releaseByVendorId", vendorId));
+        }
+
+        // Filter by component ID
+        if (!isNullOrEmpty(componentId)) {
+            releaseIds.retainAll(queryForIds("releasesByComponentId", componentId));
+        }
+
+        // Filter by creation date
+        if (createdAfter != null) {
+            releaseIds = releaseIds.stream()
+                    .filter(id -> {
+                        Release release = getFullDocById(id);
+                        return release.getCreatedOn().after(createdAfter);
+                    })
+                    .collect(Collectors.toSet());
+        }
+
+        // Apply pagination and permissions
+        List<Release> filteredReleases = new ArrayList<>(getFullDocsById(releaseIds));
+        filteredReleases = makeSummaryWithPermissionsFromFullDocs(SummaryType.SUMMARY, filteredReleases, user);
+
+        Map<PaginationData, List<Release>> result = Maps.newHashMap();
+        result.put(pageData, filteredReleases);
+
+        return result;
+    }
+
 }
