@@ -1091,6 +1091,7 @@ public class RestControllerHelper<T> {
         Obligation embeddedObligation = new Obligation();
         embeddedObligation.setTitle(obligation.getTitle());
         embeddedObligation.setObligationType(obligation.getObligationType());
+        embeddedObligation.setObligationLevel(obligation.getObligationLevel());
         embeddedObligation.setId(obligation.getId());
         embeddedObligation.setWhitelist(obligation.getWhitelist());
         embeddedObligation.setText(obligation.getText());
