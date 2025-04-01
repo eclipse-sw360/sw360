@@ -9,24 +9,20 @@
  */
 package org.eclipse.sw360.cyclonedx;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.packageurl.MalformedPackageURLException;
+import com.github.packageurl.PackageURL;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.plexus.util.CollectionUtils;
+import org.cyclonedx.Version;
 import org.cyclonedx.exception.GeneratorException;
 import org.cyclonedx.generators.json.BomJsonGenerator;
 import org.cyclonedx.generators.xml.BomXmlGenerator;
-import org.cyclonedx.Version;
-import org.cyclonedx.model.Bom;
+import org.cyclonedx.model.*;
 import org.cyclonedx.model.Component.Type;
-import org.cyclonedx.model.ExternalReference;
-import org.cyclonedx.model.License;
-import org.cyclonedx.model.LicenseChoice;
-import org.cyclonedx.model.Metadata;
-import org.cyclonedx.model.Tool;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -34,23 +30,19 @@ import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.ProjectDatabaseHandler;
 import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
-import org.eclipse.sw360.datahandler.thrift.CycloneDxComponentType;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
+import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.spdx.library.model.license.ListedLicenses;
+import org.spdx.library.model.license.SpdxListedLicense;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.packageurl.MalformedPackageURLException;
-import com.github.packageurl.PackageURL;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * CycloneDX BOM export implementation.
@@ -65,13 +57,22 @@ public class CycloneDxBOMExporter {
     private final ComponentDatabaseHandler componentDatabaseHandler;
     private final PackageDatabaseHandler packageDatabaseHandler;
     private final User user;
+    private final ListedLicenses listedLicenses;
 
-    public CycloneDxBOMExporter(ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler,
-            PackageDatabaseHandler packageDatabaseHandler, User user) {
+    public CycloneDxBOMExporter(ProjectDatabaseHandler projectDatabaseHandler, ComponentDatabaseHandler componentDatabaseHandler, PackageDatabaseHandler packageDatabaseHandler, User user) {
         this.projectDatabaseHandler = projectDatabaseHandler;
         this.componentDatabaseHandler = componentDatabaseHandler;
         this.packageDatabaseHandler = packageDatabaseHandler;
         this.user = user;
+        this.listedLicenses = ListedLicenses.getListedLicenses();
+    }
+
+    private static Tool getTool() {
+        Tool tool = new Tool();
+        tool.setName(SW360Constants.TOOL_NAME);
+        tool.setVendor(SW360Constants.TOOL_VENDOR);
+        tool.setVersion(SW360Utils.getSW360Version());
+        return tool;
     }
 
     public RequestSummary exportSbom(String projectId, String bomType, Boolean includeSubProjReleases, User user) {
@@ -104,10 +105,7 @@ public class CycloneDxBOMExporter {
             if (SW360Constants.IS_PACKAGE_PORTLET_ENABLED && CommonUtils.isNotEmpty(linkedPackageIds)) {
                 List<Package> packages = packageDatabaseHandler.getPackageByIds(linkedPackageIds);
                 List<org.cyclonedx.model.Component> sbomComponents = getCycloneDxComponentsFromSw360Packages(packages);
-                Set<String> releaseIds = packages.stream()
-                        .filter(pkg -> CommonUtils.isNotNullEmptyOrWhitespace(pkg.getReleaseId()))
-                        .map(Package::getReleaseId).collect(Collectors.toSet());
-                // remove Releases of linked packages, & include remaining Release info in SBOM export
+                Set<String> releaseIds = packages.stream().filter(pkg -> CommonUtils.isNotNullEmptyOrWhitespace(pkg.getReleaseId())).map(Package::getReleaseId).collect(Collectors.toSet());
                 if (linkedReleaseIds.removeAll(releaseIds) && CommonUtils.isNotEmpty(linkedReleaseIds)) {
                     List<Release> linkedReleases = componentDatabaseHandler.getReleasesByIds(linkedReleaseIds);
                     Set<String> componentIds = linkedReleases.stream().map(Release::getComponentId).filter(Objects::nonNull).collect(Collectors.toSet());
@@ -144,25 +142,17 @@ public class CycloneDxBOMExporter {
             }
             return summary;
         } catch (SW360Exception e) {
-            log.error(String.format("An error occured while fetching project: %s from db, for SBOM export!", projectId), e);
-            summary.setMessage("An error occured while fetching project from db, for SBOM export: " + e.getMessage());
+            log.error(String.format("An error occurred while fetching project: %s from db, for SBOM export!", projectId), e);
+            summary.setMessage("An error occurred while fetching project from db, for SBOM export: " + e.getMessage());
         } catch (GeneratorException e) {
-            log.error(String.format("An error occured while exporting xml SBOM for project with id: %s", projectId), e);
-            summary.setMessage("An error occured while exporting xml SBOM for project: " + e.getMessage());
+            log.error(String.format("An error occurred while exporting xml SBOM for project with id: %s", projectId), e);
+            summary.setMessage("An error occurred while exporting xml SBOM for project: " + e.getMessage());
         } catch (Exception e) {
-            log.error("An error occured while exporting SBOm for project: " + projectId, e);
-            summary.setMessage("An error occured while exporting SBOM for project: " + e.getMessage());
+            log.error("An error occurred while exporting SBOM for project: " + projectId, e);
+            summary.setMessage("An error occurred while exporting SBOM for project: " + e.getMessage());
         }
         summary.setRequestStatus(RequestStatus.FAILURE);
         return summary;
-    }
-
-    private static Tool getTool() {
-        Tool tool = new Tool();
-        tool.setName(SW360Constants.TOOL_NAME);
-        tool.setVendor(SW360Constants.TOOL_VENDOR);
-        tool.setVersion(SW360Utils.getSW360Version());
-        return tool;
     }
 
     private org.cyclonedx.model.Component getMetadataComponent(Project project) {
@@ -178,9 +168,7 @@ public class CycloneDxBOMExporter {
 
     private List<org.cyclonedx.model.Component> getCycloneDxComponentsFromSw360Releases(List<Release> releases, List<Component> components) {
         List<org.cyclonedx.model.Component> comps = Lists.newArrayList();
-        Map<String, Component> compIdToComponentMap = components.stream()
-                .map(comp -> new AbstractMap.SimpleEntry<>(comp.getId(), comp))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldVal, newVal) -> newVal));
+        Map<String, Component> compIdToComponentMap = components.stream().map(comp -> new AbstractMap.SimpleEntry<>(comp.getId(), comp)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldVal, newVal) -> newVal));
         for (Release release : releases) {
             Component sw360Comp = compIdToComponentMap.get(release.getComponentId());
             org.cyclonedx.model.Component comp = new org.cyclonedx.model.Component();
@@ -188,20 +176,19 @@ public class CycloneDxBOMExporter {
             comp.setVersion(release.getVersion());
             comp.setDescription(CommonUtils.nullToEmptyString(sw360Comp.getDescription()));
 
-            // set package URL
             Set<String> purlSet = new TreeSet<>();
             if (!CommonUtils.isNullOrEmptyMap(release.getExternalIds())) {
                 if (release.getExternalIds().containsKey(SW360Constants.PACKAGE_URL)) {
                     purlSet.addAll(getPurlFromSw360Document(release.getExternalIds(), SW360Constants.PACKAGE_URL));
                 }
-                if ( release.getExternalIds().containsKey(SW360Constants.PURL_ID)) {
+                if (release.getExternalIds().containsKey(SW360Constants.PURL_ID)) {
                     purlSet.addAll(getPurlFromSw360Document(release.getExternalIds(), SW360Constants.PURL_ID));
                 }
             } else if (!CommonUtils.isNullOrEmptyMap(sw360Comp.getExternalIds())) {
                 if (sw360Comp.getExternalIds().containsKey(SW360Constants.PACKAGE_URL)) {
                     purlSet.addAll(getPurlFromSw360Document(sw360Comp.getExternalIds(), SW360Constants.PACKAGE_URL));
                 }
-                if ( sw360Comp.getExternalIds().containsKey(SW360Constants.PURL_ID)) {
+                if (sw360Comp.getExternalIds().containsKey(SW360Constants.PURL_ID)) {
                     purlSet.addAll(getPurlFromSw360Document(sw360Comp.getExternalIds(), SW360Constants.PURL_ID));
                 }
             }
@@ -213,12 +200,8 @@ public class CycloneDxBOMExporter {
                 comp.setCpe(release.getCpeid());
             }
 
-            // set CycloneDx component type
-            if (sw360Comp.isSetCdxComponentType()) {
-                comp.setType(getCdxComponentType(sw360Comp.getCdxComponentType()));
-            }
+            comp.setType(sw360Comp.isSetCdxComponentType() ? getCdxComponentType(sw360Comp.getCdxComponentType()) : Type.LIBRARY);
 
-            // set vcs, website and mailing list
             List<ExternalReference> extRefs = Lists.newArrayList();
             if (null != release.getRepository() && null != release.getRepository().getUrl()) {
                 ExternalReference extRef = new ExternalReference();
@@ -248,7 +231,6 @@ public class CycloneDxBOMExporter {
                 comp.setExternalReferences(extRefs);
             }
 
-            // set licenses
             Set<String> licenses = Sets.newHashSet();
             if (CommonUtils.isNotEmpty(release.getMainLicenseIds())) {
                 licenses.addAll(release.getMainLicenseIds());
@@ -283,10 +265,7 @@ public class CycloneDxBOMExporter {
             if (CommonUtils.isNotEmpty(pckg.getLicenseIds())) {
                 comp.setLicenseChoice(getLicenseFromSw360Document(pckg.getLicenseIds()));
             }
-            if (null != pckg.getPackageType()) {
-                comp.setType(getCdxComponentType(pckg.getPackageType()));
-            }
-            comp.setLicenseChoice(getLicenseFromSw360Document(pckg.getLicenseIds()));
+            comp.setType(pckg.getPackageType() != null ? getCdxComponentType(pckg.getPackageType()) : Type.LIBRARY);
             comp.setDescription(pckg.getDescription());
             List<ExternalReference> extRefs = Lists.newArrayList();
             if (CommonUtils.isNotNullEmptyOrWhitespace(pckg.getHomepageUrl())) {
@@ -309,13 +288,59 @@ public class CycloneDxBOMExporter {
         return comps;
     }
 
+    private String normalizeLicenseId(String licenseId) {
+        if (CommonUtils.isNullEmptyOrWhitespace(licenseId)) {
+            return licenseId;
+        }
+        try {
+            // Check if the license ID is in the SPDX list and deprecated
+            SpdxListedLicense spdxLicense = listedLicenses.getListedLicenseById(licenseId);
+            if (spdxLicense != null && spdxLicense.isDeprecated()) {
+                // Look for a replacement in the seeAlso field
+                List<String> seeAlso = new ArrayList<>(spdxLicense.getSeeAlso());
+                for (String url : seeAlso) {
+                    if (url.contains("spdx.org/licenses/")) {
+                        String replacementId = url.substring(url.lastIndexOf("/") + 1).replace(".html", "");
+                        if (!replacementId.equals(licenseId) && listedLicenses.isSpdxListedLicenseId(replacementId)) {
+                            log.info("Normalized deprecated license ID: " + licenseId + " to " + replacementId);
+                            return replacementId;
+                        }
+                    }
+                }
+                log.warn("Deprecated license ID " + licenseId + " found, but no replacement available in seeAlso");
+            }
+            // If the license ID is valid and not deprecated, return it as-is
+            if (listedLicenses.isSpdxListedLicenseId(licenseId)) {
+                return licenseId;
+            }
+            // If the license ID is not in the SPDX list, return it unchanged
+            return licenseId;
+        } catch (Exception e) {
+            log.warn("Failed to normalize license ID: " + licenseId, e);
+            return licenseId;
+        }
+    }
+
+    private boolean isValidSpdxLicenseId(String licenseId) {
+        if (CommonUtils.isNullEmptyOrWhitespace(licenseId)) {
+            return false;
+        }
+        // Use Spdx-Java-Library to validate the license ID against the official SPDX list
+        return listedLicenses.isSpdxListedLicenseId(licenseId);
+    }
+
     private LicenseChoice getLicenseFromSw360Document(Set<String> sw360Licenses) {
         LicenseChoice licenseChoice = new LicenseChoice();
         List<License> licenses = Lists.newArrayList();
         for (String lic : sw360Licenses) {
-            License license = new License();
-            license.setId(lic);
-            licenses.add(license);
+            String normalizedLic = normalizeLicenseId(lic);
+            if (isValidSpdxLicenseId(normalizedLic)) {
+                License license = new License();
+                license.setId(normalizedLic);
+                licenses.add(license);
+            } else {
+                log.warn("Skipping invalid SPDX license ID: " + lic);
+            }
         }
         licenseChoice.setLicenses(licenses);
         return licenseChoice;
@@ -323,24 +348,24 @@ public class CycloneDxBOMExporter {
 
     private org.cyclonedx.model.Component.Type getCdxComponentType(CycloneDxComponentType compType) {
         switch (compType) {
-        case APPLICATION:
-            return org.cyclonedx.model.Component.Type.APPLICATION;
-        case CONTAINER:
-            return org.cyclonedx.model.Component.Type.CONTAINER;
-        case DEVICE:
-            return org.cyclonedx.model.Component.Type.DEVICE;
-        case FILE:
-            return org.cyclonedx.model.Component.Type.FILE;
-        case FIRMWARE:
-            return org.cyclonedx.model.Component.Type.FIRMWARE;
-        case FRAMEWORK:
-            return org.cyclonedx.model.Component.Type.FRAMEWORK;
-        case LIBRARY:
-            return org.cyclonedx.model.Component.Type.LIBRARY;
-        case OPERATING_SYSTEM:
-            return org.cyclonedx.model.Component.Type.OPERATING_SYSTEM;
-        default:
-            return null;
+            case APPLICATION:
+                return org.cyclonedx.model.Component.Type.APPLICATION;
+            case CONTAINER:
+                return org.cyclonedx.model.Component.Type.CONTAINER;
+            case DEVICE:
+                return org.cyclonedx.model.Component.Type.DEVICE;
+            case FILE:
+                return org.cyclonedx.model.Component.Type.FILE;
+            case FIRMWARE:
+                return org.cyclonedx.model.Component.Type.FIRMWARE;
+            case FRAMEWORK:
+                return org.cyclonedx.model.Component.Type.FRAMEWORK;
+            case LIBRARY:
+                return org.cyclonedx.model.Component.Type.LIBRARY;
+            case OPERATING_SYSTEM:
+                return org.cyclonedx.model.Component.Type.OPERATING_SYSTEM;
+            default:
+                return null;
         }
     }
 
