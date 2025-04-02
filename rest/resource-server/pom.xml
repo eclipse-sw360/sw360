@@ -242,9 +242,41 @@
         <finalName>resource</finalName>
         <plugins>
             <plugin>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
+                <version>${git-commit-id.version}</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                    </execution>
+                    <execution>
+                        <id>validate-the-git-infos</id>
+                        <goals>
+                            <goal>validateRevision</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <validationShouldFailIfNoMatch>false</validationShouldFailIfNoMatch>
+                    <generateGitPropertiesFile>false</generateGitPropertiesFile>
+                    <gitDescribe>
+                        <!--
+                         Run `git describe -tags` to consider lightweight tags
+                         https://github.com/git-commit-id/git-commit-id-maven-plugin/#git-describe-and-a-small-gotcha-with-tags
+                         -->
+                        <tags>true</tags>
+                    </gitDescribe>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>com.internetitem</groupId>
                 <artifactId>write-properties-file-maven-plugin</artifactId>
-                <version>2.0.0</version>
+                <version>${write.properties.file.version}</version>
                 <executions>
                     <execution>
                         <id>one</id>
@@ -258,6 +290,16 @@
                                 <property>
                                     <name>sw360RestVersion</name>
                                     <value>${rest.version}</value>
+                                </property>
+                                <property>
+                                    <!-- Build version from git-commit-id-maven-plugin -->
+                                    <name>sw360BuildVersion</name>
+                                    <value>${git.build.version}</value>
+                                </property>
+                                <property>
+                                    <!-- Commits between HEAD and latest tag from git-commit-id-maven-plugin -->
+                                    <name>sw360CommitCount</name>
+                                    <value>${git.closest.tag.commit.count}</value>
                                 </property>
                             </properties>
                         </configuration>
