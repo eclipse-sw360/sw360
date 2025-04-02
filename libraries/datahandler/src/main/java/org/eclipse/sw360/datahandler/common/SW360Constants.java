@@ -95,7 +95,7 @@ public class SW360Constants {
     public static final String PLEASE_ENABLE_FLEXIBLE_PROJECT_RELEASE_RELATIONSHIP = "Please enable flexible project " +
             "release relationship configuration to use this function (enable.flexible.project.release.relationship = true)";
 
-    public static final String RDF_FILE_EXTENSION = ".rdf";
+    public static final String RDF_FILE_EXTENSION = "rdf";
     public static final String MAIN_LICENSE_FILES = "LICENSE.*|License.*|license|license.txt|license.html|COPYING.*|Copying.*|copying|copying.txt|copying.html";
     public static final String LICENSE_PREFIX = "license";
     public static final String CONCLUDED_LICENSE_IDS = "Concluded License Ids";
