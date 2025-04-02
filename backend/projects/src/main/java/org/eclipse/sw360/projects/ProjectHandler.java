@@ -304,9 +304,23 @@ public class ProjectHandler implements ProjectService.Iface {
         assertIdUnset(project.getId());
         assertUser(user);
 
+        // Prevent duplicate external IDs
+        if (project.isSetExternalIds()) {
+            // Convert Map<String,String> to Map<String,Set<String>> for searchByExternalIds
+            Map<String, Set<String>> externalIdsMap = new HashMap<>();
+            project.getExternalIds().forEach((key, value) ->
+                    externalIdsMap.put(key, Collections.singleton(value)));
+
+            Set<Project> existingProjects = searchByExternalIds(externalIdsMap, user);
+            if (!existingProjects.isEmpty()) {
+                return new AddDocumentRequestSummary()
+                        .setRequestStatus(RequestStatus.DUPLICATE)
+                        .setMessage("Project with these external IDs already exists");
+            }
+        }
+
         return handler.addProject(project, user);
     }
-
     ///////////////////////////////
     // UPDATE INDIVIDUAL OBJECTS //
     ///////////////////////////////
