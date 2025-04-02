@@ -144,7 +144,7 @@ public class ReleaseHelper implements ExporterHelper<Release> {
     }
 
 
-    private void addFieldValueToRow(List<String> row, Release._Fields field, Release release, boolean isForProjectExport) throws SW360Exception {
+    public void addFieldValueToRow(List<String> row, Release._Fields field, Release release, boolean isForProjectExport) throws SW360Exception {
         switch (field) {
             case COMPONENT_ID:
                 // first, add data for given field

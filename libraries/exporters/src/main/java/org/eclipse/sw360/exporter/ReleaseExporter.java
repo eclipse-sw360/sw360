@@ -33,6 +33,7 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
     static {
         nameToDisplayName = new HashMap<>();
         nameToDisplayName.put(Release._Fields.ID.getFieldName(), "release ID");
+        nameToDisplayName.put(Release._Fields.VERSION.getFieldName(), "release version");
         nameToDisplayName.put(Release._Fields.CPEID.getFieldName(), "CPE ID");
         nameToDisplayName.put(Release._Fields.COMPONENT_ID.getFieldName(), "component ID");
         nameToDisplayName.put(Release._Fields.RELEASE_DATE.getFieldName(), "release date");
@@ -106,7 +107,7 @@ public class ReleaseExporter extends ExcelExporter<Release, ReleaseHelper> {
 
     public static final List<String> HEADERS_EXTENDED_BY_ADDITIONAL_DATA_PROJECT = makeHeadersForExtendedExportProject();
 
-    private static List<String> makeReleaseHeadersForProjectExport() {
+    public static List<String> makeReleaseHeadersForProjectExport() {
         List<String> headers = new ArrayList<>();
         for (Release._Fields field : RELEASE_RENDERED_FIELDS_PROJECTS) {
             addToHeadersForProjectExport(headers, field);
