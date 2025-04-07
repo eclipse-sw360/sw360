@@ -1,7 +1,7 @@
 import org.eclipse.sw360.rest.resourceserver.admin.attachment.AttachmentCleanUpController;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.admin.attachment.Sw360AttachmentCleanUpService;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
 import org.springframework.hateoas.Link;
 
