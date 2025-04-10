@@ -31,6 +31,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.ReleaseRelationship;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.OutputFormatVariant;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -43,6 +44,7 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.google.gson.JsonObject;
@@ -58,12 +60,14 @@ import org.springframework.web.bind.annotation.RestController;
 @SecurityRequirement(name = "basic")
 public class SW360ReportController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String REPORTS_URL = "/reports";
+    public static final String CONTENT_DISPOSITION = "Content-Disposition";
     private static final Logger log = LogManager.getLogger(SW360ReportController.class);
     private static final String LICENSE_INFO = "licenseInfo";
     private static final String LICENSES_RESOURCE_BUNDLE = "licenseResourceBundle";
     private static final String ZIP_CONTENT_TYPE = "application/zip";
     private static final String EXPORT_CREATE_PROJ_CLEARING_REPORT = "exportCreateProjectClearingReport";
     private static final List<String> GENERATOR_MODULES = List.of(LICENSE_INFO, EXPORT_CREATE_PROJ_CLEARING_REPORT);
+    public static final String ATTACHMENT_FILENAME_S = "attachment; filename=\"%s\"";
     @NonNull
     private final RestControllerHelper restControllerHelper;
     @NonNull
@@ -103,71 +107,97 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "variant", required = false) String variant,
             @Parameter(description = "Template for generating report. Can be supplied with modules [" + LICENSE_INFO + ", " + EXPORT_CREATE_PROJ_CLEARING_REPORT + "]")
             @RequestParam(value = "template", required = false, defaultValue = "") String template,
-            @Parameter(description = "The external Ids of the project. Can be supplied with modules [" + LICENSE_INFO + ", " + EXPORT_CREATE_PROJ_CLEARING_REPORT + "]", example = "376577")
+            @Parameter(description = "The external Ids of the project. External Ids can be supplied multiple with comma separated. " +
+                    "Can be supplied with modules [" + LICENSE_INFO + ", " + EXPORT_CREATE_PROJ_CLEARING_REPORT + "]", example = "376577,12345")
             @RequestParam(value = "externalIds", required = false, defaultValue = "") String externalIds,
             @Parameter(description = "Generate report for only current project or with Sub projects. Can be supplied with modules [" + LICENSE_INFO + ", " + EXPORT_CREATE_PROJ_CLEARING_REPORT + "]")
             @RequestParam(value = "withSubProject", required = false, defaultValue = "false") boolean withSubProject,
             @Parameter(description = "Type of SBOM file", schema = @Schema(allowableValues = {XML_FILE_EXTENSION, JSON_FILE_EXTENSION}))
             @RequestParam(value = "bomType", required = false) String bomType,
+            @Parameter(description = "Selected release relationships. Can be supplied with modules [" + LICENSE_INFO + "]", example = "CONTAINED,UNKNOWN")
+            @RequestParam(value = "selectedRelRelationship", required = false) List<ReleaseRelationship> selectedRelRelationship,
             HttpServletRequest request,
             HttpServletResponse response
     ) throws TException {
         if (GENERATOR_MODULES.contains(module) && (isNullOrEmpty(generatorClassName) || isNullOrEmpty(variant))) {
             throw new BadRequestClientException("Error : GeneratorClassName and Variant is required for module " + module);
         }
+        SW360ReportBean reportBean = createReportBeanObject(withLinkedReleases, excludeReleaseVersion, generatorClassName, variant,
+                template, externalIds, withSubProject, bomType, selectedRelRelationship);
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         String baseUrl = getBaseUrl(request);
         switch (module) {
             case SW360Constants.PROJECTS:
-                getProjectReports(withLinkedReleases, response, sw360User, module, projectId,
-                        excludeReleaseVersion, baseUrl, generatorClassName, variant, template, externalIds);
+                getProjectReports(response, sw360User, module, projectId, baseUrl, reportBean);
                 break;
             case SW360Constants.COMPONENTS:
-                getComponentsReports(withLinkedReleases, response, sw360User, module, excludeReleaseVersion,
-                        baseUrl, generatorClassName, variant, template, externalIds);
+                getComponentsReports(response, sw360User, module, baseUrl, reportBean);
                 break;
             case SW360Constants.LICENSES:
-                getLicensesReports(response, sw360User, module, excludeReleaseVersion, generatorClassName, variant,
-                        template, externalIds);
+                getLicensesReports(response, sw360User, module, reportBean);
                 break;
             case LICENSE_INFO:
-                getLicensesInfoReports(response, sw360User, module, projectId, excludeReleaseVersion,
-                        generatorClassName, variant, template, externalIds, withSubProject);
+                getLicensesInfoReports(response, sw360User, module, projectId, reportBean);
                 break;
             case LICENSES_RESOURCE_BUNDLE:
-                getLicenseResourceBundleReports(projectId, response, sw360User, module, generatorClassName, variant,
-                        template, externalIds, excludeReleaseVersion, withSubProject);
+                getLicenseResourceBundleReports(projectId, response, sw360User, module, reportBean);
                 break;
             case SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO:
-                getProjectReleaseWithEccSpreadSheet(response, sw360User, module, projectId, excludeReleaseVersion,
-                        generatorClassName, variant, template, externalIds);
+                getProjectReleaseWithEccSpreadSheet(response, sw360User, module, projectId, reportBean);
                 break;
             case EXPORT_CREATE_PROJ_CLEARING_REPORT:
-                exportProjectCreateClearingRequest(response, sw360User, module, projectId, excludeReleaseVersion,
-                        generatorClassName, variant, template, externalIds);
+                exportProjectCreateClearingRequest(response, sw360User, module, projectId, reportBean);
                 break;
             case SW360Constants.SBOM:
-                exportSBOM(response, sw360User, module, projectId, bomType, withSubProject);
+                exportSBOM(response, sw360User, module, projectId, reportBean);
                 break;
             default:
                 break;
         }
     }
 
+    /**
+     * Creates a SW360ReportBean object with the given parameters.
+     *
+     * @param withLinkedReleases      whether to include linked releases
+     * @param excludeReleaseVersion   whether to exclude release version
+     * @param generatorClassName      the generator class name
+     * @param variant                 the variant of the report
+     * @param template                the template for generating the report
+     * @param externalIds             the external IDs of the project
+     * @param withSubProject          whether to include sub-projects
+     * @param bomType                 the type of SBOM file
+     * @param selectedRelRelationship selected release relationships
+     * @return a SW360ReportBean object with the specified parameters
+     */
+    private SW360ReportBean createReportBeanObject(boolean withLinkedReleases, boolean excludeReleaseVersion, String generatorClassName,
+                                                   String variant, String template, String externalIds, boolean withSubProject, String bomType,
+                                                   List<ReleaseRelationship> selectedRelRelationship) {
+        SW360ReportBean reportBean = new SW360ReportBean();
+        reportBean.setWithLinkedReleases(withLinkedReleases);
+        reportBean.setExcludeReleaseVersion(excludeReleaseVersion);
+        reportBean.setGeneratorClassName(generatorClassName);
+        reportBean.setVariant(variant);
+        reportBean.setTemplate(template);
+        reportBean.setExternalIds(externalIds);
+        reportBean.setWithSubProject(withSubProject);
+        reportBean.setBomType(bomType);
+        reportBean.setSelectedRelRelationship(selectedRelRelationship);
+        return reportBean;
+    }
+
     private void getProjectReports(
-            boolean withLinkedReleases, HttpServletResponse response, User sw360User, String module, String projectId,
-            boolean excludeReleaseVersion, String baseUrl, String generatorClassName, String variant, String template,
-            String externalIds
+            HttpServletResponse response, User sw360User, String module, String projectId,
+            String baseUrl, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_PROJECT_REPORT, false)) {
-                sw360ReportService.getUploadedProjectPath(sw360User, withLinkedReleases, baseUrl, projectId);
+                sw360ReportService.getUploadedProjectPath(sw360User, reportBean.isWithLinkedReleases(), baseUrl, projectId);
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("response", "The downloaded report link will be send to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
-                downloadExcelReport(withLinkedReleases, response, sw360User, module, projectId, excludeReleaseVersion,
-                        defaultByteBufferVal, generatorClassName, variant, template, externalIds);
+                downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
             }
         } catch (Exception e) {
             log.error(e);
@@ -176,19 +206,16 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     }
 
     private void getComponentsReports(
-            boolean withLinkedReleases, HttpServletResponse response, User sw360User, String module,
-            boolean excludeReleaseVersion, String baseUrl, String generatorClassName, String variant, String template,
-            String externalIds
+            HttpServletResponse response, User sw360User, String module, String baseUrl, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
             if (SW360Utils.readConfig(MAIL_REQUEST_FOR_COMPONENT_REPORT, false)) {
-                sw360ReportService.getUploadedComponentPath(sw360User, withLinkedReleases, baseUrl);
+                sw360ReportService.getUploadedComponentPath(sw360User, reportBean.isWithLinkedReleases(), baseUrl);
                 JsonObject responseJson = new JsonObject();
                 responseJson.addProperty("response", "Component report download link will get send to the end user.");
                 response.getWriter().write(responseJson.toString());
             } else {
-                downloadExcelReport(withLinkedReleases, response, sw360User, module, null, excludeReleaseVersion,
-                        defaultByteBufferVal, generatorClassName, variant, template, externalIds);
+                downloadExcelReport(response, sw360User, module, null, defaultByteBufferVal, reportBean);
             }
         } catch (Exception e) {
             log.error(e);
@@ -197,12 +224,10 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     }
 
     private void getLicensesReports(
-            HttpServletResponse response, User sw360User, String module, boolean excludeReleaseVersion,
-            String generatorClassName, String variant, String template, String externalIds
+            HttpServletResponse response, User sw360User, String module, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
-            downloadExcelReport(false, response, sw360User, module, null, excludeReleaseVersion,
-                    defaultByteBufferVal, generatorClassName, variant, template, externalIds);
+            downloadExcelReport(response, sw360User, module, null, defaultByteBufferVal, reportBean);
         } catch (Exception e) {
             log.error(e);
             throw new SW360Exception(e.getMessage());
@@ -210,14 +235,11 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     }
 
     private void getLicensesInfoReports(
-            HttpServletResponse response, User sw360User, String module, String projectId,
-            boolean excludeReleaseVersion, String generatorClassName, String variant, String template,
-            String externalIds, boolean withSubProject
+            HttpServletResponse response, User sw360User, String module, String projectId, SW360ReportBean reportBean
     ) throws SW360Exception {
         // TODO: use `withSubProject` while generating LicenseInfo report.
         try {
-            downloadExcelReport(false, response, sw360User, module, projectId, excludeReleaseVersion,
-                    defaultByteBufferVal, generatorClassName, variant, template, externalIds);
+            downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
         } catch (Exception e) {
             log.error(e);
             throw new SW360Exception(e.getMessage());
@@ -225,26 +247,20 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     }
 
     private void getProjectReleaseWithEccSpreadSheet(
-            HttpServletResponse response, User sw360User, String module, String projectId,
-            boolean excludeReleaseVersion, String generatorClassName, String variant, String template,
-            String externalIds
+            HttpServletResponse response, User sw360User, String module, String projectId, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
-            downloadExcelReport(false, response, sw360User, module, projectId, excludeReleaseVersion,
-                    defaultByteBufferVal, generatorClassName, variant, template, externalIds);
+            downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }
     }
 
     private void exportProjectCreateClearingRequest(
-            HttpServletResponse response, User sw360User, String module, String projectId,
-            boolean excludeReleaseVersion, String generatorClassName, String variant, String template,
-            String externalIds
+            HttpServletResponse response, User sw360User, String module, String projectId, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
-            downloadExcelReport(false, response, sw360User, module, projectId, excludeReleaseVersion,
-                    defaultByteBufferVal, generatorClassName, variant, template, externalIds);
+            downloadExcelReport(response, sw360User, module, projectId, defaultByteBufferVal, reportBean);
         } catch (Exception e) {
             log.error(e);
             throw new SW360Exception(e.getMessage());
@@ -252,9 +268,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     }
 
     private void downloadExcelReport(
-            boolean withLinkedReleases, HttpServletResponse response, User user, String module, String projectId,
-            boolean excludeReleaseVersion, ByteBuffer buffer, String generatorClassName, String variant,
-            String template, String externalIds
+            HttpServletResponse response, User user, String module, String projectId,
+            ByteBuffer buffer, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
             ByteBuffer buff = null;
@@ -263,11 +278,11 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
 
             switch (module) {
                 case SW360Constants.PROJECTS:
-                    buff = sw360ReportService.getProjectBuffer(user, withLinkedReleases, projectId);
+                    buff = sw360ReportService.getProjectBuffer(user, reportBean.isWithLinkedReleases(), projectId);
                     fileName = sw360ReportService.getDocumentName(user, projectId, module);
                     break;
                 case SW360Constants.COMPONENTS:
-                    buff = sw360ReportService.getComponentBuffer(user, withLinkedReleases);
+                    buff = sw360ReportService.getComponentBuffer(user, reportBean.isWithLinkedReleases());
                     break;
                 case SW360Constants.LICENSES:
                     buff = sw360ReportService.getLicenseBuffer();
@@ -280,10 +295,9 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                     break;
                 case LICENSE_INFO:
                 case EXPORT_CREATE_PROJ_CLEARING_REPORT:
-                    buff = sw360ReportService.getLicenseInfoBuffer(user, projectId, generatorClassName, variant,
-                            template, externalIds, excludeReleaseVersion);
-                    fileName = sw360ReportService.getGenericLicInfoFileName(user, projectId, generatorClassName,
-                            variant);
+                    buff = sw360ReportService.getLicenseInfoBuffer(user, projectId, reportBean);
+                    fileName = sw360ReportService.getGenericLicInfoFileName(user, projectId, reportBean.getGeneratorClassName(),
+                            reportBean.getVariant());
                     break;
                 case SW360Constants.PROJECT_RELEASE_SPREADSHEET_WITH_ECCINFO:
                     buff = sw360ReportService.getProjectReleaseSpreadSheetWithEcc(user, projectId);
@@ -295,7 +309,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             if (null == buff) {
                 throw new TException("No data available for the user " + user.getEmail());
             }
-            response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", fileName));
+            response.setHeader(CONTENT_DISPOSITION, String.format(ATTACHMENT_FILENAME_S, fileName));
             copyDataStreamToResponse(response, buff);
         } catch (Exception e) {
             log.error(e);
@@ -304,13 +318,12 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     }
 
     private void getLicenseResourceBundleReports(
-            String projectId, HttpServletResponse response, User sw360User, String module, String generatorClassName,
-            String variant, String template, String externalIds, boolean excludeReleaseVersion, boolean withSubProject
+            String projectId, HttpServletResponse response, User sw360User, String module, SW360ReportBean reportBean
     ) throws SW360Exception {
         try {
-            ByteBuffer buffer = sw360ReportService.downloadSourceCodeBundle(projectId, sw360User, withSubProject);
-            downloadExcelReport(false, response, sw360User, module, projectId, excludeReleaseVersion,
-                    buffer, generatorClassName, variant, template, externalIds);
+            ByteBuffer buffer = sw360ReportService.downloadSourceCodeBundle(projectId, sw360User, reportBean.isWithSubProject());
+            downloadExcelReport(response, sw360User, module, projectId,
+                    buffer, reportBean);
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
         }
@@ -365,7 +378,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 throw new TException("No data available for the user " + user.getEmail());
             }
             response.setContentType(CONTENT_TYPE_OPENXML_SPREADSHEET);
-            response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", fileName));
+            response.setHeader(CONTENT_DISPOSITION, String.format(ATTACHMENT_FILENAME_S, fileName));
             copyDataStreamToResponse(response, buffer);
         } catch (Exception e) {
             throw new SW360Exception(e.getMessage());
@@ -380,20 +393,20 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
     }
 
     private void exportSBOM(
-            HttpServletResponse response, User sw360User, String module, String projectId,
-            String bomType, boolean withSubProject
+            HttpServletResponse response, User sw360User, String module, String projectId, SW360ReportBean reportBean
     ) throws TException {
         try {
-            String buff = sw360ReportService.getProjectSBOMBuffer(sw360User, projectId, bomType, withSubProject);
+            String buff = sw360ReportService.getProjectSBOMBuffer(sw360User, projectId, reportBean.getBomType(),
+                    reportBean.isWithSubProject());
             response.setContentType(SW360Constants.CONTENT_TYPE_JSON);
-            String fileName = sw360ReportService.getSBOMFileName(sw360User, projectId, module, bomType);
+            String fileName = sw360ReportService.getSBOMFileName(sw360User, projectId, module, reportBean.getBomType());
             if (null == buff) {
                 throw new SW360Exception("No data available for the user " + sw360User.getEmail());
             }
-            if (SW360Constants.XML_FILE_EXTENSION.equalsIgnoreCase(bomType)) {
+            if (SW360Constants.XML_FILE_EXTENSION.equalsIgnoreCase(reportBean.getBomType())) {
                 response.setContentType(SW360Constants.CONTENT_TYPE_XML);
             }
-            response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", fileName));
+            response.setHeader(CONTENT_DISPOSITION, String.format(ATTACHMENT_FILENAME_S, fileName));
             copyDataStreamToResponse(response, ByteBuffer.wrap(buff.getBytes()));
         }
         catch (AccessDeniedException e) {
