@@ -270,14 +270,17 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Map<String, Project> mapOfProjects = new HashMap<>();
         boolean isSearchByName = name != null && !name.isEmpty();
         boolean isNoFilter = false;
-        boolean isAllProjectAdded=false;
+        boolean isAllProjectAdded = false;
+
         String queryString = request.getQueryString();
         Map<String, String> params = restControllerHelper.parseQueryString(queryString);
         List<Project> sw360Projects = new ArrayList<>();
+
         if (luceneSearch) {
             Map<String, Set<String>> filterMap = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
                     additionalData);
@@ -294,20 +297,68 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             if (isSearchByName) {
                 sw360Projects.addAll(projectService.searchProjectByName(params.get("name"), sw360User));
             } else {
-                isAllProjectAdded=true;
+                isAllProjectAdded = true;
                 sw360Projects.addAll(projectService.getProjectsSummaryForUserWithoutPagination(sw360User));
             }
+
             Map<String, Set<String>> restrictions = getFilterMap(tag, projectType, group, version, projectResponsible, projectState, projectClearingState,
                     additionalData);
+
             if (!restrictions.isEmpty()) {
                 sw360Projects = new ArrayList<>(sw360Projects.stream()
                         .filter(filterProjectMap(restrictions)).toList());
-            }else if(isAllProjectAdded){
+            } else if (isAllProjectAdded) {
                 isNoFilter = true;
             }
         }
-        return getProjectResponse(pageable, allDetails, luceneSearch, request, sw360User,
-                mapOfProjects, isSearchByName, sw360Projects, isNoFilter);
+
+        PaginationResult<Project> paginationResult = restControllerHelper.createPaginationResult(
+                request,
+                pageable,
+                sw360Projects,
+                SW360Constants.TYPE_PROJECT
+        );
+
+        CollectionModel<EntityModel<Project>> projectResources = getFilteredProjectResources(
+                allDetails, sw360User, paginationResult);
+
+        return new ResponseEntity<>(projectResources, HttpStatus.OK);
+    }
+
+    private CollectionModel<EntityModel<Project>> getFilteredProjectResources(
+        boolean allDetails,
+        User sw360User,
+        PaginationResult<Project> paginationResult
+    ) throws URISyntaxException {
+        List<EntityModel<Project>> projectResources = new ArrayList<>();
+
+        Consumer<Project> consumer = p -> {
+            EntityModel<Project> embeddedProjectResource = null;
+            if (!allDetails) {
+                Project embeddedProject = restControllerHelper.convertToEmbeddedProject(p);
+                embeddedProjectResource = EntityModel.of(embeddedProject);
+            } else {
+                try {
+                    embeddedProjectResource = createHalProject(p, sw360User);
+                } catch (TException e) {
+                    throw new RuntimeException(e);
+                }
+                if (embeddedProjectResource == null) {
+                    return;
+                }
+            }
+            projectResources.add(embeddedProjectResource);
+        };
+
+        paginationResult.getResources().forEach(consumer);
+
+        CollectionModel<EntityModel<Project>> resources;
+        if (projectResources.isEmpty()) {
+            resources = restControllerHelper.emptyPageResource(Project.class, paginationResult);
+        } else {
+            resources = restControllerHelper.generatePagesResource(paginationResult, projectResources);
+        }
+        return resources;
     }
 
     private Map<String, Set<String>> getFilterMap(String tag, String projectType, String group, String version, String projectResponsible,
