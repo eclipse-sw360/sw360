@@ -76,6 +76,8 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
         return resource;
     }
 
+    private static String selectedReleaseRelations = null;
+
     @Operation(
             summary = "Generate the reports.",
             description = "Generate the reports.",
@@ -103,12 +105,15 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
             @RequestParam(value = "variant", required = false) String variant,
             @Parameter(description = "Template for generating report. Can be supplied with modules [" + LICENSE_INFO + ", " + EXPORT_CREATE_PROJ_CLEARING_REPORT + "]")
             @RequestParam(value = "template", required = false, defaultValue = "") String template,
-            @Parameter(description = "The external Ids of the project. Can be supplied with modules [" + LICENSE_INFO + ", " + EXPORT_CREATE_PROJ_CLEARING_REPORT + "]", example = "376577")
+            @Parameter(description = "The external Ids of the project. External Ids can be supplied multiple with comma separated. " +
+                    "Can be supplied with modules [" + LICENSE_INFO + ", " + EXPORT_CREATE_PROJ_CLEARING_REPORT + "]", example = "376577")
             @RequestParam(value = "externalIds", required = false, defaultValue = "") String externalIds,
             @Parameter(description = "Generate report for only current project or with Sub projects. Can be supplied with modules [" + LICENSE_INFO + ", " + EXPORT_CREATE_PROJ_CLEARING_REPORT + "]")
             @RequestParam(value = "withSubProject", required = false, defaultValue = "false") boolean withSubProject,
             @Parameter(description = "Type of SBOM file", schema = @Schema(allowableValues = {XML_FILE_EXTENSION, JSON_FILE_EXTENSION}))
             @RequestParam(value = "bomType", required = false) String bomType,
+            @Parameter(description = "Selected release relationships.")
+            @RequestParam(value = "selectedRelRelationship", required = false) String selectedRelRelationship,
             HttpServletRequest request,
             HttpServletResponse response
     ) throws TException {
@@ -131,6 +136,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                         template, externalIds);
                 break;
             case LICENSE_INFO:
+                selectedReleaseRelations = selectedRelRelationship;
                 getLicensesInfoReports(response, sw360User, module, projectId, excludeReleaseVersion,
                         generatorClassName, variant, template, externalIds, withSubProject);
                 break;
@@ -281,7 +287,7 @@ public class SW360ReportController implements RepresentationModelProcessor<Repos
                 case LICENSE_INFO:
                 case EXPORT_CREATE_PROJ_CLEARING_REPORT:
                     buff = sw360ReportService.getLicenseInfoBuffer(user, projectId, generatorClassName, variant,
-                            template, externalIds, excludeReleaseVersion);
+                            template, externalIds, excludeReleaseVersion, selectedReleaseRelations);
                     fileName = sw360ReportService.getGenericLicInfoFileName(user, projectId, generatorClassName,
                             variant);
                     break;

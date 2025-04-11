@@ -596,7 +596,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         given(this.projectServiceMock.getProjectForUserById(eq(project7.getId()), any())).willReturn(project7);
         given(this.projectServiceMock.getProjectForUserById(eq(project8.getId()), any())).willReturn(project8);
         given(this.sw360ReportServiceMock.downloadSourceCodeBundle(any(), any(), anyBoolean())).willReturn(ByteBuffer.allocate(10000));
-        given(this.sw360ReportServiceMock.getLicenseInfoBuffer(any(), any(), any(), any(), any(), any(), anyBoolean())).willReturn(ByteBuffer.allocate(10000));
+        given(this.sw360ReportServiceMock.getLicenseInfoBuffer(any(), any(), any(), any(), any(), any(), anyBoolean(), any())).willReturn(ByteBuffer.allocate(10000));
         given(this.sw360ReportServiceMock.getSourceCodeBundleName(any(), any())).willReturn("SourceCodeBundle-ProjectName");
         given(this.projectServiceMock.getLicenseInfoAttachmentUsage(eq(project8.getId()))).willReturn(licenseInfoUsages);
         given(this.projectServiceMock.getObligationData(eq(project8.getLinkedObligationId()), any())).willReturn(obligationLists);
