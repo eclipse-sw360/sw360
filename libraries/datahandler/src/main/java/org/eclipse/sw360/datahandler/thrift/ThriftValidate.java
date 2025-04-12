@@ -276,7 +276,9 @@ public class ThriftValidate {
 
     public static void prepareSPDXDocument(SPDXDocument spdx) throws SW360Exception {
         // Check required fields
-
+        assert spdx != null : "SPDXDocument object cannot be null";
+        assertNotEmpty(spdx.getId());
+        assertNotEmpty(spdx.getSpdxDocumentCreationInfoId());
         // Check type
         spdx.setType(TYPE_SPDX_DOCUMENT);
         // Unset temporary fields
@@ -285,7 +287,9 @@ public class ThriftValidate {
 
     public static void prepareSpdxDocumentCreationInfo(DocumentCreationInformation documentCreationInfo) throws SW360Exception {
         // Check required fields
-
+        assert documentCreationInfo != null : "DocumentCreationInformation object cannot be null";
+        assertNotEmpty(documentCreationInfo.getCreator());
+        assertNotEmpty(documentCreationInfo.getCreated());
         // Check type
         documentCreationInfo.setType(TYPE_SPDX_DOCUMENT_CREATION_INFO);
         // Unset temporary fields
