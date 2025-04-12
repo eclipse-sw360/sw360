@@ -87,7 +87,7 @@ public class ResourceServerConfiguration {
                 .exceptionHandling(x -> x.authenticationEntryPoint(saep))
                 .headers(headers -> headers.xssProtection(xXssConfig -> xXssConfig.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
                         .contentSecurityPolicy(cps -> cps.policyDirectives("script-src 'self'")))
-                .build();
+                .csrf(csrf -> csrf.disable()).build();
     }
 
 
