@@ -103,6 +103,7 @@ build:
     - key: thrift-$THRIFT_VERSION
       paths:
         - $CI_PROJECT_DIR/dist/thrift-$THRIFT_VERSION
+        - /var/cache/deps/thrift-$THRIFT_VERSION.tar.gz
   artifacts:
     when: always
     reports:
@@ -110,7 +111,7 @@ build:
         - ./**/target/surefire-reports/TEST-*.xml
         - ./**/target/failsafe-reports/TEST-*.xml
     paths:
-      - $BUILD_ARTIFACT_ROOT
+      - $BUILD_ARTIFACT_ROOT/keycloak
 
 Docker-latest:
   extends: .awesome-ci/build-docker-image
