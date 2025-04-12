@@ -16,8 +16,10 @@ ENV KC_DB=postgres
 
 WORKDIR /opt/keycloak
 
-# Copy the artifacts
-ADD --chown=keycloak:keycloak --chmod=644 ./artifacts/keycloak/ /opt/keycloak/providers/
+# Copy always does root:root with 644. Thus cp within container to get
+# keycloak:root with 644
+COPY . /tmp/providers/
+RUN cp /tmp/providers/*jar /opt/keycloak/providers/
 
 RUN /opt/keycloak/bin/kc.sh build
 

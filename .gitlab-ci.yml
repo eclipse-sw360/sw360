@@ -13,9 +13,6 @@ include:
     file:
       - docker/build-docker-image.gitlab-ci.yml
 
-services:
-  - couchdb:3.4
-
 variables:
   http_proxy: $CODE_PROXY
   https_proxy: $CODE_PROXY
@@ -64,6 +61,8 @@ variables:
 build:
   stage: build
   image: maven:3-eclipse-temurin-21
+  services:
+    - couchdb:3.4
   before_script:
     - mkdir -p ${BUILD_ARTIFACT_ROOT}/tomcat ${BUILD_ARTIFACT_ROOT}/keycloak /etc/sw360/ $CI_PROJECT_DIR/.m2/repository
 
@@ -122,6 +121,7 @@ Docker-latest:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/keycloak
     EXTRA_ARGUMENTS: --build-arg KC_VERSION=$KC_VERSION
     IMAGE_TAG: $KC_VERSION
+    BUILD_CONTEXT: $BUILD_ARTIFACT_ROOT/keycloak
     DOCKERFILE: $CI_PROJECT_DIR/Dockerfile.keycloak
   needs:
     - job: build
