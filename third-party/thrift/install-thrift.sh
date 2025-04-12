@@ -45,7 +45,12 @@ processThrift() {
     -DWITH_OPENSSL=OFF \
     -DBUILD_PYTHON=OFF \
     -DBUILD_TESTING=OFF \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     "${BASEDIR}/thrift/"
+
+  # -DCMAKE_POLICY_VERSION_MINIMUM=3.5 is added to fix the cmake error:
+  # CMake Error at CMakeLists.txt:20 (cmake_minimum_required):
+  #  Compatibility with CMake < 3.5 has been removed from CMake.
 
   make -j"$(nproc)"
 

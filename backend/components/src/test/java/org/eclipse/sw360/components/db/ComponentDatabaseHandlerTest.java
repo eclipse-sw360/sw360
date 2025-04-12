@@ -18,6 +18,7 @@ import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.SvmConnector;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
@@ -858,7 +859,7 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testForceUpdateComponent() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         // Make some changes in the component
@@ -928,7 +929,7 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testForceUpdateRelease() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         Release release = releases.get(1);
@@ -961,7 +962,7 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testForceEccUpdate() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         Release release = releases.get(1);
@@ -999,7 +1000,7 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testForceDeleteComponent() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         lenient().when(moderator.deleteComponent(any(Component.class), eq(user2))).thenReturn(RequestStatus.SENT_TO_MODERATOR);
@@ -1067,7 +1068,7 @@ public class ComponentDatabaseHandlerTest {
 
     @Test
     public void testForceDeleteRelease() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         lenient().when(releaseModerator.deleteRelease(any(Release.class), eq(user1))).thenReturn(RequestStatus.SENT_TO_MODERATOR);

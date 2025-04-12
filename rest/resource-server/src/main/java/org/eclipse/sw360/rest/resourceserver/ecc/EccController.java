@@ -13,8 +13,8 @@ import java.util.List;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -67,7 +67,7 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getEccDetails(
             HttpServletRequest request,
             Pageable pageable
-    ) throws TException {
+    ) throws SW360Exception {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         try {
             List<Release> releases = releaseService.getReleasesForUser(user);
@@ -89,8 +89,7 @@ public class EccController implements RepresentationModelProcessor<RepositoryLin
             HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
             return new ResponseEntity<>(resources, status);
         } catch (Exception e) {
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
-
 }

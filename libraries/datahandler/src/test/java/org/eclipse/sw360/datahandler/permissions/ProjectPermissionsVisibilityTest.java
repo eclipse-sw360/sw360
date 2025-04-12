@@ -10,6 +10,9 @@
 
 package org.eclipse.sw360.datahandler.permissions;
 
+import org.eclipse.sw360.datahandler.TestUtils;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenProject;
 import org.eclipse.sw360.datahandler.permissions.jgivens.ThenVisible;
 import org.eclipse.sw360.datahandler.permissions.jgivens.WhenComputeVisibility;
@@ -21,10 +24,17 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import com.tngtech.jgiven.junit.ScenarioTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import static org.eclipse.sw360.datahandler.permissions.jgivens.GivenProject.ProjectRole.*;
 import static org.eclipse.sw360.datahandler.thrift.Visibility.*;
 import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.withSettings;
 
 /**
  * @author johannes.najjar@tngtech.com
@@ -48,7 +58,7 @@ public class ProjectPermissionsVisibilityTest extends ScenarioTest<GivenProject,
     @DataProvider
     public static Object[][] projectVisibilityProvider() {
         // @formatter:off
-        if (PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED) {
+        if (TestUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED) {
             return new Object[][] {
                     //test otherDeparment
                     //test User
@@ -126,9 +136,12 @@ public class ProjectPermissionsVisibilityTest extends ScenarioTest<GivenProject,
     @UseDataProvider("projectVisibilityProvider")
     public void testVisibility(Visibility visibility, String businessUnit, String department, UserGroup userGroup, boolean expectedVisibility) {
         given().a_new_project().with_visibility_$_and_business_unit_$(visibility, businessUnit);
-        when().the_visibility_is_computed_for_department_$_and_user_group_$(department, userGroup);
-        then().the_visibility_should_be(expectedVisibility);
-
+        try (MockedStatic<SW360Utils> mockedStatic = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mockedStatic.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_ADMIN_PRIVATE_ACCESS_ENABLED), any()))
+                    .thenReturn(TestUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED);
+            when().the_visibility_is_computed_for_department_$_and_user_group_$(department, userGroup);
+            then().the_visibility_should_be(expectedVisibility);
+        }
     }
 
     @DataProvider

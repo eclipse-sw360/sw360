@@ -34,6 +34,7 @@ import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.CheckStatus;
 import org.eclipse.sw360.datahandler.thrift.components.*;
+import org.eclipse.sw360.datahandler.thrift.configurations.SW360ConfigsService;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.ObligationLevel;
@@ -1138,5 +1139,37 @@ public class SW360Utils {
             }
         }
         return packageInfo;
+    }
+
+    public static String getConfigByKey(String key) throws SW360Exception {
+        try {
+            SW360ConfigsService.Iface configClient = new ThriftClients().makeSW360ConfigsClient();
+            return configClient.getConfigByKey(key);
+        } catch (TException exception) {
+            throw new SW360Exception("Unable to get configuration");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T readConfig(String key, T defaultValue) {
+        try {
+            String value = getConfigByKey(key);
+
+            if (defaultValue instanceof Enum<?>) {
+                Class<T> enumClass = (Class<T>) defaultValue.getClass();
+                return (T) Enum.valueOf((Class<Enum>) enumClass, value);
+            }
+
+            return switch (defaultValue) {
+                case Boolean b -> (T) Boolean.valueOf(Boolean.parseBoolean(value));
+                case Integer i -> (T) Integer.valueOf(Integer.parseInt(value));
+                case Double v -> (T) Double.valueOf(Double.parseDouble(value));
+                case Long l -> (T) Long.valueOf(Long.parseLong(value));
+                case null, default -> (T) value; // Assume it's a String
+            };
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return defaultValue;
+        }
     }
 }

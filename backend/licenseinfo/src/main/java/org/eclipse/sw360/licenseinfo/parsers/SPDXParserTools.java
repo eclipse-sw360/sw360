@@ -14,6 +14,8 @@ package org.eclipse.sw360.licenseinfo.parsers;
 import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.apache.jena.util.XMLChar;
@@ -36,11 +38,10 @@ import org.w3c.dom.Element;
 import org.apache.jena.rdf.model.impl.Util;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.USE_LICENSE_INFO_FROM_FILES;
 
 public class SPDXParserTools {
     private static final String PROPERTIES_FILE_PATH = "/sw360.properties";
-    private static final String PROPERTY_KEY_USE_LICENSE_INFO_FROM_FILES = "licenseinfo.spdxparser.use-license-info-from-files";
-    private static final boolean USE_LICENSE_INFO_FROM_FILES;
 
     private static final String XML_LITERAL = "^^http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral";
     private static final String LICENSE_REF_PREFIX = "LicenseRef-";
@@ -92,8 +93,6 @@ public class SPDXParserTools {
 
     static {
         Properties properties = CommonUtils.loadProperties(SPDXParserTools.class, PROPERTIES_FILE_PATH);
-        USE_LICENSE_INFO_FROM_FILES = Boolean
-                .valueOf(properties.getOrDefault(PROPERTY_KEY_USE_LICENSE_INFO_FROM_FILES, "true").toString());
     }
 
     // Make NodeList be iterable
@@ -673,10 +672,10 @@ public class SPDXParserTools {
 
         uriLicenseMap = getLicenseTextFromMetadata(doc, includeFileInformation);
         nodeIDFileMap = getFileFromMetadata(doc);
-
+        final boolean useLicenseInfoFromFilesEnabled = SW360Utils.readConfig(USE_LICENSE_INFO_FROM_FILES, true);
         for (Node spdxItem : getDocumentDescribes(doc)) {
             licenseInfo.getLicenseNamesWithTexts()
-                    .addAll(getAllLicenseTexts(spdxItem, USE_LICENSE_INFO_FROM_FILES, includeConcludedLicense));
+                    .addAll(getAllLicenseTexts(spdxItem, useLicenseInfoFromFilesEnabled, includeConcludedLicense));
             licenseInfo.getCopyrights().addAll(getAllCopyrights(spdxItem).collect(Collectors.toSet()));
             if (getNodeName(spdxItem).equals(SPDX_PACKAGE)) {
                 concludedLicenseIds.addAll(getAllConcludedLicenseIds(getLicenseConcluded(spdxItem)));

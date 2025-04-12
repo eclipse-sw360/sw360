@@ -69,30 +69,30 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
 
     @Operation(
             description = "Manually active the service.",
-            tags = {"Department"}
+            tags = {"Departments"}
     )
     @RequestMapping(value = DEPARTMENT_URL + "/manuallyactive", method = RequestMethod.POST)
-    public ResponseEntity<RequestSummary> importDepartmentManually() {
+    public ResponseEntity<RequestSummary> importDepartmentManually() throws SW360Exception {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         return processAction(sw360User);
     }
 
-    private ResponseEntity<RequestSummary> processAction(User sw360User) {
+    private ResponseEntity<RequestSummary> processAction(User sw360User) throws SW360Exception {
         try {
             RequestSummary requestSummary = departmentService.importDepartmentManually(sw360User);
             return ResponseEntity.ok(requestSummary);
         } catch (TException e) {
             log.error("Error importing department", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new SW360Exception("Error importing department");
         }
     }
 
     @Operation(
             description = "Schedule import.",
-            tags = {"Department"}
+            tags = {"Departments"}
     )
     @RequestMapping(value = DEPARTMENT_URL + "/scheduleImport", method = RequestMethod.POST)
-    public ResponseEntity<Map<String, String>> scheduleImportDepartment() {
+    public ResponseEntity<Map<String, String>> scheduleImportDepartment() throws SW360Exception {
         try {
             User user = restControllerHelper.getSw360UserFromAuthentication();
 
@@ -110,20 +110,18 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             return ResponseEntity.ok(response);
         } catch (SW360Exception e) {
             log.error("Schedule check failed: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Collections.singletonMap("error", e.getMessage()));
+            throw e;
         } catch (TException e) {
             log.error("Schedule import department: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("error", "Failed to schedule department import"));
+            throw new SW360Exception("Failed to schedule department import");
         }
     }
 
     @Operation(summary = "Unschedule Department Import",
             description = "Cancels the scheduled import task for the department.",
-            tags = {"Department"})
+            tags = {"Departments"})
     @RequestMapping(value = DEPARTMENT_URL + "/unscheduleImport", method = RequestMethod.POST)
-    public ResponseEntity<Map<String, String>> unScheduleImportDepartment() throws TException {
+    public ResponseEntity<Map<String, String>> unScheduleImportDepartment() throws SW360Exception {
 
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -136,24 +134,26 @@ public class DepartmentController implements RepresentationModelProcessor<Reposi
             return ResponseEntity.ok(response);
         } catch (TException e) {
             log.error("Failed to cancel scheduled department import: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("error", "Failed to unschedule department import"));
+            throw new SW360Exception("Failed to unschedule department import");
         }
     }
 
-    @Operation(summary = "Update Folder Path Configuration",
-            description = "Updates the department folder path configuration.")
+    @Operation(
+            summary = "Update Folder Path Configuration",
+            description = "Updates the department folder path configuration.",
+            tags = {"Departments"}
+    )
     @RequestMapping(value = DEPARTMENT_URL + "/writePathFolder", method = RequestMethod.POST)
     public ResponseEntity<String> updatePath(
             @Parameter(description = "The path of the folder")
-            @RequestParam String pathFolder) {
+            @RequestParam String pathFolder
+    ) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             departmentService.writePathFolderConfig(pathFolder, sw360User);
             return ResponseEntity.ok("Path updated successfully.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error updating path: " + e.getMessage());
+            throw new SW360Exception("Error updating path: " + e.getMessage());
         }
     }
 

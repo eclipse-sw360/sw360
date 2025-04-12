@@ -102,7 +102,7 @@ public class Sw360DepartmentService {
         }
         UserService.Iface userClient = thriftClients.makeUserClient();
         if (userClient == null) {
-            throw new TException("Failed to create UserService client");
+            throw new SW360Exception("Failed to create UserService client");
         }
         userClient.writePathFolderConfig(pathFolder);
     }

@@ -35,10 +35,7 @@ import org.cyclonedx.parsers.JsonParser;
 import org.cyclonedx.parsers.Parser;
 import org.cyclonedx.parsers.XmlParser;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.common.ThriftEnumUtils;
+import org.eclipse.sw360.datahandler.common.*;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.PackageDatabaseHandler;
@@ -75,6 +72,9 @@ import com.github.packageurl.MalformedPackageURLException;
 import com.github.packageurl.PackageURL;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_PACKAGE_PORTLET_ENABLED;
 
 /**
  * CycloneDX BOM import implementation.
@@ -108,7 +108,6 @@ public class CycloneDxBOMImporter {
     private static final String PROJECT_ID = "projectId";
     private static final String PROJECT_NAME = "projectName";
     private static final String REDIRECTED_VCS = "redirectedVCS";
-    private static final boolean IS_PACKAGE_PORTLET_ENABLED = SW360Constants.IS_PACKAGE_PORTLET_ENABLED;
     private static final Predicate<ExternalReference.Type> typeFilter = type -> ExternalReference.Type.VCS.equals(type);
 
     private Set<String> redirectedUrls = new HashSet<>();
@@ -168,9 +167,11 @@ public class CycloneDxBOMImporter {
         String fileExtension = Files.getFileExtension(attachmentContent.getFilename());
         Parser parser;
 
-        if (!SW360Utils.isUserAtleastDesiredRoleInPrimaryOrSecondaryGroup(user, SW360Constants.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE)) {
+        final UserGroup allowedUserGroup = SW360Utils.readConfig(SW360ConfigKeys.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, UserGroup.USER);
+
+        if (!SW360Utils.isUserAtleastDesiredRoleInPrimaryOrSecondaryGroup(user, allowedUserGroup)) {
             log.warn("User does not have permission to import the SBOM: " + user.getEmail());
-            requestSummary.setMessage(SW360Constants.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE.name());
+            requestSummary.setMessage(allowedUserGroup.name());
             requestSummary.setRequestStatus(RequestStatus.ACCESS_DENIED);
             return requestSummary;
         }
@@ -197,7 +198,7 @@ public class CycloneDxBOMImporter {
             org.cyclonedx.model.Component compMetadata = bomMetadata.getComponent();
             Map<String, List<org.cyclonedx.model.Component>> vcsToComponentMap = new HashMap<>();
 
-            if (!IS_PACKAGE_PORTLET_ENABLED) {
+            if (!SW360Utils.readConfig(IS_PACKAGE_PORTLET_ENABLED, true)) {
                 vcsToComponentMap.put("", components);
                 requestSummary = importSbomAsProject(compMetadata, vcsToComponentMap, projectId, attachmentContent, doNotReplacePackageAndRelease);
             } else {
@@ -424,7 +425,7 @@ public class CycloneDxBOMImporter {
             return summary;
         }
 
-        if (IS_PACKAGE_PORTLET_ENABLED) {
+        if (SW360Utils.readConfig(IS_PACKAGE_PORTLET_ENABLED, true)) {
             messageMap = importAllComponentsAsPackages(vcsToComponentMap, project, doNotReplacePackageAndRelease);
         } else {
             messageMap = importAllComponentsAsReleases(vcsToComponentMap, project);

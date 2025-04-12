@@ -14,14 +14,11 @@ package org.eclipse.sw360.rest.resourceserver.restdocs;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
-import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
 
 import org.eclipse.sw360.datahandler.thrift.RequestSummary;
 import org.eclipse.sw360.datahandler.thrift.users.User;
@@ -42,7 +39,7 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-    
+
     @MockBean
     private Sw360ScheduleService scheduleServiceMock;
     private RequestSummary requestSummary = new RequestSummary();
@@ -67,10 +64,10 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
         given(this.scheduleServiceMock.scheduleSvmReverseMatch(any())).willReturn(requestSummary);
         given(this.scheduleServiceMock.svmReleaseTrackingFeedback(any())).willReturn(requestSummary);
         given(this.scheduleServiceMock.svmMonitoringListUpdate(any())).willReturn(requestSummary);
-        given(this.scheduleServiceMock.triggeSrcUpload(any())).willReturn(requestSummary);
+        given(this.scheduleServiceMock.triggerSrcUpload(any())).willReturn(requestSummary);
         given(this.scheduleServiceMock.cancelSvmMonitoringListUpdate(any())).willReturn(RequestStatus.SUCCESS);
         given(this.scheduleServiceMock.unscheduleSrcUpload(any())).willReturn(RequestStatus.SUCCESS);
-        
+
     }
 
     @Test
@@ -80,7 +77,7 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isAccepted());
     }
-    
+
     @Test
     public void should_document_schedule_cve_service() throws Exception {
         mockMvc.perform(post("/api/schedule/cveService")
@@ -160,7 +157,7 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isAccepted());
     }
-    
+
     @Test
     public void should_document_unschedule_cve_search() throws Exception {
         mockMvc.perform(post("/api/schedule/unscheduleCve")
@@ -168,7 +165,7 @@ public class ScheduleSpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isAccepted());
     }
-    
+
     @Test
     public void should_document_schedule_service_from_local() throws Exception {
         mockMvc.perform(post("/api/schedule/deleteAttachment")

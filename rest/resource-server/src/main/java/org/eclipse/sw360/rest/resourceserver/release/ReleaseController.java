@@ -11,6 +11,7 @@
  */
 package org.eclipse.sw360.rest.resourceserver.release;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SPDX_DOCUMENT_ENABLED;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -23,7 +24,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -74,6 +74,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.rest.resourceserver.attachment.AttachmentInfo;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.component.ComponentController;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -94,7 +95,6 @@ import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -273,7 +273,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
         List<ReleaseLink> linkedReleaseRelations = releaseService.getLinkedReleaseRelations(sw360Release, sw360User);
 
         String spdxId = sw360Release.getSpdxId();
-        if (CommonUtils.isNotNullEmptyOrWhitespace(spdxId) && SW360Constants.SPDX_DOCUMENT_ENABLED) {
+        if (CommonUtils.isNotNullEmptyOrWhitespace(spdxId) && SW360Utils.readConfig(SPDX_DOCUMENT_ENABLED, false)) {
             SPDXDocument spdxDocument = releaseService.getSPDXDocumentById(spdxId, sw360User);
             sw360SPDXDocumentService.sortSectionForSPDXDocument(spdxDocument);
             restControllerHelper.addEmbeddedSpdxDocument(halRelease, spdxDocument);
@@ -623,11 +623,11 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @Parameter(description = "The ID of the release.")
             @PathVariable("id") String releaseId
     ) throws TException {
-        if (Boolean.FALSE.equals(SW360Constants.SPDX_DOCUMENT_ENABLED)) {
-            return new ResponseEntity<>("Feature SPDXDocument disable", HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!SW360Utils.readConfig(SPDX_DOCUMENT_ENABLED, false)) {
+            throw new SW360Exception("Feature SPDXDocument disable");
         }
         if (CommonUtils.isNullEmptyOrWhitespace(releaseId)) {
-            throw new HttpMessageNotReadableException("Release id not found");
+            throw new BadRequestClientException("Release id not found");
         }
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Release release = releaseService.getReleaseForUserById(releaseId, user);
@@ -641,7 +641,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 : releaseService.getSPDXDocumentById(spdxId, user);
         spdxId = spdxDocumentActual.getId();
         if (CommonUtils.isNullEmptyOrWhitespace(spdxId)) {
-            throw new HttpMessageNotReadableException("Update SPDXDocument Failed!");
+            throw new BadRequestClientException("Update SPDXDocument Failed!");
         }
         HalResource<Release> halRelease = createHalReleaseResource(release, false);
 
@@ -1201,7 +1201,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @RequestBody Set<String> packagesInRequestBody
     ) throws URISyntaxException, TException {
         if(!packageService.validatePackageIds(packagesInRequestBody)){
-            return new ResponseEntity<>("Package ID invalid! ", HttpStatus.NOT_FOUND);
+            throw new ResourceNotFoundException("Package ID invalid!");
         }
         RequestStatus unlinkPackageStatus = linkOrUnlinkPackages(id, packagesInRequestBody, false);
         if (unlinkPackageStatus == RequestStatus.SENT_TO_MODERATOR) {
@@ -1295,7 +1295,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             @RequestParam("attachmentId") String attachmentId,
             @Parameter(description = "Include concluded license.")
             @RequestParam(value = "includeConcludedLicense", required = false, defaultValue = "false") boolean includeConcludedLicense
-    ) {
+    ) throws SW360Exception {
         User user = restControllerHelper.getSw360UserFromAuthentication();
         Map<String, Set<String>> licenseToSrcFilesMap = new LinkedHashMap<>();
         Set<String> mainLicenseNames = new TreeSet<>();
@@ -1314,13 +1314,13 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
             attachmentType = release.getAttachments().stream()
                     .filter(att -> attachmentId.equals(att.getAttachmentContentId())).map(Attachment::getAttachmentType).findFirst().orElse(null);
             if (null == attachmentType) {
-                return new ResponseEntity<>("Cannot retrieve license information for attachment id " + attachmentId + " in release "
-                        + releaseId + ".", HttpStatus.INTERNAL_SERVER_ERROR);
+                throw new SW360Exception("Cannot retrieve license information for attachment id " + attachmentId + " in release "
+                        + releaseId + ".");
             }
             if (!attachmentType.equals(AttachmentType.COMPONENT_LICENSE_INFO_XML) &&
                     !attachmentType.equals(AttachmentType.COMPONENT_LICENSE_INFO_COMBINED) &&
                     !attachmentType.equals(AttachmentType.INITIAL_SCAN_REPORT)) {
-                return new ResponseEntity<>("Cannot retrieve license information for attachment type " + attachmentType + ".", HttpStatus.INTERNAL_SERVER_ERROR);
+                throw new SW360Exception("Cannot retrieve license information for attachment type " + attachmentType + ".");
             }
             attachmentName = release.getAttachments().stream()
                     .filter(att -> attachmentId.equals(att.getAttachmentContentId())).map(Attachment::getFilename).findFirst().orElse("");
@@ -1365,9 +1365,9 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                         .map(LicenseNameWithText::getLicenseName).collect(Collectors.toCollection(() -> new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)));
             }
         } catch (TException e) {
-            log.error(e.getMessage());
-            return new ResponseEntity<>("Cannot retrieve license information for attachment id " + attachmentId + " in release "
-                    + releaseId + ".", HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error(e.getMessage(), e);
+            throw new SW360Exception("Cannot retrieve license information for attachment id " + attachmentId + " in release "
+                    + releaseId + ".");
         }
 
         if (CommonUtils.isNotEmpty(concludedLicenseIds)) {
@@ -1460,7 +1460,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
     }
 
     private RequestStatus linkOrUnlinkPackages(String id, Set<String> packagesInRequestBody, boolean link)
-            throws URISyntaxException, TException {
+            throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Release release = releaseService.getReleaseForUserById(id, sw360User);
         Set<String> packageIds;
@@ -1514,7 +1514,7 @@ public class ReleaseController implements RepresentationModelProcessor<Repositor
                 .filter(att -> att.getAttachmentType().equals(AttachmentType.COMPONENT_LICENSE_INFO_XML))
                 .map(Attachment::getAttachmentContentId).collect(Collectors.toList());
         if (cliAttachmentIds.size() != 1) {
-            return new ResponseEntity<>("Number of CLI attachments must be 1", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new SW360Exception("Number of CLI attachments must be 1");
         }
         List<LicenseInfoParsingResult> licenseInfoResult = sw360LicenseInfoService.getLicenseInfoForAttachment(release,
                 user, cliAttachmentIds.get(0), INCLUDE_CONCLUDED_LICENSE);

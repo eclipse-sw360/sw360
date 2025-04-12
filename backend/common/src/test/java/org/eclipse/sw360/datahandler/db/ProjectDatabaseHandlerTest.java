@@ -13,7 +13,6 @@ package org.eclipse.sw360.datahandler.db;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.SetMultimap;
 
-import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -175,7 +174,7 @@ public class ProjectDatabaseHandlerTest {
     
     @Test
     public void testForceUpdateProject() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         Project project1 = handler.getProjectById("P1", user1);
@@ -307,7 +306,7 @@ public class ProjectDatabaseHandlerTest {
     
     @Test
     public void testForceDeleteProject() throws Exception {
-        if (!BackendUtils.IS_FORCE_UPDATE_ENABLED) {
+        if (!TestUtils.IS_FORCE_UPDATE_ENABLED) {
             return;
         }
         int expect = handler.getMyProjectsSummary(user1.getEmail()).size() - 1;

@@ -10,6 +10,8 @@
 package org.eclipse.sw360.datahandler.permissions;
 
 import com.google.common.collect.Sets;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.thrift.components.Component;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.toSingletonSet;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
 import static org.eclipse.sw360.datahandler.common.SW360Utils.getBUFromOrganisation;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.*;
 import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.ADMIN;
@@ -72,10 +75,10 @@ public class ComponentPermissions extends DocumentPermissions<Component> {
     public static Predicate<Component> isVisible(final User user) {
         return input -> {
 
-            if(!PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+            if(!SW360Utils.readConfig(IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, false)) {
                 return true;
             }
-            
+
             Visibility visibility = input.getVisbility();
             if (visibility == null) {
                 visibility = Visibility.BUISNESSUNIT_AND_MODERATORS; // the current default
@@ -141,13 +144,13 @@ public class ComponentPermissions extends DocumentPermissions<Component> {
     }
 
     @Override
-    protected Set<String> getUserEquivalentOwnerGroup(){
+    protected Set<String> getUserEquivalentOwnerGroup() {
         Set<String> departments = new HashSet<String>();
         if (!CommonUtils.isNullOrEmptyMap(user.getSecondaryDepartmentsAndRoles())) {
             departments.addAll(user.getSecondaryDepartmentsAndRoles().keySet());
         }
         departments.add(user.getDepartment());
-        if(!PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+        if(!SW360Utils.readConfig(IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED, false)) {
             return departments;
         }
         Set<String> finalDepartments = new HashSet<String>();

@@ -15,7 +15,9 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.thrift.Visibility;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
@@ -31,8 +33,7 @@ import org.eclipse.sw360.licenseinfo.TestHelper.AttachmentContentStore;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 import org.w3c.dom.Document;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -45,6 +46,9 @@ import static org.eclipse.sw360.licenseinfo.TestHelper.*;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.withSettings;
 
 /**
  * @author: maximilian.huber@tngtech.com
@@ -138,10 +142,12 @@ public class SPDXParserTest {
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
         Document spdxDocument = dBuilder.parse(input);
         spdxDocument.getDocumentElement().normalize();
-
-        LicenseInfoParsingResult result = SPDXParserTools.getLicenseInfoFromSpdx(attachmentContent, true, false, spdxDocument);
-        assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
-                exampleCopyright, exampleConcludedLicenseIds);
+        try (MockedStatic<SW360Utils> mockedStatic = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mockedStatic.when(() -> SW360Utils.readConfig(SW360ConfigKeys.USE_LICENSE_INFO_FROM_FILES, true)).thenReturn(true);
+            LicenseInfoParsingResult result = SPDXParserTools.getLicenseInfoFromSpdx(attachmentContent, true, false, spdxDocument);
+            assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
+                    exampleCopyright, exampleConcludedLicenseIds);
+        }
     }
 
     @Test
@@ -154,18 +160,20 @@ public class SPDXParserTest {
                         .filter(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES::contains)
                         .findAny()
                         .get());
+        try (MockedStatic<SW360Utils> mockedStatic = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS))) {
+            mockedStatic.when(() -> SW360Utils.readConfig(SW360ConfigKeys.USE_LICENSE_INFO_FROM_FILES, true)).thenReturn(true);
+            LicenseInfoParsingResult result = parser.getLicenseInfos(attachment, dummyUser,
+                            new Project()
+                                    .setVisbility(Visibility.ME_AND_MODERATORS)
+                                    .setCreatedBy(dummyUser.getEmail())
+                                    .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachment.getAttachmentContentId()))))
+                    .stream()
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Parser returned empty LisenceInfoParsingResult list"));
 
-        LicenseInfoParsingResult result = parser.getLicenseInfos(attachment, dummyUser,
-                                            new Project()
-                                                    .setVisbility(Visibility.ME_AND_MODERATORS)
-                                                    .setCreatedBy(dummyUser.getEmail())
-                                                    .setAttachments(Collections.singleton(new Attachment().setAttachmentContentId(attachment.getAttachmentContentId()))))
-                .stream()
-                .findFirst()
-                .orElseThrow(()->new RuntimeException("Parser returned empty LisenceInfoParsingResult list"));
-
-        assertLicenseInfoParsingResult(result);
-        assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
-                exampleCopyright, exampleConcludedLicenseIds);
+            assertLicenseInfoParsingResult(result);
+            assertIsResultOfExample(result.getLicenseInfo(), exampleFile, expectedLicenses, numberOfCoyprights,
+                    exampleCopyright, exampleConcludedLicenseIds);
+        }
     }
 }

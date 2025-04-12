@@ -14,7 +14,6 @@ import com.ibm.cloud.cloudant.v1.Cloudant;
 import com.ibm.cloud.cloudant.v1.model.DocumentResult;
 import com.google.common.collect.*;
 
-import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.components.summary.SummaryType;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
@@ -62,7 +61,6 @@ import org.eclipse.sw360.mail.MailConstants;
 import org.eclipse.sw360.mail.MailUtil;
 import org.apache.logging.log4j.Logger;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.spdx.SpdxBOMImporter;
@@ -76,7 +74,6 @@ import org.spdx.library.InvalidSPDXAnalysisException;
 
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.*;
@@ -93,6 +90,7 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.*;
 import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.fail;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.*;
 import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
 import static org.eclipse.sw360.datahandler.thrift.ThriftUtils.copyFields;
 import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.ensureEccInformationIsSet;
@@ -562,7 +560,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
         }
         // Add release to database
         releaseRepository.add(release);
-        if (SW360Constants.SPDX_DOCUMENT_ENABLED) {
+        if (SW360Utils.readConfig(SPDX_DOCUMENT_ENABLED, false)) {
             try {
                 spdxDocumentDatabaseHandler.updateSPDX(user, release);
             } catch (TException ex) {
@@ -1268,7 +1266,8 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
     }
 
     private void setMainlineState(Release updated, User user, Release current) {
-        boolean isMainlineStateDisabled = !(BackendUtils.MAINLINE_STATE_ENABLED_FOR_USER
+        boolean isMainLineStateEnabledForUser = SW360Utils.readConfig(MAINLINE_STATE_ENABLED_FOR_USER, false);
+        boolean isMainlineStateDisabled = !(isMainLineStateEnabledForUser
                 || PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, user));
 
         if ((null == current || null == current.getMainlineState()) && isMainlineStateDisabled) {
@@ -1352,7 +1351,7 @@ public class ComponentDatabaseHandler extends AttachmentAwareDatabaseHandler {
                 eccInfo.setAl(ECC_AUTOSET_VALUE);
                 eccInfo.setEccn(ECC_AUTOSET_VALUE);
                 eccInfo.setEccComment(ECC_AUTOSET_COMMENT);
-                if (DatabaseHandlerUtil.AUTO_SET_ECC_STATUS) {
+                if (SW360Utils.readConfig(AUTO_SET_ECC_STATUS, false)) {
                     eccInfo.setEccStatus(ECCStatus.APPROVED);
                 }
                 eccInfo.setAssessmentDate(SW360Utils.getCreatedOn());

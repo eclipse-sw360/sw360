@@ -34,7 +34,6 @@ import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.fossology.FossologyService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.RequestedAction;
 import org.eclipse.sw360.datahandler.thrift.spdx.annotations.Annotations;
 import org.eclipse.sw360.datahandler.thrift.spdx.documentcreationinformation.*;
@@ -48,9 +47,9 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.ExternalReferen
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformation;
 import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageInformationService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
@@ -59,17 +58,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.hateoas.Link;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 
 import com.google.common.collect.Sets;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_FORCE_UPDATE_ENABLED;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
-import static org.eclipse.sw360.datahandler.permissions.PermissionUtils.makePermission;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -165,14 +161,14 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public Release setComponentDependentFieldsInRelease(Release releaseById, User sw360User) {
         String componentId = releaseById.getComponentId();
         if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
-            throw new HttpMessageNotReadableException("ComponentId must be present");
+            throw new BadRequestClientException("ComponentId must be present");
         }
         Component componentById = null;
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
             componentById = sw360ComponentClient.getComponentById(componentId, sw360User);
         } catch (TException e) {
-            throw new HttpMessageNotReadableException("No Component found with Id - " + componentId);
+            throw new BadRequestClientException("No Component found with Id - " + componentId);
         }
         releaseById.setComponentType(componentById.getComponentType());
         return releaseById;
@@ -186,23 +182,23 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             List<Component> components = sw360ComponentClient.getComponentSummary(sw360User);
             componentIdMap = components.stream().collect(Collectors.toMap(Component::getId, c -> c));
         } catch (TException e) {
-            throw new HttpMessageNotReadableException("No Components found");
+            throw new BadRequestClientException("No Components found");
         }
-        
+
         for (Release release : releases) {
             String componentId = release.getComponentId();
             if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
-                throw new HttpMessageNotReadableException("ComponentId must be present");
+                throw new BadRequestClientException("ComponentId must be present");
             }
             if (!componentIdMap.containsKey(componentId)) {
-            	throw new HttpMessageNotReadableException("No Component found with Id - " + componentId);
+            	throw new BadRequestClientException("No Component found with Id - " + componentId);
             }
             Component component = componentIdMap.get(componentId);
             release.setComponentType(component.getComponentType());
         }
         return releases;
     }
-    
+
     public List<Release> getReleaseSubscriptions(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.getSubscribedReleases(sw360User);
@@ -247,10 +243,10 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.DUPLICATE) {
             throw new DataIntegrityViolationException("sw360 release with name '" + SW360Utils.printName(release) + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+            throw new BadRequestClientException("Dependent document Id/ids not valid.");
         }
         else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Release name and version field cannot be empty or contain only whitespace character");
         }
         return null;
@@ -259,14 +255,14 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public void setComponentNameAsReleaseName(Release release, User sw360User) {
         String componentId = release.getComponentId();
         if (CommonUtils.isNullEmptyOrWhitespace(componentId)) {
-            throw new HttpMessageNotReadableException("ComponentId must be present");
+            throw new BadRequestClientException("ComponentId must be present");
         }
         Component componentById = null;
         try {
             ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
             componentById = sw360ComponentClient.getComponentById(componentId, sw360User);
         } catch (TException e) {
-            throw new HttpMessageNotReadableException("No Component found with Id - " + componentId);
+            throw new BadRequestClientException("No Component found with Id - " + componentId);
         }
         release.setName(componentById.getName());
     }
@@ -276,15 +272,15 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         rch.checkForCyclicOrInvalidDependencies(sw360ComponentClient, release, sw360User);
 
         RequestStatus requestStatus;
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
             requestStatus = sw360ComponentClient.updateReleaseWithForceFlag(release, sw360User, true);
         } else {
             requestStatus = sw360ComponentClient.updateRelease(release, sw360User);
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+            throw new BadRequestClientException("Dependent document Id/ids not valid.");
         } else if (requestStatus == RequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Release name and version field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
             throw new RuntimeException("Multiple attachments with same name or content cannot be present in attachment list.");
@@ -811,7 +807,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             }
         }
 
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
             deleteStatus = sw360ComponentClient.deleteReleaseWithForceFlag(releaseId, sw360User, true);
         } else {
             deleteStatus = sw360ComponentClient.deleteRelease(releaseId, sw360User);
@@ -821,7 +817,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
         return deleteStatus;
     }
-    
+
     public BulkOperationNode deleteBulkRelease(String releaseId,  User sw360User, boolean isPreview) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.deleteBulkRelease(releaseId, sw360User, isPreview);
@@ -958,7 +954,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         Set<Attachment> attachments = release.getAttachments();
 
         if (attachments == null || attachments.isEmpty()) {
-            throw new HttpMessageNotReadableException(String.format(RELEASE_ATTACHMENT_ERRORMSG, 0));
+            throw new BadRequestClientException(String.format(RELEASE_ATTACHMENT_ERRORMSG, 0));
         }
 
         List<Attachment> listOfSources = attachments.parallelStream()
@@ -967,7 +963,7 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         int noOfSrcAttached = listOfSources.size();
 
         if (noOfSrcAttached != 1) {
-            throw new HttpMessageNotReadableException(String.format(RELEASE_ATTACHMENT_ERRORMSG, noOfSrcAttached));
+            throw new BadRequestClientException(String.format(RELEASE_ATTACHMENT_ERRORMSG, noOfSrcAttached));
         }
 
         return listOfSources.get(0).getAttachmentContentId();

@@ -4,6 +4,7 @@ SPDX-License-Identifier: EPL-2.0
 */
 package org.eclipse.sw360.rest.resourceserver.report;
 
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 
 import java.io.IOException;
@@ -22,6 +23,7 @@ import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
@@ -32,6 +34,7 @@ import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
@@ -50,9 +53,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import jakarta.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
@@ -165,7 +167,7 @@ public class SW360ReportService {
     public void getUploadedProjectPath(User user, boolean withLinkedReleases, String base, String projectId)
             throws TException {
         if (projectId!=null && !validateProject(projectId, user)) {
-            throw new TException("No project record found for the project Id : " + projectId);
+            throw new SW360Exception("No project record found for the project Id : " + projectId);
         }
         Runnable asyncRunnable = () -> wrapTException(() -> {
             try {
@@ -454,7 +456,7 @@ public class SW360ReportService {
                     bomString = status.name();
                     throw new SW360Exception(bomString);
                 } else if (RequestStatus.ACCESS_DENIED.equals(status)) {
-                    bomString = status.name() + ", only user with role " + SW360Constants.SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE + " can access.";
+                    bomString = status.name() + ", only user with role " + SW360Utils.readConfig(SBOM_IMPORT_EXPORT_ACCESS_USER_ROLE, UserGroup.USER).name() + " can access.";
                     throw new AccessDeniedException(bomString);
                 } else if (RequestStatus.FAILURE.equals(status)) {
                     bomString = status.name() + "-" + summary.getMessage() ;

@@ -27,6 +27,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.MultiStatus;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -40,7 +41,6 @@ import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -204,7 +204,7 @@ public class ObligationController implements RepresentationModelProcessor<Reposi
                 || CommonUtils.isNullEmptyOrWhitespace(obligation.getText())
         ) {
             log.error("Obligation title or text is empty");
-            throw new HttpMessageNotReadableException("Obligation title or text is empty");
+            throw new BadRequestClientException("Obligation title or text is empty");
         }
 
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();

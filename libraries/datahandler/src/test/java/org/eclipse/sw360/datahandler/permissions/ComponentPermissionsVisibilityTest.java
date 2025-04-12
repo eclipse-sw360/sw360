@@ -14,7 +14,7 @@ import static org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent.C
 import static org.eclipse.sw360.datahandler.thrift.Visibility.*;
 import static org.eclipse.sw360.datahandler.thrift.users.UserGroup.*;
 
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
+import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent;
 import org.eclipse.sw360.datahandler.permissions.jgivens.GivenComponent.ComponentRole;
 import org.eclipse.sw360.datahandler.permissions.jgivens.ThenVisible;
@@ -50,7 +50,7 @@ public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenCompon
 
     @DataProvider
     public static Object[][] componentVisibilityProvider() {
-        if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+        if (TestUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
             // @formatter:off
             return new Object[][] {
     
@@ -142,7 +142,7 @@ public class ComponentPermissionsVisibilityTest extends ScenarioTest<GivenCompon
 
     @DataProvider
     public static Object[][] componentVisibilityByRoleProvider() {
-        if (PermissionUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
+        if (TestUtils.IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED) {
             // @formatter:off
             return new Object[][] {
                     //test otherDepartment

@@ -22,9 +22,9 @@ import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.licenses.LicenseService;
 import org.eclipse.sw360.datahandler.thrift.licenses.Obligation;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -64,7 +64,7 @@ public class Sw360ObligationService {
                 obligation.setId(obligationId);
                 return obligation;
             } else {
-                throw new HttpMessageNotReadableException("Obligation Title, Text, Level are required. Obligation Title, Text cannot contain only space character.");
+                throw new BadRequestClientException("Obligation Title, Text, Level are required. Obligation Title, Text cannot contain only space character.");
             }
         } catch (TException e) {
             throw new RuntimeException(e);
@@ -93,7 +93,7 @@ public class Sw360ObligationService {
                 throw new RuntimeException("Error updating obligation", e);
             }
         } else {
-            throw new HttpMessageNotReadableException("Obligation Title, Text are required. Obligation Title, Text cannot contain only space character.");
+            throw new BadRequestClientException("Obligation Title, Text are required. Obligation Title, Text cannot contain only space character.");
         }
     }
 

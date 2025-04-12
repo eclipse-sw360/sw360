@@ -83,8 +83,25 @@ public class Sw360XSSRequestWrapper extends HttpServletRequestWrapper {
 
 	@Override
 	public String getHeader(String name) {
+		if (shouldIgnoreHeaderForXSS(name)) {
+			return super.getHeader(name);
+		}
 		String value = super.getHeader(name);
 		return stripXSS(value);
+	}
+
+	private boolean shouldIgnoreHeaderForXSS(String headerName) {
+		// Headers essential for HTTP operations and negotiation
+		return "Range".equalsIgnoreCase(headerName) ||
+				"Accept".equalsIgnoreCase(headerName) ||
+				"Content-Type".equalsIgnoreCase(headerName) ||
+				"Authorization".equalsIgnoreCase(headerName) ||
+				"Content-Length".equalsIgnoreCase(headerName) ||
+				"Host".equalsIgnoreCase(headerName) ||
+				"User-Agent".equalsIgnoreCase(headerName) ||
+				"Referer".equalsIgnoreCase(headerName) ||
+				"Cookie".equalsIgnoreCase(headerName) ||
+				"Set-Cookie".equalsIgnoreCase(headerName);
 	}
 
 	private String stripXSS(String value) {
@@ -109,5 +126,4 @@ public class Sw360XSSRequestWrapper extends HttpServletRequestWrapper {
 			return input;
 		}
 	}
-
 }

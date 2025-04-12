@@ -2579,7 +2579,8 @@ public class JacksonCustomizations {
                 "nameIsSet",
                 "createdOnIsSet",
                 "tokenIsSet",
-                "authoritiesIsSet"
+                "authoritiesIsSet",
+                "numberOfDaysValidIsSet"
         })
         public abstract static class RestApiTokenMixin extends RestApiToken {
         }

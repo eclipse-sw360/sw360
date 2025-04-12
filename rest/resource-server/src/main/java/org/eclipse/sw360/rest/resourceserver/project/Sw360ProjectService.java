@@ -61,8 +61,8 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
-import org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer;
 import org.eclipse.sw360.rest.resourceserver.core.AwareOfRestServices;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.release.ReleaseController;
@@ -74,7 +74,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.Link;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -116,6 +115,7 @@ import static com.google.common.base.Strings.nullToEmpty;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.getSortedMap;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
+import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_FORCE_UPDATE_ENABLED;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
@@ -779,9 +779,9 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             throw new DataIntegrityViolationException(
                     "sw360 project with name '" + project.getName() + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+            throw new BadRequestClientException("Dependent document Id/ids not valid.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Project name field cannot be empty or contain only whitespace character");
         }
         return null;
@@ -796,7 +796,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         if (project.getReleaseIdToUsage() != null) {
             for (String releaseId : project.getReleaseIdToUsage().keySet()) {
                 if (isNullEmptyOrWhitespace(releaseId)) {
-                    throw new HttpMessageNotReadableException("Release Id can't be empty");
+                    throw new BadRequestClientException("Release Id can't be empty");
                 }
             }
         }
@@ -806,13 +806,13 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         RequestStatus requestStatus;
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
             requestStatus = sw360ProjectClient.updateProjectWithForceFlag(project, sw360User, true);
         } else {
             requestStatus = sw360ProjectClient.updateProject(project, sw360User);
         }
         if (requestStatus == RequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Project name field cannot be empty or contain only whitespace character");
         }
 
@@ -823,7 +823,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             return requestStatus;
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+            throw new BadRequestClientException("Dependent document Id/ids not valid.");
         } else if (requestStatus != RequestStatus.SENT_TO_MODERATOR && requestStatus != RequestStatus.SUCCESS) {
             throw new RuntimeException("sw360 project with name '" + project.getName() + " cannot be updated.");
         }
@@ -832,7 +832,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     public RequestStatus deleteProject(String projectId, User sw360User) throws TException {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
             return sw360ProjectClient.deleteProjectWithForceFlag(projectId, sw360User, true);
         } else {
             return sw360ProjectClient.deleteProject(projectId, sw360User);
@@ -843,7 +843,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         ProjectService.Iface sw360ProjectClient = getThriftProjectClient();
         List<Project> projects = sw360ProjectClient.getAccessibleProjectsSummary(sw360User);
         for (Project project : projects) {
-            if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+            if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
                 sw360ProjectClient.deleteProjectWithForceFlag(project.getId(), sw360User, true);
             } else {
                 sw360ProjectClient.deleteProject(project.getId(), sw360User);
@@ -1408,7 +1408,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         if (project.getReleaseIdToUsage() != null) {
             for (String releaseId : project.getReleaseIdToUsage().keySet()) {
                 if (isNullEmptyOrWhitespace(releaseId)) {
-                    throw new HttpMessageNotReadableException("Release Id can't be empty");
+                    throw new BadRequestClientException("Release Id can't be empty");
                 }
             }
         }
@@ -1418,13 +1418,13 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         }
 
         RequestStatus requestStatus;
-        if (Sw360ResourceServer.IS_FORCE_UPDATE_ENABLED) {
+        if (SW360Utils.readConfig(IS_FORCE_UPDATE_ENABLED, false)) {
             requestStatus = sw360ProjectClient.updateProjectWithForceFlag(project, sw360User, true);
         } else {
             requestStatus = sw360ProjectClient.updateProject(project, sw360User);
         }
         if (requestStatus == RequestStatus.NAMINGERROR) {
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Project name field cannot be empty or contain only whitespace character");
         }
         if(requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
@@ -1434,7 +1434,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             throw new RuntimeException("User cannot modify a closed project");
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
-            throw new HttpMessageNotReadableException("Dependent document Id/ids not valid.");
+            throw new BadRequestClientException("Dependent document Id/ids not valid.");
         } else if (requestStatus != RequestStatus.SENT_TO_MODERATOR && requestStatus != RequestStatus.SUCCESS) {
             throw new RuntimeException("sw360 project with name '" + project.getName() + " cannot be updated.");
         }

@@ -8,7 +8,6 @@
  */
 package org.eclipse.sw360.rest.resourceserver.user;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,19 +33,20 @@ import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.thrift.users.RestApiToken;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.server.EntityLinks;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -55,12 +55,11 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import org.springframework.data.domain.Pageable;
 import jakarta.servlet.http.HttpServletRequest;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +69,9 @@ import java.util.Collections;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.API_TOKEN_HASH_SALT;
+import static org.eclipse.sw360.rest.resourceserver.user.Sw360UserService.AUTHORITIES_READ;
+import static org.eclipse.sw360.rest.resourceserver.user.Sw360UserService.AUTHORITIES_WRITE;
+import static org.eclipse.sw360.rest.resourceserver.user.Sw360UserService.EXPIRATION_DATE_PROPERTY;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @BasePathAwareController
@@ -109,16 +111,14 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                     value = "luceneSearch", required = false) boolean luceneSearch,
             @RequestParam(value = "lastname", required = false) String lastname,
             @RequestParam(value = "department", required = false) String department,
-            @RequestParam(value = "usergroup", required = false) UserGroup usergroup)
-            throws TException, URISyntaxException, PaginationParameterException,
-            ResourceClassNotFoundException {
+            @RequestParam(value = "usergroup", required = false) UserGroup usergroup
+    ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         PaginationResult<User> paginationResult = null;
         List<User> sw360Users = new ArrayList<>();
         boolean isSearchByName = givenname != null && !givenname.isEmpty();
         boolean isSearchByLastName = lastname != null && !lastname.isEmpty();
         boolean isSearchByDepartment = CommonUtils.isNotNullEmptyOrWhitespace(department);
         boolean isUserGroup = usergroup != null && !Objects.equals(usergroup, "");
-        boolean isSearchEmail = CommonUtils.isNotNullEmptyOrWhitespace(email);
         if (luceneSearch) {
             Map<String, Set<String>> filterMap = new HashMap<>();
             if (CommonUtils.isNotNullEmptyOrWhitespace(givenname)) {
@@ -191,14 +191,12 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     @Operation(summary = "Get a single user.", description = "Get a single user by email.",
             tags = {"Users"})
     @RequestMapping(value = USERS_URL + "/{email:.+}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<User>> getUserByEmail(@Parameter(
-            description = "The email of the user to be retrieved.") @PathVariable("email") String email) {
+    public ResponseEntity<EntityModel<User>> getUserByEmail(
+            @Parameter(description = "The email of the user to be retrieved.")
+            @PathVariable("email") String email
+    ) {
         String decodedEmail;
-        try {
-            decodedEmail = URLDecoder.decode(email, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        decodedEmail = URLDecoder.decode(email, StandardCharsets.UTF_8);
 
         User sw360User = userService.getUserByEmail(decodedEmail);
         HalResource<User> halResource = createHalUser(sw360User);
@@ -210,8 +208,10 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     @Operation(summary = "Get a single user.", description = "Get a single user by id.",
             tags = {"Users"})
     @RequestMapping(value = USERS_URL + "/byid/{id:.+}", method = RequestMethod.GET)
-    public ResponseEntity<EntityModel<User>> getUser(@Parameter(
-            description = "The id of the user to be retrieved.") @PathVariable("id") String id) throws TException {
+    public ResponseEntity<EntityModel<User>> getUser(
+            @Parameter(description = "The id of the user to be retrieved.")
+            @PathVariable("id") String id
+    ) throws TException {
         User sw360User = userService.getUser(id);
         HalResource<User> halResource = createHalUser(sw360User);
         return new ResponseEntity<>(halResource, HttpStatus.OK);
@@ -221,10 +221,11 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             tags = {"Users"})
     @PostMapping(value = USERS_URL)
     public ResponseEntity<EntityModel<User>> createUser(
-            @Parameter(description = "The user to be created.") @RequestBody User user)
-            throws TException {
+            @Parameter(description = "The user to be created.")
+            @RequestBody User user
+    ) {
         if (CommonUtils.isNullEmptyOrWhitespace(user.getPassword())) {
-            throw new HttpMessageNotReadableException(
+            throw new BadRequestClientException(
                     "Password can not be null or empty or whitespace!");
         }
         String encodedPassword = passwordEncoder.encode(user.getPassword());
@@ -276,7 +277,9 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                             "releaseMODERATORS": false
                         }
                     }
-                    """)) @RequestBody Map<String, Object> userProfile) throws TException {
+                    """))
+            @RequestBody Map<String, Object> userProfile
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         sw360User = restControllerHelper.updateUserProfile(sw360User, userProfile,
                 setOfUserProfileFields);
@@ -311,9 +314,20 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             tags = {"Users"})
     @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.POST)
     public ResponseEntity<String> createUserRestApiToken(
-            @Parameter(description = "Token request", schema = @Schema(
-                    implementation = RestApiToken.class)) @RequestBody Map<String, Object> requestBody)
-            throws TException {
+            @Parameter(description = "Token request",
+                    schema = @Schema(
+                            type = "object",
+                            example = "{\n" +
+                              "  \"name\": \"my-new-token\",\n" +
+                              "  \"" + EXPIRATION_DATE_PROPERTY + "\": \"2025-12-31\",\n" +
+                              "  \"authorities\": [\n" +
+                              "  \"" + AUTHORITIES_READ + "\",\n" +
+                              "  \"" + AUTHORITIES_WRITE + "\"\n" +
+                              "  ]\n}",
+                            requiredProperties = {"name", "authorities", EXPIRATION_DATE_PROPERTY}
+                    ))
+            @RequestBody Map<String, Object> requestBody
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RestApiToken restApiToken = userService.convertToRestApiToken(requestBody, sw360User);
         String token = RandomStringUtils.random(20, true, true);
@@ -333,14 +347,13 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.DELETE)
     public ResponseEntity<String> revokeUserRestApiToken(
             @Parameter(description = "Name of token to be revoked.",
-                    example = "MyToken") @RequestParam("name") String tokenName)
-            throws TException {
+                    example = "MyToken")
+            @RequestParam("name") String tokenName
+    ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         if (!userService.isTokenNameExisted(sw360User, tokenName)) {
-            return new ResponseEntity<>(
-                    "Token not found: " + StringEscapeUtils.escapeHtml4(tokenName),
-                    HttpStatus.NOT_FOUND);
+            throw new ResourceNotFoundException("Token not found: " + StringEscapeUtils.escapeHtml4(tokenName));
         }
 
         sw360User.getRestApiTokens().removeIf(t -> t.getName().equals(tokenName));
@@ -417,7 +430,8 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             tags = {"Users"})
     @GetMapping(value = USERS_URL + "/departments")
     public ResponseEntity<?> getExistingDepartments(
-            @Parameter(description = "Type of department (primary, secondary)") @RequestParam(value = "type", required = false) String type
+            @Parameter(description = "Type of department (primary, secondary)")
+            @RequestParam(value = "type", required = false) String type
     ) {
         if (!CommonUtils.isNotNullEmptyOrWhitespace(type)) {
             return new ResponseEntity<>(userService.getAvailableDepartments(), HttpStatus.OK);

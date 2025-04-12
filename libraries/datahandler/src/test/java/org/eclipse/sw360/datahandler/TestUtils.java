@@ -50,6 +50,19 @@ import static org.mockito.Mockito.mock;
  */
 public class TestUtils {
     public static final String BLACK_HOLE_ADDRESS = "100::/64";
+    public static final boolean IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED;
+    public static final boolean IS_ADMIN_PRIVATE_ACCESS_ENABLED;
+    public static final boolean IS_FORCE_UPDATE_ENABLED;
+    public static final boolean IS_BULK_RELEASE_DELETING_ENABLED;
+
+    static {
+        IS_COMPONENT_VISIBILITY_RESTRICTION_ENABLED = Boolean.parseBoolean(
+                System.getProperty("RunComponentVisibilityRestrictionTest", "false"));
+        IS_ADMIN_PRIVATE_ACCESS_ENABLED = Boolean.parseBoolean(
+                System.getProperty("RunPrivateProjectAccessTest", "false"));
+        IS_FORCE_UPDATE_ENABLED = Boolean.parseBoolean(System.getProperty("RunRestForceUpdateTest", "false"));
+        IS_BULK_RELEASE_DELETING_ENABLED = Boolean.parseBoolean(System.getProperty("RunBulkReleaseDeletingTest", "false"));
+    }
 
     private static final List<String> dbNames = ImmutableList.of(
             DatabaseSettingsTest.COUCH_DB_DATABASE,

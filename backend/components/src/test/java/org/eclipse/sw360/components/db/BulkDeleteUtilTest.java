@@ -10,22 +10,20 @@
 
 package org.eclipse.sw360.components.db;
 
-import org.eclipse.sw360.common.utils.BackendUtils;
 import org.eclipse.sw360.datahandler.TestUtils;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
+import org.eclipse.sw360.datahandler.common.SW360ConfigKeys;
+import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.db.ComponentDatabaseHandler;
 import org.eclipse.sw360.datahandler.db.BulkDeleteUtil;
 import org.eclipse.sw360.datahandler.entitlement.ComponentModerator;
 import org.eclipse.sw360.datahandler.entitlement.ProjectModerator;
 import org.eclipse.sw360.datahandler.entitlement.ReleaseModerator;
-import org.eclipse.sw360.datahandler.permissions.PermissionUtils;
 import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.components.*;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectProjectRelationship;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectRelationship;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
@@ -34,13 +32,13 @@ import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.common.collect.ImmutableMap;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -51,6 +49,10 @@ import java.util.*;
 
 import static org.eclipse.sw360.datahandler.TestUtils.assertTestString;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.withSettings;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BulkDeleteUtilTest {
@@ -118,7 +120,18 @@ public class BulkDeleteUtilTest {
     ReleaseModerator releaseModerator;
     @Mock
     ProjectModerator projectModerator;
-    
+
+    private static MockedStatic<SW360Utils> mockedStatic;
+
+    @BeforeClass
+    public static void setUpOnce() {
+        mockedStatic = mockStatic(SW360Utils.class, withSettings().defaultAnswer(Answers.CALLS_REAL_METHODS));
+        mockedStatic.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_ADMIN_PRIVATE_ACCESS_ENABLED), any()))
+                .thenReturn(TestUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED);
+        mockedStatic.when(() -> SW360Utils.readConfig(eq(SW360ConfigKeys.IS_BULK_RELEASE_DELETING_ENABLED), any()))
+                .thenReturn(TestUtils.IS_BULK_RELEASE_DELETING_ENABLED);
+    }
+
     @Before
     public void setUp() throws Exception {
         assertTestString(dbName);
@@ -151,6 +164,7 @@ public class BulkDeleteUtilTest {
         bulkDeleteUtil = handler.getBulkDeleteUtil();
         
         treeNodeCreateReleaseCounter = 0;
+
     }
 
     @After
@@ -1437,10 +1451,10 @@ public class BulkDeleteUtilTest {
     }
     
     private boolean isFeatureEnable() {
-        if (!BackendUtils.IS_BULK_RELEASE_DELETING_ENABLED) {
+        if (!TestUtils.IS_BULK_RELEASE_DELETING_ENABLED) {
             return false;
         }
-        if (!PermissionUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED) {
+        if (!TestUtils.IS_ADMIN_PRIVATE_ACCESS_ENABLED) {
             return false;
         }
         return true;
@@ -1491,4 +1505,10 @@ public class BulkDeleteUtilTest {
         }
     }
 
+    @AfterClass
+    public static void tearDownOnce() {
+        if (mockedStatic != null) {
+            mockedStatic.close();  // Ensure cleanup after all tests
+        }
+    }
 }

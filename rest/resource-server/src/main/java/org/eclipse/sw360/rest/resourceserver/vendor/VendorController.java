@@ -21,13 +21,16 @@ import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
+import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelProcessor;
 import org.springframework.hateoas.CollectionModel;
@@ -83,7 +86,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
             @RequestParam(value = "searchText", required = false) String searchText,
             Pageable pageable,
             HttpServletRequest request
-            ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
+    ) throws URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         List<Vendor> vendors = null;
         if (!isNullOrEmpty(searchText)) {
             vendors = vendorService.searchVendors(searchText);
@@ -133,7 +136,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
     public ResponseEntity<CollectionModel<EntityModel<Release>>> getReleases(
             @Parameter(description = "The id of the vendor to get.")
             @PathVariable("id") String id
-    ) throws TException {
+    ) throws SW360Exception {
         try {
             Set<Release> releases = vendorService.getAllReleaseList(id);
             List<EntityModel<Release>> resources = new ArrayList<>();
@@ -146,7 +149,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
             HttpStatus status = relResources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
             return new ResponseEntity<>(relResources, status);
         } catch (TException e) {
-            throw new TException(e.getMessage());
+            throw new SW360Exception(e.getMessage());
         }
     }
 
@@ -163,13 +166,13 @@ public class VendorController implements RepresentationModelProcessor<Repository
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         Vendor sw360Vendor = vendorService.getVendorById(id);
         if (sw360Vendor == null) {
-            return new ResponseEntity<>("Vendor with id " + id + " not found.", HttpStatus.NOT_FOUND);
+            throw new ResourceNotFoundException("Vendor with id " + id + " not found.");
         }
         RequestStatus requestStatus = vendorService.deleteVendorByid(id, sw360User);
         if (requestStatus == RequestStatus.SUCCESS) {
             return new ResponseEntity<>("Vendor with full name " + sw360Vendor.getFullname() + " deleted successfully.", HttpStatus.OK);
         } else {
-            return new ResponseEntity<>("Vendor with full name " + sw360Vendor.getFullname() + " cannot be deleted.", HttpStatus.BAD_REQUEST);
+            throw new BadRequestClientException("Vendor with full name " + sw360Vendor.getFullname() + " cannot be deleted.");
         }
     }
 
@@ -235,7 +238,7 @@ public class VendorController implements RepresentationModelProcessor<Repository
     ) {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         if (vendor.getFullname() == null && vendor.getShortname() == null && vendor.getUrl() == null) {
-            return new ResponseEntity<>("Value cannot be null", HttpStatus.BAD_REQUEST);
+            throw new BadRequestClientException("Vendor cannot be null");
         }
         RequestStatus status = vendorService.vendorUpdate(vendor, sw360User, id);
         if (RequestStatus.SUCCESS.equals(status)) {
