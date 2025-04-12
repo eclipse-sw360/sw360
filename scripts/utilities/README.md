@@ -2,11 +2,11 @@
 
 This folder contains utility scripts which implement the database schema changes.
 
-The scripts are written in `python3` and depend on the `couchdb` library. The CouchDB server has to be running and accessible on `localhost:5984`.
+The scripts are written in `python2` and depend on `python2-couchdb`. The couchdb has to run and be accessible on `localhost:5984`.
 
 To execute the scripts, follow these steps:
 1. Ensure that CouchDB is accessible (try to open `http://localhost:5984/_utils/`).
-2. Run the utility scripts (e.g., for each script call `python3 /PATH/TO/00?_some_utility_script.py`).
+2. Run the utility scripts (i.e. for each script call `python2 /PATH/TO/00?_some_utility_script.py`).
     * Be aware that some scripts use an internal dry-run switch which you have to change manually in the script's code.
 
 ## List and Description of Scripts
@@ -35,10 +35,7 @@ To execute the scripts, follow these steps:
 ## Running the Scripts for a Database Not Running on Localhost
 To run the scripts on a remote CouchDB instance, follow these steps:
 1. Ensure that the remote CouchDB is accessible and you have the necessary credentials.
-2. Update the script to point to the remote CouchDB URL.
+2. Update the CouchDB URL directly in the scripts.
 3. Run the script with the necessary parameters.
 
-Example:
-```bash
-export COUCHDB_URL=http://remote-couchdb-server:5984
-python3 /PATH/TO/00?_some_utility_script.py
+Note: These scripts do not read environment variables. You need to modify the connection information directly in the script files.
