@@ -451,32 +451,59 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             tags = {"Projects"}
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/licenseClearing", method = RequestMethod.GET)
-    public ResponseEntity licenseClearing(
+    public ResponseEntity<HalResource<Project>> licenseClearing(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String id,
             @Parameter(description = "Get the transitive releases.")
-            @RequestParam(value = "transitive", required = true) boolean transitive
+            @RequestParam(value = "transitive", required = true) boolean transitive,
+            @Parameter(description = "Type of the component")
+            @RequestParam(value = "componentType", required = false) List<ComponentType> componentType,
+            @Parameter(description = "Type of release relation")
+            @RequestParam(value = "releaseRelation", required = false) ReleaseRelationship releaseRelation,
+            @Parameter(description = "Clearing state of the release")
+            @RequestParam(value = "clearingState", required = false) List<ClearingState> clearingState
     ) throws TException {
 
-		final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
-		Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+        final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+        Project sw360Project = projectService.getProjectForUserById(id, sw360User);
 
-		final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
-		List<Release> releases = releaseIds.stream().map(relId -> wrapTException(() -> {
-			final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
-			releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
-			return sw360Release;
-		})).collect(Collectors.toList());
+        //check the below condition when releaseRelation is not null
+        if (releaseRelation != null) {
+            Map<String, ProjectReleaseRelationship> filteredReleaseIdToUsage = sw360Project.getReleaseIdToUsage().entrySet().stream()
+                .filter(entry -> entry.getValue().getReleaseRelation() == releaseRelation)
+                .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    Map.Entry::getValue
+                ));
+            sw360Project.setReleaseIdToUsage(filteredReleaseIdToUsage);
+        }
 
-		List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
-			final Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedRelease(sw360Release);
-			final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease);
-			return releaseResource;
-		})).collect(Collectors.toList());
+        final Set<String> releaseIds = projectService.getReleaseIds(id, sw360User, transitive);
+        List<Release> releases = projectService.getFilteredReleases(releaseIds, sw360User, clearingState, componentType, releaseService);
 
-		HalResource<Project> userHalResource = createHalLicenseClearing(sw360Project, releaseList);
-		return new ResponseEntity<>(userHalResource, HttpStatus.OK);
-	}
+        // Extract all release IDs from the provided list
+        Set<String> validReleaseIds = releases.stream()
+            .map(Release::getId)
+            .collect(Collectors.toSet());
+
+        // Filter the releaseIdToUsage map
+        Map<String, ProjectReleaseRelationship> filteredReleaseIdData = sw360Project.getReleaseIdToUsage().entrySet().stream()
+            .filter(entry -> validReleaseIds.contains(entry.getKey()))
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue
+            ));
+        sw360Project.setReleaseIdToUsage(filteredReleaseIdData);
+
+        List<EntityModel<Release>> releaseList = releases.stream().map(sw360Release -> wrapTException(() -> {
+            final Release embeddedRelease = restControllerHelper.convertToEmbeddedLinkedRelease(sw360Release);
+            final HalResource<Release> releaseResource = restControllerHelper.addEmbeddedReleaseLinks(embeddedRelease);
+            return releaseResource;
+        })).collect(Collectors.toList());
+
+        HalResource<Project> userHalResource = createHalLicenseClearing(sw360Project, releaseList);
+        return new ResponseEntity<>(userHalResource, HttpStatus.OK);
+    }
 
     @Operation(
             description = "Get a single project.",
