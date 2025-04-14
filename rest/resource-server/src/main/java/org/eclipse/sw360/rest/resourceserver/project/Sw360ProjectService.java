@@ -39,6 +39,8 @@ import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.attachments.*;
+import org.eclipse.sw360.datahandler.thrift.components.ClearingState;
+import org.eclipse.sw360.datahandler.thrift.components.ComponentType;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseClearingStatusData;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
@@ -1758,5 +1760,32 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             log.debug("No changes detected for release: {}", release.getId());
         }
         return isUpdated;
+    }
+
+    public List<Release> getFilteredReleases(Set<String> releaseIds, User sw360User, List<ClearingState> clearingState, List<ComponentType> componentType, Sw360ReleaseService releaseService) throws TException {
+        List<Release> releases = releaseIds.stream().map(relId -> wrapTException(() -> {
+            final Release sw360Release = releaseService.getReleaseForUserById(relId, sw360User);
+            releaseService.setComponentDependentFieldsInRelease(sw360Release, sw360User);
+            return sw360Release;
+        }))
+        .filter(Objects::nonNull)
+        .filter(release -> {
+        // Filter by componentType if provided
+        if (componentType != null && !componentType.isEmpty()) {
+            ComponentType releaseType = release.getComponentType();
+            if (releaseType == null || componentType.stream().noneMatch(input -> input == releaseType)) {
+                return false;
+            }
+        }
+        // Filter by clearingState if provided
+        if (clearingState != null && !clearingState.isEmpty()) {
+            ClearingState releaseState = release.getClearingState();
+            if (releaseState == null || clearingState.stream().noneMatch(input -> input == releaseState)) {
+                return false;
+            }
+        }
+        return true;
+        }).collect(Collectors.toList());
+        return releases;
     }
 }
