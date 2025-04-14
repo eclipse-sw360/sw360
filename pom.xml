@@ -132,7 +132,7 @@
     <jgiven.version>2.0.2</jgiven.version>
     <jose4j.version>0.9.6</jose4j.version>
     <json.version>20250107</json.version>
-    <joda-time.version>2.13.0</joda-time.version>
+    <joda-time.version>2.14.0</joda-time.version>
     <junit-dataprovider.version>1.13.1</junit-dataprovider.version>
     <junit.version>4.13.2</junit.version>
     <log4j2.version>2.24.3</log4j2.version>
