@@ -1,0 +1,94 @@
+# Copyright Siemens AG, 2013-2016, 2019. Part of the SW360 Portal Project.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+# --------------------------------------------------#
+#                       NOTE                        #
+#                                                   #
+# This property file only lists the properties for  #
+# this module as a reference to lookup.             #
+#                                                   #
+# If you want to set these properties, you should   #
+# create a file named '/etc/sw36/sw360.properties'  #
+# on your system and set the properties in there.   #
+#                                                   #
+# The values given here are the default values.     #
+# --------------------------------------------------#
+
+
+# ***************************************
+# Portlet Properties
+# ***************************************
+
+# ---------------------------------------
+# Predefined values for select boxes and
+# autocompletion
+#
+# They are only used in the UI and not
+# for validation.
+# ---------------------------------------
+
+
+## API Token generation
+rest.write.access.usergroup=USER
+rest.admin.access.usergroup=ADMIN
+rest.apitoken.read.validity.days=90
+rest.apitoken.write.validity.days=30
+rest.apitoken.hash.salt=$REST_APITOKEN_HASH_SALT
+
+# where the frontend searches the backend
+backend.url= http://127.0.0.1:8080
+
+domain=Application Software, Documentation, Embedded Software, Hardware, Test and Diagnostics
+
+org.eclipse.sw360.licensinfo.projectclearing.templatemapping=Default:templateReport,SHS:SHS_templateReport
+
+# ---------------------------------------
+# Other
+# ---------------------------------------
+
+# ---------------------------------------
+# Activation of portlets and components
+#
+# There are no default values for these
+# settings therefore they sould be
+# configured in any case
+# ---------------------------------------
+
+send.project.spreadsheet.export.to.mail.enabled=true
+
+# ---------------------------------------
+# SVM Properties
+# ---------------------------------------
+svm.sw360.api.url=$SVM_SW360_API_URL/portal/api/custom/sw360/applications.json
+svm.sw360.certificate.filename=SVM.CERT.SIEMENS.COM.pfx
+svm.sw360.certificate.passphrase=$SVM_SW360_CERTIFICATE_PASSPHRASE
+svm.sw360.jks.password=$SVM_SW360_JKS_PASSWORD
+
+svm.components.url=$SVM_SW360_API_URL/portal/api/v1/public/components
+svm.actions.url=$SVM_SW360_API_URL/portal/api/v1/public/actions
+svm.priorities.url=$SVM_SW360_API_URL/portal/api/v1/public/priorities
+svm.components.vulnerabilities.url=$SVM_SW360_API_URL/portal/api/v1/public/components/#compVmId#/notifications
+svm.vulnerabilities.url=$SVM_SW360_API_URL/portal/api/v1/public/notifications
+
+svm.base.path=$SVM_SW360_API_URL
+svm.api.root.path=/portal/api/v1/public
+svm.component.id=com.siemens.svm.component.id
+mainline.component.id=com.siemens.mainl.component.id
+svm.component.id.key=svm_component_id
+svm.short.status=com.siemens.svm.component.short.status
+svm.short.status.key=short_status
+svm.scheduler.email=svm.component.mapping@siemens.com
+svm.monitoringlist.id=com.siemens.svm.monitoringlist.id
+
+# ---------------------------------------
+# JWKS Properties
+# ---------------------------------------
+jwks.validation.enabled=true
+jwks.issuer.url=$JWKS_ISSUER/
+jwks.endpoint.url=JWKS_ISSUER/client-management/.well-known/jwks.json

@@ -12,21 +12,17 @@ include:
     ref: v2.4.0 # Insert desired version from https://code.siemens.com/awesome-ci/templates/-/releases
     file:
       - docker/build-docker-image.gitlab-ci.yml
+      - general/use-proxy.gitlab-ci.yml
 
 variables:
-  http_proxy: $CODE_PROXY
-  https_proxy: $CODE_PROXY
-  HTTP_PROXY: $CODE_PROXY
-  HTTPS_PROXY: $CODE_PROXY
-  no_proxy: "${CODE_NO_PROXY},.siemens.net,.siemens.com,.siemens.co.in,couchdb"
   COUCHDB_USER: $COUCHDB_TEST_USER
   COUCHDB_PASSWORD: $COUCHDB_TEST_PWD
   BUILD_ARTIFACT_ROOT: $CI_PROJECT_DIR/artifacts
-  _JAVA_OPTIONS: -Djdk.net.URLClassPath.disableClassPathURLCheck=true -DSPDXParser.OnlyUseLocalLicenses=true -Dhttp.proxySet=true -Dhttp.proxyHost=$CODE_PROXY_HOST -Dhttp.proxyPort=$CODE_PROXY_PORT -Dhttp.nonProxyHosts=localhost|couchdb
+  _JAVA_OPTIONS: -Djdk.net.URLClassPath.disableClassPathURLCheck=true -DSPDXParser.OnlyUseLocalLicenses=true
   GRADLE_USER_HOME: $HOME/.gradle
   # Use m2 repository in build dir for caching
   MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Xmx3072m"
-  KC_VERSION: 26.2.0
+  THRIFT_DIR: ${CI_PROJECT_DIR}/dist/thrift-${THRIFT_VERSION}
 
 ################
 # Helper anchors
@@ -53,30 +49,42 @@ variables:
       "$CODE_PROXY_HOST" "$CODE_PROXY_PORT" >> $GRADLE_USER_HOME/gradle.properties
 
 .install_thrift: &install_thrift
-  - apt-get update -qq
-  - DEBIAN_FRONTEND=noninteractive apt-get install -yq build-essential libevent-dev libtool flex bison pkg-config libssl-dev git cmake
-  - chmod +x third-party/thrift/install-thrift.sh
-  - DESTDIR=$CI_PROJECT_DIR/dist/thrift-$THRIFT_VERSION third-party/thrift/install-thrift.sh
+  - |
+    if [ ! -d $THRIFT_DIR ]; then
+      mkdir -p $THRIFT_DIR;
+      apt-get update -qq
+      DEBIAN_FRONTEND=noninteractive apt-get install -yq build-essential libevent-dev libtool flex bison pkg-config libssl-dev git cmake
+      chmod +x third-party/thrift/install-thrift.sh
+      DESTDIR=$THRIFT_DIR third-party/thrift/install-thrift.sh
+      # Create GitLab package
+      tar -czvf $CI_PROJECT_DIR/dist/thrift-${THRIFT_VERSION}.tar.gz -C $THRIFT_DIR .
+      curl --location --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+           --upload-file $CI_PROJECT_DIR/dist/thrift-${THRIFT_VERSION}.tar.gz \
+           "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/thrift/${THRIFT_VERSION}/thrift-${THRIFT_VERSION}.tar.gz"
+    fi
 
 build:
   stage: build
   image: maven:3-eclipse-temurin-21
+  extends: .awesome-ci/use-proxy
   services:
     - couchdb:3.4
   before_script:
+    - export _JAVA_OPTIONS="$_JAVA_OPTIONS -Dhttp.proxySet=true $JAVA_PROXY_OPTS"
+    - export no_proxy="${no_proxy},couchdb"
     - mkdir -p ${BUILD_ARTIFACT_ROOT}/tomcat ${BUILD_ARTIFACT_ROOT}/keycloak /etc/sw360/ $CI_PROJECT_DIR/.m2/repository
 
     - *setup_proxies
 
     - cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/
-    - sed -i 's/^\(couchdb.url\s*=\).*/\1 http:\/\/couchdb:5984/' /etc/sw360/couchdb-test.properties
+    - sed -i 's/^\(couchdb.url\s*=\).*/\1 '${COUCHDB_URL//\//\\/}'/' /etc/sw360/couchdb-test.properties
     - sed -i 's/^\(couchdb.user\s*=\).*/\1 '${COUCHDB_TEST_USER}'/' /etc/sw360/couchdb-test.properties
     - sed -i 's/^\(couchdb.password\s*=\).*/\1 '${COUCHDB_TEST_PWD}'/' /etc/sw360/couchdb-test.properties
 
     - *install_thrift
 
     # Check if CouchDB is running
-    - curl -s couchdb:5984/_up | grep -q '"status":"ok"'
+    - curl -s $COUCHDB_URL/_up | grep -q '"status":"ok"'
 
     # Checkout branch for proper footer
     - git checkout ${CI_COMMIT_REF_NAME}
@@ -84,10 +92,10 @@ build:
   script:
     # Build code and create artifacts
     - |
-      export PATH=$PATH:$CI_PROJECT_DIR/dist/thrift-$THRIFT_VERSION/usr/local/bin
+      export PATH=$PATH:$THRIFT_DIR/usr/local/bin
       mvn clean install \
         --no-transfer-progress \
-        -P deploy -Dhelp-docs=true \
+        -P deploy \
         -Dbase.deploy.dir=${BUILD_ARTIFACT_ROOT}/tomcat \
         -Dlistener.deploy.dir=${BUILD_ARTIFACT_ROOT}/keycloak \
         -DRunComponentVisibilityRestrictionTest=false \
@@ -95,14 +103,20 @@ build:
         -DRunRestForceUpdateTest=false \
         -fae \
         -Dmaven.plugin.validation=VERBOSE
+  after_script:
+    # Get thrift package to artifact as kaniko does not have curl
+    - |
+      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+           --location \
+           --output ${CI_PROJECT_DIR}/thrift-${THRIFT_VERSION}.tar.gz \
+           "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/thrift/${THRIFT_VERSION}/thrift-${THRIFT_VERSION}.tar.gz"
   cache:
     - key: maven
       paths:
         - $CI_PROJECT_DIR/.m2/repository
     - key: thrift-$THRIFT_VERSION
       paths:
-        - $CI_PROJECT_DIR/dist/thrift-$THRIFT_VERSION
-        - /var/cache/deps/thrift-$THRIFT_VERSION.tar.gz
+        - $THRIFT_DIR
   artifacts:
     when: always
     reports:
@@ -111,8 +125,9 @@ build:
         - ./**/target/failsafe-reports/TEST-*.xml
     paths:
       - $BUILD_ARTIFACT_ROOT/keycloak
+      - ${CI_PROJECT_DIR}/thrift-${THRIFT_VERSION}.tar.gz
 
-Docker-latest:
+docker-keycloak:
   extends: .awesome-ci/build-docker-image
   stage: container-image
   rules:
@@ -123,6 +138,28 @@ Docker-latest:
     IMAGE_TAG: $KC_VERSION
     BUILD_CONTEXT: $BUILD_ARTIFACT_ROOT/keycloak
     DOCKERFILE: $CI_PROJECT_DIR/Dockerfile.keycloak
+  needs:
+    - job: build
+      artifacts: true
+
+docker-latest:
+  extends: .awesome-ci/build-docker-image
+  stage: container-image
+  services:
+    - couchdb:3.4
+  rules:
+      - if: $CI_COMMIT_BRANCH == "mainct"
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/sw360-new
+    IMAGE_TAG: latest
+    DOCKERFILE: $CI_PROJECT_DIR/Dockerfile.internal
+    EXTRA_ARGUMENTS: --build-arg CODE_PROXY_HOST=$CODE_PROXY_HOST --build-arg CODE_PROXY_PORT=$CODE_PROXY_PORT
+      --build-arg THRIFT_VERSION=$THRIFT_VERSION --build-arg DEFAULT_BRANCH=mainct
+      --build-arg COUCHDB_URL=$COUCHDB_URL --build-arg COUCHDB_USER=$COUCHDB_TEST_USER
+      --build-arg COUCHDB_PASSWORD=$COUCHDB_TEST_PWD
+  before_script:
+    - export NO_PROXY="${NO_PROXY},couchdb"
+    - export no_proxy=$NO_PROXY
   needs:
     - job: build
       artifacts: true

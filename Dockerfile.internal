@@ -1,0 +1,91 @@
+# Copyright Siemens AG, 2025.
+#
+# This program and the accompanying materials are made
+# available under the terms of the Eclipse Public License 2.0
+# which is available at https://www.eclipse.org/legal/epl-2.0/
+#
+# SPDX-License-Identifier: EPL-2.0
+
+#------------------------------------------------------------------------------
+# SW360 builder
+# Take most of the configurations as ARG, setup proxy and build sw360
+FROM maven:3-eclipse-temurin-21 as build
+
+ARG http_proxy
+ARG https_proxy
+ARG no_proxy
+ARG CODE_PROXY_HOST
+ARG CODE_PROXY_PORT
+ARG THRIFT_VERSION
+ARG DEFAULT_BRANCH
+ARG COUCHDB_URL
+ARG COUCHDB_USER
+ARG COUCHDB_PASSWORD
+
+# Coordination variables
+ENV BUILD_ARTIFACT_ROOT=/build/artifacts
+ENV KEYCLOAK_ARTIFACT_ROOT=/build/keycloak
+
+# Variables required for build
+ENV GRADLE_USER_HOME=~/.gradle
+ENV THRIFT_DIR=/build/sw360/dist/thrift-$THRIFT_VERSION
+ENV PATH=$PATH:$THRIFT_DIR/usr/local/bin
+ENV _JAVA_OPTIONS="-Djdk.net.URLClassPath.disableClassPathURLCheck=true -DSPDXParser.OnlyUseLocalLicenses=true -Dhttp.proxySet=true -Dhttp.proxyHost=$CODE_PROXY_HOST -Dhttp.proxyPort=$CODE_PROXY_PORT -Dhttp.nonProxyHosts=localhost|couchdb"
+ENV MAVEN_OPTS="-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Xmx3072m"
+
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /build/sw360
+
+RUN mkdir -p ${BUILD_ARTIFACT_ROOT} ${KEYCLOAK_ARTIFACT_ROOT} /etc/sw360/ ~/.m2/repository \
+ && mkdir -p /etc/apt/apt.conf.d \
+ && printf "Acquire::http::proxy \"%s\";\nAcquire::https::proxy \"%s\";\n" "${http_proxy}" "${https_proxy}" > /etc/apt/apt.conf.d/95proxy \
+ && printf '<settings><mirrors><mirror><mirrorOf>*</mirrorOf><name>remote-repos</name><url>https://devops.bt.siemens.com/artifactory/maven2-all</url><id>remote-repos</id></mirror></mirrors></settings>' > ~/.m2/settings.xml \
+ && mkdir -p $GRADLE_USER_HOME \
+ && printf "systemProp.http.proxyHost=%s\nsystemProp.http.proxyPort=%s\nsystemProp.http.nonProxyHosts='%s'\nsystemProp.https.proxyHost=%s\nsystemProp.https.proxyPort=%s\n" "$CODE_PROXY_HOST" "$CODE_PROXY_PORT" "localhost|couchdb|*.siemens.com|*.siemens.de|*.siemens.co.in" "$CODE_PROXY_HOST" "$CODE_PROXY_PORT" >> $GRADLE_USER_HOME/gradle.properties
+
+COPY . .
+
+RUN mkdir -p $THRIFT_DIR \
+ && tar -xzvf thrift-$THRIFT_VERSION.tar.gz -C $THRIFT_DIR \
+ && cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/ \
+ && sed -i 's/^\(couchdb.url\s*=\).*/\1 '${COUCHDB_URL//\//\\/}'/' /etc/sw360/couchdb-test.properties \
+ && sed -i 's/^\(couchdb.user\s*=\).*/\1 '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties \
+ && sed -i 's/^\(couchdb.password\s*=\).*/\1 '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties \
+ && curl -s $COUCHDB_URL/_up | grep -q '"status":"ok"' \
+ && git checkout ${DEFAULT_BRANCH}
+
+RUN mvn clean install \
+        --no-transfer-progress \
+        -P deploy \
+        -Dbase.deploy.dir=${BUILD_ARTIFACT_ROOT} \
+        -Dlistener.deploy.dir=${KEYCLOAK_ARTIFACT_ROOT} \
+        -DRunComponentVisibilityRestrictionTest=false \
+        -DRunPrivateProjectAccessTest=false \
+        -DRunRestForceUpdateTest=false \
+        -fae \
+        -DskipTests=true \
+        -Dmaven.plugin.validation=VERBOSE
+
+#------------------------------------------------------------------------------
+# SW360
+# Copy build wars and configuration files. Offload configuration file update to
+# docker-entrypoint.sh to do this at every container start.
+FROM tomcat:11-jre21-temurin-noble
+
+ARG TOMCAT_DIR=${CATALINA_HOME:-/usr/local/tomcat}
+
+WORKDIR /app/docker-config
+
+# Copy the webapps
+COPY --from=build  /build/artifacts/webapps/*.war ${TOMCAT_DIR}/webapps/
+
+# Copy the configuration files
+COPY ./scripts/docker-config .
+
+# Make entrypoint executable
+RUN chmod a+x ./docker-entrypoint.sh
+
+EXPOSE 8080
+
+ENTRYPOINT ["/app/docker-config/docker-entrypoint.sh"]
