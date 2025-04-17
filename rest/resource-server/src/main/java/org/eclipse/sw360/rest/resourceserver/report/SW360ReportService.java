@@ -10,21 +10,15 @@ import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTExcepti
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;
-import org.eclipse.sw360.datahandler.common.CommonUtils;
-import org.eclipse.sw360.datahandler.common.SW360Constants;
-import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.ProjectReleaseRelationship;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
-import org.eclipse.sw360.datahandler.thrift.ThriftClients;
+import org.eclipse.sw360.datahandler.common.*;
+import org.eclipse.sw360.datahandler.thrift.*;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentType;
 import org.eclipse.sw360.datahandler.thrift.attachments.SourcePackageUsage;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
@@ -39,23 +33,17 @@ import org.eclipse.sw360.exporter.ReleaseExporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.eclipse.sw360.datahandler.thrift.RequestSummary;
-import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 
 import lombok.RequiredArgsConstructor;
 
 import static org.eclipse.sw360.rest.resourceserver.Sw360ResourceServer.REPORT_FILENAME_MAPPING;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.sw360.datahandler.thrift.Source;
 import org.eclipse.sw360.datahandler.thrift.attachments.Attachment;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentUsage;
 import org.eclipse.sw360.datahandler.thrift.attachments.UsageData;
@@ -76,12 +64,8 @@ import com.google.common.base.Strings;
 import lombok.NonNull;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentStreamConnector;
 
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
@@ -236,8 +220,16 @@ public class SW360ReportService {
 
     public ByteBuffer getLicenseInfoBuffer(User sw360User, String id, String generatorClassName,
                                            String variant, String template, String externalIds,
-                                           boolean excludeReleaseVersion) throws TException {
+                                           boolean excludeReleaseVersion, String selectedRelRelationship) throws TException {
         final Project sw360Project = projectService.getProjectForUserById(id, sw360User);
+
+        List<String> selectedReleaseRelationships =  getSelectedReleaseRationships(selectedRelRelationship);
+        final Set<ReleaseRelationship> listOfSelectedRelationships = selectedReleaseRelationships.stream()
+                .map(rel -> ThriftEnumUtils.stringToEnum(rel, ReleaseRelationship.class)).filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        final Set<String> listOfSelectedRelationshipsInString = listOfSelectedRelationships.stream().map(ReleaseRelationship::name)
+                .collect(Collectors.toSet());
 
         List<ProjectLink> mappedProjectLinks = projectService.createLinkedProjects(sw360Project,
                 projectService.filterAndSortAttachments(SW360Constants.LICENSE_INFO_ATTACHMENT_TYPES), true, sw360User);
@@ -261,7 +253,7 @@ public class SW360ReportService {
         final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachments = new HashMap<>();
 
         getSelectedAttchIdsAndExcludedLicInfo(sw360User, mappedProjectLinks, releaseIdToExcludedLicenses,
-                usedAttachmentContentIds, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments);
+                usedAttachmentContentIds, selectedReleaseAndAttachmentIds, excludedLicensesPerAttachments, listOfSelectedRelationshipsInString);
 
         String outputGeneratorClassNameWithVariant = generatorClassName + "::" + variant;
         String fileName = "";
@@ -277,15 +269,27 @@ public class SW360ReportService {
         return licenseInfoFile.bufferForGeneratedOutput();
     }
 
+    private List<String> getSelectedReleaseRationships(String selectedRelRelationship) {
+        List<String> selectedReleaseRelationships = null;
+        if (!CommonUtils.isNullEmptyOrWhitespace(selectedRelRelationship)) {
+            selectedReleaseRelationships = Arrays.asList(selectedRelRelationship.split(","));
+        }
+        return selectedReleaseRelationships;
+    }
+
     private void getSelectedAttchIdsAndExcludedLicInfo(User sw360User, List<ProjectLink> mappedProjectLinks,
                                                        Map<Source, Set<String>> releaseIdToExcludedLicenses, Map<String, Boolean> usedAttachmentContentIds,
                                                        final Map<String, Map<String, Boolean>> selectedReleaseAndAttachmentIds,
-                                                       final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachments) {
+                                                       final Map<String, Set<LicenseNameWithText>> excludedLicensesPerAttachments,
+                                                       Set<String> listOfSelectedRelationshipsInString) {
         mappedProjectLinks.forEach(projectLink -> wrapTException(() -> projectLink.getLinkedReleases().stream()
                 .filter(ReleaseLink::isSetAttachments).forEach(releaseLink -> {
                     String releaseLinkId = releaseLink.getId();
                     Set<String> excludedLicenseIds = releaseIdToExcludedLicenses.get(Source.releaseId(releaseLinkId));
 
+                    if(!listOfSelectedRelationshipsInString.contains(releaseLink.getReleaseRelationship().name())){
+                        return;
+                    }
                     if (!selectedReleaseAndAttachmentIds.containsKey(releaseLinkId)) {
                         selectedReleaseAndAttachmentIds.put(releaseLinkId, new HashMap<>());
                     }
