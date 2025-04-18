@@ -162,6 +162,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
     private Project project8;
     private Set<Project> projectList = new HashSet<>();
     private Attachment attachment;
+    private Release release;
 
     @Before
     public void before() throws TException, IOException {
@@ -496,6 +497,7 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
         release5.setReleaseDate("2016-12-17");
         release5.setVersion("2.3.1");
         release5.setCreatedOn("2016-12-28");
+        release = release5.deepCopy();
 
         Project project9 = new Project();
         project9.setId("0000007");
@@ -3289,12 +3291,21 @@ public class ProjectSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_add_license_to_linked_releases() throws Exception {
-        String projectId = "1234567";
-        when(projectServiceMock.addLicenseToLinkedReleases(eq(projectId), any(User.class))).thenReturn(RequestStatus.SUCCESS);
+        String projectId = project.getId();
+        when(projectServiceMock.addLicenseToLinkedReleases(eq(projectId), any(User.class))).thenReturn(
+                Map.of(Sw360ProjectService.ReleaseCLIInfo.UPDATED, List.of(release))
+        );
 
         MockHttpServletRequestBuilder requestBuilder = post("/api/projects/" + projectId + "/addLinkedReleasesLicenses")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword));
-        this.mockMvc.perform(requestBuilder).andExpect(status().isOk()).andDo(this.documentationHandler.document());
+        this.mockMvc.perform(requestBuilder).andExpect(status().isOk())
+                .andDo(this.documentationHandler.document(
+                        responseFields(
+                                fieldWithPath(Sw360ProjectService.ReleaseCLIInfo.UPDATED.toString()).description("Array of release IDs which are updated."),
+                                fieldWithPath(Sw360ProjectService.ReleaseCLIInfo.NOT_UPDATED.toString()).description("Array of release IDs which are not updated."),
+                                fieldWithPath(Sw360ProjectService.ReleaseCLIInfo.MULTIPLE_ATTACHMENTS.toString()).description("Array of release IDs with multiple attachments."),
+                                subsectionWithPath("_embedded.sw360:releases").description("An array of <<resources-releases, Releases resources>>")
+                        )));
     }
 }

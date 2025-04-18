@@ -111,7 +111,6 @@ import org.eclipse.sw360.rest.resourceserver.vendor.Sw360VendorService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.VulnerabilityController;
 import org.jetbrains.annotations.NotNull;
-import org.jose4j.json.internal.json_simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -3706,54 +3705,96 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 
     @Operation(
             summary = "Add licenses to linked releases of a project.",
-            description = "This API adds license information to linked releases of a project by processing the approved CLI attachments for each release. It categorizes releases based on the number of CLI attachments (single, multiple, or none) and updates their main and other licenses accordingly.",
+            description = "This API adds license information to linked releases of a project by processing the approved" +
+                    " CLI attachments for each release. It categorizes releases based on the number of CLI attachments" +
+                    " (single, multiple, or none) and updates their main and other licenses accordingly.",
             tags = {"Projects"},
-                    parameters = {
-                            @Parameter(
-                                name = "projectId",
-                                description = "The ID of the project whose linked releases need license updates.",
-                                required = true,
-                                example = "12345",
-                                schema = @Schema(type = "string")
-                            )
-                        },
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "License information successfully added to linked releases.",
+                            description = "License information successfully added to linked releases. " +
+                                    "Response contains a map with keys `[MULTIPLE_ATTACHMENTS, NOT_UPDATED, UPDATED]`" +
+                                    ", each containing a list of release IDs (releases available as embedded objects).",
                             content = @Content(
-                            mediaType = "application/hal+json",
-                            schema = @Schema(type = "object", implementation = JSONObject.class),
-                            examples = @ExampleObject(
-                                     value = "{\"message\": \"License information successfully added to linked releases.\" }"
+                                    schema = @Schema(type = "object", implementation = Map.class),
+                                    examples = @ExampleObject(
+                                            value = """
+                                                    {
+                                                      "MULTIPLE_ATTACHMENTS": [
+                                                        "rel1"
+                                                      ],
+                                                      "NOT_UPDATED": [
+                                                        "rel2"
+                                                      ],
+                                                      "UPDATED": [
+                                                        "rel3",
+                                                        "rel4"
+                                                      ],
+                                                      "_embedded": {
+                                                        "sw360:releases": [
+                                                          {
+                                                            "id": "rel1",
+                                                            "name": "release 1",
+                                                            "version": "1",
+                                                            "externalIds": {},
+                                                            "clearingState": "APPROVED"
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                    """
+                                    )
                             )
-                        )
                     ),
                     @ApiResponse(
                             responseCode = "500",
                             description = "Error occurred while processing license information for linked releases.",
                             content = @Content(
-                                mediaType = "application/json",
-                                examples = @ExampleObject(
-                                    value = "{\n  \"error\": \"Error adding license info to linked releases.\"\n}"
-                                )
+                                    mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            value = "{\n  \"error\": \"Error adding license info to linked releases.\"\n}"
+                                    )
                             )
-                        )
-          }
+                    )
+            }
     )
     @RequestMapping(value = PROJECTS_URL + "/{id}/addLinkedReleasesLicenses", method = RequestMethod.POST)
-    public ResponseEntity<String> addLicenseToLinkedReleases(
+    public ResponseEntity<HalResource<EntityModel<Map<String, List<String>>>>> addLicenseToLinkedReleases(
             @Parameter(description = "Project ID", example = "376576")
             @PathVariable("id") String projectId
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
-        RequestStatus requestStatus = projectService.addLicenseToLinkedReleases(projectId, sw360User);
+        Map<Sw360ProjectService.ReleaseCLIInfo, List<Release>> releaseUpdates =
+                projectService.addLicenseToLinkedReleases(projectId, sw360User);
 
-        if (requestStatus == RequestStatus.SUCCESS) {
-            return ResponseEntity.ok("License information successfully added to linked releases.");
-        } else {
-            throw new SW360Exception("Failed to add license information to linked releases.");
+        // Make sure all types are set for response, irrespective of what service returns.
+        for (Sw360ProjectService.ReleaseCLIInfo key : Sw360ProjectService.ReleaseCLIInfo.values()) {
+            try {
+                releaseUpdates.putIfAbsent(key, new ArrayList<>());
+            } catch (UnsupportedOperationException e) {
+                releaseUpdates = new HashMap<>(releaseUpdates);
+                releaseUpdates.putIfAbsent(key, new ArrayList<>());
+            }
         }
+
+        Map<String, List<String>> responseContent = releaseUpdates.entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey().toString(),
+                        entry -> entry.getValue().stream().map(Release::getId)
+                                .collect(Collectors.toList())
+                ));
+
+        HalResource<EntityModel<Map<String, List<String>>>> resources =
+                new HalResource<>(EntityModel.of(responseContent));
+
+        releaseUpdates.values().stream()
+                .flatMap(List::stream)
+                .forEach(release -> resources.addEmbeddedResource(
+                        "sw360:releases",
+                        releaseService.convertToEmbeddedWithExternalIds(release)
+                ));
+
+        return new ResponseEntity<>(resources, HttpStatus.OK);
     }
 }
