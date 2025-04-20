@@ -53,7 +53,8 @@ RUN pushd ${UTILS_DIR} \
  && ./create.sh $WORK_DIR | tee download.sh \
  && chmod +x download.sh \
  && bash download.sh \
- && find ~/.m2/repository/org/eclipse/sw360 -type f -name "*.war" -exec cp {} "${BUILD_ARTIFACT_ROOT}/" \;
+ && find ~/.m2/repository/org/eclipse/sw360 -type f -name "*.war" \
+ && find ~/.m2/repository/org/eclipse/sw360 -type f -name "*.war" -exec cp -v {} "${BUILD_ARTIFACT_ROOT}/" \;
 
 #------------------------------------------------------------------------------
 # SW360
