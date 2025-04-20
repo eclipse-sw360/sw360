@@ -3,18 +3,37 @@
 
 set -o errexit -o nounset -o pipefail
 
+# Set default values for environment variables
 COUCHDB_URL="${COUCHDB_URL:-http://couchdb:5984}"
 COUCHDB_USER="${COUCHDB_USER:-admin}"
-COUCHDB_PASSWORD="${COUCHDB_PASSWORD:-admin}"
 COUCHDB_LUCENESEARCH_LIMIT="${COUCHDB_LUCENESEARCH_LIMIT:-1000}"
 ENABLE_DISKSPACE="${ENABLE_DISKSPACE:-false}"
 JWKS_ISSUER_URI="${JWKS_ISSUER_URI:-http://localhost:8080/authorization/oauth2/jwks}"
 JWKS_SET_URI="${JWKS_SET_URI:-http://localhost:8080/authorization/oauth2/jwks}"
 SVM_SW360_API_URL="${SVM_SW360_API_URL:-https://svmtest.cert.siemens.com}"
-SVM_SW360_CERTIFICATE_PASSPHRASE="${SVM_SW360_CERTIFICATE_PASSPHRASE:-}"
-SVM_SW360_JKS_PASSWORD="${SVM_SW360_JKS_PASSWORD:-}"
-REST_APITOKEN_HASH_SALT="${REST_APITOKEN_HASH_SALT:-}"
 JWKS_ISSUER="${JWKS_ISSUER:-http://localhost:8090}"
+
+# Read secrets from Docker secrets if available
+if [ -f "/run/secrets/COUCHDB_PASSWORD" ]; then
+  COUCHDB_PASSWORD=$(cat /run/secrets/COUCHDB_PASSWORD)
+else
+  COUCHDB_PASSWORD="${COUCHDB_PASSWORD:-admin}"
+fi
+if [ -f "/run/secrets/SVM_SW360_CERTIFICATE_PASSPHRASE" ]; then
+  SVM_SW360_CERTIFICATE_PASSPHRASE=$(cat /run/secrets/SVM_SW360_CERTIFICATE_PASSPHRASE)
+else
+  SVM_SW360_CERTIFICATE_PASSPHRASE="${SVM_SW360_CERTIFICATE_PASSPHRASE:-}"
+fi
+if [ -f "/run/secrets/SVM_SW360_JKS_PASSWORD" ]; then
+  SVM_SW360_JKS_PASSWORD=$(cat /run/secrets/SVM_SW360_JKS_PASSWORD)
+else
+  SVM_SW360_JKS_PASSWORD="${SVM_SW360_JKS_PASSWORD:-}"
+fi
+if [ -f "/run/secrets/REST_APITOKEN_HASH_SALT" ]; then
+  REST_APITOKEN_HASH_SALT=$(cat /run/secrets/REST_APITOKEN_HASH_SALT)
+else
+  REST_APITOKEN_HASH_SALT="${REST_APITOKEN_HASH_SALT:-}"
+fi
 
 mkdir -p /etc/sw360/authorization /etc/sw360/rest
 
