@@ -11,61 +11,49 @@
 # Take most of the configurations as ARG, setup proxy and build sw360
 FROM maven:3-eclipse-temurin-21 as build
 
-ARG http_proxy
-ARG https_proxy
-ARG no_proxy
-ARG CODE_PROXY_HOST
-ARG CODE_PROXY_PORT
-ARG THRIFT_VERSION
-ARG DEFAULT_BRANCH
-ARG COUCHDB_URL
-ARG COUCHDB_USER
-ARG COUCHDB_PASSWORD
+ARG CI_JOB_TOKEN
 
-# Coordination variables
 ENV BUILD_ARTIFACT_ROOT=/build/artifacts
-ENV KEYCLOAK_ARTIFACT_ROOT=/build/keycloak
-
-# Variables required for build
-ENV GRADLE_USER_HOME=~/.gradle
-ENV THRIFT_DIR=/build/sw360/dist/thrift-$THRIFT_VERSION
-ENV PATH=$PATH:$THRIFT_DIR/usr/local/bin
-ENV _JAVA_OPTIONS="-Djdk.net.URLClassPath.disableClassPathURLCheck=true -DSPDXParser.OnlyUseLocalLicenses=true -Dhttp.proxySet=true -Dhttp.proxyHost=$CODE_PROXY_HOST -Dhttp.proxyPort=$CODE_PROXY_PORT -Dhttp.nonProxyHosts=localhost|couchdb"
-ENV MAVEN_OPTS="-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Xmx3072m"
+ENV WORK_DIR=/build/sw360
+ENV UTILS_DIR=$WORK_DIR/utils/internal
 
 SHELL ["/bin/bash", "-c"]
 
-WORKDIR /build/sw360
+WORKDIR $WORK_DIR
 
-RUN mkdir -p ${BUILD_ARTIFACT_ROOT} ${KEYCLOAK_ARTIFACT_ROOT} /etc/sw360/ ~/.m2/repository \
- && mkdir -p /etc/apt/apt.conf.d \
- && printf "Acquire::http::proxy \"%s\";\nAcquire::https::proxy \"%s\";\n" "${http_proxy}" "${https_proxy}" > /etc/apt/apt.conf.d/95proxy \
- && printf '<settings><mirrors><mirror><mirrorOf>*</mirrorOf><name>remote-repos</name><url>https://devops.bt.siemens.com/artifactory/maven2-all</url><id>remote-repos</id></mirror></mirrors></settings>' > ~/.m2/settings.xml \
- && mkdir -p $GRADLE_USER_HOME \
- && printf "systemProp.http.proxyHost=%s\nsystemProp.http.proxyPort=%s\nsystemProp.http.nonProxyHosts='%s'\nsystemProp.https.proxyHost=%s\nsystemProp.https.proxyPort=%s\n" "$CODE_PROXY_HOST" "$CODE_PROXY_PORT" "localhost|couchdb|*.siemens.com|*.siemens.de|*.siemens.co.in" "$CODE_PROXY_HOST" "$CODE_PROXY_PORT" >> $GRADLE_USER_HOME/gradle.properties
+RUN mkdir -p ${BUILD_ARTIFACT_ROOT} ~/.m2/repository \
+ && printf '<settings>\
+    <mirrors>\
+      <mirror>\
+        <mirrorOf>central</mirrorOf>\
+        <name>remote-repos</name>\
+        <url>https://devops.bt.siemens.com/artifactory/maven2-all</url>\
+        <id>remote-repos</id>\
+      </mirror>\
+    </mirrors>\
+    <servers>\
+      <server>\
+      <id>gitlab-maven</id>\
+      <configuration>\
+        <httpHeaders>\
+          <property>\
+          <name>Job-Token</name>\
+          <value>%s</value>\
+          </property>\
+        </httpHeaders>\
+      </configuration>\
+      </server>\
+    </servers>\
+  </settings>' "${CI_JOB_TOKEN}" > ~/.m2/settings.xml
 
 COPY . .
 
-RUN mkdir -p $THRIFT_DIR \
- && tar -xzvf thrift-$THRIFT_VERSION.tar.gz -C $THRIFT_DIR \
- && cp ./build-configuration/test-resources/couchdb-test.properties /etc/sw360/ \
- && sed -i 's/^\(couchdb.url\s*=\).*/\1 '${COUCHDB_URL//\//\\/}'/' /etc/sw360/couchdb-test.properties \
- && sed -i 's/^\(couchdb.user\s*=\).*/\1 '${COUCHDB_USER}'/' /etc/sw360/couchdb-test.properties \
- && sed -i 's/^\(couchdb.password\s*=\).*/\1 '${COUCHDB_PASSWORD}'/' /etc/sw360/couchdb-test.properties \
- && curl -s $COUCHDB_URL/_up | grep -q '"status":"ok"' \
- && git checkout ${DEFAULT_BRANCH}
-
-RUN mvn clean install \
-        --no-transfer-progress \
-        -P deploy \
-        -Dbase.deploy.dir=${BUILD_ARTIFACT_ROOT} \
-        -Dlistener.deploy.dir=${KEYCLOAK_ARTIFACT_ROOT} \
-        -DRunComponentVisibilityRestrictionTest=false \
-        -DRunPrivateProjectAccessTest=false \
-        -DRunRestForceUpdateTest=false \
-        -fae \
-        -DskipTests=true \
-        -Dmaven.plugin.validation=VERBOSE
+RUN pushd ${UTILS_DIR} \
+ && chmod +x ./create.sh \
+ && ./create.sh $WORK_DIR | tee download.sh \
+ && chmod +x download.sh \
+ && bash download.sh \
+ && find ~/.m2/repository/org/eclipse/sw360 -type f -name "*.war" -exec cp {} "${BUILD_ARTIFACT_ROOT}/" \;
 
 #------------------------------------------------------------------------------
 # SW360
@@ -78,7 +66,7 @@ ARG TOMCAT_DIR=${CATALINA_HOME:-/usr/local/tomcat}
 WORKDIR /app/docker-config
 
 # Copy the webapps
-COPY --from=build  /build/artifacts/webapps/*.war ${TOMCAT_DIR}/webapps/
+COPY --from=build  ${BUILD_ARTIFACT_ROOT}/*.war ${TOMCAT_DIR}/webapps/
 
 # Copy the configuration files
 COPY ./scripts/docker-config .

@@ -5,7 +5,7 @@ image: debian:bullseye
 
 stages:
   - build
-  - container-image
+  - images
 
 include:
   - project: awesome-ci/templates
@@ -15,11 +15,12 @@ include:
       - general/use-proxy.gitlab-ci.yml
 
 variables:
+  BUILD_ARTIFACT_ROOT: $CI_PROJECT_DIR/artifacts
   COUCHDB_USER: $COUCHDB_TEST_USER
   COUCHDB_PASSWORD: $COUCHDB_TEST_PWD
-  BUILD_ARTIFACT_ROOT: $CI_PROJECT_DIR/artifacts
-  _JAVA_OPTIONS: -Djdk.net.URLClassPath.disableClassPathURLCheck=true -DSPDXParser.OnlyUseLocalLicenses=true
+  DOCKER_PROXY_HOST: "$CODE_CR_PROXY_HOST"
   GRADLE_USER_HOME: $HOME/.gradle
+  _JAVA_OPTIONS: -Djdk.net.URLClassPath.disableClassPathURLCheck=true -DSPDXParser.OnlyUseLocalLicenses=true
   # Use m2 repository in build dir for caching
   MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Xmx3072m"
   THRIFT_DIR: ${CI_PROJECT_DIR}/dist/thrift-${THRIFT_VERSION}
@@ -34,7 +35,30 @@ variables:
       "${http_proxy}" "${https_proxy}" > /etc/apt/apt.conf.d/95proxy
 
   # setting remote repos url to download mvn packages
-  - printf '<settings><mirrors><mirror><mirrorOf>*</mirrorOf><name>remote-repos</name><url>https://devops.bt.siemens.com/artifactory/maven2-all</url><id>remote-repos</id></mirror></mirrors></settings>' > ~/.m2/settings.xml
+  - |
+    printf '<settings>
+        <mirrors>
+          <mirror>
+            <mirrorOf>central</mirrorOf>
+            <name>remote-repos</name>
+            <url>https://devops.bt.siemens.com/artifactory/maven2-all</url>
+            <id>remote-repos</id>
+          </mirror>
+        </mirrors>
+        <servers>
+          <server>
+          <id>gitlab-maven</id>
+          <configuration>
+            <httpHeaders>
+              <property>
+              <name>Job-Token</name>
+              <value>%s</value>
+              </property>
+            </httpHeaders>
+          </configuration>
+          </server>
+        </servers>
+      </settings>' "${CI_JOB_TOKEN}" > ~/.m2/settings.xml
 
   # setting proxy for gradle, required to build thrift
   - |
@@ -93,7 +117,12 @@ build:
     # Build code and create artifacts
     - |
       export PATH=$PATH:$THRIFT_DIR/usr/local/bin
-      mvn clean install \
+      if [ $CI_COMMIT_REF_NAME == "mainct" ]; then
+        mvn_target="deploy"
+      else
+        mvn_target="install"
+      fi
+      mvn_cmd="mvn clean ${mvn_target} \
         --no-transfer-progress \
         -P deploy \
         -Dbase.deploy.dir=${BUILD_ARTIFACT_ROOT}/tomcat \
@@ -102,14 +131,8 @@ build:
         -DRunPrivateProjectAccessTest=false \
         -DRunRestForceUpdateTest=false \
         -fae \
-        -Dmaven.plugin.validation=VERBOSE
-  after_script:
-    # Get thrift package to artifact as kaniko does not have curl
-    - |
-      curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
-           --location \
-           --output ${CI_PROJECT_DIR}/thrift-${THRIFT_VERSION}.tar.gz \
-           "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/thrift/${THRIFT_VERSION}/thrift-${THRIFT_VERSION}.tar.gz"
+        -Dmaven.plugin.validation=VERBOSE"
+      eval $mvn_cmd
   cache:
     - key: maven
       paths:
@@ -125,41 +148,32 @@ build:
         - ./**/target/failsafe-reports/TEST-*.xml
     paths:
       - $BUILD_ARTIFACT_ROOT/keycloak
-      - ${CI_PROJECT_DIR}/thrift-${THRIFT_VERSION}.tar.gz
 
-docker-keycloak:
+sw360-image:
   extends: .awesome-ci/build-docker-image
-  stage: container-image
+  stage: images
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/sw360-new
+    IMAGE_TAG: latest
+    DOCKERFILE: $CI_PROJECT_DIR/Dockerfile.internal
+    EXTRA_ARGUMENTS: --reproducible --build-arg CI_JOB_TOKEN=$CI_JOB_TOKEN
+  needs:
+    - job: build
+      artifacts: false
   rules:
     - if: $CI_COMMIT_BRANCH == "mainct"
+
+keycloak-image:
+  extends: .awesome-ci/build-docker-image
+  stage: images
   variables:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/keycloak
-    EXTRA_ARGUMENTS: --build-arg KC_VERSION=$KC_VERSION
+    EXTRA_ARGUMENTS: --reproducible --build-arg KC_VERSION=$KC_VERSION
     IMAGE_TAG: $KC_VERSION
     BUILD_CONTEXT: $BUILD_ARTIFACT_ROOT/keycloak
     DOCKERFILE: $CI_PROJECT_DIR/Dockerfile.keycloak
   needs:
     - job: build
       artifacts: true
-
-docker-latest:
-  extends: .awesome-ci/build-docker-image
-  stage: container-image
-  services:
-    - couchdb:3.4
   rules:
-      - if: $CI_COMMIT_BRANCH == "mainct"
-  variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/sw360-new
-    IMAGE_TAG: latest
-    DOCKERFILE: $CI_PROJECT_DIR/Dockerfile.internal
-    EXTRA_ARGUMENTS: --build-arg CODE_PROXY_HOST=$CODE_PROXY_HOST --build-arg CODE_PROXY_PORT=$CODE_PROXY_PORT
-      --build-arg THRIFT_VERSION=$THRIFT_VERSION --build-arg DEFAULT_BRANCH=mainct
-      --build-arg COUCHDB_URL=$COUCHDB_URL --build-arg COUCHDB_USER=$COUCHDB_TEST_USER
-      --build-arg COUCHDB_PASSWORD=$COUCHDB_TEST_PWD
-  before_script:
-    - export NO_PROXY="${NO_PROXY},couchdb"
-    - export no_proxy=$NO_PROXY
-  needs:
-    - job: build
-      artifacts: true
+    - if: $CI_COMMIT_BRANCH == "mainct"
