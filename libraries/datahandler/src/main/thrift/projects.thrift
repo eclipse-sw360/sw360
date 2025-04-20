@@ -268,7 +268,7 @@ struct ProjectDTO{
     7: optional string domain,
 
     // information from external data sources
-    9: optional map<string, string> externalIds,
+    9: optional map<string, set<string>> externalIds,
     300: optional map<string, string> additionalData,
 
     // Additional informations
