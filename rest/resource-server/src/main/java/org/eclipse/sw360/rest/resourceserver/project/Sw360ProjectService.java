@@ -94,6 +94,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Map.Entry;
@@ -130,6 +131,20 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
     @NonNull
     private RestControllerHelper rch;
+
+    /**
+     * This enum is used to indicate the status of the CLI update process.
+     */
+    public enum ReleaseCLIInfo {
+        UPDATED,
+        NOT_UPDATED,
+        MULTIPLE_ATTACHMENTS;
+
+        // Convert to string for JSON serialization
+        public String toString() {
+            return this.name();
+        }
+    }
 
     public static final ExecutorService releaseExecutor = Executors.newFixedThreadPool(10);
 
@@ -1598,7 +1613,17 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
         return sw360ProjectClient.getReleaseLinksOfProjectNetWorkByIndexPath(projectId, indexPath, sw360User);
     }
 
-    public RequestStatus addLicenseToLinkedReleases(String projectId, User sw360User)
+    /**
+     * Fetch all the linked releases for a given project and find the approved CLX attachment. If no approved CLX
+     * attachment is found, then fetch the first CLX attachment. Process the release if there are only CLX attachment.
+     * Update the processes releases and return their list.
+     *
+     * @param projectId Project to process
+     * @param sw360User User
+     * @return Map of updated releases
+     * @throws TException If thrift call fails
+     */
+    public Map<ReleaseCLIInfo, List<Release>> addLicenseToLinkedReleases(String projectId, User sw360User)
             throws TException {
         if (!PermissionUtils.isUserAtLeast(UserGroup.CLEARING_ADMIN, sw360User)) {
             throw new AccessDeniedException("Adding license info to releases is disabled for the current users.");
@@ -1612,7 +1637,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
 
         try {
             project = projectClient.getProjectById(projectId, sw360User);
-        } catch (SW360Exception e) {
+        } catch (TException e) {
             throw new ResourceNotFoundException("Requested project not found.", e);
         }
 
@@ -1620,62 +1645,88 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
             throw new ResourceNotFoundException("Requested project not found.");
         }
 
-        try {
-            Set<String> releaseIds = CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage());
-            List<Release> releasesToUpdate = new ArrayList<>();
+        Set<String> releaseIds = CommonUtils.getNullToEmptyKeyset(project.getReleaseIdToUsage());
+        Map<ReleaseCLIInfo, List<Release>> updateStatus = new HashMap<>();
+        updateStatus.put(ReleaseCLIInfo.UPDATED, new ArrayList<>());
+        updateStatus.put(ReleaseCLIInfo.NOT_UPDATED, new ArrayList<>());
+        updateStatus.put(ReleaseCLIInfo.MULTIPLE_ATTACHMENTS, new ArrayList<>());
 
-            for (String releaseId : releaseIds) {
-                Release release = componentClient.getReleaseById(releaseId, sw360User);
-                if (release == null) {
-                    log.error("Release with ID {} not found.", releaseId);
-                    continue;
-                }
-
-                List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
-                if (approvedCliAttachments.isEmpty()) {
-                    approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
-                }
-
-                boolean updated = false;
-                if (!approvedCliAttachments.isEmpty()) {
-                    updated = processSingleAttachment(approvedCliAttachments.getFirst(), release, licenseInfoClient, sw360User);
-                }
-
-                if (updated) {
-                    releasesToUpdate.add(release);
-                }
+        for (String releaseId : releaseIds) {
+            Release release = null;
+            try {
+                release = componentClient.getReleaseById(releaseId, sw360User);
+            } catch (TException e) {
+                updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
+                log.error("Error fetching release: {}", releaseId, e);
+                continue;
+            }
+            if (release == null) {
+                updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
+                log.error("Release with ID {} not found.", releaseId);
+                continue;
             }
 
-            for (Release release : releasesToUpdate) {
-                log.info("Updating release: {}", release.getId());
-                componentClient.updateRelease(release, sw360User);
+            List<Attachment> approvedCliAttachments = SW360Utils.getApprovedClxAttachmentForRelease(release);
+            if (approvedCliAttachments.isEmpty()) {
+                approvedCliAttachments = SW360Utils.getClxAttachmentForRelease(release);
             }
 
-            return RequestStatus.SUCCESS;
-
-        } catch (SW360Exception sw360Exp) {
-            if (sw360Exp.getErrorCode() == 404) {
-                throw new ResourceNotFoundException("Requested Project Not Found");
-            } else if (sw360Exp.getErrorCode() == 403) {
-                throw new AccessDeniedException("Project or its linked releases are restricted and not accessible.");
+            if (approvedCliAttachments.size() > 1) {
+                updateStatus.get(ReleaseCLIInfo.MULTIPLE_ATTACHMENTS).add(release);
+                log.info("Release {} has more than one attachment. Skipping update.", release.getId());
+                continue;
             }
-            throw new RuntimeException("SW360 API error: " + sw360Exp.getMessage(), sw360Exp);
-        } catch (Exception e) {
-            throw new RuntimeException("Error processing linked releases for project: " + project.getId(), e);
+
+            if (approvedCliAttachments.isEmpty()) {
+                updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
+                log.info("No CLX attachment found for release: {}. Skipping update.", release.getId());
+                continue;
+            }
+
+            if (processSingleAttachment(approvedCliAttachments.getFirst(), release, licenseInfoClient, sw360User)) {
+                updateStatus.get(ReleaseCLIInfo.UPDATED).add(release);
+            } else {
+                updateStatus.get(ReleaseCLIInfo.NOT_UPDATED).add(release);
+                log.info("No changes done for release: {}", release.getId());
+            }
         }
+
+        for (Release release : updateStatus.get(ReleaseCLIInfo.UPDATED)) {
+            log.info("Updating release: {}", release.getId());
+            componentClient.updateRelease(release, sw360User);
+        }
+
+        return updateStatus;
     }
 
-    private boolean processSingleAttachment(Attachment attachment, Release release,
-                                            LicenseInfoService.Iface licenseInfoClient, User sw360User) throws TException {
+    /**
+     * For a single CLX attachment, fetch the license information and update the release if necessary.
+     *
+     * @param attachment        Attachment to process
+     * @param release           Release in question
+     * @param licenseInfoClient thrift client
+     * @param sw360User         User
+     * @return true if the release was updated, false otherwise
+     */
+    private boolean processSingleAttachment(
+            Attachment attachment, Release release, LicenseInfoService.Iface licenseInfoClient,
+            User sw360User
+    ) {
 
         String attachmentName = attachment.getFilename();
         Set<String> mainLicenses = new HashSet<>();
         Set<String> otherLicenses = new HashSet<>();
 
-        List<LicenseInfoParsingResult> licenseInfoResults = licenseInfoClient.getLicenseInfoForAttachment(release,
-                attachment.getAttachmentContentId(), true, sw360User);
+        List<LicenseInfoParsingResult> licenseInfoResults;
+        try {
+            licenseInfoResults = licenseInfoClient.getLicenseInfoForAttachment(release,
+                    attachment.getAttachmentContentId(), true, sw360User);
+        } catch (TException e) {
+            log.error("Error fetching license information for attachment: {}", attachmentName, e);
+            return false;
+        }
 
-        if (attachmentName.endsWith(SW360Constants.RDF_FILE_EXTENSION)) {
+        if (attachmentName.toLowerCase(Locale.ROOT).endsWith(SW360Constants.RDF_FILE_EXTENSION)) {
             licenseInfoResults.forEach(result -> {
                 if (result.getLicenseInfo() != null) {
                     mainLicenses.addAll(result.getLicenseInfo().getConcludedLicenseIds());
@@ -1684,7 +1735,7 @@ public class Sw360ProjectService implements AwareOfRestServices<Project> {
                 }
             });
             otherLicenses.removeAll(mainLicenses);
-        } else if (attachmentName.endsWith(SW360Constants.XML_FILE_EXTENSION)) {
+        } else if (attachmentName.toLowerCase(Locale.ROOT).endsWith(SW360Constants.XML_FILE_EXTENSION)) {
             licenseInfoResults.forEach(result -> {
                 if (result.getLicenseInfo() != null) {
                     result.getLicenseInfo().getLicenseNamesWithTexts().forEach(license -> {

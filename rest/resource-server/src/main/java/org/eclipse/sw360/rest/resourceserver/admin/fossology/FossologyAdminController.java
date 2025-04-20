@@ -16,6 +16,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import java.util.Map;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
@@ -38,6 +41,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @BasePathAwareController
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@SecurityRequirement(name = "tokenAuth")
+@SecurityRequirement(name = "basic")
 public class FossologyAdminController implements RepresentationModelProcessor<RepositoryLinksResource> {
     public static final String FOSSOLOGY_URL = "/fossology";
 
@@ -59,7 +64,21 @@ public class FossologyAdminController implements RepresentationModelProcessor<Re
             tags = {"Admin"}
     )
     @PostMapping(value = FOSSOLOGY_URL + "/saveConfig", consumes  = {MediaType.APPLICATION_JSON_VALUE})
-    public ResponseEntity<?> saveConfigration(@RequestBody Map<String, String> request) throws SW360Exception {
+    public ResponseEntity<?> saveConfigration(
+            @Parameter(description = "Request body containing the configuration parameters.",
+                    schema = @Schema(
+                            type = "object",
+                            example = """
+                                    {
+                                      "url": "https://fossology.com/repo/api/v1/",
+                                      "folderId": "2",
+                                      "token": "dead.beef"
+                                    }""",
+                            requiredProperties = {"url", "folderId", "token"}
+                    )
+            )
+            @RequestBody Map<String, String> request
+    ) throws SW360Exception {
         try {
             User sw360User = restControllerHelper.getSw360UserFromAuthentication();
             String url = request.get("url");
