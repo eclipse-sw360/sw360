@@ -11,12 +11,8 @@ package org.eclipse.sw360.rest.resourceserver.clearingrequest;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.Map;
 import java.time.format.DateTimeFormatter;
 
 import io.swagger.v3.oas.annotations.media.Content;
@@ -142,6 +138,7 @@ public class ClearingRequestController implements RepresentationModelProcessor<R
                 Project project = projectService.getProjectForUserById(clearingRequest.getProjectId(), sw360User);
                 Project projectWithClearingInfo = projectService.getClearingInfo(project, sw360User);
                 ClearingRequest updatedCR = restControllerHelper.updateCRSize(clearingRequest, projectWithClearingInfo, sw360User);
+                sw360ClearingRequestService.convertTimestampAndEmail(updatedCR);
                 halClearingRequest = new HalResource<>(updatedCR);
                 restControllerHelper.addEmbeddedReleaseDetails(halClearingRequest, projectWithClearingInfo);
                 restControllerHelper.addEmbeddedProject(halClearingRequest, project, true);
