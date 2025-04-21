@@ -140,7 +140,7 @@
     <mockito.version>5.16.1</mockito.version>
     <okhttp.version>4.12.0</okhttp.version>
     <org.ow2.asm.version>9.8</org.ow2.asm.version>
-    <org.spdx.java.spdx.library.version>1.1.1</org.spdx.java.spdx.library.version>
+    <org.spdx.java.spdx.library.version>2.0.0</org.spdx.java.spdx.library.version>
     <org.spdx.tools.java.version>1.1.5</org.spdx.tools.java.version>
     <package-url.version>1.5.0</package-url.version>
     <plexus-utils.version>4.0.2</plexus-utils.version>
