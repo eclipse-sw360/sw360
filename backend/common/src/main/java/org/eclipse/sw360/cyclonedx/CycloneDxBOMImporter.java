@@ -60,16 +60,15 @@ import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.components.Repository;
 import org.eclipse.sw360.datahandler.thrift.components.RepositoryType;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
-import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
 import org.eclipse.sw360.datahandler.thrift.projects.ProjectType;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.github.jsonldjava.shaded.com.google.common.io.Files;
 import com.github.packageurl.MalformedPackageURLException;
 import com.github.packageurl.PackageURL;
+import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import com.google.gson.Gson;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
