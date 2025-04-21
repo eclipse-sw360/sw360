@@ -65,6 +65,12 @@ ARG TOMCAT_DIR=${CATALINA_HOME:-/usr/local/tomcat}
 
 WORKDIR /app/docker-config
 
+# Install required package for entrypoint script
+RUN apt-get update -qq \
+ && apt-get install -y -qq --no-install-recommends \
+    gettext-base grep curl \
+ && rm -rf /var/lib/apt/lists/*
+
 # Copy the webapps
 COPY --from=build /build/artifacts/*.war ${TOMCAT_DIR}/webapps/
 

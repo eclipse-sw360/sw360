@@ -38,10 +38,10 @@ fi
 mkdir -p /etc/sw360/authorization /etc/sw360/rest
 
 # Write configuration
-envsubst < /app/docker-config/couchdb.properties.template | tee /etc/sw360/couchdb.properties
-envsubst < /app/docker-config/etc_sw360/authorization/application.yml.template | tee /etc/sw360/authorization/application.yml
-envsubst < /app/docker-config/etc_sw360/rest/application.yml.template | tee /etc/sw360/rest/application.yml
-envsubst < /app/docker-config/etc_sw360/sw360.properties.template | tee /etc/sw360/sw360.properties
+/usr/bin/envsubst < /app/docker-config/couchdb.properties.template > /etc/sw360/couchdb.properties
+/usr/bin/envsubst < /app/docker-config/etc_sw360/authorization/application.yml.template > /etc/sw360/authorization/application.yml
+/usr/bin/envsubst < /app/docker-config/etc_sw360/rest/application.yml.template > /etc/sw360/rest/application.yml
+/usr/bin/envsubst < /app/docker-config/etc_sw360/sw360.properties.template > /etc/sw360/sw360.properties
 
 # Wait for DB
 test_for_couchdb() {
