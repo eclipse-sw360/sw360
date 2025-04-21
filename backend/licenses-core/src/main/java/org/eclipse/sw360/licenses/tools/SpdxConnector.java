@@ -15,9 +15,10 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.licenses.License;
 import org.eclipse.sw360.datahandler.thrift.Quadratic;
-import org.spdx.library.InvalidSPDXAnalysisException;
-import org.spdx.library.model.license.LicenseInfoFactory;
-import org.spdx.library.model.license.SpdxListedLicense;
+import org.spdx.core.InvalidSPDXAnalysisException;
+import org.spdx.library.ListedLicenses;
+import org.spdx.library.model.v2.license.SpdxListedLicense;
+import org.spdx.licenseTemplate.LicenseTextHelper;
 import org.spdx.utility.compare.LicenseCompareHelper;
 import org.spdx.utility.compare.SpdxCompareException;
 
@@ -32,14 +33,13 @@ public class SpdxConnector {
     private static final Logger log = LogManager.getLogger(SpdxConnector.class);
 
     public static List<String> getAllSpdxLicenseIds() {
-        return LicenseInfoFactory.getSpdxListedLicenseIds();
-
+        return ListedLicenses.getListedLicenses().getSpdxListedLicenseIds();
     }
 
     protected static Optional<SpdxListedLicense> getSpdxLicense(String licenseId) {
         final SpdxListedLicense listedLicenseById;
         try {
-            listedLicenseById = LicenseInfoFactory.getListedLicenseById(licenseId);
+            listedLicenseById = ListedLicenses.getListedLicenses().getListedLicenseByIdCompatV2(licenseId);
         } catch (InvalidSPDXAnalysisException e) {
             log.warn("Failed to find SpdxListedLicense with id: " + licenseId);
             return Optional.empty();
@@ -95,7 +95,7 @@ public class SpdxConnector {
     }
 
     public static boolean matchesLicenseText(License license, String licenseText) {
-        return  LicenseCompareHelper.isLicenseTextEquivalent(license.getText(), licenseText);
+        return LicenseTextHelper.isLicenseTextEquivalent(license.getText(), licenseText);
     }
 
     /**
@@ -128,7 +128,7 @@ public class SpdxConnector {
 
     public static List<License> findMatchingLicenseIDs(String licenseText, List<License> haystack) {
         return haystack.stream()
-                .filter(l -> LicenseCompareHelper.isLicenseTextEquivalent(licenseText, l.getText()))
+                .filter(l -> LicenseTextHelper.isLicenseTextEquivalent(licenseText, l.getText()))
                 .collect(Collectors.toList());
     }
 }
