@@ -21,16 +21,22 @@ import org.eclipse.sw360.datahandler.thrift.ClearingRequestState;
 import org.eclipse.sw360.datahandler.thrift.Comment;
 import org.eclipse.sw360.datahandler.thrift.RequestStatus;
 import org.eclipse.sw360.datahandler.thrift.SW360Exception;
+import org.eclipse.sw360.datahandler.thrift.ThriftClients;
 import org.eclipse.sw360.datahandler.thrift.moderation.ModerationService;
 import org.eclipse.sw360.datahandler.thrift.projects.ClearingRequest;
 import org.eclipse.sw360.datahandler.thrift.users.User;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -129,5 +135,40 @@ public class Sw360ClearingRequestService {
         } catch (SW360Exception e) {
             log.error("Error updating clearing request for change in clearing size: " + e.getMessage());
         }
+    }
+
+    public void convertTimestampAndEmail(ClearingRequest clearingRequest) throws TException {
+        List<Comment> comments = clearingRequest.getComments();
+        if (comments != null && !comments.isEmpty()) {
+            for (Comment comment : comments) {
+                String convertTimestampToDateTime = convertTimestampToDateTime(comment.getCommentedOn());
+                comment.setDateTime(convertTimestampToDateTime);
+
+                String email = comment.getCommentedBy();
+                if (email != null && !email.isEmpty()) {
+                    String convertEmailToUsername = getUserNameByEmail(email);
+                    comment.setUsername(convertEmailToUsername);
+                }
+            }
+        }
+    }
+
+    public String getUserNameByEmail(String userEmail) throws TException {
+        try {
+            ThriftClients thriftClients = new ThriftClients();
+            UserService.Iface userClient = thriftClients.makeUserClient();
+            User sw360User = userClient.getByEmail(userEmail);
+            return sw360User.getFullname();
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String convertTimestampToDateTime(long timestamp) {
+        Instant instant = Instant.ofEpochMilli(timestamp);
+        String iso8601Format = DateTimeFormatter.ISO_INSTANT
+                .withZone(ZoneOffset.UTC)
+                .format(instant);
+        return iso8601Format;
     }
 }
