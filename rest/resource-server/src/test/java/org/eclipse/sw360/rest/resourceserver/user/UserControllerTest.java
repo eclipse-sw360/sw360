@@ -38,7 +38,8 @@ public class UserControllerTest {
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
+
     }
 
     @Test
