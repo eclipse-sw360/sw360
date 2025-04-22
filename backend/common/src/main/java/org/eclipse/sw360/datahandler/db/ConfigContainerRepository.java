@@ -9,8 +9,6 @@
  */
 package org.eclipse.sw360.datahandler.db;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseRepositoryCloudantClient;
 import org.eclipse.sw360.datahandler.thrift.ConfigContainer;
@@ -25,9 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 public class ConfigContainerRepository extends DatabaseRepositoryCloudantClient<ConfigContainer> {
-
-    private static final Logger log = LogManager.getLogger(ConfigContainerRepository.class);
-
     private static final String ALL = "function(doc) { emit(null, doc._id); }";
     private static final String BYID = "function(doc) { emit(doc._id, null); }";
     private static final String BYCONFIGFOR = "function(doc) { emit(doc.configFor, null); }";
@@ -42,32 +37,17 @@ public class ConfigContainerRepository extends DatabaseRepositoryCloudantClient<
     }
 
     public ConfigContainer getByConfigFor(ConfigFor configFor) {
-        try {
-            PostViewOptions query = getConnector().getPostViewQueryBuilder(ConfigContainer.class, "byConfigFor")
-                    .keys(Collections.singletonList(configFor.toString()))
-                    .includeDocs(true).build();
+        PostViewOptions query = getConnector().getPostViewQueryBuilder(ConfigContainer.class, "byConfigFor")
+                .keys(Collections.singletonList(configFor.toString()))
+                .includeDocs(true).build();
 
-            List<ConfigContainer> configs = queryView(query);
-
-            if (configs == null || configs.isEmpty()) {
-                log.warn("No ConfigContainer found for " + configFor + ". Using default config.");
-                return createDefaultFossologyConfig();
-            }
-
+        List<ConfigContainer> configs = queryView(query);
+        if (configs.size() != 1) {
+            throw new IllegalStateException(
+                    "There are " + configs.size() + " configuration objects in the couch db for type " + configFor
+                            + " while there should be exactly one!");
+        } else {
             return configs.get(0);
-        } catch (Exception e) {
-            log.error("Error fetching ConfigContainer for " + configFor, e);
-            return createDefaultFossologyConfig();
         }
-    }
-
-    private ConfigContainer createDefaultFossologyConfig() {
-        log.info("Creating default FOSSology configuration.");
-        ConfigContainer defaultConfig = new ConfigContainer();
-        defaultConfig.setConfigFor(ConfigFor.FOSSOLOGY_REST);
-        defaultConfig.setConfigKeyToValues(new HashMap<>());
-        defaultConfig.getConfigKeyToValues().put("fossology.downloadTimeout", Collections.singleton("2"));
-        defaultConfig.getConfigKeyToValues().put("fossology.downloadTimeoutUnit", Collections.singleton("MINUTES"));
-        return defaultConfig;
     }
 }
