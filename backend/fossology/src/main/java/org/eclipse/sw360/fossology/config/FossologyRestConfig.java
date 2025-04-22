@@ -23,6 +23,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Settings for the fossology rest connection
@@ -35,6 +36,8 @@ public class FossologyRestConfig {
     public static final String CONFIG_KEY_URL = "url";
     public static final String CONFIG_KEY_TOKEN = "token";
     public static final String CONFIG_KEY_FOLDER_ID = "folderId";
+    public static final String CONFIG_KEY_DOWNLOAD_TIMEOUT = "fossology.downloadTimeout";
+    public static final String CONFIG_KEY_DOWNLOAD_TIMEOUT_UNIT = "fossology.downloadTimeoutUnit";
 
     private final ConfigContainerRepository repository;
 
@@ -65,6 +68,14 @@ public class FossologyRestConfig {
 
     public String getFolderId() {
         return getFirstValue(CONFIG_KEY_FOLDER_ID);
+    }
+
+    public String getDownloadTimeout() {
+        return getFirstValue(CONFIG_KEY_DOWNLOAD_TIMEOUT);
+    }
+
+    public String getDownloadTimeoutUnit() {
+        return getFirstValue(CONFIG_KEY_DOWNLOAD_TIMEOUT_UNIT);
     }
 
     private String getFirstValue(String key) {
@@ -103,6 +114,28 @@ public class FossologyRestConfig {
             throw new IllegalStateException("The new FOSSology REST configuration does not contain a valid folder id.");
         }
 
+        String downloadTimeout = newConfig.getConfigKeyToValues().getOrDefault(CONFIG_KEY_DOWNLOAD_TIMEOUT, new HashSet<>()).stream()
+                .findFirst().orElse("");
+        try {
+            if (!downloadTimeout.isEmpty()) {
+                Long.parseLong(downloadTimeout);
+            }
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException(
+                    "The new FOSSology REST configuration does not contain a valid download timeout.");
+        }
+
+        String downloadTimeoutUnit = newConfig.getConfigKeyToValues().getOrDefault(CONFIG_KEY_DOWNLOAD_TIMEOUT_UNIT, new HashSet<>()).stream()
+                .findFirst().orElse("");
+        try {
+            if (!downloadTimeoutUnit.isEmpty()) {
+                TimeUnit.valueOf(downloadTimeoutUnit.toUpperCase());
+            }
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException(
+                    "The new FOSSology REST configuration does not contain a valid download timeout unit.");
+        }
+
         ConfigContainer current;
         try {
             current = get();
@@ -115,7 +148,7 @@ public class FossologyRestConfig {
         repository.update(current);
         outdated = true;
 
-        log.info("Successfully updated fossology configuration to: " + current);
+        log.info("Successfully updated fossology configuration to: {}", current);
 
         return current;
     }
