@@ -48,7 +48,10 @@ public class Sw360FossologyAdminServices {
 
     String key;
 
-    public void saveConfig(User sw360User, String url, String folderId, String token) throws TException {
+    public void saveConfig(
+            User sw360User, String url, String folderId, String token,
+            String downloadTimeout, String downloadTimeoutUnit
+    ) throws TException {
         FossologyService.Iface client = getThriftFossologyClient();
         ConfigContainer fossologyConfig = client.getFossologyConfig();
 
@@ -57,6 +60,13 @@ public class Sw360FossologyAdminServices {
             setConfigValues(configKeyToValues, "url", url);
             setConfigValues(configKeyToValues, "folderId", folderId);
             setConfigValues(configKeyToValues, "token", token);
+            if (downloadTimeout != null && !downloadTimeout.isEmpty()) {
+                setConfigValues(configKeyToValues, "fossology.downloadTimeout", downloadTimeout);
+                if (downloadTimeoutUnit == null || downloadTimeoutUnit.isEmpty()) {
+                    throw new BadRequestClientException("downloadTimeoutUnit required if downloadTimeout is set.");
+                }
+                setConfigValues(configKeyToValues, "fossology.downloadTimeoutUnit", downloadTimeoutUnit);
+            }
             fossologyConfig.setConfigKeyToValues(configKeyToValues);
             if (client != null && fossologyConfig != null) {
                 client.setFossologyConfig(fossologyConfig);
