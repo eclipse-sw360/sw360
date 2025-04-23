@@ -1,13 +1,12 @@
-/*******************************************************************************
- * Copyright (c) 2025 Your Organization
+/*
+ * Copyright Rajnish Kumar<rk2452003@gmail.com>, 2025. Part of the SW360 Portal Project.
  *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v. 2.0 which is available at
- * https://www.eclipse.org/legal/epl-2.0/
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- *******************************************************************************/
-
+ */
 
 package org.eclipse.sw360.rest.resourceserver.user;
 
@@ -15,7 +14,6 @@ import org.eclipse.sw360.rest.resourceserver.user.model.UserDTO;
 import org.eclipse.sw360.rest.resourceserver.user.model.UserProfileDTO;
 import org.eclipse.sw360.rest.resourceserver.user.model.ApiTokenDTO;
 import org.eclipse.sw360.rest.resourceserver.user.model.UserPatchDTO;
-import org.eclipse.sw360.rest.resourceserver.user.Sw360UserService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -39,7 +37,6 @@ public class UserControllerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-
     }
 
     @Test

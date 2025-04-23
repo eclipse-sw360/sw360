@@ -11,7 +11,7 @@
 package org.eclipse.sw360.importer;
 
 import com.google.common.collect.FluentIterable;
-import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
+//import org.eclipse.sw360.datahandler.db.AttachmentContentRepository;
 import org.eclipse.sw360.datahandler.common.DatabaseSettingsTest;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.ImportCSV;
