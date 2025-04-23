@@ -2361,14 +2361,14 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
             requestSummary = projectService.importSPDX(sw360User, attachment.getAttachmentContentId());
 
             if (!(requestSummary.getRequestStatus() == RequestStatus.SUCCESS)) {
-                throw new BadRequestClientException(requestSummary.getMessage());
+                throw new BadRequestClientException((requestSummary.getMessage()!=null)? requestSummary.getMessage() : "Invalid SBOM file");
             }
             projectId = requestSummary.getMessage();
         } else {
             requestSummary = projectService.importCycloneDX(sw360User, attachment.getAttachmentContentId(), "", true);
 
             if (requestSummary.getRequestStatus() == RequestStatus.FAILURE) {
-                throw new BadRequestClientException(requestSummary.getMessage());
+                throw new BadRequestClientException((requestSummary.getMessage()!=null)? requestSummary.getMessage() : "Invalid SBOM file");
             }
             else if (requestSummary.getRequestStatus() == RequestStatus.ACCESS_DENIED) {
                 throw new BadCredentialsException("You do not have sufficient permissions.");
@@ -2439,7 +2439,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
         requestSummary = projectService.importCycloneDX(sw360User, attachment.getAttachmentContentId(), id, doNotReplacePackageAndRelease);
 
         if (requestSummary.getRequestStatus() == RequestStatus.FAILURE) {
-            throw new BadRequestClientException(requestSummary.getMessage());
+            throw new BadRequestClientException((requestSummary.getMessage()!=null)? requestSummary.getMessage() : "Invalid SBOM file");
         }else if(requestSummary.getRequestStatus() == RequestStatus.ACCESS_DENIED){
             throw new BadCredentialsException("You do not have sufficient permissions.");
         }
