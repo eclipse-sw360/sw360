@@ -163,4 +163,9 @@ public class PackageHandler implements PackageService.Iface {
 
         return handler.getPackageByPurl(purl);
     }
+
+    @Override
+    public List<Package> refineSearchAccessiblePackages(String text, Map<String,Set<String>> subQueryRestrictions, User user) throws TException {
+        return packageSearchHandler.searchAccessiblePackages(text, subQueryRestrictions, user);
+    }
 }

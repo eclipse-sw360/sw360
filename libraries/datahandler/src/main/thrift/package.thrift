@@ -184,4 +184,9 @@ service PackageService {
      */
     list<Package> searchByPurl(1: string purl);
 
+    /**
+     * search packages in database that match subQueryRestrictions
+     */
+    list<Package> refineSearchAccessiblePackages(1: string text, 2: map<string, set<string>> subQueryRestrictions, 3: User user);
+
 }
