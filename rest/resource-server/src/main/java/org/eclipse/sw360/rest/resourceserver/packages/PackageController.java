@@ -14,12 +14,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -35,6 +32,7 @@ import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Constants;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
+import org.eclipse.sw360.datahandler.couchdb.lucene.NouveauLuceneAwareDatabaseConnector;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationParameterException;
 import org.eclipse.sw360.datahandler.resourcelists.PaginationResult;
 import org.eclipse.sw360.datahandler.resourcelists.ResourceClassNotFoundException;
@@ -43,6 +41,7 @@ import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.packages.Package;
 import org.eclipse.sw360.datahandler.thrift.packages.PackageManager;
+import org.eclipse.sw360.datahandler.thrift.packages.PackageService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
@@ -231,8 +230,19 @@ public class PackageController implements RepresentationModelProcessor<Repositor
             @RequestParam(value = "purl", required = false) String purl,
             @Parameter(description = "The package manager of the package.")
             @RequestParam(value = "packageManager", required = false) String packageManager,
+            @Parameter(description = "Licenses to filter, as a comma separated list.")
+            @RequestParam(value = "licenses", required = false) String licenses,
+            @Parameter(description = "Created by user to filter (email).")
+            @RequestParam(value = "createdBy", required = false) String createdBy,
+            @Parameter(description = "Date package was created on (YYYY-MM-DD).",
+                    schema = @Schema(type = "string", format = "date"))
+            @RequestParam(value = "createdOn", required = false) String createdOn,
+            @Parameter(description = "Properties which should be present for each package in the result")
+            @RequestParam(value = "fields", required = false) List<String> fields,
             @Parameter(description = "Get all details of the package.")
             @RequestParam(value = "allDetails", required = false) boolean allDetails,
+            @Parameter(description = "Use lucenesearch to filter the packages.")
+            @RequestParam(value = "luceneSearch", required = false) boolean luceneSearch,
             HttpServletRequest request
     ) throws TException, URISyntaxException, PaginationParameterException, ResourceClassNotFoundException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
@@ -244,22 +254,33 @@ public class PackageController implements RepresentationModelProcessor<Repositor
         boolean isSearchByPurl = CommonUtils.isNotNullEmptyOrWhitespace(purl);
         List<Package> sw360Packages = new ArrayList<>();
 
-        if (isSearchByName) {
-            sw360Packages.addAll(packageService.searchPackageByName(params.get("name")));
-        } else if (isSearchByPackageManager) {
-            packageManager = packageManager.toUpperCase();
-
-            if (!EnumUtils.isValidEnum(PackageManager.class, packageManager)) {
-                throw new BadRequestClientException("Invalid package manager type. Possible values are "
-                        + Arrays.asList(PackageManager.values()));
+        if (luceneSearch) {
+            Map<String, Set<String>> filterMap = getFilterMap(name, version, purl, packageManager, licenses, createdBy, createdOn);
+            if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+                Set<String> values = CommonUtils.splitToSet(name);
+                values = values.stream().map(NouveauLuceneAwareDatabaseConnector::prepareWildcardQuery)
+                        .collect(Collectors.toSet());
+                filterMap.put(Package._Fields.NAME.getFieldName(), values);
             }
-            sw360Packages.addAll(packageService.searchByPackageManager(packageManager));
-        } else if (isSearchByVersion) {
-            sw360Packages.addAll(packageService.searchPackageByVersion(params.get("version")));
-        } else if (isSearchByPurl) {
-            sw360Packages.addAll(packageService.searchPackageByPurl(params.get("purl")));
+            sw360Packages.addAll(packageService.refineSearch(filterMap, sw360User));
         } else {
-            sw360Packages.addAll(packageService.getPackagesForUser());
+            if (isSearchByName) {
+                sw360Packages.addAll(packageService.searchPackageByName(params.get("name")));
+            } else if (isSearchByPackageManager) {
+                packageManager = packageManager.toUpperCase();
+
+                if (!EnumUtils.isValidEnum(PackageManager.class, packageManager)) {
+                    throw new BadRequestClientException("Invalid package manager type. Possible values are "
+                            + Arrays.asList(PackageManager.values()));
+                }
+                sw360Packages.addAll(packageService.searchByPackageManager(packageManager));
+            } else if (isSearchByVersion) {
+                sw360Packages.addAll(packageService.searchPackageByVersion(params.get("version")));
+            } else if (isSearchByPurl) {
+                sw360Packages.addAll(packageService.searchPackageByPurl(params.get("purl")));
+            } else {
+                sw360Packages.addAll(packageService.getPackagesForUser());
+            }
         }
         return getPackageResponse(version, purl, packageManager, pageable, allDetails, request, sw360User, sw360Packages);
     }
@@ -339,5 +360,38 @@ public class PackageController implements RepresentationModelProcessor<Repositor
 
         HttpStatus status = resources == null ? HttpStatus.NO_CONTENT : HttpStatus.OK;
         return new ResponseEntity<>(resources, status);
+    }
+
+    /**
+     * Create a map of filters with the field name in the key and expected value in the value (as set).
+     * @return Filter map from the user's request.
+     */
+    private @NonNull Map<String, Set<String>> getFilterMap(
+            String name, String version, String purl, String packageManager,
+            String licenses, String createdBy, String createdOn
+    ) {
+        Map<String, Set<String>> filterMap = new HashMap<>();
+        if (CommonUtils.isNotNullEmptyOrWhitespace(name)) {
+            filterMap.put(Package._Fields.NAME.getFieldName(), CommonUtils.splitToSet(name));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(version)) {
+            filterMap.put(Package._Fields.VERSION.getFieldName(), CommonUtils.splitToSet(version));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(purl)) {
+            filterMap.put(Package._Fields.PURL.getFieldName(), CommonUtils.splitToSet(purl));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(packageManager)) {
+            filterMap.put(Package._Fields.PACKAGE_MANAGER.getFieldName(), CommonUtils.splitToSet(packageManager));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(licenses)) {
+            filterMap.put(Package._Fields.LICENSE_IDS.getFieldName(), CommonUtils.splitToSet(licenses));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(createdBy)) {
+            filterMap.put(Package._Fields.CREATED_BY.getFieldName(), CommonUtils.splitToSet(createdBy));
+        }
+        if (CommonUtils.isNotNullEmptyOrWhitespace(createdOn)) {
+            filterMap.put(Package._Fields.CREATED_ON.getFieldName(), CommonUtils.splitToSet(createdOn));
+        }
+        return filterMap;
     }
 }
