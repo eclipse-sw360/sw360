@@ -26,8 +26,9 @@ import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Value;
+import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.io.ByteArrayResource;
@@ -64,7 +65,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -75,7 +75,7 @@ public class ComponentTest extends TestIntegrationBase {
     @LocalServerPort
     private int port;
 
-    @MockBean
+    @SpyBean
     private Sw360ComponentService componentServiceMock;
 
     @MockBean
@@ -98,7 +98,8 @@ public class ComponentTest extends TestIntegrationBase {
         component.setCreatedBy("admin@sw360.org");
         componentList.add(component);
 
-        given(this.componentServiceMock.getComponentsForUser(any())).willReturn(componentList);
+        Mockito.doReturn(componentList).when(componentServiceMock)
+                .getComponentsForUser(any());
 
         User user = TestHelper.getTestUser();
 
@@ -126,8 +127,8 @@ public class ComponentTest extends TestIntegrationBase {
 
         AttachmentContent attachmentContent = TestHelper.getDummyAttachmentContent();
 
-        given(this.componentServiceMock.getComponentForUserById(eq(componentId), any()))
-                .willReturn(component);
+        Mockito.doReturn(component).when(this.componentServiceMock)
+                .getComponentForUserById(eq(componentId), any());
         given(this.attachmentServiceMock.getAttachmentContent(attachmentId))
                 .willReturn(attachmentContent);
 
@@ -156,10 +157,12 @@ public class ComponentTest extends TestIntegrationBase {
     public void should_add_attachment_to_component() throws Exception{
         String componentId = "abc";
 
-        given(componentServiceMock.getComponentForUserById(eq(componentId), any())).willReturn(component);
+        Mockito.doReturn(component).when(componentServiceMock)
+                .getComponentForUserById(eq(componentId), any());
         given(attachmentServiceMock.uploadAttachment(any(), any(), any())).willReturn(TestHelper.getDummyAttachmentsListForTest().getFirst())
         ;
-        given(componentServiceMock.updateComponent(any(), any())).willReturn(RequestStatus.SUCCESS);
+        Mockito.doReturn(RequestStatus.SUCCESS).when(componentServiceMock)
+                .updateComponent(any(), any());
         Resource fileResource = new ByteArrayResource("Dummy file content".getBytes(StandardCharsets.UTF_8)) {
             @Override
             public String getFilename() {
@@ -186,7 +189,8 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_get_all_components_empty_list() throws IOException, TException {
-        given(this.componentServiceMock.getComponentsForUser(any())).willReturn(new ArrayList<>());
+        Mockito.doReturn(new ArrayList<>()).when(this.componentServiceMock)
+                .getComponentsForUser(any());
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/components",
@@ -200,7 +204,8 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_get_all_components_wrong_page() throws IOException, TException {
-        when(this.componentServiceMock.getComponentsForUser(any())).thenThrow(ResourceNotFoundException.class);
+        Mockito.doThrow(ResourceNotFoundException.class).when(this.componentServiceMock)
+                .getComponentsForUser(any());
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/components?page=5&page_entries=10",
@@ -238,8 +243,10 @@ public class ComponentTest extends TestIntegrationBase {
                 "  ]\n" +
                 "}";
 
-        given(this.componentServiceMock.updateComponent(any(), any())).willReturn(RequestStatus.SUCCESS);
-        given(this.componentServiceMock.getComponentForUserById(eq(componentId), any())).willReturn(component);
+        Mockito.doReturn(RequestStatus.SUCCESS).when(this.componentServiceMock)
+                .updateComponent(any(), any());
+        Mockito.doReturn(component).when(this.componentServiceMock)
+                .getComponentForUserById(eq(componentId), any());
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
         ResponseEntity<String> response =
@@ -256,7 +263,8 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_update_component_invalid() throws IOException, TException {
-        doThrow(TException.class).when(this.componentServiceMock).getComponentForUserById(any(), any());
+        Mockito.doThrow(TException.class).when(this.componentServiceMock)
+                .getComponentForUserById(any(), any());
         String updatedComponentName = "updatedComponentName";
         HttpHeaders headers = getHeaders(port);
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -272,7 +280,8 @@ public class ComponentTest extends TestIntegrationBase {
 
     @Test
     public void should_delete_component_valid() throws IOException, TException {
-        given(this.componentServiceMock.deleteComponent(eq(componentId), any())).willReturn(RequestStatus.SUCCESS);
+        Mockito.doReturn(RequestStatus.SUCCESS).when(this.componentServiceMock)
+                .deleteComponent(eq(componentId), any());
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/components/" + componentId,
@@ -285,7 +294,8 @@ public class ComponentTest extends TestIntegrationBase {
     @Test
     public void should_delete_component_invalid() throws IOException, TException {
         String invalidComponentId = "2734982743928374";
-        given(this.componentServiceMock.deleteComponent(any(), any())).willReturn(RequestStatus.FAILURE);
+        Mockito.doReturn(RequestStatus.FAILURE).when(this.componentServiceMock)
+                .deleteComponent(any(), any());
         HttpHeaders headers = getHeaders(port);
         ResponseEntity<String> response =
                 new TestRestTemplate().exchange("http://localhost:" + port + "/api/components/" + invalidComponentId,
@@ -302,12 +312,12 @@ public class ComponentTest extends TestIntegrationBase {
         List<String> attachmentIds = Arrays.asList(attachments.get(0).attachmentContentId, "otherAttachmentId");
         String strIds = String.join(",", attachmentIds);
         component.setAttachments(new HashSet<>(attachments));
-        given(componentServiceMock.getComponentForUserById(componentId, TestHelper.getTestUser())).willReturn(component);
-        given(componentServiceMock.updateComponent(any(), eq(TestHelper.getTestUser())))
-                .will(invocationOnMock -> {
-                    refUpdatedComponent.set(new Component((Component) invocationOnMock.getArguments()[0]));
-                    return RequestStatus.SUCCESS;
-                });
+        Mockito.doReturn(component).when(componentServiceMock)
+                .getComponentForUserById(eq(componentId), eq(TestHelper.getTestUser()));
+        Mockito.doAnswer(invocationOnMock -> {
+            refUpdatedComponent.set(new Component((Component) invocationOnMock.getArguments()[0]));
+            return RequestStatus.SUCCESS;
+        }).when(componentServiceMock).updateComponent(any(), eq(TestHelper.getTestUser()));
         given(attachmentServiceMock.filterAttachmentsToRemove(Source.componentId(componentId),
                 component.getAttachments(), attachmentIds))
                 .willReturn(Collections.singleton(attachments.get(1)));
@@ -340,8 +350,8 @@ public class ComponentTest extends TestIntegrationBase {
                 .getAttachmentContentId();
         Set<Attachment> attachments = new HashSet<>(TestHelper.getDummyAttachmentsListForTest());
         component.setAttachments(attachments);
-        given(componentServiceMock.getComponentForUserById(componentId, TestHelper.getTestUser()))
-                .willReturn(component);
+        Mockito.doReturn(component).when(componentServiceMock)
+                .getComponentForUserById(eq(componentId), eq(TestHelper.getTestUser()));
         given(attachmentServiceMock.filterAttachmentsToRemove(Source.releaseId(componentId),
                 component.getAttachments(), Collections.singletonList(attachmentId)))
                 .willReturn(Collections.emptySet());
@@ -353,9 +363,25 @@ public class ComponentTest extends TestIntegrationBase {
                         new HttpEntity<>(null, getHeaders(port)),
                         String.class);
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        then(componentServiceMock)
-                .should(never())
+        Mockito.verify(componentServiceMock, Mockito.never())
                 .updateComponent(any(), any());
     }
 
+    @Test
+    public void should_merge_component_with_failure_handling() throws IOException {
+        Component mergeSelection = new Component();
+        mergeSelection.setCategories(Set.of("category1", "category2"));
+        mergeSelection.setName("Component name");
+
+        ResponseEntity<String> response =
+                new TestRestTemplate().exchange("http://localhost:" + port + "/api/components/mergecomponents?" +
+                                "mergeTargetId={targetId}&mergeSourceId={sourceId}",
+                        HttpMethod.PATCH,
+                        new HttpEntity<>(mergeSelection, getHeaders(port)),
+                        String.class,
+                        "targetId", "sourceId"
+                        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
 }
