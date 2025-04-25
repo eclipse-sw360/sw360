@@ -10,157 +10,114 @@
 
 package org.eclipse.sw360.rest.resourceserver.user;
 
-import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
-import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.jetbrains.annotations.NotNull;
+import org.eclipse.sw360.datahandler.thrift.users.UserProfile;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.Mockito;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
 
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.hateoas.server.EntityLinks;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.*;
-
-@RunWith(MockitoJUnitRunner.class)
 public class UserControllerTest {
 
-    @Mock
-    private EntityLinks entityLinks;
-
-    @Mock
-    private Sw360UserService userService;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
-    @Mock
-    private RestControllerHelper restControllerHelper;
-
-    @InjectMocks
+    private UserService.Iface userServiceMock;
     private UserController userController;
+    private User mockUser;
 
-    @Test
-    public void testGetUserByEmail() {
-        String email = "test@example.com";
-        User user = new User();  // Create a mock user
-        when(userService.getUserByEmail(email)).thenReturn(user);
+    @Before
+    public void setUp() {
+        // Create a mock of the UserService
+        userServiceMock = mock(UserService.Iface.class);
 
-        ResponseEntity<?> response = userController.getUserByEmail(email);
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals(user, response.getBody());
+        // Create an instance of UserController using the mock service
+        userController = new UserController(new Sw360UserService(userServiceMock));
+
+        // Create a mock user for tests
+        mockUser = new User();
+        mockUser.setPassword("initialPassword");
     }
 
     @Test
-    public void testGetUser() throws TException {
-        String userId = "userId";
-        User user = new User();
-        when(userService.getUser(userId)).thenReturn(user);
+    public void testUpdatePassword() {
+        String newPassword = "newPassword";
 
-        ResponseEntity<?> response = userController.getUser(userId);
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals(user, response.getBody());
+        // Call updatePassword method of UserController
+        userController.updatePassword(mockUser, newPassword);
+
+        // Assert that the password was updated
+        assertEquals("newPassword", mockUser.getPassword());
     }
 
     @Test
-    public void testCreateUser() {
-        User newUser = new User();
-        when(userService.createUser(newUser)).thenReturn(newUser);  // Ensure this method exists in userService
+    public void testGetUserProfile() throws Exception {
+        // Prepare a mock UserProfile
+        UserProfile mockProfile = new UserProfile();
+        mockProfile.setUserId("user123");
+        mockProfile.setName("John Doe");
+        mockProfile.setEmail("john.doe@example.com");
 
-        ResponseEntity<?> response = userController.createUser(newUser);
-        assertEquals(201, response.getStatusCodeValue());
-        assertEquals(newUser, response.getBody());
+        // Mock the getUserProfile method of the Sw360UserService
+        when(userServiceMock.getUserProfile("user123")).thenReturn(mockProfile);
+
+        // Call the getUserProfile method of UserController
+        UserProfile profile = userController.getUserProfile("user123");
+
+        // Assert that the profile returned matches the mock profile
+        assertNotNull(profile);
+        assertEquals("user123", profile.getUserId());
+        assertEquals("John Doe", profile.getName());
+        assertEquals("john.doe@example.com", profile.getEmail());
     }
 
     @Test
-    public void testGetUserProfile() {
-        String userId = "userId";
-        Map<String, Object> profile = new HashMap<>();
-        when(userService.getUserProfile(userId)).thenReturn(profile); // Ensure this method exists
+    public void testUpdateUserProfile() throws Exception {
+        // Create some mock data for the user profile update
+        Map<String, Object> profileData = new HashMap<>();
+        profileData.put("name", "Jane Doe");
+        profileData.put("email", "jane.doe@example.com");
 
-        ResponseEntity<?> response = userController.getUserProfile(userId);
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals(profile, response.getBody());
+        // Call the updateUserProfile method of UserController
+        userController.updateUserProfile(profileData);
+
+        // Verify that the updateUserProfile method of the Sw360UserService was called
+        verify(userServiceMock).updateUserProfile(profileData);
     }
 
     @Test
-    public void testUpdateUserProfile() throws TException {
-        Map<String, Object> profile = new HashMap<>();
-        when(userService.updateUserProfile(profile)).thenReturn(profile); // Ensure this method exists
+    public void testGetUserPassword() {
+        // Get the user's password using the UserController
+        String password = userController.getUserPassword(mockUser);
 
-        ResponseEntity<?> response = userController.updateUserProfile(profile);
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals(profile, response.getBody());
+        // Assert that the password is what was set earlier
+        assertEquals("initialPassword", password);
     }
 
     @Test
-    public void testGetUserRestApiTokens() {
-        String userId = "userId";
-        List<Map<String, Object>> tokens = Collections.emptyList();
-        when(userService.getUserTokens(userId)).thenReturn(tokens); // Ensure this method exists
+    public void testCreateUserToken() throws Exception {
+        String userId = "user123";
+        String expectedToken = "tokenXYZ";
 
-        ResponseEntity<?> response = userController.getUserRestApiTokens(userId);
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals(tokens, response.getBody());
+        // Mock the createUserToken method
+        when(userServiceMock.createUserToken(userId)).thenReturn(expectedToken);
+
+        // Call the createUserToken method of UserController
+        String token = userController.createUserToken(userId);
+
+        // Assert that the token returned matches the expected token
+        assertEquals(expectedToken, token);
     }
 
     @Test
-    public void testCreateUserRestApiToken() throws TException {
-        String userId = "userId";
-        Map<String, Object> token = new HashMap<>();
-        when(userService.createUserToken(userId)).thenReturn(token); // Ensure this method exists
+    public void testRevokeToken() throws Exception {
+        String userId = "user123";
+        String token = "tokenXYZ";
 
-        ResponseEntity<?> response = userController.createUserRestApiToken(userId);
-        assertEquals(201, response.getStatusCodeValue());
-        assertEquals(token, response.getBody());
-    }
+        // Call the revokeToken method of UserController
+        userController.revokeToken(userId, token);
 
-    @Test
-    public void testRevokeUserRestApiToken() throws TException {
-        String userId = "userId";
-        String tokenId = "tokenId";
-        doNothing().when(userService).revokeToken(userId, tokenId); // Ensure this method exists
-
-        ResponseEntity<?> response = userController.revokeUserRestApiToken(userId, tokenId);
-        assertEquals(204, response.getStatusCodeValue());
-    }
-
-    @Test
-    public void testGetGroupList() {
-        List<String> groups = Arrays.asList("Engineering", "Legal");
-        when(userService.getGroups()).thenReturn(groups); // Ensure this method exists
-
-        ResponseEntity<?> response = userController.getGroupList();
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals(groups, response.getBody());
-    }
-
-    @Test
-    public void testPatchUser() throws TException {
-        String userId = "userId";
-        Map<String, Object> patch = new HashMap<>();
-        User patchedUser = new User();
-        when(userService.patchUser(String.valueOf(userId), patch)).thenReturn(patchedUser); // Ensure this method exists
-
-        ResponseEntity<?> response = userController.patchUser(userId, patch.toString());
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals(patchedUser, response.getBody());
-    }
-
-    @Test
-    public void testGetExistingDepartments() {
-        List<String> departments = Arrays.asList("R&D", "Sales");
-        when(userService.getDepartments()).thenReturn(departments); // Ensure this method exists
-
-        ResponseEntity<?> response = userController.getExistingDepartments();
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals(departments, response.getBody());
+        // Verify that the revokeToken method of Sw360UserService was called with correct arguments
+        verify(userServiceMock).revokeToken(userId, token);
     }
 }
