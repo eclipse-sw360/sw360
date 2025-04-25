@@ -10,35 +10,45 @@
 
 package org.eclipse.sw360.rest.resourceserver.user;
 
+import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.junit.Test;
-import org.springframework.hateoas.server.EntityLinks;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Collections;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.hateoas.server.EntityLinks;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.*;
+
+@RunWith(MockitoJUnitRunner.class)
 public class UserControllerTest {
 
-    private final EntityLinks entityLinks = mock(EntityLinks.class);
-    private final Sw360UserService userService = mock(Sw360UserService.class);
-    private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-    private final RestControllerHelper restControllerHelper = mock(RestControllerHelper.class);
+    @Mock
+    private EntityLinks entityLinks;
 
-    private final UserController userController = new UserController(
-            entityLinks,
-            userService,
-            passwordEncoder,
-            restControllerHelper
-    );
+    @Mock
+    private Sw360UserService userService;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private RestControllerHelper restControllerHelper;
+
+    @InjectMocks
+    private UserController userController;
 
     @Test
     public void testGetUserByEmail() {
         String email = "test@example.com";
-        Object user = new Object(); // Replace with actual UserDTO when available
+        User user = new User();
         when(userService.getUserByEmail(email)).thenReturn(user);
 
         ResponseEntity<?> response = userController.getUserByEmail(email);
@@ -49,7 +59,7 @@ public class UserControllerTest {
     @Test
     public void testGetUser() {
         String userId = "userId";
-        Object user = new Object();
+        User user = new User();
         when(userService.getUser(userId)).thenReturn(user);
 
         ResponseEntity<?> response = userController.getUser(userId);
@@ -59,7 +69,7 @@ public class UserControllerTest {
 
     @Test
     public void testCreateUser() {
-        Object newUser = new Object();
+        User newUser = new User();
         when(userService.createUser(newUser)).thenReturn(newUser);
 
         ResponseEntity<?> response = userController.createUser(newUser);
@@ -70,7 +80,7 @@ public class UserControllerTest {
     @Test
     public void testGetUserProfile() {
         String userId = "userId";
-        Object profile = new Object();
+        Map<String, Object> profile = new HashMap<>();
         when(userService.getUserProfile(userId)).thenReturn(profile);
 
         ResponseEntity<?> response = userController.getUserProfile(userId);
@@ -80,7 +90,7 @@ public class UserControllerTest {
 
     @Test
     public void testUpdateUserProfile() {
-        Object profile = new Object();
+        Map<String, Object> profile = new HashMap<>();
         when(userService.updateUserProfile(profile)).thenReturn(profile);
 
         ResponseEntity<?> response = userController.updateUserProfile(profile);
@@ -91,16 +101,18 @@ public class UserControllerTest {
     @Test
     public void testGetUserRestApiTokens() {
         String userId = "userId";
-        when(userService.getUserTokens(userId)).thenReturn(Collections.emptyList());
+        List<Map<String, Object>> tokens = Collections.emptyList();
+        when(userService.getUserTokens(userId)).thenReturn(tokens);
 
         ResponseEntity<?> response = userController.getUserRestApiTokens(userId);
         assertEquals(200, response.getStatusCodeValue());
+        assertEquals(tokens, response.getBody());
     }
 
     @Test
     public void testCreateUserRestApiToken() {
         String userId = "userId";
-        Object token = new Object();
+        Map<String, Object> token = new HashMap<>();
         when(userService.createUserToken(userId)).thenReturn(token);
 
         ResponseEntity<?> response = userController.createUserRestApiToken(userId);
@@ -120,30 +132,33 @@ public class UserControllerTest {
 
     @Test
     public void testGetGroupList() {
-        when(userService.getGroups()).thenReturn(Collections.emptyList());
+        List<String> groups = Arrays.asList("Engineering", "Legal");
+        when(userService.getGroups()).thenReturn(groups);
 
         ResponseEntity<?> response = userController.getGroupList();
         assertEquals(200, response.getStatusCodeValue());
+        assertEquals(groups, response.getBody());
     }
 
     @Test
     public void testPatchUser() {
         String userId = "userId";
-        Object patch = new Object();
-        Object updatedUser = new Object();
-
-        when(userService.patchUser(userId, patch)).thenReturn(updatedUser);
+        Map<String, Object> patch = new HashMap<>();
+        User patchedUser = new User();
+        when(userService.patchUser(userId, patch)).thenReturn(patchedUser);
 
         ResponseEntity<?> response = userController.patchUser(userId, patch);
         assertEquals(200, response.getStatusCodeValue());
-        assertEquals(updatedUser, response.getBody());
+        assertEquals(patchedUser, response.getBody());
     }
 
     @Test
     public void testGetExistingDepartments() {
-        when(userService.getDepartments()).thenReturn(Collections.emptyList());
+        List<String> departments = Arrays.asList("R&D", "Sales");
+        when(userService.getDepartments()).thenReturn(departments);
 
         ResponseEntity<?> response = userController.getExistingDepartments();
         assertEquals(200, response.getStatusCodeValue());
+        assertEquals(departments, response.getBody());
     }
 }
