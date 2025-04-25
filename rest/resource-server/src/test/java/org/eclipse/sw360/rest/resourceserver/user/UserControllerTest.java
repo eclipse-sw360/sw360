@@ -10,8 +10,10 @@
 
 package org.eclipse.sw360.rest.resourceserver.user;
 
+import org.apache.thrift.TException;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -48,7 +50,7 @@ public class UserControllerTest {
     @Test
     public void testGetUserByEmail() {
         String email = "test@example.com";
-        User user = new User();
+        User user = new User();  // Create a mock user
         when(userService.getUserByEmail(email)).thenReturn(user);
 
         ResponseEntity<?> response = userController.getUserByEmail(email);
@@ -57,7 +59,7 @@ public class UserControllerTest {
     }
 
     @Test
-    public void testGetUser() {
+    public void testGetUser() throws TException {
         String userId = "userId";
         User user = new User();
         when(userService.getUser(userId)).thenReturn(user);
@@ -70,7 +72,7 @@ public class UserControllerTest {
     @Test
     public void testCreateUser() {
         User newUser = new User();
-        when(userService.createUser(newUser)).thenReturn(newUser);
+        when(userService.createUser(newUser)).thenReturn(newUser);  // Ensure this method exists in userService
 
         ResponseEntity<?> response = userController.createUser(newUser);
         assertEquals(201, response.getStatusCodeValue());
@@ -81,7 +83,7 @@ public class UserControllerTest {
     public void testGetUserProfile() {
         String userId = "userId";
         Map<String, Object> profile = new HashMap<>();
-        when(userService.getUserProfile(userId)).thenReturn(profile);
+        when(userService.getUserProfile(userId)).thenReturn(profile); // Ensure this method exists
 
         ResponseEntity<?> response = userController.getUserProfile(userId);
         assertEquals(200, response.getStatusCodeValue());
@@ -89,9 +91,9 @@ public class UserControllerTest {
     }
 
     @Test
-    public void testUpdateUserProfile() {
+    public void testUpdateUserProfile() throws TException {
         Map<String, Object> profile = new HashMap<>();
-        when(userService.updateUserProfile(profile)).thenReturn(profile);
+        when(userService.updateUserProfile(profile)).thenReturn(profile); // Ensure this method exists
 
         ResponseEntity<?> response = userController.updateUserProfile(profile);
         assertEquals(200, response.getStatusCodeValue());
@@ -102,7 +104,7 @@ public class UserControllerTest {
     public void testGetUserRestApiTokens() {
         String userId = "userId";
         List<Map<String, Object>> tokens = Collections.emptyList();
-        when(userService.getUserTokens(userId)).thenReturn(tokens);
+        when(userService.getUserTokens(userId)).thenReturn(tokens); // Ensure this method exists
 
         ResponseEntity<?> response = userController.getUserRestApiTokens(userId);
         assertEquals(200, response.getStatusCodeValue());
@@ -110,10 +112,10 @@ public class UserControllerTest {
     }
 
     @Test
-    public void testCreateUserRestApiToken() {
+    public void testCreateUserRestApiToken() throws TException {
         String userId = "userId";
         Map<String, Object> token = new HashMap<>();
-        when(userService.createUserToken(userId)).thenReturn(token);
+        when(userService.createUserToken(userId)).thenReturn(token); // Ensure this method exists
 
         ResponseEntity<?> response = userController.createUserRestApiToken(userId);
         assertEquals(201, response.getStatusCodeValue());
@@ -121,10 +123,10 @@ public class UserControllerTest {
     }
 
     @Test
-    public void testRevokeUserRestApiToken() {
+    public void testRevokeUserRestApiToken() throws TException {
         String userId = "userId";
         String tokenId = "tokenId";
-        doNothing().when(userService).revokeToken(userId, tokenId);
+        doNothing().when(userService).revokeToken(userId, tokenId); // Ensure this method exists
 
         ResponseEntity<?> response = userController.revokeUserRestApiToken(userId, tokenId);
         assertEquals(204, response.getStatusCodeValue());
@@ -133,7 +135,7 @@ public class UserControllerTest {
     @Test
     public void testGetGroupList() {
         List<String> groups = Arrays.asList("Engineering", "Legal");
-        when(userService.getGroups()).thenReturn(groups);
+        when(userService.getGroups()).thenReturn(groups); // Ensure this method exists
 
         ResponseEntity<?> response = userController.getGroupList();
         assertEquals(200, response.getStatusCodeValue());
@@ -141,13 +143,13 @@ public class UserControllerTest {
     }
 
     @Test
-    public void testPatchUser() {
+    public void testPatchUser() throws TException {
         String userId = "userId";
         Map<String, Object> patch = new HashMap<>();
         User patchedUser = new User();
-        when(userService.patchUser(userId, patch)).thenReturn(patchedUser);
+        when(userService.patchUser(String.valueOf(userId), patch)).thenReturn(patchedUser); // Ensure this method exists
 
-        ResponseEntity<?> response = userController.patchUser(userId, patch);
+        ResponseEntity<?> response = userController.patchUser(userId, patch.toString());
         assertEquals(200, response.getStatusCodeValue());
         assertEquals(patchedUser, response.getBody());
     }
@@ -155,7 +157,7 @@ public class UserControllerTest {
     @Test
     public void testGetExistingDepartments() {
         List<String> departments = Arrays.asList("R&D", "Sales");
-        when(userService.getDepartments()).thenReturn(departments);
+        when(userService.getDepartments()).thenReturn(departments); // Ensure this method exists
 
         ResponseEntity<?> response = userController.getExistingDepartments();
         assertEquals(200, response.getStatusCodeValue());

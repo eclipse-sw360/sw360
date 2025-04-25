@@ -36,7 +36,6 @@ import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
 import org.eclipse.sw360.rest.resourceserver.core.BadRequestClientException;
 import org.eclipse.sw360.rest.resourceserver.core.HalResource;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RepositoryLinksResource;
@@ -241,7 +240,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     @Operation(summary = "Get current user's profile.", description = "Get current user's profile.",
             tags = {"Users"})
     @GetMapping(value = USERS_URL + "/profile")
-    public ResponseEntity<HalResource<User>> getUserProfile() {
+    public ResponseEntity<HalResource<User>> getUserProfile(String userId) {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         HalResource<User> halUserResource = new HalResource<>(sw360User);
         return ResponseEntity.ok(halUserResource);
@@ -293,7 +292,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             responses = {@ApiResponse(responseCode = "200", description = "List of tokens.")},
             tags = {"Users"})
     @RequestMapping(value = USERS_URL + "/tokens", method = RequestMethod.GET)
-    public ResponseEntity<CollectionModel<EntityModel<RestApiToken>>> getUserRestApiTokens() {
+    public ResponseEntity<CollectionModel<EntityModel<RestApiToken>>> getUserRestApiTokens(String userId) {
         final User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         List<RestApiToken> restApiTokens = sw360User.getRestApiTokens();
 
@@ -326,7 +325,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
                               "  ]\n}",
                             requiredProperties = {"name", "authorities", EXPIRATION_DATE_PROPERTY}
                     ))
-            @RequestBody Map<String, Object> requestBody
+            @RequestBody String requestBody
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
         RestApiToken restApiToken = userService.convertToRestApiToken(requestBody, sw360User);
@@ -348,8 +347,8 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     public ResponseEntity<String> revokeUserRestApiToken(
             @Parameter(description = "Name of token to be revoked.",
                     example = "MyToken")
-            @RequestParam("name") String tokenName
-    ) throws TException {
+            @RequestParam("name") String tokenName,
+            String tokenId) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 
         if (!userService.isTokenNameExisted(sw360User, tokenName)) {
@@ -406,7 +405,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
     @PatchMapping(value = USERS_URL + "/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<EntityModel<User>> patchUser(
-            @Parameter(description = "The user data to be updated.", schema = @Schema(implementation = User.class)) @RequestBody @NotNull User user,
+            @Parameter(description = "The user data to be updated.", schema = @Schema(implementation = User.class)) @RequestBody String user,
             @Parameter(description = "Id of updated user") @PathVariable String id
     ) throws TException {
         if (user.getPassword() != null && user.getPassword().isEmpty()) {
@@ -430,9 +429,7 @@ public class UserController implements RepresentationModelProcessor<RepositoryLi
             tags = {"Users"})
     @GetMapping(value = USERS_URL + "/departments")
     public ResponseEntity<?> getExistingDepartments(
-            @Parameter(description = "Type of department (primary, secondary)")
-            @RequestParam(value = "type", required = false) String type
-    ) {
+            ) {
         if (!CommonUtils.isNotNullEmptyOrWhitespace(type)) {
             return new ResponseEntity<>(userService.getAvailableDepartments(), HttpStatus.OK);
         }

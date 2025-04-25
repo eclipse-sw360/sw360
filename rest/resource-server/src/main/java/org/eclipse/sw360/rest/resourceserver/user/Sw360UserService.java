@@ -292,4 +292,31 @@ public class Sw360UserService {
             return Collections.emptySet();
         }
     }
+
+    public Object createUser(User newUser) {
+    }
+
+    public Object getUserProfile(String userId) {
+    }
+
+    public Object updateUserProfile(Map<String, Object> profile) {
+    }
+
+    public Object getUserTokens(String userId) {
+    }
+
+    public Object createUserToken(String userId) {
+    }
+
+    public void revokeToken(String userId, String tokenId) {
+    }
+
+    public Object getGroups() {
+    }
+
+    public Object patchUser(String userId, Map<String, Object> patch) {
+    }
+
+    public Object getDepartments() {
+    }
 }
