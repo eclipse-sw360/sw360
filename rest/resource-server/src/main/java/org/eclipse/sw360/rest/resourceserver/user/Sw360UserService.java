@@ -294,29 +294,98 @@ public class Sw360UserService {
     }
 
     public Object createUser(User newUser) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            AddDocumentRequestSummary summary = sw360UserClient.addUser(newUser);
+            if (summary.getRequestStatus() == AddDocumentRequestStatus.SUCCESS) {
+                return newUser;  // Return the newly created user
+            } else {
+                throw new BadRequestClientException("Failed to create user.");
+            }
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
+
 
     public Object getUserProfile(String userId) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.getUserProfile(userId);  // Assuming this is a valid method in your thrift service
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
+
 
     public Object updateUserProfile(Map<String, Object> profile) {
+        try {
+            // Logic to update user profile
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.updateUserProfile(profile);  // Assuming this method exists in your thrift client
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
+
 
     public Object getUserTokens(String userId) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.getUserTokens(userId);  // Assuming this method exists
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
+
 
     public Object createUserToken(String userId) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.createUserToken(userId);  // Assuming this method exists
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
+
 
     public void revokeToken(String userId, String tokenId) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            sw360UserClient.revokeToken(userId, tokenId);  // Assuming this method exists
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
+
 
     public Object getGroups() {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.getGroups();  // Assuming this method exists
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
+
 
     public Object patchUser(String userId, Map<String, Object> patch) {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.patchUser(userId, patch);  // Assuming this method exists
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
 
+
     public Object getDepartments() {
+        try {
+            UserService.Iface sw360UserClient = getThriftUserClient();
+            return sw360UserClient.getDepartments();  // Assuming this method exists
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
     }
+
 }
