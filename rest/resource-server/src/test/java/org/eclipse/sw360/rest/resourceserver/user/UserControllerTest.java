@@ -10,22 +10,36 @@
 
 package org.eclipse.sw360.rest.resourceserver.user;
 
+import org.eclipse.sw360.rest.resourceserver.user.dto.UserDTO;
+import org.eclipse.sw360.rest.resourceserver.user.dto.UserProfileDTO;
+import org.eclipse.sw360.rest.resourceserver.user.dto.ApiTokenDTO;
+import org.eclipse.sw360.rest.resourceserver.user.dto.UserPatchDTO;
 
-import org.eclipse.sw360.datahandler.thrift.users.UserService;
-import org.junit.Test;
-import org.mockito.Mockito;
+import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
+import org.springframework.hateoas.server.EntityLinks;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.http.ResponseEntity;
 
+import org.junit.Test;
+
 import java.util.Collections;
-import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 public class UserControllerTest {
 
-    private final UserService userService = mock(UserService.class);
-    private final UserController userController = new UserController(userService);
+    private final EntityLinks entityLinks = mock(EntityLinks.class);
+    private final Sw360UserService userService = mock(Sw360UserService.class);
+    private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
+    private final RestControllerHelper restControllerHelper = mock(RestControllerHelper.class);
+
+    private final UserController userController = new UserController(
+            entityLinks,
+            userService,
+            passwordEncoder,
+            restControllerHelper
+    );
 
     @Test
     public void testGetUserByEmail() {
