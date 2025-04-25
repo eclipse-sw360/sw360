@@ -10,6 +10,8 @@
 
 package org.eclipse.sw360.rest.resourceserver.user;
 
+
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.http.ResponseEntity;
