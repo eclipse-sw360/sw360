@@ -256,4 +256,24 @@ public class ImportExportController implements RepresentationModelProcessor<Repo
         RequestSummary requestSummary = importExportService.uploadComponentAttachment(sw360User, file, request);
         return ResponseEntity.ok(requestSummary);
     }
+
+    @Operation(
+            summary = "Export users as CSV.",
+            description = "Export all users in CSV format.",
+            tags = {"ImportExport"},
+            parameters = {
+                    @Parameter(name = "Accept", in = ParameterIn.HEADER, required = true),
+            }
+    )
+    @PreAuthorize("hasAuthority('WRITE')")
+    @RequestMapping(value = IMPORTEXPORT_URL + "/downloadUsers", method = RequestMethod.GET, produces = { MediaType.TEXT_PLAIN_VALUE })
+    public void downloadUsers(HttpServletResponse response) throws SW360Exception {
+        try {
+            User sw360User = restControllerHelper.getSw360UserFromAuthentication();
+            importExportService.getDownloadUsers(sw360User, response);
+        } catch (TException | IOException e) {
+            LOGGER.error("Error download users: {}", e.getMessage(), e);
+            throw new SW360Exception("Error download users: " + e.getMessage());
+        }
+    }
 }
