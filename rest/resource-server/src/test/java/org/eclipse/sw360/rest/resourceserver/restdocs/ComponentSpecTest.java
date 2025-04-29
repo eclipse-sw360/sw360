@@ -32,6 +32,7 @@ import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityState;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.rest.resourceserver.TestHelper;
 import org.eclipse.sw360.rest.resourceserver.attachment.Sw360AttachmentService;
+import org.eclipse.sw360.rest.resourceserver.component.ComponentMergeSelector;
 import org.eclipse.sw360.rest.resourceserver.component.Sw360ComponentService;
 import org.eclipse.sw360.rest.resourceserver.report.SW360ReportService;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
@@ -973,9 +974,10 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
 
     @Test
     public void should_document_merge_components() throws Exception {
+        ComponentMergeSelector mergeSelection = ComponentMergeSelector.from(angularTargetComponent);
         mockMvc.perform(patch("/api/components/mergecomponents")
                 .contentType(MediaTypes.HAL_JSON)
-                .content(this.objectMapper.writeValueAsString(angularTargetComponent))
+                .content(this.objectMapper.writeValueAsString(mergeSelection))
                 .header("Authorization", TestHelper.generateAuthHeader(testUserId, testUserPassword))
                 .queryParam("mergeTargetId", "87654321")
                 .queryParam("mergeSourceId", "17653524")
@@ -987,7 +989,6 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 parameterWithName("mergeTargetId").description("Id of a target component to merge")
                         ),
                         requestFields(
-                                fieldWithPath("id").description("The Id of the component"),
                                 fieldWithPath("subscribers").description("The subscribers of component"),
                                 fieldWithPath("ownerAccountingUnit").description("The owner accounting unit of the component"),
                                 subsectionWithPath("externalIds").description("When components are imported from other tools, the external ids can be stored here. Store as 'Single String' when single value, or 'Array of String' when multi-values"),
@@ -999,13 +1000,12 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("wiki").description("The wiki of component"),
                                 fieldWithPath("blog").description("The blog of component"),
                                 fieldWithPath("homepage").description("The homepage url of the component"),
-                                fieldWithPath("modifiedOn").description("The date the component was modified"),
 
                                 fieldWithPath("moderators").description("The component moderators"),
 
                                 fieldWithPath("name").description("The updated name of the component"),
-                                fieldWithPath("type").description("The updated name of the component"),
                                 fieldWithPath("createdOn").description("The date the component was created"),
+                                fieldWithPath("createdBy").description("The updated creator of this component"),
                                 fieldWithPath("componentOwner").description("The owner name of the component"),
                                 fieldWithPath("ownerGroup").description("The owner group of the component"),
                                 fieldWithPath("ownerCountry").description("The owner country of the component"),
@@ -1015,7 +1015,7 @@ public class ComponentSpecTest extends TestRestDocsSpecBase {
                                 fieldWithPath("mailinglist").description("Component mailing lists"),
                                 fieldWithPath("vendors").description("The vendors list"),
                                 fieldWithPath("description").description("The updated component description"),
-                                fieldWithPath("componentType").description("The updated  component type, possible values are: " + Arrays.asList(ComponentType.values()))
+                                fieldWithPath("componentType").description("The updated component type, possible values are: " + Arrays.asList(ComponentType.values()))
                         )));
     }
 
