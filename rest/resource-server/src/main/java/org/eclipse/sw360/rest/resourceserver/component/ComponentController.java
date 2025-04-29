@@ -1074,7 +1074,7 @@ public class ComponentController implements RepresentationModelProcessor<Reposit
             @Parameter(description = "The id of the merge source component.")
             @RequestParam(value = "mergeSourceId", required = true) String mergeSourceId,
             @Parameter(description = "The merge selection.")
-            @RequestBody Component mergeSelection
+            @RequestBody ComponentMergeSelector mergeSelection
     ) throws TException {
         User sw360User = restControllerHelper.getSw360UserFromAuthentication();
 

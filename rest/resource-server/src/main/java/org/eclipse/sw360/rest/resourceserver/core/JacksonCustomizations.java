@@ -61,6 +61,7 @@ import org.eclipse.sw360.datahandler.thrift.spdx.spdxpackageinfo.PackageVerifica
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vendors.Vendor;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.*;
+import org.eclipse.sw360.rest.resourceserver.component.ComponentMergeSelector;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonProjectRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.core.serializer.JsonReleaseRelationSerializer;
 import org.eclipse.sw360.rest.resourceserver.moderationrequest.EmbeddedModerationRequest;
@@ -92,6 +93,7 @@ public class JacksonCustomizations {
             setMixInAnnotation(User.class, Sw360Module.UserMixin.class);
             setMixInAnnotation(Component.class, Sw360Module.ComponentMixin.class);
             setMixInAnnotation(ComponentDTO.class, Sw360Module.ComponentDTOMixin.class);
+            setMixInAnnotation(ComponentMergeSelector.class, Sw360Module.ComponentMergeSelectorMixin.class);
             setMixInAnnotation(Package.class, Sw360Module.PackageMixin.class);
             setMixInAnnotation(Release.class, Sw360Module.ReleaseMixin.class);
             setMixInAnnotation(SPDXDocument.class, Sw360Module.SPDXDocumentMixin.class);
@@ -159,6 +161,7 @@ public class JacksonCustomizations {
                     .replaceWithClass(User.class, UserMixin.class)
                     .replaceWithClass(Component.class, ComponentMixin.class)
                     .replaceWithClass(ComponentDTO.class, ComponentDTOMixin.class)
+                    .replaceWithClass(ComponentMergeSelector.class, ComponentMergeSelectorMixin.class)
                     .replaceWithClass(Package.class, PackageMixin.class)
                     .replaceWithClass(Release.class, ReleaseMixin.class)
                     .replaceWithClass(ReleaseLink.class, ReleaseLinkMixin.class)
@@ -820,6 +823,135 @@ public class JacksonCustomizations {
                 "descriptionIsSet"
         })
         static abstract class ComponentDTOMixin extends Component {
+            @Override
+            @JsonProperty(PropertyKeyMapping.COMPONENT_VENDOR_KEY_JSON)
+            abstract public Set<String> getVendorNames();
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonIgnoreProperties(value = {
+                "id",
+                "type",
+                "revision",
+                "attachments",
+                "releases",
+                "documentState",
+                "permissions",
+                "setId",
+                "setRevision",
+                "setType",
+                "setName",
+                "setDescription",
+                "setAttachments",
+                "setCreatedOn",
+                "setCreatedBy",
+                "setSubscribers",
+                "setModerators",
+                "releasesSize",
+                "setReleases",
+                "setReleaseIds",
+                "setDefaultVendor",
+                "setDefaultVendorId",
+                "setCategories",
+                "languagesSize",
+                "setLanguages",
+                "setVendorNames",
+                "setHomepage",
+                "setMailinglist",
+                "setWiki",
+                "setBlog",
+                "setWikipedia",
+                "setOpenHub",
+                "setPermissions",
+                "attachmentsSize",
+                "attachmentsIterator",
+                "setComponentType",
+                "subscribersSize",
+                "subscribersIterator",
+                "moderatorsSize",
+                "moderatorsIterator",
+                "releasesIterator",
+                "releaseIdsSize",
+                "releaseIdsIterator",
+                "mainLicenseIdsSize",
+                "mainLicenseIdsIterator",
+                "setMainLicenseIds",
+                "categoriesSize",
+                "categoriesIterator",
+                "languagesIterator",
+                "softwarePlatformsSize",
+                "softwarePlatformsIterator",
+                "setExternalIds",
+                "externalIdsSize",
+                "setSoftwarePlatforms",
+                "operatingSystemsSize",
+                "operatingSystemsIterator",
+                "setOperatingSystems",
+                "vendorNamesSize",
+                "vendorNamesIterator",
+                "setDocumentState",
+                "permissionsSize",
+                "setComponentOwner",
+                "setOwnerAccountingUnit",
+                "setOwnerGroup",
+                "setOwnerCountry",
+                "rolesSize",
+                "setRoles",
+                "additionalDataSize",
+                "setAdditionalData",
+                "setModifiedOn",
+                "setModifiedBy",
+                "modifiedBy",
+                "cdxComponentType",
+                "setCdxComponentType",
+                "setVcs",
+                "createdByIsSet",
+                "createdOnIsSet",
+                "componentTypeIsSet",
+                "externalIdsIsSet",
+                "additionalDataIsSet",
+                "attachmentsIsSet",
+                "subscribersIsSet",
+                "rolesIsSet",
+                "mainLicenseIdsIsSet",
+                "modifiedOn",
+                "languagesIsSet",
+                "operatingSystemsIsSet",
+                "softwarePlatformsIsSet",
+                "modifiedByIsSet",
+                "modifiedOnIsSet",
+                "idIsSet",
+                "revisionIsSet",
+                "typeIsSet",
+                "documentStateIsSet",
+                "permissionsIsSet",
+                "moderatorsIsSet",
+                "componentOwnerIsSet",
+                "ownerAccountingUnitIsSet",
+                "ownerGroupIsSet",
+                "ownerCountryIsSet",
+                "setVisbility",
+                "visbilityIsSet",
+                "setBusinessUnit",
+                "businessUnitIsSet",
+                "cdxComponentTypeIsSet",
+                "releasesIsSet",
+                "releaseIdsIsSet",
+                "defaultVendorIsSet",
+                "defaultVendorIdIsSet",
+                "categoriesIsSet",
+                "vendorNamesIsSet",
+                "mailinglistIsSet",
+                "wikiIsSet",
+                "blogIsSet",
+                "wikipediaIsSet",
+                "openHubIsSet",
+                "vcsIsSet",
+                "nameIsSet",
+                "homepageIsSet",
+                "descriptionIsSet"
+        })
+        static abstract class ComponentMergeSelectorMixin extends ComponentMergeSelector {
             @Override
             @JsonProperty(PropertyKeyMapping.COMPONENT_VENDOR_KEY_JSON)
             abstract public Set<String> getVendorNames();
