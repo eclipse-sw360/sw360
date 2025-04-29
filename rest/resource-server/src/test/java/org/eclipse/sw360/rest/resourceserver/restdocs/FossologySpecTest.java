@@ -49,16 +49,16 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
 
     @Value("${sw360.test-user-password}")
     private String testUserPassword;
-    
+
     @MockBean
     Sw360FossologyAdminServices fossologyAdminServices;
-    
+
     @MockBean
     FossologyService.Iface fossologyClient;
-    
+
     @MockBean
     private ConfigContainer fossologyConfig;
-    
+
     @Before
     public void before() throws TException, IOException,TTransportException {
         fossologyClient = mock(FossologyService.Iface.class);
@@ -70,10 +70,10 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
                 new User("admin@sw360.org", "sw360").setId("123456789"));
         when(fossologyAdminServices.getThriftFossologyClient()).thenReturn(fossologyClient);
         when(fossologyClient.getFossologyConfig()).thenReturn(fossologyConfig);
-        Mockito.doNothing().when(fossologyAdminServices).saveConfig(any(), any(), any(), any());
+        Mockito.doNothing().when(fossologyAdminServices).saveConfig(any(), any(), any(), any(), any(), any());
         Mockito.doNothing().when(fossologyAdminServices).serverConnection(any());
     }
-    
+
     @Test
     public void should_document_save_configuration() throws Exception {
         Map<String, String> myMap = new HashMap<>();
@@ -87,7 +87,7 @@ public class FossologySpecTest extends TestRestDocsSpecBase {
                 .accept(MediaTypes.HAL_JSON))
                 .andExpect(status().isOk());
     }
-    
+
     @Test
     public void should_document_check_server_configuration() throws Exception {
         mockMvc.perform(get("/api/fossology/reServerConnection")

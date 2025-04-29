@@ -7,16 +7,18 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
+
 package org.eclipse.sw360.fossology.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.sw360.datahandler.cloudantclient.DatabaseConnectorCloudant;
 import org.eclipse.sw360.datahandler.common.Duration;
 import org.eclipse.sw360.datahandler.couchdb.AttachmentConnector;
 import org.eclipse.sw360.datahandler.db.ConfigContainerRepository;
+import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.ThriftClients;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -33,11 +35,45 @@ import static org.eclipse.sw360.datahandler.common.Duration.durationOf;
 @Configuration
 @ComponentScan({"org.eclipse.sw360.fossology"})
 public class FossologyConfig {
-    // TODO get from a config class
-    private final Duration downloadTimeout = durationOf(2, TimeUnit.MINUTES);
+
+    private static final Logger log = LogManager.getLogger(FossologyConfig.class);
+    private Duration downloadTimeout = null;
+
+    private Duration getDownloadTimeout() {
+        FossologyRestConfig fossologyRestConfig;
+        try {
+            fossologyRestConfig = new FossologyRestConfig(configContainerRepository());
+        } catch (SW360Exception e) {
+            log.error("Failed to load Fossology configuration.", e);
+            return durationOf(2, TimeUnit.MINUTES);
+        }
+        long timeoutValue = 2; // Set the default to 2
+        TimeUnit timeoutUnit = TimeUnit.MINUTES;
+
+        String timeoutStr = fossologyRestConfig.getDownloadTimeout();
+        String timeoutUnitStr = fossologyRestConfig.getDownloadTimeoutUnit();
+
+        if (timeoutStr != null) {
+            try {
+                timeoutValue = Long.parseLong(timeoutStr);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid timeout value in config, using default (2 minutes).", e);
+            }
+        }
+
+        if (timeoutUnitStr != null) {
+            try {
+                timeoutUnit = TimeUnit.valueOf(timeoutUnitStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid timeout unit in config, using default (MINUTES).", e);
+            }
+        }
+
+        return durationOf(timeoutValue, timeoutUnit);
+    }
 
     @Bean
-    public ConfigContainerRepository configContainerRepository() throws MalformedURLException {
+    public ConfigContainerRepository configContainerRepository() {
         DatabaseConnectorCloudant configContainerDatabaseConnector = new DatabaseConnectorCloudant(getConfiguredClient(),
                 COUCH_DB_CONFIG);
         return new ConfigContainerRepository(configContainerDatabaseConnector);
@@ -45,6 +81,9 @@ public class FossologyConfig {
 
     @Bean
     public AttachmentConnector attachmentConnector() throws MalformedURLException {
+        if (this.downloadTimeout == null) {
+            this.downloadTimeout = getDownloadTimeout();
+        }
         return new AttachmentConnector(getConfiguredClient(), COUCH_DB_ATTACHMENTS, downloadTimeout);
     }
 
@@ -62,5 +101,4 @@ public class FossologyConfig {
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
     }
-
 }

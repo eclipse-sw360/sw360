@@ -33,6 +33,5 @@
             <groupId>org.spdx</groupId>
             <artifactId>tools-java</artifactId>
         </dependency>
-
     </dependencies>
 </project>

@@ -12,8 +12,8 @@ package org.eclipse.sw360.search;
 
 import com.google.common.collect.ImmutableMap;
 
+import com.google.common.collect.Sets;
 import com.ibm.cloud.cloudant.v1.Cloudant;
-import org.apache.jena.ext.com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.thrift.TException;

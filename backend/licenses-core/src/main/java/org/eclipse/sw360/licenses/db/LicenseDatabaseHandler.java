@@ -34,7 +34,6 @@ import org.eclipse.sw360.datahandler.thrift.changelogs.Operation;
 import org.eclipse.sw360.licenses.tools.SpdxConnector;
 import org.eclipse.sw360.exporter.LicenseExporter;
 import org.eclipse.sw360.licenses.tools.OSADLObligationConnector;
-import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -63,7 +62,7 @@ import static org.eclipse.sw360.datahandler.thrift.ThriftValidate.*;
 import org.eclipse.sw360.datahandler.db.DatabaseHandlerUtil;
 import com.google.common.collect.Lists;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
-import org.spdx.library.InvalidSPDXAnalysisException;
+import org.spdx.core.InvalidSPDXAnalysisException;
 
 /**
  * Class for accessing the CouchDB database

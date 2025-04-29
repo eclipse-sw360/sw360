@@ -163,7 +163,7 @@ struct COTSDetails{
     8: optional string clearingDeadline,
     9: optional bool sourceCodeAvailable,
 }
-struct EccInformation{
+struct EccInformation {
     1: optional ECCStatus eccStatus, // Status of ECC assessment
     2: optional string al, // German Ausfuhrliste
     3: optional string eccn, // European control classification number
@@ -172,6 +172,7 @@ struct EccInformation{
     6: optional string eccComment, // comments for ecc information
     7: optional string materialIndexNumber, // six digit material index number, string for convenience
     8: optional string assessmentDate, // Date - YYYY-MM-dd, date of the last editing of ECC information
+    9: optional bool containsCryptography = false, // Indicates if the release contains cryptography
 }
 struct ClearingInformation {
     // supplier / ec info
