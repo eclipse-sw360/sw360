@@ -12,6 +12,10 @@
 
 package org.eclipse.sw360.rest.resourceserver.release;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,9 +64,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfo;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoParsingResult;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseInfoService;
+import org.eclipse.sw360.datahandler.thrift.licenseinfo.LicenseNameWithText;
 
 import com.google.common.collect.Sets;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptySet;
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyString;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_FORCE_UPDATE_ENABLED;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapTException;
@@ -95,6 +104,11 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     private static final String RESPONSE_STATUS_VALUE_COMPLETED = "Completed";
     private static final String RESPONSE_STATUS_VALUE_FAILED = "Failed";
     private static final String RELEASE_ATTACHMENT_ERRORMSG = "There has to be exactly one source attachment, but there are %s at this release. Please come back once you corrected that.";
+    private static final String EMPTY = "<empty>";
+    private static final String LICENSE_NAME_WITH_TEXT_NAME = "name";
+    private static final String LICENSE_NAME_WITH_TEXT_TEXT = "text";
+    private static final String LICENSE_NAME_WITH_TEXT_ERROR = "error";
+    private static final String LICENSE_NAME_WITH_TEXT_FILE = "file";
 
     public List<Release> getReleasesForUser(User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
@@ -1360,5 +1374,49 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
     public void unsubscribeRelease(User user, String releaseId) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         sw360ComponentClient.unsubscribeRelease(releaseId, user);
+    }
+
+    public List<Map<String,String>> getReleaseLicenseInfo(Release rel, User sw360User, String attachContentId) throws TException{
+        ThriftClients thriftClients = new ThriftClients();
+        LicenseInfoService.Iface licenseClient = thriftClients.makeLicenseInfoClient();
+        List<LicenseInfoParsingResult> licenseInfos = licenseClient.getLicenseInfoForAttachment(rel, attachContentId, false, sw360User);
+        List<Map<String, String>> licenses = Lists.newArrayList();
+        licenseInfos.forEach(licenseInfoResult ->
+                addLicenseInfoResultToJsonSerializableLicensesList(licenseInfoResult, licenses));
+        return licenses;
+    }
+
+    private void addLicenseInfoResultToJsonSerializableLicensesList(LicenseInfoParsingResult licenseInfoResult,
+                                                                    List<Map<String, String>> licenses) {
+        switch (licenseInfoResult.getStatus()) {
+            case SUCCESS:
+                Set<LicenseNameWithText> licenseNamesWithTexts = nullToEmptySet(licenseInfoResult.getLicenseInfo().getLicenseNamesWithTexts());
+                List<Map<String, String>> licensesAsObject = licenseNamesWithTexts.stream()
+                        .filter(licenseNameWithText -> !Strings.isNullOrEmpty(licenseNameWithText.getLicenseName())
+                                || !Strings.isNullOrEmpty(licenseNameWithText.getLicenseText())).map(licenseNameWithText -> {
+                            Map<String, String> data = Maps.newHashMap();
+                            data.put(LICENSE_NAME_WITH_TEXT_NAME, Strings.isNullOrEmpty(licenseNameWithText.getLicenseName()) ? EMPTY
+                                    : licenseNameWithText.getLicenseName());
+                            data.put(LICENSE_NAME_WITH_TEXT_TEXT, licenseNameWithText.getLicenseText());
+                            return data;
+                        }).collect(Collectors.toList());
+
+                licenses.addAll(licensesAsObject);
+                break;
+            case FAILURE:
+            case NO_APPLICABLE_SOURCE:
+                LicenseInfo licenseInfo = licenseInfoResult.getLicenseInfo();
+                String filename = Optional.ofNullable(licenseInfo)
+                        .map(LicenseInfo::getFilenames)
+                        .map(CommonUtils.COMMA_JOINER::join)
+                        .orElse("<filename unknown>");
+                String message = Optional.ofNullable(licenseInfoResult.getMessage())
+                        .orElse("<no message>");
+                licenses.add(ImmutableMap.of(LICENSE_NAME_WITH_TEXT_ERROR, message,
+                        LICENSE_NAME_WITH_TEXT_FILE, filename));
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown LicenseInfoRequestStatus: " + licenseInfoResult.getStatus());
+        }
     }
 }
