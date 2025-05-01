@@ -105,3 +105,21 @@ SPDX-License-Identifier: EPL-2.0
 This program and the accompanying materials are made
 available under the terms of the Eclipse Public License 2.0
 which is available at [https://www.eclipse.org/legal/epl-2.0/](https://www.eclipse.org/legal/epl-2.0/)
+
+
+Step 1: Configure `sw360.properties`
+Edit the file at `backend/src/main/resources/sw360.properties` to point to your remote CouchDB server:
+
+STep 2: Run the provided script to create necessary databases and design documents:
+```bash```
+./scripts/init-database.sh
+
+You can override the config file used by setting the SW360_CONFIG_FILE environment variable
+export SW360_CONFIG_FILE=/path/to/custom-sw360.properties
+./scripts/init-database.sh
+
+Step 3: Verify the Remote CouchDB Setup
+http://<REMOTE_HOST>:5984/_utils
+
+
+
