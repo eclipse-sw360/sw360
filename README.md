@@ -63,6 +63,7 @@ requirements
   * thrift 0.16.0 runtime
   * Python environment ( to [pre-commit](https://pre-commit.com/) ) - SW360 use Eclipse formatting rules
   through [Spotless maven plugin](https://github.com/diffplug/spotless/tree/main/plugin-maven)
+  **Note:** Python 3.6 or higher is required to run the scripts in `scripts/utilities`. 
 
 If you can't install thrift 0.16 runtime, you will need the following requirements:
 
