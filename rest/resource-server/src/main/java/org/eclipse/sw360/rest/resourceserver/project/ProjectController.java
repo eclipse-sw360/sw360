@@ -2632,7 +2632,7 @@ public class ProjectController implements RepresentationModelProcessor<Repositor
 		sw360.unsetVisbility();
 		sw360.unsetSecurityResponsibles();
 		HalResource<Project> halProject = new HalResource<>(sw360);
-
+        halProject.add(linkTo(ProjectController.class).slash("api/projects/" + sw360Project.getId()).withSelfRel());
 		if (releaseIdToUsage != null) {
 		    restControllerHelper.addEmbeddedProjectReleases(halProject, releases);
 		}
