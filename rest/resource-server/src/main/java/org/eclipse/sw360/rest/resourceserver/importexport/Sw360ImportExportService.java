@@ -24,11 +24,7 @@ import static org.eclipse.sw360.importer.ComponentImportUtils.writeToDatabase;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 
 import org.apache.commons.csv.CSVRecord;
@@ -47,6 +43,7 @@ import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.users.UserGroup;
+import org.eclipse.sw360.datahandler.thrift.users.UserService;
 import org.eclipse.sw360.datahandler.thrift.vendors.VendorService;
 import org.eclipse.sw360.exporter.CSVExport;
 import org.eclipse.sw360.importer.ComponentAttachmentCSVRecord;
@@ -329,5 +326,40 @@ public class Sw360ImportExportService {
         final RequestSummary requestSummary = writeAttachmentsToDatabase(compCSVRecords, sw360User,
                 sw360ComponentClient, sw360AttachmentClient);
         return requestSummary;
+    }
+
+    public void getDownloadUsers(User sw360User, HttpServletResponse response) throws IOException, TException {
+        if (!PermissionUtils.isUserAtLeast(UserGroup.ADMIN, sw360User)) {
+            throw new AccessDeniedException("User is not admin");
+        }
+
+        UserService.Iface userClient = thriftClients.makeUserClient();
+        List<User> users = userClient.getAllUsers();
+
+        List<String> headers = Arrays.asList(
+                "GivenName", "Lastname", "Email", "Department", "UserGroup", "GID", "PasswdHash", "wantsMailNotification"
+        );
+
+        List<Iterable<String>> csvRows = new ArrayList<>();
+
+        for (User user : users) {
+            List<String> row = new ArrayList<>();
+            row.add(user.getGivenname() != null ? user.getGivenname() : "");
+            row.add(user.getLastname() != null ? user.getLastname() : "");
+            row.add(user.getEmail() != null ? user.getEmail() : "");
+            row.add(user.getDepartment() != null ? user.getDepartment() : "");
+            row.add(user.getUserGroup() != null ? user.getUserGroup().toString() : "");
+            row.add(user.getExternalid() != null ? user.getExternalid() : "");
+            row.add(user.getPassword() != null ? user.getPassword() : "");
+            row.add(user.isSetWantsMailNotification() ? "True" : "False");
+
+            csvRows.add(row);
+        }
+
+        ByteArrayInputStream byteArrayInputStream = CSVExport.createCSV(headers, csvRows);
+
+        String filename = String.format("AllUsersData_%s.csv", SW360Utils.getCreatedOn());
+        response.setHeader(CONTENT_DISPOSITION, String.format("Users; filename=\"%s\"", filename));
+        FileCopyUtils.copy(byteArrayInputStream, response.getOutputStream());
     }
 }

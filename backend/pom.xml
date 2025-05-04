@@ -121,6 +121,11 @@
             <artifactId>jakarta.mail-api</artifactId>
             <version>${jakarta.mail-api.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>jakarta.mail</artifactId>
+            <version>${sun.mail.version}</version>
+        </dependency>
     </dependencies>
 
     <!-- Needed by Servlets to be activated by Tomcat -->

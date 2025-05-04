@@ -12,7 +12,7 @@
 package org.eclipse.sw360.clients.rest.resource.users;
 
 public enum SW360UserGroup {
-    USER(0), ADMIN(1), CLEARING_ADMIN(2), ECC_ADMIN(3), SECURITY_ADMIN(4), SW360_ADMIN(5);
+    USER(0), ADMIN(1), CLEARING_ADMIN(2), ECC_ADMIN(3), SECURITY_ADMIN(4), SW360_ADMIN(5), CLEARING_EXPERT(6);
 
     private final int value;
 
@@ -38,6 +38,8 @@ public enum SW360UserGroup {
                 return SECURITY_ADMIN;
             case 5:
                 return SW360_ADMIN;
+            case 6:
+                return CLEARING_EXPERT;
             default:
                 return null;
         }

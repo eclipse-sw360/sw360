@@ -12,12 +12,10 @@
 
 package org.eclipse.sw360.rest.resourceserver.component;
 
+import com.google.common.collect.ImmutableSet;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
@@ -30,7 +28,6 @@ import org.eclipse.sw360.datahandler.thrift.components.Component;
 import org.eclipse.sw360.datahandler.thrift.components.ComponentService;
 import org.eclipse.sw360.datahandler.thrift.components.ReleaseLink;
 import org.eclipse.sw360.datahandler.thrift.projects.Project;
-import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.components.Release;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.datahandler.thrift.vulnerabilities.VulnerabilityDTO;
@@ -40,21 +37,20 @@ import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.vulnerability.Sw360VulnerabilityService;
 import org.eclipse.sw360.rest.resourceserver.project.Sw360ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.eclipse.sw360.datahandler.common.CommonUtils.getSortedMap;
+import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhitespace;
 import static org.eclipse.sw360.datahandler.common.SW360ConfigKeys.IS_FORCE_UPDATE_ENABLED;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class Sw360ComponentService implements AwareOfRestServices<Component> {
-    @Value("${sw360.thrift-server-url:http://localhost:8080}")
-    private String thriftServerUrl;
 
     @NonNull
     private final RestControllerHelper<Component> rch;
@@ -249,15 +245,7 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     }
 
     private ComponentService.Iface getThriftComponentClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/components/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new ComponentService.Client(protocol);
-    }
-
-    private ProjectService.Iface getThriftProjectClient() throws TTransportException {
-        THttpClient thriftClient = new THttpClient(thriftServerUrl + "/projects/thrift");
-        TProtocol protocol = new TCompactProtocol(thriftClient);
-        return new ProjectService.Client(protocol);
+        return new ThriftClients().makeComponentClient();
     }
 
     public List<Component> getMyComponentsForUser(User sw360User) throws TException {
@@ -290,21 +278,24 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
         return sw360ComponentClient.prepareImportBom(user, attachmentContentId);
     }
 
-  public RequestStatus mergeComponents(String componentTargetId, String componentSourceId, Component componentSelection, User user) throws TException {
+    public RequestStatus mergeComponents(String componentTargetId, String componentSourceId,
+                                         Component componentSelection, User user) throws TException {
+        validateComponentMergeSelection(componentSelection);
+
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
-        RequestStatus requestStatus;
-        requestStatus =  sw360ComponentClient.mergeComponents(componentTargetId, componentSourceId, componentSelection, user);
+        RequestStatus requestStatus = sw360ComponentClient.mergeComponents(
+                componentTargetId, componentSourceId, componentSelection, user);
 
         if (requestStatus == RequestStatus.IN_USE) {
             throw new BadRequestClientException("Component already in use.");
         } else if (requestStatus == RequestStatus.FAILURE) {
             throw new BadRequestClientException("Cannot merge these components");
         } else if (requestStatus == RequestStatus.ACCESS_DENIED) {
-            throw new RuntimeException("Access denied");
+            throw new AccessDeniedException("Access denied");
         }
 
         return requestStatus;
-  }
+    }
 
     public RequestStatus splitComponents(Component srcComponent, Component targetComponent, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
@@ -339,5 +330,27 @@ public class Sw360ComponentService implements AwareOfRestServices<Component> {
     public List<Component> refineSearch(Map<String, Set<String>> filterMap, User sw360User) throws TException {
         ComponentService.Iface sw360ComponentClient = getThriftComponentClient();
         return sw360ComponentClient.refineSearchAccessibleComponents(null, filterMap, sw360User);
+    }
+
+    /**
+     * Validate if the `componentSelection` object is not null and contains the required fields.
+     * @param componentSelection The component selection object to validate.
+     * @throws BadRequestClientException if the object is null or missing required fields.
+     */
+    private void validateComponentMergeSelection(Component componentSelection) {
+        if (componentSelection == null) {
+            throw new BadRequestClientException("Body for merge cannot be null");
+        }
+        Set<Component._Fields> requiredFields = ImmutableSet.<Component._Fields>builder()
+                .add(Component._Fields.NAME)
+                .add(Component._Fields.CREATED_ON)
+                .add(Component._Fields.CREATED_BY)
+                .build();
+
+        for (Component._Fields field : requiredFields) {
+            if (!componentSelection.isSet(field) || isNullEmptyOrWhitespace((String) componentSelection.getFieldValue(field))) {
+                throw new BadRequestClientException("Merge body is missing field " + field.getFieldName());
+            }
+        }
     }
 }

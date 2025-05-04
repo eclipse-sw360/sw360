@@ -15,12 +15,10 @@ import com.google.common.collect.Sets;
 
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.SW360Utils;
-import org.eclipse.sw360.datahandler.thrift.SW360Exception;
 import org.eclipse.sw360.datahandler.thrift.attachments.AttachmentContent;
 import org.eclipse.sw360.datahandler.thrift.licenseinfo.*;
 import org.apache.jena.util.XMLChar;
 
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -125,7 +123,7 @@ public class SPDXParserTools {
             if (!XMLChar.isNCName(label.charAt(i))) {
                 if (Util.splitNamespaceXML(label) == label.length()) {
                     try {
-                        label = URLDecoder.decode(label, StandardCharsets.UTF_8.name());
+                        label = URLDecoder.decode(label, StandardCharsets.UTF_8);
                         URL url = new URL(label);
                         if (null != url.getRef()) {
                             return url.getRef();
@@ -133,7 +131,7 @@ public class SPDXParserTools {
                             String path = url.getPath();
                             return path.substring(path.lastIndexOf('/') + 1);
                         }
-                    } catch (UnsupportedEncodingException | MalformedURLException e) {
+                    } catch (MalformedURLException e) {
                         return "";
                     }
                 }
