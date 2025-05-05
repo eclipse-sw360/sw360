@@ -265,8 +265,9 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
             throw new DataIntegrityViolationException("sw360 release with name '" + SW360Utils.printName(release) + "' already exists.");
         } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
-        }
-        else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
+        } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.INVALID_SOURCE_CODE_URL) {
+            throw new BadRequestClientException("Invalid source code URL.");
+        } else if (documentRequestSummary.getRequestStatus() == AddDocumentRequestStatus.NAMINGERROR) {
             throw new BadRequestClientException(
                     "Release name and version field cannot be empty or contain only whitespace character");
         }
@@ -300,7 +301,12 @@ public class Sw360ReleaseService implements AwareOfRestServices<Release> {
         }
         if (requestStatus == RequestStatus.INVALID_INPUT) {
             throw new BadRequestClientException("Dependent document Id/ids not valid.");
-        } else if (requestStatus == RequestStatus.NAMINGERROR) {
+        }
+        else if (requestStatus == RequestStatus.INVALID_SOURCE_CODE_URL ){
+            throw new BadRequestClientException("Invalid source code URL.");
+        }
+
+        else if (requestStatus == RequestStatus.NAMINGERROR) {
             throw new BadRequestClientException(
                     "Release name and version field cannot be empty or contain only whitespace character");
         } else if (requestStatus == RequestStatus.DUPLICATE_ATTACHMENT) {
