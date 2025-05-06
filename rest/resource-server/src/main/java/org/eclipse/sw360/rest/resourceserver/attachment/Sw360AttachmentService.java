@@ -26,6 +26,7 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransportException;
+import org.cyclonedx.exception.ParseException;
 import org.eclipse.sw360.commonIO.AttachmentFrontendUtils;
 import org.eclipse.sw360.datahandler.common.CommonUtils;
 import org.eclipse.sw360.datahandler.common.DatabaseSettings;
@@ -41,6 +42,9 @@ import org.eclipse.sw360.datahandler.thrift.projects.ProjectService;
 import org.eclipse.sw360.datahandler.thrift.users.User;
 import org.eclipse.sw360.rest.resourceserver.core.RestControllerHelper;
 import org.eclipse.sw360.rest.resourceserver.core.ThriftServiceProvider;
+import org.spdx.library.InvalidSPDXAnalysisException;
+import org.spdx.library.model.SpdxDocument;
+import org.spdx.tools.InvalidFileNameException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
@@ -64,6 +68,8 @@ import static org.eclipse.sw360.datahandler.common.CommonUtils.isNullEmptyOrWhit
 import static org.eclipse.sw360.datahandler.common.CommonUtils.nullToEmptyList;
 import static org.eclipse.sw360.datahandler.common.SW360Assert.assertNotNull;
 import static org.eclipse.sw360.datahandler.common.WrappedException.wrapSW360Exception;
+import static org.spdx.tools.SpdxToolsHelper.deserializeDocument;
+import org.cyclonedx.parsers.*;
 
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -567,6 +573,82 @@ public class Sw360AttachmentService {
             attachment.unsetCheckedTeam();
             attachment.setCheckedComment("");
             attachment.unsetCheckedOn();
+        }
+    }
+
+    public boolean isValidSbomFile(MultipartFile file) throws TException {
+
+        if (file == null || file.isEmpty()) {
+            return false;
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        File tmpFile = null;
+
+        try {
+            String lowerCaseFilename = originalFilename.toLowerCase();
+
+            // SPDX formats
+            if (lowerCaseFilename.endsWith(".spdx") || lowerCaseFilename.endsWith(".rdf")) {
+
+                String extension = lowerCaseFilename.endsWith(".spdx") ? ".spdx" : ".rdf";
+                tmpFile = saveAsTempFile(file.getInputStream(), "sbom_validation", extension);
+
+                try {
+                    SpdxDocument doc = deserializeDocument(tmpFile);
+
+                    String specVersion = doc.getSpecVersion();
+                    if (specVersion == null || specVersion.isEmpty()) {
+                        log.debug("SPDX document missing SPDX specification version");
+                        return false;
+                    }
+
+                    String documentUri = doc.getDocumentUri();
+                    if (documentUri == null || documentUri.isEmpty()) {
+                        log.debug("SPDX document missing required Document URI/namespace");
+                        return false;
+                    }
+
+                    return true;
+
+                } catch (InvalidSPDXAnalysisException | InvalidFileNameException e) {
+                    log.debug("Not a valid SPDX file: {}", e.getMessage());
+                    return false;
+                }
+            }
+
+            // CycloneDX formats
+            else if (lowerCaseFilename.endsWith(".xml")) {
+                tmpFile = saveAsTempFile(file.getInputStream(), "sbom_validation", ".xml");
+                try {
+                    XmlParser xmlParser = new XmlParser();
+                    List<ParseException> xmlErrors = xmlParser.validate(tmpFile);
+                    return xmlErrors == null || xmlErrors.isEmpty();
+                } catch (Exception e) {
+                    log.debug("Not a valid CycloneDX XML file: {}", e.getMessage());
+                    return false;
+                }
+            } else if (lowerCaseFilename.endsWith(".json")) {
+                tmpFile = saveAsTempFile(file.getInputStream(), "sbom_validation", ".json");
+                try {
+                    JsonParser jsonParser = new JsonParser();
+                    List<ParseException> jsonErrors = jsonParser.validate(tmpFile);
+                    return jsonErrors == null || jsonErrors.isEmpty();
+                } catch (Exception e) {
+                    log.debug("Not a valid CycloneDX JSON file: {}", e.getMessage());
+                    return false;
+                }
+            }
+
+            return false;
+
+        } catch (IOException e) {
+            log.error("Error validating SBOM file: {}", e.getMessage(), e);
+            throw new TException("Failed to validate SBOM file: " + e.getMessage());
+        } finally {
+            if (tmpFile != null && tmpFile.exists()) {
+                tmpFile.delete();
+            }
         }
     }
 }
