@@ -6,7 +6,7 @@ resource "keycloak_openid_client_scope" "sw360_read" {
   realm_id               = keycloak_realm.sw360.id
   name                   = "READ"
   description            = "Read access to SW360"
-  include_in_token_scope = false
+  include_in_token_scope = true
 }
 
 # 2. WRITE scope
@@ -14,7 +14,7 @@ resource "keycloak_openid_client_scope" "sw360_write" {
   realm_id               = keycloak_realm.sw360.id
   name                   = "WRITE"
   description            = "Write access to SW360"
-  include_in_token_scope = false
+  include_in_token_scope = true
 }
 
 # 3. Bind the scopes to SW360 UI realm. arc, basic, profile, email, roles &
