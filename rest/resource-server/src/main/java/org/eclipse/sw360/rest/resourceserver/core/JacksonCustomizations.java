@@ -833,7 +833,6 @@ public class JacksonCustomizations {
                 "id",
                 "type",
                 "revision",
-                "attachments",
                 "releases",
                 "documentState",
                 "permissions",
